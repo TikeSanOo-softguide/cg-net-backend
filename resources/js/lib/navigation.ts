@@ -1,0 +1,181 @@
+import type { LucideIcon } from 'lucide-react';
+import {
+    Activity,
+    BadgePercent,
+    Banknote,
+    Bell,
+    ClipboardList,
+    CreditCard,
+    Headphones,
+    LayoutDashboard,
+    MapPinned,
+    MessageSquare,
+    Package,
+    Router,
+    Settings,
+    Shield,
+    Ticket,
+    Users,
+    Wallet,
+} from 'lucide-react';
+
+export type NavItem = {
+    labelKey: string;
+    href: string;
+};
+
+export type NavGroup = {
+    id: string;
+    labelKey: string;
+    href?: string;
+    icon: LucideIcon;
+    children?: NavItem[];
+};
+
+export const navigation: NavGroup[] = [
+    { id: 'dashboard', labelKey: 'menu.dashboard', href: '/dashboard', icon: LayoutDashboard },
+    {
+        id: 'customers',
+        labelKey: 'menu.customer_management',
+        icon: Users,
+        children: [
+            { labelKey: 'menu.customers_list', href: '/customers' },
+            { labelKey: 'menu.broadband_accounts', href: '/broadband-accounts' },
+        ],
+    },
+    {
+        id: 'cpe',
+        labelKey: 'menu.cpe_management',
+        icon: Router,
+        children: [
+            { labelKey: 'menu.cpe_inventory', href: '/cpe/inventory' },
+            { labelKey: 'menu.cpe_assignment', href: '/cpe/assignment' },
+            { labelKey: 'menu.connection_status', href: '/cpe/status' },
+        ],
+    },
+    {
+        id: 'packages',
+        labelKey: 'menu.package_management',
+        icon: Package,
+        children: [
+            { labelKey: 'menu.packages', href: '/packages' },
+            { labelKey: 'menu.auto_renew_rules', href: '/packages/auto-renew' },
+            { labelKey: 'menu.recommended_packages', href: '/packages/recommended' },
+        ],
+    },
+    {
+        id: 'billing',
+        labelKey: 'menu.billing',
+        icon: CreditCard,
+        children: [
+            { labelKey: 'menu.invoices', href: '/billing/invoices' },
+            { labelKey: 'menu.payment_gateway_logs', href: '/billing/gateway-logs' },
+            { labelKey: 'menu.transactions', href: '/billing/transactions' },
+        ],
+    },
+    {
+        id: 'vouchers',
+        labelKey: 'menu.voucher_management',
+        icon: Ticket,
+        children: [
+            { labelKey: 'menu.voucher_batch', href: '/vouchers/batch' },
+            { labelKey: 'menu.redeem_history', href: '/vouchers/redeem-history' },
+        ],
+    },
+    {
+        id: 'service-requests',
+        labelKey: 'menu.service_requests',
+        icon: ClipboardList,
+        children: [
+            { labelKey: 'menu.installation_applications', href: '/service-requests/installations' },
+            { labelKey: 'menu.failure_reports', href: '/service-requests/failures' },
+            { labelKey: 'menu.relocation_requests', href: '/service-requests/relocations' },
+            { labelKey: 'menu.change_plan_requests', href: '/service-requests/change-plan' },
+        ],
+    },
+    { id: 'regions', labelKey: 'menu.region_management', href: '/regions', icon: MapPinned },
+    {
+        id: 'notifications',
+        labelKey: 'menu.notifications',
+        icon: Bell,
+        children: [
+            { labelKey: 'menu.push_composer', href: '/notifications/compose' },
+            { labelKey: 'menu.notification_categories', href: '/notifications/categories' },
+        ],
+    },
+    {
+        id: 'support',
+        labelKey: 'menu.support',
+        icon: Headphones,
+        children: [
+            { labelKey: 'menu.chat_conversations', href: '/support/conversations' },
+            { labelKey: 'menu.agent_assignment', href: '/support/agents' },
+            { labelKey: 'menu.quick_reply_templates', href: '/support/quick-replies' },
+        ],
+    },
+    { id: 'banners', labelKey: 'menu.banners', href: '/banners', icon: BadgePercent },
+    {
+        id: 'staff',
+        labelKey: 'menu.staff_role_management',
+        icon: Shield,
+        children: [
+            { labelKey: 'menu.staff_accounts', href: '/staff/accounts' },
+            { labelKey: 'menu.roles', href: '/staff/roles' },
+            { labelKey: 'menu.permissions_matrix', href: '/staff/permissions' },
+        ],
+    },
+    { id: 'activity', labelKey: 'menu.activity_logs', href: '/activity-logs', icon: Activity },
+    { id: 'reports', labelKey: 'menu.reports', href: '/reports', icon: Banknote },
+    {
+        id: 'settings',
+        labelKey: 'menu.settings',
+        icon: Settings,
+        children: [
+            { labelKey: 'menu.app_version', href: '/settings/app-version' },
+            { labelKey: 'menu.language_management', href: '/settings/languages' },
+            { labelKey: 'menu.general_settings', href: '/settings/general' },
+        ],
+    },
+];
+
+export const bottomNavItems: { id: string; labelKey: string; href: string; icon: LucideIcon }[] = [
+    { id: 'dashboard', labelKey: 'menu.dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { id: 'customers', labelKey: 'menu.customer_management', href: '/customers', icon: Users },
+    { id: 'billing', labelKey: 'menu.billing', href: '/billing/invoices', icon: Wallet },
+    { id: 'service-requests', labelKey: 'menu.service_requests', href: '/service-requests/installations', icon: ClipboardList },
+    { id: 'support', labelKey: 'menu.support', href: '/support/conversations', icon: MessageSquare },
+];
+
+export const moreNavIds = new Set(bottomNavItems.map((item) => item.id));
+
+export function isActivePath(current: string, href: string): boolean {
+    if (href === '/dashboard') {
+        return current === '/dashboard' || current === '/';
+    }
+
+    return current === href || current.startsWith(`${href}/`);
+}
+
+export function groupIsActive(current: string, group: NavGroup): boolean {
+    if (group.href) {
+        return isActivePath(current, group.href);
+    }
+
+    return Boolean(group.children?.some((child) => isActivePath(current, child.href)));
+}
+
+export function titleKeyForPath(current: string): string {
+    for (const group of navigation) {
+        if (group.href && isActivePath(current, group.href)) {
+            return group.labelKey;
+        }
+
+        const child = group.children?.find((item) => isActivePath(current, item.href));
+
+        if (child) {
+            return child.labelKey;
+        }
+    }
+
+    return 'menu.dashboard';
+}

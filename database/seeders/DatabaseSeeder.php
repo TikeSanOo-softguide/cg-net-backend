@@ -1,0 +1,275 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Enums\ChangePlanStatus;
+use App\Enums\CustomerPackageStatus;
+use App\Enums\InvoiceStatus;
+use App\Enums\PaymentStatus;
+use App\Enums\ReviewStatus;
+use App\Models\Admin;
+use App\Models\Banner;
+use App\Models\BroadbandAccount;
+use App\Models\ChangePlanRequest;
+use App\Models\CpeDevice;
+use App\Models\CustomerPackage;
+use App\Models\FailureReport;
+use App\Models\InstallationApplication;
+use App\Models\Invoice;
+use App\Models\NotificationCustom;
+use App\Models\Package;
+use App\Models\Payment;
+use App\Models\Region;
+use App\Models\RelocationRequest;
+use App\Models\Setting;
+use App\Models\User;
+use App\Models\Wallet;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+
+class DatabaseSeeder extends Seeder
+{
+    use WithoutModelEvents;
+
+    public function run(): void
+    {
+        $admins = $this->seedAdmins();
+        $townships = $this->seedRegions();
+        $packages = $this->seedPackages();
+        $users = $this->seedCustomers($packages);
+        $this->seedServiceRequests($users, $townships, $packages);
+        $this->seedBilling($users);
+        $this->seedNotifications();
+        $this->seedBanners();
+
+        Setting::factory()->create([
+            'key' => 'support_hotline',
+            'value' => '+959123456789',
+        ]);
+
+        unset($admins);
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, Admin>
+     */
+    private function seedAdmins()
+    {
+        return collect([
+            ['name' => 'Super Admin', 'email' => 'admin@cg-net.test'],
+            ['name' => 'Staff Officer', 'email' => 'staff@cg-net.test'],
+            ['name' => 'Support Agent', 'email' => 'support@cg-net.test'],
+        ])->map(fn (array $admin) => Admin::factory()->create($admin));
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, Region>
+     */
+    private function seedRegions()
+    {
+        $tree = [
+            ['Yangon', 'ရန်ကုန်', [['Bahan', 'ဗဟန်း'], ['Kamayut', 'ကမာရွတ်']]],
+            ['Mandalay', 'မန္တလေး', [['Chanayethazan', 'ချမ်းအေးသာဇံ'], ['Mahaaungmye', 'မဟာအောင်မြေ']]],
+            ['Shan', 'ရှမ်း', [['Taunggyi', 'တောင်ကြီး'], ['Kalaw', 'ကလော']]],
+            ['Ayeyarwady', 'ဧရာဝတီ', [['Pathein', 'ပုသိမ်'], ['Hinthada', 'ဟင်္သာတ']]],
+            ['Sagaing', 'စစ်ကိုင်း', [['Monywa', 'မုံရွာ'], ['Shwebo', 'ရွှေဘို']]],
+        ];
+
+        $townships = collect();
+
+        foreach ($tree as [$en, $mm, $children]) {
+            $parent = Region::factory()->create([
+                'name_en' => $en,
+                'name_mm' => $mm,
+                'parent_id' => null,
+            ]);
+
+            foreach ($children as [$childEn, $childMm]) {
+                $townships->push(Region::factory()->create([
+                    'name_en' => $childEn,
+                    'name_mm' => $childMm,
+                    'parent_id' => $parent->id,
+                ]));
+            }
+        }
+
+        return $townships;
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, Package>
+     */
+    private function seedPackages()
+    {
+        $plans = [
+            ['name' => 'Home 50', 'data_gb' => 50, 'price' => 15000, 'validity_days' => 30, 'speed_mbps' => 20, 'description' => 'Entry home broadband.'],
+            ['name' => 'Home 100', 'data_gb' => 100, 'price' => 25000, 'validity_days' => 30, 'speed_mbps' => 30, 'description' => 'Everyday streaming.'],
+            ['name' => 'Family 200', 'data_gb' => 200, 'price' => 35000, 'validity_days' => 30, 'speed_mbps' => 50, 'description' => 'Family household plan.'],
+            ['name' => 'Pro 300', 'data_gb' => 300, 'price' => 45000, 'validity_days' => 30, 'speed_mbps' => 100, 'description' => 'Work-from-home plan.'],
+            ['name' => 'Unlimited 500', 'data_gb' => 500, 'price' => 65000, 'validity_days' => 30, 'speed_mbps' => 200, 'description' => 'High-usage households.'],
+            ['name' => 'Annual 1000', 'data_gb' => 1000, 'price' => 199000, 'validity_days' => 365, 'speed_mbps' => 100, 'description' => 'Prepaid annual bundle.'],
+        ];
+
+        return collect($plans)->map(fn (array $plan) => Package::factory()->create($plan));
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, Package>  $packages
+     * @return \Illuminate\Database\Eloquent\Collection<int, User>
+     */
+    private function seedCustomers($packages)
+    {
+        return User::factory()
+            ->count(20)
+            ->create()
+            ->each(function (User $user) use ($packages): void {
+                $package = $packages->random();
+
+                $account = BroadbandAccount::factory()->create([
+                    'user_id' => $user->id,
+                    'customer_name' => $user->name,
+                    'current_package_id' => $package->id,
+                ]);
+
+                CustomerPackage::factory()->create([
+                    'user_id' => $user->id,
+                    'broadband_account_id' => $account->id,
+                    'package_id' => $package->id,
+                    'start_date' => now()->subDays(10),
+                    'expiry_date' => now()->addDays($package->validity_days - 10),
+                    'status' => CustomerPackageStatus::Active,
+                ]);
+
+                Wallet::factory()->create([
+                    'user_id' => $user->id,
+                    'balance_mmk' => fake()->randomElement([0, 5000, 15000, 42000]),
+                ]);
+
+                CpeDevice::factory()->create([
+                    'broadband_account_id' => $account->id,
+                ]);
+
+                $user->forceFill([
+                    'created_at' => now()->subDays(fake()->numberBetween(0, 29)),
+                ])->save();
+            });
+    }
+
+    /**
+     * @param  \Illuminate\Database\Eloquent\Collection<int, User>  $users
+     * @param  \Illuminate\Support\Collection<int, Region>  $townships
+     * @param  \Illuminate\Support\Collection<int, Package>  $packages
+     */
+    private function seedServiceRequests($users, $townships, $packages): void
+    {
+        $sample = $users->take(8)->values();
+
+        foreach ([ReviewStatus::UnderReview, ReviewStatus::Approved, ReviewStatus::Rejected] as $i => $status) {
+            $user = $sample[$i];
+
+            InstallationApplication::factory()->create([
+                'user_id' => $user->id,
+                'region_id' => $townships->random()->id,
+                'plan_id' => $packages->random()->id,
+                'status' => $status,
+            ]);
+        }
+
+        foreach ([ReviewStatus::UnderReview, ReviewStatus::Approved, ReviewStatus::Rejected] as $i => $status) {
+            $user = $sample[$i + 3];
+            $account = $user->broadbandAccounts()->first();
+
+            FailureReport::factory()->create([
+                'user_id' => $user->id,
+                'broadband_account_id' => $account->id,
+                'status' => $status,
+            ]);
+        }
+
+        $relocUser = $sample[6];
+        RelocationRequest::factory()->create([
+            'user_id' => $relocUser->id,
+            'broadband_account_id' => $relocUser->broadbandAccounts()->first()->id,
+            'status' => ReviewStatus::UnderReview,
+        ]);
+        RelocationRequest::factory()->create([
+            'user_id' => $sample[7]->id,
+            'broadband_account_id' => $sample[7]->broadbandAccounts()->first()->id,
+            'status' => ReviewStatus::Approved,
+        ]);
+
+        $planUser = $sample[0];
+        $account = $planUser->broadbandAccounts()->first();
+        $current = $account->current_package_id;
+        $new = $packages->first(fn (Package $package) => $package->id !== $current) ?? $packages->last();
+
+        ChangePlanRequest::factory()->create([
+            'user_id' => $planUser->id,
+            'broadband_account_id' => $account->id,
+            'current_package_id' => $current,
+            'new_package_id' => $new->id,
+            'status' => ChangePlanStatus::UnderReview,
+        ]);
+        ChangePlanRequest::factory()->create([
+            'user_id' => $sample[1]->id,
+            'broadband_account_id' => $sample[1]->broadbandAccounts()->first()->id,
+            'current_package_id' => $sample[1]->broadbandAccounts()->first()->current_package_id,
+            'new_package_id' => $new->id,
+            'status' => ChangePlanStatus::Approved,
+        ]);
+    }
+
+    /**
+     * @param  \Illuminate\Database\Eloquent\Collection<int, User>  $users
+     */
+    private function seedBilling($users): void
+    {
+        $users->take(12)->values()->each(function (User $user, int $index): void {
+            $account = $user->broadbandAccounts()->first();
+
+            if (! $account) {
+                return;
+            }
+
+            $paidAt = now()->subDays($index * 2);
+            $amount = fake()->randomElement([15000, 25000, 35000, 45000]);
+
+            $invoice = Invoice::factory()->create([
+                'broadband_account_id' => $account->id,
+                'amount' => $amount,
+                'status' => InvoiceStatus::Paid,
+                'due_date' => $paidAt->copy()->addDays(7),
+            ]);
+
+            Payment::factory()->create([
+                'invoice_id' => $invoice->id,
+                'amount' => $amount,
+                'status' => PaymentStatus::Paid,
+                'paid_at' => $paidAt,
+            ]);
+        });
+    }
+
+    private function seedNotifications(): void
+    {
+        NotificationCustom::factory()->count(4)->create(['is_read' => false, 'user_id' => null]);
+        NotificationCustom::factory()->count(2)->create(['is_read' => true, 'user_id' => null]);
+    }
+
+    private function seedBanners(): void
+    {
+        Banner::factory()->create([
+            'title' => 'Monsoon promo',
+            'sort_order' => 1,
+            'link_url' => 'https://cg-net.test/promo',
+        ]);
+        Banner::factory()->create([
+            'title' => 'New fiber coverage',
+            'sort_order' => 2,
+        ]);
+        Banner::factory()->create([
+            'title' => 'Pay with KBZPay',
+            'sort_order' => 3,
+        ]);
+    }
+}
