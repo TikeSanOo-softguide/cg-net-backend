@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { HashIcon, RotateCcwIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { FormControl } from '@/components/ui/form-control';
 import { Input } from '@/components/ui/input';
 import {
     DEFAULT_PRIMARY,
@@ -44,11 +46,10 @@ function OptionTile({
             aria-pressed={selected}
             onClick={onClick}
             className={cn(
-                'h-8 min-w-0 flex-1 rounded-[8px] px-1 text-[11px] font-medium transition-all duration-200 ease-out',
-                'hover:-translate-y-0.5 hover:shadow-sm active:translate-y-0',
+                'h-8 min-w-0 flex-1 rounded-[6px] px-1 text-[11px] font-medium transition-colors duration-200',
                 selected
-                    ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary-hover'
-                    : 'bg-muted text-foreground hover:bg-primary/12',
+                    ? 'bg-primary text-primary-foreground hover:bg-[color-mix(in_srgb,hsl(var(--primary))_88%,black)]'
+                    : 'bg-secondary text-secondary-foreground hover:bg-muted',
             )}
         >
             {children}
@@ -73,7 +74,7 @@ function HexColorField({
 
     return (
         <div className="flex items-center gap-2">
-            <label className="relative size-9 shrink-0 cursor-pointer overflow-hidden rounded-[8px] ring-1 ring-border">
+            <label className="relative size-9 shrink-0 cursor-pointer overflow-hidden rounded-[6px] ring-1 ring-border">
                 <span className="absolute inset-0" style={{ backgroundColor: swatchHsl(preview) }} />
                 <input
                     type="color"
@@ -83,23 +84,25 @@ function HexColorField({
                     aria-label="Pick primary color"
                 />
             </label>
-            <Input
-                value={draft}
-                onChange={(event) => {
-                    const next = event.target.value;
-                    setDraft(next);
-                    const hex = normalizeHex(next);
+            <FormControl icon={HashIcon}>
+                <Input
+                    value={draft}
+                    onChange={(event) => {
+                        const next = event.target.value;
+                        setDraft(next);
+                        const hex = normalizeHex(next);
 
-                    if (hex) {
-                        onChange(hex);
-                    }
-                }}
-                aria-invalid={draft.length > 0 && ! valid}
-                spellCheck={false}
-                maxLength={7}
-                placeholder={DEFAULT_PRIMARY}
-                className="h-9 rounded-[8px] font-mono text-xs tracking-wide"
-            />
+                        if (hex) {
+                            onChange(hex);
+                        }
+                    }}
+                    aria-invalid={draft.length > 0 && ! valid}
+                    spellCheck={false}
+                    maxLength={7}
+                    placeholder={DEFAULT_PRIMARY}
+                    className="font-mono text-xs tracking-wide"
+                />
+            </FormControl>
         </div>
     );
 }
@@ -271,9 +274,10 @@ export function ThemeSettingsPanel({ open, onOpenChange }: ThemeSettingsPanelPro
                     <Button
                         type="button"
                         variant="primary"
-                        className="h-10 w-full rounded-[8px] text-sm"
+                        className="w-full"
                         onClick={resetThemeSettings}
                     >
+                        <RotateCcwIcon />
                         Reset Default
                     </Button>
                 </div>

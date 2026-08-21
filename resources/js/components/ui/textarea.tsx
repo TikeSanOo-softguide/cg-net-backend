@@ -1,19 +1,13 @@
 import * as React from 'react';
 
+import { formControlClass } from '@/lib/form-control';
 import { cn } from '@/lib/utils';
 
 function Textarea({ className, ...props }: React.ComponentProps<'textarea'>) {
     return (
         <textarea
             data-slot="textarea"
-            className={cn(
-                'flex field-sizing-content min-h-20 w-full rounded-md border border-input bg-surface px-3 py-2 text-sm shadow-none transition-colors duration-200 outline-none',
-                'placeholder:text-muted-foreground',
-                'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                'disabled:cursor-not-allowed disabled:opacity-50',
-                'aria-invalid:border-danger aria-invalid:ring-danger/20',
-                className,
-            )}
+            className={cn('flex min-h-20 field-sizing-content py-2', formControlClass, className)}
             {...props}
         />
     );

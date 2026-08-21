@@ -31,22 +31,22 @@ export function Pagination({ meta, summary }: PaginationProps) {
     }
 
     return (
-        <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-[11px] text-muted-foreground">{summary}</p>
-            <nav className="flex flex-wrap gap-1" aria-label="Pagination">
+        <div className="flex flex-col gap-3 border-t border-border/70 bg-muted/25 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+            <p className="text-xs text-muted-foreground">{summary}</p>
+            <nav className="flex flex-wrap gap-1.5" aria-label="Pagination">
                 {meta.links.map((link, index) => {
                     const label = link.label.replace(/&laquo;|&raquo;/g, '').trim();
 
                     if (! link.url) {
                         return (
-                            <Button key={`${label}-${index}`} type="button" variant="outline" size="sm" disabled className="h-7 min-w-7 px-2 text-[11px]">
+                            <Button key={`${label}-${index}`} type="button" variant="outline" size="sm" disabled className="min-w-8 px-2.5">
                                 <span dangerouslySetInnerHTML={{ __html: link.label }} />
                             </Button>
                         );
                     }
 
                     return (
-                        <Button key={`${label}-${index}`} asChild variant={link.active ? 'primary' : 'outline'} size="sm" className="h-7 min-w-7 px-2 text-[11px]">
+                        <Button key={`${label}-${index}`} asChild variant={link.active ? 'primary' : 'outline'} size="sm" className="min-w-8 px-2.5">
                             <Link href={link.url} preserveState preserveScroll>
                                 <span className={cn(link.active && 'text-primary-foreground')} dangerouslySetInnerHTML={{ __html: link.label }} />
                             </Link>

@@ -2,25 +2,21 @@
 
 namespace App\Console\Commands;
 
+use App\Support\JsonTranslations;
 use Illuminate\Console\Command;
 
 class LangCheckCommand extends Command
 {
     protected $signature = 'lang:check';
 
-    protected $description = 'Fail if en/mm/zh JSON translation files do not share the same key set';
-
-    /**
-     * @var list<string>
-     */
-    private const LOCALES = ['en', 'mm', 'zh'];
+    protected $description = 'Fail if en/my/zh JSON translation files do not share the same key set';
 
     public function handle(): int
     {
         /** @var array<string, list<string>> $keysByLocale */
         $keysByLocale = [];
 
-        foreach (self::LOCALES as $locale) {
+        foreach (JsonTranslations::LOCALES as $locale) {
             $path = lang_path("{$locale}.json");
 
             if (! is_readable($path)) {
@@ -37,7 +33,7 @@ class LangCheckCommand extends Command
                 return self::FAILURE;
             }
 
-            $keysByLocale[$locale] = array_keys($decoded);
+            $keysByLocale[$locale] = JsonTranslations::dottedKeys($decoded);
         }
 
         $union = array_values(array_unique(array_merge(...array_values($keysByLocale))));
@@ -45,7 +41,7 @@ class LangCheckCommand extends Command
 
         $failed = false;
 
-        foreach (self::LOCALES as $locale) {
+        foreach (JsonTranslations::LOCALES as $locale) {
             $missing = array_values(array_diff($union, $keysByLocale[$locale]));
 
             if ($missing !== []) {

@@ -1,0 +1,47 @@
+import { FormEvent } from 'react';
+import { Head, useForm } from '@inertiajs/react';
+
+import { PromotionForm, type PromotionFormValues } from '@/components/cms/PromotionForm';
+import { PageHeader } from '@/components/PageHeader';
+import { useTranslation } from '@/hooks/useTranslation';
+
+type Props = {
+    item: {
+        id: number;
+        title: string;
+        description: string | null;
+        start_date: string | null;
+        end_date: string | null;
+        is_active: boolean;
+        lang: string;
+        image_url: string | null;
+    };
+};
+
+export default function PromotionEdit({ item }: Props) {
+    const { t } = useTranslation();
+    const form = useForm<PromotionFormValues>({
+        title: item.title,
+        description: item.description ?? '',
+        start_date: item.start_date ?? '',
+        end_date: item.end_date ?? '',
+        is_active: item.is_active,
+        lang: item.lang,
+        image: null,
+    });
+
+    const submit = (event: FormEvent) => {
+        event.preventDefault();
+        form.transform((data) => ({ ...data, _method: 'put' })).post(`/cms/promotions/${item.id}`, { forceFormData: true });
+    };
+
+    return (
+        <>
+            <Head title={t('cms.edit_promotion')} />
+            <div className="flex w-full flex-col gap-5 pt-6 lg:pt-8">
+                <PageHeader eyebrow={t('menu.cms_promotions')} title={t('cms.edit_promotion')} />
+                <PromotionForm form={form} onSubmit={submit} cancelHref="/cms/promotions" imageUrl={item.image_url} />
+            </div>
+        </>
+    );
+}

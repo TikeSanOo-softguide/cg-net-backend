@@ -4,14 +4,18 @@ export type AuthUser = {
     email: string;
 };
 
-export type SupportedLocale = 'en' | 'mm' | 'zh';
+export type SupportedLocale = 'en' | 'my' | 'zh';
+
+export type TranslationTree = {
+    [key: string]: string | TranslationTree;
+};
 
 export type PageProps<T extends Record<string, unknown> = Record<string, unknown>> = T & {
     auth: {
         user: AuthUser | null;
     };
     locale: SupportedLocale;
-    translations: Record<string, string>;
+    translations: TranslationTree;
     unreadNotifications: number;
     flash: {
         success: string | null;
@@ -25,7 +29,7 @@ declare module '@inertiajs/core' {
                 user: AuthUser | null;
             };
             locale: SupportedLocale;
-            translations: Record<string, string>;
+            translations: TranslationTree;
             unreadNotifications: number;
             flash: {
                 success: string | null;

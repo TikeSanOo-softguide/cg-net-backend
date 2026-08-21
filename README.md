@@ -16,7 +16,7 @@ This repo is the admin backend and Inertia React shell. Domain models and seed d
 | Data | MySQL 8.4, Redis 7 (cache + queues) |
 | Docker | PHP-FPM app, Nginx 1.27, MySQL, Redis |
 | Auth audience | `Admin` model (session guard `web`). `User` is the customer record. |
-| i18n | English, Myanmar (`mm`), Chinese (`zh`) — `resources/lang/` |
+| i18n | English, Myanmar (`my`), Chinese (`zh`) — `lang/` |
 | Also wired | Spatie Permission + Activity Log, Reverb, FCM, Excel, Sentry, Scramble |
 
 ## What works today
@@ -26,7 +26,7 @@ This repo is the admin backend and Inertia React shell. Domain models and seed d
 - Staff login (logo-only login card), password reset, 2FA challenge pages
 - Dashboard: stats, 30-day charts, recent service requests
 - Collapsible sidebar, top bar, dark mode, theme panel, language switcher
-- Locale switch: `POST /locale/{en\|mm\|zh}`
+- Locale switch: `POST /locale/{en\|my\|zh}`
 
 **Data layer (models + migrations + seeders, no admin CRUD yet)**
 
@@ -109,9 +109,9 @@ app/
   Support/MenuPages.php Sidebar routes that are still placeholders
 database/               migrations, factories, seeders
 docker/                 nginx + php.ini
+lang/{en,my,zh}.json    Nested JSON translations
 resources/
   js/pages/{Domain}/    Customer/Index, Auth/Login, Dashboard/Index
-  lang/{en,mm,zh}.json
   css/app.css
 routes/web.php
 ```
@@ -122,7 +122,7 @@ Frontend alias: `@` → `resources/js`.
 
 - **Auth:** Fortify against `admins`. Customers never log into this app.
 - **Folders:** Group HTTP and Inertia files by domain (`Customer/CustomerController`, `Customer/Index`). Page names are PascalCase (`Auth/ForgotPassword`).
-- **i18n:** JSON keys in `resources/lang/`. Keep locales in sync with `php artisan lang:check`.
+- **i18n:** Nested JSON keys in `lang/`. Keep locales in sync with `php artisan lang:check`.
 - **Theme:** `ThemeProvider` (`isp-admin-theme`). Default brand teal `#173236`.
 - **Sidebar:** Width 260px expanded / 88px collapsed; pin state in `isp-admin-sidebar-pinned`.
 - **New menu screens:** add `{Domain}/{Domain}Controller` plus `pages/{Domain}/Index`, then remove that path from `MenuPages`.

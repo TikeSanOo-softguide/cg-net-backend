@@ -23,14 +23,14 @@ export function BrandLockup({
         <>
             <span
                 className={cn(
-                    'relative size-11 shrink-0 overflow-hidden rounded-full bg-brand',
+                    'relative size-12 shrink-0 overflow-hidden rounded-[6px] bg-brand',
                     logoClassName,
                 )}
             >
                 <img
-                    src="/images/smart-link-logo.jpg"
+                    src="/images/smart-link-logo.png"
                     alt=""
-                    className="size-full object-cover object-[center_30%] scale-[1.35]"
+                    className="size-full object-cover"
                 />
             </span>
             {compact ? (
@@ -38,9 +38,9 @@ export function BrandLockup({
             ) : (
                 <span
                     className={cn(
-                        'overflow-hidden whitespace-nowrap font-heading text-base font-semibold tracking-tight text-foreground',
+                        'overflow-hidden whitespace-nowrap font-heading text-lg font-semibold tracking-normal text-primary uppercase',
                         'motion-reduce:transition-none transition-[max-width,opacity,margin] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
-                        showWordmark ? 'ml-0 max-w-[140px] opacity-100' : 'pointer-events-none max-w-0 opacity-0',
+                        showWordmark ? 'ml-0 max-w-[180px] opacity-100' : 'pointer-events-none max-w-0 opacity-0',
                     )}
                     aria-hidden={! showWordmark}
                 >

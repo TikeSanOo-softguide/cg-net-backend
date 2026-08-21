@@ -11,7 +11,7 @@ class LocaleController extends Controller
     /**
      * @var list<string>
      */
-    private const SUPPORTED = ['en', 'mm', 'zh'];
+    private const SUPPORTED = ['en', 'my', 'zh'];
 
     public function __invoke(Request $request, string $lang): RedirectResponse
     {

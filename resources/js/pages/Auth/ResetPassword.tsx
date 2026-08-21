@@ -1,7 +1,9 @@
 import { FormEvent } from 'react';
 import { Head, useForm } from '@inertiajs/react';
+import { LockIcon, MailIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 
 type ResetPasswordProps = {
@@ -32,29 +34,20 @@ export default function ResetPassword({ email, token }: ResetPasswordProps) {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={submit} className="flex flex-col gap-4">
-                        <div className="flex flex-col gap-2">
-                            <label htmlFor="email" className="text-sm font-medium">
-                                Email
-                            </label>
+                        <FormField label="Email" htmlFor="email" icon={MailIcon}>
                             <Input id="email" type="email" value={form.data.email} readOnly className="font-mono" />
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <label htmlFor="password" className="text-sm font-medium">
-                                Password
-                            </label>
+                        </FormField>
+                        <FormField label="Password" htmlFor="password" error={form.errors.password} icon={LockIcon}>
                             <Input
                                 id="password"
                                 type="password"
                                 value={form.data.password}
                                 onChange={(event) => form.setData('password', event.target.value)}
                                 required
+                                aria-invalid={Boolean(form.errors.password)}
                             />
-                            {form.errors.password ? <p className="text-sm text-danger">{form.errors.password}</p> : null}
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <label htmlFor="password_confirmation" className="text-sm font-medium">
-                                Confirm password
-                            </label>
+                        </FormField>
+                        <FormField label="Confirm password" htmlFor="password_confirmation" icon={LockIcon}>
                             <Input
                                 id="password_confirmation"
                                 type="password"
@@ -62,8 +55,9 @@ export default function ResetPassword({ email, token }: ResetPasswordProps) {
                                 onChange={(event) => form.setData('password_confirmation', event.target.value)}
                                 required
                             />
-                        </div>
+                        </FormField>
                         <Button type="submit" variant="primary" size="md" disabled={form.processing}>
+                            <LockIcon />
                             Reset password
                         </Button>
                     </form>

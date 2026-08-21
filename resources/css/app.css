@@ -46,6 +46,8 @@
     --warning-foreground: #3d3208;
     --danger: #b42318;
     --danger-foreground: #ffffff;
+    --success: #2f7d57;
+    --success-foreground: #ffffff;
     --border: #e2e8e8;
     --muted: #eef2f2;
     --muted-foreground: #5c6d70;
@@ -100,6 +102,8 @@
     --warning-foreground: #1a1504;
     --danger: #f97066;
     --danger-foreground: #1a0a08;
+    --success: #5dba8a;
+    --success-foreground: #0b1f16;
     --border: #2a4043;
     --muted: #1d3336;
     --muted-foreground: #9aadaf;
@@ -184,6 +188,8 @@
     --color-warning-foreground: var(--warning-foreground);
     --color-danger: var(--danger);
     --color-danger-foreground: var(--danger-foreground);
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
     --color-muted: var(--muted);
     --color-muted-foreground: var(--muted-foreground);
     --color-border: var(--border);

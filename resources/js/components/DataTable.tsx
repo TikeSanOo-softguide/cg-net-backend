@@ -1,11 +1,12 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link, router } from '@inertiajs/react';
-import { ArrowDownIcon, ArrowUpIcon } from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from 'lucide-react';
 
 import { Pagination, type Paginated } from '@/components/Pagination';
 import { SearchInput } from '@/components/SearchInput';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 
@@ -84,6 +85,7 @@ export function DataTable<T>({
     const mobileSubtitle = columns.find((column) => column.mobile === 'subtitle');
     const mobileMeta = columns.find((column) => column.mobile === 'meta');
     const mobileBadge = columns.find((column) => column.mobile === 'badge');
+    const columnCount = columns.length + (actions ? 1 : 0);
 
     const visitRow = (row: T) => {
         const to = href?.(row);
@@ -94,55 +96,66 @@ export function DataTable<T>({
     };
 
     return (
-        <Card className={cn('gap-0 py-0', className)}>
-            <CardHeader className="gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-                {title ? <CardTitle className="text-sm font-semibold sm:text-[15px]">{title}</CardTitle> : <span />}
-                <div className="flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+        <TooltipProvider>
+        <Card className={cn('gap-0 overflow-hidden py-0', className)}>
+            <CardHeader className="gap-3 border-b border-border/70 bg-card px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                {title ? (
+                    <CardTitle className="text-[15px] font-semibold tracking-tight sm:text-base">{title}</CardTitle>
+                ) : (
+                    <span />
+                )}
+                <div className="flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
                     {filters}
                     <SearchInput
-                        size="sm"
                         value={searchValue}
                         onChange={onSearchChange ?? setQuery}
                         placeholder={searchPlaceholder ?? t('common.search')}
-                        className="sm:max-w-64"
+                        className="w-full sm:w-72"
                     />
                 </div>
             </CardHeader>
-            <CardContent className="px-0 pb-2 sm:px-2 sm:pb-3">
+            <CardContent className="px-0 pb-0">
                 <div className="hidden sm:block">
-                    <Table className="text-[13px]">
-                        <TableHeader>
+                    <Table>
+                        <TableHeader className="bg-muted/45">
                             <TableRow className="hover:bg-transparent">
                                 {columns.map((column) => (
-                                    <TableHead key={column.id} className="h-9 px-2.5 text-[11px]">
+                                    <TableHead key={column.id} className="h-[45px] px-4">
                                         {column.sortable && onSort ? (
                                             <button
                                                 type="button"
-                                                className="inline-flex items-center gap-1 hover:text-foreground"
+                                                className={cn(
+                                                    'inline-flex items-center gap-1.5 rounded-md py-0.5 transition-colors',
+                                                    sort === column.id ? 'text-foreground' : 'hover:text-foreground',
+                                                )}
                                                 onClick={() => onSort(column.id)}
                                             >
                                                 {column.header}
                                                 {sort === column.id ? (
                                                     direction === 'asc' ? (
-                                                        <ArrowUpIcon className="size-3" />
+                                                        <ArrowUpIcon className="size-3.5 text-primary" />
                                                     ) : (
-                                                        <ArrowDownIcon className="size-3" />
+                                                        <ArrowDownIcon className="size-3.5 text-primary" />
                                                     )
-                                                ) : null}
+                                                ) : (
+                                                    <ChevronsUpDownIcon className="size-3.5 opacity-40" />
+                                                )}
                                             </button>
                                         ) : (
                                             column.header
                                         )}
                                     </TableHead>
                                 ))}
-                                {actions ? <TableHead className="h-9 w-24 px-2.5 text-[11px]">{t('common.actions')}</TableHead> : null}
+                                {actions ? (
+                                    <TableHead className="h-[45px] w-px px-3 text-center">{t('common.actions')}</TableHead>
+                                ) : null}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {rows.length === 0 ? (
                                 <TableRow className="hover:bg-transparent">
-                                    <TableCell colSpan={columns.length + (actions ? 1 : 0)} className="h-16 text-center text-xs text-muted-foreground">
-                                        {noResults}
+                                    <TableCell colSpan={columnCount} className="h-28 text-center">
+                                        <p className="text-sm font-medium text-foreground">{noResults}</p>
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -152,16 +165,17 @@ export function DataTable<T>({
                                     return (
                                         <TableRow
                                             key={getRowId(row)}
-                                            className={to ? 'cursor-pointer' : undefined}
+                                            className={cn(to && 'cursor-pointer', 'even:bg-muted/25')}
                                             onClick={to ? () => visitRow(row) : undefined}
                                         >
                                             {columns.map((column) => (
-                                                <TableCell
-                                                    key={column.id}
-                                                    className={cn('h-9 px-2.5 py-1.5 text-[13px]', column.className)}
-                                                >
+                                                <TableCell key={column.id} className={column.className}>
                                                     {column.mobile === 'title' && to ? (
-                                                        <Link href={to} className="font-medium hover:underline" onClick={(event) => event.stopPropagation()}>
+                                                        <Link
+                                                            href={to}
+                                                            className="font-medium text-foreground hover:text-primary hover:underline"
+                                                            onClick={(event) => event.stopPropagation()}
+                                                        >
                                                             {column.cell(row)}
                                                         </Link>
                                                     ) : (
@@ -170,8 +184,8 @@ export function DataTable<T>({
                                                 </TableCell>
                                             ))}
                                             {actions ? (
-                                                <TableCell className="h-9 px-2.5 py-1.5" onClick={(event) => event.stopPropagation()}>
-                                                    {actions(row)}
+                                                <TableCell className="w-px px-3 text-center align-middle" onClick={(event) => event.stopPropagation()}>
+                                                    <div className="flex h-full items-center justify-center gap-1.5">{actions(row)}</div>
                                                 </TableCell>
                                             ) : null}
                                         </TableRow>
@@ -182,9 +196,9 @@ export function DataTable<T>({
                     </Table>
                 </div>
 
-                <ul className="flex flex-col gap-2 px-4 pb-3 sm:hidden">
+                <ul className="flex flex-col gap-2.5 px-4 py-4 sm:hidden">
                     {rows.length === 0 ? (
-                        <li className="rounded-[8px] border border-border bg-card px-3 py-2.5 text-center text-xs text-muted-foreground">
+                        <li className="rounded-xl border border-border/80 bg-muted/30 px-4 py-8 text-center text-sm text-muted-foreground">
                             {noResults}
                         </li>
                     ) : (
@@ -192,25 +206,28 @@ export function DataTable<T>({
                             const to = href?.(row);
                             const body = (
                                 <>
-                                    <div className="flex items-start justify-between gap-2">
+                                    <div className="flex items-start justify-between gap-3">
                                         <div className="min-w-0">
                                             {mobileTitle ? (
-                                                <p className="truncate text-[13px] font-medium">{mobileTitle.cell(row)}</p>
+                                                <p className="truncate text-sm font-semibold text-foreground">{mobileTitle.cell(row)}</p>
                                             ) : null}
                                             {mobileSubtitle ? (
-                                                <p className="truncate text-xs text-muted-foreground">{mobileSubtitle.cell(row)}</p>
+                                                <p className="mt-0.5 truncate text-[13px] text-muted-foreground">{mobileSubtitle.cell(row)}</p>
                                             ) : null}
                                         </div>
                                         {mobileBadge ? mobileBadge.cell(row) : null}
                                     </div>
                                     {mobileMeta ? (
-                                        <p className="mt-1.5 font-mono text-[11px] text-muted-foreground">{mobileMeta.cell(row)}</p>
+                                        <p className="mt-2 font-mono text-[11px] text-muted-foreground">{mobileMeta.cell(row)}</p>
                                     ) : null}
                                 </>
                             );
 
                             return (
-                                <li key={getRowId(row)} className="rounded-[8px] border border-border bg-card px-3 py-2.5">
+                                <li
+                                    key={getRowId(row)}
+                                    className="rounded-xl border border-border/80 bg-card px-4 py-3.5 shadow-[0_1px_2px_rgb(23_50_54/0.04)]"
+                                >
                                     {to ? (
                                         <Link href={to} className="block">
                                             {body}
@@ -218,7 +235,7 @@ export function DataTable<T>({
                                     ) : (
                                         body
                                     )}
-                                    {actions ? <div className="mt-2">{actions(row)}</div> : null}
+                                    {actions ? <div className="mt-3 flex items-center justify-center gap-1.5 border-t border-border/60 pt-3">{actions(row)}</div> : null}
                                 </li>
                             );
                         })
@@ -238,5 +255,6 @@ export function DataTable<T>({
                 ) : null}
             </CardContent>
         </Card>
+        </TooltipProvider>
     );
 }

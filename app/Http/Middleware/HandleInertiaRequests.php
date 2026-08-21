@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\NotificationCustom;
+use App\Support\JsonTranslations;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -60,18 +61,10 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, mixed>
      */
     private function translationsFor(string $locale): array
     {
-        $path = lang_path("{$locale}.json");
-
-        if (! is_readable($path)) {
-            return [];
-        }
-
-        $decoded = json_decode(file_get_contents($path), true);
-
-        return is_array($decoded) ? $decoded : [];
+        return JsonTranslations::load($locale);
     }
 }

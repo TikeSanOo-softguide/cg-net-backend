@@ -20,6 +20,7 @@ class BannerFactory extends Factory
             'is_active' => true,
             'starts_at' => now()->subDay(),
             'ends_at' => now()->addMonth(),
+            'lang' => 'en',
         ];
     }
 }

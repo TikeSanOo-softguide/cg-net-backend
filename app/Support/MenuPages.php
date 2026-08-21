@@ -34,7 +34,6 @@ final class MenuPages
             ['path' => '/support/conversations', 'titleKey' => 'menu.chat_conversations', 'name' => 'support.conversations'],
             ['path' => '/support/agents', 'titleKey' => 'menu.agent_assignment', 'name' => 'support.agents'],
             ['path' => '/support/quick-replies', 'titleKey' => 'menu.quick_reply_templates', 'name' => 'support.quick-replies'],
-            ['path' => '/banners', 'titleKey' => 'menu.banners', 'name' => 'banners.index'],
             ['path' => '/staff/accounts', 'titleKey' => 'menu.staff_accounts', 'name' => 'staff.accounts'],
             ['path' => '/staff/roles', 'titleKey' => 'menu.roles', 'name' => 'staff.roles'],
             ['path' => '/staff/permissions', 'titleKey' => 'menu.permissions_matrix', 'name' => 'staff.permissions'],

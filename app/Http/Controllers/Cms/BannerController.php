@@ -1,0 +1,116 @@
+<?php
+
+namespace App\Http\Controllers\Cms;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Cms\StoreBannerRequest;
+use App\Http\Requests\Cms\UpdateBannerRequest;
+use App\Models\Banner;
+use App\Support\CmsListing;
+use App\Support\StoresPublicImage;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class BannerController extends Controller
+{
+    public function index(Request $request): Response
+    {
+        $listing = CmsListing::paginate(
+            $request,
+            Banner::query(),
+            ['title', 'link_url'],
+            ['title', 'sort_order', 'is_active', 'lang', 'starts_at', 'created_at'],
+            defaultSort: 'sort_order',
+            statusColumn: 'is_active',
+        );
+
+        return Inertia::render('Cms/Banners/Index', [
+            'items' => $listing['paginator']->through(fn (Banner $item) => $this->payload($item)),
+            'filters' => $listing['filters'],
+        ]);
+    }
+
+    public function create(): Response
+    {
+        return Inertia::render('Cms/Banners/Create');
+    }
+
+    public function store(StoreBannerRequest $request): RedirectResponse
+    {
+        $banner = Banner::query()->create($this->attributes($request->validated(), $request->file('image')));
+
+        activity('cms')->causedBy($request->user())->performedOn($banner)->event('created')->log('banner_created');
+
+        return redirect()->route('cms.banners.index')->with('success', 'cms.created');
+    }
+
+    public function edit(Banner $banner): Response
+    {
+        return Inertia::render('Cms/Banners/Edit', [
+            'item' => $this->payload($banner),
+        ]);
+    }
+
+    public function update(UpdateBannerRequest $request, Banner $banner): RedirectResponse
+    {
+        $banner->update($this->attributes($request->validated(), $request->file('image'), $banner->image_path));
+
+        activity('cms')->causedBy($request->user())->performedOn($banner)->event('updated')->log('banner_updated');
+
+        return redirect()->route('cms.banners.index')->with('success', 'cms.updated');
+    }
+
+    public function destroy(Request $request, Banner $banner): RedirectResponse
+    {
+        StoresPublicImage::delete($banner->image_path);
+        $banner->delete();
+
+        activity('cms')->causedBy($request->user())->performedOn($banner)->event('deleted')->log('banner_deleted');
+
+        return redirect()->route('cms.banners.index')->with('success', 'cms.deleted');
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function attributes(array $validated, $image = null, ?string $previousPath = null): array
+    {
+        $data = [
+            'title' => $validated['title'],
+            'link_url' => $validated['link_url'] ?: null,
+            'sort_order' => $validated['sort_order'],
+            'is_active' => $validated['is_active'],
+            'lang' => $validated['lang'],
+            'starts_at' => $validated['start_date'] ?? null,
+            'ends_at' => $validated['end_date'] ?? null,
+        ];
+
+        if ($image) {
+            $data['image_path'] = StoresPublicImage::store($image, 'cms/banners', $previousPath);
+        }
+
+        return $data;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function payload(Banner $banner): array
+    {
+        return [
+            'id' => $banner->id,
+            'title' => $banner->title,
+            'link_url' => $banner->link_url,
+            'sort_order' => $banner->sort_order,
+            'is_active' => $banner->is_active,
+            'lang' => $banner->lang->value,
+            'start_date' => $banner->starts_at?->toDateString(),
+            'end_date' => $banner->ends_at?->toDateString(),
+            'image_url' => StoresPublicImage::url($banner->image_path),
+            'created_at' => $banner->created_at?->toDateString(),
+        ];
+    }
+}

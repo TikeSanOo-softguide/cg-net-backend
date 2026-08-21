@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { CheckIcon, XIcon } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -42,16 +43,17 @@ export function ConfirmDialog({
                     <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                    <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                        <XIcon />
                         {cancelLabel ?? t('common.cancel')}
                     </Button>
                     <Button
                         type="button"
-                        size="sm"
                         variant={destructive ? 'destructive' : 'primary'}
                         disabled={processing}
                         onClick={onConfirm}
                     >
+                        <CheckIcon />
                         {confirmLabel ?? t('common.confirm')}
                     </Button>
                 </DialogFooter>

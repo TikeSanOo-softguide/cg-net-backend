@@ -4,26 +4,30 @@ import { cn } from '@/lib/utils';
 
 const liveStatuses = new Set(['under_review', 'good', 'active']);
 
-function variantFor(status: string): 'default' | 'secondary' | 'outline' | 'destructive' | 'warning' {
+function variantFor(status: string): 'default' | 'secondary' | 'outline' | 'destructive' | 'warning' | 'success' {
     switch (status) {
+        case 'active':
+            return 'default';
         case 'approved':
         case 'paid':
         case 'good':
-        case 'active':
-            return 'default';
+        case 'published':
+            return 'success';
         case 'under_review':
-            return 'warning';
+        case 'draft':
+        case 'pending':
         case 'suspended':
             return 'warning';
         case 'terminated':
         case 'rejected':
         case 'offline':
         case 'failed':
+        case 'archived':
             return 'destructive';
         case 'slow':
         case 'expired':
         case 'unpaid':
-        case 'pending':
+        case 'inactive':
             return 'secondary';
         default:
             return 'outline';
@@ -36,9 +40,7 @@ export function StatusBadge({ status, className }: { status: string; className?:
 
     return (
         <Badge variant={variantFor(status)} className={cn('gap-1.5', className)}>
-            {live ? (
-                <span className="size-1.5 rounded-full bg-current status-pulse" aria-hidden />
-            ) : null}
+            {live ? <span className="size-1.5 rounded-full bg-current status-pulse" aria-hidden /> : null}
             {t(`status.${status}`)}
         </Badge>
     );

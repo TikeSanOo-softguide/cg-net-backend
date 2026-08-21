@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\LanguagePref;
+use App\Casts\LanguagePrefCast;
 use App\Enums\UserStatus;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -31,7 +31,7 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'language_pref' => LanguagePref::class,
+            'language_pref' => LanguagePrefCast::class,
             'status' => UserStatus::class,
         ];
     }

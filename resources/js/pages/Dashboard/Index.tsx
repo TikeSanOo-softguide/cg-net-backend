@@ -190,7 +190,7 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
                             header: t('dashboard.status'),
                             mobile: 'badge',
                             searchValue: (row) => t(`status.${row.status}`),
-                            cell: (row) => <StatusBadge status={row.status} className="px-1.5 py-0 text-[11px]" />,
+                            cell: (row) => <StatusBadge status={row.status} />,
                         },
                         {
                             id: 'date',

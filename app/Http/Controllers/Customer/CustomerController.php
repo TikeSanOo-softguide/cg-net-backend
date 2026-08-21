@@ -5,11 +5,15 @@ namespace App\Http\Controllers\Customer;
 use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\BindBroadbandAccountRequest;
+use App\Http\Requests\Customer\CustomerData;
+use App\Http\Requests\Customer\StoreCustomerRequest;
+use App\Http\Requests\Customer\UpdateCustomerRequest;
 use App\Http\Requests\Customer\UpdateCustomerStatusRequest;
 use App\Models\BroadbandAccount;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -63,6 +67,34 @@ class CustomerController extends Controller
         ]);
     }
 
+    public function create(): Response
+    {
+        return Inertia::render('Customer/Create');
+    }
+
+    public function store(StoreCustomerRequest $request): RedirectResponse
+    {
+        $payload = CustomerData::payload($request->validated());
+
+        $customer = DB::transaction(function () use ($payload) {
+            $customer = User::query()->create($payload);
+            $customer->wallet()->create(['balance_mmk' => 0]);
+
+            return $customer;
+        });
+
+        activity('customers')
+            ->causedBy($request->user())
+            ->performedOn($customer)
+            ->event('created')
+            ->withProperties($payload)
+            ->log('customer_created');
+
+        return redirect()
+            ->route('customers.show', $customer)
+            ->with('success', 'customers.created');
+    }
+
     public function show(User $customer): Response
     {
         $customer->load([
@@ -73,17 +105,7 @@ class CustomerController extends Controller
         ]);
 
         return Inertia::render('Customer/Show', [
-            'customer' => [
-                'id' => $customer->id,
-                'name' => $customer->name,
-                'phone' => $customer->phone,
-                'nrc_number' => $customer->nrc_number,
-                'email' => $customer->email,
-                'address' => $customer->address,
-                'language_pref' => $customer->language_pref->value,
-                'status' => $customer->status->value,
-                'created_at' => $customer->created_at?->toDateString(),
-            ],
+            'customer' => $this->customerPayload($customer),
             'broadbandAccounts' => $customer->broadbandAccounts->map(fn (BroadbandAccount $account) => [
                 'id' => $account->id,
                 'account_number' => $account->account_number,
@@ -117,6 +139,30 @@ class CustomerController extends Controller
                 ])->values() ?? [],
             ],
         ]);
+    }
+
+    public function edit(User $customer): Response
+    {
+        return Inertia::render('Customer/Edit', [
+            'customer' => $this->customerPayload($customer),
+        ]);
+    }
+
+    public function update(UpdateCustomerRequest $request, User $customer): RedirectResponse
+    {
+        $payload = CustomerData::payload($request->validated());
+        $customer->update($payload);
+
+        activity('customers')
+            ->causedBy($request->user())
+            ->performedOn($customer)
+            ->event('updated')
+            ->withProperties($payload)
+            ->log('customer_updated');
+
+        return redirect()
+            ->route('customers.show', $customer)
+            ->with('success', 'customers.updated');
     }
 
     public function updateStatus(UpdateCustomerStatusRequest $request, User $customer): RedirectResponse
@@ -201,5 +247,23 @@ class CustomerController extends Controller
             ->log('broadband_account_unbound');
 
         return back()->with('success', 'customers.account_unbound');
+    }
+
+    /**
+     * @return array{id: int, name: string, phone: string, nrc_number: string, email: string|null, address: string|null, language_pref: string, status: string, created_at: string|null}
+     */
+    private function customerPayload(User $customer): array
+    {
+        return [
+            'id' => $customer->id,
+            'name' => $customer->name,
+            'phone' => $customer->phone,
+            'nrc_number' => $customer->nrc_number,
+            'email' => $customer->email,
+            'address' => $customer->address,
+            'language_pref' => $customer->language_pref->value,
+            'status' => $customer->status->value,
+            'created_at' => $customer->created_at?->toDateString(),
+        ];
     }
 }

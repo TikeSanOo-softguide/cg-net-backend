@@ -153,4 +153,105 @@ class CustomerManagementTest extends TestCase
 
         $this->assertSame($other->id, $account->fresh()->user_id);
     }
+
+    public function test_admins_can_create_a_customer(): void
+    {
+        $admin = Admin::factory()->create();
+
+        $this->actingAs($admin, 'web')
+            ->get('/customers/create')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Customer/Create'));
+
+        $response = $this->actingAs($admin, 'web')
+            ->post('/customers', [
+                'name' => 'Hla Hla',
+                'phone' => '+95911112222',
+                'nrc_number' => '12/ABC(N)222222',
+                'email' => 'hla@example.test',
+                'address' => 'Bahan, Yangon',
+                'language_pref' => 'my',
+                'status' => 'active',
+            ]);
+
+        $customer = User::query()->where('phone', '+95911112222')->first();
+
+        $this->assertNotNull($customer);
+        $response->assertRedirect('/customers/'.$customer->id);
+        $this->assertDatabaseHas('users', [
+            'name' => 'Hla Hla',
+            'phone' => '+95911112222',
+            'nrc_number' => '12/ABC(N)222222',
+            'email' => 'hla@example.test',
+        ]);
+        $this->assertDatabaseHas('wallets', [
+            'user_id' => $customer->id,
+            'balance_mmk' => '0.00',
+        ]);
+        $this->assertDatabaseHas('activity_log', [
+            'description' => 'customer_created',
+            'subject_id' => $customer->id,
+            'causer_id' => $admin->id,
+        ]);
+    }
+
+    public function test_create_rejects_duplicate_phone_numbers(): void
+    {
+        $admin = Admin::factory()->create();
+        User::factory()->create(['phone' => '+95933334444']);
+
+        $this->actingAs($admin, 'web')
+            ->post('/customers', [
+                'name' => 'Duplicate Phone',
+                'phone' => '+95933334444',
+                'nrc_number' => '12/ABC(N)333333',
+                'language_pref' => 'en',
+                'status' => 'active',
+            ])
+            ->assertSessionHasErrors('phone');
+    }
+
+    public function test_admins_can_update_a_customer(): void
+    {
+        $admin = Admin::factory()->create();
+        $customer = User::factory()->create([
+            'name' => 'Old Name',
+            'phone' => '+95955556666',
+            'status' => UserStatus::Active,
+        ]);
+
+        $this->actingAs($admin, 'web')
+            ->get('/customers/'.$customer->id.'/edit')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Customer/Edit')
+                ->where('customer.id', $customer->id)
+                ->where('customer.name', 'Old Name'));
+
+        $this->actingAs($admin, 'web')
+            ->put('/customers/'.$customer->id, [
+                'name' => 'New Name',
+                'phone' => '+95955556666',
+                'nrc_number' => $customer->nrc_number,
+                'email' => 'updated@example.test',
+                'address' => 'Kamayut, Yangon',
+                'language_pref' => 'en',
+                'status' => 'suspended',
+            ])
+            ->assertRedirect('/customers/'.$customer->id);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $customer->id,
+            'name' => 'New Name',
+            'email' => 'updated@example.test',
+            'address' => 'Kamayut, Yangon',
+            'language_pref' => 'en',
+            'status' => 'suspended',
+        ]);
+        $this->assertDatabaseHas('activity_log', [
+            'description' => 'customer_updated',
+            'subject_id' => $customer->id,
+            'causer_id' => $admin->id,
+        ]);
+    }
 }

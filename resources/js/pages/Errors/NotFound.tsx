@@ -1,4 +1,5 @@
 import { Head, Link, usePage } from '@inertiajs/react';
+import { HouseIcon, LogInIcon } from 'lucide-react';
 
 import { NotFoundIllustration } from '@/components/errors/NotFoundIllustration';
 import { Button } from '@/components/ui/button';
@@ -31,8 +32,9 @@ export default function NotFound() {
                         <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
                             {t('errors.not_found_description')}
                         </p>
-                        <Button asChild variant="primary" size="md" className="mt-6 h-11 rounded-[8px] px-6">
+                        <Button asChild variant="primary" size="md" className="mt-6">
                             <Link href={user ? '/dashboard' : '/login'}>
+                                {user ? <HouseIcon /> : <LogInIcon />}
                                 {user ? t('errors.back_home') : t('auth.sign_in')}
                             </Link>
                         </Button>

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('nrc_number')->index();
             $table->string('email')->nullable()->index();
             $table->text('address')->nullable();
-            $table->string('language_pref', 8)->default('mm')->index();
+            $table->string('language_pref', 8)->default('my')->index();
             $table->string('status', 16)->default('active')->index();
             $table->timestamps();
             $table->softDeletes();

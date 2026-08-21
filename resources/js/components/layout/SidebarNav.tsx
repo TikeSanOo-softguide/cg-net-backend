@@ -30,9 +30,9 @@ const idleItemClass = 'text-sidebar-foreground hover:bg-primary/12 hover:text-fo
 
 function itemClass(active: boolean, expanded: boolean) {
     return cn(
-        'flex h-11 w-full items-center overflow-hidden rounded-[8px] px-3 text-[15px] font-medium',
-        'motion-reduce:transition-none transition-[gap,color,background-color] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
-        expanded ? 'gap-3' : 'gap-0',
+        'flex h-11 w-full items-center overflow-hidden rounded-[8px] text-[15px] font-medium',
+        'motion-reduce:transition-none transition-[gap,color,background-color,padding] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+        expanded ? 'justify-start gap-3 px-3' : 'justify-center gap-0 px-0',
         active ? selectedItemClass : idleItemClass,
     );
 }
@@ -295,7 +295,7 @@ export function SidebarNav({
                     className={cn(
                         'flex h-[var(--navbar-height)] shrink-0 items-center overflow-hidden border-b border-sidebar-border',
                         'motion-reduce:transition-none transition-[padding] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
-                        expanded ? 'px-3' : 'px-[22px]',
+                        expanded ? 'justify-start px-3' : 'justify-center px-0',
                     )}
                 >
                     <BrandLockup expanded={expanded} className="overflow-hidden" />
@@ -308,11 +308,11 @@ export function SidebarNav({
                     className={cn(
                         'sidebar-scroll h-full min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain py-3',
                         'motion-reduce:transition-none transition-[padding] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
-                        expanded ? 'px-3' : 'px-[22px]',
+                        expanded ? 'px-3' : 'px-2',
                     )}
                     aria-label="Sidebar"
                 >
-                    <ul className="flex flex-col gap-2">
+                    <ul className="flex flex-col gap-1.5">
                         {groups.map((group) => (
                             <SidebarGroup
                                 key={group.id}
@@ -380,7 +380,7 @@ function SidebarGroup({
             {group.children ? (
                 <ChevronDownIcon
                     className={cn(
-                        'h-4 shrink-0 overflow-hidden',
+                        'size-4 shrink-0 overflow-hidden',
                         'motion-reduce:transition-none transition-[width,opacity,transform,margin] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
                         expanded ? 'w-4 opacity-100' : 'w-0 opacity-0',
                         open && expanded && 'rotate-180',
@@ -440,7 +440,7 @@ function SidebarGroup({
                                             aria-current={childActive ? 'page' : undefined}
                                             tabIndex={expanded && open ? 0 : -1}
                                             className={cn(
-                                                'flex items-center gap-2.5 rounded-[8px] px-3 py-2.5 text-[15px] font-medium transition-colors duration-200',
+                                                'flex items-center gap-2.5 rounded-[8px] px-3 py-2 text-sm font-medium transition-colors duration-200',
                                                 childActive ? selectedChildItemClass : idleItemClass,
                                             )}
                                         >

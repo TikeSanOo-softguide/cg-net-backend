@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use App\Enums\ChangePlanStatus;
 use App\Enums\CustomerPackageStatus;
 use App\Enums\InvoiceStatus;
+use App\Enums\LanguagePref;
+use App\Enums\NewsStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\ReviewStatus;
 use App\Enums\UserStatus;
@@ -12,24 +14,33 @@ use App\Enums\WalletTransactionType;
 use App\Models\Admin;
 use App\Models\Banner;
 use App\Models\BroadbandAccount;
+use App\Models\Category;
 use App\Models\ChangePlanRequest;
+use App\Models\Contact;
 use App\Models\CpeDevice;
 use App\Models\CustomerPackage;
 use App\Models\FailureReport;
+use App\Models\Gallery;
 use App\Models\InstallationApplication;
 use App\Models\Invoice;
+use App\Models\News;
 use App\Models\NotificationCustom;
 use App\Models\Package;
 use App\Models\Payment;
+use App\Models\Promotion;
 use App\Models\Region;
 use App\Models\RelocationRequest;
 use App\Models\Setting;
+use App\Models\Tag;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
+use App\Support\CmsPermissions;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 
 class DatabaseSeeder extends Seeder
 {
@@ -45,6 +56,8 @@ class DatabaseSeeder extends Seeder
         $this->seedBilling($users);
         $this->seedNotifications();
         $this->seedBanners();
+        $this->seedCms();
+        $this->seedPermissions($admins);
 
         Setting::factory()->create([
             'key' => 'support_hotline',
@@ -300,5 +313,47 @@ class DatabaseSeeder extends Seeder
             'title' => 'Pay with KBZPay',
             'sort_order' => 3,
         ]);
+    }
+
+    private function seedCms(): void
+    {
+        $offers = Category::factory()->create(['name' => 'Offers', 'slug' => 'offers', 'lang' => LanguagePref::En]);
+        $tips = Tag::factory()->create(['name' => 'Tips', 'slug' => 'tips', 'lang' => LanguagePref::En]);
+        $fiber = Tag::factory()->create(['name' => 'Fiber', 'slug' => 'fiber', 'lang' => LanguagePref::En]);
+
+        $article = News::factory()->create([
+            'category_id' => $offers->id,
+            'title' => 'New fiber coverage in Yangon',
+            'slug' => 'new-fiber-coverage-yangon',
+            'status' => NewsStatus::Published,
+            'lang' => LanguagePref::En,
+        ]);
+        $article->tags()->sync([$tips->id, $fiber->id]);
+
+        Promotion::factory()->create([
+            'title' => 'Monsoon home broadband',
+            'lang' => LanguagePref::En,
+        ]);
+        Gallery::factory()->create(['label' => 'Yangon office', 'lang' => LanguagePref::En]);
+        Contact::factory()->create(['contact_point' => '+959123456789']);
+        Contact::factory()->create(['contact_point' => 'support@cg-net.test']);
+    }
+
+    /**
+     * @param  Collection<int, Admin>  $admins
+     */
+    private function seedPermissions(Collection $admins): void
+    {
+        $permissions = collect(CmsPermissions::all())->map(
+            fn (string $name) => Permission::query()->firstOrCreate([
+                'name' => $name,
+                'guard_name' => 'web',
+            ]),
+        );
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $admins->first(fn (Admin $admin) => $admin->email === 'admin@cg-net.test')
+            ?->givePermissionTo($permissions->all());
     }
 }

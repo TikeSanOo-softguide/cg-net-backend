@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react';
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { BanIcon, HashIcon, Link2Icon, SquarePenIcon, UnlinkIcon, UserCheckIcon } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
+import { TableActionButton } from '@/components/TableActionButton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FormControl } from '@/components/ui/form-control';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -106,7 +109,14 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
                     actions={
                         <div className="hidden items-center gap-2 sm:flex">
                             <StatusBadge status={customer.status} />
+                            <Button type="button" size="sm" variant="outline" asChild>
+                                <Link href={`/customers/${customer.id}/edit`}>
+                                    <SquarePenIcon />
+                                    {t('common.edit')}
+                                </Link>
+                            </Button>
                             <Button type="button" size="sm" variant={customer.status === 'active' ? 'destructive' : 'primary'} onClick={() => setStatusOpen(true)}>
+                                {customer.status === 'active' ? <BanIcon /> : <UserCheckIcon />}
                                 {customer.status === 'active' ? t('customers.suspend') : t('customers.reactivate')}
                             </Button>
                         </div>
@@ -116,8 +126,14 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
                     <p className="rounded-[8px] bg-primary/10 px-3 py-2 text-sm text-foreground">{t(flash.success)}</p>
                 ) : null}
 
-                <div className="flex sm:hidden">
+                <div className="flex items-center gap-2 sm:hidden">
                     <StatusBadge status={customer.status} />
+                    <Button type="button" size="sm" variant="outline" asChild>
+                        <Link href={`/customers/${customer.id}/edit`}>
+                            <SquarePenIcon />
+                            {t('common.edit')}
+                        </Link>
+                    </Button>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -163,22 +179,27 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
                                 });
                             }}
                         >
-                            <Input
-                                value={bindForm.data.account_number}
-                                onChange={(event) => bindForm.setData('account_number', event.target.value)}
-                                placeholder={t('customers.account_number')}
-                                className="h-8 max-w-56 text-xs"
-                                aria-invalid={Boolean(errors.account_number)}
-                            />
+                            <FormControl icon={HashIcon} className="max-w-56">
+                                <Input
+                                    value={bindForm.data.account_number}
+                                    onChange={(event) => bindForm.setData('account_number', event.target.value)}
+                                    placeholder={t('customers.account_number')}
+                                    aria-invalid={Boolean(errors.account_number)}
+                                />
+                            </FormControl>
                             <Button type="submit" size="sm" disabled={bindForm.processing}>
+                                <Link2Icon />
                                 {t('customers.bind_account')}
                             </Button>
                         </form>
                     }
                     actions={(row) => (
-                        <Button type="button" variant="outline" size="sm" className="h-7 text-[11px]" onClick={() => setUnbindAccount(row)}>
-                            {t('customers.remove_account')}
-                        </Button>
+                        <TableActionButton
+                            label={t('customers.remove_account')}
+                            icon={UnlinkIcon}
+                            tone="danger"
+                            onClick={() => setUnbindAccount(row)}
+                        />
                     )}
                     columns={[
                         {
@@ -201,7 +222,7 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
                             header: t('common.status'),
                             mobile: 'badge',
                             searchValue: (row) => t(`status.${row.status}`),
-                            cell: (row) => <StatusBadge status={row.status} className="px-1.5 py-0 text-[11px]" />,
+                            cell: (row) => <StatusBadge status={row.status} />,
                         },
                     ]}
                 />
@@ -214,15 +235,15 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
                     searchPlaceholder={t('customers.search_packages')}
                     emptyLabel={t('customers.no_packages')}
                     filters={
-                        <div className="flex rounded-[8px] bg-muted p-0.5">
+                        <div className="flex h-10 w-full items-center rounded-[6px] border border-input bg-surface p-0.5 sm:w-auto">
                             {(['active', 'expired'] as const).map((tab) => (
                                 <button
                                     key={tab}
                                     type="button"
                                     onClick={() => setPackageTab(tab)}
                                     className={cn(
-                                        'h-7 rounded-[6px] px-3 text-xs font-medium',
-                                        packageTab === tab ? 'bg-surface text-foreground shadow-sm' : 'text-muted-foreground',
+                                        'h-full rounded-[6px] px-3 text-sm font-medium transition-colors duration-200',
+                                        packageTab === tab ? 'bg-primary/12 text-primary' : 'text-muted-foreground hover:text-foreground',
                                     )}
                                 >
                                     {t(`status.${tab}`)}
@@ -258,7 +279,7 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
                             header: t('common.status'),
                             mobile: 'badge',
                             searchValue: (row) => t(`status.${row.status}`),
-                            cell: (row) => <StatusBadge status={row.status} className="px-1.5 py-0 text-[11px]" />,
+                            cell: (row) => <StatusBadge status={row.status} />,
                         },
                     ]}
                 />
@@ -290,7 +311,7 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
                             header: t('common.status'),
                             mobile: 'badge',
                             searchValue: (row) => t(`status.${row.status}`),
-                            cell: (row) => <StatusBadge status={row.status} className="px-1.5 py-0 text-[11px]" />,
+                            cell: (row) => <StatusBadge status={row.status} />,
                         },
                         {
                             id: 'created_at',
@@ -318,23 +339,26 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
                             {t('customers.account_number')}
                         </Label>
                         <div className="flex gap-2">
-                            <Input
-                                id="account_number"
-                                value={bindForm.data.account_number}
-                                onChange={(event) => bindForm.setData('account_number', event.target.value)}
-                                placeholder={t('customers.account_number')}
-                                className="h-9 text-sm"
-                            />
-                            <Button type="submit" size="sm" className="h-9 shrink-0" disabled={bindForm.processing}>
+                            <FormControl icon={HashIcon}>
+                                <Input
+                                    id="account_number"
+                                    value={bindForm.data.account_number}
+                                    onChange={(event) => bindForm.setData('account_number', event.target.value)}
+                                    placeholder={t('customers.account_number')}
+                                />
+                            </FormControl>
+                            <Button type="submit" size="sm" className="shrink-0" disabled={bindForm.processing}>
+                                <Link2Icon />
                                 {t('customers.bind_account')}
                             </Button>
                         </div>
                         <Button
                             type="button"
                             variant={customer.status === 'active' ? 'destructive' : 'primary'}
-                            className="h-9 w-full"
+                            className="w-full"
                             onClick={() => setStatusOpen(true)}
                         >
+                            {customer.status === 'active' ? <BanIcon /> : <UserCheckIcon />}
                             {customer.status === 'active' ? t('customers.suspend') : t('customers.reactivate')}
                         </Button>
                     </form>

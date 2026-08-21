@@ -15,9 +15,21 @@ import { cn } from '@/lib/utils';
 
 const LOCALE_STORAGE_KEY = 'locale';
 
+function migrateStoredLocale(stored: string | null): SupportedLocale | null {
+    if (stored === 'mm') {
+        return 'my';
+    }
+
+    if (stored === 'th') {
+        return 'zh';
+    }
+
+    return stored as SupportedLocale | null;
+}
+
 const locales: { code: SupportedLocale; label: string }[] = [
     { code: 'en', label: 'English' },
-    { code: 'mm', label: 'မြန်မာ' },
+    { code: 'my', label: 'မြန်မာ' },
     { code: 'zh', label: '中文' },
 ];
 
@@ -25,7 +37,12 @@ export default function LanguageSwitcher({ className, compact = false }: { class
     const { locale, t } = useTranslation();
 
     useEffect(() => {
-        const stored = localStorage.getItem(LOCALE_STORAGE_KEY) as SupportedLocale | null;
+        const storedRaw = localStorage.getItem(LOCALE_STORAGE_KEY);
+        const stored = migrateStoredLocale(storedRaw);
+
+        if (stored && stored !== storedRaw) {
+            localStorage.setItem(LOCALE_STORAGE_KEY, stored);
+        }
 
         if (stored && locales.some((entry) => entry.code === stored) && stored !== locale) {
             switchLocale(stored, false);
@@ -63,9 +80,8 @@ export default function LanguageSwitcher({ className, compact = false }: { class
                     type="button"
                     variant="ghost"
                     className={cn(
-                        'h-10 gap-2 rounded-full border border-primary/15 bg-surface/80 px-1.5 pr-3 text-foreground shadow-[0_8px_24px_rgb(23_50_54/0.08)] backdrop-blur-md',
-                        'hover:border-warning/50 hover:bg-surface',
-                        compact && 'size-10 pr-1.5',
+                        'h-10 gap-2 rounded-[6px] px-2 text-foreground',
+                        compact && 'size-10 px-0',
                         className,
                     )}
                     aria-label={t('common.language')}

@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { CircleDotIcon, PlusIcon, SquarePenIcon } from 'lucide-react';
 
 import { DataTable } from '@/components/DataTable';
 import type { Paginated } from '@/components/Pagination';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
+import { TableActionButton } from '@/components/TableActionButton';
+import { Button } from '@/components/ui/button';
+import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -72,9 +76,20 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
         <>
             <Head title={t('menu.customers_list')} />
             <div className="flex w-full flex-col gap-5 pt-6 lg:pt-8">
-                <PageHeader title={t('menu.customers_list')} description={t('customers.index_description')} />
+                <PageHeader
+                    title={t('menu.customers_list')}
+                    description={t('customers.index_description')}
+                    actions={
+                        <Button asChild>
+                            <Link href="/customers/create">
+                                <PlusIcon />
+                                {t('customers.create')}
+                            </Link>
+                        </Button>
+                    }
+                />
                 {flash.success ? (
-                    <p className="rounded-[8px] bg-primary/10 px-3 py-2 text-sm text-foreground">{t(flash.success)}</p>
+                    <p className="rounded-[4px] bg-primary/10 px-3 py-2 text-sm text-foreground">{t(flash.success)}</p>
                 ) : null}
                 <DataTable
                     data={customers.data}
@@ -87,20 +102,30 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                     onSort={onSort}
                     href={(row) => `/customers/${row.id}`}
                     pagination={customers}
+                    actions={(row) => (
+                        <TableActionButton
+                            label={t('common.edit')}
+                            icon={SquarePenIcon}
+                            tone="edit"
+                            href={`/customers/${row.id}/edit`}
+                        />
+                    )}
                     filters={
-                        <Select
-                            value={filters.status || 'all'}
-                            onValueChange={(value) => visitIndex({ ...filters, status: value === 'all' ? '' : value })}
-                        >
-                            <SelectTrigger className="h-8 w-full text-xs sm:w-40">
-                                <SelectValue placeholder={t('customers.filter_status')} />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">{t('customers.all_statuses')}</SelectItem>
-                                <SelectItem value="active">{t('status.active')}</SelectItem>
-                                <SelectItem value="suspended">{t('status.suspended')}</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <FormControl icon={CircleDotIcon} className="w-full shrink-0 sm:w-48">
+                            <Select
+                                value={filters.status || 'all'}
+                                onValueChange={(value) => visitIndex({ ...filters, status: value === 'all' ? '' : value })}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder={t('customers.filter_status')} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">{t('customers.all_statuses')}</SelectItem>
+                                    <SelectItem value="active">{t('status.active')}</SelectItem>
+                                    <SelectItem value="suspended">{t('status.suspended')}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </FormControl>
                     }
                     columns={[
                         {
@@ -131,7 +156,7 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                             header: t('common.status'),
                             mobile: 'badge',
                             sortable: true,
-                            cell: (row) => <StatusBadge status={row.status} className="px-1.5 py-0 text-[11px]" />,
+                            cell: (row) => <StatusBadge status={row.status} />,
                         },
                         {
                             id: 'accounts_count',

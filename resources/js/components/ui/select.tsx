@@ -21,18 +21,26 @@ function SelectTrigger({ className, children, ...props }: React.ComponentProps<t
         <SelectPrimitive.Trigger
             data-slot="select-trigger"
             className={cn(
-                'flex h-10 w-full items-center justify-between gap-2 rounded-md border border-input bg-surface px-3 py-2 text-sm whitespace-nowrap shadow-none transition-colors duration-200 outline-none',
-                'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                'disabled:cursor-not-allowed disabled:opacity-50',
+                'flex h-10 w-full min-w-0 items-center justify-between gap-2 rounded-[6px] border border-input bg-surface px-3 py-2 text-sm text-foreground whitespace-nowrap shadow-none outline-none transition-colors duration-200',
+                'hover:border-primary/35',
+                'focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:ring-offset-0',
+                'data-[state=open]:border-primary data-[state=open]:ring-1 data-[state=open]:ring-primary/40',
+                'disabled:cursor-not-allowed disabled:border-input disabled:bg-muted disabled:opacity-70 disabled:hover:border-input',
                 'data-[placeholder]:text-muted-foreground',
-                '[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*="size-"])]:size-4',
+                '[&>span]:min-w-0 [&>span]:truncate',
+                '[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground [&_svg]:transition-colors',
+                'focus-visible:[&_svg]:text-primary data-[state=open]:[&_svg]:text-primary',
+                'aria-invalid:border-danger aria-invalid:hover:border-danger aria-invalid:focus-visible:border-danger aria-invalid:focus-visible:ring-danger/25',
+                'aria-invalid:data-[state=open]:border-danger aria-invalid:data-[state=open]:ring-danger/25 aria-invalid:[&_svg]:text-danger',
+                'group-data-[error=true]/field:border-danger group-data-[error=true]/field:hover:border-danger group-data-[error=true]/field:focus-visible:border-danger group-data-[error=true]/field:focus-visible:ring-danger/25',
+                'group-data-[error=true]/field:data-[state=open]:border-danger group-data-[error=true]/field:data-[state=open]:ring-danger/25 group-data-[error=true]/field:[&_svg]:text-danger',
                 className,
             )}
             {...props}
         >
             {children}
             <SelectPrimitive.Icon asChild>
-                <ChevronDownIcon className="size-4 opacity-50" />
+                <ChevronDownIcon className="size-4" />
             </SelectPrimitive.Icon>
         </SelectPrimitive.Trigger>
     );
@@ -49,7 +57,7 @@ function SelectContent({
             <SelectPrimitive.Content
                 data-slot="select-content"
                 className={cn(
-                    'relative z-50 max-h-96 min-w-32 overflow-hidden rounded-md border border-border bg-popover text-popover-foreground shadow-md',
+                    'relative z-50 max-h-96 min-w-32 overflow-hidden rounded-[6px] border border-border bg-popover text-popover-foreground shadow-md',
                     'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
                     position === 'popper' &&
                         'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
@@ -79,7 +87,7 @@ function SelectItem({ className, children, ...props }: React.ComponentProps<type
         <SelectPrimitive.Item
             data-slot="select-item"
             className={cn(
-                'relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none',
+                'relative flex w-full cursor-default items-center gap-2 rounded-[6px] py-1.5 pr-8 pl-2 text-sm outline-hidden select-none',
                 'focus:bg-accent focus:text-accent-foreground',
                 'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
                 className,

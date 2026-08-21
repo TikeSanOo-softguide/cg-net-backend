@@ -5,6 +5,6 @@ namespace App\Enums;
 enum LanguagePref: string
 {
     case En = 'en';
-    case Mm = 'mm';
+    case My = 'my';
     case Zh = 'zh';
 }

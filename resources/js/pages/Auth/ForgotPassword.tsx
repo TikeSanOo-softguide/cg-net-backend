@@ -1,7 +1,9 @@
 import { FormEvent } from 'react';
 import { Head, useForm } from '@inertiajs/react';
+import { MailIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 
 type ForgotPasswordProps = {
@@ -29,20 +31,18 @@ export default function ForgotPassword({ status }: ForgotPasswordProps) {
                 <CardContent>
                     {status ? <p className="mb-4 text-sm text-accent-foreground">{status}</p> : null}
                     <form onSubmit={submit} className="flex flex-col gap-4">
-                        <div className="flex flex-col gap-2">
-                            <label htmlFor="email" className="text-sm font-medium">
-                                Email
-                            </label>
+                        <FormField label="Email" htmlFor="email" error={form.errors.email} icon={MailIcon}>
                             <Input
                                 id="email"
                                 type="email"
                                 value={form.data.email}
                                 onChange={(event) => form.setData('email', event.target.value)}
                                 required
+                                aria-invalid={Boolean(form.errors.email)}
                             />
-                            {form.errors.email ? <p className="text-sm text-danger">{form.errors.email}</p> : null}
-                        </div>
+                        </FormField>
                         <Button type="submit" variant="primary" size="md" disabled={form.processing}>
+                            <MailIcon />
                             Email reset link
                         </Button>
                     </form>

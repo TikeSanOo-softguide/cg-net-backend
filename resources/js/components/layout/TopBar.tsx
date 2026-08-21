@@ -21,7 +21,7 @@ import type { SupportedLocale } from '@/types';
 
 const locales: { code: SupportedLocale; label: string }[] = [
     { code: 'en', label: 'English' },
-    { code: 'mm', label: 'မြန်မာ' },
+    { code: 'my', label: 'မြန်မာ' },
     { code: 'zh', label: '中文' },
 ];
 
@@ -84,7 +84,7 @@ export function TopBar({ sidebarOpen = false }: TopBarProps) {
                         <ThemeToggle />
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-10 gap-2 rounded-[8px] px-2 text-foreground">
+                                <Button variant="ghost" size="sm" className="h-10 gap-2 px-2 text-foreground">
                                     <span className="flex size-7 items-center justify-center rounded-full bg-muted">
                                         <UserRoundIcon className="size-4" strokeWidth={1.9} />
                                     </span>

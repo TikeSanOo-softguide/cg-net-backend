@@ -1,7 +1,9 @@
 import { FormEvent } from 'react';
 import { Head, useForm } from '@inertiajs/react';
+import { KeyRoundIcon, ShieldCheckIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 
 export default function TwoFactorChallenge() {
@@ -25,31 +27,26 @@ export default function TwoFactorChallenge() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={submit} className="flex flex-col gap-4">
-                        <div className="flex flex-col gap-2">
-                            <label htmlFor="code" className="text-sm font-medium">
-                                Authentication code
-                            </label>
+                        <FormField label="Authentication code" htmlFor="code" error={form.errors.code} icon={ShieldCheckIcon}>
                             <Input
                                 id="code"
                                 className="font-mono"
                                 value={form.data.code}
                                 onChange={(event) => form.setData('code', event.target.value)}
                                 autoComplete="one-time-code"
+                                aria-invalid={Boolean(form.errors.code)}
                             />
-                            {form.errors.code ? <p className="text-sm text-danger">{form.errors.code}</p> : null}
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <label htmlFor="recovery_code" className="text-sm font-medium">
-                                Recovery code
-                            </label>
+                        </FormField>
+                        <FormField label="Recovery code" htmlFor="recovery_code" icon={KeyRoundIcon}>
                             <Input
                                 id="recovery_code"
                                 className="font-mono"
                                 value={form.data.recovery_code}
                                 onChange={(event) => form.setData('recovery_code', event.target.value)}
                             />
-                        </div>
+                        </FormField>
                         <Button type="submit" variant="primary" size="md" disabled={form.processing}>
+                            <ShieldCheckIcon />
                             Continue
                         </Button>
                     </form>

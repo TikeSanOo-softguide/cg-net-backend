@@ -38,6 +38,14 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {
+            if ($response->getStatusCode() === 429 && $request->header('X-Inertia')) {
+                $retryAfter = (int) $response->headers->get('Retry-After', 60);
+
+                return back()->withErrors([
+                    'email' => __('auth.throttle', ['seconds' => $retryAfter]),
+                ]);
+            }
+
             if ($response->getStatusCode() === 404 && ! $request->is('api/*') && ! $request->expectsJson()) {
                 Inertia::share(app(HandleInertiaRequests::class)->share($request));
 
