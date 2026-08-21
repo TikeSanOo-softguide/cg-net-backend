@@ -26,4 +26,11 @@ class BroadbandAccountFactory extends Factory
             'current_package_id' => Package::factory(),
         ];
     }
+
+    public function unbound(): static
+    {
+        return $this->state(fn () => [
+            'user_id' => null,
+        ]);
+    }
 }

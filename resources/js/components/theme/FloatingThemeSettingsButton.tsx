@@ -3,6 +3,7 @@ import { SettingsIcon } from 'lucide-react';
 
 import { ThemeSettingsPanel } from '@/components/theme/ThemeSettingsPanel';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export function FloatingThemeSettingsButton() {
     const [open, setOpen] = useState(false);
@@ -16,7 +17,10 @@ export function FloatingThemeSettingsButton() {
                 aria-label="Theme settings"
                 aria-expanded={open}
                 onClick={() => setOpen(true)}
-                className="group fixed right-5 bottom-20 z-50 size-11 rounded-full shadow-md sm:right-6 sm:bottom-6"
+                className={cn(
+                    'group fixed right-4 bottom-5 z-[90] size-11 rounded-full shadow-md sm:right-6 sm:bottom-6',
+                    open && 'hidden',
+                )}
             >
                 <SettingsIcon className="size-5 animate-[theme-spin_3.5s_linear_infinite] group-hover:[animation-play-state:paused] motion-reduce:animate-none" />
             </Button>

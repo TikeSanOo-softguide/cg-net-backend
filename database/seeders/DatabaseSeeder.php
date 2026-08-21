@@ -7,6 +7,8 @@ use App\Enums\CustomerPackageStatus;
 use App\Enums\InvoiceStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\ReviewStatus;
+use App\Enums\UserStatus;
+use App\Enums\WalletTransactionType;
 use App\Models\Admin;
 use App\Models\Banner;
 use App\Models\BroadbandAccount;
@@ -24,8 +26,10 @@ use App\Models\RelocationRequest;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\Wallet;
+use App\Models\WalletTransaction;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 
 class DatabaseSeeder extends Seeder
 {
@@ -51,7 +55,7 @@ class DatabaseSeeder extends Seeder
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, Admin>
+     * @return Collection<int, Admin>
      */
     private function seedAdmins()
     {
@@ -59,11 +63,14 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Super Admin', 'email' => 'admin@cg-net.test'],
             ['name' => 'Staff Officer', 'email' => 'staff@cg-net.test'],
             ['name' => 'Support Agent', 'email' => 'support@cg-net.test'],
-        ])->map(fn (array $admin) => Admin::factory()->create($admin));
+        ])->map(fn (array $admin) => Admin::query()->firstOrCreate(
+            ['email' => $admin['email']],
+            Admin::factory()->raw($admin),
+        ));
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, Region>
+     * @return Collection<int, Region>
      */
     private function seedRegions()
     {
@@ -97,7 +104,7 @@ class DatabaseSeeder extends Seeder
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, Package>
+     * @return Collection<int, Package>
      */
     private function seedPackages()
     {
@@ -114,7 +121,7 @@ class DatabaseSeeder extends Seeder
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, Package>  $packages
+     * @param  Collection<int, Package>  $packages
      * @return \Illuminate\Database\Eloquent\Collection<int, User>
      */
     private function seedCustomers($packages)
@@ -122,7 +129,11 @@ class DatabaseSeeder extends Seeder
         return User::factory()
             ->count(20)
             ->create()
-            ->each(function (User $user) use ($packages): void {
+            ->each(function (User $user, int $index) use ($packages): void {
+                if ($index < 3) {
+                    $user->update(['status' => UserStatus::Suspended]);
+                }
+
                 $package = $packages->random();
 
                 $account = BroadbandAccount::factory()->create([
@@ -140,9 +151,22 @@ class DatabaseSeeder extends Seeder
                     'status' => CustomerPackageStatus::Active,
                 ]);
 
-                Wallet::factory()->create([
+                if ($index % 4 === 0) {
+                    CustomerPackage::factory()->expired()->create([
+                        'user_id' => $user->id,
+                        'broadband_account_id' => $account->id,
+                        'package_id' => $packages->random()->id,
+                    ]);
+                }
+
+                $wallet = Wallet::factory()->create([
                     'user_id' => $user->id,
                     'balance_mmk' => fake()->randomElement([0, 5000, 15000, 42000]),
+                ]);
+
+                WalletTransaction::factory()->count(3)->create([
+                    'wallet_id' => $wallet->id,
+                    'type' => fake()->randomElement(WalletTransactionType::cases()),
                 ]);
 
                 CpeDevice::factory()->create([
@@ -152,13 +176,18 @@ class DatabaseSeeder extends Seeder
                 $user->forceFill([
                     'created_at' => now()->subDays(fake()->numberBetween(0, 29)),
                 ])->save();
+            })
+            ->tap(function () use ($packages): void {
+                BroadbandAccount::factory()->unbound()->count(3)->create([
+                    'current_package_id' => $packages->random()->id,
+                ]);
             });
     }
 
     /**
      * @param  \Illuminate\Database\Eloquent\Collection<int, User>  $users
-     * @param  \Illuminate\Support\Collection<int, Region>  $townships
-     * @param  \Illuminate\Support\Collection<int, Package>  $packages
+     * @param  Collection<int, Region>  $townships
+     * @param  Collection<int, Package>  $packages
      */
     private function seedServiceRequests($users, $townships, $packages): void
     {

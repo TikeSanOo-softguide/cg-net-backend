@@ -10,16 +10,19 @@ declare global {
 
 const enabled = import.meta.env.VITE_REVERB_ENABLED === 'true';
 const key = import.meta.env.VITE_REVERB_APP_KEY;
+const scheme = import.meta.env.VITE_REVERB_SCHEME || 'http';
+const port = Number(import.meta.env.VITE_REVERB_PORT || 8081);
+const useTLS = scheme === 'https';
 
 if (enabled && key) {
     window.Pusher = Pusher;
     window.Echo = new Echo({
         broadcaster: 'reverb',
         key,
-        wsHost: import.meta.env.VITE_REVERB_HOST,
-        wsPort: Number(import.meta.env.VITE_REVERB_PORT ?? 8081),
-        wssPort: Number(import.meta.env.VITE_REVERB_PORT ?? 8081),
-        forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
-        enabledTransports: ['ws', 'wss'],
+        wsHost: import.meta.env.VITE_REVERB_HOST || 'localhost',
+        wsPort: port,
+        wssPort: port,
+        forceTLS: useTLS,
+        enabledTransports: useTLS ? ['wss'] : ['ws'],
     });
 }

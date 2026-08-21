@@ -1,9 +1,16 @@
 import { useEffect, useState, type ReactNode } from 'react';
 
-import { SidebarNav, readSidebarExpanded, writeSidebarExpanded } from '@/components/layout/SidebarNav';
+import {
+    DESKTOP_SIDEBAR_QUERY,
+    SidebarNav,
+    readSidebarExpanded,
+    writeSidebarExpanded,
+} from '@/components/layout/SidebarNav';
+import { FloatingThemeSettingsButton } from '@/components/theme/FloatingThemeSettingsButton';
 import { SidebarToggle } from '@/components/layout/SidebarToggle';
 import { TopBar } from '@/components/layout/TopBar';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 
@@ -11,48 +18,115 @@ type AppLayoutProps = {
     children: ReactNode;
 };
 
+function readExpandedForViewport(isDesktop: boolean): boolean {
+    return isDesktop ? readSidebarExpanded() : false;
+}
+
 export default function AppLayout({ children }: AppLayoutProps) {
     const { t } = useTranslation();
-    const [expanded, setExpanded] = useState(true);
+    const isDesktop = useMediaQuery(DESKTOP_SIDEBAR_QUERY);
+    const [expanded, setExpanded] = useState(() =>
+        readExpandedForViewport(typeof window !== 'undefined' && window.matchMedia(DESKTOP_SIDEBAR_QUERY).matches),
+    );
 
     useEffect(() => {
-        setExpanded(readSidebarExpanded());
-    }, []);
+        setExpanded(readExpandedForViewport(isDesktop));
+    }, [isDesktop]);
+
+    useEffect(() => {
+        const root = document.documentElement;
+        const layoutWidth = isDesktop && expanded ? 'min(var(--sidebar-width), 85vw)' : '88px';
+
+        root.style.setProperty('--app-navbar-current', 'var(--navbar-height)');
+        root.style.setProperty('--app-sidebar-current', layoutWidth);
+
+        return () => {
+            root.style.removeProperty('--app-navbar-current');
+            root.style.removeProperty('--app-sidebar-current');
+        };
+    }, [expanded, isDesktop]);
+
+    useEffect(() => {
+        if (isDesktop || ! expanded) {
+            return;
+        }
+
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setExpanded(false);
+            }
+        };
+
+        window.addEventListener('keydown', onKeyDown);
+
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [expanded, isDesktop]);
 
     const toggleSidebar = () => {
         setExpanded((current) => {
             const next = ! current;
-            writeSidebarExpanded(next);
+
+            if (isDesktop) {
+                writeSidebarExpanded(next);
+            }
 
             return next;
         });
     };
 
+    const closeMobileSidebar = () => {
+        if (! isDesktop) {
+            setExpanded(false);
+        }
+    };
+
     return (
         <TooltipProvider>
-            <div className="flex h-dvh overflow-hidden bg-background">
-                <aside
-                    id="app-sidebar"
+            <div className="relative flex h-dvh overflow-hidden bg-background">
+                <div
                     className={cn(
-                        'relative z-[61] flex h-full min-h-0 shrink-0 flex-col overflow-visible bg-sidebar shadow-sidebar',
-                        'motion-reduce:transition-none transition-[width] duration-300 ease-out',
+                        'shrink-0',
+                        'motion-reduce:transition-none transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                        isDesktop && expanded ? 'w-[min(var(--sidebar-width),85vw)]' : 'w-[88px]',
+                    )}
+                    aria-hidden
+                />
+
+                {! isDesktop && expanded ? (
+                    <button
+                        type="button"
+                        aria-label={t('common.close')}
+                        className="fixed inset-0 z-[61] bg-black/25"
+                        onClick={closeMobileSidebar}
+                    />
+                ) : null}
+
+                <div
+                    className={cn(
+                        'absolute inset-y-0 left-0 z-[62] overflow-visible',
+                        'motion-reduce:transition-none transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
                         expanded ? 'w-[min(var(--sidebar-width),85vw)]' : 'w-[88px]',
                     )}
                 >
-                    <SidebarNav expanded={expanded} />
+                    <aside id="app-sidebar" className="h-full w-full overflow-hidden bg-sidebar shadow-sidebar">
+                        <div className="flex h-full w-full min-w-0 flex-col">
+                            <SidebarNav expanded={expanded} onNavigate={closeMobileSidebar} />
+                        </div>
+                    </aside>
                     <SidebarToggle
                         expanded={expanded}
                         onToggle={toggleSidebar}
                         label={t('common.toggle_sidebar')}
                     />
-                </aside>
+                </div>
 
                 <div className="flex min-h-0 min-w-0 flex-1 flex-col">
                     <TopBar sidebarOpen={expanded} />
-                    <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-6 sm:px-6 lg:px-8">
+                    <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pb-6 sm:px-6 lg:px-8">
                         {children}
                     </main>
                 </div>
+                <FloatingThemeSettingsButton />
             </div>
         </TooltipProvider>
     );

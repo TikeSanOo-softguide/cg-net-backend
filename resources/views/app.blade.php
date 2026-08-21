@@ -4,6 +4,10 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title inertia>{{ config('app.name', 'CG-Net Admin') }}</title>
+        <link rel="icon" href="/favicon.ico" sizes="any">
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
         <script>
             (function () {
                 function hexToHsl(raw) {
@@ -31,10 +35,15 @@
                     }
 
                     var raw = localStorage.getItem('isp-admin-theme-settings');
-                    if (!raw) return;
-                    var settings = JSON.parse(raw);
+                    var hex = '#1d4ed8';
+                    if (raw) {
+                        var settings = JSON.parse(raw);
+                        if (settings.primaryColor && String(settings.primaryColor).toLowerCase() !== '#173236') {
+                            hex = settings.primaryColor;
+                        }
+                    }
                     var root = document.documentElement;
-                    var primary = hexToHsl(settings.primaryColor);
+                    var primary = hexToHsl(hex);
                     if (primary) {
                         var hover = Math.min(primary.l + 4, 96);
                         var darkL = primary.l < 40 ? Math.min(primary.l + 46, 64) : primary.l < 55 ? Math.min(Math.max(primary.l, 52), 68) : Math.max(42, Math.min(primary.l, 62));

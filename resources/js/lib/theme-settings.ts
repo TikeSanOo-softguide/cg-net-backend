@@ -1,10 +1,10 @@
 export const THEME_SETTINGS_KEY = 'isp-admin-theme-settings';
-export const DEFAULT_PRIMARY = '#173236';
+export const DEFAULT_PRIMARY = '#1d4ed8';
 
 export const PRIMARY_PRESETS = [
+    { name: 'Royal', hex: '#1d4ed8' },
     { name: 'Brand Teal', hex: '#173236' },
     { name: 'Ocean', hex: '#0f766e' },
-    { name: 'Royal', hex: '#1d4ed8' },
     { name: 'Violet', hex: '#7c3aed' },
     { name: 'Rose', hex: '#be123c' },
     { name: 'Amber', hex: '#b45309' },
@@ -25,9 +25,9 @@ export type ThemeSettings = {
 
 export const DEFAULT_THEME_SETTINGS: ThemeSettings = {
     primaryColor: DEFAULT_PRIMARY,
-    cardStyle: 'bordered',
-    borderRadius: 'lg',
-    shadowStyle: 'sm',
+    cardStyle: 'flat',
+    borderRadius: 'md',
+    shadowStyle: 'md',
 };
 
 export function normalizeHex(input: string): string | null {
@@ -133,6 +133,10 @@ function pick<T extends string>(value: unknown, allowed: readonly T[], fallback:
     return allowed.includes(value as T) ? (value as T) : fallback;
 }
 
+function migratePrimaryColor(hex: string): string {
+    return hex === '#173236' ? DEFAULT_PRIMARY : hex;
+}
+
 export function readStoredThemeSettings(): ThemeSettings {
     if (typeof window === 'undefined') {
         return DEFAULT_THEME_SETTINGS;
@@ -151,7 +155,7 @@ export function readStoredThemeSettings(): ThemeSettings {
         };
 
         return {
-            primaryColor: normalizeHex(parsed.primaryColor ?? '') ?? DEFAULT_PRIMARY,
+            primaryColor: migratePrimaryColor(normalizeHex(parsed.primaryColor ?? '') ?? DEFAULT_PRIMARY),
             cardStyle: pick(parsed.cardStyle ?? parsed.cardVariant, ['flat', 'bordered', 'shadow', 'elevated'], DEFAULT_THEME_SETTINGS.cardStyle),
             borderRadius: pick(parsed.borderRadius ?? parsed.cardRadius, ['none', 'sm', 'md', 'lg', 'full'], DEFAULT_THEME_SETTINGS.borderRadius),
             shadowStyle: pick(parsed.shadowStyle, ['none', 'sm', 'md', 'lg', 'glow'], DEFAULT_THEME_SETTINGS.shadowStyle),

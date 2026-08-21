@@ -18,7 +18,7 @@ export default function TwoFactorChallenge() {
     return (
         <>
             <Head title="Two-factor challenge" />
-            <Card>
+            <Card className="mx-auto w-full max-w-[400px]">
                 <CardHeader>
                     <CardTitle>Two-factor authentication</CardTitle>
                     <CardDescription>Optional 2FA is scaffolded. Enter an authenticator code or a recovery code.</CardDescription>

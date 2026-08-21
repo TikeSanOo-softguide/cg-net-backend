@@ -1,8 +1,8 @@
 import { router, usePage } from '@inertiajs/react';
 import { BellIcon, CheckIcon, LogOutIcon, MoonIcon, MoreHorizontalIcon, SunIcon, UserRoundIcon } from 'lucide-react';
 
-import { BrandLockup } from '@/components/layout/BrandLockup';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+// import { BrandLockup } from '@/components/layout/BrandLockup';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import {
@@ -62,11 +62,9 @@ export function TopBar({ sidebarOpen = false }: TopBarProps) {
 
     return (
         <header className="sticky top-0 z-[60] shrink-0 border-b border-border/60 bg-surface/95 shadow-navbar backdrop-blur-sm">
-            <div className="flex h-[var(--navbar-height)] items-center justify-between gap-2 px-4 sm:px-5">
+            <div className="flex h-[var(--navbar-height)] items-center justify-between gap-2 px-3 sm:px-5">
                 <div className="flex min-w-0 items-center gap-2.5">
-                    <BrandLockup className={cn('min-w-0', sidebarOpen && 'hidden')} logoClassName="size-10 sm:size-11" />
-                    <span className={cn('hidden h-5 w-px shrink-0 bg-border', !sidebarOpen && 'sm:block')} />
-                    <h1 className="hidden truncate font-heading text-base font-semibold tracking-tight text-foreground sm:block">
+                    <h1 className="truncate font-heading text-sm font-semibold tracking-tight text-foreground sm:text-base">
                         {title}
                     </h1>
                 </div>

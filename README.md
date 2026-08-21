@@ -69,6 +69,7 @@ docker compose down    # stop and remove containers (volumes kept)
 | Nginx | `cg-net-nginx` | `8080` (`NGINX_PORT`) |
 | PHP-FPM | `cg-net-app` | 9000 (internal) |
 | Vite (HMR) | `cg-net-vite` | `5173` (`VITE_PORT`) |
+| Reverb (WebSocket) | `cg-net-reverb` | `8081` (`FORWARD_REVERB_PORT`) |
 | MySQL 8.4 | `cg-net-mysql` | `3306` |
 | Redis 7 | `cg-net-redis` | `6379` |
 
@@ -102,13 +103,14 @@ Seed also creates Myanmar region trees, packages, sample customers (broadband + 
 
 ```
 app/
-  Http/Controllers/     Dashboard, locale, placeholder menu pages
+  Http/Controllers/{Domain}/{Domain}Controller.php
+  Http/Requests/{Domain}/
   Models/               ISP domain
   Support/MenuPages.php Sidebar routes that are still placeholders
 database/               migrations, factories, seeders
 docker/                 nginx + php.ini
 resources/
-  js/                   React pages, layouts, UI kit
+  js/pages/{Domain}/    Customer/Index, Auth/Login, Dashboard/Index
   lang/{en,mm,zh}.json
   css/app.css
 routes/web.php
@@ -119,10 +121,11 @@ Frontend alias: `@` → `resources/js`.
 ## Conventions
 
 - **Auth:** Fortify against `admins`. Customers never log into this app.
+- **Folders:** Group HTTP and Inertia files by domain (`Customer/CustomerController`, `Customer/Index`). Page names are PascalCase (`Auth/ForgotPassword`).
 - **i18n:** JSON keys in `resources/lang/`. Keep locales in sync with `php artisan lang:check`.
 - **Theme:** `ThemeProvider` (`isp-admin-theme`). Default brand teal `#173236`.
 - **Sidebar:** Width 260px expanded / 88px collapsed; pin state in `isp-admin-sidebar-pinned`.
-- **New menu screens:** add a real controller/page, then remove that path from `MenuPages`.
+- **New menu screens:** add `{Domain}/{Domain}Controller` plus `pages/{Domain}/Index`, then remove that path from `MenuPages`.
 
 ## Useful commands
 
@@ -131,6 +134,11 @@ php artisan test
 php artisan lang:check
 php artisan route:list
 docker compose exec app php artisan migrate --seed
+
+# Turn Reverb on later
+# 1. Set VITE_REVERB_ENABLED=true in .env
+# 2. docker compose --profile reverb up -d reverb
+# 3. docker compose restart vite
 ```
 
 ## Environment notes
@@ -143,7 +151,7 @@ Copy values from `.env.example`. Important ones:
 | `AUTH_GUARD` / `AUTH_PASSWORD_BROKER` | `web` / `admins` |
 | `DB_*` | MySQL |
 | `CACHE_STORE` / `QUEUE_CONNECTION` / `REDIS_*` | Redis |
-| `VITE_REVERB_ENABLED` | WebSockets (off by default) |
+| `VITE_REVERB_ENABLED` | Laravel Echo → Reverb. Off until you start the `reverb` profile. |
 | `FIREBASE_*` / `SENTRY_*` | Push + error tracking (optional) |
 | `NGINX_PORT` | Docker HTTP port (default 8080) |
 

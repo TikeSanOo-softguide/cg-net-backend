@@ -53,6 +53,9 @@ class HandleInertiaRequests extends Middleware
             'unreadNotifications' => $user
                 ? NotificationCustom::query()->where('is_read', false)->count()
                 : 0,
+            'flash' => [
+                'success' => $request->session()->get('success'),
+            ],
         ];
     }
 

@@ -1,14 +1,19 @@
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, usePage } from '@inertiajs/react';
 import { ChevronDownIcon } from 'lucide-react';
 
 import { BrandLockup } from '@/components/layout/BrandLockup';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTranslation } from '@/hooks/useTranslation';
-import { groupIsActive, isActivePath, navigation, type NavGroup } from '@/lib/navigation';
+import { groupIsActive, isActivePath, navigation, type NavGroup, type NavItem } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 
 const EXPANDED_KEY = 'isp-admin-sidebar-pinned';
+
+export const DESKTOP_SIDEBAR_QUERY = '(min-width: 1024px)';
+const FINE_HOVER_QUERY = '(hover: hover) and (pointer: fine)';
 
 type SidebarNavProps = {
     expanded: boolean;
@@ -17,19 +22,26 @@ type SidebarNavProps = {
     showBrand?: boolean;
 };
 
+const selectedItemClass =
+    'bg-sidebar-item text-white hover:bg-sidebar-item-hover hover:text-white [&_svg]:text-white';
+const selectedChildItemClass =
+    'bg-sidebar-child-selected text-primary hover:bg-sidebar-child-selected-hover hover:text-primary [&_svg]:text-primary';
+const idleItemClass = 'text-sidebar-foreground hover:bg-primary/12 hover:text-foreground';
+
 function itemClass(active: boolean, expanded: boolean) {
     return cn(
-        'flex items-center rounded-[8px] text-[15px] font-medium transition-colors duration-200',
-        expanded ? 'w-full gap-3 px-3 py-2.5' : 'mx-auto size-11 justify-center p-0',
-        active
-            ? 'bg-primary text-primary-foreground hover:bg-primary-hover hover:text-primary-foreground'
-            : 'text-sidebar-foreground hover:bg-primary/12 hover:text-foreground',
+        'flex h-11 w-full items-center overflow-hidden rounded-[8px] px-3 text-[15px] font-medium',
+        'motion-reduce:transition-none transition-[gap,color,background-color] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+        expanded ? 'gap-3' : 'gap-0',
+        active ? selectedItemClass : idleItemClass,
     );
 }
 
-function RailLabel({ children, label }: { children: ReactElement; label: string }) {
+function RailLabel({ children, label, disabled = false }: { children: ReactElement; label: string; disabled?: boolean }) {
+    const [open, setOpen] = useState(false);
+
     return (
-        <Tooltip delayDuration={80}>
+        <Tooltip delayDuration={80} open={disabled ? false : open} onOpenChange={setOpen}>
             <TooltipTrigger asChild>{children}</TooltipTrigger>
             <TooltipContent
                 side="right"
@@ -44,6 +56,158 @@ function RailLabel({ children, label }: { children: ReactElement; label: string 
     );
 }
 
+function RailFlyout({
+    label,
+    childrenItems,
+    current,
+    onNavigate,
+    t,
+    trigger,
+    disabled = false,
+    canHover = true,
+}: {
+    label: string;
+    childrenItems: NavItem[];
+    current: string;
+    onNavigate?: () => void;
+    t: (key: string) => string;
+    trigger: ReactElement;
+    disabled?: boolean;
+    canHover?: boolean;
+}) {
+    const triggerRef = useRef<HTMLDivElement>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
+    const [open, setOpen] = useState(false);
+    const [pos, setPos] = useState({ top: 0, left: 0 });
+    const closeTimer = useRef<number>(0);
+
+    const place = () => {
+        if (! triggerRef.current) {
+            return;
+        }
+
+        const rect = triggerRef.current.getBoundingClientRect();
+        const panelWidth = 220;
+        const left = Math.min(rect.right + 12, window.innerWidth - panelWidth - 8);
+        const top = Math.min(rect.top, window.innerHeight - 280);
+
+        setPos({ top: Math.max(8, top), left: Math.max(8, left) });
+    };
+
+    const show = () => {
+        if (disabled) {
+            return;
+        }
+        window.clearTimeout(closeTimer.current);
+        place();
+        setOpen(true);
+    };
+
+    const hide = () => {
+        window.clearTimeout(closeTimer.current);
+        closeTimer.current = window.setTimeout(() => setOpen(false), 140);
+    };
+
+    const hideNow = () => {
+        window.clearTimeout(closeTimer.current);
+        setOpen(false);
+    };
+
+    const onTriggerClick = () => {
+        if (disabled || canHover) {
+            return;
+        }
+
+        if (open) {
+            hideNow();
+        } else {
+            show();
+        }
+    };
+
+    useEffect(() => {
+        if (disabled) {
+            setOpen(false);
+        }
+    }, [disabled]);
+
+    useEffect(() => {
+        if (! open || disabled) {
+            return;
+        }
+
+        const onPointerDown = (event: PointerEvent) => {
+            const target = event.target as Node;
+
+            if (triggerRef.current?.contains(target) || panelRef.current?.contains(target)) {
+                return;
+            }
+
+            hideNow();
+        };
+
+        document.addEventListener('pointerdown', onPointerDown);
+
+        return () => document.removeEventListener('pointerdown', onPointerDown);
+    }, [open, disabled]);
+
+    useEffect(() => () => window.clearTimeout(closeTimer.current), []);
+
+    return (
+        <div
+            ref={triggerRef}
+            className="relative w-full"
+            onMouseEnter={canHover ? show : undefined}
+            onMouseLeave={canHover ? hide : undefined}
+            onClick={onTriggerClick}
+        >
+            {trigger}
+            {open && ! disabled
+                ? createPortal(
+                      <div
+                          ref={panelRef}
+                          className="fixed z-[90] max-h-[min(80vh,360px)] min-w-[220px] overflow-y-auto rounded-[8px] border border-border bg-surface p-1.5 shadow-card"
+                          style={{ top: pos.top, left: pos.left }}
+                          onMouseEnter={canHover ? show : undefined}
+                          onMouseLeave={canHover ? hide : undefined}
+                      >
+                          <p className="px-2.5 py-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                              {label}
+                          </p>
+                          <ul className="flex flex-col gap-0.5">
+                              {childrenItems.map((child) => {
+                                  const childActive = isActivePath(current, child.href);
+                                  const ChildIcon = child.icon;
+
+                                  return (
+                                      <li key={child.href}>
+                                          <Link
+                                              href={child.href}
+                                              onClick={() => {
+                                                  setOpen(false);
+                                                  onNavigate?.();
+                                              }}
+                                              aria-current={childActive ? 'page' : undefined}
+                                              className={cn(
+                                                  'flex items-center gap-2.5 rounded-[8px] px-2.5 py-2 text-sm font-medium transition-colors duration-200',
+                                                  childActive ? selectedChildItemClass : idleItemClass,
+                                              )}
+                                          >
+                                              <ChildIcon className="size-4 shrink-0" strokeWidth={1.9} />
+                                              <span className="truncate">{t(child.labelKey)}</span>
+                                          </Link>
+                                      </li>
+                                  );
+                              })}
+                          </ul>
+                      </div>,
+                      document.body,
+                  )
+                : null}
+        </div>
+    );
+}
+
 export function SidebarNav({
     expanded,
     onNavigate,
@@ -53,7 +217,34 @@ export function SidebarNav({
     const { t } = useTranslation();
     const { url } = usePage();
     const current = url.split('?')[0];
+    const canHover = useMediaQuery(FINE_HOVER_QUERY);
     const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+    const scrollRef = useRef<HTMLNavElement>(null);
+    const [stick, setStick] = useState({ show: false, top: 12, height: 56 });
+
+    const updateStick = () => {
+        const el = scrollRef.current;
+
+        if (! el) {
+            return;
+        }
+
+        const overflow = el.scrollHeight - el.clientHeight;
+
+        if (overflow <= 1) {
+            setStick((current) => (current.show ? { ...current, show: false } : current));
+
+            return;
+        }
+
+        const inset = 12;
+        const track = Math.max(el.clientHeight - inset * 2, 1);
+        const height = Math.min(72, Math.max(48, Math.round(track * 0.18)));
+        const maxTop = track - height;
+        const top = inset + (el.scrollTop / overflow) * maxTop;
+
+        setStick({ show: true, top, height });
+    };
 
     useEffect(() => {
         setOpenGroups((prev) => {
@@ -71,6 +262,28 @@ export function SidebarNav({
         });
     }, [current, groups]);
 
+    useEffect(() => {
+        const el = scrollRef.current;
+
+        if (! el) {
+            return;
+        }
+
+        updateStick();
+        el.addEventListener('scroll', updateStick, { passive: true });
+        const observer = new ResizeObserver(updateStick);
+        observer.observe(el);
+
+        if (el.firstElementChild) {
+            observer.observe(el.firstElementChild);
+        }
+
+        return () => {
+            el.removeEventListener('scroll', updateStick);
+            observer.disconnect();
+        };
+    }, [expanded, openGroups]);
+
     const toggleGroup = (id: string) => {
         setOpenGroups((prev) => ({ ...prev, [id]: ! prev[id] }));
     };
@@ -80,33 +293,49 @@ export function SidebarNav({
             {showBrand ? (
                 <div
                     className={cn(
-                        'flex h-[var(--navbar-height)] shrink-0 items-center border-b border-sidebar-border px-3',
-                        expanded ? '' : 'justify-center',
+                        'flex h-[var(--navbar-height)] shrink-0 items-center overflow-hidden border-b border-sidebar-border',
+                        'motion-reduce:transition-none transition-[padding] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                        expanded ? 'px-3' : 'px-[22px]',
                     )}
                 >
-                    <BrandLockup compact={! expanded} logoClassName={expanded ? undefined : 'size-11'} />
+                    <BrandLockup expanded={expanded} className="overflow-hidden" />
                 </div>
             ) : null}
 
-            <nav
-                className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-3 pt-3 pb-4"
-                aria-label="Sidebar"
-            >
-                <ul className="flex flex-col gap-2">
-                    {groups.map((group) => (
-                        <SidebarGroup
-                            key={group.id}
-                            group={group}
-                            expanded={expanded}
-                            current={current}
-                            open={Boolean(openGroups[group.id])}
-                            onToggle={() => toggleGroup(group.id)}
-                            onNavigate={onNavigate}
-                            t={t}
-                        />
-                    ))}
-                </ul>
-            </nav>
+            <div className="relative min-h-0 flex-1">
+                <nav
+                    ref={scrollRef}
+                    className={cn(
+                        'sidebar-scroll h-full min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain py-3',
+                        'motion-reduce:transition-none transition-[padding] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                        expanded ? 'px-3' : 'px-[22px]',
+                    )}
+                    aria-label="Sidebar"
+                >
+                    <ul className="flex flex-col gap-2">
+                        {groups.map((group) => (
+                            <SidebarGroup
+                                key={group.id}
+                                group={group}
+                                expanded={expanded}
+                                current={current}
+                                open={Boolean(openGroups[group.id])}
+                                onToggle={() => toggleGroup(group.id)}
+                                onNavigate={onNavigate}
+                                t={t}
+                                canHover={canHover}
+                            />
+                        ))}
+                    </ul>
+                </nav>
+                {stick.show && expanded ? (
+                    <span
+                        aria-hidden
+                        className="pointer-events-none absolute right-1 w-[3px] rounded-full bg-muted-foreground/40"
+                        style={{ top: stick.top, height: stick.height }}
+                    />
+                ) : null}
+            </div>
         </div>
     );
 }
@@ -119,6 +348,7 @@ function SidebarGroup({
     onToggle,
     onNavigate,
     t,
+    canHover,
 }: {
     group: NavGroup;
     expanded: boolean;
@@ -127,66 +357,102 @@ function SidebarGroup({
     onToggle: () => void;
     onNavigate?: () => void;
     t: (key: string) => string;
+    canHover: boolean;
 }) {
     const active = groupIsActive(current, group);
     const Icon = group.icon;
     const label = t(group.labelKey);
     const href = group.href ?? group.children?.[0]?.href ?? '#';
 
-    if (! expanded) {
-        return (
-            <li>
-                <RailLabel label={label}>
-                    <Link href={href} onClick={onNavigate} className={itemClass(active, false)}>
-                        <Icon className="size-5 shrink-0" strokeWidth={1.9} />
-                        <span className="sr-only">{label}</span>
-                    </Link>
-                </RailLabel>
-            </li>
-        );
-    }
+    const row = (
+        <div className={itemClass(active, expanded)}>
+            <Icon className="size-5 shrink-0" strokeWidth={1.9} />
+            <span
+                className={cn(
+                    'min-w-0 flex-1 truncate text-left',
+                    'motion-reduce:transition-none transition-[max-width,opacity] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                    expanded ? 'max-w-[11.25rem] opacity-100' : 'pointer-events-none max-w-0 opacity-0',
+                )}
+                aria-hidden={! expanded}
+            >
+                {label}
+            </span>
+            {group.children ? (
+                <ChevronDownIcon
+                    className={cn(
+                        'h-4 shrink-0 overflow-hidden',
+                        'motion-reduce:transition-none transition-[width,opacity,transform,margin] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                        expanded ? 'w-4 opacity-100' : 'w-0 opacity-0',
+                        open && expanded && 'rotate-180',
+                    )}
+                    strokeWidth={1.9}
+                />
+            ) : null}
+        </div>
+    );
 
-    if (! group.children) {
-        return (
-            <li>
-                <Link href={href} onClick={onNavigate} className={itemClass(active, true)}>
-                    <Icon className="size-5 shrink-0" strokeWidth={1.9} />
-                    <span className="truncate">{label}</span>
-                </Link>
-            </li>
-        );
-    }
+    const trigger = group.children ? (
+        <button type="button" onClick={expanded ? onToggle : undefined} className="w-full" aria-expanded={open}>
+            {row}
+        </button>
+    ) : (
+        <Link href={href} onClick={onNavigate} className="block w-full">
+            {row}
+        </Link>
+    );
 
     return (
         <li>
-            <button type="button" onClick={onToggle} className={itemClass(active, true)} aria-expanded={open}>
-                <Icon className="size-5 shrink-0" strokeWidth={1.9} />
-                <span className="flex-1 truncate text-left">{label}</span>
-                <ChevronDownIcon className={cn('size-4 shrink-0 transition-transform duration-200', open && 'rotate-180')} />
-            </button>
-            {open ? (
-                <ul className="mt-1 ml-3 flex flex-col gap-1.5 border-l border-sidebar-border pl-2">
-                    {group.children.map((child) => {
-                        const childActive = isActivePath(current, child.href);
+            {group.children?.length ? (
+                <RailFlyout
+                    label={label}
+                    childrenItems={group.children}
+                    current={current}
+                    onNavigate={onNavigate}
+                    t={t}
+                    trigger={trigger}
+                    disabled={expanded}
+                    canHover={canHover}
+                />
+            ) : (
+                <RailLabel label={label} disabled={expanded || ! canHover}>
+                    {trigger}
+                </RailLabel>
+            )}
+            {group.children ? (
+                <div
+                    className={cn(
+                        'grid motion-reduce:transition-none transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                        expanded && open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
+                    )}
+                >
+                    <div className="overflow-hidden">
+                        <ul className="mt-1 ml-3 flex flex-col gap-1.5 border-l border-sidebar-border pl-2">
+                            {group.children.map((child) => {
+                                const childActive = isActivePath(current, child.href);
+                                const ChildIcon = child.icon;
 
-                        return (
-                            <li key={child.href}>
-                                <Link
-                                    href={child.href}
-                                    onClick={onNavigate}
-                                    className={cn(
-                                        'flex items-center rounded-[8px] px-3 py-2 text-sm font-medium transition-colors duration-200',
-                                        childActive
-                                            ? 'bg-primary text-primary-foreground hover:bg-primary-hover hover:text-primary-foreground'
-                                            : 'text-muted-foreground hover:bg-primary/12 hover:text-foreground',
-                                    )}
-                                >
-                                    {t(child.labelKey)}
-                                </Link>
-                            </li>
-                        );
-                    })}
-                </ul>
+                                return (
+                                    <li key={child.href}>
+                                        <Link
+                                            href={child.href}
+                                            onClick={onNavigate}
+                                            aria-current={childActive ? 'page' : undefined}
+                                            tabIndex={expanded && open ? 0 : -1}
+                                            className={cn(
+                                                'flex items-center gap-2.5 rounded-[8px] px-3 py-2.5 text-[15px] font-medium transition-colors duration-200',
+                                                childActive ? selectedChildItemClass : idleItemClass,
+                                            )}
+                                        >
+                                            <ChildIcon className="size-4 shrink-0" strokeWidth={1.9} />
+                                            <span className="truncate">{t(child.labelKey)}</span>
+                                        </Link>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </div>
+                </div>
             ) : null}
         </li>
     );

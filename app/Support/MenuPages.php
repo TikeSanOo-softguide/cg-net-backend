@@ -12,7 +12,6 @@ final class MenuPages
     public static function all(): array
     {
         return [
-            ['path' => '/customers', 'titleKey' => 'menu.customers_list', 'name' => 'customers.index'],
             ['path' => '/broadband-accounts', 'titleKey' => 'menu.broadband_accounts', 'name' => 'broadband-accounts.index'],
             ['path' => '/cpe/inventory', 'titleKey' => 'menu.cpe_inventory', 'name' => 'cpe.inventory'],
             ['path' => '/cpe/assignment', 'titleKey' => 'menu.cpe_assignment', 'name' => 'cpe.assignment'],

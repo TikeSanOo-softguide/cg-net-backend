@@ -1,27 +1,52 @@
 import type { LucideIcon } from 'lucide-react';
 import {
     Activity,
+    AlertTriangle,
+    ArrowRightLeft,
     BadgePercent,
     Banknote,
     Bell,
+    Boxes,
     ClipboardList,
     CreditCard,
+    FileText,
     Headphones,
+    History,
+    KeyRound,
+    Languages,
     LayoutDashboard,
+    Link2,
     MapPinned,
     MessageSquare,
+    Move,
     Package,
+    PenLine,
+    Plug,
+    Receipt,
+    RefreshCw,
+    Reply,
     Router,
+    ScrollText,
     Settings,
     Shield,
+    ShieldCheck,
+    Signal,
+    SlidersHorizontal,
+    Smartphone,
+    Sparkles,
+    Tags,
     Ticket,
+    UserCog,
+    UserRound,
     Users,
     Wallet,
+    Wifi,
 } from 'lucide-react';
 
 export type NavItem = {
     labelKey: string;
     href: string;
+    icon: LucideIcon;
 };
 
 export type NavGroup = {
@@ -39,8 +64,8 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.customer_management',
         icon: Users,
         children: [
-            { labelKey: 'menu.customers_list', href: '/customers' },
-            { labelKey: 'menu.broadband_accounts', href: '/broadband-accounts' },
+            { labelKey: 'menu.customers_list', href: '/customers', icon: UserRound },
+            { labelKey: 'menu.broadband_accounts', href: '/broadband-accounts', icon: Wifi },
         ],
     },
     {
@@ -48,9 +73,9 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.cpe_management',
         icon: Router,
         children: [
-            { labelKey: 'menu.cpe_inventory', href: '/cpe/inventory' },
-            { labelKey: 'menu.cpe_assignment', href: '/cpe/assignment' },
-            { labelKey: 'menu.connection_status', href: '/cpe/status' },
+            { labelKey: 'menu.cpe_inventory', href: '/cpe/inventory', icon: Boxes },
+            { labelKey: 'menu.cpe_assignment', href: '/cpe/assignment', icon: Link2 },
+            { labelKey: 'menu.connection_status', href: '/cpe/status', icon: Signal },
         ],
     },
     {
@@ -58,9 +83,9 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.package_management',
         icon: Package,
         children: [
-            { labelKey: 'menu.packages', href: '/packages' },
-            { labelKey: 'menu.auto_renew_rules', href: '/packages/auto-renew' },
-            { labelKey: 'menu.recommended_packages', href: '/packages/recommended' },
+            { labelKey: 'menu.packages', href: '/packages', icon: Package },
+            { labelKey: 'menu.auto_renew_rules', href: '/packages/auto-renew', icon: RefreshCw },
+            { labelKey: 'menu.recommended_packages', href: '/packages/recommended', icon: Sparkles },
         ],
     },
     {
@@ -68,9 +93,9 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.billing',
         icon: CreditCard,
         children: [
-            { labelKey: 'menu.invoices', href: '/billing/invoices' },
-            { labelKey: 'menu.payment_gateway_logs', href: '/billing/gateway-logs' },
-            { labelKey: 'menu.transactions', href: '/billing/transactions' },
+            { labelKey: 'menu.invoices', href: '/billing/invoices', icon: FileText },
+            { labelKey: 'menu.payment_gateway_logs', href: '/billing/gateway-logs', icon: ScrollText },
+            { labelKey: 'menu.transactions', href: '/billing/transactions', icon: Receipt },
         ],
     },
     {
@@ -78,8 +103,8 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.voucher_management',
         icon: Ticket,
         children: [
-            { labelKey: 'menu.voucher_batch', href: '/vouchers/batch' },
-            { labelKey: 'menu.redeem_history', href: '/vouchers/redeem-history' },
+            { labelKey: 'menu.voucher_batch', href: '/vouchers/batch', icon: Ticket },
+            { labelKey: 'menu.redeem_history', href: '/vouchers/redeem-history', icon: History },
         ],
     },
     {
@@ -87,10 +112,10 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.service_requests',
         icon: ClipboardList,
         children: [
-            { labelKey: 'menu.installation_applications', href: '/service-requests/installations' },
-            { labelKey: 'menu.failure_reports', href: '/service-requests/failures' },
-            { labelKey: 'menu.relocation_requests', href: '/service-requests/relocations' },
-            { labelKey: 'menu.change_plan_requests', href: '/service-requests/change-plan' },
+            { labelKey: 'menu.installation_applications', href: '/service-requests/installations', icon: Plug },
+            { labelKey: 'menu.failure_reports', href: '/service-requests/failures', icon: AlertTriangle },
+            { labelKey: 'menu.relocation_requests', href: '/service-requests/relocations', icon: Move },
+            { labelKey: 'menu.change_plan_requests', href: '/service-requests/change-plan', icon: ArrowRightLeft },
         ],
     },
     { id: 'regions', labelKey: 'menu.region_management', href: '/regions', icon: MapPinned },
@@ -99,8 +124,8 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.notifications',
         icon: Bell,
         children: [
-            { labelKey: 'menu.push_composer', href: '/notifications/compose' },
-            { labelKey: 'menu.notification_categories', href: '/notifications/categories' },
+            { labelKey: 'menu.push_composer', href: '/notifications/compose', icon: PenLine },
+            { labelKey: 'menu.notification_categories', href: '/notifications/categories', icon: Tags },
         ],
     },
     {
@@ -108,9 +133,9 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.support',
         icon: Headphones,
         children: [
-            { labelKey: 'menu.chat_conversations', href: '/support/conversations' },
-            { labelKey: 'menu.agent_assignment', href: '/support/agents' },
-            { labelKey: 'menu.quick_reply_templates', href: '/support/quick-replies' },
+            { labelKey: 'menu.chat_conversations', href: '/support/conversations', icon: MessageSquare },
+            { labelKey: 'menu.agent_assignment', href: '/support/agents', icon: UserCog },
+            { labelKey: 'menu.quick_reply_templates', href: '/support/quick-replies', icon: Reply },
         ],
     },
     { id: 'banners', labelKey: 'menu.banners', href: '/banners', icon: BadgePercent },
@@ -119,9 +144,9 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.staff_role_management',
         icon: Shield,
         children: [
-            { labelKey: 'menu.staff_accounts', href: '/staff/accounts' },
-            { labelKey: 'menu.roles', href: '/staff/roles' },
-            { labelKey: 'menu.permissions_matrix', href: '/staff/permissions' },
+            { labelKey: 'menu.staff_accounts', href: '/staff/accounts', icon: UserRound },
+            { labelKey: 'menu.roles', href: '/staff/roles', icon: ShieldCheck },
+            { labelKey: 'menu.permissions_matrix', href: '/staff/permissions', icon: KeyRound },
         ],
     },
     { id: 'activity', labelKey: 'menu.activity_logs', href: '/activity-logs', icon: Activity },
@@ -131,9 +156,9 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.settings',
         icon: Settings,
         children: [
-            { labelKey: 'menu.app_version', href: '/settings/app-version' },
-            { labelKey: 'menu.language_management', href: '/settings/languages' },
-            { labelKey: 'menu.general_settings', href: '/settings/general' },
+            { labelKey: 'menu.app_version', href: '/settings/app-version', icon: Smartphone },
+            { labelKey: 'menu.language_management', href: '/settings/languages', icon: Languages },
+            { labelKey: 'menu.general_settings', href: '/settings/general', icon: SlidersHorizontal },
         ],
     },
 ];
@@ -165,6 +190,10 @@ export function groupIsActive(current: string, group: NavGroup): boolean {
 }
 
 export function titleKeyForPath(current: string): string {
+    if (/^\/customers\/\d+/.test(current)) {
+        return 'menu.customer_detail';
+    }
+
     for (const group of navigation) {
         if (group.href && isActivePath(current, group.href)) {
             return group.labelKey;

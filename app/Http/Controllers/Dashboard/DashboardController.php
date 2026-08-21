@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Dashboard;
 
 use App\Enums\BroadbandAccountStatus;
 use App\Enums\ChangePlanStatus;
 use App\Enums\CustomerPackageStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\ReviewStatus;
+use App\Http\Controllers\Controller;
 use App\Models\BroadbandAccount;
 use App\Models\ChangePlanRequest;
 use App\Models\CustomerPackage;

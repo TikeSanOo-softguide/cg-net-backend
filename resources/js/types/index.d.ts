@@ -13,6 +13,9 @@ export type PageProps<T extends Record<string, unknown> = Record<string, unknown
     locale: SupportedLocale;
     translations: Record<string, string>;
     unreadNotifications: number;
+    flash: {
+        success: string | null;
+    };
 };
 
 declare module '@inertiajs/core' {
@@ -24,6 +27,9 @@ declare module '@inertiajs/core' {
             locale: SupportedLocale;
             translations: Record<string, string>;
             unreadNotifications: number;
+            flash: {
+                success: string | null;
+            };
         };
     }
 }

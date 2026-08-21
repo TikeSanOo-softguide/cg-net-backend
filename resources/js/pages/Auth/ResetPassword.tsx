@@ -25,7 +25,7 @@ export default function ResetPassword({ email, token }: ResetPasswordProps) {
     return (
         <>
             <Head title="Reset password" />
-            <Card>
+            <Card className="mx-auto w-full max-w-[400px]">
                 <CardHeader>
                     <CardTitle>Choose a new password</CardTitle>
                     <CardDescription>This link was emailed to your staff account.</CardDescription>

@@ -1,15 +1,12 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import {
     DEFAULT_PRIMARY,
     PRIMARY_PRESETS,
-    borderRadiusClass,
-    cardStyleClass,
     normalizeHex,
-    shadowStyleClass,
     swatchHsl,
     type BorderRadius,
     type CardStyle,
@@ -23,50 +20,46 @@ type ThemeSettingsPanelProps = {
     onOpenChange: (open: boolean) => void;
 };
 
-function Tile({
-    selected,
-    label,
-    onClick,
-    children,
-}: {
-    selected: boolean;
-    label: string;
-    onClick: () => void;
-    children: ReactNode;
-}) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
     return (
-        <button
-            type="button"
-            onClick={onClick}
-            aria-pressed={selected}
-            className={cn(
-                'flex flex-col items-center gap-1 rounded-md bg-transparent p-1.5 transition-all duration-200',
-                selected
-                    ? 'scale-[1.02] bg-muted/70 ring-1 ring-primary/45'
-                    : 'hover:scale-[1.01] hover:bg-muted/50',
-            )}
-        >
-            <div className="flex h-8 w-full items-center justify-center">{children}</div>
-            <span className="text-center text-[9px] font-medium leading-none tracking-wide text-muted-foreground">{label}</span>
-        </button>
-    );
-}
-
-function Section({ title, children }: { title: string; children: ReactNode }) {
-    return (
-        <section className="flex min-h-0 flex-col gap-1.5 border-b border-border/40 py-2.5 last:border-b-0">
-            <h3 className="font-heading text-[10px] font-medium tracking-[0.18em] text-muted-foreground uppercase">{title}</h3>
+        <section className="flex flex-col gap-2">
+            <h3 className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">{title}</h3>
             {children}
         </section>
     );
 }
 
+function OptionTile({
+    selected,
+    onClick,
+    children,
+}: {
+    selected: boolean;
+    onClick: () => void;
+    children: React.ReactNode;
+}) {
+    return (
+        <button
+            type="button"
+            aria-pressed={selected}
+            onClick={onClick}
+            className={cn(
+                'h-8 min-w-0 flex-1 rounded-[8px] px-1 text-[11px] font-medium transition-all duration-200 ease-out',
+                'hover:-translate-y-0.5 hover:shadow-sm active:translate-y-0',
+                selected
+                    ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary-hover'
+                    : 'bg-muted text-foreground hover:bg-primary/12',
+            )}
+        >
+            {children}
+        </button>
+    );
+}
+
 function HexColorField({
-    id,
     value,
     onChange,
 }: {
-    id: string;
     value: string;
     onChange: (hex: string) => void;
 }) {
@@ -80,7 +73,7 @@ function HexColorField({
 
     return (
         <div className="flex items-center gap-2">
-            <label className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-md ring-1 ring-border/80">
+            <label className="relative size-9 shrink-0 cursor-pointer overflow-hidden rounded-[8px] ring-1 ring-border">
                 <span className="absolute inset-0" style={{ backgroundColor: swatchHsl(preview) }} />
                 <input
                     type="color"
@@ -91,7 +84,6 @@ function HexColorField({
                 />
             </label>
             <Input
-                id={id}
                 value={draft}
                 onChange={(event) => {
                     const next = event.target.value;
@@ -106,7 +98,7 @@ function HexColorField({
                 spellCheck={false}
                 maxLength={7}
                 placeholder={DEFAULT_PRIMARY}
-                className="h-8 font-mono text-xs tracking-wide"
+                className="h-9 rounded-[8px] font-mono text-xs tracking-wide"
             />
         </div>
     );
@@ -114,24 +106,24 @@ function HexColorField({
 
 const cardStyleOptions: { value: CardStyle; label: string }[] = [
     { value: 'flat', label: 'Flat' },
-    { value: 'bordered', label: 'Bordered' },
+    { value: 'bordered', label: 'Border' },
     { value: 'shadow', label: 'Shadow' },
-    { value: 'elevated', label: 'Elevated' },
+    { value: 'elevated', label: 'Lift' },
 ];
 
 const radiusOptions: { value: BorderRadius; label: string }[] = [
-    { value: 'none', label: 'None' },
-    { value: 'sm', label: 'Small' },
-    { value: 'md', label: 'Medium' },
-    { value: 'lg', label: 'Large' },
+    { value: 'none', label: '0' },
+    { value: 'sm', label: 'SM' },
+    { value: 'md', label: 'MD' },
+    { value: 'lg', label: 'LG' },
     { value: 'full', label: 'Full' },
 ];
 
 const shadowOptions: { value: ShadowStyle; label: string }[] = [
-    { value: 'none', label: 'None' },
-    { value: 'sm', label: 'Small' },
-    { value: 'md', label: 'Medium' },
-    { value: 'lg', label: 'Large' },
+    { value: 'none', label: 'Off' },
+    { value: 'sm', label: 'SM' },
+    { value: 'md', label: 'MD' },
+    { value: 'lg', label: 'LG' },
     { value: 'glow', label: 'Glow' },
 ];
 
@@ -148,110 +140,145 @@ export function ThemeSettingsPanel({ open, onOpenChange }: ThemeSettingsPanelPro
         resetThemeSettings,
     } = useThemeSettings();
 
-    const tileRadius = borderRadiusClass[borderRadius === 'full' ? 'lg' : borderRadius];
+    useEffect(() => {
+        if (! open) {
+            return;
+        }
 
-    return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent
-                side="right"
-                className="h-dvh w-[360px] max-w-[90vw] gap-0 overflow-hidden bg-card p-0 sm:max-w-[360px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onOpenChange(false);
+            }
+        };
+
+        window.addEventListener('keydown', onKeyDown);
+
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [open, onOpenChange]);
+
+    if (! open || typeof document === 'undefined') {
+        return null;
+    }
+
+    return createPortal(
+        <>
+            <button
+                type="button"
+                aria-label="Close theme settings"
+                className="fixed z-[80] bg-black/25"
+                style={{
+                    top: 'var(--app-navbar-current, 0px)',
+                    left: 'var(--app-sidebar-current, 0px)',
+                    right: 0,
+                    bottom: 0,
+                }}
+                onClick={() => onOpenChange(false)}
+            />
+            <aside
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="theme-settings-title"
+                className="fixed z-[81] flex w-[min(300px,calc(100vw-var(--app-sidebar-current,0px)))] flex-col overflow-hidden border-l border-border/70 bg-card"
+                style={{
+                    top: 'var(--app-navbar-current, 0px)',
+                    right: 0,
+                    bottom: 0,
+                }}
             >
-                <SheetHeader className="shrink-0 space-y-0.5 border-b border-border/40 px-5 py-3.5 pr-12">
-                    <SheetTitle className="font-heading text-[13px] font-medium tracking-[0.16em] uppercase">Theme</SheetTitle>
-                    <SheetDescription className="text-[11px] tracking-wide">Live preview. Changes save instantly.</SheetDescription>
-                </SheetHeader>
+                <div className="shrink-0 px-4 pt-5 pb-4">
+                    <p className="text-[10px] font-semibold tracking-[0.22em] text-primary uppercase">Customize</p>
+                    <h2 id="theme-settings-title" className="font-heading mt-1 text-xl font-semibold tracking-tight text-foreground">
+                        Theme
+                    </h2>
+                    <span className="mt-2 block h-1 w-9 rounded-[8px] bg-primary" />
+                </div>
 
-                <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-5 pb-3">
-                    <Section title="Card style">
-                        <div className="grid grid-cols-4 gap-1">
+                <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-4 pb-4">
+                    <Section title="Color">
+                        <div className="flex gap-1.5">
+                            {PRIMARY_PRESETS.map((preset) => {
+                                const selected = primaryColor === preset.hex;
+
+                                return (
+                                    <button
+                                        key={preset.hex}
+                                        type="button"
+                                        title={preset.name}
+                                        aria-label={preset.name}
+                                        aria-pressed={selected}
+                                        onClick={() => setPrimaryColor(preset.hex)}
+                                        className={cn(
+                                            'size-6 shrink-0 rounded-[8px] transition-all duration-200 ease-out',
+                                            'hover:-translate-y-0.5 hover:shadow-sm active:translate-y-0',
+                                            selected ? 'ring-2 ring-primary ring-offset-2 ring-offset-card' : 'ring-1 ring-border',
+                                        )}
+                                    >
+                                        <span
+                                            className="block size-full rounded-[8px]"
+                                            style={{ backgroundColor: swatchHsl(preset.hex) }}
+                                        />
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <HexColorField value={primaryColor} onChange={setPrimaryColor} />
+                    </Section>
+
+                    <Section title="Card">
+                        <div className="flex gap-1.5">
                             {cardStyleOptions.map((option) => (
-                                <Tile
+                                <OptionTile
                                     key={option.value}
-                                    label={option.label}
                                     selected={cardStyle === option.value}
                                     onClick={() => setCardStyle(option.value)}
                                 >
-                                    <div
-                                        className={cn(
-                                            'h-7 w-11 bg-card ring-1 ring-border/50',
-                                            tileRadius,
-                                            cardStyleClass[option.value],
-                                            option.value === 'shadow' && 'shadow-card',
-                                            option.value === 'elevated' && 'shadow-md',
-                                        )}
-                                    >
-                                        <div className="mt-1.5 ml-1.5 h-0.5 w-5 rounded-full bg-muted-foreground/30" />
-                                        <div className="mt-1 ml-1.5 h-0.5 w-3 rounded-full bg-muted-foreground/20" />
-                                    </div>
-                                </Tile>
+                                    {option.label}
+                                </OptionTile>
                             ))}
                         </div>
                     </Section>
 
-                    <Section title="Border radius">
-                        <div className="grid grid-cols-5 gap-1">
+                    <Section title="Radius">
+                        <div className="flex gap-1.5">
                             {radiusOptions.map((option) => (
-                                <Tile
+                                <OptionTile
                                     key={option.value}
-                                    label={option.label}
                                     selected={borderRadius === option.value}
                                     onClick={() => setBorderRadius(option.value)}
                                 >
-                                    <div
-                                        className={cn(
-                                            'size-7 border border-border/80 bg-card',
-                                            option.value === 'full' ? 'rounded-full' : borderRadiusClass[option.value],
-                                        )}
-                                    />
-                                </Tile>
+                                    {option.label}
+                                </OptionTile>
                             ))}
                         </div>
                     </Section>
 
-                    <Section title="Primary color">
-                        <div className="grid grid-cols-4 gap-1">
-                            {PRIMARY_PRESETS.map((preset) => (
-                                <Tile
-                                    key={preset.hex}
-                                    label={preset.name.replace('Brand ', '')}
-                                    selected={primaryColor === preset.hex}
-                                    onClick={() => setPrimaryColor(preset.hex)}
-                                >
-                                    <div
-                                        className="size-6 rounded-full ring-1 ring-foreground/10"
-                                        style={{ backgroundColor: swatchHsl(preset.hex) }}
-                                    />
-                                </Tile>
-                            ))}
-                        </div>
-                        <HexColorField id="primary-hex" value={primaryColor} onChange={setPrimaryColor} />
-                    </Section>
-
-                    <Section title="Shadow style">
-                        <div className="grid grid-cols-5 gap-1">
+                    <Section title="Shadow">
+                        <div className="flex gap-1.5">
                             {shadowOptions.map((option) => (
-                                <Tile
+                                <OptionTile
                                     key={option.value}
-                                    label={option.label}
                                     selected={shadowStyle === option.value}
                                     onClick={() => setShadowStyle(option.value)}
                                 >
-                                    <div className={cn('h-7 w-10 bg-card ring-1 ring-border/50', tileRadius, shadowStyleClass[option.value])} />
-                                </Tile>
+                                    {option.label}
+                                </OptionTile>
                             ))}
                         </div>
                     </Section>
+                </div>
 
+                <div className="shrink-0 px-4 py-3">
                     <Button
                         type="button"
-                        variant="ghost"
+                        variant="primary"
+                        className="h-10 w-full rounded-[8px] text-sm"
                         onClick={resetThemeSettings}
-                        className="mt-auto h-8 shrink-0 text-[11px] font-medium tracking-wide text-muted-foreground hover:text-foreground"
                     >
-                        Reset to defaults
+                        Reset Default
                     </Button>
                 </div>
-            </SheetContent>
-        </Sheet>
+            </aside>
+        </>,
+        document.body,
     );
 }

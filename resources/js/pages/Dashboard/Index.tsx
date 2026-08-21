@@ -1,15 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Head } from '@inertiajs/react';
 import { ChevronDownIcon, UsersIcon, WifiIcon, PackageIcon, BanknoteIcon, ClipboardListIcon } from 'lucide-react';
 import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
+import { DataTable } from '@/components/DataTable';
 import { PageHeader } from '@/components/PageHeader';
-import { SearchInput } from '@/components/SearchInput';
 import { StatCard } from '@/components/StatCard';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
@@ -44,8 +43,6 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
     const { t } = useTranslation();
     const isMobile = useMediaQuery('(max-width: 639px)');
     const [legendOpen, setLegendOpen] = useState(false);
-    const [query, setQuery] = useState('');
-
     const cards = [
         {
             key: 'dashboard.total_customers',
@@ -78,26 +75,6 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
             iconWrapperClassName: 'bg-orange-100 text-orange-800 dark:bg-orange-500/15 dark:text-orange-300',
         },
     ];
-
-    const filteredRequests = useMemo(() => {
-        const term = query.trim().toLowerCase();
-
-        if (! term) {
-            return recentRequests;
-        }
-
-        return recentRequests.filter((row) => {
-            const typeLabel = t(`type.${row.type}`).toLowerCase();
-            const statusLabel = t(`status.${row.status}`).toLowerCase();
-
-            return (
-                row.customer.toLowerCase().includes(term) ||
-                typeLabel.includes(term) ||
-                statusLabel.includes(term) ||
-                (row.created_at ?? '').toLowerCase().includes(term)
-            );
-        });
-    }, [query, recentRequests, t]);
 
     return (
         <>
@@ -187,73 +164,44 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
                     </CardContent>
                 </Card>
 
-                <Card className="gap-0 py-0">
-                    <CardHeader className="gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                        <CardTitle className="text-lg font-semibold">{t('dashboard.recent_requests')}</CardTitle>
-                        <SearchInput
-                            value={query}
-                            onChange={setQuery}
-                            placeholder={t('dashboard.search_requests')}
-                            className="sm:max-w-80"
-                        />
-                    </CardHeader>
-                    <CardContent className="px-0 pb-2 sm:px-2 sm:pb-4">
-                        <div className="hidden sm:block">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="hover:bg-transparent">
-                                        <TableHead>{t('dashboard.customer')}</TableHead>
-                                        <TableHead>{t('dashboard.type')}</TableHead>
-                                        <TableHead>{t('dashboard.status')}</TableHead>
-                                        <TableHead>{t('dashboard.date')}</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredRequests.length === 0 ? (
-                                        <TableRow className="hover:bg-transparent">
-                                            <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                                                {t('common.no_results')}
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : (
-                                        filteredRequests.map((row) => (
-                                            <TableRow key={row.id}>
-                                                <TableCell className="font-medium">{row.customer}</TableCell>
-                                                <TableCell>{t(`type.${row.type}`)}</TableCell>
-                                                <TableCell>
-                                                    <StatusBadge status={row.status} />
-                                                </TableCell>
-                                                <TableCell className="font-mono text-xs text-muted-foreground">
-                                                    {row.created_at?.slice(0, 10)}
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
-
-                        <ul className="flex flex-col gap-3 px-5 pb-4 sm:hidden">
-                            {filteredRequests.length === 0 ? (
-                                <li className="rounded-lg border border-border bg-card p-4 text-center text-sm text-muted-foreground">
-                                    {t('common.no_results')}
-                                </li>
-                            ) : null}
-                            {filteredRequests.map((row) => (
-                                <li key={row.id} className="rounded-lg border border-border bg-card p-4 shadow-sm">
-                                    <div className="flex items-start justify-between gap-2">
-                                        <div className="min-w-0">
-                                            <p className="font-medium">{row.customer}</p>
-                                            <p className="text-sm text-muted-foreground">{t(`type.${row.type}`)}</p>
-                                        </div>
-                                        <StatusBadge status={row.status} />
-                                    </div>
-                                    <p className="mt-2 font-mono text-xs text-muted-foreground">{row.created_at?.slice(0, 10)}</p>
-                                </li>
-                            ))}
-                        </ul>
-                    </CardContent>
-                </Card>
+                <DataTable
+                    title={t('dashboard.recent_requests')}
+                    data={recentRequests}
+                    getRowId={(row) => row.id}
+                    searchPlaceholder={t('dashboard.search_requests')}
+                    columns={[
+                        {
+                            id: 'customer',
+                            header: t('dashboard.customer'),
+                            className: 'font-medium',
+                            mobile: 'title',
+                            searchValue: (row) => row.customer,
+                            cell: (row) => row.customer,
+                        },
+                        {
+                            id: 'type',
+                            header: t('dashboard.type'),
+                            mobile: 'subtitle',
+                            searchValue: (row) => t(`type.${row.type}`),
+                            cell: (row) => t(`type.${row.type}`),
+                        },
+                        {
+                            id: 'status',
+                            header: t('dashboard.status'),
+                            mobile: 'badge',
+                            searchValue: (row) => t(`status.${row.status}`),
+                            cell: (row) => <StatusBadge status={row.status} className="px-1.5 py-0 text-[11px]" />,
+                        },
+                        {
+                            id: 'date',
+                            header: t('dashboard.date'),
+                            className: 'font-mono text-[11px] text-muted-foreground',
+                            mobile: 'meta',
+                            searchValue: (row) => row.created_at ?? '',
+                            cell: (row) => row.created_at?.slice(0, 10),
+                        },
+                    ]}
+                />
             </div>
         </>
     );

@@ -21,7 +21,7 @@ export default function ForgotPassword({ status }: ForgotPasswordProps) {
     return (
         <>
             <Head title="Forgot password" />
-            <Card>
+            <Card className="mx-auto w-full max-w-[400px]">
                 <CardHeader>
                     <CardTitle>Reset password</CardTitle>
                     <CardDescription>Enter your staff email and we will send a reset link.</CardDescription>
