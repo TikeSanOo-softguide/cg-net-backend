@@ -35,7 +35,7 @@
     --primary: var(--theme-primary, 224 76% 48%);
     --primary-hover: var(--theme-primary-hover, 224 76% 52%);
     --primary-foreground: var(--theme-primary-foreground, 0 0% 100%);
-    --background: #f4f6f6;
+    --background: #f5f7fa;
     --surface: #ffffff;
     --foreground: #173236;
     --secondary: #e8eeee;
@@ -256,11 +256,13 @@
 }
 
 @keyframes status-pulse {
+
     0%,
     100% {
         opacity: 1;
         transform: scale(1);
     }
+
     50% {
         opacity: 0.4;
         transform: scale(0.85);
@@ -282,6 +284,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
     .status-pulse,
     .animate-\[theme-spin_3\.5s_linear_infinite\] {
         animation: none;

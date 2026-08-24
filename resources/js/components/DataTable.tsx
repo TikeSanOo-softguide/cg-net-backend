@@ -1,6 +1,33 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, router } from '@inertiajs/react';
-import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon, EyeIcon, Trash2Icon } from 'lucide-react';
+import {
+    ArrowDownIcon,
+    ArrowUpIcon,
+    BanknoteIcon,
+    CalendarIcon,
+    ChevronsUpDownIcon,
+    CircleDotIcon,
+    EyeIcon,
+    FolderIcon,
+    HashIcon,
+    HeadingIcon,
+    IdCardIcon,
+    LanguagesIcon,
+    LinkIcon,
+    ListOrderedIcon,
+    MailIcon,
+    PackageIcon,
+    PhoneIcon,
+    Settings2Icon,
+    ShieldIcon,
+    ShapesIcon,
+    Trash2Icon,
+    TypeIcon,
+    UserRoundIcon,
+    UsersIcon,
+    WifiIcon,
+    type LucideIcon,
+} from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Pagination, type Paginated } from '@/components/Pagination';
@@ -22,6 +49,38 @@ export type DataTableColumn<T> = {
     mobile?: 'title' | 'subtitle' | 'meta' | 'badge' | false;
     searchValue?: (row: T) => string;
     sortable?: boolean;
+    icon?: LucideIcon;
+};
+
+const DEFAULT_COLUMN_ICONS: Record<string, LucideIcon> = {
+    name: UserRoundIcon,
+    customer: UserRoundIcon,
+    title: TypeIcon,
+    label: HeadingIcon,
+    email: MailIcon,
+    phone: PhoneIcon,
+    nrc_number: IdCardIcon,
+    contact_point: PhoneIcon,
+    status: CircleDotIcon,
+    is_active: CircleDotIcon,
+    created_at: CalendarIcon,
+    date: CalendarIcon,
+    start_date: CalendarIcon,
+    end_date: CalendarIcon,
+    dates: CalendarIcon,
+    roles: ShieldIcon,
+    permissions_count: ShieldIcon,
+    users_count: UsersIcon,
+    accounts_count: WifiIcon,
+    account_number: WifiIcon,
+    package: PackageIcon,
+    package_name: PackageIcon,
+    type: ShapesIcon,
+    amount: BanknoteIcon,
+    lang: LanguagesIcon,
+    slug: LinkIcon,
+    category_name: FolderIcon,
+    sort_order: ListOrderedIcon,
 };
 
 type DataTableProps<T> = {
@@ -248,8 +307,8 @@ export function DataTable<T>({
 
     return (
         <TooltipProvider>
-            <Card className={cn('gap-0 overflow-hidden py-0', className)}>
-                <CardHeader className="gap-3 border-b border-border/70 bg-card px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-[45px]">
+            <Card className={cn('gap-0 overflow-hidden bg-[#FFFFFF] py-0 dark:bg-card', className)}>
+                <CardHeader className="gap-3 border-b border-border/70 bg-[#FFFFFF] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-[45px] dark:bg-card">
                     {title ? (
                         <CardTitle className="text-[15px] font-semibold tracking-tight sm:text-base">{title}</CardTitle>
                     ) : (
@@ -283,10 +342,10 @@ export function DataTable<T>({
                 <CardContent className="px-0 pb-0">
                     <div className="hidden sm:block">
                         <Table>
-                            <TableHeader className="bg-muted/45">
+                            <TableHeader className="bg-[#FFFFFF] dark:bg-card">
                                 <TableRow className="hover:bg-transparent">
                                     {canSelect ? (
-                                        <TableHead className="h-[45px] w-10 pr-0">
+                                        <TableHead className={cn(headerCellClass, 'w-10 pr-0')}>
                                             <TableCheckbox
                                                 checked={allSelected}
                                                 indeterminate={someSelected}
@@ -297,37 +356,43 @@ export function DataTable<T>({
                                         </TableHead>
                                     ) : null}
                                     {numbered ? (
-                                        <TableHead className={cn('h-[45px] w-12', canSelect && 'pl-3')}>{t('common.no')}</TableHead>
-                                    ) : null}
-                                    {columns.map((column) => (
-                                        <TableHead key={column.id} className="h-[45px]">
-                                            {column.sortable && onSort ? (
-                                                <button
-                                                    type="button"
-                                                    className={cn(
-                                                        'inline-flex items-center gap-1.5 rounded-md py-0.5 transition-colors',
-                                                        sort === column.id ? 'text-foreground' : 'hover:text-foreground',
-                                                    )}
-                                                    onClick={() => onSort(column.id)}
-                                                >
-                                                    {column.header}
-                                                    {sort === column.id ? (
-                                                        direction === 'asc' ? (
-                                                            <ArrowUpIcon className="size-3.5 text-primary" />
-                                                        ) : (
-                                                            <ArrowDownIcon className="size-3.5 text-primary" />
-                                                        )
-                                                    ) : (
-                                                        <ChevronsUpDownIcon className="size-3.5 opacity-40" />
-                                                    )}
-                                                </button>
-                                            ) : (
-                                                column.header
-                                            )}
+                                        <TableHead className={cn(headerCellClass, 'w-12', canSelect && 'pl-3')}>
+                                            <ColumnHeaderLabel icon={HashIcon} label={t('common.no')} />
                                         </TableHead>
-                                    ))}
+                                    ) : null}
+                                    {columns.map((column) => {
+                                        const HeaderIcon = column.icon ?? DEFAULT_COLUMN_ICONS[column.id];
+                                        const label = <ColumnHeaderLabel icon={HeaderIcon} label={column.header} />;
+
+                                        return (
+                                            <TableHead key={column.id} className={headerCellClass}>
+                                                {column.sortable && onSort ? (
+                                                    <button
+                                                        type="button"
+                                                        className="inline-flex items-center gap-1.5 rounded-md py-0.5 transition-colors"
+                                                        onClick={() => onSort(column.id)}
+                                                    >
+                                                        {label}
+                                                        {sort === column.id ? (
+                                                            direction === 'asc' ? (
+                                                                <ArrowUpIcon className="size-3.5 text-muted-foreground transition-colors group-hover/head:text-primary" />
+                                                            ) : (
+                                                                <ArrowDownIcon className="size-3.5 text-muted-foreground transition-colors group-hover/head:text-primary" />
+                                                            )
+                                                        ) : (
+                                                            <ChevronsUpDownIcon className="size-3.5 text-muted-foreground opacity-40 transition-colors group-hover/head:text-primary group-hover/head:opacity-100" />
+                                                        )}
+                                                    </button>
+                                                ) : (
+                                                    label
+                                                )}
+                                            </TableHead>
+                                        );
+                                    })}
                                     {showActions ? (
-                                        <TableHead className="h-[45px] w-px text-center">{t('common.actions')}</TableHead>
+                                        <TableHead className={cn(headerCellClass, 'w-px text-center')}>
+                                            <ColumnHeaderLabel icon={Settings2Icon} label={t('common.actions')} className="justify-center" />
+                                        </TableHead>
                                     ) : null}
                                 </TableRow>
                             </TableHeader>
@@ -349,7 +414,7 @@ export function DataTable<T>({
                                             <TableRow
                                                 key={id}
                                                 data-state={selected ? 'selected' : undefined}
-                                                className={cn(to && 'cursor-pointer', 'even:bg-muted/25')}
+                                                className={cn(to && 'cursor-pointer', 'bg-[#FFFFFF] dark:bg-card')}
                                                 onClick={to ? () => visitRow(row) : undefined}
                                             >
                                                 {canSelect ? (
@@ -395,7 +460,7 @@ export function DataTable<T>({
                         </Table>
                     </div>
 
-                    <ul className="flex flex-col gap-2.5 px-5 py-4 sm:hidden">
+                    <ul className="flex flex-col gap-2.5 bg-[#FFFFFF] px-5 py-4 sm:hidden dark:bg-card">
                         {rows.length === 0 ? (
                             <li className="rounded-xl border border-border/80 bg-muted/30 px-4 py-8 text-center text-sm text-muted-foreground">
                                 {noResults}
@@ -498,3 +563,23 @@ export function DataTable<T>({
         </TooltipProvider>
     );
 }
+
+function ColumnHeaderLabel({
+    icon: Icon,
+    label,
+    className,
+}: {
+    icon?: LucideIcon;
+    label: string;
+    className?: string;
+}) {
+    return (
+        <span className={cn('inline-flex items-center gap-1.5', className)}>
+            {Icon ? <Icon className="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover/head:text-primary" strokeWidth={1.85} /> : null}
+            {label}
+        </span>
+    );
+}
+
+const headerCellClass =
+    'group/head h-[45px] bg-[#FFFFFF] text-muted-foreground transition-colors hover:bg-primary/[0.08] hover:text-primary dark:bg-card';
