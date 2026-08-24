@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Head, router, usePage } from '@inertiajs/react';
-import { ChevronDownIcon, CircleAlertIcon, UsersIcon, WifiIcon, PackageIcon, BanknoteIcon, ClipboardListIcon, Trash2Icon } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { ChevronDownIcon, UsersIcon, WifiIcon, PackageIcon, BanknoteIcon, ClipboardListIcon, Trash2Icon } from 'lucide-react';
 import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -16,7 +16,6 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 import { visitBulkDelete } from '@/lib/bulk-delete';
-import { translateFlash } from '@/lib/flash';
 
 type ChartPoint = {
     date: string;
@@ -47,8 +46,6 @@ type DashboardProps = {
 export default function DashboardIndex({ stats, chart, recentRequests }: DashboardProps) {
     const { t } = useTranslation();
     const can = useCan();
-    const { flash } = usePage().props;
-    const deleteError = (usePage().props as { errors?: { delete?: string } }).errors?.delete;
     const isMobile = useMediaQuery('(max-width: 639px)');
     const [legendOpen, setLegendOpen] = useState(false);
     const [pendingIds, setPendingIds] = useState<string[]>([]);
@@ -92,15 +89,6 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
             <Head title={t('menu.dashboard')} />
             <div className="flex w-full flex-col gap-6 pt-6 lg:gap-8 lg:pt-8">
                 <PageHeader eyebrow={t('dashboard.welcome_back')} title={t('dashboard.overview')} />
-                {translateFlash(t, flash.success, flash.count) ? (
-                    <p className="rounded-[6px] bg-primary/10 px-3 py-2 text-sm text-foreground">{translateFlash(t, flash.success, flash.count)}</p>
-                ) : null}
-                {deleteError ? (
-                    <p role="alert" className="flex items-start gap-2 rounded-[6px] bg-danger/10 px-3 py-2 text-sm text-danger">
-                        <CircleAlertIcon className="mt-0.5 size-4 shrink-0" />
-                        <span>{t(deleteError)}</span>
-                    </p>
-                ) : null}
 
                 <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                     {cards.map((card) => (

@@ -273,6 +273,28 @@
     animation: status-pulse 1.6s ease-in-out infinite;
 }
 
+@keyframes toast-progress {
+    from {
+        transform: scaleX(0);
+    }
+
+    to {
+        transform: scaleX(1);
+    }
+}
+
+.toast-progress {
+    transform: scaleX(0);
+    transform-origin: left center;
+    animation-name: toast-progress;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+
+.group[data-state='open']:hover .toast-progress {
+    animation-play-state: paused;
+}
+
 .sidebar-scroll {
     scrollbar-width: none;
 }
@@ -288,5 +310,9 @@
     .status-pulse,
     .animate-\[theme-spin_3\.5s_linear_infinite\] {
         animation: none;
+    }
+
+    .toast-progress {
+        animation-duration: 1ms !important;
     }
 }

@@ -22,6 +22,7 @@ export type PageProps<T extends Record<string, unknown> = Record<string, unknown
     unreadNotifications: number;
     flash: {
         success: string | null;
+        error: string | null;
         count: number | null;
     };
 };
@@ -40,6 +41,7 @@ declare module '@inertiajs/core' {
             unreadNotifications: number;
             flash: {
                 success: string | null;
+                error: string | null;
                 count: number | null;
             };
         };
