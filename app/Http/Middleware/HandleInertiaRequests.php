@@ -2,7 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Admin;
 use App\Models\NotificationCustom;
+use App\Support\AppPermissions;
 use App\Support\JsonTranslations;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -48,6 +50,13 @@ class HandleInertiaRequests extends Middleware
                     'name' => $user->name,
                     'email' => $user->email,
                 ] : null,
+                'permissions' => $user instanceof Admin
+                    ? $user->getAllPermissions()->pluck('name')->values()->all()
+                    : [],
+                'roles' => $user instanceof Admin
+                    ? $user->getRoleNames()->values()->all()
+                    : [],
+                'is_super_admin' => $user instanceof Admin && $user->hasRole(AppPermissions::SuperAdmin),
             ],
             'locale' => $locale,
             'translations' => $this->translationsFor($locale),
@@ -56,6 +65,7 @@ class HandleInertiaRequests extends Middleware
                 : 0,
             'flash' => [
                 'success' => $request->session()->get('success'),
+                'count' => $request->session()->get('deleted_count'),
             ],
         ];
     }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Cms\StoreBannerRequest;
 use App\Http\Requests\Cms\UpdateBannerRequest;
 use App\Models\Banner;
+use App\Support\CmsBulkDelete;
 use App\Support\CmsListing;
 use App\Support\StoresPublicImage;
 use Illuminate\Http\RedirectResponse;
@@ -70,6 +71,17 @@ class BannerController extends Controller
         activity('cms')->causedBy($request->user())->performedOn($banner)->event('deleted')->log('banner_deleted');
 
         return redirect()->route('cms.banners.index')->with('success', 'cms.deleted');
+    }
+
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        return CmsBulkDelete::run(
+            $request,
+            Banner::query(),
+            'cms.banners.index',
+            'banner_deleted',
+            beforeDelete: fn (Banner $banner) => StoresPublicImage::delete($banner->image_path),
+        );
     }
 
     /**

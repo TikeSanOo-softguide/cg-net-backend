@@ -1,17 +1,22 @@
 import { useState } from 'react';
-import { Head } from '@inertiajs/react';
-import { ChevronDownIcon, UsersIcon, WifiIcon, PackageIcon, BanknoteIcon, ClipboardListIcon } from 'lucide-react';
+import { Head, router, usePage } from '@inertiajs/react';
+import { ChevronDownIcon, CircleAlertIcon, UsersIcon, WifiIcon, PackageIcon, BanknoteIcon, ClipboardListIcon, Trash2Icon } from 'lucide-react';
 import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
 import { PageHeader } from '@/components/PageHeader';
 import { StatCard } from '@/components/StatCard';
 import { StatusBadge } from '@/components/StatusBadge';
+import { TableActionButton } from '@/components/TableActionButton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useCan } from '@/hooks/useCan';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
+import { visitBulkDelete } from '@/lib/bulk-delete';
+import { translateFlash } from '@/lib/flash';
 
 type ChartPoint = {
     date: string;
@@ -41,8 +46,14 @@ type DashboardProps = {
 
 export default function DashboardIndex({ stats, chart, recentRequests }: DashboardProps) {
     const { t } = useTranslation();
+    const can = useCan();
+    const { flash } = usePage().props;
+    const deleteError = (usePage().props as { errors?: { delete?: string } }).errors?.delete;
     const isMobile = useMediaQuery('(max-width: 639px)');
     const [legendOpen, setLegendOpen] = useState(false);
+    const [pendingIds, setPendingIds] = useState<string[]>([]);
+    const [processing, setProcessing] = useState(false);
+    const canDelete = can('service-requests.delete');
     const cards = [
         {
             key: 'dashboard.total_customers',
@@ -81,6 +92,15 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
             <Head title={t('menu.dashboard')} />
             <div className="flex w-full flex-col gap-6 pt-6 lg:gap-8 lg:pt-8">
                 <PageHeader eyebrow={t('dashboard.welcome_back')} title={t('dashboard.overview')} />
+                {translateFlash(t, flash.success, flash.count) ? (
+                    <p className="rounded-[6px] bg-primary/10 px-3 py-2 text-sm text-foreground">{translateFlash(t, flash.success, flash.count)}</p>
+                ) : null}
+                {deleteError ? (
+                    <p role="alert" className="flex items-start gap-2 rounded-[6px] bg-danger/10 px-3 py-2 text-sm text-danger">
+                        <CircleAlertIcon className="mt-0.5 size-4 shrink-0" />
+                        <span>{t(deleteError)}</span>
+                    </p>
+                ) : null}
 
                 <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                     {cards.map((card) => (
@@ -169,6 +189,19 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
                     data={recentRequests}
                     getRowId={(row) => row.id}
                     searchPlaceholder={t('dashboard.search_requests')}
+                    onBulkDelete={canDelete ? (ids) => visitBulkDelete('/dashboard/requests/bulk-destroy', ids) : undefined}
+                    bulkDeleteTitle={t('dashboard.bulk_delete_title')}
+                    actions={canDelete ? (row) => (
+                        <TableActionButton
+                            label={t('common.delete')}
+                            icon={Trash2Icon}
+                            tone="danger"
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                setPendingIds([row.id]);
+                            }}
+                        />
+                    ) : undefined}
                     columns={[
                         {
                             id: 'customer',
@@ -203,6 +236,34 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
                     ]}
                 />
             </div>
+            <ConfirmDialog
+                open={pendingIds.length === 1}
+                onOpenChange={(open) => {
+                    if (! open) {
+                        setPendingIds([]);
+                    }
+                }}
+                title={t('dashboard.delete_title')}
+                description={t('dashboard.delete_description')}
+                confirmLabel={t('common.delete')}
+                destructive
+                processing={processing}
+                onConfirm={() => {
+                    if (pendingIds.length !== 1) {
+                        return;
+                    }
+
+                    router.delete('/dashboard/requests/bulk-destroy', {
+                        data: { ids: pendingIds },
+                        preserveScroll: true,
+                        onStart: () => setProcessing(true),
+                        onFinish: () => {
+                            setProcessing(false);
+                            setPendingIds([]);
+                        },
+                    });
+                }}
+            />
         </>
     );
 }

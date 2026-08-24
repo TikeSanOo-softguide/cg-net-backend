@@ -165,6 +165,39 @@ class CustomerController extends Controller
             ->with('success', 'customers.updated');
     }
 
+    public function destroy(Request $request, User $customer): RedirectResponse
+    {
+        $customer->delete();
+
+        activity('customers')->causedBy($request->user())->performedOn($customer)->event('deleted')->log('customer_deleted');
+
+        return redirect()->route('customers.index')->with('success', 'customers.deleted');
+    }
+
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $ids = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'distinct', 'exists:users,id'],
+        ])['ids'];
+
+        $deleted = 0;
+
+        foreach (User::query()->whereIn('id', $ids)->get() as $customer) {
+            $customer->delete();
+            activity('customers')->causedBy($request->user())->performedOn($customer)->event('deleted')->log('customer_deleted');
+            $deleted++;
+        }
+
+        if ($deleted === 0) {
+            return back()->withErrors(['delete' => 'common.bulk_delete_failed']);
+        }
+
+        return redirect()->route('customers.index')
+            ->with('success', 'common.bulk_deleted')
+            ->with('deleted_count', $deleted);
+    }
+
     public function updateStatus(UpdateCustomerStatusRequest $request, User $customer): RedirectResponse
     {
         $status = UserStatus::from($request->validated('status'));

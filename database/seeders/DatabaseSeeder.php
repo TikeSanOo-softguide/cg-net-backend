@@ -35,12 +35,10 @@ use App\Models\Tag;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
-use App\Support\CmsPermissions;
+use App\Support\AppPermissions;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\PermissionRegistrar;
 
 class DatabaseSeeder extends Seeder
 {
@@ -344,16 +342,15 @@ class DatabaseSeeder extends Seeder
      */
     private function seedPermissions(Collection $admins): void
     {
-        $permissions = collect(CmsPermissions::all())->map(
-            fn (string $name) => Permission::query()->firstOrCreate([
-                'name' => $name,
-                'guard_name' => 'web',
-            ]),
-        );
-
-        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        RolePermissionSeeder::sync();
 
         $admins->first(fn (Admin $admin) => $admin->email === 'admin@cg-net.test')
-            ?->givePermissionTo($permissions->all());
+            ?->syncRoles([AppPermissions::SuperAdmin]);
+
+        $admins->first(fn (Admin $admin) => $admin->email === 'staff@cg-net.test')
+            ?->syncRoles([AppPermissions::StaffOfficer]);
+
+        $admins->first(fn (Admin $admin) => $admin->email === 'support@cg-net.test')
+            ?->syncRoles([AppPermissions::SupportAgent]);
     }
 }

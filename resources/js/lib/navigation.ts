@@ -16,7 +16,6 @@ import {
     History,
     Image,
     Images,
-    KeyRound,
     Languages,
     LayoutDashboard,
     Link2,
@@ -164,9 +163,8 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.staff_role_management',
         icon: Shield,
         children: [
-            { labelKey: 'menu.staff_accounts', href: '/staff/accounts', icon: UserRound },
-            { labelKey: 'menu.roles', href: '/staff/roles', icon: ShieldCheck },
-            { labelKey: 'menu.permissions_matrix', href: '/staff/permissions', icon: KeyRound },
+            { labelKey: 'menu.staff_accounts', href: '/staff', icon: UserRound },
+            { labelKey: 'menu.roles', href: '/roles', icon: ShieldCheck },
         ],
     },
     { id: 'activity', labelKey: 'menu.activity_logs', href: '/activity-logs', icon: Activity },
@@ -193,12 +191,27 @@ export const bottomNavItems: { id: string; labelKey: string; href: string; icon:
 
 export const moreNavIds = new Set(bottomNavItems.map((item) => item.id));
 
+const navHrefs: string[] = navigation.flatMap((group) => [
+    ...(group.href ? [group.href] : []),
+    ...(group.children?.map((child) => child.href) ?? []),
+]);
+
 export function isActivePath(current: string, href: string): boolean {
     if (href === '/dashboard') {
         return current === '/dashboard' || current === '/';
     }
 
-    return current === href || current.startsWith(`${href}/`);
+    if (current === href) {
+        return true;
+    }
+
+    if (! current.startsWith(`${href}/`)) {
+        return false;
+    }
+
+    return ! navHrefs.some(
+        (other) => other !== href && other.startsWith(`${href}/`) && (current === other || current.startsWith(`${other}/`)),
+    );
 }
 
 export function groupIsActive(current: string, group: NavGroup): boolean {
@@ -209,9 +222,99 @@ export function groupIsActive(current: string, group: NavGroup): boolean {
     return Boolean(group.children?.some((child) => isActivePath(current, child.href)));
 }
 
+export function viewPermissionForHref(href: string): string | undefined {
+    if (href === '/dashboard' || href === '/') {
+        return 'dashboard.view';
+    }
+
+    if (href.startsWith('/customers') || href === '/broadband-accounts') {
+        return 'customers.view';
+    }
+
+    if (href.startsWith('/cpe')) {
+        return 'cpe.view';
+    }
+
+    if (href.startsWith('/packages')) {
+        return 'packages.view';
+    }
+
+    if (href.startsWith('/billing')) {
+        return 'billing.view';
+    }
+
+    if (href.startsWith('/vouchers')) {
+        return 'vouchers.view';
+    }
+
+    if (href.startsWith('/service-requests')) {
+        return 'service-requests.view';
+    }
+
+    if (href.startsWith('/regions')) {
+        return 'regions.view';
+    }
+
+    if (href.startsWith('/notifications')) {
+        return 'notifications.view';
+    }
+
+    if (href.startsWith('/support')) {
+        return 'support.view';
+    }
+
+    if (href.startsWith('/cms')) {
+        return 'cms.view';
+    }
+
+    if (href.startsWith('/roles')) {
+        return 'roles.view';
+    }
+
+    if (href.startsWith('/staff')) {
+        return 'staff.view';
+    }
+
+    if (href.startsWith('/activity-logs')) {
+        return 'activity.view';
+    }
+
+    if (href.startsWith('/reports')) {
+        return 'reports.view';
+    }
+
+    if (href.startsWith('/settings')) {
+        return 'settings.view';
+    }
+
+    return undefined;
+}
+
+export function filterNavigation(groups: NavGroup[], can: (permission: string) => boolean): NavGroup[] {
+    return groups.flatMap((group) => {
+        if (group.children?.length) {
+            const children = group.children.filter((child) => {
+                const permission = viewPermissionForHref(child.href);
+
+                return ! permission || can(permission);
+            });
+
+            return children.length > 0 ? [{ ...group, children }] : [];
+        }
+
+        const permission = group.href ? viewPermissionForHref(group.href) : undefined;
+
+        return ! permission || can(permission) ? [group] : [];
+    });
+}
+
 export function titleKeyForPath(current: string): string {
     if (/^\/customers\/\d+/.test(current)) {
         return 'menu.customer_detail';
+    }
+
+    if (/^\/staff\/\d+/.test(current)) {
+        return 'staff.detail';
     }
 
     for (const group of navigation) {

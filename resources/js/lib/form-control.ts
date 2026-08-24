@@ -12,9 +12,19 @@ export const formControlClass = cn(
 
 export const formControlIconClass = cn(
     'text-muted-foreground transition-colors duration-200',
+    'group-hover/control:text-primary',
     'group-focus-within/control:text-primary',
     'group-has-[[data-state=open]]/control:text-primary',
     'group-has-[:disabled]/control:text-muted-foreground',
     'group-has-[[aria-invalid=true]]/control:text-danger',
+    'group-data-[error=true]/field:text-danger',
+);
+
+export const formLabelClass = cn(
+    'text-foreground transition-colors duration-200',
+    'group-hover/field:text-primary',
+    'group-focus-within/field:text-primary',
+    'group-has-[[data-state=open]]/field:text-primary',
+    'group-has-[:disabled]/field:text-muted-foreground',
     'group-data-[error=true]/field:text-danger',
 );

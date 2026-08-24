@@ -205,4 +205,38 @@ class CmsManagementTest extends TestCase
         $this->assertDatabaseHas('tags', ['slug' => 'promo']);
         $this->assertDatabaseCount('gallery', 1);
     }
+
+    public function test_admins_can_bulk_delete_promotions(): void
+    {
+        $admin = Admin::factory()->create();
+        $first = Promotion::factory()->create(['title' => 'First promo']);
+        $second = Promotion::factory()->create(['title' => 'Second promo']);
+
+        $this->actingAs($admin, 'web')
+            ->from('/cms/promotions')
+            ->delete('/cms/promotions/bulk-destroy', ['ids' => [$first->id, $second->id]])
+            ->assertRedirect('/cms/promotions')
+            ->assertSessionHas('success', 'common.bulk_deleted');
+
+        $this->assertSoftDeleted($first);
+        $this->assertSoftDeleted($second);
+    }
+
+    public function test_bulk_delete_skips_categories_that_have_news(): void
+    {
+        $admin = Admin::factory()->create();
+        $inUse = Category::factory()->create();
+        $unused = Category::factory()->create();
+        News::factory()->create(['category_id' => $inUse->id]);
+
+        $this->actingAs($admin, 'web')
+            ->from('/cms/categories')
+            ->delete('/cms/categories/bulk-destroy', ['ids' => [$inUse->id, $unused->id]])
+            ->assertRedirect('/cms/categories')
+            ->assertSessionHas('success', 'common.bulk_deleted')
+            ->assertSessionHasErrors(['delete' => 'cms.bulk_delete_partial']);
+
+        $this->assertDatabaseHas('categories', ['id' => $inUse->id, 'deleted_at' => null]);
+        $this->assertSoftDeleted($unused);
+    }
 }

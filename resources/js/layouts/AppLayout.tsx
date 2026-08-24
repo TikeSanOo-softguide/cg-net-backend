@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import {
     DESKTOP_SIDEBAR_QUERY,
@@ -10,8 +10,10 @@ import { FloatingThemeSettingsButton } from '@/components/theme/FloatingThemeSet
 import { SidebarToggle } from '@/components/layout/SidebarToggle';
 import { TopBar } from '@/components/layout/TopBar';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { useCan } from '@/hooks/useCan';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTranslation } from '@/hooks/useTranslation';
+import { filterNavigation, navigation } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 
 type AppLayoutProps = {
@@ -24,10 +26,12 @@ function readExpandedForViewport(isDesktop: boolean): boolean {
 
 export default function AppLayout({ children }: AppLayoutProps) {
     const { t } = useTranslation();
+    const can = useCan();
     const isDesktop = useMediaQuery(DESKTOP_SIDEBAR_QUERY);
     const [expanded, setExpanded] = useState(() =>
         readExpandedForViewport(typeof window !== 'undefined' && window.matchMedia(DESKTOP_SIDEBAR_QUERY).matches),
     );
+    const groups = useMemo(() => filterNavigation(navigation, can), [can]);
 
     useEffect(() => {
         setExpanded(readExpandedForViewport(isDesktop));
@@ -110,7 +114,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 >
                     <aside id="app-sidebar" className="h-full w-full overflow-hidden bg-sidebar shadow-sidebar">
                         <div className="flex h-full w-full min-w-0 flex-col">
-                            <SidebarNav expanded={expanded} onNavigate={closeMobileSidebar} />
+                            <SidebarNav expanded={expanded} onNavigate={closeMobileSidebar} groups={groups} />
                         </div>
                     </aside>
                     <SidebarToggle

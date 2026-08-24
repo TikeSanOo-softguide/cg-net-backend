@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Cms\StoreGalleryRequest;
 use App\Http\Requests\Cms\UpdateGalleryRequest;
 use App\Models\Gallery;
+use App\Support\CmsBulkDelete;
 use App\Support\CmsListing;
 use App\Support\StoresPublicImage;
 use Illuminate\Http\RedirectResponse;
@@ -81,6 +82,17 @@ class GalleryController extends Controller
         activity('cms')->causedBy($request->user())->performedOn($gallery)->event('deleted')->log('gallery_deleted');
 
         return redirect()->route('cms.gallery.index')->with('success', 'cms.deleted');
+    }
+
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        return CmsBulkDelete::run(
+            $request,
+            Gallery::query(),
+            'cms.gallery.index',
+            'gallery_deleted',
+            beforeDelete: fn (Gallery $gallery) => StoresPublicImage::delete($gallery->image_path),
+        );
     }
 
     /**

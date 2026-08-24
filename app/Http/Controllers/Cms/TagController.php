@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Cms\StoreTagRequest;
 use App\Http\Requests\Cms\UpdateTagRequest;
 use App\Models\Tag;
+use App\Support\CmsBulkDelete;
 use App\Support\CmsListing;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -66,6 +67,11 @@ class TagController extends Controller
         activity('cms')->causedBy($request->user())->performedOn($tag)->event('deleted')->log('tag_deleted');
 
         return redirect()->route('cms.tags.index')->with('success', 'cms.deleted');
+    }
+
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        return CmsBulkDelete::run($request, Tag::query(), 'cms.tags.index', 'tag_deleted');
     }
 
     /**

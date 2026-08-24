@@ -18,7 +18,7 @@ export function FloatingThemeSettingsButton() {
                 aria-expanded={open}
                 onClick={() => setOpen(true)}
                 className={cn(
-                    'group fixed right-4 bottom-5 z-[90] size-11 shadow-md sm:right-6 sm:bottom-6',
+                    'group fixed right-4 bottom-5 z-[70] size-11 shadow-md sm:right-6 sm:bottom-6',
                     open && 'hidden',
                 )}
             >

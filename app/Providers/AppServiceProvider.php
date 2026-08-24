@@ -2,7 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Admin;
+use App\Support\AppPermissions;
 use App\Support\JsonTranslations;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\ServiceProvider;
 
@@ -29,5 +32,13 @@ class AppServiceProvider extends ServiceProvider
         foreach (JsonTranslations::LOCALES as $locale) {
             Lang::addLines(JsonTranslations::flatten(JsonTranslations::load($locale)), $locale);
         }
+
+        Gate::before(function ($user, string $ability): ?bool {
+            if ($user instanceof Admin && $user->hasRole(AppPermissions::SuperAdmin)) {
+                return true;
+            }
+
+            return null;
+        });
     }
 }

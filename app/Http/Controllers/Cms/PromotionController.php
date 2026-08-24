@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Cms\StorePromotionRequest;
 use App\Http\Requests\Cms\UpdatePromotionRequest;
 use App\Models\Promotion;
+use App\Support\CmsBulkDelete;
 use App\Support\CmsListing;
 use App\Support\StoresPublicImage;
 use Illuminate\Http\RedirectResponse;
@@ -78,6 +79,17 @@ class PromotionController extends Controller
         activity('cms')->causedBy($request->user())->performedOn($promotion)->event('deleted')->log('promotion_deleted');
 
         return redirect()->route('cms.promotions.index')->with('success', 'cms.deleted');
+    }
+
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        return CmsBulkDelete::run(
+            $request,
+            Promotion::query(),
+            'cms.promotions.index',
+            'promotion_deleted',
+            beforeDelete: fn (Promotion $promotion) => StoresPublicImage::delete($promotion->image_path),
+        );
     }
 
     /**

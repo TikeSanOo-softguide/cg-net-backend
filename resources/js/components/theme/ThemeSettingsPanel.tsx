@@ -5,6 +5,7 @@ import { HashIcon, RotateCcwIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormControl } from '@/components/ui/form-control';
 import { Input } from '@/components/ui/input';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import {
     DEFAULT_PRIMARY,
     PRIMARY_PRESETS,
@@ -130,6 +131,9 @@ const shadowOptions: { value: ShadowStyle; label: string }[] = [
     { value: 'glow', label: 'Glow' },
 ];
 
+const PANEL_DURATION_MS = 300;
+const REDUCE_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+
 export function ThemeSettingsPanel({ open, onOpenChange }: ThemeSettingsPanelProps) {
     const {
         primaryColor,
@@ -142,9 +146,32 @@ export function ThemeSettingsPanel({ open, onOpenChange }: ThemeSettingsPanelPro
         setShadowStyle,
         resetThemeSettings,
     } = useThemeSettings();
+    const reduceMotion = useMediaQuery(REDUCE_MOTION_QUERY);
+    const [mounted, setMounted] = useState(open);
+    const [entered, setEntered] = useState(open);
 
     useEffect(() => {
-        if (! open) {
+        if (open) {
+            setMounted(true);
+            let inner = 0;
+            const outer = window.requestAnimationFrame(() => {
+                inner = window.requestAnimationFrame(() => setEntered(true));
+            });
+
+            return () => {
+                window.cancelAnimationFrame(outer);
+                window.cancelAnimationFrame(inner);
+            };
+        }
+
+        setEntered(false);
+        const timeout = window.setTimeout(() => setMounted(false), reduceMotion ? 0 : PANEL_DURATION_MS);
+
+        return () => window.clearTimeout(timeout);
+    }, [open, reduceMotion]);
+
+    useEffect(() => {
+        if (! mounted) {
             return;
         }
 
@@ -157,9 +184,38 @@ export function ThemeSettingsPanel({ open, onOpenChange }: ThemeSettingsPanelPro
         window.addEventListener('keydown', onKeyDown);
 
         return () => window.removeEventListener('keydown', onKeyDown);
-    }, [open, onOpenChange]);
+    }, [mounted, onOpenChange]);
 
-    if (! open || typeof document === 'undefined') {
+    useEffect(() => {
+        if (! mounted) {
+            return;
+        }
+
+        const html = document.documentElement;
+        const { body } = document;
+        const main = document.querySelector('main');
+        const previousHtmlOverflow = html.style.overflow;
+        const previousBodyOverflow = body.style.overflow;
+        const previousMainOverflow = main instanceof HTMLElement ? main.style.overflow : '';
+
+        html.style.overflow = 'hidden';
+        body.style.overflow = 'hidden';
+
+        if (main instanceof HTMLElement) {
+            main.style.overflow = 'hidden';
+        }
+
+        return () => {
+            html.style.overflow = previousHtmlOverflow;
+            body.style.overflow = previousBodyOverflow;
+
+            if (main instanceof HTMLElement) {
+                main.style.overflow = previousMainOverflow;
+            }
+        };
+    }, [mounted]);
+
+    if (! mounted || typeof document === 'undefined') {
         return null;
     }
 
@@ -168,25 +224,22 @@ export function ThemeSettingsPanel({ open, onOpenChange }: ThemeSettingsPanelPro
             <button
                 type="button"
                 aria-label="Close theme settings"
-                className="fixed z-[80] bg-black/25"
-                style={{
-                    top: 'var(--app-navbar-current, 0px)',
-                    left: 'var(--app-sidebar-current, 0px)',
-                    right: 0,
-                    bottom: 0,
-                }}
+                className={cn(
+                    'fixed inset-0 z-[100] bg-black/40',
+                    'motion-reduce:transition-none transition-opacity duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                    entered ? 'opacity-100' : 'opacity-0',
+                )}
                 onClick={() => onOpenChange(false)}
             />
             <aside
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="theme-settings-title"
-                className="fixed z-[81] flex w-[min(300px,calc(100vw-var(--app-sidebar-current,0px)))] flex-col overflow-hidden border-l border-border/70 bg-card"
-                style={{
-                    top: 'var(--app-navbar-current, 0px)',
-                    right: 0,
-                    bottom: 0,
-                }}
+                className={cn(
+                    'fixed inset-y-0 right-0 z-[110] flex h-dvh w-[min(300px,85vw)] flex-col overflow-hidden border-l border-border/70 bg-card shadow-sidebar',
+                    'motion-reduce:transition-none transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                    entered ? 'translate-x-0' : 'translate-x-full',
+                )}
             >
                 <div className="shrink-0 px-4 pt-5 pb-4">
                     <p className="text-[10px] font-semibold tracking-[0.22em] text-primary uppercase">Customize</p>
@@ -196,7 +249,7 @@ export function ThemeSettingsPanel({ open, onOpenChange }: ThemeSettingsPanelPro
                     <span className="mt-2 block h-1 w-9 rounded-[8px] bg-primary" />
                 </div>
 
-                <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-4 pb-4">
+                <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto overscroll-contain px-4 pb-4">
                     <Section title="Color">
                         <div className="flex gap-1.5">
                             {PRIMARY_PRESETS.map((preset) => {

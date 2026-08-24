@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Cms\StoreContactRequest;
 use App\Http\Requests\Cms\UpdateContactRequest;
 use App\Models\Contact;
+use App\Support\CmsBulkDelete;
 use App\Support\CmsListing;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -67,6 +68,11 @@ class ContactController extends Controller
         activity('cms')->causedBy($request->user())->performedOn($contact)->event('deleted')->log('contact_deleted');
 
         return redirect()->route('cms.contacts.index')->with('success', 'cms.deleted');
+    }
+
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        return CmsBulkDelete::run($request, Contact::query(), 'cms.contacts.index', 'contact_deleted');
     }
 
     /**

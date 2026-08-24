@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { CircleDotIcon, PlusIcon, SquarePenIcon } from 'lucide-react';
+import { CircleAlertIcon, CircleDotIcon, PlusIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
 
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
 import type { Paginated } from '@/components/Pagination';
 import { PageHeader } from '@/components/PageHeader';
@@ -10,7 +11,10 @@ import { TableActionButton } from '@/components/TableActionButton';
 import { Button } from '@/components/ui/button';
 import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
+import { visitBulkDelete } from '@/lib/bulk-delete';
+import { translateFlash } from '@/lib/flash';
 
 type CustomerRow = {
     id: number;
@@ -49,9 +53,13 @@ function visitIndex(filters: Filters) {
 
 export default function CustomersIndex({ customers, filters }: CustomersIndexProps) {
     const { t } = useTranslation();
+    const can = useCan();
     const { flash } = usePage().props;
+    const deleteError = (usePage().props as { errors?: { delete?: string } }).errors?.delete;
     const [search, setSearch] = useState(filters.search);
+    const [pendingIds, setPendingIds] = useState<number[]>([]);
     const debounce = useRef<number>(0);
+    const canDelete = can('customers.delete');
 
     useEffect(() => {
         setSearch(filters.search);
@@ -80,16 +88,24 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                     title={t('menu.customers_list')}
                     description={t('customers.index_description')}
                     actions={
-                        <Button asChild>
-                            <Link href="/customers/create">
-                                <PlusIcon />
-                                {t('customers.create')}
-                            </Link>
-                        </Button>
+                        can('customers.create') ? (
+                            <Button asChild>
+                                <Link href="/customers/create">
+                                    <PlusIcon />
+                                    {t('customers.create')}
+                                </Link>
+                            </Button>
+                        ) : null
                     }
                 />
-                {flash.success ? (
-                    <p className="rounded-[4px] bg-primary/10 px-3 py-2 text-sm text-foreground">{t(flash.success)}</p>
+                {translateFlash(t, flash.success, flash.count) ? (
+                    <p className="rounded-[4px] bg-primary/10 px-3 py-2 text-sm text-foreground">{translateFlash(t, flash.success, flash.count)}</p>
+                ) : null}
+                {deleteError ? (
+                    <p role="alert" className="flex items-start gap-2 rounded-[4px] bg-danger/10 px-3 py-2 text-sm text-danger">
+                        <CircleAlertIcon className="mt-0.5 size-4 shrink-0" />
+                        <span>{t(deleteError)}</span>
+                    </p>
                 ) : null}
                 <DataTable
                     data={customers.data}
@@ -102,13 +118,30 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                     onSort={onSort}
                     href={(row) => `/customers/${row.id}`}
                     pagination={customers}
+                    onBulkDelete={canDelete ? (ids) => visitBulkDelete('/customers/bulk-destroy', ids.map(Number)) : undefined}
+                    bulkDeleteTitle={t('customers.bulk_delete_title')}
                     actions={(row) => (
-                        <TableActionButton
-                            label={t('common.edit')}
-                            icon={SquarePenIcon}
-                            tone="edit"
-                            href={`/customers/${row.id}/edit`}
-                        />
+                        <>
+                            {can('customers.update') ? (
+                                <TableActionButton
+                                    label={t('common.edit')}
+                                    icon={SquarePenIcon}
+                                    tone="edit"
+                                    href={`/customers/${row.id}/edit`}
+                                />
+                            ) : null}
+                            {canDelete ? (
+                                <TableActionButton
+                                    label={t('common.delete')}
+                                    icon={Trash2Icon}
+                                    tone="danger"
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        setPendingIds([row.id]);
+                                    }}
+                                />
+                            ) : null}
+                        </>
                     )}
                     filters={
                         <FormControl icon={CircleDotIcon} className="w-full shrink-0 sm:w-48">
@@ -174,6 +207,27 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                     ]}
                 />
             </div>
+            <ConfirmDialog
+                open={pendingIds.length === 1}
+                onOpenChange={(open) => {
+                    if (! open) {
+                        setPendingIds([]);
+                    }
+                }}
+                title={t('customers.delete_title')}
+                description={t('customers.delete_description')}
+                destructive
+                confirmLabel={t('common.delete')}
+                onConfirm={() => {
+                    if (pendingIds.length !== 1) {
+                        return;
+                    }
+
+                    router.delete(`/customers/${pendingIds[0]}`, {
+                        onFinish: () => setPendingIds([]),
+                    });
+                }}
+            />
         </>
     );
 }

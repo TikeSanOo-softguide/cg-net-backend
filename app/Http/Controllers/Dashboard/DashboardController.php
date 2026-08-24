@@ -18,12 +18,25 @@ use App\Models\RelocationRequest;
 use App\Models\User;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController extends Controller
 {
+    /**
+     * @var array<string, class-string<Model>>
+     */
+    private const REQUEST_MODELS = [
+        'installation' => InstallationApplication::class,
+        'failure' => FailureReport::class,
+        'relocation' => RelocationRequest::class,
+        'change_plan' => ChangePlanRequest::class,
+    ];
+
     public function __invoke(): Response
     {
         return Inertia::render('Dashboard/Index', [
@@ -31,6 +44,46 @@ class DashboardController extends Controller
             'chart' => $this->chartSeries(),
             'recentRequests' => $this->recentRequests(),
         ]);
+    }
+
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $ids = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['string', 'distinct', 'regex:/^(installation|failure|relocation|change_plan)-\d+$/'],
+        ])['ids'];
+
+        $deleted = 0;
+        $skipped = false;
+
+        foreach ($ids as $composite) {
+            [$type, $id] = explode('-', $composite, 2);
+            $item = self::REQUEST_MODELS[$type]::query()->find($id);
+
+            if ($item === null) {
+                $skipped = true;
+
+                continue;
+            }
+
+            $item->delete();
+            activity('service-requests')->causedBy($request->user())->performedOn($item)->event('deleted')->log($type.'_deleted');
+            $deleted++;
+        }
+
+        if ($deleted === 0) {
+            return back()->withErrors(['delete' => 'common.bulk_delete_failed']);
+        }
+
+        $redirect = redirect()->route('dashboard')
+            ->with('success', 'common.bulk_deleted')
+            ->with('deleted_count', $deleted);
+
+        if ($skipped) {
+            return $redirect->withErrors(['delete' => 'dashboard.bulk_delete_partial']);
+        }
+
+        return $redirect;
     }
 
     /**

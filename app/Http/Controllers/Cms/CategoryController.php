@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Cms\StoreCategoryRequest;
 use App\Http\Requests\Cms\UpdateCategoryRequest;
 use App\Models\Category;
+use App\Support\CmsBulkDelete;
 use App\Support\CmsListing;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -62,7 +63,7 @@ class CategoryController extends Controller
     public function destroy(Request $request, Category $category): RedirectResponse
     {
         if ($category->news()->exists()) {
-            return back()->withErrors(['delete' => __('cms.category_in_use')]);
+            return back()->withErrors(['delete' => 'cms.category_in_use']);
         }
 
         $category->delete();
@@ -70,6 +71,17 @@ class CategoryController extends Controller
         activity('cms')->causedBy($request->user())->performedOn($category)->event('deleted')->log('category_deleted');
 
         return redirect()->route('cms.categories.index')->with('success', 'cms.deleted');
+    }
+
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        return CmsBulkDelete::run(
+            $request,
+            Category::query(),
+            'cms.categories.index',
+            'category_deleted',
+            deletionError: fn (Category $category) => $category->news()->exists() ? 'cms.category_in_use' : null,
+        );
     }
 
     /**

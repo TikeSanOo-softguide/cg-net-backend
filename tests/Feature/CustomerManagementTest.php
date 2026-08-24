@@ -9,8 +9,10 @@ use App\Models\CustomerPackage;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class CustomerManagementTest extends TestCase
@@ -253,5 +255,56 @@ class CustomerManagementTest extends TestCase
             'subject_id' => $customer->id,
             'causer_id' => $admin->id,
         ]);
+    }
+
+    public function test_admins_can_delete_a_customer(): void
+    {
+        $admin = Admin::factory()->create();
+        $customer = User::factory()->create();
+
+        $this->actingAs($admin, 'web')
+            ->from('/customers')
+            ->delete('/customers/'.$customer->id)
+            ->assertRedirect('/customers')
+            ->assertSessionHas('success', 'customers.deleted');
+
+        $this->assertSoftDeleted($customer);
+        $this->assertDatabaseHas('activity_log', [
+            'description' => 'customer_deleted',
+            'subject_id' => $customer->id,
+            'causer_id' => $admin->id,
+        ]);
+    }
+
+    public function test_admins_can_bulk_delete_customers(): void
+    {
+        $admin = Admin::factory()->create();
+        $first = User::factory()->create();
+        $second = User::factory()->create();
+
+        $this->actingAs($admin, 'web')
+            ->from('/customers')
+            ->delete('/customers/bulk-destroy', ['ids' => [$first->id, $second->id]])
+            ->assertRedirect('/customers')
+            ->assertSessionHas('success', 'common.bulk_deleted');
+
+        $this->assertSoftDeleted($first);
+        $this->assertSoftDeleted($second);
+    }
+
+    public function test_admins_without_customer_delete_cannot_bulk_delete_customers(): void
+    {
+        $this->autoGrantPermissions = false;
+        RolePermissionSeeder::sync();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $admin = Admin::factory()->create();
+        $admin->givePermissionTo('customers.view');
+        $customer = User::factory()->create();
+
+        $this->actingAs($admin, 'web')
+            ->delete('/customers/bulk-destroy', ['ids' => [$customer->id]])
+            ->assertForbidden();
+
+        $this->assertNotSoftDeleted($customer);
     }
 }

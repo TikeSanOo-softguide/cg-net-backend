@@ -13,12 +13,16 @@ export type TranslationTree = {
 export type PageProps<T extends Record<string, unknown> = Record<string, unknown>> = T & {
     auth: {
         user: AuthUser | null;
+        permissions: string[];
+        roles: string[];
+        is_super_admin: boolean;
     };
     locale: SupportedLocale;
     translations: TranslationTree;
     unreadNotifications: number;
     flash: {
         success: string | null;
+        count: number | null;
     };
 };
 
@@ -27,12 +31,16 @@ declare module '@inertiajs/core' {
         sharedPageProps: {
             auth: {
                 user: AuthUser | null;
+                permissions: string[];
+                roles: string[];
+                is_super_admin: boolean;
             };
             locale: SupportedLocale;
             translations: TranslationTree;
             unreadNotifications: number;
             flash: {
                 success: string | null;
+                count: number | null;
             };
         };
     }

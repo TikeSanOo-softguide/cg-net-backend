@@ -43,7 +43,7 @@ export function ConfirmDialog({
                     <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                    <Button type="button" variant="outline" disabled={processing} onClick={() => onOpenChange(false)}>
                         <XIcon />
                         {cancelLabel ?? t('common.cancel')}
                     </Button>

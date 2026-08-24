@@ -8,6 +8,7 @@ use App\Http\Requests\Cms\UpdateNewsRequest;
 use App\Models\Category;
 use App\Models\News;
 use App\Models\Tag;
+use App\Support\CmsBulkDelete;
 use App\Support\CmsListing;
 use App\Support\StoresPublicImage;
 use Illuminate\Http\RedirectResponse;
@@ -89,6 +90,20 @@ class NewsController extends Controller
         activity('cms')->causedBy($request->user())->performedOn($news)->event('deleted')->log('news_deleted');
 
         return redirect()->route('cms.news.index')->with('success', 'cms.deleted');
+    }
+
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        return CmsBulkDelete::run(
+            $request,
+            News::query(),
+            'cms.news.index',
+            'news_deleted',
+            beforeDelete: function (News $news): void {
+                StoresPublicImage::delete($news->image_path);
+                $news->tags()->detach();
+            },
+        );
     }
 
     /**

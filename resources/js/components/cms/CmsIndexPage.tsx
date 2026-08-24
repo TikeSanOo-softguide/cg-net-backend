@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
-import { CircleDotIcon, LanguagesIcon, PlusIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
+import { CircleAlertIcon, CircleDotIcon, LanguagesIcon, PlusIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
@@ -11,6 +11,9 @@ import { Button } from '@/components/ui/button';
 import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useCan } from '@/hooks/useCan';
+import { visitBulkDelete } from '@/lib/bulk-delete';
+import { translateFlash } from '@/lib/flash';
 
 export type CmsFilters = {
     search: string;
@@ -48,12 +51,14 @@ export function CmsIndexPage<T extends { id: number }>({
     langFilter = true,
 }: CmsIndexPageProps<T>) {
     const { t } = useTranslation();
+    const can = useCan();
     const { flash } = usePage().props;
     const deleteError = (usePage().props as { errors?: { delete?: string } }).errors?.delete;
     const [search, setSearch] = useState(filters.search);
-    const [deleteId, setDeleteId] = useState<number | null>(null);
+    const [pendingIds, setPendingIds] = useState<number[]>([]);
     const [processing, setProcessing] = useState(false);
     const debounce = useRef<number>(0);
+    const canDelete = can('cms.delete');
 
     useEffect(() => {
         setSearch(filters.search);
@@ -139,18 +144,25 @@ export function CmsIndexPage<T extends { id: number }>({
                 title={t(titleKey)}
                 description={t(descriptionKey)}
                 actions={
-                    <Button asChild>
-                        <Link href={createHref}>
-                            <PlusIcon />
-                            {t(createLabelKey)}
-                        </Link>
-                    </Button>
+                    can('cms.create') ? (
+                        <Button asChild>
+                            <Link href={createHref}>
+                                <PlusIcon />
+                                {t(createLabelKey)}
+                            </Link>
+                        </Button>
+                    ) : null
                 }
             />
-            {flash.success ? (
-                <p className="rounded-[4px] bg-primary/10 px-3 py-2 text-sm text-foreground">{t(flash.success)}</p>
+            {translateFlash(t, flash.success, flash.count) ? (
+                <p className="rounded-[4px] bg-primary/10 px-3 py-2 text-sm text-foreground">{translateFlash(t, flash.success, flash.count)}</p>
             ) : null}
-            {deleteError ? <p className="rounded-[4px] bg-danger/10 px-3 py-2 text-sm text-danger">{deleteError}</p> : null}
+            {deleteError ? (
+                <p role="alert" className="flex items-start gap-2 rounded-[4px] bg-danger/10 px-3 py-2 text-sm text-danger">
+                    <CircleAlertIcon className="mt-0.5 size-4 shrink-0" />
+                    <span>{t(deleteError)}</span>
+                </p>
+            ) : null}
             <DataTable
                 data={items.data}
                 getRowId={(row) => String(row.id)}
@@ -162,29 +174,35 @@ export function CmsIndexPage<T extends { id: number }>({
                 onSort={onSort}
                 pagination={items}
                 filters={filterControls}
+                onBulkDelete={canDelete ? (ids) => visitBulkDelete(`${destroyBase}/bulk-destroy`, ids.map(Number)) : undefined}
+                bulkDeleteTitle={t('cms.bulk_delete_title')}
                 actions={(row) => (
                     <>
-                        <TableActionButton
-                            label={t('common.edit')}
-                            icon={SquarePenIcon}
-                            tone="edit"
-                            href={`${destroyBase}/${row.id}/edit`}
-                        />
-                        <TableActionButton
-                            label={t('common.delete')}
-                            icon={Trash2Icon}
-                            tone="danger"
-                            onClick={() => setDeleteId(row.id)}
-                        />
+                        {can('cms.update') ? (
+                            <TableActionButton
+                                label={t('common.edit')}
+                                icon={SquarePenIcon}
+                                tone="edit"
+                                href={`${destroyBase}/${row.id}/edit`}
+                            />
+                        ) : null}
+                        {canDelete ? (
+                            <TableActionButton
+                                label={t('common.delete')}
+                                icon={Trash2Icon}
+                                tone="danger"
+                                onClick={() => setPendingIds([row.id])}
+                            />
+                        ) : null}
                     </>
                 )}
                 columns={columns}
             />
             <ConfirmDialog
-                open={deleteId !== null}
+                open={pendingIds.length === 1}
                 onOpenChange={(open) => {
                     if (! open) {
-                        setDeleteId(null);
+                        setPendingIds([]);
                     }
                 }}
                 title={t('cms.delete_title')}
@@ -193,15 +211,17 @@ export function CmsIndexPage<T extends { id: number }>({
                 destructive
                 processing={processing}
                 onConfirm={() => {
-                    if (deleteId === null) {
+                    if (pendingIds.length !== 1) {
                         return;
                     }
 
-                    router.delete(`${destroyBase}/${deleteId}`, {
+                    router.delete(`${destroyBase}/${pendingIds[0]}`, {
                         preserveScroll: true,
                         onStart: () => setProcessing(true),
-                        onFinish: () => setProcessing(false),
-                        onSuccess: () => setDeleteId(null),
+                        onFinish: () => {
+                            setProcessing(false);
+                            setPendingIds([]);
+                        },
                     });
                 }}
             />

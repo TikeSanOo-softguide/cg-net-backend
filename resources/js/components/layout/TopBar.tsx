@@ -29,6 +29,12 @@ type TopBarProps = {
     sidebarOpen?: boolean;
 };
 
+const navbarActionClass =
+    'text-primary hover:bg-primary/12 hover:text-primary active:bg-primary/18 dark:text-foreground dark:hover:bg-muted dark:hover:text-foreground dark:active:bg-muted/80 transition-all duration-200 ease-out hover:scale-105 active:scale-95 motion-reduce:transition-colors motion-reduce:hover:scale-100 motion-reduce:active:scale-100';
+
+const navbarIconClass =
+    'size-5 transition-transform duration-200 ease-out group-hover:scale-110 group-hover:-rotate-12 motion-reduce:transition-none motion-reduce:group-hover:scale-100 motion-reduce:group-hover:rotate-0';
+
 export function TopBar({ sidebarOpen = false }: TopBarProps) {
     const { t, locale } = useTranslation();
     const { theme, toggleTheme } = useTheme();
@@ -70,8 +76,8 @@ export function TopBar({ sidebarOpen = false }: TopBarProps) {
                 </div>
 
                 <div className="flex items-center gap-0.5">
-                    <Button type="button" variant="ghost" size="icon" className="relative size-10 text-foreground" aria-label={t('common.notifications')}>
-                        <BellIcon className="size-5" strokeWidth={1.9} />
+                    <Button type="button" variant="ghost" size="icon" className={cn('group relative size-10', navbarActionClass)} aria-label={t('common.notifications')}>
+                        <BellIcon className={navbarIconClass} strokeWidth={1.9} />
                         {unread > 0 ? (
                             <span className="absolute top-1.5 right-1.5 flex size-4 items-center justify-center rounded-full bg-danger text-[9px] font-medium text-danger-foreground">
                                 {unread > 9 ? '9+' : unread}
@@ -84,8 +90,8 @@ export function TopBar({ sidebarOpen = false }: TopBarProps) {
                         <ThemeToggle />
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-10 gap-2 px-2 text-foreground">
-                                    <span className="flex size-7 items-center justify-center rounded-full bg-muted">
+                                <Button variant="ghost" size="sm" className={cn('group h-10 gap-2 px-2', navbarActionClass)}>
+                                    <span className="flex size-7 items-center justify-center rounded-full bg-primary/15 text-primary transition-transform duration-200 ease-out group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100 dark:bg-muted dark:text-foreground">
                                         <UserRoundIcon className="size-4" strokeWidth={1.9} />
                                     </span>
                                     <span className="hidden max-w-40 truncate text-sm font-medium lg:inline">{user?.name ?? 'Staff'}</span>
@@ -94,7 +100,7 @@ export function TopBar({ sidebarOpen = false }: TopBarProps) {
                             <DropdownMenuContent align="end" side="bottom" className="w-64">
                                 <DropdownMenuLabel className="px-2.5 py-2 font-normal">
                                     <div className="flex items-center gap-2.5">
-                                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/12 text-foreground">
+                                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary dark:bg-muted dark:text-foreground">
                                             <UserRoundIcon className="size-4.5" strokeWidth={1.9} />
                                         </span>
                                         <div className="flex min-w-0 flex-col gap-0.5">

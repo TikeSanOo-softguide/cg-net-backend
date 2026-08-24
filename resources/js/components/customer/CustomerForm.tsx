@@ -1,9 +1,8 @@
 import { FormEvent } from 'react';
-import { Link } from '@inertiajs/react';
 import type { InertiaFormProps } from '@inertiajs/react';
-import { CircleDotIcon, IdCardIcon, LanguagesIcon, MailIcon, MapPinIcon, PhoneIcon, SaveIcon, UserIcon, XIcon } from 'lucide-react';
+import { CircleDotIcon, IdCardIcon, LanguagesIcon, MailIcon, MapPinIcon, PhoneIcon, UserIcon } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { FormActionBar } from '@/components/FormActionBar';
 import { Card, CardContent } from '@/components/ui/card';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
@@ -33,7 +32,7 @@ export function CustomerForm({ form, onSubmit, submitLabel, cancelHref }: Custom
 
     return (
         <Card className="max-w-3xl gap-0 py-0">
-            <CardContent className="px-4 py-4 sm:px-5 sm:py-5">
+            <CardContent className="px-4 py-4 pb-24 sm:px-5 sm:py-5 sm:pb-5">
                 <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <FormField label={t('customers.name')} htmlFor="name" error={form.errors.name} icon={UserIcon} className="sm:col-span-2">
                         <Input
@@ -104,18 +103,7 @@ export function CustomerForm({ form, onSubmit, submitLabel, cancelHref }: Custom
                             aria-invalid={Boolean(form.errors.address)}
                         />
                     </FormField>
-                    <div className="flex flex-col-reverse gap-2 sm:col-span-2 sm:flex-row sm:justify-end">
-                        <Button type="button" variant="outline" asChild>
-                            <Link href={cancelHref}>
-                                <XIcon />
-                                {t('common.cancel')}
-                            </Link>
-                        </Button>
-                        <Button type="submit" disabled={form.processing}>
-                            <SaveIcon />
-                            {submitLabel}
-                        </Button>
-                    </div>
+                    <FormActionBar cancelHref={cancelHref} processing={form.processing} submitLabel={submitLabel} className="sm:col-span-2" />
                 </form>
             </CardContent>
         </Card>

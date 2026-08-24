@@ -5,11 +5,14 @@ namespace Tests\Feature;
 use App\Enums\PaymentStatus;
 use App\Enums\ReviewStatus;
 use App\Models\Admin;
+use App\Models\FailureReport;
 use App\Models\InstallationApplication;
 use App\Models\Payment;
 use App\Models\User;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class DashboardTest extends TestCase
@@ -49,5 +52,41 @@ class DashboardTest extends TestCase
                 ->has('unreadNotifications')
                 ->has('locale')
                 ->has('translations'));
+    }
+
+    public function test_admins_can_bulk_delete_recent_service_requests(): void
+    {
+        $admin = Admin::factory()->create();
+        $install = InstallationApplication::factory()->create();
+        $failure = FailureReport::factory()->create();
+
+        $this->actingAs($admin, 'web')
+            ->from('/dashboard')
+            ->delete('/dashboard/requests/bulk-destroy', [
+                'ids' => ['installation-'.$install->id, 'failure-'.$failure->id],
+            ])
+            ->assertRedirect('/dashboard')
+            ->assertSessionHas('success', 'common.bulk_deleted');
+
+        $this->assertSoftDeleted($install);
+        $this->assertSoftDeleted($failure);
+    }
+
+    public function test_admins_without_service_request_delete_cannot_bulk_delete_requests(): void
+    {
+        $this->autoGrantPermissions = false;
+        RolePermissionSeeder::sync();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $admin = Admin::factory()->create();
+        $admin->givePermissionTo('dashboard.view');
+        $install = InstallationApplication::factory()->create();
+
+        $this->actingAs($admin, 'web')
+            ->delete('/dashboard/requests/bulk-destroy', [
+                'ids' => ['installation-'.$install->id],
+            ])
+            ->assertForbidden();
+
+        $this->assertNotSoftDeleted($install);
     }
 }
