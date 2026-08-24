@@ -20,8 +20,8 @@ class CategoryController extends Controller
         $listing = CmsListing::paginate(
             $request,
             Category::query()->withCount('news'),
-            ['name', 'slug'],
-            ['name', 'slug', 'lang', 'created_at'],
+            ['name_en', 'slug'],
+            ['name_en', 'slug', 'created_at'],
         );
 
         return Inertia::render('Cms/Categories/Index', [
@@ -91,9 +91,8 @@ class CategoryController extends Controller
     {
         return [
             'id' => $category->id,
-            'name' => $category->name,
+            'name' => $category->name_en,
             'slug' => $category->slug,
-            'lang' => $category->lang->value,
             'news_count' => $category->news_count ?? $category->news()->count(),
             'created_at' => $category->created_at?->toDateString(),
         ];

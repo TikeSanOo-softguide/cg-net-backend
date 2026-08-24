@@ -13,14 +13,13 @@ class BannerFactory extends Factory
     public function definition(): array
     {
         return [
-            'title' => fake()->sentence(3),
-            'image_path' => 'banners/'.fake()->uuid().'.jpg',
-            'link_url' => fake()->optional()->url(),
+            'image_url_en' => fake()->imageUrl(),
+            'image_url_zh' => fake()->imageUrl(),
+            'image_url_my' => fake()->imageUrl(),
             'sort_order' => fake()->numberBetween(1, 20),
             'is_active' => true,
-            'starts_at' => now()->subDay(),
-            'ends_at' => now()->addMonth(),
-            'lang' => 'en',
+            'start_date' => now()->subDay()->toDateString(),
+            'end_date' => now()->addMonth()->toDateString(),
         ];
     }
 }

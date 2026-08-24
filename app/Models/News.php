@@ -2,24 +2,25 @@
 
 namespace App\Models;
 
-use App\Enums\LanguagePref;
 use App\Enums\NewsStatus;
 use Database\Factories\NewsFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
     'category_id',
-    'title',
+    'title_en',
+    'title_zh',
+    'title_my',
     'slug',
-    'content',
-    'image_path',
+    'description_en',
+    'description_zh',
+    'description_my',
+    'image_url',
     'status',
-    'lang',
 ])]
 class News extends Model
 {
@@ -30,7 +31,6 @@ class News extends Model
     {
         return [
             'status' => NewsStatus::class,
-            'lang' => LanguagePref::class,
         ];
     }
 
@@ -39,8 +39,4 @@ class News extends Model
         return $this->belongsTo(Category::class);
     }
 
-    public function tags(): BelongsToMany
-    {
-        return $this->belongsToMany(Tag::class, 'news_tags')->withPivot('id');
-    }
 }

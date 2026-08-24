@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Enums\LanguagePref;
 use App\Models\Promotion;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -14,13 +13,17 @@ class PromotionFactory extends Factory
     public function definition(): array
     {
         return [
-            'title' => fake()->sentence(4),
-            'description' => fake()->paragraph(),
+            'title_en' => fake()->sentence(4),
+            'title_zh' => fake()->sentence(4),
+            'title_my' => fake()->sentence(4),
+            'description_en' => fake()->paragraph(),
+            'description_zh' => fake()->paragraph(),
+            'description_my' => fake()->paragraph(),
             'start_date' => now()->toDateString(),
             'end_date' => now()->addMonth()->toDateString(),
             'is_active' => true,
-            'image_path' => 'cms/promotions/'.fake()->uuid().'.jpg',
-            'lang' => LanguagePref::En,
+            'image_url' => fake()->imageUrl(),
+            'slug' => fake()->unique()->slug(),
         ];
     }
 }

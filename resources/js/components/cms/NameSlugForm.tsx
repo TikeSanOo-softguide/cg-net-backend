@@ -4,14 +4,12 @@ import { Link2Icon, TypeIcon } from 'lucide-react';
 
 import { CmsField } from '@/components/cms/CmsField';
 import { CmsFormShell } from '@/components/cms/CmsFormShell';
-import { CmsLanguageField } from '@/components/cms/CmsLanguageField';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/hooks/useTranslation';
 
 export type NameSlugFormValues = {
     name: string;
     slug: string;
-    lang: string;
 };
 
 function toSlug(value: string): string {
@@ -41,7 +39,7 @@ export function NameSlugForm({ form, onSubmit, cancelHref }: NameSlugFormProps) 
                     required
                     onChange={(event) => {
                         form.setData('name', event.target.value);
-                        if (! slugTouched) {
+                        if (!slugTouched) {
                             form.setData('slug', toSlug(event.target.value));
                         }
                     }}
@@ -58,7 +56,6 @@ export function NameSlugForm({ form, onSubmit, cancelHref }: NameSlugFormProps) 
                     }}
                 />
             </CmsField>
-            <CmsLanguageField value={form.data.lang} error={form.errors.lang} onChange={(value) => form.setData('lang', value)} />
         </CmsFormShell>
     );
 }

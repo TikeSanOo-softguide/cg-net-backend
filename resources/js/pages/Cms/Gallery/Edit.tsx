@@ -6,12 +6,12 @@ import { PageHeader } from '@/components/PageHeader';
 import { useTranslation } from '@/hooks/useTranslation';
 
 type Props = {
-    item: { id: number; label: string | null; lang: string; image_url: string | null };
+    item: { id: number; label: string | null; image_url: string | null };
 };
 
 export default function GalleryEdit({ item }: Props) {
     const { t } = useTranslation();
-    const form = useForm<GalleryFormValues>({ label: item.label ?? '', lang: item.lang, image: null });
+    const form = useForm<GalleryFormValues>({ label: item.label ?? '', image: null });
 
     const submit = (event: FormEvent) => {
         event.preventDefault();

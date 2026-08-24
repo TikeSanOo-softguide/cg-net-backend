@@ -10,9 +10,9 @@ return new class extends Migration
     {
         Schema::create('banners', function (Blueprint $table) {
             $table->id();
-            $table->string('image_url_en')->nullable();
-            $table->string('image_url_zh')->nullable();
-            $table->string('image_url_my')->nullable();
+            $table->string('image_url_en');
+            $table->string('image_url_zh');
+            $table->string('image_url_my');
             $table->boolean('is_active')->default(true)->index();
             $table->unsignedInteger('sort_order')->default(0)->index();
             $table->date('start_date')->nullable()->index();
@@ -26,12 +26,12 @@ return new class extends Migration
 
         Schema::create('promotions', function (Blueprint $table) {
             $table->id();
-            $table->string('title_en')->nullable();
-            $table->string('title_zh')->nullable();
-            $table->string('title_my')->nullable();
-            $table->text('description_en')->nullable();
-            $table->text('description_zh')->nullable();
-            $table->text('description_my')->nullable();
+            $table->string('title_en');
+            $table->string('title_zh');
+            $table->string('title_my');
+            $table->text('description_en');
+            $table->text('description_zh');
+            $table->text('description_my');
             $table->date('start_date')->nullable()->index();
             $table->date('end_date')->nullable()->index();
             $table->boolean('is_active')->default(true)->index();
@@ -60,12 +60,12 @@ return new class extends Migration
         Schema::create('news', function (Blueprint $table) {
             $table->id();
             $table->foreignId('category_id')->constrained('categories')->restrictOnDelete();
-            $table->string('title_en')->nullable();
-            $table->string('title_zh')->nullable();
-            $table->string('title_my')->nullable();
-            $table->longText('description_en')->nullable();
-            $table->longText('description_zh')->nullable();
-            $table->longText('description_my')->nullable();
+            $table->string('title_en');
+            $table->string('title_zh');
+            $table->string('title_my');
+            $table->longText('description_en');
+            $table->longText('description_zh');
+            $table->longText('description_my');
             $table->string('image_url', 500)->nullable();
             $table->string('status', 20)->default('draft')->index();
             $table->string('slug')->unique();

@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\LanguagePref;
 use Database\Factories\PromotionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,13 +9,17 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
-    'title',
-    'description',
+    'title_en',
+    'title_zh',
+    'title_my',
+    'description_en',
+    'description_zh',
+    'description_my',
     'start_date',
     'end_date',
     'is_active',
-    'image_path',
-    'lang',
+    'image_url',
+    'slug',
 ])]
 class Promotion extends Model
 {
@@ -29,7 +32,6 @@ class Promotion extends Model
             'start_date' => 'date',
             'end_date' => 'date',
             'is_active' => 'boolean',
-            'lang' => LanguagePref::class,
         ];
     }
 }

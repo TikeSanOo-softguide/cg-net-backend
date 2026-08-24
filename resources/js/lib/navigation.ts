@@ -39,7 +39,6 @@ import {
     SlidersHorizontal,
     Smartphone,
     Sparkles,
-    Tag,
     Tags,
     Ticket,
     UserCog,
@@ -151,7 +150,6 @@ export const navigation: NavGroup[] = [
         children: [
             { labelKey: 'menu.cms_promotions', href: '/cms/promotions', icon: Megaphone },
             { labelKey: 'menu.cms_banners', href: '/cms/banners', icon: Image },
-            { labelKey: 'menu.cms_tags', href: '/cms/tags', icon: Tag },
             { labelKey: 'menu.cms_categories', href: '/cms/categories', icon: FolderTree },
             { labelKey: 'menu.cms_news', href: '/cms/news', icon: Newspaper },
             { labelKey: 'menu.cms_gallery', href: '/cms/gallery', icon: Images },
@@ -205,11 +203,11 @@ export function isActivePath(current: string, href: string): boolean {
         return true;
     }
 
-    if (! current.startsWith(`${href}/`)) {
+    if (!current.startsWith(`${href}/`)) {
         return false;
     }
 
-    return ! navHrefs.some(
+    return !navHrefs.some(
         (other) => other !== href && other.startsWith(`${href}/`) && (current === other || current.startsWith(`${other}/`)),
     );
 }
@@ -296,7 +294,7 @@ export function filterNavigation(groups: NavGroup[], can: (permission: string) =
             const children = group.children.filter((child) => {
                 const permission = viewPermissionForHref(child.href);
 
-                return ! permission || can(permission);
+                return !permission || can(permission);
             });
 
             return children.length > 0 ? [{ ...group, children }] : [];
@@ -304,7 +302,7 @@ export function filterNavigation(groups: NavGroup[], can: (permission: string) =
 
         const permission = group.href ? viewPermissionForHref(group.href) : undefined;
 
-        return ! permission || can(permission) ? [group] : [];
+        return !permission || can(permission) ? [group] : [];
     });
 }
 

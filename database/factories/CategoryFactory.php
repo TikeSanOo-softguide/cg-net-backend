@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Enums\LanguagePref;
 use App\Models\Category;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -17,9 +16,10 @@ class CategoryFactory extends Factory
         $name = fake()->unique()->words(2, true);
 
         return [
-            'name' => Str::title($name),
+            'name_en' => Str::title($name),
+            'name_zh' => $name,
+            'name_my' => $name,
             'slug' => Str::slug($name).'-'.fake()->unique()->numerify('###'),
-            'lang' => LanguagePref::En,
         ];
     }
 }

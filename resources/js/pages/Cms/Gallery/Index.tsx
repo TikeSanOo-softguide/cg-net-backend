@@ -7,7 +7,6 @@ import { useTranslation } from '@/hooks/useTranslation';
 type GalleryRow = {
     id: number;
     label: string | null;
-    lang: string;
     image_url: string | null;
     created_at: string | null;
 };
@@ -46,7 +45,6 @@ export default function GalleryIndex({ items, filters }: Props) {
                             </span>
                         ),
                     },
-                    { id: 'lang', header: t('common.language'), sortable: true, mobile: 'subtitle', cell: (row) => t(`language.${row.lang}`) },
                     { id: 'created_at', header: t('customers.joined'), sortable: true, mobile: 'meta', className: 'text-muted-foreground', cell: (row) => row.created_at },
                 ]}
             />

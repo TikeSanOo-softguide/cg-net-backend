@@ -7,7 +7,6 @@ use App\Http\Requests\Cms\StoreNewsRequest;
 use App\Http\Requests\Cms\UpdateNewsRequest;
 use App\Models\Category;
 use App\Models\News;
-use App\Models\Tag;
 use App\Support\CmsBulkDelete;
 use App\Support\CmsListing;
 use App\Support\StoresPublicImage;
@@ -22,9 +21,9 @@ class NewsController extends Controller
     {
         $listing = CmsListing::paginate(
             $request,
-            News::query()->with(['category:id,name', 'tags:id,name']),
+            News::query()->with('category:id,name_en'),
             ['title', 'slug'],
-            ['title', 'status', 'lang', 'created_at'],
+            ['title', 'status', 'created_at'],
             statusColumn: 'status',
         );
 
@@ -41,14 +40,13 @@ class NewsController extends Controller
 
     public function store(StoreNewsRequest $request): RedirectResponse
     {
-        $data = $request->safe()->except(['image', 'tag_ids']);
+        $data = $request->safe()->except('image');
 
         if ($request->hasFile('image')) {
             $data['image_path'] = StoresPublicImage::store($request->file('image'), 'cms/news');
         }
 
         $news = News::query()->create($data);
-        $news->tags()->sync($request->validated('tag_ids') ?? []);
 
         activity('cms')->causedBy($request->user())->performedOn($news)->event('created')->log('news_created');
 
@@ -57,8 +55,6 @@ class NewsController extends Controller
 
     public function edit(News $news): Response
     {
-        $news->load('tags:id');
-
         return Inertia::render('Cms/News/Edit', [
             ...$this->formOptions(),
             'item' => $this->payload($news),
@@ -67,14 +63,13 @@ class NewsController extends Controller
 
     public function update(UpdateNewsRequest $request, News $news): RedirectResponse
     {
-        $data = $request->safe()->except(['image', 'tag_ids']);
+        $data = $request->safe()->except('image');
 
         if ($request->hasFile('image')) {
             $data['image_path'] = StoresPublicImage::store($request->file('image'), 'cms/news', $news->image_path);
         }
 
         $news->update($data);
-        $news->tags()->sync($request->validated('tag_ids') ?? []);
 
         activity('cms')->causedBy($request->user())->performedOn($news)->event('updated')->log('news_updated');
 
@@ -84,7 +79,6 @@ class NewsController extends Controller
     public function destroy(Request $request, News $news): RedirectResponse
     {
         StoresPublicImage::delete($news->image_path);
-        $news->tags()->detach();
         $news->delete();
 
         activity('cms')->causedBy($request->user())->performedOn($news)->event('deleted')->log('news_deleted');
@@ -101,24 +95,19 @@ class NewsController extends Controller
             'news_deleted',
             beforeDelete: function (News $news): void {
                 StoresPublicImage::delete($news->image_path);
-                $news->tags()->detach();
             },
         );
     }
 
     /**
-     * @return array{categories: list<array{id: int, name: string}>, tags: list<array{id: int, name: string}>}
+    * @return array{categories: list<array{id: int, name: string}>}
      */
     private function formOptions(): array
     {
         return [
-            'categories' => Category::query()->orderBy('name')->get(['id', 'name'])->map(fn (Category $category) => [
+            'categories' => Category::query()->orderBy('name_en')->get(['id', 'name_en'])->map(fn (Category $category) => [
                 'id' => $category->id,
-                'name' => $category->name,
-            ])->all(),
-            'tags' => Tag::query()->orderBy('name')->get(['id', 'name'])->map(fn (Tag $tag) => [
-                'id' => $tag->id,
-                'name' => $tag->name,
+                'name' => $category->name_en,
             ])->all(),
         ];
     }
@@ -136,10 +125,7 @@ class NewsController extends Controller
             'slug' => $news->slug,
             'content' => $news->content,
             'status' => $news->status->value,
-            'lang' => $news->lang->value,
             'image_url' => StoresPublicImage::url($news->image_path),
-            'tag_ids' => $news->relationLoaded('tags') ? $news->tags->pluck('id')->all() : [],
-            'tag_names' => $news->relationLoaded('tags') ? $news->tags->pluck('name')->all() : [],
             'created_at' => $news->created_at?->toDateString(),
         ];
     }

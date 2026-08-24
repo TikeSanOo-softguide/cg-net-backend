@@ -26,8 +26,7 @@ class StoreCategoryRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:120'],
-            'slug' => CmsRules::slug('categories', (string) $this->string('lang')),
-            'lang' => CmsRules::lang(),
+            'slug' => CmsRules::slug('categories'),
         ];
     }
 }

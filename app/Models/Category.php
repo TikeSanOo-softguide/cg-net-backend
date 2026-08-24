@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\LanguagePref;
 use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,9 +10,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
-    'name',
+    'name_en',
+    'name_zh',
+    'name_my',
     'slug',
-    'lang',
 ])]
 class Category extends Model
 {
@@ -23,7 +23,6 @@ class Category extends Model
     protected function casts(): array
     {
         return [
-            'lang' => LanguagePref::class,
         ];
     }
 

@@ -30,8 +30,7 @@ class UpdateCategoryRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:120'],
-            'slug' => CmsRules::slug('categories', (string) $this->string('lang'), $category->id),
-            'lang' => CmsRules::lang(),
+            'slug' => CmsRules::slug('categories', $category->id),
         ];
     }
 }

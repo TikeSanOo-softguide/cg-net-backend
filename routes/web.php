@@ -6,7 +6,6 @@ use App\Http\Controllers\Cms\ContactController;
 use App\Http\Controllers\Cms\GalleryController;
 use App\Http\Controllers\Cms\NewsController;
 use App\Http\Controllers\Cms\PromotionController;
-use App\Http\Controllers\Cms\TagController;
 use App\Http\Controllers\Customer\CustomerController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Locale\LocaleController;
@@ -42,7 +41,6 @@ Route::middleware('auth:web')->group(function () {
         foreach ([
             'promotions' => [PromotionController::class, 'promotion'],
             'banners' => [BannerController::class, 'banner'],
-            'tags' => [TagController::class, 'tag'],
             'categories' => [CategoryController::class, 'category'],
             'news' => [NewsController::class, 'news'],
             'gallery' => [GalleryController::class, 'gallery'],

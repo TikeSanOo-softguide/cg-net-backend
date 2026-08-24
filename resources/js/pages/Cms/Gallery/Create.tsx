@@ -7,7 +7,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 export default function GalleryCreate() {
     const { t } = useTranslation();
-    const form = useForm<GalleryFormValues>({ label: '', lang: 'en', image: null });
+    const form = useForm<GalleryFormValues>({ label: '', image: null });
 
     const submit = (event: FormEvent) => {
         event.preventDefault();

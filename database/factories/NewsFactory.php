@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Enums\LanguagePref;
 use App\Enums\NewsStatus;
 use App\Models\Category;
 use App\Models\News;
@@ -20,12 +19,15 @@ class NewsFactory extends Factory
 
         return [
             'category_id' => Category::factory(),
-            'title' => $title,
+            'title_en' => $title,
+            'title_zh' => $title,
+            'title_my' => $title,
             'slug' => Str::slug($title).'-'.fake()->unique()->numerify('###'),
-            'content' => fake()->paragraphs(3, true),
-            'image_path' => 'cms/news/'.fake()->uuid().'.jpg',
+            'description_en' => fake()->paragraphs(3, true),
+            'description_zh' => fake()->paragraphs(3, true),
+            'description_my' => fake()->paragraphs(3, true),
+            'image_url' => fake()->imageUrl(),
             'status' => NewsStatus::Draft,
-            'lang' => LanguagePref::En,
         ];
     }
 }

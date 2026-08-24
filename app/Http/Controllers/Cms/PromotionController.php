@@ -22,7 +22,7 @@ class PromotionController extends Controller
             $request,
             Promotion::query(),
             ['title', 'description'],
-            ['title', 'start_date', 'end_date', 'is_active', 'lang', 'created_at'],
+            ['title', 'start_date', 'end_date', 'is_active', 'created_at'],
             statusColumn: 'is_active',
         );
 
@@ -104,7 +104,6 @@ class PromotionController extends Controller
             'start_date' => $promotion->start_date?->toDateString(),
             'end_date' => $promotion->end_date?->toDateString(),
             'is_active' => $promotion->is_active,
-            'lang' => $promotion->lang->value,
             'image_url' => StoresPublicImage::url($promotion->image_path),
             'created_at' => $promotion->created_at?->toDateString(),
         ];

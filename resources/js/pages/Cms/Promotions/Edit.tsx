@@ -13,7 +13,6 @@ type Props = {
         start_date: string | null;
         end_date: string | null;
         is_active: boolean;
-        lang: string;
         image_url: string | null;
     };
 };
@@ -26,7 +25,6 @@ export default function PromotionEdit({ item }: Props) {
         start_date: item.start_date ?? '',
         end_date: item.end_date ?? '',
         is_active: item.is_active,
-        lang: item.lang,
         image: null,
     });
 

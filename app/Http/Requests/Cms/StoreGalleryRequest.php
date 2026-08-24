@@ -18,7 +18,6 @@ class StoreGalleryRequest extends FormRequest
     {
         return [
             'label' => ['nullable', 'string', 'max:255'],
-            'lang' => CmsRules::lang(),
             'image' => CmsRules::image(true),
         ];
     }

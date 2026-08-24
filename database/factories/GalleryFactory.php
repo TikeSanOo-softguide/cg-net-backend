@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Enums\LanguagePref;
 use App\Models\Gallery;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -14,9 +13,10 @@ class GalleryFactory extends Factory
     public function definition(): array
     {
         return [
-            'image_path' => 'cms/gallery/'.fake()->uuid().'.jpg',
-            'label' => fake()->words(3, true),
-            'lang' => LanguagePref::En,
+            'image_url' => fake()->imageUrl(),
+            'label_en' => fake()->words(3, true),
+            'label_zh' => fake()->words(3, true),
+            'label_my' => fake()->words(3, true),
         ];
     }
 }

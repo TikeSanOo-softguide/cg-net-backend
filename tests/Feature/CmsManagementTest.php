@@ -10,7 +10,6 @@ use App\Models\Category;
 use App\Models\Contact;
 use App\Models\News;
 use App\Models\Promotion;
-use App\Models\Tag;
 use App\Support\CmsPermissions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -135,12 +134,10 @@ class CmsManagementTest extends TestCase
             ->assertNotFound();
     }
 
-    public function test_news_can_be_created_with_category_and_tags(): void
+    public function test_news_can_be_created_with_category(): void
     {
         $admin = Admin::factory()->create();
         $category = Category::factory()->create(['name' => 'Offers', 'slug' => 'offers']);
-        $tag = Tag::factory()->create(['name' => 'Fiber', 'slug' => 'fiber']);
-
         $this->actingAs($admin, 'web')
             ->post('/cms/news', [
                 'category_id' => $category->id,
@@ -149,15 +146,12 @@ class CmsManagementTest extends TestCase
                 'content' => 'Fiber is now live.',
                 'status' => NewsStatus::Published->value,
                 'lang' => 'en',
-                'tag_ids' => [$tag->id],
                 'image' => UploadedFile::fake()->image('news.jpg'),
             ])
             ->assertRedirect('/cms/news');
 
         $news = News::query()->firstOrFail();
-        $news->load('tags');
         $this->assertSame($category->id, $news->category_id);
-        $this->assertEqualsCanonicalizing([$tag->id], $news->tags->pluck('id')->all());
         Storage::disk('public')->assertExists($news->image_path);
     }
 
@@ -176,7 +170,7 @@ class CmsManagementTest extends TestCase
         $this->assertDatabaseHas('categories', ['id' => $category->id, 'deleted_at' => null]);
     }
 
-    public function test_admins_can_manage_contacts_tags_and_gallery(): void
+    public function test_admins_can_manage_contacts_and_gallery(): void
     {
         $admin = Admin::factory()->create();
 
@@ -190,10 +184,6 @@ class CmsManagementTest extends TestCase
             ->assertRedirect('/cms/contacts');
 
         $this->actingAs($admin, 'web')
-            ->post('/cms/tags', ['name' => 'Promo', 'slug' => 'promo', 'lang' => 'en'])
-            ->assertRedirect('/cms/tags');
-
-        $this->actingAs($admin, 'web')
             ->post('/cms/gallery', [
                 'label' => 'Office',
                 'lang' => 'en',
@@ -202,7 +192,6 @@ class CmsManagementTest extends TestCase
             ->assertRedirect('/cms/gallery');
 
         $this->assertDatabaseHas('contacts', ['contact_point' => 'support@cg-net.test']);
-        $this->assertDatabaseHas('tags', ['slug' => 'promo']);
         $this->assertDatabaseCount('gallery', 1);
     }
 

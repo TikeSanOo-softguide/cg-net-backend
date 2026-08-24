@@ -5,7 +5,6 @@ import { AlignLeftIcon, CalendarClockIcon, CalendarIcon, CircleDotIcon, TypeIcon
 import { CmsField } from '@/components/cms/CmsField';
 import { CmsFormShell } from '@/components/cms/CmsFormShell';
 import { CmsImageField } from '@/components/cms/CmsImageField';
-import { CmsLanguageField } from '@/components/cms/CmsLanguageField';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,7 +16,6 @@ export type PromotionFormValues = {
     start_date: string;
     end_date: string;
     is_active: boolean;
-    lang: string;
     image: File | null;
 };
 
@@ -56,8 +54,7 @@ export function PromotionForm({ form, onSubmit, cancelHref, imageUrl }: Promotio
                     </SelectContent>
                 </Select>
             </CmsField>
-            <CmsLanguageField value={form.data.lang} error={form.errors.lang} onChange={(value) => form.setData('lang', value)} />
-            <CmsImageField error={form.errors.image} currentUrl={imageUrl} required={! imageUrl} onChange={(file) => form.setData('image', file)} />
+            <CmsImageField error={form.errors.image} currentUrl={imageUrl} required={!imageUrl} onChange={(file) => form.setData('image', file)} />
         </CmsFormShell>
     );
 }
