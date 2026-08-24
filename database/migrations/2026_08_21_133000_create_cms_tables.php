@@ -8,6 +8,22 @@ return new class extends Migration
 {
     public function up(): void
     {
+        Schema::create('banners', function (Blueprint $table) {
+            $table->id();
+            $table->string('image_url_en')->nullable();
+            $table->string('image_url_zh')->nullable();
+            $table->string('image_url_my')->nullable();
+            $table->boolean('is_active')->default(true)->index();
+            $table->unsignedInteger('sort_order')->default(0)->index();
+            $table->date('start_date')->nullable()->index();
+            $table->date('end_date')->nullable()->index();
+            $table->timestamps();
+            $table->softDeletes();
+            $table->foreignId('created_by')->nullable()->constrained('admins')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('admins')->nullOnDelete();
+            $table->foreignId('deleted_by')->nullable()->constrained('admins')->nullOnDelete();
+        });
+
         Schema::create('promotions', function (Blueprint $table) {
             $table->id();
             $table->string('title_en')->nullable();
@@ -86,12 +102,11 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('news_tags');
+        Schema::dropIfExists('banners');
         Schema::dropIfExists('news');
         Schema::dropIfExists('gallery');
         Schema::dropIfExists('contacts');
         Schema::dropIfExists('promotions');
-        Schema::dropIfExists('tags');
         Schema::dropIfExists('categories');
     }
 };
