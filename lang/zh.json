@@ -152,6 +152,12 @@
     "bulk_deleted": "已成功删除 :count 条记录。",
     "bulk_delete_failed": "无法删除所选记录，请重试。"
   },
+  "toast": {
+    "success": "成功",
+    "error": "错误",
+    "info": "提示",
+    "warning": "警告"
+  },
   "type": {
     "installation": "安装申请",
     "failure": "故障报告",

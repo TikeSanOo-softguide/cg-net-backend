@@ -65,6 +65,7 @@ class HandleInertiaRequests extends Middleware
                 : 0,
             'flash' => [
                 'success' => $request->session()->get('success'),
+                'error' => $request->session()->get('error'),
                 'count' => $request->session()->get('deleted_count'),
             ],
         ];

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Link, router, usePage } from '@inertiajs/react';
-import { CircleAlertIcon, CircleDotIcon, PlusIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
+import { Link, router } from '@inertiajs/react';
+import { CircleDotIcon, LanguagesIcon, PlusIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
@@ -13,7 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCan } from '@/hooks/useCan';
 import { visitBulkDelete } from '@/lib/bulk-delete';
-import { translateFlash } from '@/lib/flash';
 
 export type CmsFilters = {
     search: string;
@@ -49,8 +48,6 @@ export function CmsIndexPage<T extends { id: number }>({
 }: CmsIndexPageProps<T>) {
     const { t } = useTranslation();
     const can = useCan();
-    const { flash } = usePage().props;
-    const deleteError = (usePage().props as { errors?: { delete?: string } }).errors?.delete;
     const [search, setSearch] = useState(filters.search);
     const [pendingIds, setPendingIds] = useState<number[]>([]);
     const [processing, setProcessing] = useState(false);
@@ -135,15 +132,6 @@ export function CmsIndexPage<T extends { id: number }>({
                     ) : null
                 }
             />
-            {translateFlash(t, flash.success, flash.count) ? (
-                <p className="rounded-[4px] bg-primary/10 px-3 py-2 text-sm text-foreground">{translateFlash(t, flash.success, flash.count)}</p>
-            ) : null}
-            {deleteError ? (
-                <p role="alert" className="flex items-start gap-2 rounded-[4px] bg-danger/10 px-3 py-2 text-sm text-danger">
-                    <CircleAlertIcon className="mt-0.5 size-4 shrink-0" />
-                    <span>{t(deleteError)}</span>
-                </p>
-            ) : null}
             <DataTable
                 data={items.data}
                 getRowId={(row) => String(row.id)}

@@ -1,5 +1,5 @@
 import { FormEvent } from 'react';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { MailIcon, SquarePenIcon, UserIcon } from 'lucide-react';
 
 import { PageHeader } from '@/components/PageHeader';
@@ -30,7 +30,6 @@ type StaffShowProps = {
 export default function StaffShow({ staffMember, roles }: StaffShowProps) {
     const { t } = useTranslation();
     const can = useCan();
-    const { flash } = usePage().props;
     const form = useForm({
         name: staffMember.name,
         email: staffMember.email,
@@ -64,9 +63,6 @@ export default function StaffShow({ staffMember, roles }: StaffShowProps) {
                         ) : null
                     }
                 />
-                {flash.success ? (
-                    <p className="rounded-[6px] bg-primary/10 px-3 py-2 text-sm text-foreground">{t(flash.success)}</p>
-                ) : null}
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                     <Card className="gap-0 py-0">
                         <CardHeader className="border-b border-border/70 px-4 py-4 sm:px-5">

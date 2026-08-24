@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Head, Link, router, usePage } from '@inertiajs/react';
-import { CircleAlertIcon, CircleDotIcon, PlusIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import { CircleDotIcon, PlusIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
@@ -14,7 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { visitBulkDelete } from '@/lib/bulk-delete';
-import { translateFlash } from '@/lib/flash';
 
 type CustomerRow = {
     id: number;
@@ -54,8 +53,6 @@ function visitIndex(filters: Filters) {
 export default function CustomersIndex({ customers, filters }: CustomersIndexProps) {
     const { t } = useTranslation();
     const can = useCan();
-    const { flash } = usePage().props;
-    const deleteError = (usePage().props as { errors?: { delete?: string } }).errors?.delete;
     const [search, setSearch] = useState(filters.search);
     const [pendingIds, setPendingIds] = useState<number[]>([]);
     const debounce = useRef<number>(0);
@@ -98,15 +95,6 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                         ) : null
                     }
                 />
-                {translateFlash(t, flash.success, flash.count) ? (
-                    <p className="rounded-[4px] bg-primary/10 px-3 py-2 text-sm text-foreground">{translateFlash(t, flash.success, flash.count)}</p>
-                ) : null}
-                {deleteError ? (
-                    <p role="alert" className="flex items-start gap-2 rounded-[4px] bg-danger/10 px-3 py-2 text-sm text-danger">
-                        <CircleAlertIcon className="mt-0.5 size-4 shrink-0" />
-                        <span>{t(deleteError)}</span>
-                    </p>
-                ) : null}
                 <DataTable
                     data={customers.data}
                     getRowId={(row) => String(row.id)}

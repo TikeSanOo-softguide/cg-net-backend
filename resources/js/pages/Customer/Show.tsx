@@ -73,7 +73,6 @@ function formatMmk(value: string): string {
 export default function CustomersShow({ customer, broadbandAccounts, packages, wallet }: CustomersShowProps) {
     const { t } = useTranslation();
     const page = usePage();
-    const flash = page.props.flash;
     const errors = page.props.errors as Record<string, string | undefined>;
     const [packageTab, setPackageTab] = useState<'active' | 'expired'>('active');
     const [statusOpen, setStatusOpen] = useState(false);
@@ -122,9 +121,6 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
                         </div>
                     }
                 />
-                {flash.success ? (
-                    <p className="rounded-[8px] bg-primary/10 px-3 py-2 text-sm text-foreground">{t(flash.success)}</p>
-                ) : null}
 
                 <div className="flex items-center gap-2 sm:hidden">
                     <StatusBadge status={customer.status} />
