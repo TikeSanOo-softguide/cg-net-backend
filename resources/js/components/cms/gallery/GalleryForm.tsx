@@ -16,18 +16,16 @@ export type GalleryFormValues = {
 type GalleryFormProps = {
     form: InertiaFormProps<GalleryFormValues>;
     onSubmit: (event: FormEvent) => void;
-    cancelHref?: string;
     onCancel?: () => void;
-    variant?: 'page' | 'modal';
     mode?: 'create' | 'edit';
     imageUrl?: string | null;
 };
 
-export function GalleryForm({ form, onSubmit, cancelHref, onCancel, variant = 'page', mode = 'create', imageUrl }: GalleryFormProps) {
+export function GalleryForm({ form, onSubmit, onCancel, mode = 'create', imageUrl }: GalleryFormProps) {
     const { t } = useTranslation();
 
     return (
-        <CmsFormShell onSubmit={onSubmit} cancelHref={cancelHref} onCancel={onCancel} processing={form.processing} variant={variant} mode={mode}>
+        <CmsFormShell onSubmit={onSubmit} onCancel={onCancel} processing={form.processing} mode={mode}>
             <FormField label={t('cms.label')} htmlFor="label" error={form.errors.label} icon={TagIcon} className="sm:col-span-2">
                 <Input id="label" value={form.data.label} onChange={(event) => form.setData('label', event.target.value)} />
             </FormField>

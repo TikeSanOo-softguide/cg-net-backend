@@ -73,7 +73,6 @@ function GalleryFormDialogBody({ item, onClose }: { item: GalleryItem | null; on
             form={form}
             onSubmit={submit}
             onCancel={onClose}
-            variant="modal"
             mode={isEdit ? 'edit' : 'create'}
             imageUrl={item?.image_url}
         />

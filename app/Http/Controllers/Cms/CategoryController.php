@@ -30,9 +30,9 @@ class CategoryController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(): RedirectResponse
     {
-        return Inertia::render('Cms/category/Create');
+        return redirect()->route('cms.categories.index');
     }
 
     public function store(StoreCategoryRequest $request): RedirectResponse
@@ -48,11 +48,9 @@ class CategoryController extends Controller
         return redirect()->route('cms.categories.index')->with('success', 'cms.created');
     }
 
-    public function edit(Category $category): Response
+    public function edit(Category $category): RedirectResponse
     {
-        return Inertia::render('Cms/category/Edit', [
-            'item' => $this->payload($category),
-        ]);
+        return redirect()->route('cms.categories.index');
     }
 
     public function update(UpdateCategoryRequest $request, Category $category): RedirectResponse

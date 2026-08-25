@@ -9,6 +9,7 @@ import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
+import { CustomerDetailDialog, type CustomerDetailMember } from '@/components/customer/CustomerDetailDialog';
 import { CustomerFormDialog, type CustomerFormMember } from '@/components/customer/CustomerFormDialog';
 import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -16,10 +17,7 @@ import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { visitBulkDelete } from '@/lib/bulk-delete';
 
-type CustomerRow = CustomerFormMember & {
-    accounts_count: number;
-    created_at: string | null;
-};
+type CustomerRow = CustomerDetailMember;
 
 type Filters = {
     search: string;
@@ -52,7 +50,9 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
     const [search, setSearch] = useState(filters.search);
     const [pendingIds, setPendingIds] = useState<number[]>([]);
     const [formOpen, setFormOpen] = useState(false);
+    const [detailOpen, setDetailOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState<CustomerFormMember | null>(null);
+    const [viewingCustomer, setViewingCustomer] = useState<CustomerDetailMember | null>(null);
     const debounce = useRef<number>(0);
     const canDelete = can('customers.delete');
 
@@ -89,7 +89,10 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                     sort={filters.sort}
                     direction={filters.direction}
                     onSort={onSort}
-                    href={(row) => `/customers/${row.id}`}
+                    onView={(row) => {
+                        setViewingCustomer(row);
+                        setDetailOpen(true);
+                    }}
                     onCreate={can('customers.create') ? () => {
                         setEditingCustomer(null);
                         setFormOpen(true);
@@ -189,6 +192,23 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                     ]}
                 />
             </PageContent>
+            <CustomerDetailDialog
+                open={detailOpen}
+                onOpenChange={(open) => {
+                    setDetailOpen(open);
+
+                    if (! open) {
+                        setViewingCustomer(null);
+                    }
+                }}
+                customer={viewingCustomer}
+                onEdit={(customer) => {
+                    setDetailOpen(false);
+                    setViewingCustomer(null);
+                    setEditingCustomer(customer);
+                    setFormOpen(true);
+                }}
+            />
             <CustomerFormDialog
                 open={formOpen}
                 onOpenChange={(open) => {

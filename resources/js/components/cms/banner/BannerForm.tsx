@@ -22,18 +22,16 @@ export type BannerFormValues = {
 type BannerFormProps = {
     form: InertiaFormProps<BannerFormValues>;
     onSubmit: (event: FormEvent) => void;
-    cancelHref?: string;
     onCancel?: () => void;
-    variant?: 'page' | 'modal';
     mode?: 'create' | 'edit';
     imageUrl?: string | null;
 };
 
-export function BannerForm({ form, onSubmit, cancelHref, onCancel, variant = 'page', mode = 'create', imageUrl }: BannerFormProps) {
+export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrl }: BannerFormProps) {
     const { t } = useTranslation();
 
     return (
-        <CmsFormShell onSubmit={onSubmit} cancelHref={cancelHref} onCancel={onCancel} processing={form.processing} variant={variant} mode={mode}>
+        <CmsFormShell onSubmit={onSubmit} onCancel={onCancel} processing={form.processing} mode={mode}>
             <FormField label={t('cms.title')} htmlFor="title" error={form.errors.title} icon={TypeIcon} className="sm:col-span-2">
                 <Input id="title" value={form.data.title} required onChange={(event) => form.setData('title', event.target.value)} />
             </FormField>

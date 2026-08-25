@@ -6,29 +6,31 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
+import type { PermissionMatrixGroup } from '@/components/PermissionMatrix';
 import { TableActionButton } from '@/components/TableActionButton';
+import { RoleFormDialog, type RoleFormItem } from '@/components/staff/RoleFormDialog';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { visitBulkDelete } from '@/lib/bulk-delete';
 
-type RoleRow = {
-    id: number;
-    name: string;
-    is_locked: boolean;
+type RoleRow = RoleFormItem & {
     permissions_count: number;
     users_count: number;
 };
 
 type RolesIndexProps = {
     roles: RoleRow[];
+    matrix: PermissionMatrixGroup[];
     filters: { search: string };
 };
 
-export default function RolesIndex({ roles, filters }: RolesIndexProps) {
+export default function RolesIndex({ roles, matrix, filters }: RolesIndexProps) {
     const { t } = useTranslation();
     const can = useCan();
     const [search, setSearch] = useState(filters.search);
     const [pendingIds, setPendingIds] = useState<number[]>([]);
+    const [formOpen, setFormOpen] = useState(false);
+    const [editingRole, setEditingRole] = useState<RoleFormItem | null>(null);
     const debounce = useRef<number>(0);
     const canDelete = can('roles.delete');
 
@@ -55,7 +57,10 @@ export default function RolesIndex({ roles, filters }: RolesIndexProps) {
                         }, 300);
                     }}
                     searchPlaceholder={t('staff.search_roles')}
-                    createHref={can('roles.create') ? '/roles/create' : undefined}
+                    onCreate={can('roles.create') ? () => {
+                        setEditingRole(null);
+                        setFormOpen(true);
+                    } : undefined}
                     createLabel={t('staff.create_role')}
                     onBulkDelete={canDelete ? (ids) => visitBulkDelete('/roles/bulk-destroy', ids.map(Number)) : undefined}
                     bulkDeleteTitle={t('staff.bulk_delete_roles_title')}
@@ -63,7 +68,21 @@ export default function RolesIndex({ roles, filters }: RolesIndexProps) {
                     actions={(row) => (
                         <>
                             {can('roles.update') ? (
-                                <TableActionButton label={t('common.edit')} icon={SquarePenIcon} tone="edit" href={`/roles/${row.id}/edit`} />
+                                <TableActionButton
+                                    label={t('common.edit')}
+                                    icon={SquarePenIcon}
+                                    tone="edit"
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        setEditingRole({
+                                            id: row.id,
+                                            name: row.name,
+                                            is_locked: row.is_locked,
+                                            permissions: row.permissions,
+                                        });
+                                        setFormOpen(true);
+                                    }}
+                                />
                             ) : null}
                             {canDelete && ! row.is_locked ? (
                                 <TableActionButton
@@ -101,6 +120,18 @@ export default function RolesIndex({ roles, filters }: RolesIndexProps) {
                     ]}
                 />
             </PageContent>
+            <RoleFormDialog
+                open={formOpen}
+                onOpenChange={(open) => {
+                    setFormOpen(open);
+
+                    if (! open) {
+                        setEditingRole(null);
+                    }
+                }}
+                role={editingRole}
+                matrix={matrix}
+            />
             <ConfirmDialog
                 open={pendingIds.length === 1}
                 onOpenChange={(open) => {

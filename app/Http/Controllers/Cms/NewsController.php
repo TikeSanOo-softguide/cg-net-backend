@@ -34,9 +34,9 @@ class NewsController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(): RedirectResponse
     {
-        return Inertia::render('Cms/news/Create', $this->formOptions());
+        return redirect()->route('cms.news.index');
     }
 
     public function store(StoreNewsRequest $request): RedirectResponse
@@ -54,12 +54,9 @@ class NewsController extends Controller
         return redirect()->route('cms.news.index')->with('success', 'cms.created');
     }
 
-    public function edit(News $news): Response
+    public function edit(News $news): RedirectResponse
     {
-        return Inertia::render('Cms/news/Edit', [
-            ...$this->formOptions(),
-            'item' => $this->payload($news),
-        ]);
+        return redirect()->route('cms.news.index');
     }
 
     public function update(UpdateNewsRequest $request, News $news): RedirectResponse

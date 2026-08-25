@@ -2,12 +2,12 @@ import { FormEvent, useState } from 'react';
 import type { InertiaFormProps } from '@inertiajs/react';
 import { Link2Icon, TypeIcon } from 'lucide-react';
 
-import { FormField } from '@/components/ui/form-field';
 import { CmsFormShell } from '@/components/cms/shared/CmsFormShell';
+import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/hooks/useTranslation';
 
-export type NameSlugFormValues = {
+export type CategoryFormValues = {
     name: string;
     slug: string;
 };
@@ -20,21 +20,19 @@ function toSlug(value: string): string {
         .replace(/^-+|-+$/g, '');
 }
 
-type NameSlugFormProps = {
-    form: InertiaFormProps<NameSlugFormValues>;
+type CategoryFormProps = {
+    form: InertiaFormProps<CategoryFormValues>;
     onSubmit: (event: FormEvent) => void;
-    cancelHref?: string;
     onCancel?: () => void;
-    variant?: 'page' | 'modal';
     mode?: 'create' | 'edit';
 };
 
-export function NameSlugForm({ form, onSubmit, cancelHref, onCancel, variant = 'page', mode = 'create' }: NameSlugFormProps) {
+export function CategoryForm({ form, onSubmit, onCancel, mode = 'create' }: CategoryFormProps) {
     const { t } = useTranslation();
     const [slugTouched, setSlugTouched] = useState(form.data.slug !== '');
 
     return (
-        <CmsFormShell onSubmit={onSubmit} cancelHref={cancelHref} onCancel={onCancel} processing={form.processing} variant={variant} mode={mode}>
+        <CmsFormShell onSubmit={onSubmit} onCancel={onCancel} processing={form.processing} mode={mode}>
             <FormField label={t('cms.name')} htmlFor="name" error={form.errors.name} icon={TypeIcon} className="sm:col-span-2">
                 <Input
                     id="name"

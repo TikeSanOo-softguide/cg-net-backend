@@ -70,9 +70,9 @@ class CustomerController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(): RedirectResponse
     {
-        return Inertia::render('Customer/Create');
+        return redirect()->route('customers.index');
     }
 
     public function store(StoreCustomerRequest $request): RedirectResponse
@@ -150,11 +150,9 @@ class CustomerController extends Controller
         ]);
     }
 
-    public function edit(User $customer): Response
+    public function edit(User $customer): RedirectResponse
     {
-        return Inertia::render('Customer/Edit', [
-            'customer' => $this->customerPayload($customer),
-        ]);
+        return redirect()->route('customers.show', $customer);
     }
 
     public function update(UpdateCustomerRequest $request, User $customer): RedirectResponse

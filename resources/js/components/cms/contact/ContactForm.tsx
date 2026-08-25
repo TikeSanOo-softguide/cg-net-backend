@@ -14,17 +14,15 @@ export type ContactFormValues = {
 type ContactFormProps = {
     form: InertiaFormProps<ContactFormValues>;
     onSubmit: (event: FormEvent) => void;
-    cancelHref?: string;
     onCancel?: () => void;
-    variant?: 'page' | 'modal';
     mode?: 'create' | 'edit';
 };
 
-export function ContactForm({ form, onSubmit, cancelHref, onCancel, variant = 'page', mode = 'create' }: ContactFormProps) {
+export function ContactForm({ form, onSubmit, onCancel, mode = 'create' }: ContactFormProps) {
     const { t } = useTranslation();
 
     return (
-        <CmsFormShell onSubmit={onSubmit} cancelHref={cancelHref} onCancel={onCancel} processing={form.processing} variant={variant} mode={mode}>
+        <CmsFormShell onSubmit={onSubmit} onCancel={onCancel} processing={form.processing} mode={mode}>
             <FormField label={t('cms.contact_point')} htmlFor="contact_point" error={form.errors.contact_point} icon={ContactIcon} className="sm:col-span-2">
                 <Input id="contact_point" value={form.data.contact_point} required onChange={(event) => form.setData('contact_point', event.target.value)} />
             </FormField>

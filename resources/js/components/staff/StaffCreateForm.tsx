@@ -1,9 +1,8 @@
 import { FormEvent, useState } from 'react';
 import type { InertiaFormProps } from '@inertiajs/react';
-import { CircleDotIcon, LockIcon, MailIcon, ShieldIcon, UserIcon, UserPlusIcon } from 'lucide-react';
+import { CircleDotIcon, LockIcon, MailIcon, ShieldIcon, UserIcon } from 'lucide-react';
 
 import { FormActionBar } from '@/components/FormActionBar';
-import { FormCard } from '@/components/FormCard';
 import { MultiSelect } from '@/components/MultiSelect';
 import type { StaffFormValues, StaffRoleOption } from '@/components/staff/StaffForm';
 import { FormField } from '@/components/ui/form-field';
@@ -39,24 +38,16 @@ type StaffCreateFormProps = {
     form: InertiaFormProps<StaffFormValues>;
     roles: StaffRoleOption[];
     onSubmit: (event: FormEvent) => void;
-    cancelHref?: string;
     onCancel?: () => void;
-    title?: string;
-    description?: string;
     mode?: 'create' | 'edit';
-    variant?: 'page' | 'modal';
 };
 
 export function StaffCreateForm({
     form,
     roles,
     onSubmit,
-    cancelHref,
     onCancel,
-    title,
-    description,
     mode = 'create',
-    variant = 'page',
 }: StaffCreateFormProps) {
     const { t } = useTranslation();
     const [touched, setTouched] = useState<TouchedFields>(untouched);
@@ -270,31 +261,16 @@ export function StaffCreateForm({
         noValidate: true,
     };
 
-    if (variant === 'modal') {
-        return (
-            <form {...formProps} className="flex min-h-0 flex-1 flex-col">
-                <div aria-hidden="true" className="pointer-events-none absolute h-0 w-0 overflow-hidden opacity-0">
-                    <input type="text" tabIndex={-1} autoComplete="username" />
-                    <input type="password" tabIndex={-1} autoComplete="current-password" />
-                </div>
-                <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
-                    <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">{fields}</div>
-                </div>
-                <FormActionBar variant="modal" mode={mode} onCancel={onCancel} processing={form.processing} />
-            </form>
-        );
-    }
-
     return (
-        <FormCard title={title} description={description} icon={title ? UserPlusIcon : undefined}>
-            <form {...formProps} className={cn('relative grid grid-cols-1 gap-5 sm:grid-cols-2')}>
-                <div aria-hidden="true" className="pointer-events-none absolute h-0 w-0 overflow-hidden opacity-0">
-                    <input type="text" tabIndex={-1} autoComplete="username" />
-                    <input type="password" tabIndex={-1} autoComplete="current-password" />
-                </div>
-                {fields}
-                <FormActionBar mode={mode} cancelHref={cancelHref} onCancel={onCancel} processing={form.processing} className="sm:col-span-2" />
-            </form>
-        </FormCard>
+        <form {...formProps} className="relative flex min-h-0 flex-1 flex-col">
+            <div aria-hidden="true" className="pointer-events-none absolute h-0 w-0 overflow-hidden opacity-0">
+                <input type="text" tabIndex={-1} autoComplete="username" />
+                <input type="password" tabIndex={-1} autoComplete="current-password" />
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
+                <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">{fields}</div>
+            </div>
+            <FormActionBar mode={mode} onCancel={onCancel} processing={form.processing} />
+        </form>
     );
 }

@@ -33,9 +33,9 @@ class BannerController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(): RedirectResponse
     {
-        return Inertia::render('Cms/banner/Create');
+        return redirect()->route('cms.banners.index');
     }
 
     public function store(StoreBannerRequest $request): RedirectResponse
@@ -47,11 +47,9 @@ class BannerController extends Controller
         return redirect()->route('cms.banners.index')->with('success', 'cms.created');
     }
 
-    public function edit(Banner $banner): Response
+    public function edit(Banner $banner): RedirectResponse
     {
-        return Inertia::render('Cms/banner/Edit', [
-            'item' => $this->payload($banner),
-        ]);
+        return redirect()->route('cms.banners.index');
     }
 
     public function update(UpdateBannerRequest $request, Banner $banner): RedirectResponse

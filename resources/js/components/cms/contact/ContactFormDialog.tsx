@@ -66,5 +66,5 @@ function ContactFormDialogBody({ item, onClose }: { item: ContactItem | null; on
         form.post('/cms/contacts', options);
     };
 
-    return <ContactForm form={form} onSubmit={submit} onCancel={onClose} variant="modal" mode={isEdit ? 'edit' : 'create'} />;
+    return <ContactForm form={form} onSubmit={submit} onCancel={onClose} mode={isEdit ? 'edit' : 'create'} />;
 }

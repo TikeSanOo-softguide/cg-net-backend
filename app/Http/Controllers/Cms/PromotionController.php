@@ -32,9 +32,9 @@ class PromotionController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(): RedirectResponse
     {
-        return Inertia::render('Cms/promotion/Create');
+        return redirect()->route('cms.promotions.index');
     }
 
     public function store(StorePromotionRequest $request): RedirectResponse
@@ -49,11 +49,9 @@ class PromotionController extends Controller
         return redirect()->route('cms.promotions.index')->with('success', 'cms.created');
     }
 
-    public function edit(Promotion $promotion): Response
+    public function edit(Promotion $promotion): RedirectResponse
     {
-        return Inertia::render('Cms/promotion/Edit', [
-            'item' => $this->payload($promotion),
-        ]);
+        return redirect()->route('cms.promotions.index');
     }
 
     public function update(UpdatePromotionRequest $request, Promotion $promotion): RedirectResponse

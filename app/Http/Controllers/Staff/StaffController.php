@@ -57,11 +57,9 @@ class StaffController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(): RedirectResponse
     {
-        return Inertia::render('Staff/Create', [
-            'roles' => $this->roleOptions(),
-        ]);
+        return redirect()->route('staff.index');
     }
 
     public function store(StoreStaffRequest $request): RedirectResponse
@@ -87,14 +85,9 @@ class StaffController extends Controller
         ]);
     }
 
-    public function edit(Admin $admin): Response
+    public function edit(Admin $admin): RedirectResponse
     {
-        $admin->load('roles:id,name');
-
-        return Inertia::render('Staff/Edit', [
-            'staffMember' => $this->payload($admin),
-            'roles' => $this->roleOptions(),
-        ]);
+        return redirect()->route('staff.show', $admin);
     }
 
     public function update(UpdateStaffRequest $request, Admin $admin): RedirectResponse

@@ -98,7 +98,6 @@ function BannerFormDialogBody({ item, onClose }: { item: BannerItem | null; onCl
             form={form}
             onSubmit={submit}
             onCancel={onClose}
-            variant="modal"
             mode={isEdit ? 'edit' : 'create'}
             imageUrl={item?.image_url}
         />

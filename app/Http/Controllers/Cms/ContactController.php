@@ -30,9 +30,9 @@ class ContactController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(): RedirectResponse
     {
-        return Inertia::render('Cms/contact/Create');
+        return redirect()->route('cms.contacts.index');
     }
 
     public function store(StoreContactRequest $request): RedirectResponse
@@ -44,11 +44,9 @@ class ContactController extends Controller
         return redirect()->route('cms.contacts.index')->with('success', 'cms.created');
     }
 
-    public function edit(Contact $contact): Response
+    public function edit(Contact $contact): RedirectResponse
     {
-        return Inertia::render('Cms/contact/Edit', [
-            'item' => $this->payload($contact),
-        ]);
+        return redirect()->route('cms.contacts.index');
     }
 
     public function update(UpdateContactRequest $request, Contact $contact): RedirectResponse

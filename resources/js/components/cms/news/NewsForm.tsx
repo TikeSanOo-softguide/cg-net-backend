@@ -36,20 +36,18 @@ function toSlug(value: string): string {
 type NewsFormProps = {
     form: InertiaFormProps<NewsFormValues>;
     onSubmit: (event: FormEvent) => void;
-    cancelHref?: string;
     onCancel?: () => void;
-    variant?: 'page' | 'modal';
     mode?: 'create' | 'edit';
     categories: NewsOption[];
     imageUrl?: string | null;
 };
 
-export function NewsForm({ form, onSubmit, cancelHref, onCancel, variant = 'page', mode = 'create', categories, imageUrl }: NewsFormProps) {
+export function NewsForm({ form, onSubmit, onCancel, mode = 'create', categories, imageUrl }: NewsFormProps) {
     const { t } = useTranslation();
     const [slugTouched, setSlugTouched] = useState(form.data.slug !== '');
 
     return (
-        <CmsFormShell onSubmit={onSubmit} cancelHref={cancelHref} onCancel={onCancel} processing={form.processing} variant={variant} mode={mode}>
+        <CmsFormShell onSubmit={onSubmit} onCancel={onCancel} processing={form.processing} mode={mode}>
             <FormField label={t('cms.category')} htmlFor="category_id" error={form.errors.category_id} className="sm:col-span-2">
                 <FormControl icon={FolderTreeIcon}>
                     <Select value={form.data.category_id} onValueChange={(value) => form.setData('category_id', value)}>

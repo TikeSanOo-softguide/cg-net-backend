@@ -21,23 +21,23 @@ class RoleController extends Controller
 
         $roles = Role::query()
             ->where('guard_name', 'web')
+            ->with('permissions:id,name')
             ->withCount(['permissions', 'users'])
             ->when($search !== '', fn ($query) => $query->where('name', 'like', '%'.$search.'%'))
             ->orderBy('name')
             ->get()
-            ->map(fn (Role $role) => $this->payload($role));
+            ->map(fn (Role $role) => $this->payload($role, includePermissions: true));
 
         return Inertia::render('Roles/Index', [
             'roles' => $roles,
+            'matrix' => AppPermissions::matrix(),
             'filters' => ['search' => $search],
         ]);
     }
 
-    public function create(): Response
+    public function create(): RedirectResponse
     {
-        return Inertia::render('Roles/Create', [
-            'matrix' => AppPermissions::matrix(),
-        ]);
+        return redirect()->route('roles.index');
     }
 
     public function store(StoreRoleRequest $request): RedirectResponse
@@ -54,15 +54,11 @@ class RoleController extends Controller
         return redirect()->route('roles.index')->with('success', 'staff.role_created');
     }
 
-    public function edit(Role $role): Response
+    public function edit(Role $role): RedirectResponse
     {
         abort_unless($role->guard_name === 'web', 404);
-        $role->load('permissions:id,name');
 
-        return Inertia::render('Roles/Edit', [
-            'role' => $this->payload($role, includePermissions: true),
-            'matrix' => AppPermissions::matrix(),
-        ]);
+        return redirect()->route('roles.index');
     }
 
     public function update(UpdateRoleRequest $request, Role $role): RedirectResponse

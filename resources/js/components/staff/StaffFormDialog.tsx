@@ -61,7 +61,6 @@ function StaffFormDialogBody({
     staff: StaffFormMember | null;
     onClose: () => void;
 }) {
-    const { t } = useTranslation();
     const isEdit = staff !== null;
     const form = useForm<StaffFormValues>(
         staff
@@ -101,9 +100,6 @@ function StaffFormDialogBody({
             onCancel={onClose}
             passwordRequired={false}
             mode="edit"
-            title={t('staff.edit')}
-            description={t('staff.edit_description')}
-            variant="modal"
         />
     ) : (
         <StaffCreateForm
@@ -111,10 +107,7 @@ function StaffFormDialogBody({
             roles={roles}
             onSubmit={submit}
             onCancel={onClose}
-            title={t('staff.create')}
-            description={t('staff.create_description')}
             mode="create"
-            variant="modal"
         />
     );
 }

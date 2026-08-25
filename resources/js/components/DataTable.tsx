@@ -54,6 +54,7 @@ type DataTableProps<T> = {
     pagination?: Paginated<T>;
     paginationSummary?: string;
     href?: (row: T) => string | undefined;
+    onView?: (row: T) => void;
     actions?: (row: T) => ReactNode;
     numbered?: boolean;
     selectable?: boolean;
@@ -88,6 +89,7 @@ export function DataTable<T>({
     pagination,
     paginationSummary,
     href,
+    onView,
     actions,
     numbered = true,
     selectable,
@@ -179,22 +181,31 @@ export function DataTable<T>({
     const selectedOnPage = selectableIds.filter((id) => selectedIds.includes(id));
     const allSelected = selectableIds.length > 0 && selectedOnPage.length === selectableIds.length;
     const someSelected = selectedOnPage.length > 0 && ! allSelected;
-    const showActions = Boolean(actions) || Boolean(href);
+    const showActions = Boolean(actions) || Boolean(href) || Boolean(onView);
     const columnCount = columns.length + Number(canSelect) + Number(numbered) + Number(showActions);
     const hasSelection = selectedIds.length > 0;
     const showDelete = hasSelection && Boolean(bulkActions || onBulkDelete);
 
     const renderActions = (row: T) => {
         const to = href?.(row);
+        const canView = Boolean(onView) || Boolean(to);
 
-        if (! to && ! actions) {
+        if (! canView && ! actions) {
             return null;
         }
 
         return (
             <>
-                {to ? (
-                    <TableActionButton label={t('common.view')} icon={EyeIcon} href={to} />
+                {canView ? (
+                    <TableActionButton
+                        label={t('common.view')}
+                        icon={EyeIcon}
+                        href={onView ? undefined : to}
+                        onClick={onView ? (event) => {
+                            event.stopPropagation();
+                            onView(row);
+                        } : undefined}
+                    />
                 ) : null}
                 {actions?.(row)}
             </>

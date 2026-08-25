@@ -97,7 +97,6 @@ function CustomerFormDialogBody({
             onSubmit={submit}
             onCancel={onClose}
             mode={isEdit ? 'edit' : 'create'}
-            variant="modal"
         />
     );
 }

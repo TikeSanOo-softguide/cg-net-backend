@@ -9,6 +9,7 @@ import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
+import { StaffDetailDialog, type StaffDetailMember } from '@/components/staff/StaffDetailDialog';
 import { StaffFormDialog, type StaffFormMember } from '@/components/staff/StaffFormDialog';
 import type { StaffRoleOption } from '@/components/staff/StaffForm';
 import { FormControl } from '@/components/ui/form-control';
@@ -17,9 +18,7 @@ import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { visitBulkDelete } from '@/lib/bulk-delete';
 
-type StaffRow = StaffFormMember & {
-    created_at: string | null;
-};
+type StaffRow = StaffDetailMember;
 
 type Filters = {
     search: string;
@@ -54,7 +53,9 @@ export default function StaffIndex({ staff, roles = [], filters }: StaffIndexPro
     const [search, setSearch] = useState(filters.search);
     const [pendingIds, setPendingIds] = useState<number[]>([]);
     const [formOpen, setFormOpen] = useState(false);
+    const [detailOpen, setDetailOpen] = useState(false);
     const [editingStaff, setEditingStaff] = useState<StaffFormMember | null>(null);
+    const [viewingStaff, setViewingStaff] = useState<StaffDetailMember | null>(null);
     const debounce = useRef<number>(0);
     const canDelete = can('staff.delete');
 
@@ -85,7 +86,10 @@ export default function StaffIndex({ staff, roles = [], filters }: StaffIndexPro
                         const nextDirection = filters.sort === column && filters.direction === 'asc' ? 'desc' : 'asc';
                         visitIndex({ ...filters, sort: column, direction: nextDirection });
                     }}
-                    href={(row) => `/staff/${row.id}`}
+                    onView={(row) => {
+                        setViewingStaff(row);
+                        setDetailOpen(true);
+                    }}
                     onCreate={can('staff.create') ? () => {
                         setEditingStaff(null);
                         setFormOpen(true);
@@ -186,6 +190,23 @@ export default function StaffIndex({ staff, roles = [], filters }: StaffIndexPro
                     ]}
                 />
             </PageContent>
+            <StaffDetailDialog
+                open={detailOpen}
+                onOpenChange={(open) => {
+                    setDetailOpen(open);
+
+                    if (! open) {
+                        setViewingStaff(null);
+                    }
+                }}
+                staff={viewingStaff}
+                onEdit={(member) => {
+                    setDetailOpen(false);
+                    setViewingStaff(null);
+                    setEditingStaff(member);
+                    setFormOpen(true);
+                }}
+            />
             <StaffFormDialog
                 open={formOpen}
                 onOpenChange={(open) => {

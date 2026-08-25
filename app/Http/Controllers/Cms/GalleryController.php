@@ -31,9 +31,9 @@ class GalleryController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(): RedirectResponse
     {
-        return Inertia::render('Cms/gallery/Create');
+        return redirect()->route('cms.gallery.index');
     }
 
     public function store(StoreGalleryRequest $request): RedirectResponse
@@ -48,11 +48,9 @@ class GalleryController extends Controller
         return redirect()->route('cms.gallery.index')->with('success', 'cms.created');
     }
 
-    public function edit(Gallery $gallery): Response
+    public function edit(Gallery $gallery): RedirectResponse
     {
-        return Inertia::render('Cms/gallery/Edit', [
-            'item' => $this->payload($gallery),
-        ]);
+        return redirect()->route('cms.gallery.index');
     }
 
     public function update(UpdateGalleryRequest $request, Gallery $gallery): RedirectResponse

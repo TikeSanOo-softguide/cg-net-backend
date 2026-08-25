@@ -1,18 +1,37 @@
 import { useMemo, useState } from 'react';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { BanIcon, HashIcon, Link2Icon, SquarePenIcon, UnlinkIcon, UserCheckIcon } from 'lucide-react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import {
+    BanIcon,
+    CalendarIcon,
+    CircleDotIcon,
+    HashIcon,
+    IdCardIcon,
+    LanguagesIcon,
+    Link2Icon,
+    MailIcon,
+    MapPinIcon,
+    PhoneIcon,
+    SquarePenIcon,
+    UnlinkIcon,
+    UserCheckIcon,
+    UserIcon,
+    WalletIcon,
+} from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { CustomerFormDialog } from '@/components/customer/CustomerFormDialog';
 import { DataTable } from '@/components/DataTable';
+import { DetailPanel } from '@/components/DetailPanel';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormControl } from '@/components/ui/form-control';
+import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 
@@ -77,6 +96,7 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
     const errors = page.props.errors as Record<string, string | undefined>;
     const [packageTab, setPackageTab] = useState<'active' | 'expired'>('active');
     const [statusOpen, setStatusOpen] = useState(false);
+    const [formOpen, setFormOpen] = useState(false);
     const [unbindAccount, setUnbindAccount] = useState<BroadbandAccountRow | null>(null);
     const [statusProcessing, setStatusProcessing] = useState(false);
     const [unbindProcessing, setUnbindProcessing] = useState(false);
@@ -89,73 +109,82 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
         [packageTab, packages],
     );
 
-    const profileFields = [
-        { label: t('customers.phone'), value: customer.phone },
-        { label: t('customers.nrc'), value: customer.nrc_number },
-        { label: t('customers.email'), value: customer.email ?? '—' },
-        { label: t('customers.address'), value: customer.address ?? '—' },
-        { label: t('customers.language'), value: t(`language.${customer.language_pref}`) },
-        { label: t('customers.joined'), value: customer.created_at ?? '—' },
-    ];
-
     return (
         <>
             <Head title={customer.name} />
             <PageContent className="pb-24 sm:pb-8">
-                <PageHeader
-                    title={customer.name}
-                    description={customer.phone}
-                    actions={
-                        <div className="hidden items-center gap-2 sm:flex">
-                            <StatusBadge status={customer.status} />
-                            <Button type="button" size="sm" variant="outline" asChild>
-                                <Link href={`/customers/${customer.id}/edit`}>
+                <PageHeader title={customer.name} description={customer.phone} />
+
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,560px)_minmax(0,1fr)]">
+                    <DetailPanel
+                        title={t('customers.profile')}
+                        description={t('customers.edit_description')}
+                        icon={UserIcon}
+                        actions={
+                            <div className="hidden items-center gap-2 sm:flex">
+                                <StatusBadge status={customer.status} />
+                                <Button type="button" size="sm" variant="outline" onClick={() => setFormOpen(true)}>
                                     <SquarePenIcon />
                                     {t('common.edit')}
-                                </Link>
-                            </Button>
-                            <Button type="button" size="sm" variant={customer.status === 'active' ? 'destructive' : 'primary'} onClick={() => setStatusOpen(true)}>
-                                {customer.status === 'active' ? <BanIcon /> : <UserCheckIcon />}
-                                {customer.status === 'active' ? t('customers.suspend') : t('customers.reactivate')}
-                            </Button>
-                        </div>
-                    }
-                />
+                                </Button>
+                            </div>
+                        }
+                        footer={
+                            <>
+                                <Button type="button" size="sm" variant="outline" className="h-8 w-[120px] rounded-[4px] sm:hidden" onClick={() => setFormOpen(true)}>
+                                    <SquarePenIcon className="size-3.5" strokeWidth={1.85} />
+                                    {t('common.edit')}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant={customer.status === 'active' ? 'destructive' : 'primary'}
+                                    className="h-8 min-w-[120px] rounded-[4px]"
+                                    onClick={() => setStatusOpen(true)}
+                                >
+                                    {customer.status === 'active' ? <BanIcon className="size-3.5" strokeWidth={1.85} /> : <UserCheckIcon className="size-3.5" strokeWidth={1.85} />}
+                                    {customer.status === 'active' ? t('customers.suspend') : t('customers.reactivate')}
+                                </Button>
+                            </>
+                        }
+                    >
+                        <FormField label={t('customers.name')} htmlFor="detail-name" icon={UserIcon} className="sm:col-span-2">
+                            <Input id="detail-name" value={customer.name} readOnly />
+                        </FormField>
+                        <FormField label={t('customers.phone')} htmlFor="detail-phone" icon={PhoneIcon}>
+                            <Input id="detail-phone" value={customer.phone} readOnly />
+                        </FormField>
+                        <FormField label={t('customers.nrc')} htmlFor="detail-nrc" icon={IdCardIcon}>
+                            <Input id="detail-nrc" value={customer.nrc_number} readOnly />
+                        </FormField>
+                        <FormField label={t('customers.email')} htmlFor="detail-email" icon={MailIcon}>
+                            <Input id="detail-email" value={customer.email ?? '—'} readOnly />
+                        </FormField>
+                        <FormField label={t('customers.language')} htmlFor="detail-language" icon={LanguagesIcon}>
+                            <Input id="detail-language" value={t(`language.${customer.language_pref}`)} readOnly />
+                        </FormField>
+                        <FormField label={t('common.status')} htmlFor="detail-status" icon={CircleDotIcon}>
+                            <div id="detail-status" className="flex h-10 items-center">
+                                <StatusBadge status={customer.status} />
+                            </div>
+                        </FormField>
+                        <FormField label={t('customers.joined')} htmlFor="detail-joined" icon={CalendarIcon}>
+                            <Input id="detail-joined" value={customer.created_at ?? '—'} readOnly />
+                        </FormField>
+                        <FormField label={t('customers.address')} htmlFor="detail-address" icon={MapPinIcon} className="sm:col-span-2">
+                            <Textarea id="detail-address" value={customer.address ?? '—'} readOnly rows={3} />
+                        </FormField>
+                    </DetailPanel>
 
-                <div className="flex items-center gap-2 sm:hidden">
-                    <StatusBadge status={customer.status} />
-                    <Button type="button" size="sm" variant="outline" asChild>
-                        <Link href={`/customers/${customer.id}/edit`}>
-                            <SquarePenIcon />
-                            {t('common.edit')}
-                        </Link>
-                    </Button>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                    <Card className="gap-0 py-0">
-                        <CardHeader className="px-4 py-3 sm:px-5">
-                            <CardTitle className="text-sm font-semibold">{t('customers.profile')}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid grid-cols-1 gap-3 px-4 pb-4 sm:grid-cols-2 sm:px-5">
-                            {profileFields.map((field) => (
-                                <div key={field.label} className="min-w-0">
-                                    <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">{field.label}</p>
-                                    <p className="mt-0.5 truncate text-[13px] text-foreground">{field.value}</p>
-                                </div>
-                            ))}
-                        </CardContent>
-                    </Card>
-
-                    <Card className="gap-0 py-0">
-                        <CardHeader className="px-4 py-3 sm:px-5">
-                            <CardTitle className="text-sm font-semibold">{t('customers.wallet')}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="px-4 pb-4 sm:px-5">
-                            <p className="font-heading text-2xl font-semibold tracking-tight">{formatMmk(wallet.balance_mmk)}</p>
-                            <p className="mt-1 text-xs text-muted-foreground">{t('customers.wallet_balance')}</p>
-                        </CardContent>
-                    </Card>
+                    <DetailPanel
+                        title={t('customers.wallet')}
+                        description={t('customers.wallet_balance')}
+                        icon={WalletIcon}
+                    >
+                        <FormField label={t('customers.wallet_balance')} htmlFor="detail-wallet" icon={WalletIcon} className="sm:col-span-2">
+                            <Input id="detail-wallet" value={formatMmk(wallet.balance_mmk)} readOnly className="font-heading text-base font-semibold" />
+                        </FormField>
+                    </DetailPanel>
                 </div>
 
                 <DataTable
@@ -360,6 +389,12 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
                     </form>
                 </div>
             </PageContent>
+
+            <CustomerFormDialog
+                open={formOpen}
+                onOpenChange={setFormOpen}
+                customer={customer}
+            />
 
             <ConfirmDialog
                 open={statusOpen}

@@ -2,7 +2,7 @@ import { FormEvent } from 'react';
 import { useForm } from '@inertiajs/react';
 import { FolderTreeIcon, SquarePenIcon } from 'lucide-react';
 
-import { NameSlugForm, type NameSlugFormValues } from '@/components/cms/shared/NameSlugForm';
+import { CategoryForm, type CategoryFormValues } from '@/components/cms/category/CategoryForm';
 import { FormDialog } from '@/components/FormDialog';
 import { cmsModalVisit } from '@/lib/cms-modal';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -18,6 +18,13 @@ type CategoryFormDialogProps = {
     onOpenChange: (open: boolean) => void;
     item: CategoryItem | null;
 };
+
+function emptyCategoryForm(): CategoryFormValues {
+    return {
+        name: '',
+        slug: '',
+    };
+}
 
 export function CategoryFormDialog({ open, onOpenChange, item }: CategoryFormDialogProps) {
     const { t } = useTranslation();
@@ -44,10 +51,13 @@ export function CategoryFormDialog({ open, onOpenChange, item }: CategoryFormDia
 
 function CategoryFormDialogBody({ item, onClose }: { item: CategoryItem | null; onClose: () => void }) {
     const isEdit = item !== null;
-    const form = useForm<NameSlugFormValues>(
+    const form = useForm<CategoryFormValues>(
         item
-            ? { name: item.name, slug: item.slug }
-            : { name: '', slug: '' },
+            ? {
+                  name: item.name,
+                  slug: item.slug,
+              }
+            : emptyCategoryForm(),
     );
 
     const submit = (event: FormEvent) => {
@@ -67,5 +77,12 @@ function CategoryFormDialogBody({ item, onClose }: { item: CategoryItem | null; 
         form.post('/cms/categories', options);
     };
 
-    return <NameSlugForm form={form} onSubmit={submit} onCancel={onClose} variant="modal" mode={isEdit ? 'edit' : 'create'} />;
+    return (
+        <CategoryForm
+            form={form}
+            onSubmit={submit}
+            onCancel={onClose}
+            mode={isEdit ? 'edit' : 'create'}
+        />
+    );
 }

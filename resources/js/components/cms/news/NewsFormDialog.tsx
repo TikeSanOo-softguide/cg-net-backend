@@ -105,7 +105,6 @@ function NewsFormDialogBody({
             form={form}
             onSubmit={submit}
             onCancel={onClose}
-            variant="modal"
             mode={isEdit ? 'edit' : 'create'}
             categories={categories}
             imageUrl={item?.image_url}
