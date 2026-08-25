@@ -1,7 +1,7 @@
 import { FormEvent } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 
-import { PageHeader } from '@/components/PageHeader';
+import { FormPage } from '@/components/FormPage';
 import { StaffForm, type StaffFormValues, type StaffRoleOption } from '@/components/staff/StaffForm';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -34,10 +34,18 @@ export default function StaffEdit({ staffMember, roles }: StaffEditProps) {
     return (
         <>
             <Head title={t('staff.edit')} />
-            <div className="flex w-full flex-col gap-5 pt-6 lg:pt-8">
-                <PageHeader eyebrow={t('menu.staff_accounts')} title={t('staff.edit')} description={t('staff.edit_description')} />
-                <StaffForm form={form} roles={roles} onSubmit={submit} cancelHref={`/staff/${staffMember.id}`} passwordRequired={false} />
-            </div>
+            <FormPage>
+                <p className="text-xs font-medium text-primary/70">{t('menu.staff_accounts')}</p>
+                <StaffForm
+                    form={form}
+                    roles={roles}
+                    onSubmit={submit}
+                    cancelHref={`/staff/${staffMember.id}`}
+                    passwordRequired={false}
+                    title={t('staff.edit')}
+                    description={t('staff.edit_description')}
+                />
+            </FormPage>
         </>
     );
 }

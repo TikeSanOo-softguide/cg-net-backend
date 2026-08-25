@@ -1,6 +1,7 @@
 import { FormEvent } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 
+import { FormPage } from '@/components/FormPage';
 import { PageHeader } from '@/components/PageHeader';
 import { RoleForm, type RoleFormValues } from '@/components/staff/RoleForm';
 import type { PermissionMatrixGroup } from '@/components/PermissionMatrix';
@@ -31,10 +32,10 @@ export default function RoleEdit({ role, matrix }: RoleEditProps) {
     return (
         <>
             <Head title={t('staff.edit_role')} />
-            <div className="flex w-full flex-col gap-5 pt-6 lg:pt-8">
+            <FormPage width="lg">
                 <PageHeader eyebrow={t('menu.roles')} title={t('staff.edit_role')} description={t('staff.role_form_description')} />
                 <RoleForm form={form} matrix={matrix} onSubmit={submit} cancelHref="/roles" locked={role.is_locked} />
-            </div>
+            </FormPage>
         </>
     );
 }

@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
-import { PlusIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { SquarePenIcon, Trash2Icon } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
 import { PageHeader } from '@/components/PageHeader';
 import { TableActionButton } from '@/components/TableActionButton';
-import { Button } from '@/components/ui/button';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { visitBulkDelete } from '@/lib/bulk-delete';
@@ -46,16 +45,6 @@ export default function RolesIndex({ roles, filters }: RolesIndexProps) {
                     eyebrow={t('menu.staff_role_management')}
                     title={t('menu.roles')}
                     description={t('staff.roles_description')}
-                    actions={
-                        can('roles.create') ? (
-                            <Button asChild>
-                                <Link href="/roles/create">
-                                    <PlusIcon />
-                                    {t('staff.create_role')}
-                                </Link>
-                            </Button>
-                        ) : null
-                    }
                 />
                 <DataTable
                     data={roles}
@@ -69,6 +58,8 @@ export default function RolesIndex({ roles, filters }: RolesIndexProps) {
                         }, 300);
                     }}
                     searchPlaceholder={t('staff.search_roles')}
+                    createHref={can('roles.create') ? '/roles/create' : undefined}
+                    createLabel={t('staff.create_role')}
                     onBulkDelete={canDelete ? (ids) => visitBulkDelete('/roles/bulk-destroy', ids.map(Number)) : undefined}
                     bulkDeleteTitle={t('staff.bulk_delete_roles_title')}
                     isRowSelectable={(row) => ! row.is_locked}

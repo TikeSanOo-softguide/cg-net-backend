@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { ChevronDownIcon, UsersIcon, WifiIcon, PackageIcon, BanknoteIcon, ClipboardListIcon, Trash2Icon } from 'lucide-react';
-import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { ChevronDownIcon, UsersIcon, WifiIcon, PackageIcon, BanknoteIcon, ClipboardListIcon, Trash2Icon, TrendingUpIcon } from 'lucide-react';
+import { Area, Bar, CartesianGrid, ComposedChart, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
@@ -57,30 +57,35 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
             value: stats.total_customers.toLocaleString(),
             icon: UsersIcon,
             iconWrapperClassName: 'bg-teal-100 text-teal-800 dark:bg-teal-500/15 dark:text-teal-300',
+            accentClassName: 'bg-teal-500',
         },
         {
             key: 'dashboard.active_broadband_accounts',
             value: stats.active_broadband_accounts.toLocaleString(),
             icon: WifiIcon,
             iconWrapperClassName: 'bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-300',
+            accentClassName: 'bg-sky-500',
         },
         {
             key: 'dashboard.active_packages',
             value: stats.active_packages.toLocaleString(),
             icon: PackageIcon,
             iconWrapperClassName: 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300',
+            accentClassName: 'bg-amber-500',
         },
         {
             key: 'dashboard.todays_revenue',
             value: `${Number(stats.todays_revenue).toLocaleString()} MMK`,
             icon: BanknoteIcon,
             iconWrapperClassName: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300',
+            accentClassName: 'bg-emerald-500',
         },
         {
             key: 'dashboard.pending_requests',
             value: stats.pending_requests.toLocaleString(),
             icon: ClipboardListIcon,
             iconWrapperClassName: 'bg-orange-100 text-orange-800 dark:bg-orange-500/15 dark:text-orange-300',
+            accentClassName: 'bg-orange-500',
         },
     ];
 
@@ -98,18 +103,24 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
                             value={card.value}
                             icon={card.icon}
                             iconWrapperClassName={card.iconWrapperClassName}
+                            accentClassName={card.accentClassName}
                         />
                     ))}
                 </section>
 
-                <Card className="gap-0 py-0">
-                    <CardHeader className="flex flex-row items-center justify-between gap-3 px-5 py-5 sm:px-6">
-                        <div>
-                            <CardTitle className="text-lg font-semibold">{t('dashboard.last_30_days')}</CardTitle>
-                            <CardDescription>
-                                {t('dashboard.revenue')}
-                                {! isMobile ? ` · ${t('dashboard.new_signups')}` : null}
-                            </CardDescription>
+                <Card className="gap-0 overflow-hidden py-0 transition-shadow duration-200 hover:shadow-md">
+                    <CardHeader className="flex flex-row items-center justify-between gap-3 border-b border-border/70 px-5 py-5 sm:px-6">
+                        <div className="flex min-w-0 items-start gap-3">
+                            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                                <TrendingUpIcon className="size-[22px]" strokeWidth={1.85} />
+                            </div>
+                            <div className="min-w-0">
+                                <CardTitle className="text-lg font-semibold">{t('dashboard.last_30_days')}</CardTitle>
+                                <CardDescription>
+                                    {t('dashboard.revenue')}
+                                    {! isMobile ? ` · ${t('dashboard.new_signups')}` : null}
+                                </CardDescription>
+                            </div>
                         </div>
                         {isMobile ? (
                             <Button type="button" variant="outline" size="sm" onClick={() => setLegendOpen((open) => ! open)}>
@@ -134,6 +145,12 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
                         <div className="h-64 w-full min-w-0 sm:h-72">
                             <ResponsiveContainer width="100%" height="100%">
                                 <ComposedChart data={chart} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="dashboard-revenue-fill" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.22} />
+                                            <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
                                     <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
                                     <XAxis dataKey="date" tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} tickFormatter={(value) => String(value).slice(5)} />
                                     <YAxis yAxisId="left" tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} />
@@ -154,14 +171,16 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
                                             formatter={(value) => (value === 'revenue' ? t('dashboard.revenue') : t('dashboard.new_signups'))}
                                         />
                                     ) : null}
-                                    <Line
+                                    <Area
                                         yAxisId="left"
                                         type="monotone"
                                         dataKey="revenue"
                                         name="revenue"
                                         stroke="var(--chart-1)"
                                         strokeWidth={2}
+                                        fill="url(#dashboard-revenue-fill)"
                                         dot={false}
+                                        activeDot={{ r: 4 }}
                                     />
                                     {! isMobile || legendOpen ? (
                                         <Bar yAxisId="right" dataKey="signups" name="signups" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />

@@ -2,6 +2,7 @@ import { FormEvent } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 
 import { PromotionForm, type PromotionFormValues } from '@/components/cms/PromotionForm';
+import { FormPage } from '@/components/FormPage';
 import { PageHeader } from '@/components/PageHeader';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -36,10 +37,10 @@ export default function PromotionEdit({ item }: Props) {
     return (
         <>
             <Head title={t('cms.edit_promotion')} />
-            <div className="flex w-full flex-col gap-5 pt-6 lg:pt-8">
+            <FormPage>
                 <PageHeader eyebrow={t('menu.cms_promotions')} title={t('cms.edit_promotion')} />
                 <PromotionForm form={form} onSubmit={submit} cancelHref="/cms/promotions" imageUrl={item.image_url} />
-            </div>
+            </FormPage>
         </>
     );
 }

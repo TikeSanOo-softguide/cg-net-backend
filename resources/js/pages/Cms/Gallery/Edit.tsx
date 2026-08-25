@@ -2,6 +2,7 @@ import { FormEvent } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 
 import { GalleryForm, type GalleryFormValues } from '@/components/cms/GalleryForm';
+import { FormPage } from '@/components/FormPage';
 import { PageHeader } from '@/components/PageHeader';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -21,10 +22,10 @@ export default function GalleryEdit({ item }: Props) {
     return (
         <>
             <Head title={t('cms.edit_gallery')} />
-            <div className="flex w-full flex-col gap-5 pt-6 lg:pt-8">
+            <FormPage>
                 <PageHeader eyebrow={t('menu.cms_gallery')} title={t('cms.edit_gallery')} />
                 <GalleryForm form={form} onSubmit={submit} cancelHref="/cms/gallery" imageUrl={item.image_url} />
-            </div>
+            </FormPage>
         </>
     );
 }

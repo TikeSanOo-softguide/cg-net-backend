@@ -1,8 +1,9 @@
 import { FormEvent } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 
-import { PageHeader } from '@/components/PageHeader';
-import { StaffForm, type StaffFormValues, type StaffRoleOption } from '@/components/staff/StaffForm';
+import { FormPage } from '@/components/FormPage';
+import { StaffCreateForm } from '@/components/staff/StaffCreateForm';
+import { type StaffFormValues, type StaffRoleOption } from '@/components/staff/StaffForm';
 import { useTranslation } from '@/hooks/useTranslation';
 
 type StaffCreateProps = {
@@ -28,10 +29,17 @@ export default function StaffCreate({ roles }: StaffCreateProps) {
     return (
         <>
             <Head title={t('staff.create')} />
-            <div className="flex w-full flex-col gap-5 pt-6 lg:pt-8">
-                <PageHeader eyebrow={t('menu.staff_accounts')} title={t('staff.create')} description={t('staff.create_description')} />
-                <StaffForm form={form} roles={roles} onSubmit={submit} cancelHref="/staff" />
-            </div>
+            <FormPage>
+                <p className="text-xs font-medium text-primary/70">{t('menu.staff_accounts')}</p>
+                <StaffCreateForm
+                    form={form}
+                    roles={roles}
+                    onSubmit={submit}
+                    cancelHref="/staff"
+                    title={t('staff.create')}
+                    description={t('staff.create_description')}
+                />
+            </FormPage>
         </>
     );
 }

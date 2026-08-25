@@ -47,6 +47,7 @@ class StaffController extends Controller
 
         return Inertia::render('Staff/Index', [
             'staff' => $staff,
+            'roles' => $this->roleOptions(),
             'filters' => [
                 'search' => $search,
                 'status' => $status,
@@ -108,6 +109,10 @@ class StaffController extends Controller
         $admin->syncRoles($this->allowedRoles($request->user(), $request->validated('role_ids', []), $admin));
 
         activity('staff')->causedBy($request->user())->performedOn($admin)->event('updated')->log('staff_updated');
+
+        if ($request->headers->has('X-Modal')) {
+            return back()->with('success', 'staff.updated');
+        }
 
         return redirect()->route('staff.show', $admin)->with('success', 'staff.updated');
     }

@@ -80,6 +80,25 @@ class StaffManagementTest extends TestCase
                 ->has('staffMember.roles', 2));
     }
 
+    public function test_staff_create_validates_required_fields(): void
+    {
+        $actor = Admin::factory()->create();
+        $actor->assignRole(AppPermissions::SuperAdmin);
+
+        $this->actingAs($actor, 'web')
+            ->from('/staff/create')
+            ->post('/staff', [
+                'name' => '',
+                'email' => 'not-an-email',
+                'password' => 'short',
+                'password_confirmation' => 'mismatch',
+                'status' => '',
+                'role_ids' => [],
+            ])
+            ->assertRedirect('/staff/create')
+            ->assertSessionHasErrors(['name', 'email', 'password', 'status', 'role_ids']);
+    }
+
     public function test_admins_can_create_update_and_delete_a_role_with_permission_matrix(): void
     {
         $actor = Admin::factory()->create();

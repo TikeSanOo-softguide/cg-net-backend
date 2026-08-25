@@ -2,6 +2,7 @@ import { FormEvent } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 
 import { NewsForm, type NewsFormValues, type NewsOption } from '@/components/cms/NewsForm';
+import { FormPage } from '@/components/FormPage';
 import { PageHeader } from '@/components/PageHeader';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -37,10 +38,10 @@ export default function NewsEdit({ categories, item }: Props) {
     return (
         <>
             <Head title={t('cms.edit_news')} />
-            <div className="flex w-full flex-col gap-5 pt-6 lg:pt-8">
+            <FormPage>
                 <PageHeader eyebrow={t('menu.cms_news')} title={t('cms.edit_news')} />
                 <NewsForm form={form} onSubmit={submit} cancelHref="/cms/news" categories={categories} imageUrl={item.image_url} />
-            </div>
+            </FormPage>
         </>
     );
 }

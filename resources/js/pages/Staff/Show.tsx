@@ -1,6 +1,6 @@
 import { FormEvent } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { MailIcon, SquarePenIcon, UserIcon } from 'lucide-react';
+import { MailIcon, ShieldIcon, SquarePenIcon, UserIcon } from 'lucide-react';
 
 import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -63,15 +63,18 @@ export default function StaffShow({ staffMember, roles }: StaffShowProps) {
                         ) : null
                     }
                 />
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                    <Card className="gap-0 py-0">
-                        <CardHeader className="border-b border-border/70 px-4 py-4 sm:px-5">
-                            <CardTitle>{t('staff.profile')}</CardTitle>
+                <div className="mx-auto grid w-full max-w-4xl grid-cols-1 gap-4 lg:grid-cols-2">
+                    <Card className="gap-0 overflow-hidden py-0">
+                        <CardHeader className="flex flex-row items-center gap-3 border-b border-border/70 px-5 py-5">
+                            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                                <UserIcon className="size-[22px]" strokeWidth={1.85} />
+                            </div>
+                            <CardTitle className="text-lg font-semibold">{t('staff.profile')}</CardTitle>
                         </CardHeader>
-                        <CardContent className="flex flex-col gap-4 px-4 py-4 sm:px-5">
+                        <CardContent className="flex flex-col gap-4 px-5 py-5 sm:px-6">
                             <div className="flex items-center gap-3">
-                                <span className="flex size-10 items-center justify-center rounded-full bg-primary/15 text-primary">
-                                    <UserIcon className="size-4" />
+                                <span className="flex size-11 items-center justify-center rounded-xl bg-muted text-foreground">
+                                    <UserIcon className="size-5" strokeWidth={1.85} />
                                 </span>
                                 <div>
                                     <p className="text-sm font-semibold">{staffMember.name}</p>
@@ -79,8 +82,8 @@ export default function StaffShow({ staffMember, roles }: StaffShowProps) {
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
-                                <span className="flex size-10 items-center justify-center rounded-full bg-primary/15 text-primary">
-                                    <MailIcon className="size-4" />
+                                <span className="flex size-11 items-center justify-center rounded-xl bg-muted text-foreground">
+                                    <MailIcon className="size-5" strokeWidth={1.85} />
                                 </span>
                                 <div>
                                     <p className="text-sm font-semibold">{staffMember.email}</p>
@@ -97,16 +100,20 @@ export default function StaffShow({ staffMember, roles }: StaffShowProps) {
                             </div>
                         </CardContent>
                     </Card>
-                    <Card className="gap-0 py-0">
-                        <CardHeader className="border-b border-border/70 px-4 py-4 sm:px-5">
-                            <CardTitle>{t('staff.assigned_roles')}</CardTitle>
+                    <Card className="gap-0 overflow-hidden py-0">
+                        <CardHeader className="flex flex-row items-center gap-3 border-b border-border/70 px-5 py-5">
+                            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                                <ShieldIcon className="size-[22px]" strokeWidth={1.85} />
+                            </div>
+                            <CardTitle className="text-lg font-semibold">{t('staff.assigned_roles')}</CardTitle>
                         </CardHeader>
-                        <CardContent className="px-4 py-4 sm:px-5">
+                        <CardContent className="px-5 py-5 sm:px-6">
                             {can('staff.update') ? (
                                 <form onSubmit={submitRoles} className="flex flex-col gap-4">
                                     <FormField label={t('staff.roles')} htmlFor="role_ids" error={form.errors.role_ids} required>
                                         <MultiSelect
                                             id="role_ids"
+                                            icon={ShieldIcon}
                                             values={form.data.role_ids.map(String)}
                                             options={roles.map((role) => ({ value: String(role.id), label: role.name }))}
                                             placeholder={t('staff.roles_placeholder')}

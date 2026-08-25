@@ -1,0 +1,103 @@
+import { FormEvent } from 'react';
+import { useForm } from '@inertiajs/react';
+import { UserCogIcon, UserPlusIcon } from 'lucide-react';
+
+import { FormDialog } from '@/components/FormDialog';
+import { CustomerForm, emptyCustomerForm, type CustomerFormValues } from '@/components/customer/CustomerForm';
+import { useTranslation } from '@/hooks/useTranslation';
+
+export type CustomerFormMember = {
+    id: number;
+    name: string;
+    phone: string;
+    nrc_number: string;
+    email?: string | null;
+    address?: string | null;
+    language_pref: string;
+    status: string;
+};
+
+type CustomerFormDialogProps = {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    customer: CustomerFormMember | null;
+};
+
+const modalVisit = {
+    headers: { 'X-Modal': '1' },
+    preserveScroll: true,
+};
+
+export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFormDialogProps) {
+    const { t } = useTranslation();
+    const isEdit = customer !== null;
+
+    return (
+        <FormDialog
+            open={open}
+            onOpenChange={onOpenChange}
+            title={isEdit ? t('customers.edit') : t('customers.create')}
+            description={isEdit ? t('customers.edit_description') : t('customers.create_description')}
+            icon={isEdit ? UserCogIcon : UserPlusIcon}
+        >
+            {open ? (
+                <CustomerFormDialogBody
+                    key={customer ? `edit-${customer.id}` : 'create'}
+                    customer={customer}
+                    onClose={() => onOpenChange(false)}
+                />
+            ) : null}
+        </FormDialog>
+    );
+}
+
+function CustomerFormDialogBody({
+    customer,
+    onClose,
+}: {
+    customer: CustomerFormMember | null;
+    onClose: () => void;
+}) {
+    const { t } = useTranslation();
+    const isEdit = customer !== null;
+    const form = useForm<CustomerFormValues>(
+        customer
+            ? {
+                  name: customer.name,
+                  phone: customer.phone,
+                  nrc_number: customer.nrc_number,
+                  email: customer.email ?? '',
+                  address: customer.address ?? '',
+                  language_pref: customer.language_pref,
+                  status: customer.status,
+              }
+            : emptyCustomerForm(),
+    );
+
+    const submit = (event: FormEvent) => {
+        event.preventDefault();
+
+        const options = {
+            ...modalVisit,
+            onSuccess: onClose,
+        };
+
+        if (isEdit && customer) {
+            form.put(`/customers/${customer.id}`, options);
+
+            return;
+        }
+
+        form.post('/customers', options);
+    };
+
+    return (
+        <CustomerForm
+            form={form}
+            onSubmit={submit}
+            onCancel={onClose}
+            submitLabel={t('common.submit')}
+            variant="modal"
+        />
+    );
+}

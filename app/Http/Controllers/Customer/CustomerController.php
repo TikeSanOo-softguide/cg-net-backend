@@ -51,6 +51,9 @@ class CustomerController extends Controller
                 'name' => $customer->name,
                 'phone' => $customer->phone,
                 'nrc_number' => $customer->nrc_number,
+                'email' => $customer->email,
+                'address' => $customer->address,
+                'language_pref' => $customer->language_pref->value,
                 'status' => $customer->status->value,
                 'accounts_count' => $customer->broadband_accounts_count,
                 'created_at' => $customer->created_at?->toDateString(),
@@ -89,6 +92,12 @@ class CustomerController extends Controller
             ->event('created')
             ->withProperties($payload)
             ->log('customer_created');
+
+        if ($request->headers->has('X-Modal')) {
+            return redirect()
+                ->route('customers.index')
+                ->with('success', 'customers.created');
+        }
 
         return redirect()
             ->route('customers.show', $customer)
@@ -159,6 +168,10 @@ class CustomerController extends Controller
             ->event('updated')
             ->withProperties($payload)
             ->log('customer_updated');
+
+        if ($request->headers->has('X-Modal')) {
+            return back()->with('success', 'customers.updated');
+        }
 
         return redirect()
             ->route('customers.show', $customer)

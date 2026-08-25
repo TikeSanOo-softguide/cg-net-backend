@@ -25,8 +25,8 @@ export type ThemeSettings = {
 
 export const DEFAULT_THEME_SETTINGS: ThemeSettings = {
     primaryColor: DEFAULT_PRIMARY,
-    cardStyle: 'flat',
-    borderRadius: 'md',
+    cardStyle: 'bordered',
+    borderRadius: 'lg',
     shadowStyle: 'md',
 };
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
-import { CircleDotIcon, PlusIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { CircleDotIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
@@ -8,19 +8,14 @@ import type { Paginated } from '@/components/Pagination';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
-import { Button } from '@/components/ui/button';
+import { CustomerFormDialog, type CustomerFormMember } from '@/components/customer/CustomerFormDialog';
 import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { visitBulkDelete } from '@/lib/bulk-delete';
 
-type CustomerRow = {
-    id: number;
-    name: string;
-    phone: string;
-    nrc_number: string;
-    status: string;
+type CustomerRow = CustomerFormMember & {
     accounts_count: number;
     created_at: string | null;
 };
@@ -55,6 +50,8 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
     const can = useCan();
     const [search, setSearch] = useState(filters.search);
     const [pendingIds, setPendingIds] = useState<number[]>([]);
+    const [formOpen, setFormOpen] = useState(false);
+    const [editingCustomer, setEditingCustomer] = useState<CustomerFormMember | null>(null);
     const debounce = useRef<number>(0);
     const canDelete = can('customers.delete');
 
@@ -84,16 +81,6 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                 <PageHeader
                     title={t('menu.customers_list')}
                     description={t('customers.index_description')}
-                    actions={
-                        can('customers.create') ? (
-                            <Button asChild>
-                                <Link href="/customers/create">
-                                    <PlusIcon />
-                                    {t('customers.create')}
-                                </Link>
-                            </Button>
-                        ) : null
-                    }
                 />
                 <DataTable
                     data={customers.data}
@@ -105,6 +92,11 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                     direction={filters.direction}
                     onSort={onSort}
                     href={(row) => `/customers/${row.id}`}
+                    onCreate={can('customers.create') ? () => {
+                        setEditingCustomer(null);
+                        setFormOpen(true);
+                    } : undefined}
+                    createLabel={t('customers.create')}
                     pagination={customers}
                     onBulkDelete={canDelete ? (ids) => visitBulkDelete('/customers/bulk-destroy', ids.map(Number)) : undefined}
                     bulkDeleteTitle={t('customers.bulk_delete_title')}
@@ -115,7 +107,11 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                                     label={t('common.edit')}
                                     icon={SquarePenIcon}
                                     tone="edit"
-                                    href={`/customers/${row.id}/edit`}
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        setEditingCustomer(row);
+                                        setFormOpen(true);
+                                    }}
                                 />
                             ) : null}
                             {canDelete ? (
@@ -195,6 +191,17 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                     ]}
                 />
             </div>
+            <CustomerFormDialog
+                open={formOpen}
+                onOpenChange={(open) => {
+                    setFormOpen(open);
+
+                    if (! open) {
+                        setEditingCustomer(null);
+                    }
+                }}
+                customer={editingCustomer}
+            />
             <ConfirmDialog
                 open={pendingIds.length === 1}
                 onOpenChange={(open) => {

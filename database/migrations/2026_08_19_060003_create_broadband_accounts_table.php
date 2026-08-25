@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('broadband_accounts', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->string('account_number')->unique();
             $table->string('customer_name');
             $table->string('status', 16)->default('active')->index();

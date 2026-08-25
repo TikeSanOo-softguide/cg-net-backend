@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Head, Link, router, usePage } from '@inertiajs/react';
-import { CircleDotIcon, PlusIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
+import { Head, router, usePage } from '@inertiajs/react';
+import { CircleDotIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
@@ -8,19 +8,15 @@ import type { Paginated } from '@/components/Pagination';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
-import { Button } from '@/components/ui/button';
+import { StaffFormDialog, type StaffFormMember } from '@/components/staff/StaffFormDialog';
+import type { StaffRoleOption } from '@/components/staff/StaffForm';
 import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { visitBulkDelete } from '@/lib/bulk-delete';
 
-type StaffRow = {
-    id: number;
-    name: string;
-    email: string;
-    status: string;
-    roles: { id: number; name: string }[];
+type StaffRow = StaffFormMember & {
     created_at: string | null;
 };
 
@@ -33,6 +29,7 @@ type Filters = {
 
 type StaffIndexProps = {
     staff: Paginated<StaffRow>;
+    roles: StaffRoleOption[];
     filters: Filters;
 };
 
@@ -49,12 +46,14 @@ function visitIndex(filters: Filters) {
     });
 }
 
-export default function StaffIndex({ staff, filters }: StaffIndexProps) {
+export default function StaffIndex({ staff, roles = [], filters }: StaffIndexProps) {
     const { t } = useTranslation();
     const can = useCan();
     const { auth } = usePage().props;
     const [search, setSearch] = useState(filters.search);
     const [pendingIds, setPendingIds] = useState<number[]>([]);
+    const [formOpen, setFormOpen] = useState(false);
+    const [editingStaff, setEditingStaff] = useState<StaffFormMember | null>(null);
     const debounce = useRef<number>(0);
     const canDelete = can('staff.delete');
 
@@ -72,16 +71,6 @@ export default function StaffIndex({ staff, filters }: StaffIndexProps) {
                     eyebrow={t('menu.staff_role_management')}
                     title={t('menu.staff_accounts')}
                     description={t('staff.index_description')}
-                    actions={
-                        can('staff.create') ? (
-                            <Button asChild>
-                                <Link href="/staff/create">
-                                    <PlusIcon />
-                                    {t('staff.create')}
-                                </Link>
-                            </Button>
-                        ) : null
-                    }
                 />
                 <DataTable
                     data={staff.data}
@@ -100,6 +89,11 @@ export default function StaffIndex({ staff, filters }: StaffIndexProps) {
                         visitIndex({ ...filters, sort: column, direction: nextDirection });
                     }}
                     href={(row) => `/staff/${row.id}`}
+                    onCreate={can('staff.create') ? () => {
+                        setEditingStaff(null);
+                        setFormOpen(true);
+                    } : undefined}
+                    createLabel={t('staff.create')}
                     pagination={staff}
                     onBulkDelete={canDelete ? (ids) => visitBulkDelete('/staff/bulk-destroy', ids.map(Number)) : undefined}
                     bulkDeleteTitle={t('staff.bulk_delete_title')}
@@ -107,7 +101,16 @@ export default function StaffIndex({ staff, filters }: StaffIndexProps) {
                     actions={(row) => (
                         <>
                             {can('staff.update') ? (
-                                <TableActionButton label={t('common.edit')} icon={SquarePenIcon} tone="edit" href={`/staff/${row.id}/edit`} />
+                                <TableActionButton
+                                    label={t('common.edit')}
+                                    icon={SquarePenIcon}
+                                    tone="edit"
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        setEditingStaff(row);
+                                        setFormOpen(true);
+                                    }}
+                                />
                             ) : null}
                             {canDelete && row.id !== auth.user?.id ? (
                                 <TableActionButton
@@ -186,6 +189,18 @@ export default function StaffIndex({ staff, filters }: StaffIndexProps) {
                     ]}
                 />
             </div>
+            <StaffFormDialog
+                open={formOpen}
+                onOpenChange={(open) => {
+                    setFormOpen(open);
+
+                    if (! open) {
+                        setEditingStaff(null);
+                    }
+                }}
+                roles={roles}
+                staff={editingStaff}
+            />
             <ConfirmDialog
                 open={pendingIds.length === 1}
                 onOpenChange={(open) => {

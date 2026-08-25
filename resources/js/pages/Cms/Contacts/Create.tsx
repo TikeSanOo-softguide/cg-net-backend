@@ -2,6 +2,7 @@ import { FormEvent } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 
 import { ContactForm, type ContactFormValues } from '@/components/cms/ContactForm';
+import { FormPage } from '@/components/FormPage';
 import { PageHeader } from '@/components/PageHeader';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -17,10 +18,10 @@ export default function ContactCreate() {
     return (
         <>
             <Head title={t('cms.create_contact')} />
-            <div className="flex w-full flex-col gap-5 pt-6 lg:pt-8">
+            <FormPage>
                 <PageHeader eyebrow={t('menu.cms_contacts')} title={t('cms.create_contact')} />
                 <ContactForm form={form} onSubmit={submit} cancelHref="/cms/contacts" />
-            </div>
+            </FormPage>
         </>
     );
 }

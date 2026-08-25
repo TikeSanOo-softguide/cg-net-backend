@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Link, router } from '@inertiajs/react';
-import { CircleDotIcon, LanguagesIcon, PlusIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
+import { router } from '@inertiajs/react';
+import { CircleDotIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import type { Paginated } from '@/components/Pagination';
 import { PageHeader } from '@/components/PageHeader';
 import { TableActionButton } from '@/components/TableActionButton';
-import { Button } from '@/components/ui/button';
 import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -121,16 +120,6 @@ export function CmsIndexPage<T extends { id: number }>({
                 eyebrow={t('menu.cms')}
                 title={t(titleKey)}
                 description={t(descriptionKey)}
-                actions={
-                    can('cms.create') ? (
-                        <Button asChild>
-                            <Link href={createHref}>
-                                <PlusIcon />
-                                {t(createLabelKey)}
-                            </Link>
-                        </Button>
-                    ) : null
-                }
             />
             <DataTable
                 data={items.data}
@@ -143,6 +132,8 @@ export function CmsIndexPage<T extends { id: number }>({
                 onSort={onSort}
                 pagination={items}
                 filters={filterControls}
+                createHref={can('cms.create') ? createHref : undefined}
+                createLabel={t(createLabelKey)}
                 onBulkDelete={canDelete ? (ids) => visitBulkDelete(`${destroyBase}/bulk-destroy`, ids.map(Number)) : undefined}
                 bulkDeleteTitle={t('cms.bulk_delete_title')}
                 actions={(row) => (

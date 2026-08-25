@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Link, router } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import {
     ArrowDownIcon,
     ArrowUpIcon,
@@ -7,6 +7,7 @@ import {
     CalendarIcon,
     ChevronsUpDownIcon,
     CircleDotIcon,
+    DownloadIcon,
     EyeIcon,
     FolderIcon,
     HashIcon,
@@ -18,6 +19,7 @@ import {
     MailIcon,
     PackageIcon,
     PhoneIcon,
+    PlusIcon,
     Settings2Icon,
     ShieldIcon,
     ShapesIcon,
@@ -33,11 +35,10 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Pagination, type Paginated } from '@/components/Pagination';
 import { SearchInput } from '@/components/SearchInput';
 import { TableActionButton } from '@/components/TableActionButton';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TableCheckbox } from '@/components/ui/table-checkbox';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 
@@ -83,6 +84,9 @@ const DEFAULT_COLUMN_ICONS: Record<string, LucideIcon> = {
     sort_order: ListOrderedIcon,
 };
 
+const EDGE_PAD = 'px-5 sm:px-[45px]';
+const EDGE_CELL = 'first:pl-5 last:pr-5 sm:first:pl-[45px] sm:last:pr-[45px]';
+
 type DataTableProps<T> = {
     title?: string;
     data: T[];
@@ -111,6 +115,10 @@ type DataTableProps<T> = {
     bulkDeleteTitle?: string;
     bulkDeleteDescription?: string;
     bulkActions?: ReactNode;
+    createHref?: string;
+    createLabel?: string;
+    onCreate?: () => void;
+    onExport?: () => void;
 };
 
 export function DataTable<T>({
@@ -141,6 +149,10 @@ export function DataTable<T>({
     bulkDeleteTitle,
     bulkDeleteDescription,
     bulkActions,
+    createHref,
+    createLabel,
+    onCreate,
+    onExport,
 }: DataTableProps<T>) {
     const { t } = useTranslation();
     const [query, setQuery] = useState('');
@@ -219,6 +231,8 @@ export function DataTable<T>({
     const someSelected = selectedOnPage.length > 0 && ! allSelected;
     const showActions = Boolean(actions) || Boolean(href);
     const columnCount = columns.length + Number(canSelect) + Number(numbered) + Number(showActions);
+    const hasSelection = selectedIds.length > 0;
+    const showDelete = hasSelection && Boolean(bulkActions || onBulkDelete);
 
     const renderActions = (row: T) => {
         const to = href?.(row);
@@ -235,14 +249,6 @@ export function DataTable<T>({
                 {actions?.(row)}
             </>
         );
-    };
-
-    const visitRow = (row: T) => {
-        const to = href?.(row);
-
-        if (to) {
-            router.visit(to);
-        }
     };
 
     const toggleAll = () => {
@@ -305,38 +311,83 @@ export function DataTable<T>({
         }
     };
 
+    const exportRows = () => {
+        if (onExport) {
+            onExport();
+
+            return;
+        }
+
+        const headers = [
+            ...(numbered ? [t('common.no')] : []),
+            ...columns.map((column) => column.header),
+        ];
+        const lines = rows.map((row, index) => [
+            ...(numbered ? [String(indexStart + index)] : []),
+            ...columns.map((column) => column.searchValue?.(row) ?? ''),
+        ].map(csvEscape).join(','));
+        const csv = [headers.map(csvEscape).join(','), ...lines].join('\n');
+        const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'export.csv';
+        link.click();
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <TooltipProvider>
             <Card className={cn('gap-0 overflow-hidden bg-[#FFFFFF] py-0 dark:bg-card', className)}>
-                <CardHeader className="gap-3 border-b border-border/70 bg-[#FFFFFF] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-[45px] dark:bg-card">
+                <CardHeader className={cn('flex flex-col gap-3 border-b border-border/70 bg-[#FFFFFF] py-4 dark:bg-card', EDGE_PAD)}>
                     {title ? (
                         <CardTitle className="text-[15px] font-semibold tracking-tight sm:text-base">{title}</CardTitle>
-                    ) : (
-                        <span />
-                    )}
-                    <div className="flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
-                        {filters}
-                        <SearchInput
-                            value={searchValue}
-                            onChange={onSearchChange ?? setQuery}
-                            placeholder={searchPlaceholder ?? t('common.search')}
-                            className="w-full sm:w-72"
-                        />
-                        {canSelect && selectedIds.length > 0 ? (
-                            bulkActions ?? (onBulkDelete ? (
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="destructive"
-                                    className="shrink-0 sm:ml-auto"
-                                    disabled={processing}
-                                    onClick={requestBulkDelete}
-                                >
-                                    <Trash2Icon />
-                                    {t('common.delete_selected_count').replace(':count', String(selectedIds.length))}
-                                </Button>
-                            ) : null)
-                        ) : null}
+                    ) : null}
+                    <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+                        <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+                            {filters}
+                            <SearchInput
+                                value={searchValue}
+                                onChange={onSearchChange ?? setQuery}
+                                placeholder={searchPlaceholder ?? t('common.search')}
+                                className="w-full sm:w-72"
+                            />
+                        </div>
+                        <div className="flex shrink-0 items-center justify-end gap-2">
+                            {showDelete ? (
+                                <>
+                                    <span className="rounded-[6px] bg-primary/12 px-2.5 py-1.5 text-xs font-semibold tabular-nums text-primary">
+                                        {t('common.selected_count').replace(':count', String(selectedIds.length))}
+                                    </span>
+                                    {bulkActions ?? (
+                                        <ToolbarIconButton
+                                            label={t('common.delete')}
+                                            icon={Trash2Icon}
+                                            tone="danger"
+                                            prominent
+                                            disabled={processing}
+                                            onClick={requestBulkDelete}
+                                        />
+                                    )}
+                                    <span className="mx-0.5 hidden h-6 w-px bg-border sm:block" aria-hidden />
+                                </>
+                            ) : null}
+                            <ToolbarIconButton
+                                label={t('common.export')}
+                                icon={DownloadIcon}
+                                prominent
+                                onClick={exportRows}
+                            />
+                            {createHref || onCreate ? (
+                                <ToolbarIconButton
+                                    label={createLabel ?? t('common.create')}
+                                    icon={PlusIcon}
+                                    prominent
+                                    href={onCreate ? undefined : createHref}
+                                    onClick={onCreate}
+                                />
+                            ) : null}
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent className="px-0 pb-0">
@@ -345,7 +396,7 @@ export function DataTable<T>({
                             <TableHeader className="bg-[#FFFFFF] dark:bg-card">
                                 <TableRow className="hover:bg-transparent">
                                     {canSelect ? (
-                                        <TableHead className={cn(headerCellClass, 'w-10 pr-0')}>
+                                        <TableHead className={cn(headerCellClass, EDGE_CELL, 'w-10 pr-0')}>
                                             <TableCheckbox
                                                 checked={allSelected}
                                                 indeterminate={someSelected}
@@ -356,7 +407,7 @@ export function DataTable<T>({
                                         </TableHead>
                                     ) : null}
                                     {numbered ? (
-                                        <TableHead className={cn(headerCellClass, 'w-12', canSelect && 'pl-3')}>
+                                        <TableHead className={cn(headerCellClass, EDGE_CELL, 'w-12', canSelect && 'pl-3')}>
                                             <ColumnHeaderLabel icon={HashIcon} label={t('common.no')} />
                                         </TableHead>
                                     ) : null}
@@ -365,7 +416,7 @@ export function DataTable<T>({
                                         const label = <ColumnHeaderLabel icon={HeaderIcon} label={column.header} />;
 
                                         return (
-                                            <TableHead key={column.id} className={headerCellClass}>
+                                            <TableHead key={column.id} className={cn(headerCellClass, EDGE_CELL)}>
                                                 {column.sortable && onSort ? (
                                                     <button
                                                         type="button"
@@ -390,7 +441,7 @@ export function DataTable<T>({
                                         );
                                     })}
                                     {showActions ? (
-                                        <TableHead className={cn(headerCellClass, 'w-px text-center')}>
+                                        <TableHead className={cn(headerCellClass, EDGE_CELL, 'w-px text-center')}>
                                             <ColumnHeaderLabel icon={Settings2Icon} label={t('common.actions')} className="justify-center" />
                                         </TableHead>
                                     ) : null}
@@ -399,13 +450,12 @@ export function DataTable<T>({
                             <TableBody>
                                 {rows.length === 0 ? (
                                     <TableRow className="hover:bg-transparent">
-                                        <TableCell colSpan={columnCount} className="h-28 text-center">
+                                        <TableCell colSpan={columnCount} className={cn(EDGE_CELL, 'h-28 text-center')}>
                                             <p className="text-sm font-medium text-foreground">{noResults}</p>
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     rows.map((row, index) => {
-                                        const to = href?.(row);
                                         const id = getRowId(row);
                                         const enabled = isRowSelectable?.(row) ?? true;
                                         const selected = selectedIds.includes(id);
@@ -414,11 +464,10 @@ export function DataTable<T>({
                                             <TableRow
                                                 key={id}
                                                 data-state={selected ? 'selected' : undefined}
-                                                className={cn(to && 'cursor-pointer', 'bg-[#FFFFFF] dark:bg-card')}
-                                                onClick={to ? () => visitRow(row) : undefined}
+                                                className="bg-[#FFFFFF] dark:bg-card"
                                             >
                                                 {canSelect ? (
-                                                    <TableCell className="w-10 pr-0" onClick={(event) => event.stopPropagation()}>
+                                                    <TableCell className={cn(EDGE_CELL, 'w-10 pr-0')}>
                                                         <TableCheckbox
                                                             checked={selected}
                                                             disabled={! enabled}
@@ -428,27 +477,17 @@ export function DataTable<T>({
                                                     </TableCell>
                                                 ) : null}
                                                 {numbered ? (
-                                                    <TableCell className={cn('w-12 tabular-nums text-muted-foreground', canSelect && 'pl-3')}>
+                                                    <TableCell className={cn(EDGE_CELL, 'w-12 tabular-nums text-muted-foreground', canSelect && 'pl-3')}>
                                                         {indexStart + index}
                                                     </TableCell>
                                                 ) : null}
                                                 {columns.map((column) => (
-                                                    <TableCell key={column.id} className={column.className}>
-                                                        {column.mobile === 'title' && to ? (
-                                                            <Link
-                                                                href={to}
-                                                                className="font-medium text-foreground hover:text-primary hover:underline"
-                                                                onClick={(event) => event.stopPropagation()}
-                                                            >
-                                                                {column.cell(row)}
-                                                            </Link>
-                                                        ) : (
-                                                            column.cell(row)
-                                                        )}
+                                                    <TableCell key={column.id} className={cn(EDGE_CELL, column.className)}>
+                                                        {column.cell(row)}
                                                     </TableCell>
                                                 ))}
                                                 {showActions ? (
-                                                    <TableCell className="w-px text-center align-middle" onClick={(event) => event.stopPropagation()}>
+                                                    <TableCell className={cn(EDGE_CELL, 'w-px text-center align-middle')}>
                                                         <div className="flex h-full items-center justify-center gap-1.5">{renderActions(row)}</div>
                                                     </TableCell>
                                                 ) : null}
@@ -460,41 +499,22 @@ export function DataTable<T>({
                         </Table>
                     </div>
 
-                    <ul className="flex flex-col gap-2.5 bg-[#FFFFFF] px-5 py-4 sm:hidden dark:bg-card">
+                    <ul className={cn('flex flex-col gap-2.5 bg-[#FFFFFF] py-4 sm:hidden dark:bg-card', EDGE_PAD)}>
                         {rows.length === 0 ? (
-                            <li className="rounded-xl border border-border/80 bg-muted/30 px-4 py-8 text-center text-sm text-muted-foreground">
+                            <li className="rounded-[6px] border border-border/80 bg-muted/30 px-4 py-8 text-center text-sm text-muted-foreground">
                                 {noResults}
                             </li>
                         ) : (
                             rows.map((row, index) => {
-                                const to = href?.(row);
                                 const id = getRowId(row);
                                 const enabled = isRowSelectable?.(row) ?? true;
                                 const selected = selectedIds.includes(id);
-                                const body = (
-                                    <>
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="min-w-0">
-                                                {mobileTitle ? (
-                                                    <p className="truncate text-sm font-semibold text-foreground">{mobileTitle.cell(row)}</p>
-                                                ) : null}
-                                                {mobileSubtitle ? (
-                                                    <p className="mt-0.5 truncate text-[13px] text-muted-foreground">{mobileSubtitle.cell(row)}</p>
-                                                ) : null}
-                                            </div>
-                                            {mobileBadge ? mobileBadge.cell(row) : null}
-                                        </div>
-                                        {mobileMeta ? (
-                                            <p className="mt-2 font-mono text-[11px] text-muted-foreground">{mobileMeta.cell(row)}</p>
-                                        ) : null}
-                                    </>
-                                );
 
                                 return (
                                     <li
                                         key={id}
                                         className={cn(
-                                            'rounded-xl border border-border/80 bg-card px-4 py-3.5 shadow-[0_1px_2px_rgb(23_50_54/0.04)]',
+                                            'rounded-[6px] border border-border/80 bg-card px-4 py-3.5 shadow-[0_1px_2px_rgb(23_50_54/0.04)]',
                                             selected && 'border-primary/40 bg-primary/6',
                                         )}
                                     >
@@ -513,13 +533,20 @@ export function DataTable<T>({
                                                 </span>
                                             ) : null}
                                         </div>
-                                        {to ? (
-                                            <Link href={to} className="block">
-                                                {body}
-                                            </Link>
-                                        ) : (
-                                            body
-                                        )}
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                {mobileTitle ? (
+                                                    <p className="truncate text-sm font-semibold text-foreground">{mobileTitle.cell(row)}</p>
+                                                ) : null}
+                                                {mobileSubtitle ? (
+                                                    <p className="mt-0.5 truncate text-[13px] text-muted-foreground">{mobileSubtitle.cell(row)}</p>
+                                                ) : null}
+                                            </div>
+                                            {mobileBadge ? mobileBadge.cell(row) : null}
+                                        </div>
+                                        {mobileMeta ? (
+                                            <p className="mt-2 font-mono text-[11px] text-muted-foreground">{mobileMeta.cell(row)}</p>
+                                        ) : null}
                                         {showActions ? (
                                             <div className="mt-3 flex items-center justify-center gap-1.5 border-t border-border/60 pt-3">
                                                 {renderActions(row)}
@@ -564,6 +591,54 @@ export function DataTable<T>({
     );
 }
 
+function ToolbarIconButton({
+    label,
+    icon: Icon,
+    tone = 'primary',
+    disabled = false,
+    prominent = false,
+    href,
+    onClick,
+}: {
+    label: string;
+    icon: LucideIcon;
+    tone?: 'primary' | 'danger';
+    disabled?: boolean;
+    prominent?: boolean;
+    href?: string;
+    onClick?: () => void;
+}) {
+    const className = cn(
+        'inline-flex shrink-0 items-center justify-center rounded-[6px] transition-all duration-200',
+        'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:outline-none',
+        'disabled:pointer-events-none disabled:opacity-50',
+        prominent ? 'size-8' : 'size-10',
+        tone === 'danger'
+            ? 'bg-danger text-[#FFFFFF] hover:bg-danger/12 hover:text-danger'
+            : 'bg-primary text-[#FFFFFF] hover:bg-primary/12 hover:text-primary',
+    );
+    const icon = <Icon className={prominent ? 'size-[18px]' : 'size-4'} strokeWidth={prominent ? 2.5 : 1.85} />;
+
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                {href ? (
+                    <Link href={href} aria-label={label} className={className}>
+                        {icon}
+                    </Link>
+                ) : (
+                    <button type="button" aria-label={label} disabled={disabled} className={className} onClick={onClick}>
+                        {icon}
+                    </button>
+                )}
+            </TooltipTrigger>
+            <TooltipContent side="top" className="bg-primary text-primary-foreground">
+                {label}
+            </TooltipContent>
+        </Tooltip>
+    );
+}
+
 function ColumnHeaderLabel({
     icon: Icon,
     label,
@@ -579,6 +654,14 @@ function ColumnHeaderLabel({
             {label}
         </span>
     );
+}
+
+function csvEscape(value: string): string {
+    if (/[",\n]/.test(value)) {
+        return `"${value.replaceAll('"', '""')}"`;
+    }
+
+    return value;
 }
 
 const headerCellClass =

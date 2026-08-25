@@ -1,6 +1,7 @@
 import { FormEvent } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 
+import { FormPage } from '@/components/FormPage';
 import { PageHeader } from '@/components/PageHeader';
 import { useTranslation } from '@/hooks/useTranslation';
 import { CustomerForm, type CustomerFormValues } from '@/components/customer/CustomerForm';
@@ -38,7 +39,7 @@ export default function CustomerEdit({ customer }: CustomerEditProps) {
     return (
         <>
             <Head title={t('customers.edit')} />
-            <div className="flex w-full flex-col gap-5 pt-6 lg:pt-8">
+            <FormPage>
                 <PageHeader
                     eyebrow={t('menu.customers_list')}
                     title={t('customers.edit')}
@@ -50,7 +51,7 @@ export default function CustomerEdit({ customer }: CustomerEditProps) {
                     submitLabel={t('common.save')}
                     cancelHref={`/customers/${customer.id}`}
                 />
-            </div>
+            </FormPage>
         </>
     );
 }
