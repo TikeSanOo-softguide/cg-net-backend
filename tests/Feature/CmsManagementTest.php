@@ -70,7 +70,7 @@ class CmsManagementTest extends TestCase
             ->get('/cms/promotions?search=Monsoon&status=active')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Cms/Promotions/Index')
+                ->component('Cms/promotion/Index')
                 ->has('items.data', 1)
                 ->where('items.data.0.title', 'Monsoon offer'));
     }
@@ -123,7 +123,7 @@ class CmsManagementTest extends TestCase
             ->get('/cms/banners')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Cms/Banners/Index')
+                ->component('Cms/banner/Index')
                 ->has('items.data', 1));
 
         $this->actingAs($admin, 'web')

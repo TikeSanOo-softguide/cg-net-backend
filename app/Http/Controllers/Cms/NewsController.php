@@ -27,15 +27,16 @@ class NewsController extends Controller
             statusColumn: 'status',
         );
 
-        return Inertia::render('Cms/News/Index', [
+        return Inertia::render('Cms/news/Index', [
             'items' => $listing['paginator']->through(fn (News $item) => $this->payload($item)),
             'filters' => $listing['filters'],
+            ...$this->formOptions(),
         ]);
     }
 
     public function create(): Response
     {
-        return Inertia::render('Cms/News/Create', $this->formOptions());
+        return Inertia::render('Cms/news/Create', $this->formOptions());
     }
 
     public function store(StoreNewsRequest $request): RedirectResponse
@@ -55,7 +56,7 @@ class NewsController extends Controller
 
     public function edit(News $news): Response
     {
-        return Inertia::render('Cms/News/Edit', [
+        return Inertia::render('Cms/news/Edit', [
             ...$this->formOptions(),
             'item' => $this->payload($news),
         ]);

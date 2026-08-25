@@ -44,7 +44,7 @@ export default function CustomerEdit({ customer }: CustomerEditProps) {
                 <CustomerForm
                     form={form}
                     onSubmit={submit}
-                    submitLabel={t('common.save')}
+                    mode="edit"
                     cancelHref={`/customers/${customer.id}`}
                 />
             </FormPage>

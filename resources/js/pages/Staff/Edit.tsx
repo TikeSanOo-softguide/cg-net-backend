@@ -2,6 +2,7 @@ import { FormEvent } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 
 import { FormPage } from '@/components/FormPage';
+import { PageHeader } from '@/components/PageHeader';
 import { StaffForm, type StaffFormValues, type StaffRoleOption } from '@/components/staff/StaffForm';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -35,13 +36,14 @@ export default function StaffEdit({ staffMember, roles }: StaffEditProps) {
         <>
             <Head title={t('staff.edit')} />
             <FormPage>
-                <p className="text-xs font-medium text-primary/70">{t('menu.staff_accounts')}</p>
+                <PageHeader title={t('staff.edit')} description={t('staff.edit_description')} />
                 <StaffForm
                     form={form}
                     roles={roles}
                     onSubmit={submit}
                     cancelHref={`/staff/${staffMember.id}`}
                     passwordRequired={false}
+                    mode="edit"
                     title={t('staff.edit')}
                     description={t('staff.edit_description')}
                 />

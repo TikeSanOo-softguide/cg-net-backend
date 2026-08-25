@@ -20,9 +20,10 @@ type RoleFormProps = {
     onSubmit: (event: FormEvent) => void;
     cancelHref: string;
     locked?: boolean;
+    mode?: 'create' | 'edit';
 };
 
-export function RoleForm({ form, matrix, onSubmit, cancelHref, locked = false }: RoleFormProps) {
+export function RoleForm({ form, matrix, onSubmit, cancelHref, locked = false, mode = 'create' }: RoleFormProps) {
     const { t } = useTranslation();
 
     return (
@@ -47,7 +48,7 @@ export function RoleForm({ form, matrix, onSubmit, cancelHref, locked = false }:
                         onChange={(permissions) => form.setData('permissions', permissions)}
                     />
                 </div>
-                <FormActionBar cancelHref={cancelHref} processing={form.processing} className="sm:col-span-2" />
+                <FormActionBar mode={mode} cancelHref={cancelHref} processing={form.processing} className="sm:col-span-2" />
             </form>
         </FormCard>
     );

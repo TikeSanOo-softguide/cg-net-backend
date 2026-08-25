@@ -26,7 +26,7 @@ class PromotionController extends Controller
             statusColumn: 'is_active',
         );
 
-        return Inertia::render('Cms/Promotions/Index', [
+        return Inertia::render('Cms/promotion/Index', [
             'items' => $listing['paginator']->through(fn (Promotion $item) => $this->payload($item)),
             'filters' => $listing['filters'],
         ]);
@@ -34,7 +34,7 @@ class PromotionController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('Cms/Promotions/Create');
+        return Inertia::render('Cms/promotion/Create');
     }
 
     public function store(StorePromotionRequest $request): RedirectResponse
@@ -51,7 +51,7 @@ class PromotionController extends Controller
 
     public function edit(Promotion $promotion): Response
     {
-        return Inertia::render('Cms/Promotions/Edit', [
+        return Inertia::render('Cms/promotion/Edit', [
             'item' => $this->payload($promotion),
         ]);
     }

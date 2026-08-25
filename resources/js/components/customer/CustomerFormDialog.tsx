@@ -96,7 +96,7 @@ function CustomerFormDialogBody({
             form={form}
             onSubmit={submit}
             onCancel={onClose}
-            submitLabel={t('common.submit')}
+            mode={isEdit ? 'edit' : 'create'}
             variant="modal"
         />
     );

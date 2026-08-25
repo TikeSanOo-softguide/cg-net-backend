@@ -35,13 +35,14 @@ export function emptyCustomerForm(): CustomerFormValues {
 type CustomerFormProps = {
     form: InertiaFormProps<CustomerFormValues>;
     onSubmit: (event: FormEvent) => void;
-    submitLabel: string;
+    mode?: 'create' | 'edit';
+    submitLabel?: string;
     cancelHref?: string;
     onCancel?: () => void;
     variant?: 'page' | 'modal';
 };
 
-export function CustomerForm({ form, onSubmit, submitLabel, cancelHref, onCancel, variant = 'page' }: CustomerFormProps) {
+export function CustomerForm({ form, onSubmit, mode = 'create', submitLabel, cancelHref, onCancel, variant = 'page' }: CustomerFormProps) {
     const { t } = useTranslation();
 
     const fields = (
@@ -124,7 +125,7 @@ export function CustomerForm({ form, onSubmit, submitLabel, cancelHref, onCancel
                 <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
                     <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">{fields}</div>
                 </div>
-                <FormActionBar variant="modal" onCancel={onCancel} processing={form.processing} submitLabel={submitLabel} />
+                <FormActionBar variant="modal" mode={mode} onCancel={onCancel} processing={form.processing} submitLabel={submitLabel} />
             </form>
         );
     }
@@ -134,6 +135,7 @@ export function CustomerForm({ form, onSubmit, submitLabel, cancelHref, onCancel
             <form onSubmit={onSubmit} className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 {fields}
                 <FormActionBar
+                    mode={mode}
                     cancelHref={cancelHref}
                     onCancel={onCancel}
                     processing={form.processing}

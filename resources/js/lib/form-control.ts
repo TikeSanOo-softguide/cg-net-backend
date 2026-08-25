@@ -28,3 +28,13 @@ export const formLabelClass = cn(
     'group-has-[:disabled]/field:text-muted-foreground',
     'group-data-[error=true]/field:text-danger',
 );
+
+export function formControlStateClass(state: 'idle' | 'error' | 'success'): string {
+    return cn(
+        'text-[13px] font-normal',
+        state === 'error' &&
+            'border-danger hover:border-danger focus-visible:border-danger focus-visible:ring-danger/25',
+        state === 'success' &&
+            'border-success hover:border-success focus-visible:border-success focus-visible:ring-success/25',
+    );
+}

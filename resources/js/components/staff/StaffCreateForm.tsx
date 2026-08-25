@@ -5,11 +5,12 @@ import { CircleDotIcon, LockIcon, MailIcon, ShieldIcon, UserIcon, UserPlusIcon }
 import { FormActionBar } from '@/components/FormActionBar';
 import { FormCard } from '@/components/FormCard';
 import { MultiSelect } from '@/components/MultiSelect';
-import { StaffCreateField, staffCreateControlClass } from '@/components/staff/StaffCreateField';
 import type { StaffFormValues, StaffRoleOption } from '@/components/staff/StaffForm';
+import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formControlStateClass } from '@/lib/form-control';
 import { staffCreateSuccessMessage, validateStaffCreate, validateStaffCreateField } from '@/lib/staff-create-validation';
 import { cn } from '@/lib/utils';
 
@@ -42,6 +43,7 @@ type StaffCreateFormProps = {
     onCancel?: () => void;
     title?: string;
     description?: string;
+    mode?: 'create' | 'edit';
     variant?: 'page' | 'modal';
 };
 
@@ -53,6 +55,7 @@ export function StaffCreateForm({
     onCancel,
     title,
     description,
+    mode = 'create',
     variant = 'page',
 }: StaffCreateFormProps) {
     const { t } = useTranslation();
@@ -125,7 +128,7 @@ export function StaffCreateForm({
 
     const fields = (
         <>
-            <StaffCreateField
+            <FormField
                 label={t('staff.name')}
                 htmlFor="staff-create-name"
                 error={fieldError('name')}
@@ -140,13 +143,13 @@ export function StaffCreateForm({
                     value={form.data.name}
                     required
                     aria-invalid={fieldState('name') === 'error'}
-                    className={staffCreateControlClass(fieldState('name'))}
+                    className={formControlStateClass(fieldState('name'))}
                     onBlur={() => markTouched('name')}
                     onChange={(event) => setField('name', event.target.value)}
                     {...autocompleteOff}
                 />
-            </StaffCreateField>
-            <StaffCreateField
+            </FormField>
+            <FormField
                 label={t('staff.email')}
                 htmlFor="staff-create-email"
                 error={fieldError('email')}
@@ -161,13 +164,13 @@ export function StaffCreateForm({
                     value={form.data.email}
                     required
                     aria-invalid={fieldState('email') === 'error'}
-                    className={staffCreateControlClass(fieldState('email'))}
+                    className={formControlStateClass(fieldState('email'))}
                     onBlur={() => markTouched('email')}
                     onChange={(event) => setField('email', event.target.value)}
                     {...autocompleteOff}
                 />
-            </StaffCreateField>
-            <StaffCreateField
+            </FormField>
+            <FormField
                 label={t('common.status')}
                 htmlFor="staff-create-status"
                 error={fieldError('status')}
@@ -184,7 +187,7 @@ export function StaffCreateForm({
                 >
                     <SelectTrigger
                         id="staff-create-status"
-                        className={cn('w-full', staffCreateControlClass(fieldState('status')))}
+                        className={cn('w-full', formControlStateClass(fieldState('status')))}
                         aria-invalid={fieldState('status') === 'error'}
                     >
                         <SelectValue />
@@ -194,8 +197,8 @@ export function StaffCreateForm({
                         <SelectItem value="inactive">{t('status.inactive')}</SelectItem>
                     </SelectContent>
                 </Select>
-            </StaffCreateField>
-            <StaffCreateField
+            </FormField>
+            <FormField
                 label={t('staff.password')}
                 htmlFor="staff-create-password"
                 error={fieldError('password')}
@@ -210,13 +213,13 @@ export function StaffCreateForm({
                     value={form.data.password}
                     required
                     aria-invalid={fieldState('password') === 'error'}
-                    className={staffCreateControlClass(fieldState('password'))}
+                    className={formControlStateClass(fieldState('password'))}
                     onBlur={() => markTouched('password')}
                     onChange={(event) => setField('password', event.target.value)}
                     {...autocompleteOff}
                 />
-            </StaffCreateField>
-            <StaffCreateField
+            </FormField>
+            <FormField
                 label={t('staff.password_confirmation')}
                 htmlFor="staff-create-password-confirmation"
                 error={fieldError('password_confirmation')}
@@ -231,13 +234,13 @@ export function StaffCreateForm({
                     value={form.data.password_confirmation}
                     required
                     aria-invalid={fieldState('password_confirmation') === 'error'}
-                    className={staffCreateControlClass(fieldState('password_confirmation'))}
+                    className={formControlStateClass(fieldState('password_confirmation'))}
                     onBlur={() => markTouched('password_confirmation')}
                     onChange={(event) => setField('password_confirmation', event.target.value)}
                     {...autocompleteOff}
                 />
-            </StaffCreateField>
-            <StaffCreateField
+            </FormField>
+            <FormField
                 label={t('staff.roles')}
                 htmlFor="staff-create-role-ids"
                 error={fieldError('role_ids')}
@@ -257,7 +260,7 @@ export function StaffCreateForm({
                         markTouched('role_ids');
                     }}
                 />
-            </StaffCreateField>
+            </FormField>
         </>
     );
 
@@ -277,7 +280,7 @@ export function StaffCreateForm({
                 <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
                     <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">{fields}</div>
                 </div>
-                <FormActionBar variant="modal" onCancel={onCancel} processing={form.processing} />
+                <FormActionBar variant="modal" mode={mode} onCancel={onCancel} processing={form.processing} />
             </form>
         );
     }
@@ -290,7 +293,7 @@ export function StaffCreateForm({
                     <input type="password" tabIndex={-1} autoComplete="current-password" />
                 </div>
                 {fields}
-                <FormActionBar cancelHref={cancelHref} onCancel={onCancel} processing={form.processing} className="sm:col-span-2" />
+                <FormActionBar mode={mode} cancelHref={cancelHref} onCancel={onCancel} processing={form.processing} className="sm:col-span-2" />
             </form>
         </FormCard>
     );

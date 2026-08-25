@@ -24,7 +24,7 @@ class ContactController extends Controller
             ['contact_point', 'created_at'],
         );
 
-        return Inertia::render('Cms/Contacts/Index', [
+        return Inertia::render('Cms/contact/Index', [
             'items' => $listing['paginator']->through(fn (Contact $item) => $this->payload($item)),
             'filters' => $listing['filters'],
         ]);
@@ -32,7 +32,7 @@ class ContactController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('Cms/Contacts/Create');
+        return Inertia::render('Cms/contact/Create');
     }
 
     public function store(StoreContactRequest $request): RedirectResponse
@@ -46,7 +46,7 @@ class ContactController extends Controller
 
     public function edit(Contact $contact): Response
     {
-        return Inertia::render('Cms/Contacts/Edit', [
+        return Inertia::render('Cms/contact/Edit', [
             'item' => $this->payload($contact),
         ]);
     }

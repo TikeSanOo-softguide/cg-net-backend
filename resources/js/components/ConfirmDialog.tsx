@@ -1,4 +1,4 @@
-import { CheckIcon, CircleAlertIcon, CircleHelpIcon, XIcon } from 'lucide-react';
+import { CheckIcon, CircleAlertIcon, CircleHelpIcon, Trash2Icon, XIcon } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 import {
@@ -40,10 +40,17 @@ export function ConfirmDialog({
     const Icon = destructive ? CircleAlertIcon : CircleHelpIcon;
     const cancelText = cancelLabel ?? t('common.cancel');
     const confirmText = confirmLabel ?? t('common.confirm');
+    const ConfirmIcon = destructive ? Trash2Icon : CheckIcon;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="w-[min(100%-2rem,400px)] gap-0 rounded-[12px] border border-border/80 bg-[#FFFFFF] p-0 shadow-[0_8px_24px_rgb(23_50_54/0.08),0_20px_48px_rgb(23_50_54/0.12)] sm:max-w-[400px] dark:bg-card dark:shadow-[0_8px_24px_rgb(0_0_0/0.28),0_20px_48px_rgb(0_0_0/0.32)] [&>button.absolute]:hidden">
+            <DialogContent
+                overlayClassName="fixed inset-0 z-[100] h-dvh w-full bg-black/65 backdrop-blur-[2px]"
+                className={cn(
+                    'z-[101] gap-0 rounded-[12px] border border-border/80 bg-[#FFFFFF] p-0 shadow-[0_8px_24px_rgb(23_50_54/0.08),0_20px_48px_rgb(23_50_54/0.12)] dark:bg-card dark:shadow-[0_8px_24px_rgb(0_0_0/0.28),0_20px_48px_rgb(0_0_0/0.32)] [&>button.absolute]:hidden',
+                    'fixed top-[50%] left-[50%] w-[min(100%-2rem,400px)] max-w-[400px] translate-x-[-50%] translate-y-[-50%]',
+                )}
+            >
                 <div className="flex flex-col gap-4 px-5 py-5">
                     <div className="flex items-center gap-3">
                         <div
@@ -75,8 +82,12 @@ export function ConfirmDialog({
                         />
                         <ActionButton
                             label={confirmText}
-                            icon={CheckIcon}
-                            className="bg-primary/12 text-primary hover:bg-primary/20 hover:text-primary"
+                            icon={ConfirmIcon}
+                            className={
+                                destructive
+                                    ? 'bg-danger/12 text-danger hover:bg-danger/20 hover:text-danger'
+                                    : 'bg-primary/12 text-primary hover:bg-primary/20 hover:text-primary'
+                            }
                             disabled={processing}
                             onClick={onConfirm}
                         />

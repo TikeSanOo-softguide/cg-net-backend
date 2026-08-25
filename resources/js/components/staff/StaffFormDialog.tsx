@@ -100,6 +100,7 @@ function StaffFormDialogBody({
             onSubmit={submit}
             onCancel={onClose}
             passwordRequired={false}
+            mode="edit"
             title={t('staff.edit')}
             description={t('staff.edit_description')}
             variant="modal"
@@ -112,6 +113,7 @@ function StaffFormDialogBody({
             onCancel={onClose}
             title={t('staff.create')}
             description={t('staff.create_description')}
+            mode="create"
             variant="modal"
         />
     );

@@ -31,7 +31,7 @@ export default function CustomerCreate() {
                 <CustomerForm
                     form={form}
                     onSubmit={submit}
-                    submitLabel={t('common.save')}
+                    mode="create"
                     cancelHref="/customers"
                 />
             </FormPage>

@@ -11,6 +11,7 @@ type FormActionBarProps = {
     onCancel?: () => void;
     processing?: boolean;
     submitLabel?: string;
+    mode?: 'create' | 'edit';
     children?: ReactNode;
     className?: string;
     variant?: 'page' | 'modal';
@@ -21,14 +22,21 @@ export function FormActionBar({
     onCancel,
     processing = false,
     submitLabel,
+    mode = 'create',
     children,
     className,
     variant = 'page',
 }: FormActionBarProps) {
     const { t } = useTranslation();
     const cancelLabel = t('common.cancel');
-    const saveLabel = submitLabel ?? t('common.save');
-    const actionLabel = submitLabel ?? (variant === 'modal' ? t('common.submit') : t('common.save'));
+    const actionLabel = submitLabel ?? (
+        mode === 'edit'
+            ? t('common.update')
+            : variant === 'modal'
+              ? t('common.submit')
+              : t('common.save')
+    );
+    const SubmitIcon = variant === 'modal' && mode === 'create' ? SendIcon : SaveIcon;
 
     if (variant === 'modal') {
         return (
@@ -46,7 +54,7 @@ export function FormActionBar({
                 </Button>
                 {children ?? (
                     <Button type="submit" size="sm" variant="primary" disabled={processing} className="h-8 w-[120px] shrink-0 rounded-[4px]">
-                        <SendIcon className="size-3.5" strokeWidth={1.85} />
+                        <SubmitIcon className="size-3.5" strokeWidth={1.85} />
                         {actionLabel}
                     </Button>
                 )}
@@ -78,8 +86,8 @@ export function FormActionBar({
                 )}
                 {children ?? (
                     <Button type="submit" disabled={processing}>
-                        <SaveIcon />
-                        {saveLabel}
+                        <SubmitIcon />
+                        {actionLabel}
                     </Button>
                 )}
             </div>

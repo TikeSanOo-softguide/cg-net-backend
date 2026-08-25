@@ -37,6 +37,7 @@ export default function StaffCreate({ roles }: StaffCreateProps) {
                     roles={roles}
                     onSubmit={submit}
                     cancelHref="/staff"
+                    mode="create"
                 />
             </FormPage>
         </>

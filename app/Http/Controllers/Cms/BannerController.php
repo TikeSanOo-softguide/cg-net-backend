@@ -27,7 +27,7 @@ class BannerController extends Controller
             statusColumn: 'is_active',
         );
 
-        return Inertia::render('Cms/Banners/Index', [
+        return Inertia::render('Cms/banner/Index', [
             'items' => $listing['paginator']->through(fn (Banner $item) => $this->payload($item)),
             'filters' => $listing['filters'],
         ]);
@@ -35,7 +35,7 @@ class BannerController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('Cms/Banners/Create');
+        return Inertia::render('Cms/banner/Create');
     }
 
     public function store(StoreBannerRequest $request): RedirectResponse
@@ -49,7 +49,7 @@ class BannerController extends Controller
 
     public function edit(Banner $banner): Response
     {
-        return Inertia::render('Cms/Banners/Edit', [
+        return Inertia::render('Cms/banner/Edit', [
             'item' => $this->payload($banner),
         ]);
     }

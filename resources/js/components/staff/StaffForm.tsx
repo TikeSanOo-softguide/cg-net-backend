@@ -43,6 +43,7 @@ type StaffFormProps = {
     cancelHref?: string;
     onCancel?: () => void;
     passwordRequired?: boolean;
+    mode?: 'create' | 'edit';
     title: string;
     description: string;
     variant?: 'page' | 'modal';
@@ -55,6 +56,7 @@ export function StaffForm({
     cancelHref,
     onCancel,
     passwordRequired = true,
+    mode = 'create',
     title,
     description,
     variant = 'page',
@@ -158,7 +160,7 @@ export function StaffForm({
                 <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
                     <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">{fields}</div>
                 </div>
-                <FormActionBar variant="modal" onCancel={onCancel} processing={form.processing} />
+                <FormActionBar variant="modal" mode={mode} onCancel={onCancel} processing={form.processing} />
             </form>
         );
     }
@@ -167,7 +169,7 @@ export function StaffForm({
         <FormCard title={title} description={description} icon={Icon}>
             <form onSubmit={onSubmit} className={cn('grid grid-cols-1 gap-5 sm:grid-cols-2')}>
                 {fields}
-                <FormActionBar cancelHref={cancelHref} onCancel={onCancel} processing={form.processing} className="sm:col-span-2" />
+                <FormActionBar mode={mode} cancelHref={cancelHref} onCancel={onCancel} processing={form.processing} className="sm:col-span-2" />
             </form>
         </FormCard>
     );

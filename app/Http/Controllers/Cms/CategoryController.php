@@ -24,7 +24,7 @@ class CategoryController extends Controller
             ['name_en', 'slug', 'created_at'],
         );
 
-        return Inertia::render('Cms/Categories/Index', [
+        return Inertia::render('Cms/category/Index', [
             'items' => $listing['paginator']->through(fn (Category $item) => $this->payload($item)),
             'filters' => $listing['filters'],
         ]);
@@ -32,12 +32,16 @@ class CategoryController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('Cms/Categories/Create');
+        return Inertia::render('Cms/category/Create');
     }
 
     public function store(StoreCategoryRequest $request): RedirectResponse
     {
-        $category = Category::query()->create($request->validated());
+        $data = $request->validated();
+        $category = Category::query()->create([
+            'name_en' => $data['name'],
+            'slug' => $data['slug'],
+        ]);
 
         activity('cms')->causedBy($request->user())->performedOn($category)->event('created')->log('category_created');
 
@@ -46,14 +50,18 @@ class CategoryController extends Controller
 
     public function edit(Category $category): Response
     {
-        return Inertia::render('Cms/Categories/Edit', [
+        return Inertia::render('Cms/category/Edit', [
             'item' => $this->payload($category),
         ]);
     }
 
     public function update(UpdateCategoryRequest $request, Category $category): RedirectResponse
     {
-        $category->update($request->validated());
+        $data = $request->validated();
+        $category->update([
+            'name_en' => $data['name'],
+            'slug' => $data['slug'],
+        ]);
 
         activity('cms')->causedBy($request->user())->performedOn($category)->event('updated')->log('category_updated');
 

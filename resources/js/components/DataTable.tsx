@@ -3,42 +3,27 @@ import { Link } from '@inertiajs/react';
 import {
     ArrowDownIcon,
     ArrowUpIcon,
-    BanknoteIcon,
-    CalendarIcon,
     ChevronsUpDownIcon,
-    CircleDotIcon,
     DownloadIcon,
     EyeIcon,
-    FolderIcon,
     HashIcon,
-    HeadingIcon,
-    IdCardIcon,
-    LanguagesIcon,
-    LinkIcon,
-    ListOrderedIcon,
-    MailIcon,
-    PackageIcon,
-    PhoneIcon,
     PlusIcon,
     Settings2Icon,
-    ShieldIcon,
-    ShapesIcon,
     Trash2Icon,
-    TypeIcon,
-    UserRoundIcon,
-    UsersIcon,
-    WifiIcon,
     type LucideIcon,
 } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { DEFAULT_COLUMN_ICONS } from '@/components/data-table/column-icons';
+import { csvEscape, EDGE_CELL, EDGE_PAD, headerCellClass } from '@/components/data-table/styles';
+import { ColumnHeaderLabel, ToolbarIconButton } from '@/components/data-table/toolbar';
 import { Pagination, type Paginated } from '@/components/Pagination';
 import { SearchInput } from '@/components/SearchInput';
 import { TableActionButton } from '@/components/TableActionButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TableCheckbox } from '@/components/ui/table-checkbox';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 
@@ -52,41 +37,6 @@ export type DataTableColumn<T> = {
     sortable?: boolean;
     icon?: LucideIcon;
 };
-
-const DEFAULT_COLUMN_ICONS: Record<string, LucideIcon> = {
-    name: UserRoundIcon,
-    customer: UserRoundIcon,
-    title: TypeIcon,
-    label: HeadingIcon,
-    email: MailIcon,
-    phone: PhoneIcon,
-    nrc_number: IdCardIcon,
-    contact_point: PhoneIcon,
-    status: CircleDotIcon,
-    is_active: CircleDotIcon,
-    created_at: CalendarIcon,
-    date: CalendarIcon,
-    start_date: CalendarIcon,
-    end_date: CalendarIcon,
-    dates: CalendarIcon,
-    roles: ShieldIcon,
-    permissions_count: ShieldIcon,
-    users_count: UsersIcon,
-    accounts_count: WifiIcon,
-    account_number: WifiIcon,
-    package: PackageIcon,
-    package_name: PackageIcon,
-    type: ShapesIcon,
-    amount: BanknoteIcon,
-    lang: LanguagesIcon,
-    slug: LinkIcon,
-    category_name: FolderIcon,
-    sort_order: ListOrderedIcon,
-};
-
-const EDGE_PAD = 'px-5 sm:px-[45px]';
-const EDGE_CELL = 'first:pl-5 last:pr-5 sm:first:pl-[45px] sm:last:pr-[45px]';
-
 type DataTableProps<T> = {
     title?: string;
     data: T[];
@@ -590,79 +540,3 @@ export function DataTable<T>({
         </TooltipProvider>
     );
 }
-
-function ToolbarIconButton({
-    label,
-    icon: Icon,
-    tone = 'primary',
-    disabled = false,
-    prominent = false,
-    href,
-    onClick,
-}: {
-    label: string;
-    icon: LucideIcon;
-    tone?: 'primary' | 'danger';
-    disabled?: boolean;
-    prominent?: boolean;
-    href?: string;
-    onClick?: () => void;
-}) {
-    const className = cn(
-        'inline-flex shrink-0 items-center justify-center rounded-[6px] transition-all duration-200',
-        'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:outline-none',
-        'disabled:pointer-events-none disabled:opacity-50',
-        prominent ? 'size-8' : 'size-10',
-        tone === 'danger'
-            ? 'bg-danger text-[#FFFFFF] hover:bg-danger/12 hover:text-danger'
-            : 'bg-primary text-[#FFFFFF] hover:bg-primary/12 hover:text-primary',
-    );
-    const icon = <Icon className={prominent ? 'size-[18px]' : 'size-4'} strokeWidth={prominent ? 2.5 : 1.85} />;
-
-    return (
-        <Tooltip>
-            <TooltipTrigger asChild>
-                {href ? (
-                    <Link href={href} aria-label={label} className={className}>
-                        {icon}
-                    </Link>
-                ) : (
-                    <button type="button" aria-label={label} disabled={disabled} className={className} onClick={onClick}>
-                        {icon}
-                    </button>
-                )}
-            </TooltipTrigger>
-            <TooltipContent side="top" className="bg-primary text-primary-foreground">
-                {label}
-            </TooltipContent>
-        </Tooltip>
-    );
-}
-
-function ColumnHeaderLabel({
-    icon: Icon,
-    label,
-    className,
-}: {
-    icon?: LucideIcon;
-    label: string;
-    className?: string;
-}) {
-    return (
-        <span className={cn('inline-flex items-center gap-1.5', className)}>
-            {Icon ? <Icon className="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover/head:text-primary" strokeWidth={1.85} /> : null}
-            {label}
-        </span>
-    );
-}
-
-function csvEscape(value: string): string {
-    if (/[",\n]/.test(value)) {
-        return `"${value.replaceAll('"', '""')}"`;
-    }
-
-    return value;
-}
-
-const headerCellClass =
-    'group/head h-[45px] bg-[#FFFFFF] text-muted-foreground transition-colors hover:bg-primary/[0.08] hover:text-primary dark:bg-card';

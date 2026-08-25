@@ -27,8 +27,8 @@ export default function RoleCreate({ matrix }: RoleCreateProps) {
         <>
             <Head title={t('staff.create_role')} />
             <FormPage width="lg">
-                <PageHeader title={t('staff.create_role')} description={t('staff.role_form_description')} />
-                <RoleForm form={form} matrix={matrix} onSubmit={submit} cancelHref="/roles" />
+                <PageHeader title={t('staff.create_role')} description={t('staff.create_role_description')} />
+                <RoleForm form={form} matrix={matrix} onSubmit={submit} cancelHref="/roles" mode="create" />
             </FormPage>
         </>
     );

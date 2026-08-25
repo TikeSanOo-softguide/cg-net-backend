@@ -25,7 +25,7 @@ class GalleryController extends Controller
             ['label', 'created_at'],
         );
 
-        return Inertia::render('Cms/Gallery/Index', [
+        return Inertia::render('Cms/gallery/Index', [
             'items' => $listing['paginator']->through(fn (Gallery $item) => $this->payload($item)),
             'filters' => $listing['filters'],
         ]);
@@ -33,7 +33,7 @@ class GalleryController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('Cms/Gallery/Create');
+        return Inertia::render('Cms/gallery/Create');
     }
 
     public function store(StoreGalleryRequest $request): RedirectResponse
@@ -50,7 +50,7 @@ class GalleryController extends Controller
 
     public function edit(Gallery $gallery): Response
     {
-        return Inertia::render('Cms/Gallery/Edit', [
+        return Inertia::render('Cms/gallery/Edit', [
             'item' => $this->payload($gallery),
         ]);
     }
