@@ -30,7 +30,6 @@ export default function ContactsIndex({ items, filters }: Props) {
                 destroyBase="/cms/contacts"
                 items={items}
                 filters={filters}
-                langFilter={false}
                 columns={[
                     { id: 'contact_point', header: t('cms.contact_point'), mobile: 'title', sortable: true, className: 'font-medium', cell: (row) => row.contact_point },
                     { id: 'created_at', header: t('customers.joined'), sortable: true, mobile: 'meta', className: 'text-muted-foreground', cell: (row) => row.created_at },

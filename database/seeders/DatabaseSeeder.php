@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Enums\ChangePlanStatus;
 use App\Enums\CustomerPackageStatus;
 use App\Enums\InvoiceStatus;
-use App\Enums\LanguagePref;
 use App\Enums\NewsStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\ReviewStatus;
@@ -31,7 +30,6 @@ use App\Models\Promotion;
 use App\Models\Region;
 use App\Models\RelocationRequest;
 use App\Models\Setting;
-use App\Models\Tag;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
@@ -299,40 +297,38 @@ class DatabaseSeeder extends Seeder
     private function seedBanners(): void
     {
         Banner::factory()->create([
-            'title' => 'Monsoon promo',
+            'image_url_en' => 'https://cdn.cg-net.test/banners/monsoon-promo-en.jpg',
             'sort_order' => 1,
-            'link_url' => 'https://cg-net.test/promo',
         ]);
         Banner::factory()->create([
-            'title' => 'New fiber coverage',
+            'image_url_en' => 'https://cdn.cg-net.test/banners/new-fiber-coverage-en.jpg',
             'sort_order' => 2,
         ]);
         Banner::factory()->create([
-            'title' => 'Pay with KBZPay',
+            'image_url_en' => 'https://cdn.cg-net.test/banners/pay-with-kbzpay-en.jpg',
             'sort_order' => 3,
         ]);
     }
 
     private function seedCms(): void
     {
-        $offers = Category::factory()->create(['name' => 'Offers', 'slug' => 'offers', 'lang' => LanguagePref::En]);
-        $tips = Tag::factory()->create(['name' => 'Tips', 'slug' => 'tips', 'lang' => LanguagePref::En]);
-        $fiber = Tag::factory()->create(['name' => 'Fiber', 'slug' => 'fiber', 'lang' => LanguagePref::En]);
-
+        $offers = Category::factory()->create([
+            'name_en' => 'Offers',
+            'name_zh' => 'Offers',
+            'name_my' => 'Offers',
+            'slug' => 'offers',
+        ]);
         $article = News::factory()->create([
             'category_id' => $offers->id,
-            'title' => 'New fiber coverage in Yangon',
+            'title_en' => 'New fiber coverage in Yangon',
             'slug' => 'new-fiber-coverage-yangon',
             'status' => NewsStatus::Published,
-            'lang' => LanguagePref::En,
         ]);
-        $article->tags()->sync([$tips->id, $fiber->id]);
-
         Promotion::factory()->create([
-            'title' => 'Monsoon home broadband',
-            'lang' => LanguagePref::En,
+            'title_en' => 'Monsoon home broadband',
+            'slug' => 'monsoon-home-broadband',
         ]);
-        Gallery::factory()->create(['label' => 'Yangon office', 'lang' => LanguagePref::En]);
+        Gallery::factory()->create(['label_en' => 'Yangon office']);
         Contact::factory()->create(['contact_point' => '+959123456789']);
         Contact::factory()->create(['contact_point' => 'support@cg-net.test']);
     }

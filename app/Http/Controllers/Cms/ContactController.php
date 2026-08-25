@@ -22,7 +22,6 @@ class ContactController extends Controller
             Contact::query(),
             ['contact_point'],
             ['contact_point', 'created_at'],
-            hasLang: false,
         );
 
         return Inertia::render('Cms/Contacts/Index', [

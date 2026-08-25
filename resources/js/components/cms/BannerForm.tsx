@@ -5,7 +5,6 @@ import { CalendarClockIcon, CalendarIcon, CircleDotIcon, HashIcon, Link2Icon, Ty
 import { CmsField } from '@/components/cms/CmsField';
 import { CmsFormShell } from '@/components/cms/CmsFormShell';
 import { CmsImageField } from '@/components/cms/CmsImageField';
-import { CmsLanguageField } from '@/components/cms/CmsLanguageField';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -17,7 +16,6 @@ export type BannerFormValues = {
     start_date: string;
     end_date: string;
     is_active: boolean;
-    lang: string;
     image: File | null;
 };
 
@@ -57,8 +55,7 @@ export function BannerForm({ form, onSubmit, cancelHref, imageUrl }: BannerFormP
             <CmsField label={t('cms.end_date')} htmlFor="end_date" error={form.errors.end_date} icon={CalendarClockIcon}>
                 <Input id="end_date" type="date" value={form.data.end_date} onChange={(event) => form.setData('end_date', event.target.value)} />
             </CmsField>
-            <CmsLanguageField value={form.data.lang} error={form.errors.lang} onChange={(value) => form.setData('lang', value)} />
-            <CmsImageField error={form.errors.image} currentUrl={imageUrl} required={! imageUrl} onChange={(file) => form.setData('image', file)} />
+            <CmsImageField error={form.errors.image} currentUrl={imageUrl} required={!imageUrl} onChange={(file) => form.setData('image', file)} />
         </CmsFormShell>
     );
 }

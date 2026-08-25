@@ -8,7 +8,6 @@ type CategoryRow = {
     id: number;
     name: string;
     slug: string;
-    lang: string;
     news_count: number;
     created_at: string | null;
 };
@@ -36,7 +35,6 @@ export default function CategoriesIndex({ items, filters }: Props) {
                 columns={[
                     { id: 'name', header: t('cms.name'), mobile: 'title', sortable: true, className: 'font-medium', cell: (row) => row.name },
                     { id: 'slug', header: t('cms.slug'), mobile: 'subtitle', sortable: true, className: 'font-mono text-[12px]', cell: (row) => row.slug },
-                    { id: 'lang', header: t('common.language'), sortable: true, mobile: 'meta', cell: (row) => t(`language.${row.lang}`) },
                 ]}
             />
         </>

@@ -17,7 +17,6 @@ import { visitBulkDelete } from '@/lib/bulk-delete';
 export type CmsFilters = {
     search: string;
     status: string;
-    lang: string;
     sort: string;
     direction: 'asc' | 'desc';
 };
@@ -33,7 +32,6 @@ type CmsIndexPageProps<T extends { id: number }> = {
     filters: CmsFilters;
     columns: DataTableColumn<T>[];
     statusFilter?: 'active' | 'news';
-    langFilter?: boolean;
 };
 
 export function CmsIndexPage<T extends { id: number }>({
@@ -47,7 +45,6 @@ export function CmsIndexPage<T extends { id: number }>({
     filters,
     columns,
     statusFilter,
-    langFilter = true,
 }: CmsIndexPageProps<T>) {
     const { t } = useTranslation();
     const can = useCan();
@@ -67,7 +64,6 @@ export function CmsIndexPage<T extends { id: number }>({
         router.get(indexHref, {
             search: (next.search ?? filters.search) || undefined,
             status: (next.status ?? filters.status) || undefined,
-            lang: (next.lang ?? filters.lang) || undefined,
             sort: next.sort ?? filters.sort,
             direction: next.direction ?? filters.direction,
         }, {
@@ -112,21 +108,6 @@ export function CmsIndexPage<T extends { id: number }>({
                             {statusOptions.map((option) => (
                                 <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                             ))}
-                        </SelectContent>
-                    </Select>
-                </FormControl>
-            ) : null}
-            {langFilter ? (
-                <FormControl icon={LanguagesIcon} className="w-full shrink-0 sm:w-48">
-                    <Select value={filters.lang || 'all'} onValueChange={(value) => visit({ lang: value === 'all' ? '' : value })}>
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder={t('cms.filter_lang')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">{t('cms.all_languages')}</SelectItem>
-                            <SelectItem value="en">{t('language.en')}</SelectItem>
-                            <SelectItem value="my">{t('language.my')}</SelectItem>
-                            <SelectItem value="zh">{t('language.zh')}</SelectItem>
                         </SelectContent>
                     </Select>
                 </FormControl>
@@ -189,7 +170,7 @@ export function CmsIndexPage<T extends { id: number }>({
             <ConfirmDialog
                 open={pendingIds.length === 1}
                 onOpenChange={(open) => {
-                    if (! open) {
+                    if (!open) {
                         setPendingIds([]);
                     }
                 }}

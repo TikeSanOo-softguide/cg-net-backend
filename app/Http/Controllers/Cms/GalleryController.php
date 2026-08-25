@@ -22,7 +22,7 @@ class GalleryController extends Controller
             $request,
             Gallery::query(),
             ['label'],
-            ['label', 'lang', 'created_at'],
+            ['label', 'created_at'],
         );
 
         return Inertia::render('Cms/Gallery/Index', [
@@ -40,7 +40,6 @@ class GalleryController extends Controller
     {
         $gallery = Gallery::query()->create([
             'label' => $request->validated('label'),
-            'lang' => $request->validated('lang'),
             'image_path' => StoresPublicImage::store($request->file('image'), 'cms/gallery'),
         ]);
 
@@ -60,7 +59,6 @@ class GalleryController extends Controller
     {
         $data = [
             'label' => $request->validated('label'),
-            'lang' => $request->validated('lang'),
         ];
 
         if ($request->hasFile('image')) {
@@ -103,7 +101,6 @@ class GalleryController extends Controller
         return [
             'id' => $gallery->id,
             'label' => $gallery->label,
-            'lang' => $gallery->lang->value,
             'image_url' => StoresPublicImage::url($gallery->image_path),
             'created_at' => $gallery->created_at?->toDateString(),
         ];

@@ -10,7 +10,6 @@ type BannerRow = {
     title: string;
     sort_order: number;
     is_active: boolean;
-    lang: string;
     start_date: string | null;
     end_date: string | null;
     image_url: string | null;
@@ -53,7 +52,6 @@ export default function BannersIndex({ items, filters }: Props) {
                     },
                     { id: 'sort_order', header: t('cms.sort_order'), sortable: true, cell: (row) => row.sort_order },
                     { id: 'is_active', header: t('common.status'), sortable: true, mobile: 'badge', cell: (row) => <StatusBadge status={row.is_active ? 'active' : 'inactive'} /> },
-                    { id: 'lang', header: t('common.language'), sortable: true, mobile: 'subtitle', cell: (row) => t(`language.${row.lang}`) },
                 ]}
             />
         </>

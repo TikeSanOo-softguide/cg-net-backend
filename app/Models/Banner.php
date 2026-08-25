@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\LanguagePref;
 use Database\Factories\BannerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,14 +9,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
-    'title',
-    'image_path',
-    'link_url',
+    'image_url_en',
+    'image_url_zh',
+    'image_url_my',
     'sort_order',
     'is_active',
-    'lang',
-    'starts_at',
-    'ends_at',
+    'start_date',
+    'end_date',
 ])]
 class Banner extends Model
 {
@@ -29,9 +27,8 @@ class Banner extends Model
         return [
             'sort_order' => 'integer',
             'is_active' => 'boolean',
-            'lang' => LanguagePref::class,
-            'starts_at' => 'datetime',
-            'ends_at' => 'datetime',
+            'start_date' => 'date',
+            'end_date' => 'date',
         ];
     }
 }

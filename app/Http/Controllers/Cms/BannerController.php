@@ -22,7 +22,7 @@ class BannerController extends Controller
             $request,
             Banner::query(),
             ['title', 'link_url'],
-            ['title', 'sort_order', 'is_active', 'lang', 'starts_at', 'created_at'],
+            ['title', 'sort_order', 'is_active', 'start_date', 'end_date', 'created_at'],
             defaultSort: 'sort_order',
             statusColumn: 'is_active',
         );
@@ -95,9 +95,8 @@ class BannerController extends Controller
             'link_url' => $validated['link_url'] ?: null,
             'sort_order' => $validated['sort_order'],
             'is_active' => $validated['is_active'],
-            'lang' => $validated['lang'],
-            'starts_at' => $validated['start_date'] ?? null,
-            'ends_at' => $validated['end_date'] ?? null,
+            'start_date' => $validated['start_date'] ?? null,
+            'end_date' => $validated['end_date'] ?? null,
         ];
 
         if ($image) {
@@ -118,9 +117,8 @@ class BannerController extends Controller
             'link_url' => $banner->link_url,
             'sort_order' => $banner->sort_order,
             'is_active' => $banner->is_active,
-            'lang' => $banner->lang->value,
-            'start_date' => $banner->starts_at?->toDateString(),
-            'end_date' => $banner->ends_at?->toDateString(),
+            'start_date' => $banner->start_date,
+            'end_date' => $banner->end_date,
             'image_url' => StoresPublicImage::url($banner->image_path),
             'created_at' => $banner->created_at?->toDateString(),
         ];

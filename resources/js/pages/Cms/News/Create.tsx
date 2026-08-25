@@ -7,10 +7,9 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 type Props = {
     categories: NewsOption[];
-    tags: NewsOption[];
 };
 
-export default function NewsCreate({ categories, tags }: Props) {
+export default function NewsCreate({ categories }: Props) {
     const { t } = useTranslation();
     const form = useForm<NewsFormValues>({
         category_id: categories[0] ? String(categories[0].id) : '',
@@ -18,9 +17,7 @@ export default function NewsCreate({ categories, tags }: Props) {
         slug: '',
         content: '',
         status: 'draft',
-        lang: 'en',
         image: null,
-        tag_ids: [],
     });
 
     const submit = (event: FormEvent) => {
@@ -33,7 +30,7 @@ export default function NewsCreate({ categories, tags }: Props) {
             <Head title={t('cms.create_news')} />
             <div className="flex w-full flex-col gap-5 pt-6 lg:pt-8">
                 <PageHeader eyebrow={t('menu.cms_news')} title={t('cms.create_news')} />
-                <NewsForm form={form} onSubmit={submit} cancelHref="/cms/news" categories={categories} tags={tags} />
+                <NewsForm form={form} onSubmit={submit} cancelHref="/cms/news" categories={categories} />
             </div>
         </>
     );

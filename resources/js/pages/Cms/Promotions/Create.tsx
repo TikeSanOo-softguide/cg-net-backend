@@ -13,7 +13,6 @@ export default function PromotionCreate() {
         start_date: '',
         end_date: '',
         is_active: true,
-        lang: 'en',
         image: null,
     });
 
