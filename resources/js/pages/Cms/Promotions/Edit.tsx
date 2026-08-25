@@ -38,7 +38,7 @@ export default function PromotionEdit({ item }: Props) {
         <>
             <Head title={t('cms.edit_promotion')} />
             <FormPage>
-                <PageHeader eyebrow={t('menu.cms_promotions')} title={t('cms.edit_promotion')} />
+                <PageHeader title={t('cms.edit_promotion')} />
                 <PromotionForm form={form} onSubmit={submit} cancelHref="/cms/promotions" imageUrl={item.image_url} />
             </FormPage>
         </>

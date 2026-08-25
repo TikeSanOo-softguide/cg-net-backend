@@ -35,7 +35,20 @@
     --primary: var(--theme-primary, 224 76% 48%);
     --primary-hover: var(--theme-primary-hover, 224 76% 52%);
     --primary-foreground: var(--theme-primary-foreground, 0 0% 100%);
-    --background: #f5f7fa;
+    --layout-bg: #f8f9fb;
+    --layout-bg-gradient: linear-gradient(135deg, #f8f9fb 0%, #eef1f6 100%);
+    --sidebar-bg: rgba(255, 255, 255, 0.7);
+    --sidebar-backdrop-filter: blur(12px);
+    --navbar-bg: rgba(255, 255, 255, 0.7);
+    --navbar-backdrop-filter: blur(12px);
+    --navbar-border: rgba(229, 231, 235, 0.6);
+    --card-bg: rgba(255, 255, 255, 0.85);
+    --card-backdrop-filter: blur(8px);
+    --card-border: rgba(229, 231, 235, 0.8);
+    --right-panel-bg: rgba(255, 255, 255, 0.7);
+    --right-panel-backdrop-filter: blur(12px);
+    --right-panel-border: rgba(229, 231, 235, 0.6);
+    --background: var(--layout-bg);
     --surface: #ffffff;
     --foreground: #173236;
     --secondary: #e8eeee;
@@ -53,19 +66,19 @@
     --muted-foreground: #5c6d70;
     --input: #e2e8e8;
     --ring: hsl(var(--primary));
-    --card: #ffffff;
+    --card: var(--card-bg);
     --card-foreground: #173236;
     --popover: var(--surface);
     --popover-foreground: var(--foreground);
     --destructive: var(--danger);
     --destructive-foreground: var(--danger-foreground);
-    --sidebar: #ffffff;
+    --sidebar: var(--sidebar-bg);
     --sidebar-foreground: var(--foreground);
     --sidebar-primary: hsl(var(--primary));
     --sidebar-primary-foreground: hsl(var(--primary-foreground));
     --sidebar-accent: hsl(var(--primary));
     --sidebar-accent-foreground: hsl(var(--primary-foreground));
-    --sidebar-border: #eef1f1;
+    --sidebar-border: rgba(229, 231, 235, 0.6);
     --sidebar-ring: var(--ring);
     --sidebar-item: hsl(var(--primary));
     --sidebar-item-hover: hsl(var(--primary-hover));
@@ -83,7 +96,7 @@
     --radius: 0.875rem;
     --elev-navbar: 0 1px 0 rgb(23 50 54 / 0.04), 0 2px 10px rgb(23 50 54 / 0.05);
     --elev-sidebar: 4px 0 24px rgb(23 50 54 / 0.05);
-    --elev-card: 0 1px 2px rgb(23 50 54 / 0.04), 0 8px 20px rgb(23 50 54 / 0.04);
+    --elev-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .dark {
@@ -91,6 +104,19 @@
     --primary: var(--theme-primary-dark, 224 76% 52%);
     --primary-hover: var(--theme-primary-dark-hover, 224 76% 56%);
     --primary-foreground: var(--theme-primary-dark-foreground, 0 0% 100%);
+    --layout-bg: #0f1c1e;
+    --layout-bg-gradient: none;
+    --sidebar-bg: #152628;
+    --sidebar-backdrop-filter: none;
+    --navbar-bg: #152628;
+    --navbar-backdrop-filter: none;
+    --navbar-border: #2a4043;
+    --card-bg: #1a2e31;
+    --card-backdrop-filter: none;
+    --card-border: #2a4043;
+    --right-panel-bg: #1a2e31;
+    --right-panel-backdrop-filter: none;
+    --right-panel-border: #2a4043;
     --background: #0f1c1e;
     --surface: #152628;
     --foreground: #f4f7f7;
@@ -174,9 +200,14 @@
     --shadow-sidebar: var(--elev-sidebar);
     --shadow-card: var(--elev-card);
 
-    --color-background: var(--background);
+    --color-background: var(--layout-bg);
     --color-foreground: var(--foreground);
     --color-surface: var(--surface);
+    --color-layout-bg: var(--layout-bg);
+    --color-sidebar-bg: var(--sidebar-bg);
+    --color-navbar-bg: var(--navbar-bg);
+    --color-card-bg: var(--card-bg);
+    --color-right-panel-bg: var(--right-panel-bg);
     --color-primary: hsl(var(--primary));
     --color-primary-hover: hsl(var(--primary-hover));
     --color-primary-foreground: hsl(var(--primary-foreground));
@@ -293,6 +324,43 @@
 
 .group[data-state='open']:hover .toast-progress {
     animation-play-state: paused;
+}
+
+.app-shell {
+    background-color: var(--layout-bg);
+    background-image: var(--layout-bg-gradient);
+}
+
+#app-sidebar {
+    background-color: var(--sidebar-bg);
+    backdrop-filter: var(--sidebar-backdrop-filter);
+    -webkit-backdrop-filter: var(--sidebar-backdrop-filter);
+    border-right: 1px solid var(--sidebar-border);
+}
+
+.app-navbar {
+    background-color: var(--navbar-bg);
+    backdrop-filter: var(--navbar-backdrop-filter);
+    -webkit-backdrop-filter: var(--navbar-backdrop-filter);
+}
+
+[data-slot='card'] {
+    background-color: var(--card-bg);
+    backdrop-filter: var(--card-backdrop-filter);
+    -webkit-backdrop-filter: var(--card-backdrop-filter);
+    border: none;
+    border-color: transparent;
+}
+
+[data-slot='card'] [data-slot='card-header'] {
+    border-color: transparent;
+}
+
+.app-theme-panel {
+    background-color: var(--right-panel-bg);
+    backdrop-filter: var(--right-panel-backdrop-filter);
+    -webkit-backdrop-filter: var(--right-panel-backdrop-filter);
+    border-left: 1px solid var(--right-panel-border);
 }
 
 .sidebar-scroll {

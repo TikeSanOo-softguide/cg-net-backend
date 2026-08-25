@@ -19,7 +19,7 @@ export default function ContactCreate() {
         <>
             <Head title={t('cms.create_contact')} />
             <FormPage>
-                <PageHeader eyebrow={t('menu.cms_contacts')} title={t('cms.create_contact')} />
+                <PageHeader title={t('cms.create_contact')} />
                 <ContactForm form={form} onSubmit={submit} cancelHref="/cms/contacts" />
             </FormPage>
         </>

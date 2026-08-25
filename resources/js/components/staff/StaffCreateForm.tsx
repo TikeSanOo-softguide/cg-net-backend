@@ -40,8 +40,8 @@ type StaffCreateFormProps = {
     onSubmit: (event: FormEvent) => void;
     cancelHref?: string;
     onCancel?: () => void;
-    title: string;
-    description: string;
+    title?: string;
+    description?: string;
     variant?: 'page' | 'modal';
 };
 
@@ -283,7 +283,7 @@ export function StaffCreateForm({
     }
 
     return (
-        <FormCard title={title} description={description} icon={UserPlusIcon}>
+        <FormCard title={title} description={description} icon={title ? UserPlusIcon : undefined}>
             <form {...formProps} className={cn('relative grid grid-cols-1 gap-5 sm:grid-cols-2')}>
                 <div aria-hidden="true" className="pointer-events-none absolute h-0 w-0 overflow-hidden opacity-0">
                     <input type="text" tabIndex={-1} autoComplete="username" />

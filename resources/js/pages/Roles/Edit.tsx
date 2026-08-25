@@ -33,7 +33,7 @@ export default function RoleEdit({ role, matrix }: RoleEditProps) {
         <>
             <Head title={t('staff.edit_role')} />
             <FormPage width="lg">
-                <PageHeader eyebrow={t('menu.roles')} title={t('staff.edit_role')} description={t('staff.role_form_description')} />
+                <PageHeader title={t('staff.edit_role')} description={t('staff.role_form_description')} />
                 <RoleForm form={form} matrix={matrix} onSubmit={submit} cancelHref="/roles" locked={role.is_locked} />
             </FormPage>
         </>

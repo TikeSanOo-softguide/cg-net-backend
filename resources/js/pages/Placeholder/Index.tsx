@@ -1,5 +1,6 @@
 import { Head } from '@inertiajs/react';
 
+import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -9,14 +10,13 @@ type PlaceholderProps = {
 
 export default function PlaceholderIndex({ titleKey }: PlaceholderProps) {
     const { t } = useTranslation();
-    const title = t(titleKey);
 
     return (
         <>
-            <Head title={title} />
-            <div className="flex w-full flex-col gap-6 pt-6 lg:gap-8 lg:pt-8">
-                <PageHeader title={title} />
-            </div>
+            <Head title={t(titleKey)} />
+            <PageContent>
+                <PageHeader />
+            </PageContent>
         </>
     );
 }

@@ -17,7 +17,7 @@ export function FormCard({ title, description, icon: Icon, className, contentCla
     return (
         <Card className={cn('w-full gap-0 overflow-hidden py-0', className)}>
             {title || Icon ? (
-                <CardHeader className="flex flex-row items-start gap-3 border-b border-border/70 px-5 py-5 sm:px-6">
+                <CardHeader className="flex flex-row items-start gap-3 px-5 py-5 sm:px-6">
                     {Icon ? (
                         <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                             <Icon className="size-[22px]" strokeWidth={1.85} />

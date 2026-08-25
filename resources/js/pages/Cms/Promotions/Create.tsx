@@ -26,7 +26,7 @@ export default function PromotionCreate() {
         <>
             <Head title={t('cms.create_promotion')} />
             <FormPage>
-                <PageHeader eyebrow={t('menu.cms_promotions')} title={t('cms.create_promotion')} />
+                <PageHeader title={t('cms.create_promotion')} />
                 <PromotionForm form={form} onSubmit={submit} cancelHref="/cms/promotions" />
             </FormPage>
         </>

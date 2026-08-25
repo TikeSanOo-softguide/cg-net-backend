@@ -5,6 +5,7 @@ import { Area, Bar, CartesianGrid, ComposedChart, Legend, ResponsiveContainer, T
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
+import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { StatCard } from '@/components/StatCard';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -92,8 +93,8 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
     return (
         <>
             <Head title={t('menu.dashboard')} />
-            <div className="flex w-full flex-col gap-6 pt-6 lg:gap-8 lg:pt-8">
-                <PageHeader eyebrow={t('dashboard.welcome_back')} title={t('dashboard.overview')} />
+            <PageContent className="gap-6 lg:gap-8">
+                <PageHeader />
 
                 <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                     {cards.map((card) => (
@@ -109,7 +110,7 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
                 </section>
 
                 <Card className="gap-0 overflow-hidden py-0 transition-shadow duration-200 hover:shadow-md">
-                    <CardHeader className="flex flex-row items-center justify-between gap-3 border-b border-border/70 px-5 py-5 sm:px-6">
+                    <CardHeader className="flex flex-row items-center justify-between gap-3 px-5 py-5 sm:px-6">
                         <div className="flex min-w-0 items-start gap-3">
                             <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                                 <TrendingUpIcon className="size-[22px]" strokeWidth={1.85} />
@@ -242,7 +243,7 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
                         },
                     ]}
                 />
-            </div>
+            </PageContent>
             <ConfirmDialog
                 open={pendingIds.length === 1}
                 onOpenChange={(open) => {

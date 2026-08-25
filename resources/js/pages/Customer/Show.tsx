@@ -4,6 +4,7 @@ import { BanIcon, HashIcon, Link2Icon, SquarePenIcon, UnlinkIcon, UserCheckIcon 
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
+import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
@@ -100,9 +101,8 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
     return (
         <>
             <Head title={customer.name} />
-            <div className="flex w-full flex-col gap-5 pt-6 pb-24 lg:pt-8 sm:pb-8">
+            <PageContent className="pb-24 sm:pb-8">
                 <PageHeader
-                    eyebrow={t('menu.customers_list')}
                     title={customer.name}
                     description={customer.phone}
                     actions={
@@ -359,7 +359,7 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
                         </Button>
                     </form>
                 </div>
-            </div>
+            </PageContent>
 
             <ConfirmDialog
                 open={statusOpen}

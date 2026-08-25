@@ -4,6 +4,7 @@ import { SquarePenIcon, Trash2Icon } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
+import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { TableActionButton } from '@/components/TableActionButton';
 import { useCan } from '@/hooks/useCan';
@@ -40,12 +41,8 @@ export default function RolesIndex({ roles, filters }: RolesIndexProps) {
     return (
         <>
             <Head title={t('menu.roles')} />
-            <div className="flex w-full flex-col gap-5 pt-6 lg:pt-8">
-                <PageHeader
-                    eyebrow={t('menu.staff_role_management')}
-                    title={t('menu.roles')}
-                    description={t('staff.roles_description')}
-                />
+            <PageContent>
+                <PageHeader />
                 <DataTable
                     data={roles}
                     getRowId={(row) => String(row.id)}
@@ -103,7 +100,7 @@ export default function RolesIndex({ roles, filters }: RolesIndexProps) {
                         },
                     ]}
                 />
-            </div>
+            </PageContent>
             <ConfirmDialog
                 open={pendingIds.length === 1}
                 onOpenChange={(open) => {

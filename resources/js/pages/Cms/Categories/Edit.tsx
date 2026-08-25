@@ -23,7 +23,7 @@ export default function CategoryEdit({ item }: Props) {
         <>
             <Head title={t('cms.edit_category')} />
             <FormPage>
-                <PageHeader eyebrow={t('menu.cms_categories')} title={t('cms.edit_category')} />
+                <PageHeader title={t('cms.edit_category')} />
                 <NameSlugForm form={form} onSubmit={submit} cancelHref="/cms/categories" />
             </FormPage>
         </>

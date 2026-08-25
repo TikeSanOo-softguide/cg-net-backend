@@ -19,7 +19,7 @@ export default function CategoryCreate() {
         <>
             <Head title={t('cms.create_category')} />
             <FormPage>
-                <PageHeader eyebrow={t('menu.cms_categories')} title={t('cms.create_category')} />
+                <PageHeader title={t('cms.create_category')} />
                 <NameSlugForm form={form} onSubmit={submit} cancelHref="/cms/categories" />
             </FormPage>
         </>

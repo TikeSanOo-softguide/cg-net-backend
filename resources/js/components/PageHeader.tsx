@@ -1,22 +1,29 @@
 import type { ReactNode } from 'react';
+import { usePage } from '@inertiajs/react';
 
+import { useTranslation } from '@/hooks/useTranslation';
+import { resolvePageDescription, resolvePageTitle } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 
 type PageHeaderProps = {
-    eyebrow?: string;
-    title: string;
+    title?: string;
     description?: string;
     actions?: ReactNode;
     className?: string;
 };
 
-export function PageHeader({ eyebrow, title, description, actions, className }: PageHeaderProps) {
+export function PageHeader({ title, description, actions, className }: PageHeaderProps) {
+    const { t } = useTranslation();
+    const page = usePage();
+    const path = page.url.split('?')[0];
+    const displayTitle = resolvePageTitle(t, path, title);
+    const displayDescription = resolvePageDescription(t, path, description);
+
     return (
-        <div className={cn('flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between', className)}>
+        <div className={cn('flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between', className)}>
             <div className="min-w-0">
-                {eyebrow ? <p className="text-xs font-medium text-primary/70">{eyebrow}</p> : null}
-                <h1 className="font-heading text-xl font-bold tracking-tight text-primary sm:text-2xl">{title}</h1>
-                {description ? <p className="mt-1 text-[13px] text-primary/70">{description}</p> : null}
+                <h1 className="font-heading text-base font-semibold tracking-tight text-primary/70 sm:text-lg">{displayTitle}</h1>
+                {displayDescription ? <p className="mt-0.5 text-[13px] text-muted-foreground">{displayDescription}</p> : null}
             </div>
             {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
         </div>

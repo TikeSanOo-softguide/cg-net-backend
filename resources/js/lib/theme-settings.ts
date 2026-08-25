@@ -179,8 +179,8 @@ export const borderRadiusClass: Record<BorderRadius, string> = {
 
 export const cardStyleClass: Record<CardStyle, string> = {
     flat: 'border-0',
-    bordered: 'border border-border',
-    shadow: 'border border-border/80',
+    bordered: 'border-0',
+    shadow: 'border-0',
     elevated: 'border-0',
 };
 

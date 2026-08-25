@@ -2,6 +2,7 @@ import { FormEvent } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { MailIcon, ShieldIcon, SquarePenIcon, UserIcon } from 'lucide-react';
 
+import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { MultiSelect } from '@/components/MultiSelect';
@@ -47,9 +48,8 @@ export default function StaffShow({ staffMember, roles }: StaffShowProps) {
     return (
         <>
             <Head title={staffMember.name} />
-            <div className="flex w-full flex-col gap-5 pt-6 lg:pt-8">
+            <PageContent>
                 <PageHeader
-                    eyebrow={t('menu.staff_accounts')}
                     title={staffMember.name}
                     description={t('staff.detail_description')}
                     actions={
@@ -65,7 +65,7 @@ export default function StaffShow({ staffMember, roles }: StaffShowProps) {
                 />
                 <div className="mx-auto grid w-full max-w-4xl grid-cols-1 gap-4 lg:grid-cols-2">
                     <Card className="gap-0 overflow-hidden py-0">
-                        <CardHeader className="flex flex-row items-center gap-3 border-b border-border/70 px-5 py-5">
+                        <CardHeader className="flex flex-row items-center gap-3 px-5 py-5">
                             <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                                 <UserIcon className="size-[22px]" strokeWidth={1.85} />
                             </div>
@@ -101,7 +101,7 @@ export default function StaffShow({ staffMember, roles }: StaffShowProps) {
                         </CardContent>
                     </Card>
                     <Card className="gap-0 overflow-hidden py-0">
-                        <CardHeader className="flex flex-row items-center gap-3 border-b border-border/70 px-5 py-5">
+                        <CardHeader className="flex flex-row items-center gap-3 px-5 py-5">
                             <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                                 <ShieldIcon className="size-[22px]" strokeWidth={1.85} />
                             </div>
@@ -139,7 +139,7 @@ export default function StaffShow({ staffMember, roles }: StaffShowProps) {
                         </CardContent>
                     </Card>
                 </div>
-            </div>
+            </PageContent>
         </>
     );
 }

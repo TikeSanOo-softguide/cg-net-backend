@@ -39,7 +39,7 @@ export default function NewsEdit({ categories, item }: Props) {
         <>
             <Head title={t('cms.edit_news')} />
             <FormPage>
-                <PageHeader eyebrow={t('menu.cms_news')} title={t('cms.edit_news')} />
+                <PageHeader title={t('cms.edit_news')} />
                 <NewsForm form={form} onSubmit={submit} cancelHref="/cms/news" categories={categories} imageUrl={item.image_url} />
             </FormPage>
         </>

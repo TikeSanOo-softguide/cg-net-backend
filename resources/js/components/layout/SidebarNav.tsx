@@ -30,9 +30,11 @@ const idleItemClass = 'text-sidebar-foreground hover:bg-primary/12 hover:text-fo
 
 function itemClass(active: boolean, expanded: boolean) {
     return cn(
-        'flex h-11 w-full items-center overflow-hidden rounded-[8px] text-[15px] font-medium',
-        'motion-reduce:transition-none transition-[gap,color,background-color,padding] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
-        expanded ? 'justify-start gap-3 px-3' : 'justify-center gap-0 px-0',
+        'flex items-center overflow-hidden rounded-[6px] text-[14px] font-medium',
+        'motion-reduce:transition-none transition-[gap,color,background-color,padding,width,height] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+        expanded
+            ? 'h-10 w-full justify-start gap-3 px-3'
+            : 'mx-auto size-9 justify-center gap-0 px-0',
         active ? selectedItemClass : idleItemClass,
     );
 }
@@ -48,7 +50,7 @@ function RailLabel({ children, label, disabled = false }: { children: ReactEleme
                 align="center"
                 sideOffset={16}
                 collisionPadding={16}
-                className="z-[80] rounded-[8px] border-border bg-surface px-2.5 py-1.5 text-sm font-medium text-foreground shadow-card"
+                className="z-[80] rounded-[6px] border-border bg-surface px-2.5 py-1.5 text-sm font-medium text-foreground shadow-card"
             >
                 {label}
             </TooltipContent>
@@ -166,7 +168,7 @@ function RailFlyout({
                 ? createPortal(
                       <div
                           ref={panelRef}
-                          className="fixed z-[90] max-h-[min(80vh,360px)] min-w-[220px] overflow-y-auto rounded-[8px] border border-border bg-surface p-1.5 shadow-card"
+                          className="fixed z-[90] max-h-[min(80vh,360px)] min-w-[220px] overflow-y-auto rounded-[6px] border border-border bg-surface p-1.5 shadow-card"
                           style={{ top: pos.top, left: pos.left }}
                           onMouseEnter={canHover ? show : undefined}
                           onMouseLeave={canHover ? hide : undefined}
@@ -189,7 +191,7 @@ function RailFlyout({
                                               }}
                                               aria-current={childActive ? 'page' : undefined}
                                               className={cn(
-                                                  'flex items-center gap-2.5 rounded-[8px] px-2.5 py-2 text-sm font-medium transition-colors duration-200',
+                                                  'flex items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-[14px] font-medium transition-colors duration-200',
                                                   childActive ? selectedChildItemClass : idleItemClass,
                                               )}
                                           >
@@ -289,7 +291,7 @@ export function SidebarNav({
     };
 
     return (
-        <div className="flex h-full min-h-0 flex-col overflow-hidden bg-sidebar">
+        <div className="flex h-full min-h-0 flex-col overflow-hidden bg-transparent">
             {showBrand ? (
                 <div
                     className={cn(
@@ -312,7 +314,7 @@ export function SidebarNav({
                     )}
                     aria-label="Sidebar"
                 >
-                    <ul className="flex flex-col gap-1.5">
+                    <ul className="flex flex-col gap-2.5">
                         {groups.map((group) => (
                             <SidebarGroup
                                 key={group.id}
@@ -392,11 +394,11 @@ function SidebarGroup({
     );
 
     const trigger = group.children ? (
-        <button type="button" onClick={expanded ? onToggle : undefined} className="w-full" aria-expanded={open}>
+        <button type="button" onClick={expanded ? onToggle : undefined} className="w-full outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-[6px]" aria-expanded={open}>
             {row}
         </button>
     ) : (
-        <Link href={href} onClick={onNavigate} className="block w-full">
+        <Link href={href} onClick={onNavigate} className="block w-full outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-[6px]">
             {row}
         </Link>
     );
@@ -427,7 +429,7 @@ function SidebarGroup({
                     )}
                 >
                     <div className="overflow-hidden">
-                        <ul className="mt-1 ml-3 flex flex-col gap-1.5 border-l border-sidebar-border pl-2">
+                        <ul className="mt-1.5 ml-3 flex flex-col gap-2 border-l border-sidebar-border pl-2">
                             {group.children.map((child) => {
                                 const childActive = isActivePath(current, child.href);
                                 const ChildIcon = child.icon;
@@ -440,7 +442,7 @@ function SidebarGroup({
                                             aria-current={childActive ? 'page' : undefined}
                                             tabIndex={expanded && open ? 0 : -1}
                                             className={cn(
-                                                'flex items-center gap-2.5 rounded-[8px] px-3 py-2 text-sm font-medium transition-colors duration-200',
+                                                'flex items-center gap-2.5 rounded-[6px] px-3 py-2 text-[14px] font-medium transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                                                 childActive ? selectedChildItemClass : idleItemClass,
                                             )}
                                         >

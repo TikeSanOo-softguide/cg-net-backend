@@ -5,6 +5,7 @@ import { CircleDotIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
 import type { Paginated } from '@/components/Pagination';
+import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
@@ -77,11 +78,8 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
     return (
         <>
             <Head title={t('menu.customers_list')} />
-            <div className="flex w-full flex-col gap-5 pt-6 lg:pt-8">
-                <PageHeader
-                    title={t('menu.customers_list')}
-                    description={t('customers.index_description')}
-                />
+            <PageContent>
+                <PageHeader />
                 <DataTable
                     data={customers.data}
                     getRowId={(row) => String(row.id)}
@@ -190,7 +188,7 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                         },
                     ]}
                 />
-            </div>
+            </PageContent>
             <CustomerFormDialog
                 open={formOpen}
                 onOpenChange={(open) => {

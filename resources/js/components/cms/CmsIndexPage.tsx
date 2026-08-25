@@ -5,6 +5,7 @@ import { CircleDotIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import type { Paginated } from '@/components/Pagination';
+import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { TableActionButton } from '@/components/TableActionButton';
 import { FormControl } from '@/components/ui/form-control';
@@ -115,12 +116,8 @@ export function CmsIndexPage<T extends { id: number }>({
     );
 
     return (
-        <div className="flex w-full flex-col gap-5 pt-6 lg:pt-8">
-            <PageHeader
-                eyebrow={t('menu.cms')}
-                title={t(titleKey)}
-                description={t(descriptionKey)}
-            />
+        <PageContent>
+            <PageHeader />
             <DataTable
                 data={items.data}
                 getRowId={(row) => String(row.id)}
@@ -185,6 +182,6 @@ export function CmsIndexPage<T extends { id: number }>({
                     });
                 }}
             />
-        </div>
+        </PageContent>
     );
 }

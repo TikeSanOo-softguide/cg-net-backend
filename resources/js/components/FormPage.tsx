@@ -10,8 +10,8 @@ type FormPageProps = {
 
 export function FormPage({ children, width = 'md', className }: FormPageProps) {
     return (
-        <div className={cn('flex w-full justify-center pt-6 lg:pt-8', className)}>
-            <div className={cn('flex w-full flex-col gap-5', width === 'lg' ? 'max-w-4xl' : 'max-w-3xl')}>
+        <div className={cn('flex w-full justify-center pt-3 lg:pt-4', className)}>
+            <div className={cn('flex w-full flex-col gap-4', width === 'lg' ? 'max-w-4xl' : 'max-w-3xl')}>
                 {children}
             </div>
         </div>

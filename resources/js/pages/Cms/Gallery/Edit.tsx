@@ -23,7 +23,7 @@ export default function GalleryEdit({ item }: Props) {
         <>
             <Head title={t('cms.edit_gallery')} />
             <FormPage>
-                <PageHeader eyebrow={t('menu.cms_gallery')} title={t('cms.edit_gallery')} />
+                <PageHeader title={t('cms.edit_gallery')} />
                 <GalleryForm form={form} onSubmit={submit} cancelHref="/cms/gallery" imageUrl={item.image_url} />
             </FormPage>
         </>

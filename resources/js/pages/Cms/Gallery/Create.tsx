@@ -19,7 +19,7 @@ export default function GalleryCreate() {
         <>
             <Head title={t('cms.create_gallery')} />
             <FormPage>
-                <PageHeader eyebrow={t('menu.cms_gallery')} title={t('cms.create_gallery')} />
+                <PageHeader title={t('cms.create_gallery')} />
                 <GalleryForm form={form} onSubmit={submit} cancelHref="/cms/gallery" />
             </FormPage>
         </>

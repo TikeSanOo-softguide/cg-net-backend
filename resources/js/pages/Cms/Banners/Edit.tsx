@@ -40,7 +40,7 @@ export default function BannerEdit({ item }: Props) {
         <>
             <Head title={t('cms.edit_banner')} />
             <FormPage>
-                <PageHeader eyebrow={t('menu.cms_banners')} title={t('cms.edit_banner')} />
+                <PageHeader title={t('cms.edit_banner')} />
                 <BannerForm form={form} onSubmit={submit} cancelHref="/cms/banners" imageUrl={item.image_url} />
             </FormPage>
         </>

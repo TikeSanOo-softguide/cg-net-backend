@@ -30,7 +30,7 @@ export default function NewsCreate({ categories }: Props) {
         <>
             <Head title={t('cms.create_news')} />
             <FormPage>
-                <PageHeader eyebrow={t('menu.cms_news')} title={t('cms.create_news')} />
+                <PageHeader title={t('cms.create_news')} />
                 <NewsForm form={form} onSubmit={submit} cancelHref="/cms/news" categories={categories} />
             </FormPage>
         </>

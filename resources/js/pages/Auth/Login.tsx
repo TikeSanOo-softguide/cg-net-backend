@@ -34,7 +34,7 @@ export default function Login({ status }: LoginProps) {
         <>
             <Head title={t('auth.sign_in')} />
 
-            <Card className="relative w-full min-w-0 gap-0 overflow-hidden rounded-[12px] border border-border/80 bg-card py-0 shadow-[0_12px_40px_rgb(23_50_54/0.12)]">
+            <Card className="relative w-full min-w-0 gap-0 overflow-hidden rounded-[12px] border-0 bg-card py-0 shadow-[0_12px_40px_rgb(23_50_54/0.12)]">
                 <div className="grid w-full grid-cols-1 md:grid-cols-2">
                     <div className="order-1 flex justify-center px-5 pt-5 md:hidden">
                         <BrandLockup compact href="/" className="justify-center" logoClassName="size-14 sm:size-16 rounded-[6px]" />

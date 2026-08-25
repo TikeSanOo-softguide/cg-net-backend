@@ -27,7 +27,7 @@ export default function BannerCreate() {
         <>
             <Head title={t('cms.create_banner')} />
             <FormPage>
-                <PageHeader eyebrow={t('menu.cms_banners')} title={t('cms.create_banner')} />
+                <PageHeader title={t('cms.create_banner')} />
                 <BannerForm form={form} onSubmit={submit} cancelHref="/cms/banners" />
             </FormPage>
         </>

@@ -27,11 +27,7 @@ export default function CustomerCreate() {
         <>
             <Head title={t('customers.create')} />
             <FormPage>
-                <PageHeader
-                    eyebrow={t('menu.customers_list')}
-                    title={t('customers.create')}
-                    description={t('customers.create_description')}
-                />
+                <PageHeader title={t('customers.create')} description={t('customers.create_description')} />
                 <CustomerForm
                     form={form}
                     onSubmit={submit}

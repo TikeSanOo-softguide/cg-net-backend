@@ -23,7 +23,7 @@ export default function ContactEdit({ item }: Props) {
         <>
             <Head title={t('cms.edit_contact')} />
             <FormPage>
-                <PageHeader eyebrow={t('menu.cms_contacts')} title={t('cms.edit_contact')} />
+                <PageHeader title={t('cms.edit_contact')} />
                 <ContactForm form={form} onSubmit={submit} cancelHref="/cms/contacts" />
             </FormPage>
         </>

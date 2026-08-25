@@ -2,6 +2,7 @@ import { FormEvent } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 
 import { FormPage } from '@/components/FormPage';
+import { PageHeader } from '@/components/PageHeader';
 import { StaffCreateForm } from '@/components/staff/StaffCreateForm';
 import { type StaffFormValues, type StaffRoleOption } from '@/components/staff/StaffForm';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -30,14 +31,12 @@ export default function StaffCreate({ roles }: StaffCreateProps) {
         <>
             <Head title={t('staff.create')} />
             <FormPage>
-                <p className="text-xs font-medium text-primary/70">{t('menu.staff_accounts')}</p>
+                <PageHeader title={t('staff.create')} description={t('staff.create_description')} />
                 <StaffCreateForm
                     form={form}
                     roles={roles}
                     onSubmit={submit}
                     cancelHref="/staff"
-                    title={t('staff.create')}
-                    description={t('staff.create_description')}
                 />
             </FormPage>
         </>

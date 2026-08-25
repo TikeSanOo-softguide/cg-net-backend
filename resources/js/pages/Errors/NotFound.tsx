@@ -15,7 +15,7 @@ export default function NotFound() {
             <Head title={t('errors.not_found_title')} />
 
             <div className={user ? 'flex min-h-[min(36rem,100%)] items-center justify-center py-8' : undefined}>
-                <Card className="w-full min-w-0 max-w-[820px] gap-0 overflow-hidden rounded-[12px] border border-border bg-[#FFFFFF] py-0 shadow-[0_8px_30px_rgb(23_50_54/0.08)]">
+                <Card className="w-full min-w-0 max-w-[820px] gap-0 overflow-hidden rounded-[12px] border-0 bg-[#FFFFFF] py-0 shadow-[0_8px_30px_rgb(23_50_54/0.08)]">
                     <CardContent className="flex flex-col items-center px-6 py-8 text-center sm:px-10 sm:py-10">
                         <NotFoundIllustration className="max-h-52 w-full max-w-[420px] sm:max-h-64 md:max-h-72" />
                         <a

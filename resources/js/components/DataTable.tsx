@@ -338,8 +338,8 @@ export function DataTable<T>({
 
     return (
         <TooltipProvider>
-            <Card className={cn('gap-0 overflow-hidden bg-[#FFFFFF] py-0 dark:bg-card', className)}>
-                <CardHeader className={cn('flex flex-col gap-3 border-b border-border/70 bg-[#FFFFFF] py-4 dark:bg-card', EDGE_PAD)}>
+            <Card className={cn('gap-0 overflow-hidden py-0', className)}>
+                <CardHeader className={cn('flex flex-col gap-3 py-4', EDGE_PAD)}>
                     {title ? (
                         <CardTitle className="text-[15px] font-semibold tracking-tight sm:text-base">{title}</CardTitle>
                     ) : null}

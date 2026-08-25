@@ -40,11 +40,7 @@ export default function CustomerEdit({ customer }: CustomerEditProps) {
         <>
             <Head title={t('customers.edit')} />
             <FormPage>
-                <PageHeader
-                    eyebrow={t('menu.customers_list')}
-                    title={t('customers.edit')}
-                    description={t('customers.edit_description')}
-                />
+                <PageHeader title={t('customers.edit')} description={t('customers.edit_description')} />
                 <CustomerForm
                     form={form}
                     onSubmit={submit}

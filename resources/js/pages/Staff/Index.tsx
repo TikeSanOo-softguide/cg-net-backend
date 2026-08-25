@@ -5,6 +5,7 @@ import { CircleDotIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
 import type { Paginated } from '@/components/Pagination';
+import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
@@ -66,12 +67,8 @@ export default function StaffIndex({ staff, roles = [], filters }: StaffIndexPro
     return (
         <>
             <Head title={t('menu.staff_accounts')} />
-            <div className="flex w-full flex-col gap-5 pt-6 lg:pt-8">
-                <PageHeader
-                    eyebrow={t('menu.staff_role_management')}
-                    title={t('menu.staff_accounts')}
-                    description={t('staff.index_description')}
-                />
+            <PageContent>
+                <PageHeader />
                 <DataTable
                     data={staff.data}
                     getRowId={(row) => String(row.id)}
@@ -188,7 +185,7 @@ export default function StaffIndex({ staff, roles = [], filters }: StaffIndexPro
                         },
                     ]}
                 />
-            </div>
+            </PageContent>
             <StaffFormDialog
                 open={formOpen}
                 onOpenChange={(open) => {

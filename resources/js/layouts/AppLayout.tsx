@@ -88,7 +88,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
     return (
         <TooltipProvider>
-            <div className="relative flex h-dvh overflow-hidden bg-background">
+            <div className="relative flex h-dvh overflow-hidden app-shell">
                 <div
                     className={cn(
                         'shrink-0',
@@ -114,7 +114,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                         expanded ? 'w-[min(var(--sidebar-width),85vw)]' : 'w-[88px]',
                     )}
                 >
-                    <aside id="app-sidebar" className="h-full w-full overflow-hidden bg-sidebar shadow-sidebar">
+                    <aside id="app-sidebar" className="h-full w-full overflow-hidden shadow-sidebar">
                         <div className="flex h-full w-full min-w-0 flex-col">
                             <SidebarNav expanded={expanded} onNavigate={closeMobileSidebar} groups={groups} />
                         </div>

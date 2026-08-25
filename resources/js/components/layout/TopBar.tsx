@@ -14,7 +14,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useTranslation } from '@/hooks/useTranslation';
-import { titleKeyForPath } from '@/lib/navigation';
+import { resolvePageTitle } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/providers/ThemeProvider';
 import type { SupportedLocale } from '@/types';
@@ -41,7 +41,7 @@ export function TopBar({ sidebarOpen = false }: TopBarProps) {
     const page = usePage();
     const { auth, unreadNotifications } = page.props;
     const user = auth?.user;
-    const title = t(titleKeyForPath(page.url.split('?')[0]));
+    const title = resolvePageTitle(t, page.url.split('?')[0]);
     const unread = unreadNotifications ?? 0;
 
     const logout = () => {
@@ -67,10 +67,10 @@ export function TopBar({ sidebarOpen = false }: TopBarProps) {
     };
 
     return (
-        <header className="sticky top-0 z-[60] shrink-0 border-b border-border/60 bg-surface/95 shadow-navbar backdrop-blur-sm">
+        <header className="app-navbar sticky top-0 z-[60] shrink-0 shadow-navbar">
             <div className="flex h-[var(--navbar-height)] items-center justify-between gap-2 px-3 sm:px-5">
                 <div className="flex min-w-0 items-center gap-2.5">
-                    <h1 className="truncate font-heading text-sm font-semibold tracking-tight text-foreground sm:text-base">
+                    <h1 className="truncate font-heading text-sm font-medium tracking-tight text-primary/70 sm:text-[15px]">
                         {title}
                     </h1>
                 </div>
