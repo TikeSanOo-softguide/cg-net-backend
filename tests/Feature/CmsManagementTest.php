@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Enums\LanguagePref;
 use App\Enums\NewsStatus;
 use App\Models\Admin;
 use App\Models\Banner;
@@ -64,11 +63,11 @@ class CmsManagementTest extends TestCase
     public function test_admins_can_list_and_filter_promotions(): void
     {
         $admin = Admin::factory()->create();
-        Promotion::factory()->create(['title' => 'Monsoon offer', 'lang' => LanguagePref::En]);
-        Promotion::factory()->create(['title' => 'Chinese banner', 'lang' => LanguagePref::Zh, 'is_active' => false]);
+        Promotion::factory()->create(['title_en' => 'Monsoon offer']);
+        Promotion::factory()->create(['title_en' => 'Chinese banner', 'is_active' => false]);
 
         $this->actingAs($admin, 'web')
-            ->get('/cms/promotions?search=Monsoon&lang=en&status=active')
+            ->get('/cms/promotions?search=Monsoon&status=active')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Cms/Promotions/Index')
@@ -87,7 +86,6 @@ class CmsManagementTest extends TestCase
                 'start_date' => '2026-08-01',
                 'end_date' => '2026-08-31',
                 'is_active' => '1',
-                'lang' => 'en',
                 'image' => UploadedFile::fake()->image('promo.jpg'),
             ])
             ->assertRedirect('/cms/promotions');
@@ -103,7 +101,6 @@ class CmsManagementTest extends TestCase
                 'start_date' => '2026-08-01',
                 'end_date' => '2026-08-31',
                 'is_active' => '0',
-                'lang' => 'my',
             ])
             ->assertRedirect('/cms/promotions');
 
@@ -120,14 +117,14 @@ class CmsManagementTest extends TestCase
     public function test_existing_banners_are_managed_under_cms(): void
     {
         $admin = Admin::factory()->create();
-        Banner::factory()->create(['title' => 'Homepage hero', 'lang' => LanguagePref::En]);
+        Banner::factory()->create();
 
         $this->actingAs($admin, 'web')
             ->get('/cms/banners')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Cms/Banners/Index')
-                ->where('items.data.0.title', 'Homepage hero'));
+                ->has('items.data', 1));
 
         $this->actingAs($admin, 'web')
             ->get('/banners')
@@ -145,7 +142,6 @@ class CmsManagementTest extends TestCase
                 'slug' => 'coverage-update',
                 'content' => 'Fiber is now live.',
                 'status' => NewsStatus::Published->value,
-                'lang' => 'en',
                 'image' => UploadedFile::fake()->image('news.jpg'),
             ])
             ->assertRedirect('/cms/news');
@@ -186,7 +182,6 @@ class CmsManagementTest extends TestCase
         $this->actingAs($admin, 'web')
             ->post('/cms/gallery', [
                 'label' => 'Office',
-                'lang' => 'en',
                 'image' => UploadedFile::fake()->image('gallery.jpg'),
             ])
             ->assertRedirect('/cms/gallery');
@@ -198,8 +193,8 @@ class CmsManagementTest extends TestCase
     public function test_admins_can_bulk_delete_promotions(): void
     {
         $admin = Admin::factory()->create();
-        $first = Promotion::factory()->create(['title' => 'First promo']);
-        $second = Promotion::factory()->create(['title' => 'Second promo']);
+        $first = Promotion::factory()->create(['title_en' => 'First promo']);
+        $second = Promotion::factory()->create(['title_en' => 'Second promo']);
 
         $this->actingAs($admin, 'web')
             ->from('/cms/promotions')
