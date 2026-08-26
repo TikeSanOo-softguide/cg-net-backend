@@ -11,6 +11,7 @@ use App\Support\CmsListing;
 use App\Support\StoresPublicImage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,14 +22,14 @@ class BannerController extends Controller
         $listing = CmsListing::paginate(
             $request,
             Banner::query(),
-            ['title', 'link_url'],
-            ['title', 'sort_order', 'is_active', 'start_date', 'end_date', 'created_at'],
+            ['is_active', 'start_date'],
+            ['sort_order', 'is_active', 'start_date', 'end_date', 'created_at'],
             defaultSort: 'sort_order',
             statusColumn: 'is_active',
         );
 
         return Inertia::render('Cms/banner/Index', [
-            'items' => $listing['paginator']->through(fn (Banner $item) => $this->payload($item)),
+            'items' => $listing['paginator']->through(fn(Banner $item) => $this->payload($item)),
             'filters' => $listing['filters'],
         ]);
     }
@@ -40,7 +41,12 @@ class BannerController extends Controller
 
     public function store(StoreBannerRequest $request): RedirectResponse
     {
-        $banner = Banner::query()->create($this->attributes($request->validated(), $request->file('image')));
+        $banner = Banner::query()->create($this->attributes(
+            $request->validated(),
+            $request->file('image_url_en'),
+            $request->file('image_url_zh'),
+            $request->file('image_url_my'),
+        ));
 
         activity('cms')->causedBy($request->user())->performedOn($banner)->event('created')->log('banner_created');
 
@@ -54,7 +60,15 @@ class BannerController extends Controller
 
     public function update(UpdateBannerRequest $request, Banner $banner): RedirectResponse
     {
-        $banner->update($this->attributes($request->validated(), $request->file('image'), $banner->image_path));
+        $banner->update($this->attributes(
+            $request->validated(),
+            $request->file('image_url_en'),
+            $request->file('image_url_zh'),
+            $request->file('image_url_my'),
+            $banner->image_url_en,
+            $banner->image_url_zh,
+            $banner->image_url_my
+        ));
 
         activity('cms')->causedBy($request->user())->performedOn($banner)->event('updated')->log('banner_updated');
 
@@ -63,7 +77,9 @@ class BannerController extends Controller
 
     public function destroy(Request $request, Banner $banner): RedirectResponse
     {
-        StoresPublicImage::delete($banner->image_path);
+        StoresPublicImage::delete($banner->image_url_en);
+        StoresPublicImage::delete($banner->image_url_zh);
+        StoresPublicImage::delete($banner->image_url_my);
         $banner->delete();
 
         activity('cms')->causedBy($request->user())->performedOn($banner)->event('deleted')->log('banner_deleted');
@@ -78,7 +94,7 @@ class BannerController extends Controller
             Banner::query(),
             'cms.banners.index',
             'banner_deleted',
-            beforeDelete: fn (Banner $banner) => StoresPublicImage::delete($banner->image_path),
+            beforeDelete: fn(Banner $banner) => StoresPublicImage::delete($banner->image_path),
         );
     }
 
@@ -86,20 +102,46 @@ class BannerController extends Controller
      * @param  array<string, mixed>  $validated
      * @return array<string, mixed>
      */
-    private function attributes(array $validated, $image = null, ?string $previousPath = null): array
-    {
+    private function attributes(
+        array $validated,
+        ?UploadedFile $imageEn = null,
+        ?UploadedFile $imageZh = null,
+        ?UploadedFile $imageMy = null,
+        ?string $previousPathEn = null,
+        ?string $previousPathZh = null,
+        ?string $previousPathMy = null,
+    ): array {
         $data = [
-            'title' => $validated['title'],
-            'link_url' => $validated['link_url'] ?: null,
             'sort_order' => $validated['sort_order'],
             'is_active' => $validated['is_active'],
             'start_date' => $validated['start_date'] ?? null,
             'end_date' => $validated['end_date'] ?? null,
         ];
 
-        if ($image) {
-            $data['image_path'] = StoresPublicImage::store($image, 'cms/banners', $previousPath);
+        if ($imageEn) {
+            $data['image_url_en'] = StoresPublicImage::store(
+                $imageEn,
+                'cms/banners',
+                $previousPathEn
+            );
         }
+
+        if ($imageZh) {
+            $data['image_url_zh'] = StoresPublicImage::store(
+                $imageZh,
+                'cms/banners',
+                $previousPathZh
+            );
+        }
+
+        if ($imageMy) {
+            $data['image_url_my'] = StoresPublicImage::store(
+                $imageMy,
+                'cms/banners',
+                $previousPathMy
+            );
+        }
+
 
         return $data;
     }
@@ -111,13 +153,13 @@ class BannerController extends Controller
     {
         return [
             'id' => $banner->id,
-            'title' => $banner->title,
-            'link_url' => $banner->link_url,
+            'image_url_en' => StoresPublicImage::url($banner->image_url_en),
+            'image_url_zh' => StoresPublicImage::url($banner->image_url_zh),
+            'image_url_my' => StoresPublicImage::url($banner->image_url_my),
             'sort_order' => $banner->sort_order,
             'is_active' => $banner->is_active,
             'start_date' => $banner->start_date,
             'end_date' => $banner->end_date,
-            'image_url' => StoresPublicImage::url($banner->image_path),
             'created_at' => $banner->created_at?->toDateString(),
         ];
     }

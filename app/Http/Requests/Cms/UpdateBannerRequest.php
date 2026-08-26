@@ -17,13 +17,13 @@ class UpdateBannerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => ['required', 'string', 'max:255'],
-            'link_url' => ['nullable', 'url', 'max:500'],
+            'image_url_en' => CmsRules::image(false),
+            'image_url_zh' => CmsRules::image(false),
+            'image_url_my' => CmsRules::image(false),
             'sort_order' => ['required', 'integer', 'min:0', 'max:9999'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'is_active' => ['required', 'boolean'],
-            'image' => CmsRules::image(false),
         ];
     }
 
