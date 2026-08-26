@@ -38,7 +38,7 @@
                     var hex = '#1d4ed8';
                     if (raw) {
                         var settings = JSON.parse(raw);
-                        if (settings.primaryColor && String(settings.primaryColor).toLowerCase() !== '#173236') {
+                        if (settings.primaryColor && String(settings.primaryColor).toLowerCase() !== '#173236' && String(settings.primaryColor).toLowerCase() !== '#635bff') {
                             hex = settings.primaryColor;
                         }
                     }

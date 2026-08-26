@@ -31,7 +31,7 @@ export function Pagination({ meta, summary }: PaginationProps) {
     }
 
     return (
-        <div className="flex flex-col gap-3 bg-[#FFFFFF] px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-[45px] dark:bg-card">
+        <div className="flex flex-col gap-2.5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
             <p className="text-xs text-muted-foreground">{summary}</p>
             <nav className="flex flex-wrap gap-1.5" aria-label="Pagination">
                 {meta.links.map((link, index) => {

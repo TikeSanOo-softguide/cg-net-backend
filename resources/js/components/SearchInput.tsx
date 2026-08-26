@@ -13,8 +13,10 @@ type SearchInputProps = {
 };
 
 export function SearchInput({ value, onChange, placeholder, className, size = 'md' }: SearchInputProps) {
+    const compact = size === 'sm';
+
     return (
-        <FormControl icon={SearchIcon} className={cn('w-full', className)}>
+        <FormControl icon={SearchIcon} compact={compact} className={cn('w-full', className)}>
             <Input
                 type="text"
                 inputMode="search"
@@ -22,7 +24,7 @@ export function SearchInput({ value, onChange, placeholder, className, size = 'm
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
                 placeholder={placeholder}
-                className={size === 'sm' ? 'h-10 text-sm' : undefined}
+                className={compact ? 'h-8 rounded-[4px] bg-muted/50 py-0 text-[11px] placeholder:text-[11px]' : undefined}
             />
         </FormControl>
     );

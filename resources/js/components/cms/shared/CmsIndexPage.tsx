@@ -98,12 +98,12 @@ export function CmsIndexPage<T extends { id: number }>({
     const filterControls: ReactNode = (
         <>
             {statusFilter ? (
-                <FormControl icon={CircleDotIcon} className="w-full shrink-0 sm:w-48">
+                <FormControl icon={CircleDotIcon} compact className="w-full shrink-0 sm:w-48">
                     <Select value={filters.status || 'all'} onValueChange={(value) => visit({ status: value === 'all' ? '' : value })}>
                         <SelectTrigger className="w-full">
                             <SelectValue placeholder={t('common.status')} />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
                             <SelectItem value="all">{t('customers.all_statuses')}</SelectItem>
                             {statusOptions.map((option) => (
                                 <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>

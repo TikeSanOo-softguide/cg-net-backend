@@ -127,7 +127,7 @@ export default function StaffIndex({ staff, roles = [], filters }: StaffIndexPro
                         </>
                     )}
                     filters={
-                        <FormControl icon={CircleDotIcon} className="w-full shrink-0 sm:w-48">
+                        <FormControl icon={CircleDotIcon} compact className="w-full shrink-0 sm:w-48">
                             <Select
                                 value={filters.status || 'all'}
                                 onValueChange={(value) => visitIndex({ ...filters, status: value === 'all' ? '' : value })}
@@ -135,7 +135,7 @@ export default function StaffIndex({ staff, roles = [], filters }: StaffIndexPro
                                 <SelectTrigger className="w-full">
                                     <SelectValue placeholder={t('common.status')} />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
                                     <SelectItem value="all">{t('common.all')}</SelectItem>
                                     <SelectItem value="active">{t('status.active')}</SelectItem>
                                     <SelectItem value="inactive">{t('status.inactive')}</SelectItem>

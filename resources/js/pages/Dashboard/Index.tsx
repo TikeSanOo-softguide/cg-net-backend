@@ -109,7 +109,8 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
                     ))}
                 </section>
 
-                <Card className="gap-0 overflow-hidden py-0 transition-shadow duration-200 hover:shadow-md">
+                <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+                    <Card className="h-full gap-0 overflow-hidden py-0 transition-shadow duration-200 hover:shadow-md">
                     <CardHeader className="flex flex-row items-center justify-between gap-3 px-5 py-5 sm:px-6">
                         <div className="flex min-w-0 items-start gap-3">
                             <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -190,9 +191,11 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
                             </ResponsiveContainer>
                         </div>
                     </CardContent>
-                </Card>
+                    </Card>
 
-                <DataTable
+                    <DataTable
+                    className="min-w-0"
+                    numbered={false}
                     title={t('dashboard.recent_requests')}
                     data={recentRequests}
                     getRowId={(row) => row.id}
@@ -242,7 +245,8 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
                             cell: (row) => row.created_at?.slice(0, 10),
                         },
                     ]}
-                />
+                    />
+                </div>
             </PageContent>
             <ConfirmDialog
                 open={pendingIds.length === 1}

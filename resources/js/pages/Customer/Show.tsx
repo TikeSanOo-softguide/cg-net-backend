@@ -187,6 +187,8 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
                     </DetailPanel>
                 </div>
 
+                <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2">
+                    <div className="min-w-0">
                 <DataTable
                     title={t('customers.broadband_accounts')}
                     data={broadbandAccounts}
@@ -204,7 +206,7 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
                                 });
                             }}
                         >
-                            <FormControl icon={HashIcon} className="max-w-56">
+                            <FormControl icon={HashIcon} compact className="max-w-56">
                                 <Input
                                     value={bindForm.data.account_number}
                                     onChange={(event) => bindForm.setData('account_number', event.target.value)}
@@ -251,7 +253,8 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
                         },
                     ]}
                 />
-                {errors.account_number ? <p className="-mt-3 text-xs text-danger">{errors.account_number}</p> : null}
+                {errors.account_number ? <p className="mt-2 text-xs text-danger">{errors.account_number}</p> : null}
+                    </div>
 
                 <DataTable
                     title={t('customers.packages')}
@@ -260,14 +263,14 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
                     searchPlaceholder={t('customers.search_packages')}
                     emptyLabel={t('customers.no_packages')}
                     filters={
-                        <div className="flex h-10 w-full items-center rounded-[6px] border border-input bg-surface p-0.5 sm:w-auto">
+                        <div className="flex h-8 w-full items-center rounded-[4px] border border-input bg-muted/50 p-0.5 sm:w-auto">
                             {(['active', 'expired'] as const).map((tab) => (
                                 <button
                                     key={tab}
                                     type="button"
                                     onClick={() => setPackageTab(tab)}
                                     className={cn(
-                                        'h-full rounded-[6px] px-3 text-sm font-medium transition-colors duration-200',
+                                        'h-full rounded-[4px] px-3 text-[11px] font-medium transition-colors duration-200',
                                         packageTab === tab ? 'bg-primary/12 text-primary' : 'text-muted-foreground hover:text-foreground',
                                     )}
                                 >
@@ -308,6 +311,7 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
                         },
                     ]}
                 />
+                </div>
 
                 <DataTable
                     title={t('customers.recent_transactions')}

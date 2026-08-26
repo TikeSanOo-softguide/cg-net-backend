@@ -299,25 +299,26 @@ export function DataTable<T>({
 
     return (
         <TooltipProvider>
-            <Card className={cn('gap-0 overflow-hidden py-0', className)}>
-                <CardHeader className={cn('flex flex-col gap-3 py-4', EDGE_PAD)}>
+            <Card className={cn('flex h-full min-h-0 flex-col gap-0 overflow-hidden border-0 py-0 shadow-[0_4px_16px_rgb(23_50_54/0.06)] dark:shadow-[0_4px_16px_rgb(0_0_0/0.22)]', className)}>
+                <CardHeader className={cn('flex flex-col gap-2.5 py-3', EDGE_PAD)}>
                     {title ? (
-                        <CardTitle className="text-[15px] font-semibold tracking-tight sm:text-base">{title}</CardTitle>
+                        <CardTitle className="text-[13px] font-semibold tracking-tight sm:text-sm">{title}</CardTitle>
                     ) : null}
                     <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
-                        <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+                        <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center [&_[data-slot=input]]:h-8 [&_[data-slot=input]]:rounded-[4px] [&_[data-slot=input]]:bg-muted/50 [&_[data-slot=input]]:py-0 [&_[data-slot=input]]:text-[11px] [&_[data-slot=input]]:placeholder:text-[11px] [&_[data-slot=select-trigger]]:h-8 [&_[data-slot=select-trigger]]:rounded-[4px] [&_[data-slot=select-trigger]]:bg-muted/50 [&_[data-slot=select-trigger]]:py-0 [&_[data-slot=select-trigger]]:text-[11px] [&_[data-slot=select-trigger]]:data-[placeholder]:text-[11px] [&_.h-10]:h-8 [&_.rounded-\[6px\]]:rounded-[4px]">
                             {filters}
                             <SearchInput
                                 value={searchValue}
                                 onChange={onSearchChange ?? setQuery}
                                 placeholder={searchPlaceholder ?? t('common.search')}
-                                className="w-full sm:w-72"
+                                size="sm"
+                                className="w-full sm:max-w-64"
                             />
                         </div>
                         <div className="flex shrink-0 items-center justify-end gap-2">
                             {showDelete ? (
                                 <>
-                                    <span className="rounded-[6px] bg-primary/12 px-2.5 py-1.5 text-xs font-semibold tabular-nums text-primary">
+                                    <span className="inline-flex h-8 items-center rounded-[6px] bg-primary/12 px-2.5 text-[10px] font-semibold tabular-nums text-primary">
                                         {t('common.selected_count').replace(':count', String(selectedIds.length))}
                                     </span>
                                     {bulkActions ?? (
@@ -351,10 +352,12 @@ export function DataTable<T>({
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent className="px-0 pb-0">
-                    <div className="hidden sm:block">
-                        <Table>
-                            <TableHeader className="bg-[#FFFFFF] dark:bg-card">
+                <CardContent className="flex min-h-0 flex-1 flex-col px-0 pb-0">
+                    <div className={cn(EDGE_PAD, 'min-h-0 flex-1 pb-3')}>
+                        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[4px] border-0 bg-[#FFFFFF] shadow-[0_2px_8px_rgb(23_50_54/0.08)] dark:bg-card dark:shadow-[0_2px_8px_rgb(0_0_0/0.28)]">
+                            <div className="hidden min-h-0 flex-1 overflow-x-auto sm:block">
+                                <Table>
+                            <TableHeader className="bg-muted/50 dark:bg-muted/30">
                                 <TableRow className="hover:bg-transparent">
                                     {canSelect ? (
                                         <TableHead className={cn(headerCellClass, EDGE_CELL, 'w-10 pr-0')}>
@@ -411,7 +414,7 @@ export function DataTable<T>({
                             <TableBody>
                                 {rows.length === 0 ? (
                                     <TableRow className="hover:bg-transparent">
-                                        <TableCell colSpan={columnCount} className={cn(EDGE_CELL, 'h-28 text-center')}>
+                                        <TableCell colSpan={columnCount} className={cn(EDGE_CELL, 'h-20 text-center')}>
                                             <p className="text-sm font-medium text-foreground">{noResults}</p>
                                         </TableCell>
                                     </TableRow>
@@ -425,7 +428,7 @@ export function DataTable<T>({
                                             <TableRow
                                                 key={id}
                                                 data-state={selected ? 'selected' : undefined}
-                                                className="bg-[#FFFFFF] dark:bg-card"
+                                                className="odd:bg-[#FFFFFF] even:bg-muted/20 dark:odd:bg-card dark:even:bg-muted/15"
                                             >
                                                 {canSelect ? (
                                                     <TableCell className={cn(EDGE_CELL, 'w-10 pr-0')}>
@@ -460,9 +463,9 @@ export function DataTable<T>({
                         </Table>
                     </div>
 
-                    <ul className={cn('flex flex-col gap-2.5 bg-[#FFFFFF] py-4 sm:hidden dark:bg-card', EDGE_PAD)}>
+                    <ul className="flex flex-col gap-2 p-2.5 sm:hidden">
                         {rows.length === 0 ? (
-                            <li className="rounded-[6px] border border-border/80 bg-muted/30 px-4 py-8 text-center text-sm text-muted-foreground">
+                            <li className="rounded-[6px] bg-muted/30 px-3 py-6 text-center text-sm text-muted-foreground">
                                 {noResults}
                             </li>
                         ) : (
@@ -475,11 +478,11 @@ export function DataTable<T>({
                                     <li
                                         key={id}
                                         className={cn(
-                                            'rounded-[6px] border border-border/80 bg-card px-4 py-3.5 shadow-[0_1px_2px_rgb(23_50_54/0.04)]',
+                                            'rounded-[6px] border border-border/70 bg-card px-3 py-2.5 shadow-[0_1px_2px_rgb(23_50_54/0.04)]',
                                             selected && 'border-primary/40 bg-primary/6',
                                         )}
                                     >
-                                        <div className="mb-2 flex items-center gap-2.5">
+                                        <div className="mb-1.5 flex items-center gap-2">
                                             {canSelect ? (
                                                 <TableCheckbox
                                                     checked={selected}
@@ -489,27 +492,27 @@ export function DataTable<T>({
                                                 />
                                             ) : null}
                                             {numbered ? (
-                                                <span className="text-xs font-medium tabular-nums text-muted-foreground">
+                                                <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
                                                     {t('common.no')} {indexStart + index}
                                                 </span>
                                             ) : null}
                                         </div>
-                                        <div className="flex items-start justify-between gap-3">
+                                        <div className="flex items-start justify-between gap-2.5">
                                             <div className="min-w-0">
                                                 {mobileTitle ? (
-                                                    <p className="truncate text-sm font-semibold text-foreground">{mobileTitle.cell(row)}</p>
+                                                    <p className="truncate text-[13px] font-semibold text-foreground">{mobileTitle.cell(row)}</p>
                                                 ) : null}
                                                 {mobileSubtitle ? (
-                                                    <p className="mt-0.5 truncate text-[13px] text-muted-foreground">{mobileSubtitle.cell(row)}</p>
+                                                    <p className="mt-0.5 truncate text-xs text-muted-foreground">{mobileSubtitle.cell(row)}</p>
                                                 ) : null}
                                             </div>
                                             {mobileBadge ? mobileBadge.cell(row) : null}
                                         </div>
                                         {mobileMeta ? (
-                                            <p className="mt-2 font-mono text-[11px] text-muted-foreground">{mobileMeta.cell(row)}</p>
+                                            <p className="mt-1.5 font-mono text-[10px] text-muted-foreground">{mobileMeta.cell(row)}</p>
                                         ) : null}
                                         {showActions ? (
-                                            <div className="mt-3 flex items-center justify-center gap-1.5 border-t border-border/60 pt-3">
+                                            <div className="mt-2 flex items-center justify-center gap-1.5 border-t border-border/60 pt-2">
                                                 {renderActions(row)}
                                             </div>
                                         ) : null}
@@ -518,6 +521,8 @@ export function DataTable<T>({
                             })
                         )}
                     </ul>
+                        </div>
+                    </div>
                     {pagination ? (
                         <Pagination
                             meta={pagination}

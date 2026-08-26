@@ -129,7 +129,7 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                         </>
                     )}
                     filters={
-                        <FormControl icon={CircleDotIcon} className="w-full shrink-0 sm:w-48">
+                        <FormControl icon={CircleDotIcon} compact className="w-full shrink-0 sm:w-48">
                             <Select
                                 value={filters.status || 'all'}
                                 onValueChange={(value) => visitIndex({ ...filters, status: value === 'all' ? '' : value })}
@@ -137,7 +137,7 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                                 <SelectTrigger className="w-full">
                                     <SelectValue placeholder={t('customers.filter_status')} />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
                                     <SelectItem value="all">{t('customers.all_statuses')}</SelectItem>
                                     <SelectItem value="active">{t('status.active')}</SelectItem>
                                     <SelectItem value="suspended">{t('status.suspended')}</SelectItem>
