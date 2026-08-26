@@ -1,21 +1,24 @@
-import { FormEvent } from 'react';
-import { useForm } from '@inertiajs/react';
-import { ImageIcon, SquarePenIcon } from 'lucide-react';
+import { FormEvent } from "react";
+import { useForm } from "@inertiajs/react";
+import { ImageIcon, SquarePenIcon } from "lucide-react";
 
-import { BannerForm, type BannerFormValues } from '@/components/cms/banner/BannerForm';
-import { FormDialog } from '@/components/FormDialog';
-import { cmsModalVisit } from '@/lib/cms-modal';
-import { useTranslation } from '@/hooks/useTranslation';
+import {
+    BannerForm,
+    type BannerFormValues,
+} from "@/components/cms/banner/BannerForm";
+import { FormDialog } from "@/components/FormDialog";
+import { cmsModalVisit } from "@/lib/cms-modal";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export type BannerItem = {
     id: number;
-    title: string;
-    link_url: string | null;
+    image_url_en: string | null;
+    image_url_zh: string | null;
+    image_url_my: string | null;
     sort_order: number;
     start_date: string | null;
     end_date: string | null;
     is_active: boolean;
-    image_url: string | null;
 };
 
 type BannerFormDialogProps = {
@@ -26,17 +29,21 @@ type BannerFormDialogProps = {
 
 function emptyBannerForm(): BannerFormValues {
     return {
-        title: '',
-        link_url: '',
+        image_url_en: null,
+        image_url_zh: null,
+        image_url_my: null,
         sort_order: 0,
-        start_date: '',
-        end_date: '',
+        start_date: "",
+        end_date: "",
         is_active: true,
-        image: null,
     };
 }
 
-export function BannerFormDialog({ open, onOpenChange, item }: BannerFormDialogProps) {
+export function BannerFormDialog({
+    open,
+    onOpenChange,
+    item,
+}: BannerFormDialogProps) {
     const { t } = useTranslation();
     const isEdit = item !== null;
 
@@ -44,13 +51,17 @@ export function BannerFormDialog({ open, onOpenChange, item }: BannerFormDialogP
         <FormDialog
             open={open}
             onOpenChange={onOpenChange}
-            title={isEdit ? t('cms.edit_banner') : t('cms.create_banner')}
-            description={isEdit ? t('cms.edit_banner_description') : t('cms.create_banner_description')}
+            title={isEdit ? t("cms.edit_banner") : t("cms.create_banner")}
+            description={
+                isEdit
+                    ? t("cms.edit_banner_description")
+                    : t("cms.create_banner_description")
+            }
             icon={isEdit ? SquarePenIcon : ImageIcon}
         >
             {open ? (
                 <BannerFormDialogBody
-                    key={item ? `edit-${item.id}` : 'create'}
+                    key={item ? `edit-${item.id}` : "create"}
                     item={item}
                     onClose={() => onOpenChange(false)}
                 />
@@ -59,18 +70,30 @@ export function BannerFormDialog({ open, onOpenChange, item }: BannerFormDialogP
     );
 }
 
-function BannerFormDialogBody({ item, onClose }: { item: BannerItem | null; onClose: () => void }) {
+function BannerFormDialogBody({
+    item,
+    onClose,
+}: {
+    item: BannerItem | null;
+    onClose: () => void;
+}) {
     const isEdit = item !== null;
+    const formatDateForInput = (date: string | null) => {
+        if (!date) return "";
+
+        return date.slice(0, 10);
+    };
+
     const form = useForm<BannerFormValues>(
         item
             ? {
-                  title: item.title,
-                  link_url: item.link_url ?? '',
+                  image_url_en: null,
+                  image_url_zh: null,
+                  image_url_my: null,
                   sort_order: item.sort_order,
-                  start_date: item.start_date ?? '',
-                  end_date: item.end_date ?? '',
+                  start_date: formatDateForInput(item.start_date) ?? "",
+                  end_date: formatDateForInput(item.end_date) ?? "",
                   is_active: item.is_active,
-                  image: null,
               }
             : emptyBannerForm(),
     );
@@ -85,12 +108,13 @@ function BannerFormDialogBody({ item, onClose }: { item: BannerItem | null; onCl
         };
 
         if (isEdit && item) {
-            form.transform((data) => ({ ...data, _method: 'put' })).post(`/cms/banners/${item.id}`, options);
+            form.transform((data) => ({ ...data, _method: "put" }));
+            form.post(`/cms/banners/${item.id}`, options);
 
             return;
         }
 
-        form.post('/cms/banners', options);
+        form.post("/cms/banners", options);
     };
 
     return (
@@ -98,8 +122,12 @@ function BannerFormDialogBody({ item, onClose }: { item: BannerItem | null; onCl
             form={form}
             onSubmit={submit}
             onCancel={onClose}
-            mode={isEdit ? 'edit' : 'create'}
-            imageUrl={item?.image_url}
+            mode={isEdit ? "edit" : "create"}
+            imageUrls={{
+                en: item?.image_url_en,
+                zh: item?.image_url_zh,
+                my: item?.image_url_my,
+            }}
         />
     );
 }
