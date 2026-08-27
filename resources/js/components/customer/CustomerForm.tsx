@@ -45,7 +45,7 @@ export function CustomerForm({ form, onSubmit, mode = 'create', submitLabel, onC
     return (
         <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
-                <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <FormField label={t('customers.name')} htmlFor="name" error={form.errors.name} icon={UserIcon} className="sm:col-span-2">
                         <Input
                             id="name"

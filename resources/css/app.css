@@ -5,6 +5,14 @@
 @import '@fontsource/lexend/500.css';
 @import '@fontsource/lexend/600.css';
 @import '@fontsource/lexend/700.css';
+@import '@fontsource/instrument-sans/400.css';
+@import '@fontsource/instrument-sans/500.css';
+@import '@fontsource/instrument-sans/600.css';
+@import '@fontsource/instrument-sans/700.css';
+@import '@fontsource/noto-sans-myanmar/myanmar-400.css';
+@import '@fontsource/noto-sans-myanmar/myanmar-500.css';
+@import '@fontsource/noto-sans-myanmar/myanmar-600.css';
+@import '@fontsource/noto-sans-myanmar/myanmar-700.css';
 @import '@fontsource/jetbrains-mono/400.css';
 @import '@fontsource/jetbrains-mono/500.css';
 
@@ -259,6 +267,15 @@
     html {
         @apply font-sans antialiased;
         color-scheme: light;
+    }
+
+    html[lang='my'],
+    html[lang='my'] body {
+        --font-sans: 'Noto Sans Myanmar', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+            'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+        --font-heading: 'Noto Sans Myanmar', 'Instrument Sans', var(--font-sans);
+        font-family: var(--font-sans);
+        line-height: 1.7;
     }
 
     html.dark {

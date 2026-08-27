@@ -66,7 +66,7 @@ export default function LanguageSwitcher({ className, compact = false }: { class
                 preserveScroll: true,
                 preserveState: true,
                 replace: true,
-                only: ['locale', 'translations'],
+                only: ['locale', 'translations', 'flash'],
             },
         );
     };

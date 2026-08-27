@@ -30,7 +30,7 @@ function DropdownMenuContent({ className, sideOffset = 8, ...props }: React.Comp
                 sideOffset={sideOffset}
                 collisionPadding={12}
                 className={cn(
-                    'z-[70] min-w-44 overflow-hidden rounded-[8px] border border-border bg-surface p-1.5 text-foreground shadow-card',
+                    'z-[70] min-w-44 overflow-hidden rounded-[8px] border border-white/40 bg-[rgba(255,255,255,0.74)] p-1.5 text-foreground shadow-[0_18px_40px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/12 dark:bg-[rgba(18,28,30,0.82)] dark:shadow-[0_18px_45px_rgba(0,0,0,0.4)]',
                     'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
                     className,
                 )}
@@ -171,7 +171,7 @@ function DropdownMenuSubContent({ className, ...props }: React.ComponentProps<ty
         <DropdownMenuPrimitive.SubContent
             data-slot="dropdown-menu-sub-content"
             className={cn(
-                'z-50 min-w-32 overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg',
+                'z-50 min-w-32 overflow-hidden rounded-md border border-white/40 bg-[rgba(255,255,255,0.74)] p-1 text-popover-foreground shadow-[0_18px_40px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/12 dark:bg-[rgba(18,28,30,0.82)] dark:shadow-[0_18px_45px_rgba(0,0,0,0.4)]',
                 className,
             )}
             {...props}

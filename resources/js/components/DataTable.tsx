@@ -354,10 +354,10 @@ export function DataTable<T>({
                 </CardHeader>
                 <CardContent className="flex min-h-0 flex-1 flex-col px-0 pb-0">
                     <div className={cn(EDGE_PAD, 'min-h-0 flex-1 pb-3')}>
-                        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[4px] border-0 bg-[#FFFFFF] shadow-[0_2px_8px_rgb(23_50_54/0.08)] dark:bg-card dark:shadow-[0_2px_8px_rgb(0_0_0/0.28)]">
+                        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[4px] border-0 bg-card shadow-[0_2px_8px_rgb(23_50_54/0.08)] dark:shadow-[0_2px_8px_rgb(0_0_0/0.28)]">
                             <div className="hidden min-h-0 flex-1 overflow-x-auto sm:block">
                                 <Table>
-                            <TableHeader className="bg-muted/50 dark:bg-muted/30">
+                            <TableHeader className="bg-muted">
                                 <TableRow className="hover:bg-transparent">
                                     {canSelect ? (
                                         <TableHead className={cn(headerCellClass, EDGE_CELL, 'w-10 pr-0')}>
@@ -384,18 +384,18 @@ export function DataTable<T>({
                                                 {column.sortable && onSort ? (
                                                     <button
                                                         type="button"
-                                                        className="inline-flex items-center gap-1.5 rounded-md py-0.5 transition-colors"
+                                                        className="inline-flex items-center gap-1.5 rounded-md py-0.5"
                                                         onClick={() => onSort(column.id)}
                                                     >
                                                         {label}
                                                         {sort === column.id ? (
                                                             direction === 'asc' ? (
-                                                                <ArrowUpIcon className="size-3.5 text-muted-foreground transition-colors group-hover/head:text-primary" />
+                                                                <ArrowUpIcon className="size-3.5 text-muted-foreground group-hover/head:text-primary" />
                                                             ) : (
-                                                                <ArrowDownIcon className="size-3.5 text-muted-foreground transition-colors group-hover/head:text-primary" />
+                                                                <ArrowDownIcon className="size-3.5 text-muted-foreground group-hover/head:text-primary" />
                                                             )
                                                         ) : (
-                                                            <ChevronsUpDownIcon className="size-3.5 text-muted-foreground opacity-40 transition-colors group-hover/head:text-primary group-hover/head:opacity-100" />
+                                                            <ChevronsUpDownIcon className="size-3.5 text-muted-foreground opacity-40 group-hover/head:text-primary group-hover/head:opacity-100" />
                                                         )}
                                                     </button>
                                                 ) : (
@@ -428,7 +428,7 @@ export function DataTable<T>({
                                             <TableRow
                                                 key={id}
                                                 data-state={selected ? 'selected' : undefined}
-                                                className="odd:bg-[#FFFFFF] even:bg-muted/20 dark:odd:bg-card dark:even:bg-muted/15"
+                                                className="bg-card"
                                             >
                                                 {canSelect ? (
                                                     <TableCell className={cn(EDGE_CELL, 'w-10 pr-0')}>

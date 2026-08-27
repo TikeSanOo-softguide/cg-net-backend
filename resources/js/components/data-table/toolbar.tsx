@@ -63,7 +63,7 @@ export function ColumnHeaderLabel({
 }) {
     return (
         <span className={cn('inline-flex items-center gap-1.5', className)}>
-            {Icon ? <Icon className="size-3 shrink-0 text-muted-foreground transition-colors group-hover/head:text-primary" strokeWidth={1.85} /> : null}
+            {Icon ? <Icon className="size-3 shrink-0 text-muted-foreground group-hover/head:text-primary" strokeWidth={1.85} /> : null}
             {label}
         </span>
     );

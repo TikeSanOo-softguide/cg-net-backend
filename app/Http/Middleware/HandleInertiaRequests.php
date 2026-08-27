@@ -63,11 +63,48 @@ class HandleInertiaRequests extends Middleware
             'unreadNotifications' => $user
                 ? NotificationCustom::query()->where('is_read', false)->count()
                 : 0,
-            'flash' => [
-                'success' => $request->session()->get('success'),
-                'error' => $request->session()->get('error'),
-                'count' => $request->session()->get('deleted_count'),
-            ],
+            'recentNotifications' => $user ? $this->recentNotifications() : [],
+            'flash' => $this->flashPayload($request),
+        ];
+    }
+
+    /**
+     * @return list<array{id: int, title: string, body: string, category: string, is_read: bool, time: string}>
+     */
+    private function recentNotifications(): array
+    {
+        return NotificationCustom::query()
+            ->select(['id', 'title', 'body', 'category', 'is_read', 'sent_at', 'created_at'])
+            ->latest('sent_at')
+            ->latest('id')
+            ->limit(5)
+            ->get()
+            ->map(fn (NotificationCustom $notification): array => [
+                'id' => $notification->id,
+                'title' => $notification->title,
+                'body' => $notification->body,
+                'category' => $notification->category->value,
+                'is_read' => $notification->is_read,
+                'time' => ($notification->sent_at ?? $notification->created_at)->format('g:i A'),
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array{success: mixed, error: mixed, count: mixed, token: string|null}
+     */
+    private function flashPayload(Request $request): array
+    {
+        $success = $request->session()->pull('success');
+        $error = $request->session()->pull('error');
+        $count = $request->session()->pull('deleted_count');
+
+        return [
+            'success' => $success,
+            'error' => $error,
+            'count' => $count,
+            'token' => ($success !== null || $error !== null) ? (string) str()->uuid() : null,
         ];
     }
 

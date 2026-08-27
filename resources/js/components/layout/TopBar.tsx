@@ -1,8 +1,8 @@
 import { router, usePage } from '@inertiajs/react';
-import { BellIcon, CheckIcon, LogOutIcon, MoonIcon, MoreHorizontalIcon, SunIcon, UserRoundIcon } from 'lucide-react';
+import { CheckIcon, LogOutIcon, MoonIcon, MoreHorizontalIcon, SunIcon, UserRoundIcon } from 'lucide-react';
 
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-// import { BrandLockup } from '@/components/layout/BrandLockup';
+import { NotificationDropdown } from '@/components/layout/NotificationDropdown';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import {
@@ -32,9 +32,6 @@ type TopBarProps = {
 const navbarActionClass =
     'text-primary hover:bg-primary/12 hover:text-primary active:bg-primary/18 dark:text-foreground dark:hover:bg-muted dark:hover:text-foreground dark:active:bg-muted/80 transition-all duration-200 ease-out hover:scale-105 active:scale-95 motion-reduce:transition-colors motion-reduce:hover:scale-100 motion-reduce:active:scale-100';
 
-const navbarIconClass =
-    'size-5 transition-transform duration-200 ease-out group-hover:scale-110 group-hover:-rotate-12 motion-reduce:transition-none motion-reduce:group-hover:scale-100 motion-reduce:group-hover:rotate-0';
-
 export function TopBar({ sidebarOpen = false }: TopBarProps) {
     const { t, locale } = useTranslation();
     const { theme, toggleTheme } = useTheme();
@@ -61,7 +58,7 @@ export function TopBar({ sidebarOpen = false }: TopBarProps) {
                 preserveScroll: true,
                 preserveState: true,
                 replace: true,
-                only: ['locale', 'translations'],
+                only: ['locale', 'translations', 'flash'],
             },
         );
     };
@@ -76,14 +73,7 @@ export function TopBar({ sidebarOpen = false }: TopBarProps) {
                 </div>
 
                 <div className="flex items-center gap-0.5">
-                    <Button type="button" variant="ghost" size="icon" className={cn('group relative size-10', navbarActionClass)} aria-label={t('common.notifications')}>
-                        <BellIcon className={navbarIconClass} strokeWidth={1.9} />
-                        {unread > 0 ? (
-                            <span className="absolute top-1.5 right-1.5 flex size-4 items-center justify-center rounded-full bg-danger text-[9px] font-medium text-danger-foreground">
-                                {unread > 9 ? '9+' : unread}
-                            </span>
-                        ) : null}
-                    </Button>
+                    <NotificationDropdown unread={unread} />
 
                     <div className="hidden items-center gap-0.5 sm:flex">
                         <LanguageSwitcher />

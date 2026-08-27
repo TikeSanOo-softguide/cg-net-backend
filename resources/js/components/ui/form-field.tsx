@@ -49,7 +49,7 @@ export function FormField({
                 {label}
                 {required ? <span className="ms-0.5 text-primary">*</span> : null}
             </Label>
-            <div className="mt-1.5">
+            <div className="mt-2.5">
                 {icon || rightSlot ? (
                     <FormControl icon={icon} rightSlot={rightSlot}>
                         {children}

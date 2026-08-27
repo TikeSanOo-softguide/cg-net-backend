@@ -25,9 +25,9 @@ export type ThemeSettings = {
 
 export const DEFAULT_THEME_SETTINGS: ThemeSettings = {
     primaryColor: DEFAULT_PRIMARY,
-    cardStyle: 'bordered',
-    borderRadius: 'lg',
-    shadowStyle: 'md',
+    cardStyle: 'shadow',
+    borderRadius: 'md',
+    shadowStyle: 'sm',
 };
 
 export function normalizeHex(input: string): string | null {

@@ -1,12 +1,15 @@
 import { type ReactNode } from 'react';
 
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useDocumentLang } from '@/hooks/useDocumentLang';
 
 type AuthLayoutProps = {
     children: ReactNode;
 };
 
 export default function AuthLayout({ children }: AuthLayoutProps) {
+    useDocumentLang();
+
     return (
         <div className="relative flex min-h-dvh flex-col overflow-x-hidden bg-[color-mix(in_srgb,hsl(var(--primary))_8%,#f3f5f7)] px-4 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 lg:px-10 lg:py-12">
             <div

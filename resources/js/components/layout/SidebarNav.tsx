@@ -30,10 +30,10 @@ const idleItemClass = 'text-sidebar-foreground hover:bg-primary/12 hover:text-fo
 
 function itemClass(active: boolean, expanded: boolean) {
     return cn(
-        'flex items-center overflow-hidden rounded-[6px] text-[14px] font-medium',
+        'flex items-center overflow-x-hidden rounded-[6px] text-[14px] font-medium leading-6',
         'motion-reduce:transition-none transition-[gap,color,background-color,padding,width,height] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
         expanded
-            ? 'h-10 w-full justify-start gap-3 px-3'
+            ? 'min-h-10 h-auto w-full justify-start gap-3 px-3 py-2'
             : 'mx-auto size-9 justify-center gap-0 px-0',
         active ? selectedItemClass : idleItemClass,
     );
@@ -65,7 +65,6 @@ function RailFlyout({
     onNavigate,
     t,
     trigger,
-    disabled = false,
     canHover = true,
 }: {
     label: string;
@@ -74,7 +73,6 @@ function RailFlyout({
     onNavigate?: () => void;
     t: (key: string) => string;
     trigger: ReactElement;
-    disabled?: boolean;
     canHover?: boolean;
 }) {
     const triggerRef = useRef<HTMLDivElement>(null);
@@ -97,9 +95,6 @@ function RailFlyout({
     };
 
     const show = () => {
-        if (disabled) {
-            return;
-        }
         window.clearTimeout(closeTimer.current);
         place();
         setOpen(true);
@@ -116,7 +111,7 @@ function RailFlyout({
     };
 
     const onTriggerClick = () => {
-        if (disabled || canHover) {
+        if (canHover) {
             return;
         }
 
@@ -128,13 +123,7 @@ function RailFlyout({
     };
 
     useEffect(() => {
-        if (disabled) {
-            setOpen(false);
-        }
-    }, [disabled]);
-
-    useEffect(() => {
-        if (! open || disabled) {
+        if (! open) {
             return;
         }
 
@@ -151,7 +140,7 @@ function RailFlyout({
         document.addEventListener('pointerdown', onPointerDown);
 
         return () => document.removeEventListener('pointerdown', onPointerDown);
-    }, [open, disabled]);
+    }, [open]);
 
     useEffect(() => () => window.clearTimeout(closeTimer.current), []);
 
@@ -164,7 +153,7 @@ function RailFlyout({
             onClick={onTriggerClick}
         >
             {trigger}
-            {open && ! disabled
+            {open
                 ? createPortal(
                       <div
                           ref={panelRef}
@@ -191,7 +180,7 @@ function RailFlyout({
                                               }}
                                               aria-current={childActive ? 'page' : undefined}
                                               className={cn(
-                                                  'flex items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-[14px] font-medium transition-colors duration-200',
+                                                  'flex items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-[14px] font-medium leading-6 transition-colors duration-200',
                                                   childActive ? selectedChildItemClass : idleItemClass,
                                               )}
                                           >
@@ -372,8 +361,8 @@ function SidebarGroup({
             <span
                 className={cn(
                     'min-w-0 flex-1 truncate text-left',
-                    'motion-reduce:transition-none transition-[max-width,opacity] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
-                    expanded ? 'max-w-[11.25rem] opacity-100' : 'pointer-events-none max-w-0 opacity-0',
+                    'motion-reduce:transition-none transition-[opacity] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                    expanded ? 'opacity-100' : 'pointer-events-none max-w-0 opacity-0',
                 )}
                 aria-hidden={! expanded}
             >
@@ -403,6 +392,51 @@ function SidebarGroup({
         </Link>
     );
 
+    const childrenList = group.children ? (
+        <div
+            className={cn(
+                'grid motion-reduce:transition-none transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                expanded && open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
+            )}
+        >
+            <div className="overflow-hidden">
+                <ul className="mt-1.5 ml-3 flex flex-col gap-2 border-l border-sidebar-border pl-2">
+                    {group.children.map((child) => {
+                        const childActive = isActivePath(current, child.href);
+                        const ChildIcon = child.icon;
+
+                        return (
+                            <li key={child.href}>
+                                <Link
+                                    href={child.href}
+                                    onClick={onNavigate}
+                                    aria-current={childActive ? 'page' : undefined}
+                                    tabIndex={expanded && open ? 0 : -1}
+                                    className={cn(
+                                        'flex items-center gap-2.5 rounded-[6px] px-3 py-2 text-[14px] font-medium leading-6 transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+                                        childActive ? selectedChildItemClass : idleItemClass,
+                                    )}
+                                >
+                                    <ChildIcon className="size-4 shrink-0" strokeWidth={1.9} />
+                                    <span className="truncate">{t(child.labelKey)}</span>
+                                </Link>
+                            </li>
+                        );
+                    })}
+                </ul>
+            </div>
+        </div>
+    ) : null;
+
+    if (expanded) {
+        return (
+            <li>
+                {trigger}
+                {childrenList}
+            </li>
+        );
+    }
+
     return (
         <li>
             {group.children?.length ? (
@@ -413,49 +447,13 @@ function SidebarGroup({
                     onNavigate={onNavigate}
                     t={t}
                     trigger={trigger}
-                    disabled={expanded}
                     canHover={canHover}
                 />
             ) : (
-                <RailLabel label={label} disabled={expanded || ! canHover}>
+                <RailLabel label={label} disabled={! canHover}>
                     {trigger}
                 </RailLabel>
             )}
-            {group.children ? (
-                <div
-                    className={cn(
-                        'grid motion-reduce:transition-none transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
-                        expanded && open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
-                    )}
-                >
-                    <div className="overflow-hidden">
-                        <ul className="mt-1.5 ml-3 flex flex-col gap-2 border-l border-sidebar-border pl-2">
-                            {group.children.map((child) => {
-                                const childActive = isActivePath(current, child.href);
-                                const ChildIcon = child.icon;
-
-                                return (
-                                    <li key={child.href}>
-                                        <Link
-                                            href={child.href}
-                                            onClick={onNavigate}
-                                            aria-current={childActive ? 'page' : undefined}
-                                            tabIndex={expanded && open ? 0 : -1}
-                                            className={cn(
-                                                'flex items-center gap-2.5 rounded-[6px] px-3 py-2 text-[14px] font-medium transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
-                                                childActive ? selectedChildItemClass : idleItemClass,
-                                            )}
-                                        >
-                                            <ChildIcon className="size-4 shrink-0" strokeWidth={1.9} />
-                                            <span className="truncate">{t(child.labelKey)}</span>
-                                        </Link>
-                                    </li>
-                                );
-                            })}
-                        </ul>
-                    </div>
-                </div>
-            ) : null}
         </li>
     );
 }

@@ -7,6 +7,7 @@ use App\Enums\ReviewStatus;
 use App\Models\Admin;
 use App\Models\FailureReport;
 use App\Models\InstallationApplication;
+use App\Models\NotificationCustom;
 use App\Models\Payment;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
@@ -50,8 +51,29 @@ class DashboardTest extends TestCase
                 ->has('chart', 30)
                 ->has('recentRequests')
                 ->has('unreadNotifications')
+                ->has('recentNotifications')
                 ->has('locale')
                 ->has('translations'));
+    }
+
+    public function test_authenticated_admins_receive_recent_notifications(): void
+    {
+        $admin = Admin::factory()->create();
+        NotificationCustom::factory()->create([
+            'title' => 'Event Today',
+            'body' => 'Just a reminder that you have an event today.',
+            'is_read' => false,
+            'sent_at' => now()->setTime(9, 15),
+        ]);
+
+        $this->actingAs($admin, 'web')
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('unreadNotifications', 1)
+                ->has('recentNotifications', 1)
+                ->where('recentNotifications.0.title', 'Event Today')
+                ->where('recentNotifications.0.time', '9:15 AM'));
     }
 
     public function test_admins_can_bulk_delete_recent_service_requests(): void

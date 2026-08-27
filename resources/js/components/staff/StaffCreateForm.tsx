@@ -268,7 +268,7 @@ export function StaffCreateForm({
                 <input type="password" tabIndex={-1} autoComplete="current-password" />
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
-                <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">{fields}</div>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">{fields}</div>
             </div>
             <FormActionBar mode={mode} onCancel={onCancel} processing={form.processing} />
         </form>

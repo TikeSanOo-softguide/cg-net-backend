@@ -12,6 +12,9 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { FormField } from '@/components/ui/form-field';
+import { SquareImageUpload } from '@/components/ui/square-image-upload';
+import { SquareImageUploadTile } from '@/components/ui/square-image-upload-tile';
 import { useCan } from '@/hooks/useCan';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -51,6 +54,8 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
     const [legendOpen, setLegendOpen] = useState(false);
     const [pendingIds, setPendingIds] = useState<string[]>([]);
     const [processing, setProcessing] = useState(false);
+    const [dashedImage, setDashedImage] = useState<File | null>(null);
+    const [tileImage, setTileImage] = useState<File | null>(null);
     const canDelete = can('service-requests.delete');
     const cards = [
         {
@@ -108,6 +113,35 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
                         />
                     ))}
                 </section>
+
+                <Card className="gap-0 overflow-hidden py-0">
+                    <CardHeader className="px-5 py-4 sm:px-6">
+                        <CardTitle className="text-[15px] font-semibold text-primary">{t('dashboard.image_upload_examples')}</CardTitle>
+                        <CardDescription>{t('dashboard.image_upload_examples_description')}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-wrap items-start gap-8 px-5 pb-5 sm:px-6 sm:pb-6">
+                        <FormField label={t('cms.image')} htmlFor="dashboard-image-dashed">
+                            <SquareImageUpload
+                                id="dashboard-image-dashed"
+                                width={520}
+                                height={240}
+                                value={dashedImage}
+                                existingUrl="/images/smart-link-logo.png"
+                                onChange={setDashedImage}
+                            />
+                        </FormField>
+                        <FormField label={t('cms.image')} htmlFor="dashboard-image-tile">
+                            <SquareImageUploadTile
+                                id="dashboard-image-tile"
+                                width={180}
+                                height={180}
+                                value={tileImage}
+                                existingUrl="/images/smart-link-logo.png"
+                                onChange={setTileImage}
+                            />
+                        </FormField>
+                    </CardContent>
+                </Card>
 
                 <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
                     <Card className="h-full gap-0 overflow-hidden py-0 transition-shadow duration-200 hover:shadow-md">

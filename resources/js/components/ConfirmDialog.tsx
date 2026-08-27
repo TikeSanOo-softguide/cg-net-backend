@@ -45,7 +45,7 @@ export function ConfirmDialog({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-                overlayClassName="fixed inset-0 z-[100] h-dvh w-full bg-black/65 backdrop-blur-[2px]"
+                overlayClassName="fixed inset-0 z-[100] h-dvh w-full bg-black/40"
                 className={cn(
                     'z-[101] gap-0 rounded-[12px] border border-border/80 bg-[#FFFFFF] p-0 shadow-[0_8px_24px_rgb(23_50_54/0.08),0_20px_48px_rgb(23_50_54/0.12)] dark:bg-card dark:shadow-[0_8px_24px_rgb(0_0_0/0.28),0_20px_48px_rgb(0_0_0/0.32)] [&>button.absolute]:hidden',
                     'fixed top-[50%] left-[50%] w-[min(100%-2rem,400px)] max-w-[400px] translate-x-[-50%] translate-y-[-50%]',

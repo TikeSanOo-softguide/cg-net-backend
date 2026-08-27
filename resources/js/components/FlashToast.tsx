@@ -6,16 +6,30 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { translateFlash } from '@/lib/flash';
 
 let didShowInitialFlash = false;
+let lastShownFlashToken: string | null = null;
 
 type FlashBag = {
     success?: string | null;
     error?: string | null;
     count?: number | null;
+    token?: string | null;
 };
 
 type PageErrors = {
     delete?: string;
 };
+
+function flashToken(flash?: FlashBag, errors?: PageErrors): string | null {
+    if (flash?.token) {
+        return flash.token;
+    }
+
+    if (errors?.delete) {
+        return `error:delete:${errors.delete}`;
+    }
+
+    return null;
+}
 
 export function FlashToast() {
     const { t } = useTranslation();
@@ -26,6 +40,12 @@ export function FlashToast() {
 
     useEffect(() => {
         const show = (flash?: FlashBag, errors?: PageErrors) => {
+            const token = flashToken(flash, errors);
+
+            if (! token || token === lastShownFlashToken) {
+                return;
+            }
+
             const translate = tRef.current;
             const success = translateFlash(translate, flash?.success, flash?.count);
             const error = flash?.error
@@ -33,6 +53,12 @@ export function FlashToast() {
                 : errors?.delete
                     ? translate(errors.delete)
                     : null;
+
+            if (! success && ! error) {
+                return;
+            }
+
+            lastShownFlashToken = token;
 
             if (success) {
                 toast({

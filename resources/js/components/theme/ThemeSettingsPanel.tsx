@@ -191,24 +191,14 @@ export function ThemeSettingsPanel({ open, onOpenChange }: ThemeSettingsPanelPro
             return;
         }
 
-        const html = document.documentElement;
-        const { body } = document;
         const main = document.querySelector('main');
-        const previousHtmlOverflow = html.style.overflow;
-        const previousBodyOverflow = body.style.overflow;
         const previousMainOverflow = main instanceof HTMLElement ? main.style.overflow : '';
-
-        html.style.overflow = 'hidden';
-        body.style.overflow = 'hidden';
 
         if (main instanceof HTMLElement) {
             main.style.overflow = 'hidden';
         }
 
         return () => {
-            html.style.overflow = previousHtmlOverflow;
-            body.style.overflow = previousBodyOverflow;
-
             if (main instanceof HTMLElement) {
                 main.style.overflow = previousMainOverflow;
             }
@@ -236,7 +226,7 @@ export function ThemeSettingsPanel({ open, onOpenChange }: ThemeSettingsPanelPro
                 aria-modal="true"
                 aria-labelledby="theme-settings-title"
                 className={cn(
-                    'app-theme-panel fixed inset-y-0 right-0 z-[110] flex h-dvh w-[min(300px,85vw)] flex-col overflow-hidden shadow-sidebar',
+                    'app-theme-panel fixed inset-y-0 right-0 z-[110] flex h-dvh w-[min(300px,100%)] max-w-[300px] flex-col overflow-hidden shadow-sidebar',
                     'motion-reduce:transition-none transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
                     entered ? 'translate-x-0' : 'translate-x-full',
                 )}

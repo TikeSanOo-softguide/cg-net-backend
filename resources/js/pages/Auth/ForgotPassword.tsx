@@ -30,7 +30,7 @@ export default function ForgotPassword({ status }: ForgotPasswordProps) {
                 </CardHeader>
                 <CardContent>
                     {status ? <p className="mb-4 text-sm text-accent-foreground">{status}</p> : null}
-                    <form onSubmit={submit} className="flex flex-col gap-4">
+                    <form onSubmit={submit} className="flex flex-col gap-5">
                         <FormField label="Email" htmlFor="email" error={form.errors.email} icon={MailIcon}>
                             <Input
                                 id="email"

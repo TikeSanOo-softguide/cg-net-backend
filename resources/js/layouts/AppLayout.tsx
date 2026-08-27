@@ -13,6 +13,7 @@ import { TopBar } from '@/components/layout/TopBar';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useCan } from '@/hooks/useCan';
+import { useDocumentLang } from '@/hooks/useDocumentLang';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTranslation } from '@/hooks/useTranslation';
 import { filterNavigation, navigation } from '@/lib/navigation';
@@ -27,6 +28,7 @@ function readExpandedForViewport(isDesktop: boolean): boolean {
 }
 
 export default function AppLayout({ children }: AppLayoutProps) {
+    useDocumentLang();
     const { t } = useTranslation();
     const can = useCan();
     const isDesktop = useMediaQuery(DESKTOP_SIDEBAR_QUERY);
@@ -41,7 +43,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
     useEffect(() => {
         const root = document.documentElement;
-        const layoutWidth = isDesktop && expanded ? 'min(var(--sidebar-width), 85vw)' : '88px';
+        const layoutWidth = isDesktop && expanded ? 'var(--sidebar-width)' : '88px';
 
         root.style.setProperty('--app-navbar-current', 'var(--navbar-height)');
         root.style.setProperty('--app-sidebar-current', layoutWidth);
@@ -66,6 +68,35 @@ export default function AppLayout({ children }: AppLayoutProps) {
         window.addEventListener('keydown', onKeyDown);
 
         return () => window.removeEventListener('keydown', onKeyDown);
+    }, [expanded, isDesktop]);
+
+    useEffect(() => {
+        if (isDesktop || ! expanded) {
+            return;
+        }
+
+        const html = document.documentElement;
+        const { body } = document;
+        const main = document.querySelector('main');
+        const previousHtmlOverflow = html.style.overflow;
+        const previousBodyOverflow = body.style.overflow;
+        const previousMainOverflow = main instanceof HTMLElement ? main.style.overflow : '';
+
+        html.style.overflow = 'hidden';
+        body.style.overflow = 'hidden';
+
+        if (main instanceof HTMLElement) {
+            main.style.overflow = 'hidden';
+        }
+
+        return () => {
+            html.style.overflow = previousHtmlOverflow;
+            body.style.overflow = previousBodyOverflow;
+
+            if (main instanceof HTMLElement) {
+                main.style.overflow = previousMainOverflow;
+            }
+        };
     }, [expanded, isDesktop]);
 
     const toggleSidebar = () => {
@@ -93,7 +124,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     className={cn(
                         'shrink-0',
                         'motion-reduce:transition-none transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
-                        isDesktop && expanded ? 'w-[min(var(--sidebar-width),85vw)]' : 'w-[88px]',
+                        isDesktop && expanded ? 'w-[var(--sidebar-width)]' : 'w-[88px]',
                     )}
                     aria-hidden
                 />
@@ -102,8 +133,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     <button
                         type="button"
                         aria-label={t('common.close')}
-                        className="fixed inset-0 z-[61] bg-black/25"
+                        className="fixed inset-0 z-[61] touch-none overscroll-none bg-black/40"
                         onClick={closeMobileSidebar}
+                        onWheel={(event) => event.preventDefault()}
+                        onTouchMove={(event) => event.preventDefault()}
                     />
                 ) : null}
 
@@ -111,7 +144,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     className={cn(
                         'absolute inset-y-0 left-0 z-[62] overflow-visible',
                         'motion-reduce:transition-none transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
-                        expanded ? 'w-[min(var(--sidebar-width),85vw)]' : 'w-[88px]',
+                        expanded
+                            ? isDesktop
+                                ? 'w-[var(--sidebar-width)]'
+                                : 'w-[min(var(--sidebar-width),85vw)]'
+                            : 'w-[88px]',
                     )}
                 >
                     <aside id="app-sidebar" className="h-full w-full overflow-hidden shadow-sidebar">

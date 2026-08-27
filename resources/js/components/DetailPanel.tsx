@@ -43,7 +43,7 @@ export function DetailPanel({
                 {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
             </div>
             <div className="px-4 py-4 sm:px-5 sm:py-5">
-                <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">{children}</div>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">{children}</div>
             </div>
             {footer ? (
                 <div className="flex w-full shrink-0 items-center justify-center gap-2 border-t border-border/70 px-4 py-3 sm:px-5 sm:py-4">

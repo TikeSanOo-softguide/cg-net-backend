@@ -26,7 +26,7 @@ export default function TwoFactorChallenge() {
                     <CardDescription>Optional 2FA is scaffolded. Enter an authenticator code or a recovery code.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={submit} className="flex flex-col gap-4">
+                    <form onSubmit={submit} className="flex flex-col gap-5">
                         <FormField label="Authentication code" htmlFor="code" error={form.errors.code} icon={ShieldCheckIcon}>
                             <Input
                                 id="code"

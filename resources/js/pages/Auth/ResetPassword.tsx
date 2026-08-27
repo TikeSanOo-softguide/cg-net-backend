@@ -33,7 +33,7 @@ export default function ResetPassword({ email, token }: ResetPasswordProps) {
                     <CardDescription>This link was emailed to your staff account.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={submit} className="flex flex-col gap-4">
+                    <form onSubmit={submit} className="flex flex-col gap-5">
                         <FormField label="Email" htmlFor="email" icon={MailIcon}>
                             <Input id="email" type="email" value={form.data.email} readOnly className="font-mono" />
                         </FormField>

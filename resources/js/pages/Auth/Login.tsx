@@ -59,7 +59,7 @@ export default function Login({ status }: LoginProps) {
 
                         {status ? <p className="mb-4 text-center text-sm text-accent-foreground">{status}</p> : null}
 
-                        <form onSubmit={submit} className="flex flex-col gap-4">
+                        <form onSubmit={submit} className="flex flex-col gap-5">
                             <FormField label={t('auth.username')} htmlFor="email" error={form.errors.email}>
                                 <AuthOutlineInput
                                     id="email"
