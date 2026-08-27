@@ -1,20 +1,22 @@
 import { FormEvent } from 'react';
 import { Head, useForm } from '@inertiajs/react';
-import { LockIcon, MailIcon } from 'lucide-react';
+import { LockIcon, UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type ResetPasswordProps = {
-    email: string;
+    username: string;
     token: string;
 };
 
-export default function ResetPassword({ email, token }: ResetPasswordProps) {
+export default function ResetPassword({ username, token }: ResetPasswordProps) {
+    const { t } = useTranslation();
     const form = useForm({
         token,
-        email,
+        username,
         password: '',
         password_confirmation: '',
     });
@@ -30,12 +32,12 @@ export default function ResetPassword({ email, token }: ResetPasswordProps) {
             <Card className="mx-auto w-full max-w-[400px]">
                 <CardHeader>
                     <CardTitle>Choose a new password</CardTitle>
-                    <CardDescription>This link was emailed to your staff account.</CardDescription>
+                    <CardDescription>Enter a new password for this staff account.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={submit} className="flex flex-col gap-5">
-                        <FormField label="Email" htmlFor="email" icon={MailIcon}>
-                            <Input id="email" type="email" value={form.data.email} readOnly className="font-mono" />
+                        <FormField label={t('auth.username')} htmlFor="username" icon={UserIcon}>
+                            <Input id="username" type="text" value={form.data.username} readOnly className="font-mono" />
                         </FormField>
                         <FormField label="Password" htmlFor="password" error={form.errors.password} icon={LockIcon}>
                             <Input

@@ -1,6 +1,6 @@
 import { FormEvent } from 'react';
 import type { InertiaFormProps } from '@inertiajs/react';
-import { CircleDotIcon, LockIcon, MailIcon, ShieldIcon, UserIcon } from 'lucide-react';
+import { CircleDotIcon, LockIcon, AtSignIcon, ShieldIcon } from 'lucide-react';
 
 import { FormActionBar } from '@/components/FormActionBar';
 import { MultiSelect } from '@/components/MultiSelect';
@@ -15,8 +15,7 @@ export type StaffRoleOption = {
 };
 
 export type StaffFormValues = {
-    name: string;
-    email: string;
+    username: string;
     password: string;
     password_confirmation: string;
     status: string;
@@ -25,8 +24,7 @@ export type StaffFormValues = {
 
 export function emptyStaffForm(): StaffFormValues {
     return {
-        name: '',
-        email: '',
+        username: '',
         password: '',
         password_confirmation: '',
         status: 'active',
@@ -57,25 +55,15 @@ export function StaffForm({
         <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                    <FormField label={t('staff.name')} htmlFor="name" error={form.errors.name} icon={UserIcon} required className="sm:col-span-2">
+                    <FormField label={t('staff.username')} htmlFor="username" error={form.errors.username} icon={AtSignIcon} required>
                         <Input
-                            id="name"
-                            value={form.data.name}
-                            required
-                            autoComplete="name"
-                            aria-invalid={Boolean(form.errors.name)}
-                            onChange={(event) => form.setData('name', event.target.value)}
-                        />
-                    </FormField>
-                    <FormField label={t('staff.email')} htmlFor="email" error={form.errors.email} icon={MailIcon} required>
-                        <Input
-                            id="email"
-                            type="email"
-                            value={form.data.email}
+                            id="username"
+                            type="text"
+                            value={form.data.username}
                             required
                             autoComplete="username"
-                            aria-invalid={Boolean(form.errors.email)}
-                            onChange={(event) => form.setData('email', event.target.value)}
+                            aria-invalid={Boolean(form.errors.username)}
+                            onChange={(event) => form.setData('username', event.target.value)}
                         />
                     </FormField>
                     <FormField label={t('common.status')} htmlFor="status" error={form.errors.status} icon={CircleDotIcon} required>

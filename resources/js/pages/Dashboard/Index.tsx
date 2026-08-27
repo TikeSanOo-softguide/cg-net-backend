@@ -128,6 +128,7 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
                                 value={dashedImage}
                                 existingUrl="/images/smart-link-logo.png"
                                 onChange={setDashedImage}
+                                radialMenu
                             />
                         </FormField>
                         <FormField label={t('cms.image')} htmlFor="dashboard-image-tile">
@@ -138,6 +139,7 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
                                 value={tileImage}
                                 existingUrl="/images/smart-link-logo.png"
                                 onChange={setTileImage}
+                                radialMenu
                             />
                         </FormField>
                     </CardContent>

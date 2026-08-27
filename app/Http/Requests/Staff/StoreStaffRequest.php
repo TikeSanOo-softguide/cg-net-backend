@@ -20,8 +20,14 @@ class StoreStaffRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'min:2', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('admins', 'email')->whereNull('deleted_at')],
+            'username' => [
+                'required',
+                'string',
+                'min:3',
+                'max:50',
+                'regex:/^[A-Za-z0-9]+(?:[ ._ -][A-Za-z0-9]+)*$/',
+                Rule::unique('admins', 'username')->whereNull('deleted_at'),
+            ],
             'password' => ['required', 'string', 'min:8', Password::defaults(), 'confirmed'],
             'password_confirmation' => ['required', 'string'],
             'status' => ['required', Rule::enum(AdminStatus::class)],
@@ -36,12 +42,10 @@ class StoreStaffRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => __('staff.validation.name_required'),
-            'name.min' => __('staff.validation.name_min'),
-            'name.max' => __('staff.validation.name_max'),
-            'email.required' => __('staff.validation.email_required'),
-            'email.email' => __('staff.validation.email_invalid'),
-            'email.unique' => __('staff.validation.email_taken'),
+            'username.required' => __('staff.validation.username_required'),
+            'username.min' => __('staff.validation.username_min'),
+            'username.regex' => __('staff.validation.username_invalid'),
+            'username.unique' => __('staff.validation.username_taken'),
             'password.required' => __('staff.validation.password_required'),
             'password.min' => __('staff.validation.password_min'),
             'password.confirmed' => __('staff.validation.password_confirmation_mismatch'),
@@ -58,8 +62,7 @@ class StoreStaffRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'name' => __('staff.name'),
-            'email' => __('staff.email'),
+            'username' => __('staff.username'),
             'password' => __('staff.password'),
             'password_confirmation' => __('staff.password_confirmation'),
             'status' => __('common.status'),
@@ -70,8 +73,7 @@ class StoreStaffRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'name' => is_string($this->name) ? trim($this->name) : $this->name,
-            'email' => is_string($this->email) ? strtolower(trim($this->email)) : $this->email,
+            'username' => is_string($this->username) ? trim(preg_replace('/\s+/', ' ', $this->username) ?? $this->username) : $this->username,
         ]);
     }
 }

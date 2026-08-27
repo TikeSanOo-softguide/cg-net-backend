@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react';
 import type { InertiaFormProps } from '@inertiajs/react';
-import { CircleDotIcon, LockIcon, MailIcon, ShieldIcon, UserIcon } from 'lucide-react';
+import { CircleDotIcon, LockIcon, AtSignIcon, ShieldIcon } from 'lucide-react';
 
 import { FormActionBar } from '@/components/FormActionBar';
 import { MultiSelect } from '@/components/MultiSelect';
@@ -26,8 +26,7 @@ const autocompleteOff = {
 type TouchedFields = Record<keyof StaffFormValues, boolean>;
 
 const untouched: TouchedFields = {
-    name: false,
-    email: false,
+    username: false,
     password: false,
     password_confirmation: false,
     status: false,
@@ -97,8 +96,7 @@ export function StaffCreateForm({
         event.preventDefault();
         setSubmitted(true);
         setTouched({
-            name: true,
-            email: true,
+            username: true,
             password: true,
             password_confirmation: true,
             status: true,
@@ -120,44 +118,23 @@ export function StaffCreateForm({
     const fields = (
         <>
             <FormField
-                label={t('staff.name')}
-                htmlFor="staff-create-name"
-                error={fieldError('name')}
-                success={fieldSuccess('name')}
-                icon={UserIcon}
-                required
-                className="sm:col-span-2"
-            >
-                <Input
-                    id="staff-create-name"
-                    name="staff_create_name"
-                    value={form.data.name}
-                    required
-                    aria-invalid={fieldState('name') === 'error'}
-                    className={formControlStateClass(fieldState('name'))}
-                    onBlur={() => markTouched('name')}
-                    onChange={(event) => setField('name', event.target.value)}
-                    {...autocompleteOff}
-                />
-            </FormField>
-            <FormField
-                label={t('staff.email')}
-                htmlFor="staff-create-email"
-                error={fieldError('email')}
-                success={fieldSuccess('email')}
-                icon={MailIcon}
+                label={t('staff.username')}
+                htmlFor="staff-create-username"
+                error={fieldError('username')}
+                success={fieldSuccess('username')}
+                icon={AtSignIcon}
                 required
             >
                 <Input
-                    id="staff-create-email"
-                    name="staff_create_email"
-                    type="email"
-                    value={form.data.email}
+                    id="staff-create-username"
+                    name="staff_create_username"
+                    type="text"
+                    value={form.data.username}
                     required
-                    aria-invalid={fieldState('email') === 'error'}
-                    className={formControlStateClass(fieldState('email'))}
-                    onBlur={() => markTouched('email')}
-                    onChange={(event) => setField('email', event.target.value)}
+                    aria-invalid={fieldState('username') === 'error'}
+                    className={formControlStateClass(fieldState('username'))}
+                    onBlur={() => markTouched('username')}
+                    onChange={(event) => setField('username', event.target.value)}
                     {...autocompleteOff}
                 />
             </FormField>

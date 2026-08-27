@@ -7,6 +7,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Laravel\Fortify\Fortify;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
@@ -42,7 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 $retryAfter = (int) $response->headers->get('Retry-After', 60);
 
                 return back()->withErrors([
-                    'email' => __('auth.throttle', ['seconds' => $retryAfter]),
+                    Fortify::username() => __('auth.throttle', ['seconds' => $retryAfter]),
                 ]);
             }
 

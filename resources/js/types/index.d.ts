@@ -1,7 +1,6 @@
 export type AuthUser = {
     id: number;
-    name: string;
-    email: string;
+    username: string;
 };
 
 export type SupportedLocale = 'en' | 'my' | 'zh';

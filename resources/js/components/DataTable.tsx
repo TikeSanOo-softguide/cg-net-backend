@@ -8,13 +8,13 @@ import {
     EyeIcon,
     HashIcon,
     PlusIcon,
-    Settings2Icon,
     Trash2Icon,
     type LucideIcon,
 } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DEFAULT_COLUMN_ICONS } from '@/components/data-table/column-icons';
+import { RadialBubbleActions } from '@/components/data-table/RadialBubbleActions';
 import { csvEscape, EDGE_CELL, EDGE_PAD, headerCellClass } from '@/components/data-table/styles';
 import { ColumnHeaderLabel, ToolbarIconButton } from '@/components/data-table/toolbar';
 import { Pagination, type Paginated } from '@/components/Pagination';
@@ -195,7 +195,7 @@ export function DataTable<T>({
         }
 
         return (
-            <>
+            <RadialBubbleActions>
                 {canView ? (
                     <TableActionButton
                         label={t('common.view')}
@@ -208,7 +208,7 @@ export function DataTable<T>({
                     />
                 ) : null}
                 {actions?.(row)}
-            </>
+            </RadialBubbleActions>
         );
     };
 
@@ -406,7 +406,7 @@ export function DataTable<T>({
                                     })}
                                     {showActions ? (
                                         <TableHead className={cn(headerCellClass, EDGE_CELL, 'w-px text-center')}>
-                                            <ColumnHeaderLabel icon={Settings2Icon} label={t('common.actions')} className="justify-center" />
+                                            <ColumnHeaderLabel label={t('common.actions')} className="justify-center" />
                                         </TableHead>
                                     ) : null}
                                 </TableRow>
@@ -452,7 +452,7 @@ export function DataTable<T>({
                                                 ))}
                                                 {showActions ? (
                                                     <TableCell className={cn(EDGE_CELL, 'w-px text-center align-middle')}>
-                                                        <div className="flex h-full items-center justify-center gap-1.5">{renderActions(row)}</div>
+                                                        <div className="flex h-full items-center justify-center">{renderActions(row)}</div>
                                                     </TableCell>
                                                 ) : null}
                                             </TableRow>
@@ -512,7 +512,7 @@ export function DataTable<T>({
                                             <p className="mt-1.5 font-mono text-[10px] text-muted-foreground">{mobileMeta.cell(row)}</p>
                                         ) : null}
                                         {showActions ? (
-                                            <div className="mt-2 flex items-center justify-center gap-1.5 border-t border-border/60 pt-2">
+                                            <div className="mt-2 flex items-center justify-center border-t border-border/60 pt-2">
                                                 {renderActions(row)}
                                             </div>
                                         ) : null}

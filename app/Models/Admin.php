@@ -14,7 +14,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'status'])]
+#[Fillable(['username', 'password', 'status'])]
 #[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
 class Admin extends Authenticatable
 {
@@ -26,11 +26,15 @@ class Admin extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'status' => AdminStatus::class,
             'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    public function getEmailForPasswordReset(): string
+    {
+        return $this->username;
     }
 
     public function chatConversations(): HasMany

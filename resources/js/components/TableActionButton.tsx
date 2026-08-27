@@ -14,6 +14,8 @@ type TableActionButtonProps = {
     href?: string;
     onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
     className?: string;
+    size?: 'sm' | 'md';
+    inverted?: boolean;
 };
 
 const toneClass: Record<TableActionTone, string> = {
@@ -24,6 +26,14 @@ const toneClass: Record<TableActionTone, string> = {
     neutral: 'bg-muted text-muted-foreground hover:bg-foreground hover:text-background',
 };
 
+const invertedToneClass: Record<TableActionTone, string> = {
+    primary: 'bg-primary text-primary-foreground hover:bg-primary/12 hover:text-primary',
+    edit: 'bg-primary text-primary-foreground hover:bg-primary/12 hover:text-primary',
+    danger: 'bg-danger text-danger-foreground hover:bg-danger/12 hover:text-danger',
+    success: 'bg-success text-success-foreground hover:bg-success/12 hover:text-success',
+    neutral: 'bg-foreground text-background hover:bg-muted hover:text-muted-foreground',
+};
+
 export function TableActionButton({
     label,
     icon: Icon,
@@ -31,12 +41,16 @@ export function TableActionButton({
     href,
     onClick,
     className,
+    size = 'md',
+    inverted = false,
 }: TableActionButtonProps) {
+    const compact = size === 'sm';
     const actionClass = cn(
-        'inline-flex size-7 shrink-0 items-center justify-center rounded-[6px] leading-none transition-all duration-200 ease-out',
+        'inline-flex shrink-0 items-center justify-center leading-none transition-all duration-200 ease-out',
         'hover:scale-105 hover:shadow-sm active:scale-95',
         'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:outline-none',
-        toneClass[tone],
+        'size-7 rounded-[6px]',
+        (inverted ? invertedToneClass : toneClass)[tone],
         className,
     );
 
@@ -57,7 +71,13 @@ export function TableActionButton({
                     </button>
                 )}
             </TooltipTrigger>
-            <TooltipContent side="top">{label}</TooltipContent>
+            <TooltipContent
+                side="top"
+                sideOffset={compact ? 6 : 8}
+                className={compact ? 'rounded-[4px] px-1.5 py-0.5 text-[10px]' : undefined}
+            >
+                {label}
+            </TooltipContent>
         </Tooltip>
     );
 }

@@ -45,9 +45,9 @@ return [
     |
     */
 
-    'username' => 'email',
+    'username' => 'username',
 
-    'email' => 'email',
+    'email' => 'username',
 
     /*
     |--------------------------------------------------------------------------
@@ -60,7 +60,7 @@ return [
     |
     */
 
-    'lowercase_usernames' => true,
+    'lowercase_usernames' => false,
 
     /*
     |--------------------------------------------------------------------------

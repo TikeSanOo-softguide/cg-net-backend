@@ -32,14 +32,14 @@ function TooltipContent({
                 side={side}
                 sideOffset={sideOffset}
                 className={cn(
-                    'z-[90] pointer-events-none overflow-hidden rounded-[6px] bg-brand px-2.5 py-1 text-[11px] font-medium text-white shadow-md',
+                    'z-[90] pointer-events-none overflow-hidden rounded-[6px] bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground shadow-md',
                     'animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
                     className,
                 )}
                 {...props}
             >
                 {children}
-                <TooltipPrimitive.Arrow className="fill-brand" />
+                <TooltipPrimitive.Arrow className="fill-primary" />
             </TooltipPrimitive.Content>
         </TooltipPrimitive.Portal>
     );

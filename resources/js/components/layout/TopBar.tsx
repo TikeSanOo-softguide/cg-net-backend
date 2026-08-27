@@ -84,7 +84,7 @@ export function TopBar({ sidebarOpen = false }: TopBarProps) {
                                     <span className="flex size-7 items-center justify-center rounded-full bg-primary/15 text-primary transition-transform duration-200 ease-out group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100 dark:bg-muted dark:text-foreground">
                                         <UserRoundIcon className="size-4" strokeWidth={1.9} />
                                     </span>
-                                    <span className="hidden max-w-40 truncate text-sm font-medium lg:inline">{user?.name ?? 'Staff'}</span>
+                                    <span className="hidden max-w-40 truncate text-sm font-medium lg:inline">{user?.username ?? 'Staff'}</span>
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" side="bottom" className="w-64">
@@ -94,8 +94,7 @@ export function TopBar({ sidebarOpen = false }: TopBarProps) {
                                             <UserRoundIcon className="size-4.5" strokeWidth={1.9} />
                                         </span>
                                         <div className="flex min-w-0 flex-col gap-0.5">
-                                            <span className="truncate text-sm font-semibold">{user?.name ?? 'Staff'}</span>
-                                            <span className="truncate font-mono text-xs text-muted-foreground">{user?.email ?? ''}</span>
+                                            <span className="truncate text-sm font-semibold">{user?.username ?? 'Staff'}</span>
                                         </div>
                                     </div>
                                 </DropdownMenuLabel>
@@ -119,7 +118,7 @@ export function TopBar({ sidebarOpen = false }: TopBarProps) {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" side="bottom" className="w-64">
-                            <DropdownMenuLabel>{user?.name ?? 'Staff'}</DropdownMenuLabel>
+                            <DropdownMenuLabel>{user?.username ?? 'Staff'}</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
                                 {t('common.language')}

@@ -145,19 +145,12 @@ export default function StaffIndex({ staff, roles = [], filters }: StaffIndexPro
                     }
                     columns={[
                         {
-                            id: 'name',
-                            header: t('staff.name'),
+                            id: 'username',
+                            header: t('staff.username'),
                             className: 'font-medium',
                             mobile: 'title',
                             sortable: true,
-                            cell: (row) => row.name,
-                        },
-                        {
-                            id: 'email',
-                            header: t('staff.email'),
-                            mobile: 'subtitle',
-                            sortable: true,
-                            cell: (row) => row.email,
+                            cell: (row) => row.username,
                         },
                         {
                             id: 'roles',

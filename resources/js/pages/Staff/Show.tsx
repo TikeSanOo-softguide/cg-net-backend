@@ -3,7 +3,7 @@ import { Head } from '@inertiajs/react';
 import {
     CalendarIcon,
     CircleDotIcon,
-    MailIcon,
+    AtSignIcon,
     ShieldIcon,
     SquarePenIcon,
     UserIcon,
@@ -23,8 +23,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 type StaffMember = {
     id: number;
-    name: string;
-    email: string;
+    username: string;
     status: string;
     roles: StaffRoleOption[];
     role_ids: number[];
@@ -44,9 +43,9 @@ export default function StaffShow({ staffMember, roles }: StaffShowProps) {
 
     return (
         <>
-            <Head title={staffMember.name} />
+            <Head title={staffMember.username} />
             <PageContent>
-                <PageHeader title={staffMember.name} description={t('staff.detail_description')} />
+                <PageHeader title={staffMember.username} description={t('staff.detail_description')} />
                 <div className="mx-auto w-full max-w-[560px]">
                     <DetailPanel
                         title={t('staff.detail')}
@@ -69,11 +68,8 @@ export default function StaffShow({ staffMember, roles }: StaffShowProps) {
                             ) : null
                         }
                     >
-                        <FormField label={t('staff.name')} htmlFor="detail-name" icon={UserIcon} className="sm:col-span-2">
-                            <Input id="detail-name" value={staffMember.name} readOnly />
-                        </FormField>
-                        <FormField label={t('staff.email')} htmlFor="detail-email" icon={MailIcon}>
-                            <Input id="detail-email" value={staffMember.email} readOnly />
+                        <FormField label={t('staff.username')} htmlFor="detail-username" icon={AtSignIcon} className="sm:col-span-2">
+                            <Input id="detail-username" value={staffMember.username} readOnly />
                         </FormField>
                         <FormField label={t('common.status')} htmlFor="detail-status" icon={CircleDotIcon}>
                             <div id="detail-status" className="flex h-10 items-center">

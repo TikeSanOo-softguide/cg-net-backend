@@ -24,12 +24,13 @@ class UpdateStaffRequest extends FormRequest
         $admin = $this->route('admin');
 
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => [
+            'username' => [
                 'required',
-                'email',
-                'max:255',
-                Rule::unique('admins', 'email')->whereNull('deleted_at')->ignore($admin->id),
+                'string',
+                'min:3',
+                'max:50',
+                'regex:/^[A-Za-z0-9]+(?:[ ._ -][A-Za-z0-9]+)*$/',
+                Rule::unique('admins', 'username')->whereNull('deleted_at')->ignore($admin->id),
             ],
             'password' => ['nullable', 'string', Password::defaults(), 'confirmed'],
             'status' => ['required', Rule::enum(AdminStatus::class)],
@@ -38,8 +39,29 @@ class UpdateStaffRequest extends FormRequest
         ];
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'username.required' => __('staff.validation.username_required'),
+            'username.min' => __('staff.validation.username_min'),
+            'username.regex' => __('staff.validation.username_invalid'),
+            'username.unique' => __('staff.validation.username_taken'),
+            'password.confirmed' => __('staff.validation.password_confirmation_mismatch'),
+            'status.required' => __('staff.validation.status_required'),
+            'role_ids.required' => __('staff.validation.roles_required'),
+            'role_ids.min' => __('staff.validation.roles_required'),
+        ];
+    }
+
     protected function prepareForValidation(): void
     {
+        $this->merge([
+            'username' => is_string($this->username) ? trim(preg_replace('/\s+/', ' ', $this->username) ?? $this->username) : $this->username,
+        ]);
+
         if (! $this->filled('password')) {
             $this->merge([
                 'password' => null,

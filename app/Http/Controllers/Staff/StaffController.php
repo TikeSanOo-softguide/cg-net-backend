@@ -23,7 +23,7 @@ class StaffController extends Controller
         $status = $request->string('status')->toString();
         $sort = $request->string('sort')->toString();
         $direction = $request->string('direction')->toString() === 'asc' ? 'asc' : 'desc';
-        $sortable = ['name', 'email', 'status', 'created_at'];
+        $sortable = ['username', 'status', 'created_at'];
 
         if (! in_array($sort, $sortable, true)) {
             $sort = 'created_at';
@@ -33,8 +33,7 @@ class StaffController extends Controller
             ->with('roles:id,name')
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
-                    $query->where('name', 'like', '%'.$search.'%')
-                        ->orWhere('email', 'like', '%'.$search.'%');
+                    $query->where('username', 'like', '%'.$search.'%');
                 });
             })
             ->when($status !== '' && in_array($status, array_column(AdminStatus::cases(), 'value'), true), function ($query) use ($status): void {
@@ -171,8 +170,7 @@ class StaffController extends Controller
     {
         return [
             'id' => $admin->id,
-            'name' => $admin->name,
-            'email' => $admin->email,
+            'username' => $admin->username,
             'status' => $admin->status->value,
             'roles' => $admin->roles->map(fn (Role $role) => [
                 'id' => $role->id,

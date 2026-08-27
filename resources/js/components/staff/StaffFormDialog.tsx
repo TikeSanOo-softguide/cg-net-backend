@@ -9,8 +9,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 export type StaffFormMember = {
     id: number;
-    name: string;
-    email: string;
+    username: string;
     status: string;
     role_ids?: number[];
     roles: { id: number; name: string }[];
@@ -65,8 +64,7 @@ function StaffFormDialogBody({
     const form = useForm<StaffFormValues>(
         staff
             ? {
-                  name: staff.name,
-                  email: staff.email,
+                  username: staff.username,
                   password: '',
                   password_confirmation: '',
                   status: staff.status,

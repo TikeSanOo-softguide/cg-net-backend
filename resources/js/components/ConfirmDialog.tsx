@@ -1,6 +1,6 @@
 import { CheckIcon, CircleAlertIcon, CircleHelpIcon, Trash2Icon, XIcon } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogClose,
@@ -45,86 +45,61 @@ export function ConfirmDialog({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-                overlayClassName="fixed inset-0 z-[100] h-dvh w-full bg-black/40"
+                overlayClassName="fixed inset-0 z-[100] h-dvh w-full bg-[#173236]/45 backdrop-blur-[2px]"
                 className={cn(
-                    'z-[101] gap-0 rounded-[12px] border border-border/80 bg-[#FFFFFF] p-0 shadow-[0_8px_24px_rgb(23_50_54/0.08),0_20px_48px_rgb(23_50_54/0.12)] dark:bg-card dark:shadow-[0_8px_24px_rgb(0_0_0/0.28),0_20px_48px_rgb(0_0_0/0.32)] [&>button.absolute]:hidden',
-                    'fixed top-[50%] left-[50%] w-[min(100%-2rem,400px)] max-w-[400px] translate-x-[-50%] translate-y-[-50%]',
+                    'z-[101] gap-0 overflow-hidden rounded-[14px] border border-border/70 bg-[#f3f6f7] p-0 shadow-[0_16px_40px_rgb(23_50_54/0.18)] dark:bg-[#152628] dark:shadow-[0_16px_40px_rgb(0_0_0/0.4)] [&>button.absolute]:hidden',
+                    'fixed top-[50%] left-[50%] w-[min(100%-2rem,380px)] max-w-[380px] translate-x-[-50%] translate-y-[-50%]',
                 )}
             >
-                <div className="flex flex-col gap-4 px-5 py-5">
-                    <div className="flex items-center gap-3">
+                <div className="flex flex-col gap-3 px-5 pt-5 pb-4">
+                    <div className="flex items-start gap-3">
                         <div
                             className={cn(
-                                'flex size-9 shrink-0 items-center justify-center rounded-[8px]',
-                                destructive ? 'bg-danger/10 text-danger' : 'bg-primary/10 text-primary',
+                                'flex size-9 shrink-0 items-center justify-center rounded-full',
+                                destructive ? 'bg-danger/12 text-danger' : 'bg-primary/12 text-primary',
                             )}
                         >
-                            <Icon className="size-[18px]" strokeWidth={1.85} />
+                            <Icon className="size-4" strokeWidth={1.9} />
                         </div>
-                        <DialogHeader className="min-w-0 flex-1 gap-0 text-left">
-                            <DialogTitle className="truncate text-[15px] leading-snug font-semibold">{title}</DialogTitle>
+                        <DialogHeader className="min-w-0 flex-1 gap-1.5 text-left">
+                            <DialogTitle className="text-[15px] leading-snug font-semibold text-foreground">{title}</DialogTitle>
+                            <DialogDescription className="text-left text-[12px] leading-5 text-muted-foreground">
+                                {description}
+                            </DialogDescription>
                         </DialogHeader>
                         <DialogClose
-                            className="inline-flex size-8 shrink-0 items-center justify-center rounded-[6px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                            className="inline-flex size-7 shrink-0 items-center justify-center rounded-[6px] text-muted-foreground transition-colors hover:bg-black/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none dark:hover:bg-white/8"
                             aria-label={t('common.close')}
                         >
-                            <XIcon className="size-4" strokeWidth={1.85} />
+                            <XIcon className="size-3.5" strokeWidth={1.9} />
                         </DialogClose>
                     </div>
-                    <DialogDescription className="text-left text-[13px] leading-5">{description}</DialogDescription>
-                    <DialogFooter className="flex-row items-center justify-end gap-2 sm:justify-end">
-                        <ActionButton
-                            label={cancelText}
-                            icon={XIcon}
-                            className="bg-muted-foreground/12 text-muted-foreground hover:bg-muted-foreground/20 hover:text-muted-foreground"
-                            disabled={processing}
-                            onClick={() => onOpenChange(false)}
-                        />
-                        <ActionButton
-                            label={confirmText}
-                            icon={ConfirmIcon}
-                            className={
-                                destructive
-                                    ? 'bg-danger/12 text-danger hover:bg-danger/20 hover:text-danger'
-                                    : 'bg-primary/12 text-primary hover:bg-primary/20 hover:text-primary'
-                            }
-                            disabled={processing}
-                            onClick={onConfirm}
-                        />
-                    </DialogFooter>
                 </div>
+                <DialogFooter className="flex-row items-center justify-center gap-2 border-t border-border/70 bg-[#e8eef0] px-5 py-3 sm:justify-center dark:bg-[#1a2e31]">
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={processing}
+                        className="h-7 min-h-7 w-[100px] rounded-[6px] border-transparent bg-[#d4dce0] px-2.5 text-[11px] text-[#3d5054] hover:bg-[#c5d0d4] hover:text-[#3d5054] dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted/80"
+                        onClick={() => onOpenChange(false)}
+                    >
+                        <XIcon className="size-3" strokeWidth={2} />
+                        {cancelText}
+                    </Button>
+                    <Button
+                        type="button"
+                        variant={destructive ? 'destructive' : 'primary'}
+                        size="sm"
+                        disabled={processing}
+                        className="h-7 min-h-7 w-[100px] rounded-[6px] px-2.5 text-[11px]"
+                        onClick={onConfirm}
+                    >
+                        <ConfirmIcon className="size-3" strokeWidth={2} />
+                        {confirmText}
+                    </Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
-    );
-}
-
-function ActionButton({
-    label,
-    icon: Icon,
-    className,
-    disabled,
-    onClick,
-}: {
-    label: string;
-    icon: LucideIcon;
-    className?: string;
-    disabled?: boolean;
-    onClick: () => void;
-}) {
-    return (
-        <button
-            type="button"
-            disabled={disabled}
-            className={cn(
-                'inline-flex h-9 items-center justify-center gap-1.5 rounded-[8px] px-3.5 text-[13px] font-medium leading-none transition-colors duration-200',
-                'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:outline-none',
-                'disabled:pointer-events-none disabled:opacity-50',
-                className,
-            )}
-            onClick={onClick}
-        >
-            <Icon className="size-3.5" strokeWidth={1.85} />
-            {label}
-        </button>
     );
 }

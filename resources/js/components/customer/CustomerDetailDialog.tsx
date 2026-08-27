@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 
 import { FormDialog } from '@/components/FormDialog';
+import { formActionBarClass, formActionButtonClass } from '@/components/FormActionBar';
 import { StatusBadge } from '@/components/StatusBadge';
 import type { CustomerFormMember } from '@/components/customer/CustomerFormDialog';
 import { Button } from '@/components/ui/button';
@@ -81,12 +82,12 @@ export function CustomerDetailDialog({ open, onOpenChange, customer, onEdit }: C
                             </FormField>
                         </div>
                     </div>
-                    <div className="flex w-full shrink-0 items-center justify-center gap-2 border-t border-border/70 px-4 py-3 sm:px-5 sm:py-4">
+                    <div className={formActionBarClass}>
                         <Button
                             type="button"
                             size="sm"
-                            variant="destructive"
-                            className="h-8 w-[120px] shrink-0 rounded-[4px]"
+                            variant="ghost"
+                            className={formActionButtonClass}
                             onClick={() => onOpenChange(false)}
                         >
                             <XIcon className="size-3.5" strokeWidth={1.85} />
@@ -96,8 +97,8 @@ export function CustomerDetailDialog({ open, onOpenChange, customer, onEdit }: C
                             <Button
                                 type="button"
                                 size="sm"
-                                variant="primary"
-                                className="h-8 w-[120px] shrink-0 rounded-[4px]"
+                                variant="ghost"
+                                className={formActionButtonClass}
                                 onClick={() => onEdit(customer)}
                             >
                                 <SquarePenIcon className="size-3.5" strokeWidth={1.85} />

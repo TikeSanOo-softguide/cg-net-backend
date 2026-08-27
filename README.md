@@ -91,11 +91,11 @@ Or split: `php artisan serve` and `npm run dev`.
 
 Password for all seeded admins: `password`
 
-| Role | Email |
+| Role | Username |
 | --- | --- |
-| Super Admin | `admin@cg-net.test` |
-| Staff Officer | `staff@cg-net.test` |
-| Support Agent | `support@cg-net.test` |
+| Super Admin | `Super Admin` |
+| Staff Officer | `Staff Officer` |
+| Support Agent | `Support Agent` |
 
 Seed also creates Myanmar region trees, packages, sample customers (broadband + CPE + wallet), service requests, paid invoices, notifications, banners, and `support_hotline`.
 

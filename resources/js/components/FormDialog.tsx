@@ -39,14 +39,14 @@ export function FormDialog({
             <DialogContent
                 overlayClassName="z-[80]"
                 className={cn(
-                    'flex flex-col gap-0 overflow-hidden border-border/80 bg-[#FFFFFF] p-0 shadow-[0_8px_24px_rgb(23_50_54/0.08),0_20px_48px_rgb(23_50_54/0.12)] dark:bg-card dark:shadow-[0_8px_24px_rgb(0_0_0/0.28),0_20px_48px_rgb(0_0_0/0.32)] [&>button.absolute]:hidden',
+                    'flex flex-col gap-0 overflow-hidden border-border/80 bg-[#f3f6f7] p-0 shadow-[0_8px_24px_rgb(23_50_54/0.08),0_20px_48px_rgb(23_50_54/0.12)] dark:bg-[#152628] dark:shadow-[0_8px_24px_rgb(0_0_0/0.28),0_20px_48px_rgb(0_0_0/0.32)] [&>button.absolute]:hidden',
                     'z-[81] inset-0 top-0 left-0 h-dvh max-h-dvh w-full max-w-none translate-x-0 translate-y-0 rounded-none',
                     'sm:inset-auto sm:top-[50%] sm:left-[50%] sm:h-auto sm:max-h-[min(90vh,720px)] sm:w-[min(100%-2rem,560px)] sm:max-w-[560px] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-[12px]',
                     className,
                 )}
             >
                 <div className="flex h-full min-h-0 flex-col">
-                    <div className="flex shrink-0 items-start gap-3 border-b border-border/70 px-4 py-4 sm:px-5">
+                    <div className="flex shrink-0 items-start gap-3 border-b border-border/70 bg-[#eef3f4] px-4 py-4 sm:px-5 dark:bg-[#1a2e31]">
                         <div className="flex size-9 shrink-0 items-center justify-center rounded-[8px] bg-primary/10 text-primary">
                             <Icon className="size-[18px]" strokeWidth={1.85} />
                         </div>

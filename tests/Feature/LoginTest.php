@@ -14,11 +14,11 @@ class LoginTest extends TestCase
     public function test_admins_can_authenticate_and_are_redirected_to_dashboard(): void
     {
         $admin = Admin::factory()->create([
-            'email' => 'admin@cg-net.test',
+            'username' => 'admin',
         ]);
 
         $response = $this->post('/login', [
-            'email' => $admin->email,
+            'username' => $admin->username,
             'password' => 'password',
         ]);
 
@@ -29,17 +29,17 @@ class LoginTest extends TestCase
     public function test_invalid_credentials_are_shown_on_the_login_form(): void
     {
         Admin::factory()->create([
-            'email' => 'admin@cg-net.test',
+            'username' => 'admin',
         ]);
 
         $this->from('/login')
             ->post('/login', [
-                'email' => 'admin@cg-net.test',
+                'username' => 'admin',
                 'password' => 'wrong-password',
             ])
             ->assertRedirect('/login')
             ->assertSessionHasErrors([
-                'email' => 'These credentials do not match our records.',
+                'username' => 'These credentials do not match our records.',
             ]);
     }
 

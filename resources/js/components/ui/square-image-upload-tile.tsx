@@ -1,5 +1,8 @@
 import { useId } from 'react';
-import { ImageUpIcon, XIcon } from 'lucide-react';
+import { ImageUpIcon, Trash2Icon, XIcon } from 'lucide-react';
+
+import { RadialBubbleActions } from '@/components/data-table/RadialBubbleActions';
+import { TableActionButton } from '@/components/TableActionButton';
 
 import {
     browseButtonClass,
@@ -23,15 +26,42 @@ export function SquareImageUploadTile({
     className,
     width = 160,
     height = 160,
+    radialMenu = false,
 }: SquareImageUploadProps) {
     const { t } = useTranslation();
     const generatedId = useId();
     const inputId = id ?? generatedId;
-    const { inputRef, previewSrc, select, remove } = useSquareImagePreview({ value, existingUrl, onChange });
+    const { inputRef, previewSrc, select, remove, openPicker } = useSquareImagePreview({ value, existingUrl, onChange });
     const boxStyle = imageUploadBoxStyle(width, height);
 
+    const radialActions = (
+        <RadialBubbleActions placement="end">
+            <TableActionButton
+                label={t('cms.browse_image')}
+                icon={ImageUpIcon}
+                tone="edit"
+                onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openPicker();
+                }}
+            />
+            <TableActionButton
+                label={t('cms.remove_image')}
+                icon={Trash2Icon}
+                tone="danger"
+                onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    remove();
+                }}
+            />
+        </RadialBubbleActions>
+    );
+
     return (
-        <div className={cn('group relative', className)} style={boxStyle}>
+        <div className={cn('flex items-center gap-2', className)}>
+            <div className="group relative min-w-0" style={boxStyle}>
             <label
                 htmlFor={inputId}
                 className={cn(
@@ -65,7 +95,7 @@ export function SquareImageUploadTile({
                     </>
                 )}
             </label>
-            {previewSrc ? (
+            {previewSrc && ! radialMenu ? (
                 <>
                     <div className="pointer-events-none absolute inset-0 rounded-[4px] bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100" />
                     <span className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex justify-center px-2 pb-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
@@ -86,6 +116,8 @@ export function SquareImageUploadTile({
                     </button>
                 </>
             ) : null}
+            </div>
+            {previewSrc && radialMenu ? radialActions : null}
         </div>
     );
 }

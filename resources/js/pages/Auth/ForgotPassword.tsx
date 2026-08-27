@@ -1,18 +1,20 @@
 import { FormEvent } from 'react';
 import { Head, useForm } from '@inertiajs/react';
-import { MailIcon } from 'lucide-react';
+import { UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type ForgotPasswordProps = {
     status?: string;
 };
 
 export default function ForgotPassword({ status }: ForgotPasswordProps) {
+    const { t } = useTranslation();
     const form = useForm({
-        email: '',
+        username: '',
     });
 
     const submit = (event: FormEvent) => {
@@ -26,24 +28,24 @@ export default function ForgotPassword({ status }: ForgotPasswordProps) {
             <Card className="mx-auto w-full max-w-[400px]">
                 <CardHeader>
                     <CardTitle>Reset password</CardTitle>
-                    <CardDescription>Enter your staff email and we will send a reset link.</CardDescription>
+                    <CardDescription>Enter your staff username and we will send a reset link.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {status ? <p className="mb-4 text-sm text-accent-foreground">{status}</p> : null}
                     <form onSubmit={submit} className="flex flex-col gap-5">
-                        <FormField label="Email" htmlFor="email" error={form.errors.email} icon={MailIcon}>
+                        <FormField label={t('auth.username')} htmlFor="username" error={form.errors.username} icon={UserIcon}>
                             <Input
-                                id="email"
-                                type="email"
-                                value={form.data.email}
-                                onChange={(event) => form.setData('email', event.target.value)}
+                                id="username"
+                                type="text"
+                                value={form.data.username}
+                                onChange={(event) => form.setData('username', event.target.value)}
+                                autoComplete="username"
                                 required
-                                aria-invalid={Boolean(form.errors.email)}
+                                aria-invalid={Boolean(form.errors.username)}
                             />
                         </FormField>
                         <Button type="submit" variant="primary" size="md" disabled={form.processing}>
-                            <MailIcon />
-                            Email reset link
+                            Send reset link
                         </Button>
                     </form>
                 </CardContent>

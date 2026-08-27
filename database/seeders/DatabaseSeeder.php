@@ -69,13 +69,28 @@ class DatabaseSeeder extends Seeder
     private function seedAdmins()
     {
         return collect([
-            ['name' => 'Super Admin', 'email' => 'admin@cg-net.test'],
-            ['name' => 'Staff Officer', 'email' => 'staff@cg-net.test'],
-            ['name' => 'Support Agent', 'email' => 'support@cg-net.test'],
-        ])->map(fn (array $admin) => Admin::query()->firstOrCreate(
-            ['email' => $admin['email']],
-            Admin::factory()->raw($admin),
-        ));
+            ['username' => 'Super Admin'],
+            ['username' => 'Staff Officer'],
+            ['username' => 'Support Agent'],
+        ])->map(function (array $admin) {
+            $legacy = [
+                'Super Admin' => 'admin',
+                'Staff Officer' => 'staff',
+                'Support Agent' => 'support',
+            ][$admin['username']];
+
+            $existing = Admin::query()
+                ->whereIn('username', [$admin['username'], $legacy])
+                ->first();
+
+            if ($existing) {
+                $existing->update(['username' => $admin['username']]);
+
+                return $existing;
+            }
+
+            return Admin::factory()->create($admin);
+        });
     }
 
     /**
@@ -340,13 +355,13 @@ class DatabaseSeeder extends Seeder
     {
         RolePermissionSeeder::sync();
 
-        $admins->first(fn (Admin $admin) => $admin->email === 'admin@cg-net.test')
+        $admins->first(fn (Admin $admin) => $admin->username === 'Super Admin')
             ?->syncRoles([AppPermissions::SuperAdmin]);
 
-        $admins->first(fn (Admin $admin) => $admin->email === 'staff@cg-net.test')
+        $admins->first(fn (Admin $admin) => $admin->username === 'Staff Officer')
             ?->syncRoles([AppPermissions::StaffOfficer]);
 
-        $admins->first(fn (Admin $admin) => $admin->email === 'support@cg-net.test')
+        $admins->first(fn (Admin $admin) => $admin->username === 'Support Agent')
             ?->syncRoles([AppPermissions::SupportAgent]);
     }
 }

@@ -1,7 +1,7 @@
 import {
     CalendarIcon,
     CircleDotIcon,
-    MailIcon,
+    AtSignIcon,
     ShieldIcon,
     SquarePenIcon,
     UserIcon,
@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 
 import { FormDialog } from '@/components/FormDialog';
+import { formActionBarClass, formActionButtonClass } from '@/components/FormActionBar';
 import { StatusBadge } from '@/components/StatusBadge';
 import type { StaffFormMember } from '@/components/staff/StaffFormDialog';
 import { Button } from '@/components/ui/button';
@@ -37,7 +38,7 @@ export function StaffDetailDialog({ open, onOpenChange, staff, onEdit }: StaffDe
         <FormDialog
             open={open}
             onOpenChange={onOpenChange}
-            title={staff?.name ?? t('staff.detail')}
+            title={staff?.username ?? t('staff.detail')}
             description={t('staff.detail_description')}
             icon={UserIcon}
         >
@@ -45,11 +46,8 @@ export function StaffDetailDialog({ open, onOpenChange, staff, onEdit }: StaffDe
                 <div className="flex min-h-0 flex-1 flex-col">
                     <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
                         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                            <FormField label={t('staff.name')} htmlFor="view-staff-name" icon={UserIcon} className="sm:col-span-2">
-                                <Input id="view-staff-name" value={staff.name} readOnly />
-                            </FormField>
-                            <FormField label={t('staff.email')} htmlFor="view-staff-email" icon={MailIcon}>
-                                <Input id="view-staff-email" value={staff.email} readOnly />
+                            <FormField label={t('staff.username')} htmlFor="view-staff-username" icon={AtSignIcon} className="sm:col-span-2">
+                                <Input id="view-staff-username" value={staff.username} readOnly />
                             </FormField>
                             <FormField label={t('common.status')} htmlFor="view-staff-status" icon={CircleDotIcon}>
                                 <div id="view-staff-status" className="flex h-10 items-center">
@@ -64,12 +62,12 @@ export function StaffDetailDialog({ open, onOpenChange, staff, onEdit }: StaffDe
                             </FormField>
                         </div>
                     </div>
-                    <div className="flex w-full shrink-0 items-center justify-center gap-2 border-t border-border/70 px-4 py-3 sm:px-5 sm:py-4">
+                    <div className={formActionBarClass}>
                         <Button
                             type="button"
                             size="sm"
-                            variant="destructive"
-                            className="h-8 w-[120px] shrink-0 rounded-[4px]"
+                            variant="ghost"
+                            className={formActionButtonClass}
                             onClick={() => onOpenChange(false)}
                         >
                             <XIcon className="size-3.5" strokeWidth={1.85} />
@@ -79,8 +77,8 @@ export function StaffDetailDialog({ open, onOpenChange, staff, onEdit }: StaffDe
                             <Button
                                 type="button"
                                 size="sm"
-                                variant="primary"
-                                className="h-8 w-[120px] shrink-0 rounded-[4px]"
+                                variant="ghost"
+                                className={formActionButtonClass}
                                 onClick={() => onEdit(staff)}
                             >
                                 <SquarePenIcon className="size-3.5" strokeWidth={1.85} />

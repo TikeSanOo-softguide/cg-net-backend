@@ -37,7 +37,7 @@ class CmsManagementTest extends TestCase
 
     public function test_super_admin_can_be_given_cms_permissions_after_cache_reset(): void
     {
-        $admin = Admin::factory()->create(['email' => 'admin@cg-net.test']);
+        $admin = Admin::factory()->create(['username' => 'admin']);
 
         $permissions = collect(CmsPermissions::all())->map(
             fn (string $name) => Permission::query()->firstOrCreate([

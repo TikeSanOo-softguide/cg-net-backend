@@ -58,8 +58,7 @@ class StaffManagementTest extends TestCase
 
         $this->actingAs($actor, 'web')
             ->post('/staff', [
-                'name' => 'Ops Admin',
-                'email' => 'ops@cg-net.test',
+                'username' => 'ops',
                 'password' => 'password',
                 'password_confirmation' => 'password',
                 'status' => 'active',
@@ -67,7 +66,7 @@ class StaffManagementTest extends TestCase
             ])
             ->assertRedirect('/staff');
 
-        $created = Admin::query()->where('email', 'ops@cg-net.test')->firstOrFail();
+        $created = Admin::query()->where('username', 'ops')->firstOrFail();
         $this->assertTrue($created->hasRole(AppPermissions::StaffOfficer));
         $this->assertTrue($created->hasRole(AppPermissions::SupportAgent));
 
@@ -76,7 +75,7 @@ class StaffManagementTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Staff/Show')
-                ->where('staffMember.email', 'ops@cg-net.test')
+                ->where('staffMember.username', 'ops')
                 ->has('staffMember.roles', 2));
     }
 
@@ -88,15 +87,14 @@ class StaffManagementTest extends TestCase
         $this->actingAs($actor, 'web')
             ->from('/staff/create')
             ->post('/staff', [
-                'name' => '',
-                'email' => 'not-an-email',
+                'username' => 'ab',
                 'password' => 'short',
                 'password_confirmation' => 'mismatch',
                 'status' => '',
                 'role_ids' => [],
             ])
             ->assertRedirect('/staff/create')
-            ->assertSessionHasErrors(['name', 'email', 'password', 'status', 'role_ids']);
+            ->assertSessionHasErrors(['username', 'password', 'status', 'role_ids']);
     }
 
     public function test_admins_can_create_update_and_delete_a_role_with_permission_matrix(): void

@@ -20,7 +20,7 @@ export default function Login({ status }: LoginProps) {
     const { t } = useTranslation();
     const [showPassword, setShowPassword] = useState(false);
     const form = useForm({
-        email: '',
+        username: '',
         password: '',
         remember: false,
     });
@@ -60,16 +60,16 @@ export default function Login({ status }: LoginProps) {
                         {status ? <p className="mb-4 text-center text-sm text-accent-foreground">{status}</p> : null}
 
                         <form onSubmit={submit} className="flex flex-col gap-5">
-                            <FormField label={t('auth.username')} htmlFor="email" error={form.errors.email}>
+                            <FormField label={t('auth.username')} htmlFor="username" error={form.errors.username}>
                                 <AuthOutlineInput
-                                    id="email"
-                                    name="email"
+                                    id="username"
+                                    name="username"
                                     type="text"
-                                    value={form.data.email}
-                                    onChange={(event) => form.setData('email', event.target.value)}
+                                    value={form.data.username}
+                                    onChange={(event) => form.setData('username', event.target.value)}
                                     autoComplete="username"
                                     placeholder={t('auth.username')}
-                                    invalid={Boolean(form.errors.email)}
+                                    invalid={Boolean(form.errors.username)}
                                     required
                                     leftIcon={UserIcon}
                                 />

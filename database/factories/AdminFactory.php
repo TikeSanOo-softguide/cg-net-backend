@@ -18,9 +18,7 @@ class AdminFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
+            'username' => fake()->unique()->regexify('[a-z]{5}[0-9]{3}'),
             'password' => static::$password ??= Hash::make('password'),
             'status' => AdminStatus::Active,
             'remember_token' => Str::random(10),

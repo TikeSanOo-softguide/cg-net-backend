@@ -303,6 +303,28 @@
     }
 }
 
+@keyframes radial-bubble-in {
+    from {
+        opacity: 0;
+        transform: rotate(calc(var(--from-angle) - var(--to-angle))) scale(0.2);
+    }
+
+    to {
+        opacity: 1;
+        transform: rotate(0deg) scale(1);
+    }
+}
+
+@keyframes radial-icon-level {
+    from {
+        transform: rotate(calc(var(--to-angle) - var(--from-angle)));
+    }
+
+    to {
+        transform: rotate(0deg);
+    }
+}
+
 @keyframes status-pulse {
 
     0%,
