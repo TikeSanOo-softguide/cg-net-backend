@@ -1,9 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\BannerController;
-use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\Category\CategoryController;
 use App\Http\Controllers\Api\ContactController;
-use App\Http\Controllers\Api\NewsController;
+use App\Http\Controllers\Api\News\NewsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
