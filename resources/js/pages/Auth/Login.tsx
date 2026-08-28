@@ -37,7 +37,12 @@ export default function Login({ status }: LoginProps) {
             <Card className="relative w-full min-w-0 gap-0 overflow-hidden rounded-[12px] border-0 bg-card py-0 shadow-[0_12px_40px_rgb(23_50_54/0.12)]">
                 <div className="grid w-full grid-cols-1 md:grid-cols-2">
                     <div className="order-1 flex justify-center px-5 pt-5 md:hidden">
-                        <BrandLockup compact href="/" className="justify-center" logoClassName="size-14 sm:size-16 rounded-[6px]" />
+                        <BrandLockup
+                            compact
+                            href="/"
+                            className="justify-center"
+                            logoClassName="size-14 sm:size-16 rounded-[6px]"
+                        />
                     </div>
 
                     <div className="relative order-2 flex flex-col items-center justify-center bg-primary/[0.04] px-5 py-4 sm:px-6 sm:py-5 md:order-1 md:min-h-[360px] md:border-r md:border-border/80 md:px-6 md:py-8 lg:px-8">
@@ -54,7 +59,12 @@ export default function Login({ status }: LoginProps) {
 
                     <CardContent className="order-3 flex min-w-0 flex-col justify-center px-5 pt-4 pb-5 sm:px-6 sm:pb-6 md:order-2 md:px-6 md:py-8 lg:px-8">
                         <div className="mb-4 flex justify-center md:mb-5">
-                            <BrandLockup compact href="/" className="hidden justify-center md:flex" logoClassName="size-16 rounded-[6px]" />
+                            <BrandLockup
+                                compact
+                                href="/"
+                                className="hidden justify-center md:flex"
+                                logoClassName="size-16 rounded-[6px]"
+                            />
                         </div>
 
                         {status ? <p className="mb-4 text-center text-sm text-accent-foreground">{status}</p> : null}
@@ -90,13 +100,15 @@ export default function Login({ status }: LoginProps) {
                                     rightSlot={
                                         <button
                                             type="button"
-                                            onClick={() => setShowPassword((current) => ! current)}
+                                            onClick={() => setShowPassword((current) => !current)}
                                             className={cn(
                                                 'flex size-8 items-center justify-center rounded-[6px] transition-colors hover:text-primary',
                                                 'focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:outline-none',
                                                 formControlIconClass,
                                             )}
-                                            aria-label={showPassword ? t('auth.hide_password') : t('auth.show_password')}
+                                            aria-label={
+                                                showPassword ? t('auth.hide_password') : t('auth.show_password')
+                                            }
                                             aria-pressed={showPassword}
                                         >
                                             {showPassword ? (
@@ -122,7 +134,13 @@ export default function Login({ status }: LoginProps) {
                                 {t('auth.remember_me')}
                             </label>
 
-                            <Button type="submit" variant="primary" size="lg" className="mt-1 w-full" disabled={form.processing}>
+                            <Button
+                                type="submit"
+                                variant="primary"
+                                size="lg"
+                                className="mt-1 w-full"
+                                disabled={form.processing}
+                            >
                                 {form.processing ? <Loader2Icon className="animate-spin" /> : <LogInIcon />}
                                 {t('auth.sign_in')}
                             </Button>

@@ -7,5 +7,16 @@
     "printWidth": 120,
     "trailingComma": "all",
     "bracketSpacing": true,
-    "endOfLine": "lf"
+    "endOfLine": "lf",
+    "plugins": ["@prettier/plugin-php"],
+    "phpVersion": "8.3",
+    "braceStyle": "per-cs",
+    "overrides": [
+        {
+            "files": "*.php",
+            "options": {
+                "parser": "php"
+            }
+        }
+    ]
 }

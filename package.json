@@ -9,6 +9,7 @@
         "format:check": "prettier --check ."
     },
     "devDependencies": {
+        "@prettier/plugin-php": "^0.25.0",
         "@tailwindcss/vite": "^4.0.0",
         "@types/node": "^26.2.0",
         "@types/react": "^19.2.14",
