@@ -43,6 +43,39 @@ class LoginTest extends TestCase
             ]);
     }
 
+    public function test_inactive_admins_cannot_authenticate(): void
+    {
+        Admin::factory()->inactive()->create([
+            'username' => 'admin',
+        ]);
+
+        $this->from('/login')
+            ->post('/login', [
+                'username' => 'admin',
+                'password' => 'password',
+            ])
+            ->assertRedirect('/login')
+            ->assertSessionHasErrors([
+                'username' => 'This account is inactive and cannot sign in.',
+            ]);
+
+        $this->assertGuest('web');
+    }
+
+    public function test_inactive_admins_are_logged_out_of_the_app(): void
+    {
+        $admin = Admin::factory()->inactive()->create();
+
+        $this->actingAs($admin, 'web')
+            ->get('/dashboard')
+            ->assertRedirect('/login')
+            ->assertSessionHasErrors([
+                'username' => 'This account is inactive and cannot sign in.',
+            ]);
+
+        $this->assertGuest('web');
+    }
+
     public function test_english_nested_translations_are_shared(): void
     {
         $this->get('/login')

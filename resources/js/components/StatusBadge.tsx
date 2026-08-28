@@ -39,7 +39,7 @@ export function StatusBadge({ status, className }: { status: string; className?:
     const live = liveStatuses.has(status);
 
     return (
-        <Badge variant={variantFor(status)} className={cn('gap-1.5', className)}>
+        <Badge variant={variantFor(status)} className={cn('gap-1', className)}>
             {live ? <span className="size-1.5 rounded-full bg-current status-pulse" aria-hidden /> : null}
             {t(`status.${status}`)}
         </Badge>

@@ -1,20 +1,10 @@
-import {
-    CalendarIcon,
-    CircleDotIcon,
-    AtSignIcon,
-    ShieldIcon,
-    SquarePenIcon,
-    UserIcon,
-    XIcon,
-} from 'lucide-react';
+import { SquarePenIcon, UserIcon, XIcon } from 'lucide-react';
 
 import { FormDialog } from '@/components/FormDialog';
-import { formActionBarClass, formActionButtonClass } from '@/components/FormActionBar';
-import { StatusBadge } from '@/components/StatusBadge';
+import { formActionBarClass, formActionButtonClass, formActionSubmitClass } from '@/components/FormActionBar';
 import type { StaffFormMember } from '@/components/staff/StaffFormDialog';
+import { StaffViewFields } from '@/components/staff/StaffViewFields';
 import { Button } from '@/components/ui/button';
-import { FormField } from '@/components/ui/form-field';
-import { Input } from '@/components/ui/input';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -32,7 +22,6 @@ type StaffDetailDialogProps = {
 export function StaffDetailDialog({ open, onOpenChange, staff, onEdit }: StaffDetailDialogProps) {
     const { t } = useTranslation();
     const can = useCan();
-    const roleNames = staff?.roles.map((role) => role.name).join(', ') || '—';
 
     return (
         <FormDialog
@@ -46,20 +35,7 @@ export function StaffDetailDialog({ open, onOpenChange, staff, onEdit }: StaffDe
                 <div className="flex min-h-0 flex-1 flex-col">
                     <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
                         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                            <FormField label={t('staff.username')} htmlFor="view-staff-username" icon={AtSignIcon} className="sm:col-span-2">
-                                <Input id="view-staff-username" value={staff.username} readOnly />
-                            </FormField>
-                            <FormField label={t('common.status')} htmlFor="view-staff-status" icon={CircleDotIcon}>
-                                <div id="view-staff-status" className="flex h-10 items-center">
-                                    <StatusBadge status={staff.status} />
-                                </div>
-                            </FormField>
-                            <FormField label={t('customers.joined')} htmlFor="view-staff-joined" icon={CalendarIcon} className="sm:col-span-2">
-                                <Input id="view-staff-joined" value={staff.created_at ?? '—'} readOnly />
-                            </FormField>
-                            <FormField label={t('staff.roles')} htmlFor="view-staff-roles" icon={ShieldIcon} className="sm:col-span-2">
-                                <Input id="view-staff-roles" value={roleNames} readOnly />
-                            </FormField>
+                            <StaffViewFields staff={staff} />
                         </div>
                     </div>
                     <div className={formActionBarClass}>
@@ -78,7 +54,7 @@ export function StaffDetailDialog({ open, onOpenChange, staff, onEdit }: StaffDe
                                 type="button"
                                 size="sm"
                                 variant="ghost"
-                                className={formActionButtonClass}
+                                className={formActionSubmitClass}
                                 onClick={() => onEdit(staff)}
                             >
                                 <SquarePenIcon className="size-3.5" strokeWidth={1.85} />

@@ -19,6 +19,14 @@ const ROLE_META: Record<string, { icon: LucideIcon; descriptionKey: string }> = 
     },
 };
 
+export function roleIcon(name: string): LucideIcon {
+    return ROLE_META[name]?.icon ?? ShieldIcon;
+}
+
+export function roleDescription(name: string, t: Translate): string {
+    return t(ROLE_META[name]?.descriptionKey ?? 'staff.role_descriptions.custom');
+}
+
 export function staffRoleCard(role: StaffRoleOption, t: Translate) {
     const meta = ROLE_META[role.name];
 

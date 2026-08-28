@@ -1,12 +1,12 @@
 import { FormEvent } from 'react';
 import type { InertiaFormProps } from '@inertiajs/react';
-import { CircleDotIcon, LockIcon, AtSignIcon, ShieldIcon } from 'lucide-react';
+import { LockIcon, AtSignIcon, ShieldIcon } from 'lucide-react';
 
 import { FormActionBar } from '@/components/FormActionBar';
 import { MultiSelect } from '@/components/MultiSelect';
+import { StaffStatusSwitch } from '@/components/staff/StaffStatusSwitch';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
 import { staffRoleCard } from '@/lib/staff-roles';
 
@@ -67,16 +67,17 @@ export function StaffForm({
                             onChange={(event) => form.setData('username', event.target.value)}
                         />
                     </FormField>
-                    <FormField label={t('common.status')} htmlFor="status" error={form.errors.status} icon={CircleDotIcon} required>
-                        <Select value={form.data.status} onValueChange={(value) => form.setData('status', value)}>
-                            <SelectTrigger id="status" className="w-full" aria-invalid={Boolean(form.errors.status)}>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="active">{t('status.active')}</SelectItem>
-                                <SelectItem value="inactive">{t('status.inactive')}</SelectItem>
-                            </SelectContent>
-                        </Select>
+                    <FormField label={t('staff.roles')} htmlFor="role_ids" error={form.errors.role_ids} required>
+                        <MultiSelect
+                            id="role_ids"
+                            icon={ShieldIcon}
+                            heading={t('staff.roles')}
+                            values={form.data.role_ids.map(String)}
+                            options={roles.map((role) => staffRoleCard(role, t))}
+                            placeholder={t('staff.roles_placeholder')}
+                            invalid={Boolean(form.errors.role_ids)}
+                            onChange={(values) => form.setData('role_ids', values.map(Number))}
+                        />
                     </FormField>
                     <FormField
                         label={t('staff.password')}
@@ -113,17 +114,15 @@ export function StaffForm({
                             onChange={(event) => form.setData('password_confirmation', event.target.value)}
                         />
                     </FormField>
-                    <FormField label={t('staff.roles')} htmlFor="role_ids" error={form.errors.role_ids} required className="sm:col-span-2">
-                        <MultiSelect
-                            id="role_ids"
-                            icon={ShieldIcon}
-                            heading={t('staff.roles')}
-                            values={form.data.role_ids.map(String)}
-                            options={roles.map((role) => staffRoleCard(role, t))}
-                            placeholder={t('staff.roles_placeholder')}
-                            invalid={Boolean(form.errors.role_ids)}
-                            onChange={(values) => form.setData('role_ids', values.map(Number))}
+                    <FormField label={t('common.status')} htmlFor="status" error={form.errors.status} required className="sm:col-span-2">
+                        <StaffStatusSwitch
+                            id="status"
+                            value={form.data.status}
+                            onChange={(status) => form.setData('status', status)}
                         />
+                        {form.data.status === 'inactive' ? (
+                            <p className="mt-1.5 text-[12px] font-medium leading-4 text-danger">{t('staff.inactive_login_hint')}</p>
+                        ) : null}
                     </FormField>
                 </div>
             </div>

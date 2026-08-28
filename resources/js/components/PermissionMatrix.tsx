@@ -1,6 +1,6 @@
-import { CheckIcon, EyeIcon, PlusIcon, SquarePenIcon, Trash2Icon, type LucideIcon } from 'lucide-react';
+import { CheckIcon, EyeIcon, PlusIcon, ShieldIcon, SquarePenIcon, Trash2Icon, type LucideIcon } from 'lucide-react';
 
-import { navigation } from '@/lib/navigation';
+import { navigation, viewPermissionForHref } from '@/lib/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 
@@ -21,15 +21,33 @@ type PermissionMatrixProps = {
     locked?: boolean;
 };
 
-const ACTION_META: Record<string, { icon: LucideIcon; danger?: boolean }> = {
+export const PERMISSION_ACTIONS = ['view', 'create', 'update', 'delete'] as const;
+
+export const PERMISSION_ACTION_META: Record<string, { icon: LucideIcon; danger?: boolean }> = {
     view: { icon: EyeIcon },
     create: { icon: PlusIcon },
     update: { icon: SquarePenIcon },
     delete: { icon: Trash2Icon, danger: true },
 };
 
-function moduleIcon(module: string) {
-    return navigation.find((group) => group.id === module)?.icon;
+export function permissionModuleIcon(module: string): LucideIcon {
+    const group = navigation.find((item) => item.id === module);
+
+    if (group) {
+        return group.icon;
+    }
+
+    const viewPermission = `${module}.view`;
+
+    for (const item of navigation) {
+        const child = item.children?.find((entry) => viewPermissionForHref(entry.href) === viewPermission);
+
+        if (child) {
+            return child.icon;
+        }
+    }
+
+    return ShieldIcon;
 }
 
 function PermSwitch({
@@ -107,7 +125,7 @@ export function PermissionMatrix({ groups, value, onChange, locked = false }: Pe
                 const names = group.permissions.map((permission) => permission.name);
                 const selectedCount = names.filter((name) => value.includes(name)).length;
                 const allSelected = selectedCount === names.length && names.length > 0;
-                const Icon = moduleIcon(group.module);
+                const Icon = permissionModuleIcon(group.module);
 
                 return (
                     <section
@@ -116,7 +134,7 @@ export function PermissionMatrix({ groups, value, onChange, locked = false }: Pe
                     >
                         <div className="flex items-center gap-2.5 px-2.5 py-2 sm:px-3">
                             <span className="flex size-8 shrink-0 items-center justify-center rounded-[8px] bg-primary/12 text-primary">
-                                {Icon ? <Icon className="size-4" strokeWidth={1.8} /> : null}
+                                <Icon className="size-4" strokeWidth={1.8} />
                             </span>
                             <div className="min-w-0 flex-1">
                                 <h3 className="min-w-0 text-[13px] font-semibold leading-[1.75] text-primary">{t(group.labelKey)}</h3>
@@ -134,7 +152,7 @@ export function PermissionMatrix({ groups, value, onChange, locked = false }: Pe
                         <div className="grid grid-cols-2 gap-1.5 px-2.5 pb-2.5 sm:grid-cols-4 sm:px-3">
                             {group.permissions.map((permission) => {
                                 const checked = value.includes(permission.name);
-                                const meta = ACTION_META[permission.action];
+                                const meta = PERMISSION_ACTION_META[permission.action];
                                 const ActionIcon = meta?.icon;
                                 const danger = Boolean(meta?.danger);
 

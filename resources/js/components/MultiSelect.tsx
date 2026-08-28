@@ -106,12 +106,12 @@ export function MultiSelect({
             <DropdownMenuContent
                 align="start"
                 sideOffset={6}
-                className="z-[90] w-[min(calc(100vw-2rem),var(--radix-dropdown-menu-trigger-width))] min-w-[min(100%,var(--radix-dropdown-menu-trigger-width))] overflow-y-auto rounded-[12px] border-border/80 bg-[#eef1f3] p-2.5 shadow-[0_10px_28px_rgb(23_50_54/0.12)] dark:bg-[#1a2e31]"
+                className="z-[90] w-[min(calc(100vw-2rem),var(--radix-dropdown-menu-trigger-width))] min-w-[min(100%,var(--radix-dropdown-menu-trigger-width))] max-h-[min(50vh,280px)] overflow-y-auto overflow-x-hidden rounded-[12px] border-border/80 bg-[#eef1f3] p-2 shadow-[0_10px_28px_rgb(23_50_54/0.12)] dark:bg-[#1a2e31]"
             >
                 {heading ? (
                     <p className="mb-1.5 px-0.5 text-[11px] font-medium text-muted-foreground">{heading}</p>
                 ) : null}
-                <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
                     {options.map((option) => {
                         const checked = values.includes(option.value);
                         const Icon = option.icon;
@@ -124,23 +124,18 @@ export function MultiSelect({
                                     toggle(option.value);
                                 }}
                                 className={cn(
-                                    'flex h-auto min-h-0 w-full cursor-pointer items-center gap-2 rounded-[8px] border px-2 py-1.5 text-left shadow-none',
+                                    'flex h-auto min-h-0 w-full cursor-pointer items-center gap-2.5 rounded-[10px] border px-2 py-2 text-left shadow-none',
                                     'focus:text-foreground',
                                     checked
-                                        ? 'border-primary/50 bg-primary/[0.07] text-foreground focus:bg-primary/[0.07] dark:bg-primary/15'
-                                        : 'border-border/80 bg-white text-foreground hover:border-primary/25 hover:bg-white focus:bg-white dark:bg-card dark:focus:bg-card',
+                                        ? 'border-primary/45 bg-primary/[0.08] focus:bg-primary/[0.08] dark:bg-primary/15'
+                                        : 'border-border/70 bg-white hover:border-primary/30 hover:bg-white focus:bg-white dark:bg-card dark:focus:bg-card',
                                 )}
                             >
-                                <span
-                                    className={cn(
-                                        'flex size-7 shrink-0 items-center justify-center rounded-[6px]',
-                                        checked ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground',
-                                    )}
-                                >
+                                <span className="flex size-8 shrink-0 items-center justify-center rounded-[8px] bg-primary/12 text-primary">
                                     {Icon ? <Icon className="size-3.5" strokeWidth={1.85} /> : null}
                                 </span>
                                 <span className="min-w-0 flex-1">
-                                    <span className="block truncate text-[12px] font-semibold leading-4 text-foreground">
+                                    <span className="block truncate text-[12px] font-semibold leading-[1.75] text-primary">
                                         {option.label}
                                     </span>
                                     {option.description ? (
@@ -152,7 +147,7 @@ export function MultiSelect({
                                 {checked ? (
                                     <CheckIcon className="size-3.5 shrink-0 text-primary" strokeWidth={2.4} />
                                 ) : (
-                                    <PlusIcon className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={2} />
+                                    <PlusIcon className="size-3.5 shrink-0 text-primary" strokeWidth={2} />
                                 )}
                             </DropdownMenuItem>
                         );

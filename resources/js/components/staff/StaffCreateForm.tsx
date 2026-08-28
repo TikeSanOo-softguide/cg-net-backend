@@ -1,18 +1,17 @@
 import { FormEvent, useState } from 'react';
 import type { InertiaFormProps } from '@inertiajs/react';
-import { CircleDotIcon, LockIcon, AtSignIcon, ShieldIcon } from 'lucide-react';
+import { LockIcon, AtSignIcon, ShieldIcon } from 'lucide-react';
 
 import { FormActionBar } from '@/components/FormActionBar';
 import { MultiSelect } from '@/components/MultiSelect';
 import type { StaffFormValues, StaffRoleOption } from '@/components/staff/StaffForm';
+import { StaffStatusSwitch } from '@/components/staff/StaffStatusSwitch';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formControlStateClass } from '@/lib/form-control';
 import { staffCreateSuccessMessage, validateStaffCreate, validateStaffCreateField } from '@/lib/staff-create-validation';
 import { staffRoleCard } from '@/lib/staff-roles';
-import { cn } from '@/lib/utils';
 
 const autocompleteOff = {
     autoComplete: 'off',
@@ -140,32 +139,25 @@ export function StaffCreateForm({
                 />
             </FormField>
             <FormField
-                label={t('common.status')}
-                htmlFor="staff-create-status"
-                error={fieldError('status')}
-                success={fieldSuccess('status')}
-                icon={CircleDotIcon}
+                label={t('staff.roles')}
+                htmlFor="staff-create-role-ids"
+                error={fieldError('role_ids')}
+                success={fieldSuccess('role_ids')}
                 required
             >
-                <Select
-                    value={form.data.status}
-                    onValueChange={(value) => {
-                        setField('status', value);
-                        markTouched('status');
+                <MultiSelect
+                    id="staff-create-role-ids"
+                    icon={ShieldIcon}
+                    heading={t('staff.roles')}
+                    values={form.data.role_ids.map(String)}
+                    options={roles.map((role) => staffRoleCard(role, t))}
+                    placeholder={t('staff.roles_placeholder')}
+                    invalid={fieldState('role_ids') === 'error'}
+                    onChange={(values) => {
+                        setField('role_ids', values.map(Number));
+                        markTouched('role_ids');
                     }}
-                >
-                    <SelectTrigger
-                        id="staff-create-status"
-                        className={cn('w-full', formControlStateClass(fieldState('status')))}
-                        aria-invalid={fieldState('status') === 'error'}
-                    >
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="active">{t('status.active')}</SelectItem>
-                        <SelectItem value="inactive">{t('status.inactive')}</SelectItem>
-                    </SelectContent>
-                </Select>
+                />
             </FormField>
             <FormField
                 label={t('staff.password')}
@@ -210,26 +202,24 @@ export function StaffCreateForm({
                 />
             </FormField>
             <FormField
-                label={t('staff.roles')}
-                htmlFor="staff-create-role-ids"
-                error={fieldError('role_ids')}
-                success={fieldSuccess('role_ids')}
+                label={t('common.status')}
+                htmlFor="staff-create-status"
+                error={fieldError('status')}
+                success={fieldSuccess('status')}
                 required
                 className="sm:col-span-2"
             >
-                <MultiSelect
-                    id="staff-create-role-ids"
-                    icon={ShieldIcon}
-                    heading={t('staff.roles')}
-                    values={form.data.role_ids.map(String)}
-                    options={roles.map((role) => staffRoleCard(role, t))}
-                    placeholder={t('staff.roles_placeholder')}
-                    invalid={fieldState('role_ids') === 'error'}
-                    onChange={(values) => {
-                        setField('role_ids', values.map(Number));
-                        markTouched('role_ids');
+                <StaffStatusSwitch
+                    id="staff-create-status"
+                    value={form.data.status}
+                    onChange={(status) => {
+                        setField('status', status);
+                        markTouched('status');
                     }}
                 />
+                {form.data.status === 'inactive' ? (
+                    <p className="mt-1.5 text-[12px] font-medium leading-4 text-danger">{t('staff.inactive_login_hint')}</p>
+                ) : null}
             </FormField>
         </>
     );

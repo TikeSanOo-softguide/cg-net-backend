@@ -18,7 +18,7 @@ use Inertia\Inertia;
 
 Route::post('/locale/{lang}', LocaleController::class)->name('locale.update');
 
-Route::middleware('auth:web')->group(function () {
+Route::middleware(['auth:web', 'admin.active'])->group(function () {
     Route::get('/', fn () => redirect()->route('dashboard'))->name('home');
     Route::get('/dashboard', DashboardController::class)->middleware('can:dashboard.view')->name('dashboard');
     Route::delete('/dashboard/requests/bulk-destroy', [DashboardController::class, 'bulkDestroy'])

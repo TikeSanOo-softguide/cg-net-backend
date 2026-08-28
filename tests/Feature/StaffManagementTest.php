@@ -153,6 +153,39 @@ class StaffManagementTest extends TestCase
         $this->assertDatabaseMissing('roles', ['id' => $role->id]);
     }
 
+    public function test_role_requires_a_name_and_at_least_one_permission(): void
+    {
+        $actor = Admin::factory()->create();
+        $actor->assignRole(AppPermissions::SuperAdmin);
+
+        $this->actingAs($actor, 'web')
+            ->from('/roles')
+            ->post('/roles', [
+                'name' => '',
+                'permissions' => [],
+            ])
+            ->assertRedirect('/roles')
+            ->assertSessionHasErrors(['name', 'permissions']);
+
+        $this->actingAs($actor, 'web')
+            ->from('/roles')
+            ->post('/roles', [
+                'name' => 'A',
+                'permissions' => ['dashboard.view'],
+            ])
+            ->assertRedirect('/roles')
+            ->assertSessionHasErrors(['name']);
+
+        $this->actingAs($actor, 'web')
+            ->from('/roles')
+            ->post('/roles', [
+                'name' => 'Reports Only',
+                'permissions' => [],
+            ])
+            ->assertRedirect('/roles')
+            ->assertSessionHasErrors(['permissions']);
+    }
+
     public function test_super_admin_role_cannot_be_deleted(): void
     {
         $actor = Admin::factory()->create();

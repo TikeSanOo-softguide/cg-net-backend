@@ -26,11 +26,33 @@ class UpdateRoleRequest extends FormRequest
             'name' => [
                 'required',
                 'string',
+                'min:2',
                 'max:80',
                 Rule::unique('roles', 'name')->where('guard_name', 'web')->ignore($role->id),
             ],
-            'permissions' => ['present', 'array'],
+            'permissions' => ['required', 'array', 'min:1'],
             'permissions.*' => ['string', Rule::in(AppPermissions::names())],
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'name.required' => __('staff.validation.name_required'),
+            'name.min' => __('staff.validation.name_min'),
+            'name.max' => __('staff.validation.name_max'),
+            'permissions.required' => __('staff.validation.permissions_required'),
+            'permissions.min' => __('staff.validation.permissions_required'),
+        ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'name' => is_string($this->name) ? trim($this->name) : $this->name,
+        ]);
     }
 }

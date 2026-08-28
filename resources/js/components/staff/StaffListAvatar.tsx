@@ -1,5 +1,8 @@
+import { cn } from '@/lib/utils';
+
 type StaffListAvatarProps = {
     username: string;
+    className?: string;
 };
 
 export function staffInitials(username: string): string {
@@ -12,10 +15,13 @@ export function staffInitials(username: string): string {
     return username.trim().slice(0, 2).toUpperCase();
 }
 
-export function StaffListAvatar({ username }: StaffListAvatarProps) {
+export function StaffListAvatar({ username, className }: StaffListAvatarProps) {
     return (
         <span
-            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/12 text-[11px] font-semibold tracking-wide text-primary uppercase"
+            className={cn(
+                'flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/12 text-[11px] font-semibold tracking-wide text-primary uppercase',
+                className,
+            )}
             aria-hidden
         >
             {staffInitials(username)}

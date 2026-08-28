@@ -12,6 +12,7 @@ import { TableActionButton } from '@/components/TableActionButton';
 import { StaffDetailDialog, type StaffDetailMember } from '@/components/staff/StaffDetailDialog';
 import { StaffFormDialog, type StaffFormMember } from '@/components/staff/StaffFormDialog';
 import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
+import { StaffRoleChip } from '@/components/staff/StaffRoleChip';
 import type { StaffRoleOption } from '@/components/staff/StaffForm';
 import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -165,9 +166,7 @@ export default function StaffIndex({ staff, roles = [], filters }: StaffIndexPro
                             cell: (row) => (
                                 <span className="flex flex-wrap gap-1">
                                     {row.roles.length === 0 ? '—' : row.roles.map((role) => (
-                                        <span key={role.id} className="rounded-[6px] bg-primary/12 px-1.5 py-0.5 text-[11px] font-medium text-primary">
-                                            {role.name}
-                                        </span>
+                                        <StaffRoleChip key={role.id} name={role.name} />
                                     ))}
                                 </span>
                             ),

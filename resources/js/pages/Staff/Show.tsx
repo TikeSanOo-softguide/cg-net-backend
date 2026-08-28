@@ -1,23 +1,14 @@
 import { useState } from 'react';
 import { Head } from '@inertiajs/react';
-import {
-    CalendarIcon,
-    CircleDotIcon,
-    AtSignIcon,
-    ShieldIcon,
-    SquarePenIcon,
-    UserIcon,
-} from 'lucide-react';
+import { SquarePenIcon, UserIcon } from 'lucide-react';
 
 import { DetailPanel } from '@/components/DetailPanel';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
-import { StatusBadge } from '@/components/StatusBadge';
 import { StaffFormDialog } from '@/components/staff/StaffFormDialog';
+import { StaffViewFields } from '@/components/staff/StaffViewFields';
 import type { StaffRoleOption } from '@/components/staff/StaffForm';
 import { Button } from '@/components/ui/button';
-import { FormField } from '@/components/ui/form-field';
-import { Input } from '@/components/ui/input';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -38,8 +29,8 @@ type StaffShowProps = {
 export default function StaffShow({ staffMember, roles }: StaffShowProps) {
     const { t } = useTranslation();
     const can = useCan();
+
     const [formOpen, setFormOpen] = useState(false);
-    const roleNames = staffMember.roles.map((role) => role.name).join(', ') || '—';
 
     return (
         <>
@@ -68,20 +59,7 @@ export default function StaffShow({ staffMember, roles }: StaffShowProps) {
                             ) : null
                         }
                     >
-                        <FormField label={t('staff.username')} htmlFor="detail-username" icon={AtSignIcon} className="sm:col-span-2">
-                            <Input id="detail-username" value={staffMember.username} readOnly />
-                        </FormField>
-                        <FormField label={t('common.status')} htmlFor="detail-status" icon={CircleDotIcon}>
-                            <div id="detail-status" className="flex h-10 items-center">
-                                <StatusBadge status={staffMember.status} />
-                            </div>
-                        </FormField>
-                        <FormField label={t('customers.joined')} htmlFor="detail-joined" icon={CalendarIcon} className="sm:col-span-2">
-                            <Input id="detail-joined" value={staffMember.created_at ?? '—'} readOnly />
-                        </FormField>
-                        <FormField label={t('staff.roles')} htmlFor="detail-roles" icon={ShieldIcon} className="sm:col-span-2">
-                            <Input id="detail-roles" value={roleNames} readOnly />
-                        </FormField>
+                        <StaffViewFields staff={staffMember} />
                     </DetailPanel>
                 </div>
             </PageContent>

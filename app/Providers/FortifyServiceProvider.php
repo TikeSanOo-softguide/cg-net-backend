@@ -5,13 +5,17 @@ namespace App\Providers;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
+use App\Enums\AdminStatus;
 use App\Http\Controllers\Auth\LoginController;
+use App\Models\Admin;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable;
 use Laravel\Fortify\Fortify;
@@ -42,6 +46,22 @@ class FortifyServiceProvider extends ServiceProvider
             'token' => $request->route('token'),
         ]));
         Fortify::twoFactorChallengeView(fn () => Inertia::render('Auth/TwoFactorChallenge'));
+
+        Fortify::authenticateUsing(function (Request $request) {
+            $admin = Admin::query()->where('username', $request->input(Fortify::username()))->first();
+
+            if (! $admin || ! Hash::check((string) $request->password, $admin->getAuthPassword())) {
+                return null;
+            }
+
+            if ($admin->status !== AdminStatus::Active) {
+                throw ValidationException::withMessages([
+                    Fortify::username() => __('auth.inactive'),
+                ]);
+            }
+
+            return $admin;
+        });
 
         $this->registerLoginRoutes();
 

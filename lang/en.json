@@ -11,6 +11,7 @@
     "hide_password": "Hide password",
     "illustration_credit": "Illustration by Storyset",
     "failed": "These credentials do not match our records.",
+    "inactive": "This account is inactive and cannot sign in.",
     "throttle": "Too many login attempts. Please try again in :seconds seconds."
   },
   "errors": {
@@ -439,6 +440,7 @@
     "password_optional": "Leave blank to keep the current password",
     "roles": "Roles",
     "roles_placeholder": "Select one or more roles",
+    "inactive_login_hint": "Inactive staff cannot sign in.",
     "role_descriptions": {
       "super_admin": "Full access to every module and setting.",
       "staff_officer": "Customers, billing, packages, CPE, and CMS.",
@@ -464,7 +466,9 @@
       "status_required": "Please select a status.",
       "status_ok": "Status selected.",
       "roles_required": "Please select at least one role.",
-      "roles_ok": "Roles selected."
+      "roles_ok": "Roles selected.",
+      "permissions_required": "Please select at least one permission.",
+      "permissions_ok": "Permissions selected."
     },
     "assigned_roles": "Assigned roles",
     "created": "Staff account created",

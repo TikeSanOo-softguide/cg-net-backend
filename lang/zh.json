@@ -11,6 +11,7 @@
     "hide_password": "隐藏密码",
     "illustration_credit": "插图来自 Storyset",
     "failed": "账号或密码不正确。",
+    "inactive": "此账号已停用，无法登录。",
     "throttle": "尝试次数过多，请在 :seconds 秒后重试。"
   },
   "errors": {
@@ -439,6 +440,7 @@
     "password_optional": "留空则保留当前密码",
     "roles": "角色",
     "roles_placeholder": "选择一个或多个角色",
+    "inactive_login_hint": "停用的员工无法登录。",
     "role_descriptions": {
       "super_admin": "可访问全部模块与系统设置。",
       "staff_officer": "客户、计费、套餐、CPE 与内容管理。",
@@ -464,7 +466,9 @@
       "status_required": "请选择状态。",
       "status_ok": "已选择状态。",
       "roles_required": "请至少选择一个角色。",
-      "roles_ok": "已选择角色。"
+      "roles_ok": "已选择角色。",
+      "permissions_required": "请至少勾选一项权限。",
+      "permissions_ok": "已选择权限。"
     },
     "assigned_roles": "已分配角色",
     "created": "员工账户已创建",

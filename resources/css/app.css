@@ -74,6 +74,8 @@
     --muted-foreground: #5c6d70;
     --input: #e2e8e8;
     --ring: hsl(var(--primary));
+    --scrollbar-thumb: #9fb0ba;
+    --scrollbar-thumb-hover: #7a8d96;
     --card: var(--card-bg);
     --card-foreground: #173236;
     --popover: var(--surface);
@@ -143,6 +145,8 @@
     --muted-foreground: #9aadaf;
     --input: #2a4043;
     --ring: hsl(var(--primary));
+    --scrollbar-thumb: #5c6d70;
+    --scrollbar-thumb-hover: #9fb0ba;
     --card: #1a2e31;
     --card-foreground: #f4f7f7;
     --popover: var(--surface);
@@ -262,6 +266,26 @@
 @layer base {
     * {
         @apply border-border;
+        scrollbar-width: thin;
+        scrollbar-color: var(--scrollbar-thumb) transparent;
+    }
+
+    *::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    *::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    *::-webkit-scrollbar-thumb {
+        border-radius: 999px;
+        background: var(--scrollbar-thumb);
+    }
+
+    *::-webkit-scrollbar-thumb:hover {
+        background: var(--scrollbar-thumb-hover);
     }
 
     html {
@@ -421,42 +445,6 @@
     width: 0;
     height: 0;
     display: none;
-}
-
-.form-scroll {
-    scrollbar-width: thin;
-    scrollbar-color: #9fb0ba transparent;
-    scrollbar-gutter: stable;
-}
-
-.form-scroll::-webkit-scrollbar {
-    width: 6px;
-}
-
-.form-scroll::-webkit-scrollbar-track {
-    margin: 6px 0;
-    background: transparent;
-}
-
-.form-scroll::-webkit-scrollbar-thumb {
-    border-radius: 999px;
-    background: #9fb0ba;
-}
-
-.form-scroll::-webkit-scrollbar-thumb:hover {
-    background: #7a8d96;
-}
-
-.dark .form-scroll {
-    scrollbar-color: #5c6d70 transparent;
-}
-
-.dark .form-scroll::-webkit-scrollbar-thumb {
-    background: #5c6d70;
-}
-
-.dark .form-scroll::-webkit-scrollbar-thumb:hover {
-    background: #9fb0ba;
 }
 
 @media (prefers-reduced-motion: reduce) {
