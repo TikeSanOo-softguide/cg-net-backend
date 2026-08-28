@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Banner;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\BannerResource;
+use App\Http\Resources\Banner\BannerResource;
 use App\Models\Banner;
 
 class BannerController extends Controller

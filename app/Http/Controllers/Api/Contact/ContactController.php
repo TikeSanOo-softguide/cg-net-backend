@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Contact;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\ContactResource;
+use App\Http\Resources\Contact\ContactResource;
 use App\Models\Contact;
 
 class ContactController extends Controller
