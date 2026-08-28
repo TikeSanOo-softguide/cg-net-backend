@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\NewsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -16,5 +18,7 @@ Route::middleware('throttle:60,1')->group(function () {
         Route::get('/news', [NewsController::class, 'index']);
         Route::get('/news/feed', [NewsController::class, 'feed']);
         Route::get('/news/{slug}', [NewsController::class, 'show']);
+        Route::get('/banners', [BannerController::class, 'show']);
+        Route::get('/contacts', [ContactController::class, 'show']);
     });
 });

@@ -25,7 +25,7 @@ class ContactController extends Controller
         );
 
         return Inertia::render('Cms/contact/Index', [
-            'items' => $listing['paginator']->through(fn (Contact $item) => $this->payload($item)),
+            'items' => $listing['paginator']->through(fn(Contact $item) => $this->payload($item)),
             'filters' => $listing['filters'],
         ]);
     }
@@ -41,7 +41,7 @@ class ContactController extends Controller
 
         activity('cms')->causedBy($request->user())->performedOn($contact)->event('created')->log('contact_created');
 
-        return redirect()->route('cms.contacts.index')->with('success', 'cms.created');
+        return redirect()->route('cms.contacts.index')->with('success', 'cms.contact.created');
     }
 
     public function edit(Contact $contact): RedirectResponse
@@ -51,11 +51,12 @@ class ContactController extends Controller
 
     public function update(UpdateContactRequest $request, Contact $contact): RedirectResponse
     {
+        $contact = Contact::findOrFail($contact->id);
         $contact->update($request->validated());
 
         activity('cms')->causedBy($request->user())->performedOn($contact)->event('updated')->log('contact_updated');
 
-        return redirect()->route('cms.contacts.index')->with('success', 'cms.updated');
+        return redirect()->route('cms.contacts.index')->with('success', 'cms.contact.updated');
     }
 
     public function destroy(Request $request, Contact $contact): RedirectResponse
@@ -64,7 +65,7 @@ class ContactController extends Controller
 
         activity('cms')->causedBy($request->user())->performedOn($contact)->event('deleted')->log('contact_deleted');
 
-        return redirect()->route('cms.contacts.index')->with('success', 'cms.deleted');
+        return redirect()->route('cms.contacts.index')->with('success', 'cms.contact.deleted');
     }
 
     public function bulkDestroy(Request $request): RedirectResponse

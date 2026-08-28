@@ -1,4 +1,4 @@
-import { FormEvent } from "react";
+import { FormEvent, useState } from "react";
 import type { InertiaFormProps } from "@inertiajs/react";
 import {
     CalendarClockIcon,
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { useTranslation } from "@/hooks/useTranslation";
 import { CmsImageField } from "../shared/CmsImageField";
+import { SquareImageUpload } from "@/components/ui/square-image-upload";
 
 export type BannerFormValues = {
     image_url_en: File | null;
@@ -52,37 +53,99 @@ export function BannerForm({
     imageUrls,
 }: BannerFormProps) {
     const { t } = useTranslation();
+    const [imageEn, setImageEn] = useState<File | null>(null);
+    const [imageZh, setImageZh] = useState<File | null>(null);
+    const [imageMy, setImageMy] = useState<File | null>(null);
+    const [submitted, setSubmitted] = useState(false);
     const formatDateForInput = (date: string | null) => {
         if (!date) return "";
 
         return date.slice(0, 10);
     };
+    const handleSubmit = (event: FormEvent) => {
+        event.preventDefault();
+        onSubmit(event);
+    };
 
     return (
         <CmsFormShell
-            onSubmit={onSubmit}
+            onSubmit={handleSubmit}
             onCancel={onCancel}
             processing={form.processing}
             mode={mode}
         >
-            <CmsImageField
-                error={form.errors.image_url_en}
-                currentUrl={imageUrls?.en}
-                required={!imageUrls?.en}
-                onChange={(file) => form.setData("image_url_en", file)}
-            />
-            <CmsImageField
-                error={form.errors.image_url_zh}
-                currentUrl={imageUrls?.zh}
-                required={!imageUrls?.zh}
-                onChange={(file) => form.setData("image_url_zh", file)}
-            />
-            <CmsImageField
-                error={form.errors.image_url_my}
-                currentUrl={imageUrls?.my}
-                required={!imageUrls?.my}
-                onChange={(file) => form.setData("image_url_my", file)}
-            />
+            <FormField
+                label={t("cms.banner.image_en")}
+                htmlFor="banner-image-en"
+                required
+                className="sm:col-span-2"
+                error={
+                    submitted && !imageEn && !imageUrls?.en
+                        ? t("cms.banner.validation.image_en_required")
+                        : form.errors.image_url_en ? t("cms.banner.validation.image_en_required"): undefined
+                }
+            >
+                <SquareImageUpload
+                    id="banner-image-en"
+                    width={520}
+                    height={150}
+                    value={imageEn}
+                    existingUrl={imageUrls?.en}
+                    onChange={(file) => {
+                        setImageEn(file);
+                        form.setData("image_url_en", file);
+                        form.clearErrors("image_url_en");
+                    }}
+                />
+            </FormField>
+            <FormField
+                label={t("cms.banner.image_zh")}
+                htmlFor="banner-image-zh"
+                required
+                className="sm:col-span-2"
+                error={
+                    submitted && !imageZh && !imageUrls?.zh
+                        ? t("validation.required")
+                        : form.errors.image_url_zh ? t("cms.banner.validation.image_zh_required"): undefined
+                }
+            >
+                <SquareImageUpload
+                    id="banner-image-zh"
+                    width={520}
+                    height={150}
+                    value={imageZh}
+                    existingUrl={imageUrls?.zh}
+                    onChange={(file) => {
+                        setImageZh(file);
+                        form.setData("image_url_zh", file);
+                        form.clearErrors("image_url_zh");
+                    }}
+                />
+            </FormField>
+            <FormField
+                label={t("cms.banner.image_my")}
+                htmlFor="banner-image-my"
+                required
+                className="sm:col-span-2"
+                error={
+                    submitted && !imageMy && !imageUrls?.my
+                        ? t("validation.required")
+                        : form.errors.image_url_my ? t("cms.banner.validation.image_my_required"): undefined
+                }
+            >
+                <SquareImageUpload
+                    id="banner-image-my"
+                    width={520}
+                    height={150}
+                    value={imageMy}
+                    existingUrl={imageUrls?.my}
+                    onChange={(file) => {
+                        setImageMy(file);
+                        form.setData("image_url_my", file);
+                        form.clearErrors("image_url_my");
+                    }}
+                />
+            </FormField>
             <FormField
                 label={t("cms.sort_order")}
                 htmlFor="sort_order"

@@ -51,11 +51,11 @@ export function BannerFormDialog({
         <FormDialog
             open={open}
             onOpenChange={onOpenChange}
-            title={isEdit ? t("cms.edit_banner") : t("cms.create_banner")}
+            title={isEdit ? t("cms.banner.edit") : t("cms.banner.create")}
             description={
                 isEdit
-                    ? t("cms.edit_banner_description")
-                    : t("cms.create_banner_description")
+                    ? t("cms.banner.edit_description")
+                    : t("cms.banner.create_description")
             }
             icon={isEdit ? SquarePenIcon : ImageIcon}
         >

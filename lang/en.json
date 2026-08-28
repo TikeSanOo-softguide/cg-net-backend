@@ -316,28 +316,18 @@
     "content": "Content",
     "tags": "Tags",
     "promotions_description": "Manage promotional campaigns and their schedules.",
-    "banners_description": "Manage homepage and in-app banners.",
     "tags_description": "Manage tags used to group news articles.",
     "gallery_description": "Manage gallery images.",
-    "contacts_description": "Manage public contact points.",
     "create_promotion": "Create promotion",
     "edit_promotion": "Edit promotion",
-    "create_banner": "Create banner",
-    "edit_banner": "Edit banner",
     "create_tag": "Create tag",
     "edit_tag": "Edit tag",
     "create_gallery": "Add gallery image",
     "edit_gallery": "Edit gallery image",
-    "create_contact": "Create contact",
-    "edit_contact": "Edit contact",
     "create_promotion_description": "Add a promotional campaign with schedule and image.",
     "edit_promotion_description": "Update this promotion's details, schedule, and image.",
-    "create_banner_description": "Add a homepage or in-app banner with link and schedule.",
-    "edit_banner_description": "Update this banner's image, link, and schedule.",
     "create_gallery_description": "Add an image to the public gallery.",
     "edit_gallery_description": "Update this gallery image and label.",
-    "create_contact_description": "Add a public contact point for customers.",
-    "edit_contact_description": "Update this contact point's details.",
     "category": {
       "label": "Category",
       "news_count": "News count",
@@ -412,7 +402,38 @@
         "image_ok": "Image looks good.",
         "category_id_ok": "Category looks good."
       }
-    }
+    },
+    "banner": {
+      "image_en": "English Banner Image",
+      "image_zh": "Chinese Banner Image",
+      "image_my": "Myanmar Banner Image",
+      "create": "Create banner",
+      "edit": "Edit banner",
+      "created": "New Banner created",
+      "updated": "Banner item updated",
+      "deleted": "Banner item deleted",
+      "description": "Manage homepage and in-app banners.",
+      "create_description": "Add a homepage or in-app banner with link and schedule.",
+      "edit_description": "Update this banner's image, link, and schedule.",
+      "validation": {
+          "image_en_required": "Please select English image.",
+          "image_zh_required": "Please select Chinese image.",
+          "image_my_required": "Please select Myanmar image."
+      }
+    },
+    "contact": {
+      "create": "Create contact",
+      "edit": "Edit contact",
+      "created": "New Contact created",
+      "updated": "Contact item updated",
+      "deleted": "Contact item deleted",
+      "description": "Manage public contact points.",
+      "create_description": "Add a public contact point for customers.",
+      "edit_description": "Update this contact point's details.",
+      "validation": {
+        "contact_point_required": "Please enter contact point."
+      }
+    }    
   },
   "permissions": {
     "view": "View",
