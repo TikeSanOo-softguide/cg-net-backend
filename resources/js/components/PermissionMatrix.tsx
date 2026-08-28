@@ -1,3 +1,6 @@
+import { CheckIcon, EyeIcon, PlusIcon, SquarePenIcon, Trash2Icon, type LucideIcon } from 'lucide-react';
+
+import { navigation } from '@/lib/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 
@@ -17,6 +20,52 @@ type PermissionMatrixProps = {
     onChange: (value: string[]) => void;
     locked?: boolean;
 };
+
+const ACTION_META: Record<string, { icon: LucideIcon; danger?: boolean }> = {
+    view: { icon: EyeIcon },
+    create: { icon: PlusIcon },
+    update: { icon: SquarePenIcon },
+    delete: { icon: Trash2Icon, danger: true },
+};
+
+function moduleIcon(module: string) {
+    return navigation.find((group) => group.id === module)?.icon;
+}
+
+function PermSwitch({
+    checked,
+    disabled,
+    label,
+    onToggle,
+}: {
+    checked: boolean;
+    disabled?: boolean;
+    label: string;
+    onToggle: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            role="switch"
+            aria-checked={checked}
+            aria-label={label}
+            disabled={disabled}
+            onClick={onToggle}
+            className={cn(
+                'relative h-[18px] w-8 shrink-0 rounded-full transition-colors',
+                checked ? 'bg-primary' : 'bg-[#d5dde2] dark:bg-muted',
+                disabled && 'cursor-not-allowed opacity-50',
+            )}
+        >
+            <span
+                className={cn(
+                    'absolute top-[2px] size-[14px] rounded-full bg-white shadow-sm transition-[left]',
+                    checked ? 'left-[16px]' : 'left-[2px]',
+                )}
+            />
+        </button>
+    );
+}
 
 export function PermissionMatrix({ groups, value, onChange, locked = false }: PermissionMatrixProps) {
     const { t } = useTranslation();
@@ -53,63 +102,97 @@ export function PermissionMatrix({ groups, value, onChange, locked = false }: Pe
     };
 
     return (
-        <div className="flex flex-col gap-3 sm:col-span-2">
+        <div className="flex flex-col gap-2 sm:col-span-2">
             {groups.map((group) => {
                 const names = group.permissions.map((permission) => permission.name);
                 const selectedCount = names.filter((name) => value.includes(name)).length;
                 const allSelected = selectedCount === names.length && names.length > 0;
+                const Icon = moduleIcon(group.module);
 
                 return (
                     <section
                         key={group.module}
-                        className="overflow-hidden rounded-[6px] border border-border/80 bg-muted/20"
+                        className="overflow-hidden rounded-[12px] border border-border/70 bg-[#f7f9fa] dark:bg-muted/20"
                     >
-                        <div className="flex items-center justify-between gap-3 border-b border-border/60 px-3 py-2.5 sm:px-4">
-                            <div className="min-w-0">
-                                <h3 className="truncate text-sm font-semibold text-foreground">{t(group.labelKey)}</h3>
-                                <p className="text-[11px] text-muted-foreground">
+                        <div className="flex items-center gap-2.5 px-2.5 py-2 sm:px-3">
+                            <span className="flex size-8 shrink-0 items-center justify-center rounded-[8px] bg-primary/12 text-primary">
+                                {Icon ? <Icon className="size-4" strokeWidth={1.8} /> : null}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                                <h3 className="min-w-0 text-[13px] font-semibold leading-[1.75] text-primary">{t(group.labelKey)}</h3>
+                                <p className="text-[10px] leading-3.5 text-muted-foreground">
                                     {selectedCount}/{names.length}
                                 </p>
                             </div>
-                            <button
-                                type="button"
+                            <PermSwitch
+                                checked={allSelected}
                                 disabled={locked}
-                                onClick={() => toggleGroup(group)}
-                                className={cn(
-                                    'rounded-[6px] px-2.5 py-1 text-[11px] font-medium transition-colors',
-                                    allSelected
-                                        ? 'bg-primary text-primary-foreground'
-                                        : 'bg-primary/12 text-primary hover:bg-primary/18',
-                                    locked && 'cursor-not-allowed opacity-70',
-                                )}
-                            >
-                                {allSelected ? t('permissions.clear') : t('permissions.select_all')}
-                            </button>
+                                label={allSelected ? t('permissions.clear') : t('permissions.select_all')}
+                                onToggle={() => toggleGroup(group)}
+                            />
                         </div>
-                        <div className="grid grid-cols-2 gap-1.5 p-3 sm:grid-cols-4 sm:px-4">
+                        <div className="grid grid-cols-2 gap-1.5 px-2.5 pb-2.5 sm:grid-cols-4 sm:px-3">
                             {group.permissions.map((permission) => {
                                 const checked = value.includes(permission.name);
+                                const meta = ACTION_META[permission.action];
+                                const ActionIcon = meta?.icon;
+                                const danger = Boolean(meta?.danger);
 
                                 return (
-                                    <label
+                                    <button
                                         key={permission.name}
+                                        type="button"
+                                        role="checkbox"
+                                        aria-checked={checked}
+                                        disabled={locked}
+                                        onClick={() => toggle(permission.name)}
                                         className={cn(
-                                            'flex cursor-pointer items-center gap-2 rounded-[6px] border px-2.5 py-2 text-sm transition-colors',
+                                            'flex items-center gap-1.5 rounded-[8px] border px-1.5 py-1.5 text-left transition-colors',
                                             checked
-                                                ? 'border-primary/40 bg-primary/10 text-primary'
-                                                : 'border-transparent bg-card text-foreground hover:border-primary/25 hover:bg-primary/6',
-                                            locked && 'cursor-not-allowed',
+                                                ? danger
+                                                    ? 'border-danger/35 bg-danger/[0.08]'
+                                                    : 'border-primary/45 bg-white shadow-[0_1px_2px_rgb(23_50_54/0.06)] dark:bg-card'
+                                                : 'border-transparent bg-white/80 hover:border-primary/20 hover:bg-white dark:bg-card/70 dark:hover:bg-card',
+                                            locked && 'cursor-not-allowed opacity-70',
                                         )}
                                     >
-                                        <input
-                                            type="checkbox"
-                                            className="size-3.5 accent-primary"
-                                            checked={checked}
-                                            disabled={locked}
-                                            onChange={() => toggle(permission.name)}
-                                        />
-                                        <span className="truncate font-medium">{t(permission.labelKey)}</span>
-                                    </label>
+                                        <span
+                                            className={cn(
+                                                'flex size-[16px] shrink-0 items-center justify-center rounded-[4px] border transition-colors',
+                                                checked
+                                                    ? danger
+                                                        ? 'border-danger bg-danger text-danger-foreground'
+                                                        : 'border-primary bg-primary text-primary-foreground'
+                                                    : 'border-input bg-white dark:bg-card',
+                                            )}
+                                        >
+                                            {checked ? <CheckIcon className="size-2.5" strokeWidth={3} /> : null}
+                                        </span>
+                                        <span
+                                            className={cn(
+                                                'flex size-6 shrink-0 items-center justify-center rounded-[6px]',
+                                                checked
+                                                    ? danger
+                                                        ? 'bg-danger/12 text-danger'
+                                                        : 'bg-primary/12 text-primary'
+                                                    : 'bg-muted text-muted-foreground',
+                                            )}
+                                        >
+                                            {ActionIcon ? <ActionIcon className="size-3" strokeWidth={1.9} /> : null}
+                                        </span>
+                                        <span
+                                            className={cn(
+                                                'min-w-0 text-[11px] font-medium leading-[1.75]',
+                                                checked
+                                                    ? danger
+                                                        ? 'text-danger'
+                                                        : 'text-primary'
+                                                    : 'text-muted-foreground',
+                                            )}
+                                        >
+                                            {t(permission.labelKey)}
+                                        </span>
+                                    </button>
                                 );
                             })}
                         </div>

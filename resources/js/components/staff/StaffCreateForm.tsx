@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useTranslation } from '@/hooks/useTranslation';
 import { formControlStateClass } from '@/lib/form-control';
 import { staffCreateSuccessMessage, validateStaffCreate, validateStaffCreateField } from '@/lib/staff-create-validation';
+import { staffRoleCard } from '@/lib/staff-roles';
 import { cn } from '@/lib/utils';
 
 const autocompleteOff = {
@@ -219,8 +220,9 @@ export function StaffCreateForm({
                 <MultiSelect
                     id="staff-create-role-ids"
                     icon={ShieldIcon}
+                    heading={t('staff.roles')}
                     values={form.data.role_ids.map(String)}
-                    options={roles.map((role) => ({ value: String(role.id), label: role.name }))}
+                    options={roles.map((role) => staffRoleCard(role, t))}
                     placeholder={t('staff.roles_placeholder')}
                     invalid={fieldState('role_ids') === 'error'}
                     onChange={(values) => {

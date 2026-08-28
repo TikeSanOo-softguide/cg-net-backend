@@ -8,6 +8,7 @@ import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
+import { staffRoleCard } from '@/lib/staff-roles';
 
 export type StaffRoleOption = {
     id: number;
@@ -116,8 +117,9 @@ export function StaffForm({
                         <MultiSelect
                             id="role_ids"
                             icon={ShieldIcon}
+                            heading={t('staff.roles')}
                             values={form.data.role_ids.map(String)}
-                            options={roles.map((role) => ({ value: String(role.id), label: role.name }))}
+                            options={roles.map((role) => staffRoleCard(role, t))}
                             placeholder={t('staff.roles_placeholder')}
                             invalid={Boolean(form.errors.role_ids)}
                             onChange={(values) => form.setData('role_ids', values.map(Number))}

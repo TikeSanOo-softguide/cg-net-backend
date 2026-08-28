@@ -439,6 +439,12 @@
     "password_optional": "Leave blank to keep the current password",
     "roles": "Roles",
     "roles_placeholder": "Select one or more roles",
+    "role_descriptions": {
+      "super_admin": "Full access to every module and setting.",
+      "staff_officer": "Customers, billing, packages, CPE, and CMS.",
+      "support_agent": "Support chat, service requests, and customers.",
+      "custom": "Custom role with assigned permissions."
+    },
     "validation": {
       "name_required": "Please enter a name.",
       "name_min": "Name must be at least 2 characters.",
@@ -446,7 +452,7 @@
       "name_ok": "Name looks good.",
       "username_required": "Please enter a username.",
       "username_min": "Username must be at least 3 characters.",
-      "username_invalid": "Username may only contain letters, numbers, spaces, dots, underscores, and hyphens.",
+      "username_invalid": "Username must start with a letter and may only contain letters, numbers, spaces, dots, underscores, and hyphens.",
       "username_taken": "This username is already in use.",
       "username_ok": "Username looks good.",
       "password_required": "Please enter a password.",

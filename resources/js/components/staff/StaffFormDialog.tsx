@@ -38,6 +38,7 @@ export function StaffFormDialog({ open, onOpenChange, roles, staff }: StaffFormD
             title={isEdit ? t('staff.edit') : t('staff.create')}
             description={isEdit ? t('staff.edit_description') : t('staff.create_description')}
             icon={isEdit ? UserCogIcon : UserPlusIcon}
+            size="lg"
         >
             {open ? (
                 <StaffFormDialogBody
@@ -100,12 +101,6 @@ function StaffFormDialogBody({
             mode="edit"
         />
     ) : (
-        <StaffCreateForm
-            form={form}
-            roles={roles}
-            onSubmit={submit}
-            onCancel={onClose}
-            mode="create"
-        />
+        <StaffCreateForm form={form} roles={roles} onSubmit={submit} onCancel={onClose} mode="create" />
     );
 }

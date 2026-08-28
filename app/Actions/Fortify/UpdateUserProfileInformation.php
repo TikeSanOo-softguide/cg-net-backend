@@ -25,7 +25,7 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
                 'string',
                 'min:3',
                 'max:50',
-                'regex:/^[A-Za-z0-9]+(?:[ ._ -][A-Za-z0-9]+)*$/',
+                'regex:/^[A-Za-z][A-Za-z0-9]*(?:[ ._ -][A-Za-z0-9]+)*$/',
                 Rule::unique('admins')->ignore($user->id),
             ],
         ])->validateWithBag('updateProfileInformation');

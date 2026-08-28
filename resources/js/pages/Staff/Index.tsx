@@ -11,6 +11,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
 import { StaffDetailDialog, type StaffDetailMember } from '@/components/staff/StaffDetailDialog';
 import { StaffFormDialog, type StaffFormMember } from '@/components/staff/StaffFormDialog';
+import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
 import type { StaffRoleOption } from '@/components/staff/StaffForm';
 import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -150,7 +151,12 @@ export default function StaffIndex({ staff, roles = [], filters }: StaffIndexPro
                             className: 'font-medium',
                             mobile: 'title',
                             sortable: true,
-                            cell: (row) => row.username,
+                            cell: (row) => (
+                                <span className="flex min-w-0 items-center gap-2.5">
+                                    <StaffListAvatar username={row.username} />
+                                    <span className="truncate">{row.username}</span>
+                                </span>
+                            ),
                         },
                         {
                             id: 'roles',

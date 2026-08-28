@@ -439,6 +439,12 @@
     "password_optional": "留空则保留当前密码",
     "roles": "角色",
     "roles_placeholder": "选择一个或多个角色",
+    "role_descriptions": {
+      "super_admin": "可访问全部模块与系统设置。",
+      "staff_officer": "客户、计费、套餐、CPE 与内容管理。",
+      "support_agent": "客服聊天、服务申请与客户查看。",
+      "custom": "具有已分配权限的自定义角色。"
+    },
     "validation": {
       "name_required": "请输入姓名。",
       "name_min": "姓名至少需要 2 个字符。",
@@ -446,7 +452,7 @@
       "name_ok": "姓名填写正确。",
       "username_required": "请输入用户名。",
       "username_min": "用户名至少需要 3 个字符。",
-      "username_invalid": "用户名只能包含字母、数字、空格、点、下划线和连字符。",
+      "username_invalid": "用户名必须以字母开头，且只能包含字母、数字、空格、点、下划线和连字符。",
       "username_taken": "该用户名已被使用。",
       "username_ok": "用户名填写正确。",
       "password_required": "请输入密码。",

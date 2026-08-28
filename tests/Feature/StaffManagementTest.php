@@ -97,6 +97,25 @@ class StaffManagementTest extends TestCase
             ->assertSessionHasErrors(['username', 'password', 'status', 'role_ids']);
     }
 
+    public function test_staff_username_must_start_with_a_letter(): void
+    {
+        $actor = Admin::factory()->create();
+        $actor->assignRole(AppPermissions::SuperAdmin);
+        $staffRole = Role::query()->where('name', AppPermissions::StaffOfficer)->firstOrFail();
+
+        $this->actingAs($actor, 'web')
+            ->from('/staff')
+            ->post('/staff', [
+                'username' => '1ops',
+                'password' => 'password',
+                'password_confirmation' => 'password',
+                'status' => 'active',
+                'role_ids' => [$staffRole->id],
+            ])
+            ->assertRedirect('/staff')
+            ->assertSessionHasErrors('username');
+    }
+
     public function test_admins_can_create_update_and_delete_a_role_with_permission_matrix(): void
     {
         $actor = Admin::factory()->create();
