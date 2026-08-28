@@ -12,10 +12,7 @@ final class CmsRules
      */
     public static function image(bool $required): array
     {
-        return [
-            $required ? 'required' : 'nullable',
-            File::image()->max(5120),
-        ];
+        return [$required ? 'required' : 'nullable', File::image()->max(5120)];
     }
 
     /**
@@ -26,10 +23,8 @@ final class CmsRules
         return [
             'required',
             'string',
-            'max:180',
-            Rule::unique($table, 'slug')
-                ->whereNull('deleted_at')
-                ->ignore($ignoreId),
+            'max:255',
+            Rule::unique($table, 'slug')->whereNull('deleted_at')->ignore($ignoreId),
         ];
     }
 }

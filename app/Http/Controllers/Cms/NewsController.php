@@ -21,14 +21,14 @@ class NewsController extends Controller
     {
         $listing = CmsListing::paginate(
             $request,
-            News::query()->with('category:id,name_en'),
+            News::query()->with('category:id,name_en,name_zh,name_my'),
             ['title_en', 'title_zh', 'title_my', 'slug'],
             ['title_en', 'title_zh', 'title_my', 'status', 'created_at'],
             statusColumn: 'status',
         );
 
         return Inertia::render('Cms/news/Index', [
-            'items' => $listing['paginator']->through(fn (News $item) => $this->payload($item)),
+            'items' => $listing['paginator']->through(fn(News $item) => $this->payload($item)),
             'filters' => $listing['filters'],
             ...$this->formOptions(),
         ]);
@@ -50,16 +50,16 @@ class NewsController extends Controller
         }
 
         $news = News::query()->create([
-            'category_id'       => $data['category_id'],
-            'title_en'          => $data['title_en'],
-            'title_zh'          => $data['title_zh'],
-            'title_my'          => $data['title_my'],
-            'description_en'    => $data['description_en'],
-            'description_zh'    => $data['description_zh'],
-            'description_my'    => $data['description_my'],
-            'image_url'         => $data['image_url'],
-            'status'            => $data['status'],
-            'slug'              => $data['slug']
+            'category_id' => $data['category_id'],
+            'title_en' => $data['title_en'],
+            'title_zh' => $data['title_zh'],
+            'title_my' => $data['title_my'],
+            'description_en' => $data['description_en'],
+            'description_zh' => $data['description_zh'],
+            'description_my' => $data['description_my'],
+            'image_url' => $data['image_url'],
+            'status' => $data['status'],
+            'slug' => $data['slug'],
         ]);
 
         activity('cms')->causedBy($request->user())->performedOn($news)->event('created')->log('news_created');
@@ -75,26 +75,27 @@ class NewsController extends Controller
     public function update(UpdateNewsRequest $request, News $news): RedirectResponse
     {
         $data = $request->safe()->except('image');
-        
+
         if ($request->hasFile('image')) {
-            $data['image_url'] = StoresPublicImage::store($request->file('image'), 'cms/news', $news->image_path);
-        } else if ($data['image_url'] == 'clear') {
-            $data['image_url'] = '';
+            $data['image_url'] = StoresPublicImage::store($request->file('image'), 'cms/news', $news->image_url);
+        } elseif (array_key_exists('image_url', $data) && !isset($data['image_url'])) {
+            $data['image_url'] = null;
+            StoresPublicImage::delete($news->image_url);
         } else {
             $data['image_url'] = $news->image_url;
         }
 
         $news->update([
-            'category_id'       => $data['category_id'],
-            'title_en'          => $data['title_en'],
-            'title_zh'          => $data['title_zh'],
-            'title_my'          => $data['title_my'],
-            'description_en'    => $data['description_en'],
-            'description_zh'    => $data['description_zh'],
-            'description_my'    => $data['description_my'],
-            'image_url'         => $data['image_url'],
-            'status'            => $data['status'],
-            'slug'              => $data['slug']
+            'category_id' => $data['category_id'],
+            'title_en' => $data['title_en'],
+            'title_zh' => $data['title_zh'],
+            'title_my' => $data['title_my'],
+            'description_en' => $data['description_en'],
+            'description_zh' => $data['description_zh'],
+            'description_my' => $data['description_my'],
+            'image_url' => $data['image_url'],
+            'status' => $data['status'],
+            'slug' => $data['slug'],
         ]);
 
         activity('cms')->causedBy($request->user())->performedOn($news)->event('updated')->log('news_updated');
@@ -126,15 +127,21 @@ class NewsController extends Controller
     }
 
     /**
-    * @return array{categories: list<array{id: int, name: string}>}
+     * @return array{categories: list<array{id: int, name: string}>}
      */
     private function formOptions(): array
     {
         return [
-            'categories' => Category::query()->orderBy('name_en')->get(['id', 'name_en'])->map(fn (Category $category) => [
-                'id' => $category->id,
-                'name' => $category->name_en,
-            ])->all(),
+            'categories' => Category::query()
+                ->orderBy('name_en')
+                ->get(['id', 'name_en'])
+                ->map(
+                    fn(Category $category) => [
+                        'id' => $category->id,
+                        'name' => $category->name_en,
+                    ],
+                )
+                ->all(),
         ];
     }
 
