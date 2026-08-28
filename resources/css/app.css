@@ -9,10 +9,10 @@
 @import '@fontsource/instrument-sans/500.css';
 @import '@fontsource/instrument-sans/600.css';
 @import '@fontsource/instrument-sans/700.css';
-@import '@fontsource/noto-sans-myanmar/myanmar-400.css';
-@import '@fontsource/noto-sans-myanmar/myanmar-500.css';
-@import '@fontsource/noto-sans-myanmar/myanmar-600.css';
-@import '@fontsource/noto-sans-myanmar/myanmar-700.css';
+@import '@fontsource/noto-sans-myanmar/400.css';
+@import '@fontsource/noto-sans-myanmar/500.css';
+@import '@fontsource/noto-sans-myanmar/600.css';
+@import '@fontsource/noto-sans-myanmar/700.css';
 @import '@fontsource/jetbrains-mono/400.css';
 @import '@fontsource/jetbrains-mono/500.css';
 
@@ -190,9 +190,9 @@
 }
 
 @theme inline {
-    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
-    --font-heading: 'Lexend', var(--font-sans);
+    --font-sans: 'Inter', 'Noto Sans Myanmar', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-heading: 'Lexend', 'Noto Sans Myanmar', var(--font-sans);
     --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
         'Courier New', monospace;
 
@@ -270,12 +270,23 @@
     }
 
     html[lang='my'],
-    html[lang='my'] body {
-        --font-sans: 'Noto Sans Myanmar', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    html[lang='my'] body,
+    html[lang='my'] button,
+    html[lang='my'] input,
+    html[lang='my'] textarea,
+    html[lang='my'] select,
+    html[lang='my'] h1,
+    html[lang='my'] h2,
+    html[lang='my'] h3,
+    html[lang='my'] h4,
+    html[lang='my'] h5,
+    html[lang='my'] h6 {
+        --font-sans: 'Noto Sans Myanmar', 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
             'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-        --font-heading: 'Noto Sans Myanmar', 'Instrument Sans', var(--font-sans);
-        font-family: var(--font-sans);
-        line-height: 1.7;
+        --font-heading: 'Noto Sans Myanmar', 'Lexend', var(--font-sans);
+        font-family: 'Noto Sans Myanmar', 'Inter', ui-sans-serif, system-ui, sans-serif;
+        line-height: 1.75;
+        font-synthesis: none;
     }
 
     html.dark {
@@ -410,6 +421,42 @@
     width: 0;
     height: 0;
     display: none;
+}
+
+.form-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #9fb0ba transparent;
+    scrollbar-gutter: stable;
+}
+
+.form-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.form-scroll::-webkit-scrollbar-track {
+    margin: 6px 0;
+    background: transparent;
+}
+
+.form-scroll::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #9fb0ba;
+}
+
+.form-scroll::-webkit-scrollbar-thumb:hover {
+    background: #7a8d96;
+}
+
+.dark .form-scroll {
+    scrollbar-color: #5c6d70 transparent;
+}
+
+.dark .form-scroll::-webkit-scrollbar-thumb {
+    background: #5c6d70;
+}
+
+.dark .form-scroll::-webkit-scrollbar-thumb:hover {
+    background: #9fb0ba;
 }
 
 @media (prefers-reduced-motion: reduce) {

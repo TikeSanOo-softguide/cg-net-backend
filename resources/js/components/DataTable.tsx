@@ -500,7 +500,7 @@ export function DataTable<T>({
                                         <div className="flex items-start justify-between gap-2.5">
                                             <div className="min-w-0">
                                                 {mobileTitle ? (
-                                                    <p className="truncate text-[13px] font-semibold text-foreground">{mobileTitle.cell(row)}</p>
+                                                    <div className="min-w-0 text-[13px] font-semibold text-foreground">{mobileTitle.cell(row)}</div>
                                                 ) : null}
                                                 {mobileSubtitle ? (
                                                     <p className="mt-0.5 truncate text-xs text-muted-foreground">{mobileSubtitle.cell(row)}</p>

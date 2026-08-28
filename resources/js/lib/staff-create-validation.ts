@@ -2,7 +2,7 @@ import type { StaffFormValues } from '@/components/staff/StaffForm';
 
 type Translate = (key: string) => string;
 
-const usernamePattern = /^[A-Za-z0-9]+(?:[ ._ -][A-Za-z0-9]+)*$/;
+const usernamePattern = /^[A-Za-z][A-Za-z0-9]*(?:[ ._ -][A-Za-z0-9]+)*$/;
 
 export function validateStaffCreateField(
     field: keyof StaffFormValues,

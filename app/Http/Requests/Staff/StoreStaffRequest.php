@@ -25,7 +25,7 @@ class StoreStaffRequest extends FormRequest
                 'string',
                 'min:3',
                 'max:50',
-                'regex:/^[A-Za-z0-9]+(?:[ ._ -][A-Za-z0-9]+)*$/',
+                'regex:/^[A-Za-z][A-Za-z0-9]*(?:[ ._ -][A-Za-z0-9]+)*$/',
                 Rule::unique('admins', 'username')->whereNull('deleted_at'),
             ],
             'password' => ['required', 'string', 'min:8', Password::defaults(), 'confirmed'],
