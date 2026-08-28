@@ -13,6 +13,18 @@ import {
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 
+type FormDialogSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'full';
+
+const sizeClasses: Record<FormDialogSize, string> = {
+    sm: 'sm:w-[min(100%-2rem,420px)] sm:max-w-[420px]',
+    md: 'sm:w-[min(100%-2rem,560px)] sm:max-w-[560px]',
+    lg: 'sm:w-[min(100%-2rem,720px)] sm:max-w-[720px]',
+    xl: 'sm:w-[min(100%-2rem,880px)] sm:max-w-[880px]',
+    '2xl': 'sm:w-[min(100%-2rem,1040px)] sm:max-w-[1040px]',
+    '3xl': 'sm:w-[min(100%-2rem,1200px)] sm:max-w-[1200px]',
+    full: 'sm:w-[calc(100%-2rem)] sm:max-w-none',
+};
+
 type FormDialogProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -21,6 +33,7 @@ type FormDialogProps = {
     icon: LucideIcon;
     children: ReactNode;
     className?: string;
+    size?: FormDialogSize;
 };
 
 export function FormDialog({
@@ -31,6 +44,7 @@ export function FormDialog({
     icon: Icon,
     children,
     className,
+    size = 'md',
 }: FormDialogProps) {
     const { t } = useTranslation();
 
@@ -41,7 +55,8 @@ export function FormDialog({
                 className={cn(
                     'flex flex-col gap-0 overflow-hidden border-border/80 bg-[#f3f6f7] p-0 shadow-[0_8px_24px_rgb(23_50_54/0.08),0_20px_48px_rgb(23_50_54/0.12)] dark:bg-[#152628] dark:shadow-[0_8px_24px_rgb(0_0_0/0.28),0_20px_48px_rgb(0_0_0/0.32)] [&>button.absolute]:hidden',
                     'z-[81] inset-0 top-0 left-0 h-dvh max-h-dvh w-full max-w-none translate-x-0 translate-y-0 rounded-none',
-                    'sm:inset-auto sm:top-[50%] sm:left-[50%] sm:h-auto sm:max-h-[min(90vh,720px)] sm:w-[min(100%-2rem,560px)] sm:max-w-[560px] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-[12px]',
+                    'sm:inset-auto sm:top-[50%] sm:left-[50%] sm:h-auto sm:max-h-[min(90vh,720px)] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-[12px]',
+                    sizeClasses[size],
                     className,
                 )}
             >

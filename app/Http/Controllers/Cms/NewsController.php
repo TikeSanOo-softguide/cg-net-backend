@@ -22,8 +22,8 @@ class NewsController extends Controller
         $listing = CmsListing::paginate(
             $request,
             News::query()->with('category:id,name_en'),
-            ['title', 'slug'],
-            ['title', 'status', 'created_at'],
+            ['title_en', 'title_zh', 'title_my', 'slug'],
+            ['title_en', 'title_zh', 'title_my', 'status', 'created_at'],
             statusColumn: 'status',
         );
 
@@ -44,14 +44,27 @@ class NewsController extends Controller
         $data = $request->safe()->except('image');
 
         if ($request->hasFile('image')) {
-            $data['image_path'] = StoresPublicImage::store($request->file('image'), 'cms/news');
+            $data['image_url'] = StoresPublicImage::store($request->file('image'), 'cms/news');
+        } else {
+            $data['image_url'] = null;
         }
 
-        $news = News::query()->create($data);
+        $news = News::query()->create([
+            'category_id'       => $data['category_id'],
+            'title_en'          => $data['title_en'],
+            'title_zh'          => $data['title_zh'],
+            'title_my'          => $data['title_my'],
+            'description_en'    => $data['description_en'],
+            'description_zh'    => $data['description_zh'],
+            'description_my'    => $data['description_my'],
+            'image_url'         => $data['image_url'],
+            'status'            => $data['status'],
+            'slug'              => $data['slug']
+        ]);
 
         activity('cms')->causedBy($request->user())->performedOn($news)->event('created')->log('news_created');
 
-        return redirect()->route('cms.news.index')->with('success', 'cms.created');
+        return redirect()->route('cms.news.index')->with('success', 'cms.news.created');
     }
 
     public function edit(News $news): RedirectResponse
@@ -62,16 +75,31 @@ class NewsController extends Controller
     public function update(UpdateNewsRequest $request, News $news): RedirectResponse
     {
         $data = $request->safe()->except('image');
-
+        
         if ($request->hasFile('image')) {
-            $data['image_path'] = StoresPublicImage::store($request->file('image'), 'cms/news', $news->image_path);
+            $data['image_url'] = StoresPublicImage::store($request->file('image'), 'cms/news', $news->image_path);
+        } else if ($data['image_url'] == 'clear') {
+            $data['image_url'] = '';
+        } else {
+            $data['image_url'] = $news->image_url;
         }
 
-        $news->update($data);
+        $news->update([
+            'category_id'       => $data['category_id'],
+            'title_en'          => $data['title_en'],
+            'title_zh'          => $data['title_zh'],
+            'title_my'          => $data['title_my'],
+            'description_en'    => $data['description_en'],
+            'description_zh'    => $data['description_zh'],
+            'description_my'    => $data['description_my'],
+            'image_url'         => $data['image_url'],
+            'status'            => $data['status'],
+            'slug'              => $data['slug']
+        ]);
 
         activity('cms')->causedBy($request->user())->performedOn($news)->event('updated')->log('news_updated');
 
-        return redirect()->route('cms.news.index')->with('success', 'cms.updated');
+        return redirect()->route('cms.news.index')->with('success', 'cms.news.updated');
     }
 
     public function destroy(Request $request, News $news): RedirectResponse
@@ -81,7 +109,7 @@ class NewsController extends Controller
 
         activity('cms')->causedBy($request->user())->performedOn($news)->event('deleted')->log('news_deleted');
 
-        return redirect()->route('cms.news.index')->with('success', 'cms.deleted');
+        return redirect()->route('cms.news.index')->with('success', 'cms.news.deleted');
     }
 
     public function bulkDestroy(Request $request): RedirectResponse
@@ -118,12 +146,18 @@ class NewsController extends Controller
         return [
             'id' => $news->id,
             'category_id' => $news->category_id,
-            'category_name' => $news->category?->name,
-            'title' => $news->title,
+            'category_name_en' => $news->category?->name_en,
+            'category_name_zh' => $news->category?->name_zh,
+            'category_name_my' => $news->category?->name_my,
+            'title_en' => $news->title_en,
+            'title_zh' => $news->title_zh,
+            'title_my' => $news->title_my,
+            'description_en' => $news->description_en,
+            'description_zh' => $news->description_zh,
+            'description_my' => $news->description_my,
             'slug' => $news->slug,
-            'content' => $news->content,
             'status' => $news->status->value,
-            'image_url' => StoresPublicImage::url($news->image_path),
+            'image_url' => StoresPublicImage::url($news->image_url),
             'created_at' => $news->created_at?->toDateString(),
         ];
     }

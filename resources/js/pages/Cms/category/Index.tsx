@@ -12,7 +12,7 @@ type Props = {
 };
 
 export default function CategoriesIndex({ items, filters }: Props) {
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
     const [formOpen, setFormOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<CategoryItem | null>(null);
 
@@ -20,7 +20,7 @@ export default function CategoriesIndex({ items, filters }: Props) {
         <>
             <Head title={t('menu.cms_categories')} />
             <CmsIndexPage
-                createLabelKey="cms.create_category"
+                createLabelKey="cms.category.create"
                 indexHref="/cms/categories"
                 destroyBase="/cms/categories"
                 items={items}
@@ -30,7 +30,13 @@ export default function CategoriesIndex({ items, filters }: Props) {
                     setFormOpen(true);
                 }}
                 onEdit={(row) => {
-                    setEditingItem({ id: row.id, name: row.name, slug: row.slug });
+                    setEditingItem({
+                        id: row.id,
+                        name_en: row.name_en,
+                        name_zh: row.name_zh,
+                        name_my: row.name_my,
+                        slug: row.slug,
+                    });
                     setFormOpen(true);
                 }}
                 formDialog={
@@ -47,9 +53,16 @@ export default function CategoriesIndex({ items, filters }: Props) {
                     />
                 }
                 columns={[
-                    { id: 'name', header: t('cms.name'), mobile: 'title', sortable: true, className: 'font-medium', cell: (row) => row.name },
+                    {
+                        id: 'name_en',
+                        header: t('cms.category.label'),
+                        mobile: 'title',
+                        sortable: true,
+                        className: 'font-medium',
+                        cell: (row) => locale === 'zh' ? row.name_zh || row.name_en : locale === 'my' ? row.name_my || row.name_en : row.name_en,
+                    },
                     { id: 'slug', header: t('cms.slug'), mobile: 'subtitle', sortable: true, cell: (row) => row.slug },
-                    { id: 'news_count', header: t('cms.news'), mobile: 'meta', cell: (row) => row.news_count },
+                    { id: 'news_count', header: t('cms.category.news_count'), mobile: 'meta', cell: (row) => row.news_count },
                 ]}
             />
         </>

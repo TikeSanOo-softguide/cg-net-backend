@@ -9,7 +9,9 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 export type CategoryItem = {
     id: number;
-    name: string;
+    name_en: string;
+    name_zh: string;
+    name_my: string;
     slug: string;
 };
 
@@ -21,7 +23,9 @@ type CategoryFormDialogProps = {
 
 function emptyCategoryForm(): CategoryFormValues {
     return {
-        name: '',
+        name_en: '',
+        name_zh: '',
+        name_my: '',
         slug: '',
     };
 }
@@ -34,8 +38,8 @@ export function CategoryFormDialog({ open, onOpenChange, item }: CategoryFormDia
         <FormDialog
             open={open}
             onOpenChange={onOpenChange}
-            title={isEdit ? t('cms.edit_category') : t('cms.create_category')}
-            description={isEdit ? t('cms.edit_category_description') : t('cms.create_category_description')}
+            title={isEdit ? t('cms.category.edit') : t('cms.category.create')}
+            description={isEdit ? t('cms.category.edit_description') : t('cms.category.create_description')}
             icon={isEdit ? SquarePenIcon : FolderTreeIcon}
         >
             {open ? (
@@ -54,9 +58,11 @@ function CategoryFormDialogBody({ item, onClose }: { item: CategoryItem | null; 
     const form = useForm<CategoryFormValues>(
         item
             ? {
-                  name: item.name,
-                  slug: item.slug,
-              }
+                name_en: item.name_en,
+                name_zh: item.name_zh,
+                name_my: item.name_my,
+                slug: item.slug,
+            }
             : emptyCategoryForm(),
     );
 

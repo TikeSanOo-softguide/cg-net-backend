@@ -20,8 +20,8 @@ class CategoryController extends Controller
         $listing = CmsListing::paginate(
             $request,
             Category::query()->withCount('news'),
-            ['name_en', 'slug'],
-            ['name_en', 'slug', 'created_at'],
+            ['name_en','name_zh','name_my', 'slug'],
+            ['name_en','name_zh','name_my', 'slug', 'created_at'],
         );
 
         return Inertia::render('Cms/category/Index', [
@@ -39,13 +39,15 @@ class CategoryController extends Controller
     {
         $data = $request->validated();
         $category = Category::query()->create([
-            'name_en' => $data['name'],
-            'slug' => $data['slug'],
+            'name_en'   => $data['name_en'],
+            'name_zh'   => $data['name_zh'],
+            'name_my'   => $data['name_my'],
+            'slug'      => $data['slug'],
         ]);
 
         activity('cms')->causedBy($request->user())->performedOn($category)->event('created')->log('category_created');
 
-        return redirect()->route('cms.categories.index')->with('success', 'cms.created');
+        return redirect()->route('cms.categories.index')->with('success', 'cms.category.created');
     }
 
     public function edit(Category $category): RedirectResponse
@@ -57,26 +59,28 @@ class CategoryController extends Controller
     {
         $data = $request->validated();
         $category->update([
-            'name_en' => $data['name'],
-            'slug' => $data['slug'],
+            'name_en'   => $data['name_en'],
+            'name_zh'   => $data['name_zh'],
+            'name_my'   => $data['name_my'],
+            'slug'      => $data['slug'],
         ]);
 
         activity('cms')->causedBy($request->user())->performedOn($category)->event('updated')->log('category_updated');
 
-        return redirect()->route('cms.categories.index')->with('success', 'cms.updated');
+        return redirect()->route('cms.categories.index')->with('success', 'cms.category.updated');
     }
 
     public function destroy(Request $request, Category $category): RedirectResponse
     {
         if ($category->news()->exists()) {
-            return back()->withErrors(['delete' => 'cms.category_in_use']);
+            return back()->withErrors(['delete' => 'cms.category.in_use']);
         }
 
         $category->delete();
 
         activity('cms')->causedBy($request->user())->performedOn($category)->event('deleted')->log('category_deleted');
 
-        return redirect()->route('cms.categories.index')->with('success', 'cms.deleted');
+        return redirect()->route('cms.categories.index')->with('success', 'cms.category.deleted');
     }
 
     public function bulkDestroy(Request $request): RedirectResponse
@@ -86,7 +90,7 @@ class CategoryController extends Controller
             Category::query(),
             'cms.categories.index',
             'category_deleted',
-            deletionError: fn (Category $category) => $category->news()->exists() ? 'cms.category_in_use' : null,
+            deletionError: fn (Category $category) => $category->news()->exists() ? 'cms.category.in_use' : null,
         );
     }
 
@@ -96,11 +100,13 @@ class CategoryController extends Controller
     private function payload(Category $category): array
     {
         return [
-            'id' => $category->id,
-            'name' => $category->name_en,
-            'slug' => $category->slug,
-            'news_count' => $category->news_count ?? $category->news()->count(),
-            'created_at' => $category->created_at?->toDateString(),
+            'id'            => $category->id,
+            'name_en'       => $category->name_en,
+            'name_zh'       => $category->name_zh,
+            'name_my'       => $category->name_my,
+            'slug'          => $category->slug,
+            'news_count'    => $category->news_count ?? $category->news()->count(),
+            'created_at'    => $category->created_at?->toDateString(),
         ];
     }
 }

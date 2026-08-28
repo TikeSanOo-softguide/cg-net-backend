@@ -10,9 +10,13 @@ import { useTranslation } from '@/hooks/useTranslation';
 export type NewsItem = {
     id: number;
     category_id: number | null;
-    title: string;
+    title_en: string;
+    title_zh: string;
+    title_my: string;
+    description_en: string;
+    description_zh: string;
+    description_my: string;
     slug: string;
-    content: string;
     status: string;
     image_url: string | null;
 };
@@ -27,11 +31,16 @@ type NewsFormDialogProps = {
 function emptyNewsForm(): NewsFormValues {
     return {
         category_id: '',
-        title: '',
+        title_en: '',
+        title_zh: '',
+        title_my: '',
+        description_en: '',
+        description_zh: '',
+        description_my: '',
         slug: '',
-        content: '',
-        status: 'draft',
+        status: 'published',
         image: null,
+        image_url: ''
     };
 }
 
@@ -43,9 +52,10 @@ export function NewsFormDialog({ open, onOpenChange, item, categories }: NewsFor
         <FormDialog
             open={open}
             onOpenChange={onOpenChange}
-            title={isEdit ? t('cms.edit_news') : t('cms.create_news')}
-            description={isEdit ? t('cms.edit_news_description') : t('cms.create_news_description')}
+            title={isEdit ? t('cms.news.edit') : t('cms.news.create')}
+            description={isEdit ? t('cms.news.edit_description') : t('cms.news.create_description')}
             icon={isEdit ? SquarePenIcon : NewspaperIcon}
+            size='3xl'
         >
             {open ? (
                 <NewsFormDialogBody
@@ -72,13 +82,18 @@ function NewsFormDialogBody({
     const form = useForm<NewsFormValues>(
         item
             ? {
-                  category_id: item.category_id ? String(item.category_id) : '',
-                  title: item.title,
-                  slug: item.slug,
-                  content: item.content,
-                  status: item.status,
-                  image: null,
-              }
+                category_id: item.category_id ? String(item.category_id) : '',
+                title_en: item.title_en,
+                title_zh: item.title_zh,
+                title_my: item.title_my,
+                description_en: item.description_en,
+                description_zh: item.description_zh,
+                description_my: item.description_my,
+                slug: item.slug,
+                status: item.status,
+                image: null,
+                image_url: item.image_url
+            }
             : emptyNewsForm(),
     );
 
@@ -92,8 +107,8 @@ function NewsFormDialogBody({
         };
 
         if (isEdit && item) {
-            form.transform((data) => ({ ...data, _method: 'put' })).post(`/cms/news/${item.id}`, options);
-
+            form.transform((data) => ({ ...data, _method: 'put' }));
+            form.post(`/cms/news/${item.id}`, options);
             return;
         }
 

@@ -63,9 +63,9 @@ return new class extends Migration
             $table->string('title_en');
             $table->string('title_zh');
             $table->string('title_my');
-            $table->longText('description_en');
-            $table->longText('description_zh');
-            $table->longText('description_my');
+            $table->text('description_en');
+            $table->text('description_zh');
+            $table->text('description_my');
             $table->string('image_url', 500)->nullable();
             $table->string('status', 20)->default('draft')->index();
             $table->string('slug')->unique();

@@ -33,9 +33,13 @@ class UpdateNewsRequest extends FormRequest
 
         return [
             'category_id' => ['required', 'integer', Rule::exists('categories', 'id')->whereNull('deleted_at')],
-            'title' => ['required', 'string', 'max:255'],
+            'title_en' => ['required', 'string', 'max:255'],
+            'title_zh' => ['required', 'string', 'max:255'],
+            'title_my' => ['required', 'string', 'max:255'],
+            'description_en' => ['required', 'string'],
+            'description_zh' => ['required', 'string'],
+            'description_my' => ['required', 'string'],
             'slug' => CmsRules::slug('news', $news->id),
-            'content' => ['required', 'string'],
             'status' => ['required', Rule::enum(NewsStatus::class)],
             'image' => CmsRules::image(false),
         ];

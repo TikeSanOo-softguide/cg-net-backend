@@ -16,8 +16,8 @@ class StoreNewsRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if (! $this->filled('slug') && $this->filled('title')) {
-            $this->merge(['slug' => Str::slug((string) $this->string('title')) ?: Str::random(8)]);
+        if (! $this->filled('slug') && $this->filled('title_en')) {
+            $this->merge(['slug' => Str::slug((string) $this->string('title_en')) ?: Str::random(8)]);
         }
 
     }
@@ -29,9 +29,13 @@ class StoreNewsRequest extends FormRequest
     {
         return [
             'category_id' => ['required', 'integer', Rule::exists('categories', 'id')->whereNull('deleted_at')],
-            'title' => ['required', 'string', 'max:255'],
+            'title_en' => ['required', 'string', 'max:255'],
+            'title_zh' => ['required', 'string', 'max:255'],
+            'title_my' => ['required', 'string', 'max:255'],
+            'description_en' => ['required', 'string'],
+            'description_zh' => ['required', 'string'],
+            'description_my' => ['required', 'string'],
             'slug' => CmsRules::slug('news'),
-            'content' => ['required', 'string'],
             'status' => ['required', Rule::enum(NewsStatus::class)],
             'image' => CmsRules::image(false),
         ];
