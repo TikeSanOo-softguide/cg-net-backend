@@ -50,7 +50,7 @@ class BannerController extends Controller
 
         activity('cms')->causedBy($request->user())->performedOn($banner)->event('created')->log('banner_created');
 
-        return redirect()->route('cms.banners.index')->with('success', 'cms.created');
+        return redirect()->route('cms.banners.index')->with('success', 'cms.banner.created');
     }
 
     public function edit(Banner $banner): RedirectResponse
@@ -60,6 +60,7 @@ class BannerController extends Controller
 
     public function update(UpdateBannerRequest $request, Banner $banner): RedirectResponse
     {
+        $banner = Banner::findOrFail($banner->id);
         $banner->update($this->attributes(
             $request->validated(),
             $request->file('image_url_en'),
@@ -72,7 +73,7 @@ class BannerController extends Controller
 
         activity('cms')->causedBy($request->user())->performedOn($banner)->event('updated')->log('banner_updated');
 
-        return redirect()->route('cms.banners.index')->with('success', 'cms.updated');
+        return redirect()->route('cms.banners.index')->with('success', 'cms.banner.updated');
     }
 
     public function destroy(Request $request, Banner $banner): RedirectResponse
@@ -84,7 +85,7 @@ class BannerController extends Controller
 
         activity('cms')->causedBy($request->user())->performedOn($banner)->event('deleted')->log('banner_deleted');
 
-        return redirect()->route('cms.banners.index')->with('success', 'cms.deleted');
+        return redirect()->route('cms.banners.index')->with('success', 'cms.contact.deleted');
     }
 
     public function bulkDestroy(Request $request): RedirectResponse

@@ -1,10 +1,16 @@
-import { useState } from 'react';
-import { Head } from '@inertiajs/react';
+import { useState } from "react";
+import { Head } from "@inertiajs/react";
 
-import { CmsIndexPage, type CmsFilters } from '@/components/cms/shared/CmsIndexPage';
-import { ContactFormDialog, type ContactItem } from '@/components/cms/contact/ContactFormDialog';
-import type { Paginated } from '@/components/Pagination';
-import { useTranslation } from '@/hooks/useTranslation';
+import {
+    CmsIndexPage,
+    type CmsFilters,
+} from "@/components/cms/shared/CmsIndexPage";
+import {
+    ContactFormDialog,
+    type ContactItem,
+} from "@/components/cms/contact/ContactFormDialog";
+import type { Paginated } from "@/components/Pagination";
+import { useTranslation } from "@/hooks/useTranslation";
 
 type Props = {
     items: Paginated<ContactItem & { created_at: string | null }>;
@@ -18,9 +24,9 @@ export default function ContactsIndex({ items, filters }: Props) {
 
     return (
         <>
-            <Head title={t('menu.cms_contacts')} />
+            <Head title={t("menu.cms_contacts")} />
             <CmsIndexPage
-                createLabelKey="cms.create_contact"
+                createLabelKey="cms.contact.create"
                 indexHref="/cms/contacts"
                 destroyBase="/cms/contacts"
                 items={items}
@@ -30,7 +36,10 @@ export default function ContactsIndex({ items, filters }: Props) {
                     setFormOpen(true);
                 }}
                 onEdit={(row) => {
-                    setEditingItem({ id: row.id, contact_point: row.contact_point });
+                    setEditingItem({
+                        id: row.id,
+                        contact_point: row.contact_point,
+                    });
                     setFormOpen(true);
                 }}
                 formDialog={
@@ -48,19 +57,19 @@ export default function ContactsIndex({ items, filters }: Props) {
                 }
                 columns={[
                     {
-                        id: 'contact_point',
-                        header: t('cms.contact_point'),
-                        mobile: 'title',
+                        id: "contact_point",
+                        header: t("cms.contact_point"),
+                        mobile: "title",
                         sortable: true,
-                        className: 'font-medium',
+                        className: "font-medium",
                         cell: (row) => row.contact_point,
                     },
                     {
-                        id: 'created_at',
-                        header: t('customers.joined'),
+                        id: "created_at",
+                        header: t("customers.joined"),
                         sortable: true,
-                        mobile: 'meta',
-                        className: 'text-muted-foreground',
+                        mobile: "meta",
+                        className: "text-muted-foreground",
                         cell: (row) => row.created_at,
                     },
                 ]}

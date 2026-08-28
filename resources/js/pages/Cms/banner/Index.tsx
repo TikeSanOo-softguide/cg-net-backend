@@ -22,12 +22,16 @@ export default function BannersIndex({ items, filters }: Props) {
     const { t, locale } = useTranslation();
     const [formOpen, setFormOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<BannerItem | null>(null);
-
+    const imageLabels = {
+        en: t("cms.banner.image_en"),
+        zh: t("cms.banner.image_zh"),
+        my: t("cms.banner.image_my"),
+    };
     return (
         <>
             <Head title={t("menu.cms_banners")} />
             <CmsIndexPage
-                createLabelKey="cms.create_banner"
+                createLabelKey="cms.banner.create"
                 indexHref="/cms/banners"
                 destroyBase="/cms/banners"
                 items={items}
@@ -56,9 +60,8 @@ export default function BannersIndex({ items, filters }: Props) {
                 }
                 columns={[
                     {
-                        id: "title",
-                        header: t("cms.image"),
-                        mobile: "title",
+                        id: "image",
+                        header: imageLabels[locale],
                         sortable: true,
                         className: "font-medium",
                         cell: (row) => {
