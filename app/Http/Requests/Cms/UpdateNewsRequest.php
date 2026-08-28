@@ -17,8 +17,8 @@ class UpdateNewsRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if (! $this->filled('slug') && $this->filled('title')) {
-            $this->merge(['slug' => Str::slug((string) $this->string('title')) ?: Str::random(8)]);
+        if (! $this->filled('slug') && $this->filled('title_en')) {
+            $this->merge(['slug' => Str::slug((string) $this->string('title_en')) ?: Str::random(8)]);
         }
 
     }
