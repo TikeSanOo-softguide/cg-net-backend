@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ReviewStatus;
 use App\Models\Area;
 use App\Models\InstallationApplication;
 use App\Models\Package;
@@ -26,53 +27,12 @@ class InstallationApplicationFactory extends Factory
             'address' => fake()->address(),
             'phone' => fake()->phoneNumber(),
             'note' => fake()->optional()->sentence(),
-            'status' => fake()->randomElement(['pending', 'approved', 'rejected', 'installed', 'cancelled']),
+            'status' => fake()->randomElement([
+                ReviewStatus::Approved,
+                ReviewStatus::UnderReview,
+                ReviewStatus::Rejected,
+            ]),
             'user_id' => User::factory(),
         ];
-    }
-
-    public function pending(): static
-    {
-        return $this->state(
-            fn() => [
-                'status' => 'pending',
-            ],
-        );
-    }
-
-    public function approved(): static
-    {
-        return $this->state(
-            fn() => [
-                'status' => 'approved',
-            ],
-        );
-    }
-
-    public function rejected(): static
-    {
-        return $this->state(
-            fn() => [
-                'status' => 'rejected',
-            ],
-        );
-    }
-
-    public function installed(): static
-    {
-        return $this->state(
-            fn() => [
-                'status' => 'installed',
-            ],
-        );
-    }
-
-    public function cancelled(): static
-    {
-        return $this->state(
-            fn() => [
-                'status' => 'cancelled',
-            ],
-        );
     }
 }

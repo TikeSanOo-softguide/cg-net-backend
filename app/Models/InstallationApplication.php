@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ReviewStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -33,6 +34,7 @@ class InstallationApplication extends Model
         return [
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
+            'status' => ReviewStatus::class,
         ];
     }
 
