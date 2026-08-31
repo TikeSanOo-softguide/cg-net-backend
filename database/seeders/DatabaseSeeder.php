@@ -34,6 +34,7 @@ use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
 use App\Support\AppPermissions;
+use Database\Seeders\PackageSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
@@ -46,10 +47,10 @@ class DatabaseSeeder extends Seeder
     {
         $admins = $this->seedAdmins();
         $townships = $this->seedRegions();
-        // $packages = $this->seedPackages();
-        // $users = $this->seedCustomers($packages);
-        // $this->seedServiceRequests($users, $townships, $packages);
-        // $this->seedBilling($users);
+        $packages = $this->seedPackages();
+        $users = $this->seedCustomers($packages);
+        $this->seedServiceRequests($users, $townships, $packages);
+        $this->seedBilling($users);
         $this->seedNotifications();
         $this->seedBanners();
         $this->seedCms();
@@ -134,58 +135,9 @@ class DatabaseSeeder extends Seeder
      */
     private function seedPackages()
     {
-        $plans = [
-            [
-                'name' => 'Home 50',
-                'data_gb' => 50,
-                'price' => 15000,
-                'validity_days' => 30,
-                'speed_mbps' => 20,
-                'description' => 'Entry home broadband.',
-            ],
-            [
-                'name' => 'Home 100',
-                'data_gb' => 100,
-                'price' => 25000,
-                'validity_days' => 30,
-                'speed_mbps' => 30,
-                'description' => 'Everyday streaming.',
-            ],
-            [
-                'name' => 'Family 200',
-                'data_gb' => 200,
-                'price' => 35000,
-                'validity_days' => 30,
-                'speed_mbps' => 50,
-                'description' => 'Family household plan.',
-            ],
-            [
-                'name' => 'Pro 300',
-                'data_gb' => 300,
-                'price' => 45000,
-                'validity_days' => 30,
-                'speed_mbps' => 100,
-                'description' => 'Work-from-home plan.',
-            ],
-            [
-                'name' => 'Unlimited 500',
-                'data_gb' => 500,
-                'price' => 65000,
-                'validity_days' => 30,
-                'speed_mbps' => 200,
-                'description' => 'High-usage households.',
-            ],
-            [
-                'name' => 'Annual 1000',
-                'data_gb' => 1000,
-                'price' => 199000,
-                'validity_days' => 365,
-                'speed_mbps' => 100,
-                'description' => 'Prepaid annual bundle.',
-            ],
-        ];
+        (new PackageSeeder())->run();
 
-        return collect($plans)->map(fn(array $plan) => Package::factory()->create($plan));
+        return Package::all();
     }
 
     /**
