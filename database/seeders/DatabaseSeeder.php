@@ -11,6 +11,7 @@ use App\Enums\ReviewStatus;
 use App\Enums\UserStatus;
 use App\Enums\WalletTransactionType;
 use App\Models\Admin;
+use App\Models\Area;
 use App\Models\Banner;
 use App\Models\BroadbandAccount;
 use App\Models\Category;
@@ -27,13 +28,13 @@ use App\Models\NotificationCustom;
 use App\Models\Package;
 use App\Models\Payment;
 use App\Models\Promotion;
-use App\Models\Region;
 use App\Models\RelocationRequest;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
 use App\Support\AppPermissions;
+use Database\Seeders\AreaSeeder;
 use Database\Seeders\PackageSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -46,10 +47,10 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $admins = $this->seedAdmins();
-        // $townships = $this->seedRegions();
+        $areas = $this->seedAreas();
         $packages = $this->seedPackages();
         $users = $this->seedCustomers($packages);
-        // $this->seedServiceRequests($users, $townships, $packages);
+        $this->seedServiceRequests($users, $areas, $packages);
         $this->seedBilling($users);
         $this->seedNotifications();
         $this->seedBanners();
@@ -95,39 +96,13 @@ class DatabaseSeeder extends Seeder
     }
 
     /**
-     * @return Collection<int, Region>
+     * @return Collection<int, Area>
      */
-    private function seedRegions()
+    private function seedAreas()
     {
-        $tree = [
-            ['Yangon', 'ရန်ကုန်', [['Bahan', 'ဗဟန်း'], ['Kamayut', 'ကမာရွတ်']]],
-            ['Mandalay', 'မန္တလေး', [['Chanayethazan', 'ချမ်းအေးသာဇံ'], ['Mahaaungmye', 'မဟာအောင်မြေ']]],
-            ['Shan', 'ရှမ်း', [['Taunggyi', 'တောင်ကြီး'], ['Kalaw', 'ကလော']]],
-            ['Ayeyarwady', 'ဧရာဝတီ', [['Pathein', 'ပုသိမ်'], ['Hinthada', 'ဟင်္သာတ']]],
-            ['Sagaing', 'စစ်ကိုင်း', [['Monywa', 'မုံရွာ'], ['Shwebo', 'ရွှေဘို']]],
-        ];
+        (new AreaSeeder())->run();
 
-        $townships = collect();
-
-        foreach ($tree as [$en, $mm, $children]) {
-            $parent = Region::factory()->create([
-                'name_en' => $en,
-                'name_mm' => $mm,
-                'parent_id' => null,
-            ]);
-
-            foreach ($children as [$childEn, $childMm]) {
-                $townships->push(
-                    Region::factory()->create([
-                        'name_en' => $childEn,
-                        'name_mm' => $childMm,
-                        'parent_id' => $parent->id,
-                    ]),
-                );
-            }
-        }
-
-        return $townships;
+        return Area::all();
     }
 
     /**
@@ -215,10 +190,10 @@ class DatabaseSeeder extends Seeder
 
     /**
      * @param  \Illuminate\Database\Eloquent\Collection<int, User>  $users
-     * @param  Collection<int, Region>  $townships
+     * @param  Collection<int, Area>  $areas
      * @param  Collection<int, Package>  $packages
      */
-    private function seedServiceRequests($users, $townships, $packages): void
+    private function seedServiceRequests($users, $areas, $packages): void
     {
         $sample = $users->take(8)->values();
 
@@ -227,8 +202,8 @@ class DatabaseSeeder extends Seeder
 
             InstallationApplication::factory()->create([
                 'user_id' => $user->id,
-                'region_id' => $townships->random()->id,
-                'plan_id' => $packages->random()->id,
+                'area_id' => $areas->random()->id,
+                'package_id' => $packages->random()->id,
                 'status' => $status,
             ]);
         }

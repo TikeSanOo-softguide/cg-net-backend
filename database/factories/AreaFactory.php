@@ -2,20 +2,20 @@
 
 namespace Database\Factories;
 
+use App\Models\Area;
 use App\Models\Region;
-use App\Models\State;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Region>
+ * @extends Factory<Area>
  */
-class RegionFactory extends Factory
+class AreaFactory extends Factory
 {
     public function definition(): array
     {
         return [
             'name' => fake()->city(),
-            'state_id' => State::factory(),
+            'region_id' => Region::factory(),
         ];
     }
 }

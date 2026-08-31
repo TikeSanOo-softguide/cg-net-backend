@@ -16,11 +16,7 @@ export const NEWS_IMAGE_ACCEPTED_TYPES = [
 const NEWS_STATUSES = ['draft', 'published', 'archived'] as const;
 export type NewsStatus = (typeof NEWS_STATUSES)[number];
 
-export function validateNewsField(
-    field: keyof NewsFormValues,
-    data: NewsFormValues,
-    t: Translate,
-): string | undefined {
+export function validateNewsField(field: keyof NewsFormValues, data: NewsFormValues, t: Translate): string | undefined {
     const value = data[field];
 
     switch (field) {
@@ -33,7 +29,8 @@ export function validateNewsField(
 
         case 'title_en':
         case 'title_zh':
-        case 'title_my': {
+        case 'title_my':
+        case 'slug': {
             if (typeof value !== 'string') break;
             const trimmed = value.trim();
 
@@ -58,17 +55,8 @@ export function validateNewsField(
             break;
         }
 
-        case 'slug': {
-            if (typeof value !== 'string' || value.trim() === '') {
-                return t('cms.news.validation.slug_required');
-            }
-            break;
-        }
-
         case 'status': {
-            const isValid =
-                typeof value === 'string' &&
-                (NEWS_STATUSES as readonly string[]).includes(value);
+            const isValid = typeof value === 'string' && (NEWS_STATUSES as readonly string[]).includes(value);
 
             if (!isValid) {
                 return t('cms.news.validation.status_required');
@@ -97,10 +85,7 @@ export function validateNewsField(
     return undefined;
 }
 
-export function validateNews(
-    data: NewsFormValues,
-    t: Translate,
-): Partial<Record<keyof NewsFormValues, string>> {
+export function validateNews(data: NewsFormValues, t: Translate): Partial<Record<keyof NewsFormValues, string>> {
     const errors: Partial<Record<keyof NewsFormValues, string>> = {};
 
     (Object.keys(data) as (keyof NewsFormValues)[]).forEach((field) => {

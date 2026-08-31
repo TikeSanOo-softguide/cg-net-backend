@@ -9,13 +9,13 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { useTranslation } from '@/hooks/useTranslation';
 
 type Props = {
-    items: Paginated<NewsItem &
-    {
-        category_name_en: string,
-        category_name_zh: string,
-        category_name_my: string,
-        created_at: string | null
-    }
+    items: Paginated<
+        NewsItem & {
+            category_name_en: string;
+            category_name_zh: string;
+            category_name_my: string;
+            created_at: string | null;
+        }
     >;
     filters: CmsFilters;
     categories: NewsOption[];
@@ -72,22 +72,59 @@ export default function NewsIndex({ items, filters, categories }: Props) {
                 }
                 columns={[
                     {
+                        id: 'image',
+                        header: t('cms.image'),
+                        mobile: 'image',
+                        className: 'font-medium',
+                        cell: (row) => {
+                            const imageUrl = row.image_url;
+                            return (
+                                <span className="inline-flex items-center justify-content-center">
+                                    {imageUrl ? (
+                                        <img src={imageUrl} alt="" className="size-8 rounded object-cover" />
+                                    ) : null}
+                                </span>
+                            );
+                        },
+                    },
+                    {
                         id: 'title',
                         header: t('cms.news.label'),
                         mobile: 'title',
-                        sortable: true,
                         className: 'font-medium',
-                        cell: (row) => locale === 'zh' ? row.title_zh || row.title_en : locale === 'my' ? row.title_my || row.title_en : row.title_en,
+                        cell: (row) =>
+                            locale === 'zh'
+                                ? row.title_zh || row.title_en
+                                : locale === 'my'
+                                  ? row.title_my || row.title_en
+                                  : row.title_en,
                     },
                     {
                         id: 'category_name',
                         header: t('cms.category.label'),
                         mobile: 'subtitle',
-                        sortable: true,
-                        cell: (row) => locale === 'zh' ? row.category_name_zh || row.category_name_en : locale === 'my' ? row.category_name_my || row.category_name_en : row.category_name_en,
+                        cell: (row) =>
+                            locale === 'zh'
+                                ? row.category_name_zh || row.category_name_en
+                                : locale === 'my'
+                                  ? row.category_name_my || row.category_name_en
+                                  : row.category_name_en,
                     },
-                    { id: 'status', header: t('common.status'), sortable: true, mobile: 'badge', cell: (row) => <StatusBadge status={row.status} /> },
-                    { id: 'created_at', header: t('customers.joined'), sortable: true, mobile: 'meta', className: 'text-muted-foreground', cell: (row) => row.created_at },
+                    {
+                        id: 'status',
+                        header: t('common.status'),
+                        sortable: true,
+                        mobile: 'badge',
+                        cell: (row) => <StatusBadge status={row.status} />,
+                    },
+                    {
+                        id: 'created_at',
+                        header: t('customers.joined'),
+                        sortable: true,
+                        mobile: 'meta',
+                        className: 'text-muted-foreground',
+                        cell: (row) => row.created_at,
+                    },
                 ]}
             />
         </>

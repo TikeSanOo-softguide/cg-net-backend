@@ -40,7 +40,7 @@ function emptyNewsForm(): NewsFormValues {
         slug: '',
         status: 'published',
         image: null,
-        image_url: ''
+        image_url: '',
     };
 }
 
@@ -55,7 +55,7 @@ export function NewsFormDialog({ open, onOpenChange, item, categories }: NewsFor
             title={isEdit ? t('cms.news.edit') : t('cms.news.create')}
             description={isEdit ? t('cms.news.edit_description') : t('cms.news.create_description')}
             icon={isEdit ? SquarePenIcon : NewspaperIcon}
-            size='3xl'
+            size="3xl"
         >
             {open ? (
                 <NewsFormDialogBody
@@ -82,18 +82,18 @@ function NewsFormDialogBody({
     const form = useForm<NewsFormValues>(
         item
             ? {
-                category_id: item.category_id ? String(item.category_id) : '',
-                title_en: item.title_en,
-                title_zh: item.title_zh,
-                title_my: item.title_my,
-                description_en: item.description_en,
-                description_zh: item.description_zh,
-                description_my: item.description_my,
-                slug: item.slug,
-                status: item.status,
-                image: null,
-                image_url: item.image_url
-            }
+                  category_id: item.category_id ? String(item.category_id) : '',
+                  title_en: item.title_en,
+                  title_zh: item.title_zh,
+                  title_my: item.title_my,
+                  description_en: item.description_en,
+                  description_zh: item.description_zh,
+                  description_my: item.description_my,
+                  slug: item.slug,
+                  status: item.status,
+                  image: null,
+                  image_url: item.image_url,
+              }
             : emptyNewsForm(),
     );
 
@@ -115,11 +115,18 @@ function NewsFormDialogBody({
         form.post('/cms/news', options);
     };
 
+    const onImageClear = () => {
+        if (item) {
+            item.image_url = null;
+        }
+    };
+
     return (
         <NewsForm
             form={form}
             onSubmit={submit}
             onCancel={onClose}
+            onImageClear={onImageClear}
             mode={isEdit ? 'edit' : 'create'}
             categories={categories}
             imageUrl={item?.image_url}

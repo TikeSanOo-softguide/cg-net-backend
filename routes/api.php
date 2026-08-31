@@ -3,8 +3,13 @@
 use App\Http\Controllers\Api\Banner\BannerController;
 use App\Http\Controllers\Api\Category\CategoryController;
 use App\Http\Controllers\Api\Contact\ContactController;
-use App\Http\Controllers\Api\News\NewsController;
 use App\Http\Controllers\Api\Gallery\GalleryController;
+use App\Http\Controllers\Api\News\NewsController;
+use App\Http\Controllers\Api\Package\AddonController;
+use App\Http\Controllers\Api\Package\NetworkController;
+use App\Http\Controllers\Api\Package\PackageController;
+use App\Http\Controllers\Api\Package\SpeedController;
+use App\Http\Controllers\Api\Package\TermController;
 use App\Http\Controllers\Api\Promotion\PromotionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -25,5 +30,12 @@ Route::middleware('throttle:60,1')->group(function () {
         Route::get('/gallery', [GalleryController::class, 'index']);
         Route::get('/promotions', [PromotionController::class, 'index']);
         Route::get('/promotions/{slug}', [PromotionController::class, 'show']);
+        Route::get('/packages', [PackageController::class, 'index']);
+        Route::get('/packages/recommended', [PackageController::class, 'recommended']);
+        Route::get('/packages/{id}', [PackageController::class, 'show']);
+        Route::get('/networks', [NetworkController::class, 'index']);
+        Route::get('/speeds', [SpeedController::class, 'index']);
+        Route::get('/terms', [TermController::class, 'index']);
+        Route::get('/addons', [AddonController::class, 'index']);
     });
 });
