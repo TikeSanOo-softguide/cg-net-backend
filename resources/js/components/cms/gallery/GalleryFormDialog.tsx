@@ -9,7 +9,9 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 export type GalleryItem = {
     id: number;
-    label: string;
+    label_en: string | null;
+    label_my: string | null;
+    label_zh: string | null;
     image_url: string | null;
 };
 
@@ -46,8 +48,8 @@ function GalleryFormDialogBody({ item, onClose }: { item: GalleryItem | null; on
     const isEdit = item !== null;
     const form = useForm<GalleryFormValues>(
         item
-            ? { label: item.label, image: null }
-            : { label: '', image: null },
+            ? { label_en: item.label_en, label_my: item.label_my, label_zh: item.label_zh, image: null }
+            : { label_en: '', label_my: '', label_zh: '', image: null },
     );
 
     const submit = (event: FormEvent) => {
@@ -60,8 +62,8 @@ function GalleryFormDialogBody({ item, onClose }: { item: GalleryItem | null; on
         };
 
         if (isEdit && item) {
-            form.transform((data) => ({ ...data, _method: 'put' })).post(`/cms/gallery/${item.id}`, options);
-
+            form.transform((data) => ({ ...data, _method: 'put' }));
+            form.post(`/cms/gallery/${item.id}`, options);
             return;
         }
 

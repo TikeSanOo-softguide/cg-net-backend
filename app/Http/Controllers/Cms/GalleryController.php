@@ -21,12 +21,12 @@ class GalleryController extends Controller
         $listing = CmsListing::paginate(
             $request,
             Gallery::query(),
-            ['label'],
-            ['label', 'created_at'],
+            ['label_en', 'label_my', 'label_zh'],
+            ['label_en', 'label_my', 'label_zh', 'created_at'],
         );
 
         return Inertia::render('Cms/gallery/Index', [
-            'items' => $listing['paginator']->through(fn (Gallery $item) => $this->payload($item)),
+            'items' => $listing['paginator']->through(fn(Gallery $item) => $this->payload($item)),
             'filters' => $listing['filters'],
         ]);
     }
@@ -39,13 +39,15 @@ class GalleryController extends Controller
     public function store(StoreGalleryRequest $request): RedirectResponse
     {
         $gallery = Gallery::query()->create([
-            'label' => $request->validated('label'),
-            'image_path' => StoresPublicImage::store($request->file('image'), 'cms/gallery'),
+            'label_en' => $request->validated('label_en'),
+            'label_my' => $request->validated('label_my'),
+            'label_zh' => $request->validated('label_zh'),
+            'image_url' => StoresPublicImage::store($request->file('image'), 'cms/gallery'),
         ]);
 
         activity('cms')->causedBy($request->user())->performedOn($gallery)->event('created')->log('gallery_created');
 
-        return redirect()->route('cms.gallery.index')->with('success', 'cms.created');
+        return redirect()->route('cms.gallery.index')->with('success', 'cms.gallery.created');
     }
 
     public function edit(Gallery $gallery): RedirectResponse
@@ -56,11 +58,13 @@ class GalleryController extends Controller
     public function update(UpdateGalleryRequest $request, Gallery $gallery): RedirectResponse
     {
         $data = [
-            'label' => $request->validated('label'),
+            'label_en' => $request->validated('label_en'),
+            'label_my' => $request->validated('label_my'),
+            'label_zh' => $request->validated('label_zh'),
         ];
 
         if ($request->hasFile('image')) {
-            $data['image_path'] = StoresPublicImage::store($request->file('image'), 'cms/gallery', $gallery->image_path);
+            $data['image_url'] = StoresPublicImage::store($request->file('image'), 'cms/gallery', $gallery->image_url);
         }
 
         $gallery->update($data);
@@ -72,12 +76,12 @@ class GalleryController extends Controller
 
     public function destroy(Request $request, Gallery $gallery): RedirectResponse
     {
-        StoresPublicImage::delete($gallery->image_path);
+        StoresPublicImage::delete($gallery->image_url);
         $gallery->delete();
 
         activity('cms')->causedBy($request->user())->performedOn($gallery)->event('deleted')->log('gallery_deleted');
 
-        return redirect()->route('cms.gallery.index')->with('success', 'cms.deleted');
+        return redirect()->route('cms.gallery.index')->with('success', 'cms.gallery.deleted');
     }
 
     public function bulkDestroy(Request $request): RedirectResponse
@@ -87,7 +91,7 @@ class GalleryController extends Controller
             Gallery::query(),
             'cms.gallery.index',
             'gallery_deleted',
-            beforeDelete: fn (Gallery $gallery) => StoresPublicImage::delete($gallery->image_path),
+            beforeDelete: fn(Gallery $gallery) => StoresPublicImage::delete($gallery->image_url),
         );
     }
 
@@ -98,8 +102,10 @@ class GalleryController extends Controller
     {
         return [
             'id' => $gallery->id,
-            'label' => $gallery->label,
-            'image_url' => StoresPublicImage::url($gallery->image_path),
+            'label_en' => $gallery->label_en,
+            'label_my' => $gallery->label_my,
+            'label_zh' => $gallery->label_zh,
+            'image_url' => StoresPublicImage::url($gallery->image_url),
             'created_at' => $gallery->created_at?->toDateString(),
         ];
     }
