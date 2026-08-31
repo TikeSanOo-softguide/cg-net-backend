@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['name', 'state_id'])]
+#[Fillable(['name_en', 'name_zh', 'name_my', 'state_id'])]
 class Region extends Model
 {
     use HasFactory, SoftDeletes;

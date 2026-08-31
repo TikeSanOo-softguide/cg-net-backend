@@ -11,7 +11,11 @@ class AddonResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'name' => $this->name,
+            'name' => [
+                'en' => $this->name_en,
+                'zh' => $this->name_zh,
+                'my' => $this->name_my,
+            ],
             'price' => $this->price,
             'image_url' => $this->image_url,
             'is_active' => $this->is_active,

@@ -16,15 +16,17 @@ class AreaSeeder extends Seeder
         $stateName = 'ရှမ်းပြည်နယ်';
 
         DB::table('states')->updateOrInsert(
-            ['name' => $stateName],
+            ['name_en' => $stateName],
             [
-                'name' => $stateName,
+                'name_en' => $stateName,
+                'name_zh' => $stateName,
+                'name_my' => $stateName,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
         );
 
-        $shanState = DB::table('states')->where('name', $stateName)->first();
+        $shanState = DB::table('states')->where('name_en', $stateName)->first();
 
         // 2. Seed Regions + Areas
         $regionsData = [
@@ -98,28 +100,32 @@ class AreaSeeder extends Seeder
             // Seed Region
             DB::table('regions')->updateOrInsert(
                 [
-                    'name' => $regionName,
+                    'name_en' => $regionName,
                     'state_id' => $shanState->id,
                 ],
                 [
-                    'name' => $regionName,
+                    'name_en' => $regionName,
+                    'name_zh' => $regionName,
+                    'name_my' => $regionName,
                     'state_id' => $shanState->id,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ],
             );
 
-            $region = DB::table('regions')->where('name', $regionName)->where('state_id', $shanState->id)->first();
+            $region = DB::table('regions')->where('name_en', $regionName)->where('state_id', $shanState->id)->first();
 
             // Seed Areas
             foreach ($areas as $areaName) {
                 DB::table('areas')->updateOrInsert(
                     [
-                        'name' => $areaName,
+                        'name_en' => $areaName,
                         'region_id' => $region->id,
                     ],
                     [
-                        'name' => $areaName,
+                        'name_en' => $areaName,
+                        'name_zh' => $areaName,
+                        'name_my' => $areaName,
                         'region_id' => $region->id,
                         'created_at' => now(),
                         'updated_at' => now(),

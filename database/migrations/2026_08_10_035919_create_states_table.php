@@ -9,7 +9,9 @@ return new class extends Migration {
     {
         Schema::create('states', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('name_en');
+            $table->string('name_zh');
+            $table->string('name_my');
             $table->timestamps();
             $table->softDeletes();
         });

@@ -13,7 +13,9 @@ class StateFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->unique()->state(),
+            'name_en' => fake()->unique()->state(),
+            'name_zh' => fake()->unique()->state(),
+            'name_my' => fake()->unique()->state(),
         ];
     }
 }

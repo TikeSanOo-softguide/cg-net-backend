@@ -11,7 +11,11 @@ class NetworkResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'name' => $this->name,
+            'name' => [
+                'en' => $this->name_en,
+                'zh' => $this->name_zh,
+                'my' => $this->name_my,
+            ],
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
