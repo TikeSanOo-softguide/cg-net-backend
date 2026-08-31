@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,11 +10,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Package extends Model
-{
-    use HasFactory, SoftDeletes;
-
-    protected $fillable = [
+#[
+    Fillable([
         'network_id',
         'speed_id',
         'term_id',
@@ -24,16 +22,23 @@ class Package extends Model
         'is_active',
         'sort_order',
         'recommended',
-    ];
+    ]),
+]
+class Package extends Model
+{
+    use HasFactory, SoftDeletes;
 
-    protected $casts = [
-        'price' => 'decimal:2',
-        'installation_fee' => 'decimal:2',
-        'includes_free_iptv' => 'boolean',
-        'is_active' => 'boolean',
-        'recommended' => 'boolean',
-        'sort_order' => 'integer',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'price' => 'decimal:2',
+            'installation_fee' => 'decimal:2',
+            'includes_free_iptv' => 'boolean',
+            'is_active' => 'boolean',
+            'recommended' => 'boolean',
+            'sort_order' => 'integer',
+        ];
+    }
 
     public function network(): BelongsTo
     {

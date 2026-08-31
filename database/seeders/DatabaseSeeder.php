@@ -46,10 +46,10 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $admins = $this->seedAdmins();
-        $townships = $this->seedRegions();
+        // $townships = $this->seedRegions();
         $packages = $this->seedPackages();
         $users = $this->seedCustomers($packages);
-        $this->seedServiceRequests($users, $townships, $packages);
+        // $this->seedServiceRequests($users, $townships, $packages);
         $this->seedBilling($users);
         $this->seedNotifications();
         $this->seedBanners();
