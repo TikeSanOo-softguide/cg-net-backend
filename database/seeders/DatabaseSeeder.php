@@ -46,10 +46,10 @@ class DatabaseSeeder extends Seeder
     {
         $admins = $this->seedAdmins();
         $townships = $this->seedRegions();
-        $packages = $this->seedPackages();
-        $users = $this->seedCustomers($packages);
-        $this->seedServiceRequests($users, $townships, $packages);
-        $this->seedBilling($users);
+        // $packages = $this->seedPackages();
+        // $users = $this->seedCustomers($packages);
+        // $this->seedServiceRequests($users, $townships, $packages);
+        // $this->seedBilling($users);
         $this->seedNotifications();
         $this->seedBanners();
         $this->seedCms();
@@ -116,11 +116,13 @@ class DatabaseSeeder extends Seeder
             ]);
 
             foreach ($children as [$childEn, $childMm]) {
-                $townships->push(Region::factory()->create([
-                    'name_en' => $childEn,
-                    'name_mm' => $childMm,
-                    'parent_id' => $parent->id,
-                ]));
+                $townships->push(
+                    Region::factory()->create([
+                        'name_en' => $childEn,
+                        'name_mm' => $childMm,
+                        'parent_id' => $parent->id,
+                    ]),
+                );
             }
         }
 
@@ -133,15 +135,57 @@ class DatabaseSeeder extends Seeder
     private function seedPackages()
     {
         $plans = [
-            ['name' => 'Home 50', 'data_gb' => 50, 'price' => 15000, 'validity_days' => 30, 'speed_mbps' => 20, 'description' => 'Entry home broadband.'],
-            ['name' => 'Home 100', 'data_gb' => 100, 'price' => 25000, 'validity_days' => 30, 'speed_mbps' => 30, 'description' => 'Everyday streaming.'],
-            ['name' => 'Family 200', 'data_gb' => 200, 'price' => 35000, 'validity_days' => 30, 'speed_mbps' => 50, 'description' => 'Family household plan.'],
-            ['name' => 'Pro 300', 'data_gb' => 300, 'price' => 45000, 'validity_days' => 30, 'speed_mbps' => 100, 'description' => 'Work-from-home plan.'],
-            ['name' => 'Unlimited 500', 'data_gb' => 500, 'price' => 65000, 'validity_days' => 30, 'speed_mbps' => 200, 'description' => 'High-usage households.'],
-            ['name' => 'Annual 1000', 'data_gb' => 1000, 'price' => 199000, 'validity_days' => 365, 'speed_mbps' => 100, 'description' => 'Prepaid annual bundle.'],
+            [
+                'name' => 'Home 50',
+                'data_gb' => 50,
+                'price' => 15000,
+                'validity_days' => 30,
+                'speed_mbps' => 20,
+                'description' => 'Entry home broadband.',
+            ],
+            [
+                'name' => 'Home 100',
+                'data_gb' => 100,
+                'price' => 25000,
+                'validity_days' => 30,
+                'speed_mbps' => 30,
+                'description' => 'Everyday streaming.',
+            ],
+            [
+                'name' => 'Family 200',
+                'data_gb' => 200,
+                'price' => 35000,
+                'validity_days' => 30,
+                'speed_mbps' => 50,
+                'description' => 'Family household plan.',
+            ],
+            [
+                'name' => 'Pro 300',
+                'data_gb' => 300,
+                'price' => 45000,
+                'validity_days' => 30,
+                'speed_mbps' => 100,
+                'description' => 'Work-from-home plan.',
+            ],
+            [
+                'name' => 'Unlimited 500',
+                'data_gb' => 500,
+                'price' => 65000,
+                'validity_days' => 30,
+                'speed_mbps' => 200,
+                'description' => 'High-usage households.',
+            ],
+            [
+                'name' => 'Annual 1000',
+                'data_gb' => 1000,
+                'price' => 199000,
+                'validity_days' => 365,
+                'speed_mbps' => 100,
+                'description' => 'Prepaid annual bundle.',
+            ],
         ];
 
-        return collect($plans)->map(fn (array $plan) => Package::factory()->create($plan));
+        return collect($plans)->map(fn(array $plan) => Package::factory()->create($plan));
     }
 
     /**
@@ -176,11 +220,13 @@ class DatabaseSeeder extends Seeder
                 ]);
 
                 if ($index % 4 === 0) {
-                    CustomerPackage::factory()->expired()->create([
-                        'user_id' => $user->id,
-                        'broadband_account_id' => $account->id,
-                        'package_id' => $packages->random()->id,
-                    ]);
+                    CustomerPackage::factory()
+                        ->expired()
+                        ->create([
+                            'user_id' => $user->id,
+                            'broadband_account_id' => $account->id,
+                            'package_id' => $packages->random()->id,
+                        ]);
                 }
 
                 $wallet = Wallet::factory()->create([
@@ -188,23 +234,30 @@ class DatabaseSeeder extends Seeder
                     'balance_mmk' => fake()->randomElement([0, 5000, 15000, 42000]),
                 ]);
 
-                WalletTransaction::factory()->count(3)->create([
-                    'wallet_id' => $wallet->id,
-                    'type' => fake()->randomElement(WalletTransactionType::cases()),
-                ]);
+                WalletTransaction::factory()
+                    ->count(3)
+                    ->create([
+                        'wallet_id' => $wallet->id,
+                        'type' => fake()->randomElement(WalletTransactionType::cases()),
+                    ]);
 
                 CpeDevice::factory()->create([
                     'broadband_account_id' => $account->id,
                 ]);
 
-                $user->forceFill([
-                    'created_at' => now()->subDays(fake()->numberBetween(0, 29)),
-                ])->save();
+                $user
+                    ->forceFill([
+                        'created_at' => now()->subDays(fake()->numberBetween(0, 29)),
+                    ])
+                    ->save();
             })
             ->tap(function () use ($packages): void {
-                BroadbandAccount::factory()->unbound()->count(3)->create([
-                    'current_package_id' => $packages->random()->id,
-                ]);
+                BroadbandAccount::factory()
+                    ->unbound()
+                    ->count(3)
+                    ->create([
+                        'current_package_id' => $packages->random()->id,
+                    ]);
             });
     }
 
@@ -254,7 +307,7 @@ class DatabaseSeeder extends Seeder
         $planUser = $sample[0];
         $account = $planUser->broadbandAccounts()->first();
         $current = $account->current_package_id;
-        $new = $packages->first(fn (Package $package) => $package->id !== $current) ?? $packages->last();
+        $new = $packages->first(fn(Package $package) => $package->id !== $current) ?? $packages->last();
 
         ChangePlanRequest::factory()->create([
             'user_id' => $planUser->id,
@@ -277,36 +330,43 @@ class DatabaseSeeder extends Seeder
      */
     private function seedBilling($users): void
     {
-        $users->take(12)->values()->each(function (User $user, int $index): void {
-            $account = $user->broadbandAccounts()->first();
+        $users
+            ->take(12)
+            ->values()
+            ->each(function (User $user, int $index): void {
+                $account = $user->broadbandAccounts()->first();
 
-            if (! $account) {
-                return;
-            }
+                if (!$account) {
+                    return;
+                }
 
-            $paidAt = now()->subDays($index * 2);
-            $amount = fake()->randomElement([15000, 25000, 35000, 45000]);
+                $paidAt = now()->subDays($index * 2);
+                $amount = fake()->randomElement([15000, 25000, 35000, 45000]);
 
-            $invoice = Invoice::factory()->create([
-                'broadband_account_id' => $account->id,
-                'amount' => $amount,
-                'status' => InvoiceStatus::Paid,
-                'due_date' => $paidAt->copy()->addDays(7),
-            ]);
+                $invoice = Invoice::factory()->create([
+                    'broadband_account_id' => $account->id,
+                    'amount' => $amount,
+                    'status' => InvoiceStatus::Paid,
+                    'due_date' => $paidAt->copy()->addDays(7),
+                ]);
 
-            Payment::factory()->create([
-                'invoice_id' => $invoice->id,
-                'amount' => $amount,
-                'status' => PaymentStatus::Paid,
-                'paid_at' => $paidAt,
-            ]);
-        });
+                Payment::factory()->create([
+                    'invoice_id' => $invoice->id,
+                    'amount' => $amount,
+                    'status' => PaymentStatus::Paid,
+                    'paid_at' => $paidAt,
+                ]);
+            });
     }
 
     private function seedNotifications(): void
     {
-        NotificationCustom::factory()->count(4)->create(['is_read' => false, 'user_id' => null]);
-        NotificationCustom::factory()->count(2)->create(['is_read' => true, 'user_id' => null]);
+        NotificationCustom::factory()
+            ->count(4)
+            ->create(['is_read' => false, 'user_id' => null]);
+        NotificationCustom::factory()
+            ->count(2)
+            ->create(['is_read' => true, 'user_id' => null]);
     }
 
     private function seedBanners(): void
@@ -355,13 +415,16 @@ class DatabaseSeeder extends Seeder
     {
         RolePermissionSeeder::sync();
 
-        $admins->first(fn (Admin $admin) => $admin->username === 'Super Admin')
+        $admins
+            ->first(fn(Admin $admin) => $admin->username === 'Super Admin')
             ?->syncRoles([AppPermissions::SuperAdmin]);
 
-        $admins->first(fn (Admin $admin) => $admin->username === 'Staff Officer')
+        $admins
+            ->first(fn(Admin $admin) => $admin->username === 'Staff Officer')
             ?->syncRoles([AppPermissions::StaffOfficer]);
 
-        $admins->first(fn (Admin $admin) => $admin->username === 'Support Agent')
+        $admins
+            ->first(fn(Admin $admin) => $admin->username === 'Support Agent')
             ?->syncRoles([AppPermissions::SupportAgent]);
     }
 }
