@@ -13,9 +13,22 @@ type Props = {
 };
 
 export default function PromotionsIndex({ items, filters }: Props) {
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
     const [formOpen, setFormOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<PromotionItem | null>(null);
+
+    const getLabel = (row: PromotionItem): string => {
+        switch (locale) {
+            case 'my':
+                return row.title_my ?? row.title_en ?? '';
+
+            case 'zh':
+                return row.title_zh ?? row.title_en ?? '';
+
+            default:
+                return row.title_en ?? '';
+        }
+    };
 
     return (
         <>
@@ -58,7 +71,7 @@ export default function PromotionsIndex({ items, filters }: Props) {
                         cell: (row) => (
                             <span className="inline-flex items-center gap-2">
                                 {row.image_url ? <img src={row.image_url} alt="" className="size-8 rounded object-cover" /> : null}
-                                {row.title}
+                                {getLabel(row)}
                             </span>
                         ),
                     },

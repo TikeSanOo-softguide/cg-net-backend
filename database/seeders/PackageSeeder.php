@@ -20,7 +20,13 @@ class PackageSeeder extends Seeder
             'Myanmar Network', // 缅甸网
             'Chenguang Network', // 晨光网 (中缅一体网)
             'CG-Net', // CG-家庭网
-        ])->each(fn(string $name) => Network::firstOrCreate(['name' => $name]));
+        ])->each(
+            fn(string $name) => Network::firstOrCreate([
+                'name_en' => $name,
+                'name_zh' => $name,
+                'name_my' => $name,
+            ]),
+        );
 
         // ------------------------------------------------------------
         // Speeds (Mbps tiers)
@@ -36,13 +42,13 @@ class PackageSeeder extends Seeder
         // Addons (IPTV set-top box + CG-Net receiver)
         // ------------------------------------------------------------
         Addon::firstOrCreate(
-            ['name' => 'IPTV Set-Top Box'], // 电视机顶盒
-            ['price' => 288.0, 'is_active' => true],
+            ['name_en' => 'IPTV Set-Top Box'], // 电视机顶盒
+            ['name_zh' => 'IPTV Set-Top Box', 'name_my' => 'IPTV Set-Top Box', 'price' => 288.0, 'is_active' => true],
         );
 
         Addon::firstOrCreate(
-            ['name' => 'Wireless Receiver'], // 接收器 (CG-家庭网)
-            ['price' => 350.0, 'is_active' => true],
+            ['name_en' => 'Wireless Receiver'], // 接收器 (CG-家庭网)
+            ['name_zh' => 'Wireless Receiver', 'name_my' => 'Wireless Receiver', 'price' => 350.0, 'is_active' => true],
         );
 
         // ------------------------------------------------------------
@@ -90,7 +96,7 @@ class PackageSeeder extends Seeder
         ];
 
         foreach ($rows as [$networkName, $mbps, $months, $price, $sortOrder]) {
-            $networkId = Network::where('name', $networkName)->value('id');
+            $networkId = Network::where('name_en', $networkName)->value('id');
             $speedId = Speed::where('mbps', $mbps)->value('id');
             $termId = Term::where('months', $months)->value('id');
 

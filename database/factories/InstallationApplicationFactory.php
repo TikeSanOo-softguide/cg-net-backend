@@ -3,11 +3,10 @@
 namespace Database\Factories;
 
 use App\Enums\ReviewStatus;
+use App\Models\Area;
 use App\Models\InstallationApplication;
 use App\Models\Package;
-use App\Models\Region;
 use App\Models\User;
-use Database\Factories\Support\MyanmarFake;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,17 +17,22 @@ class InstallationApplicationFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id' => User::factory(),
-            'region_id' => Region::factory(),
-            'id_type' => fake()->randomElement(['nrc', 'passport']),
-            'id_number' => MyanmarFake::nrc(),
-            'plan_id' => Package::factory(),
-            'photo_path' => 'installations/'.fake()->uuid().'.jpg',
-            'latitude' => fake()->latitude(16.7, 22.0),
-            'longitude' => fake()->longitude(96.0, 97.2),
-            'address' => MyanmarFake::address(),
+            'package_id' => Package::factory(),
+            'area_id' => Area::factory(),
+            'id_type' => fake()->randomElement(['NRC', 'Passport', 'Other']),
+            'id_name' => fake()->name(),
+            'id_number' => fake()->bothify('??######'),
+            'latitude' => fake()->latitude(),
+            'longitude' => fake()->longitude(),
+            'address' => fake()->address(),
+            'phone' => fake()->phoneNumber(),
             'note' => fake()->optional()->sentence(),
-            'status' => fake()->randomElement(ReviewStatus::cases()),
+            'status' => fake()->randomElement([
+                ReviewStatus::Approved,
+                ReviewStatus::UnderReview,
+                ReviewStatus::Rejected,
+            ]),
+            'user_id' => User::factory(),
         ];
     }
 }

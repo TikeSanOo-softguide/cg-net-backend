@@ -32,7 +32,7 @@ export type DataTableColumn<T> = {
     header: string;
     cell: (row: T) => ReactNode;
     className?: string;
-    mobile?: 'title' | 'subtitle' | 'meta' | 'badge' | false;
+    mobile?: 'image' | 'title' | 'subtitle' | 'meta' | 'badge' | false;
     searchValue?: (row: T) => string;
     sortable?: boolean;
     icon?: LucideIcon;
@@ -125,16 +125,14 @@ export function DataTable<T>({
         const currentIds = data.map(getRowId);
 
         if (pagination) {
-            const pageChanged = previousPageRef.current !== undefined
-                && previousPageRef.current !== pagination.current_page;
+            const pageChanged =
+                previousPageRef.current !== undefined && previousPageRef.current !== pagination.current_page;
 
-            if (! pageChanged && previousPageIdsRef.current.length > 0) {
-                const vanished = new Set(
-                    previousPageIdsRef.current.filter((id) => ! currentIds.includes(id)),
-                );
+            if (!pageChanged && previousPageIdsRef.current.length > 0) {
+                const vanished = new Set(previousPageIdsRef.current.filter((id) => !currentIds.includes(id)));
 
                 if (vanished.size > 0) {
-                    const next = selectedIds.filter((id) => ! vanished.has(id));
+                    const next = selectedIds.filter((id) => !vanished.has(id));
 
                     if (next.length !== selectedIds.length) {
                         setSelectedIds(next);
@@ -163,7 +161,7 @@ export function DataTable<T>({
 
         const term = query.trim().toLowerCase();
 
-        if (! term) {
+        if (!term) {
             return data;
         }
 
@@ -172,6 +170,7 @@ export function DataTable<T>({
         );
     }, [columns, data, query, serverDriven]);
 
+    const mobileImage = columns.find((column) => column.mobile === 'image');
     const mobileTitle = columns.find((column) => column.mobile === 'title');
     const mobileSubtitle = columns.find((column) => column.mobile === 'subtitle');
     const mobileMeta = columns.find((column) => column.mobile === 'meta');
@@ -180,7 +179,7 @@ export function DataTable<T>({
     const selectableIds = rows.filter((row) => isRowSelectable?.(row) ?? true).map((row) => getRowId(row));
     const selectedOnPage = selectableIds.filter((id) => selectedIds.includes(id));
     const allSelected = selectableIds.length > 0 && selectedOnPage.length === selectableIds.length;
-    const someSelected = selectedOnPage.length > 0 && ! allSelected;
+    const someSelected = selectedOnPage.length > 0 && !allSelected;
     const showActions = Boolean(actions) || Boolean(href) || Boolean(onView);
     const columnCount = columns.length + Number(canSelect) + Number(numbered) + Number(showActions);
     const hasSelection = selectedIds.length > 0;
@@ -190,7 +189,7 @@ export function DataTable<T>({
         const to = href?.(row);
         const canView = Boolean(onView) || Boolean(to);
 
-        if (! canView && ! actions) {
+        if (!canView && !actions) {
             return null;
         }
 
@@ -201,10 +200,14 @@ export function DataTable<T>({
                         label={t('common.view')}
                         icon={EyeIcon}
                         href={onView ? undefined : to}
-                        onClick={onView ? (event) => {
-                            event.stopPropagation();
-                            onView(row);
-                        } : undefined}
+                        onClick={
+                            onView
+                                ? (event) => {
+                                      event.stopPropagation();
+                                      onView(row);
+                                  }
+                                : undefined
+                        }
                     />
                 ) : null}
                 {actions?.(row)}
@@ -214,7 +217,7 @@ export function DataTable<T>({
 
     const toggleAll = () => {
         if (allSelected) {
-            setSelectedIds(selectedIds.filter((id) => ! selectableIds.includes(id)));
+            setSelectedIds(selectedIds.filter((id) => !selectableIds.includes(id)));
 
             return;
         }
@@ -223,7 +226,7 @@ export function DataTable<T>({
     };
 
     const toggleRow = (id: string, enabled: boolean) => {
-        if (! enabled) {
+        if (!enabled) {
             return;
         }
 
@@ -237,7 +240,7 @@ export function DataTable<T>({
     };
 
     const requestBulkDelete = () => {
-        if (! onBulkDelete || selectedIds.length === 0 || processing) {
+        if (!onBulkDelete || selectedIds.length === 0 || processing) {
             return;
         }
 
@@ -255,7 +258,7 @@ export function DataTable<T>({
     };
 
     const runBulkDelete = async () => {
-        if (! onBulkDelete || selectedIds.length === 0 || processing) {
+        if (!onBulkDelete || selectedIds.length === 0 || processing) {
             return;
         }
 
@@ -279,14 +282,15 @@ export function DataTable<T>({
             return;
         }
 
-        const headers = [
-            ...(numbered ? [t('common.no')] : []),
-            ...columns.map((column) => column.header),
-        ];
-        const lines = rows.map((row, index) => [
-            ...(numbered ? [String(indexStart + index)] : []),
-            ...columns.map((column) => column.searchValue?.(row) ?? ''),
-        ].map(csvEscape).join(','));
+        const headers = [...(numbered ? [t('common.no')] : []), ...columns.map((column) => column.header)];
+        const lines = rows.map((row, index) =>
+            [
+                ...(numbered ? [String(indexStart + index)] : []),
+                ...columns.map((column) => column.searchValue?.(row) ?? ''),
+            ]
+                .map(csvEscape)
+                .join(','),
+        );
         const csv = [headers.map(csvEscape).join(','), ...lines].join('\n');
         const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
@@ -299,7 +303,12 @@ export function DataTable<T>({
 
     return (
         <TooltipProvider>
-            <Card className={cn('flex h-full min-h-0 flex-col gap-0 overflow-hidden border-0 py-0 shadow-[0_4px_16px_rgb(23_50_54/0.06)] dark:shadow-[0_4px_16px_rgb(0_0_0/0.22)]', className)}>
+            <Card
+                className={cn(
+                    'flex h-full min-h-0 flex-col gap-0 overflow-hidden border-0 py-0 shadow-[0_4px_16px_rgb(23_50_54/0.06)] dark:shadow-[0_4px_16px_rgb(0_0_0/0.22)]',
+                    className,
+                )}
+            >
                 <CardHeader className={cn('flex flex-col gap-2.5 py-3', EDGE_PAD)}>
                     {title ? (
                         <CardTitle className="text-[13px] font-semibold tracking-tight sm:text-sm">{title}</CardTitle>
@@ -357,67 +366,153 @@ export function DataTable<T>({
                         <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[4px] border-0 bg-card shadow-[0_2px_8px_rgb(23_50_54/0.08)] dark:shadow-[0_2px_8px_rgb(0_0_0/0.28)]">
                             <div className="hidden min-h-0 flex-1 overflow-x-auto sm:block">
                                 <Table>
-                            <TableHeader className="bg-muted">
-                                <TableRow className="hover:bg-transparent">
-                                    {canSelect ? (
-                                        <TableHead className={cn(headerCellClass, EDGE_CELL, 'w-10 pr-0')}>
-                                            <TableCheckbox
-                                                checked={allSelected}
-                                                indeterminate={someSelected}
-                                                disabled={selectableIds.length === 0}
-                                                label={t('permissions.select_all')}
-                                                onChange={toggleAll}
-                                            />
-                                        </TableHead>
-                                    ) : null}
-                                    {numbered ? (
-                                        <TableHead className={cn(headerCellClass, EDGE_CELL, 'w-12', canSelect && 'pl-3')}>
-                                            <ColumnHeaderLabel icon={HashIcon} label={t('common.no')} />
-                                        </TableHead>
-                                    ) : null}
-                                    {columns.map((column) => {
-                                        const HeaderIcon = column.icon ?? DEFAULT_COLUMN_ICONS[column.id];
-                                        const label = <ColumnHeaderLabel icon={HeaderIcon} label={column.header} />;
+                                    <TableHeader className="bg-muted">
+                                        <TableRow className="hover:bg-transparent">
+                                            {canSelect ? (
+                                                <TableHead className={cn(headerCellClass, EDGE_CELL, 'w-10 pr-0')}>
+                                                    <TableCheckbox
+                                                        checked={allSelected}
+                                                        indeterminate={someSelected}
+                                                        disabled={selectableIds.length === 0}
+                                                        label={t('permissions.select_all')}
+                                                        onChange={toggleAll}
+                                                    />
+                                                </TableHead>
+                                            ) : null}
+                                            {numbered ? (
+                                                <TableHead
+                                                    className={cn(
+                                                        headerCellClass,
+                                                        EDGE_CELL,
+                                                        'w-12',
+                                                        canSelect && 'pl-3',
+                                                    )}
+                                                >
+                                                    <ColumnHeaderLabel icon={HashIcon} label={t('common.no')} />
+                                                </TableHead>
+                                            ) : null}
+                                            {columns.map((column) => {
+                                                const HeaderIcon = column.icon ?? DEFAULT_COLUMN_ICONS[column.id];
+                                                const label = (
+                                                    <ColumnHeaderLabel icon={HeaderIcon} label={column.header} />
+                                                );
 
-                                        return (
-                                            <TableHead key={column.id} className={cn(headerCellClass, EDGE_CELL)}>
-                                                {column.sortable && onSort ? (
-                                                    <button
-                                                        type="button"
-                                                        className="inline-flex items-center gap-1.5 rounded-md py-0.5"
-                                                        onClick={() => onSort(column.id)}
+                                                return (
+                                                    <TableHead
+                                                        key={column.id}
+                                                        className={cn(headerCellClass, EDGE_CELL)}
                                                     >
-                                                        {label}
-                                                        {sort === column.id ? (
-                                                            direction === 'asc' ? (
-                                                                <ArrowUpIcon className="size-3.5 text-muted-foreground group-hover/head:text-primary" />
-                                                            ) : (
-                                                                <ArrowDownIcon className="size-3.5 text-muted-foreground group-hover/head:text-primary" />
-                                                            )
+                                                        {column.sortable && onSort ? (
+                                                            <button
+                                                                type="button"
+                                                                className="inline-flex items-center gap-1.5 rounded-md py-0.5"
+                                                                onClick={() => onSort(column.id)}
+                                                            >
+                                                                {label}
+                                                                {sort === column.id ? (
+                                                                    direction === 'asc' ? (
+                                                                        <ArrowUpIcon className="size-3.5 text-muted-foreground group-hover/head:text-primary" />
+                                                                    ) : (
+                                                                        <ArrowDownIcon className="size-3.5 text-muted-foreground group-hover/head:text-primary" />
+                                                                    )
+                                                                ) : (
+                                                                    <ChevronsUpDownIcon className="size-3.5 text-muted-foreground opacity-40 group-hover/head:text-primary group-hover/head:opacity-100" />
+                                                                )}
+                                                            </button>
                                                         ) : (
-                                                            <ChevronsUpDownIcon className="size-3.5 text-muted-foreground opacity-40 group-hover/head:text-primary group-hover/head:opacity-100" />
+                                                            label
                                                         )}
-                                                    </button>
-                                                ) : (
-                                                    label
-                                                )}
-                                            </TableHead>
-                                        );
-                                    })}
-                                    {showActions ? (
-                                        <TableHead className={cn(headerCellClass, EDGE_CELL, 'w-px text-center')}>
-                                            <ColumnHeaderLabel label={t('common.actions')} className="justify-center" />
-                                        </TableHead>
-                                    ) : null}
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
+                                                    </TableHead>
+                                                );
+                                            })}
+                                            {showActions ? (
+                                                <TableHead
+                                                    className={cn(headerCellClass, EDGE_CELL, 'w-px text-center')}
+                                                >
+                                                    <ColumnHeaderLabel
+                                                        label={t('common.actions')}
+                                                        className="justify-center"
+                                                    />
+                                                </TableHead>
+                                            ) : null}
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {rows.length === 0 ? (
+                                            <TableRow className="hover:bg-transparent">
+                                                <TableCell
+                                                    colSpan={columnCount}
+                                                    className={cn(EDGE_CELL, 'h-20 text-center')}
+                                                >
+                                                    <p className="text-sm font-medium text-foreground">{noResults}</p>
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : (
+                                            rows.map((row, index) => {
+                                                const id = getRowId(row);
+                                                const enabled = isRowSelectable?.(row) ?? true;
+                                                const selected = selectedIds.includes(id);
+
+                                                return (
+                                                    <TableRow
+                                                        key={id}
+                                                        data-state={selected ? 'selected' : undefined}
+                                                        className="bg-card"
+                                                    >
+                                                        {canSelect ? (
+                                                            <TableCell className={cn(EDGE_CELL, 'w-10 pr-0')}>
+                                                                <TableCheckbox
+                                                                    checked={selected}
+                                                                    disabled={!enabled}
+                                                                    label={t('common.select_row')}
+                                                                    onChange={() => toggleRow(id, enabled)}
+                                                                />
+                                                            </TableCell>
+                                                        ) : null}
+                                                        {numbered ? (
+                                                            <TableCell
+                                                                className={cn(
+                                                                    EDGE_CELL,
+                                                                    'w-12 tabular-nums text-muted-foreground',
+                                                                    canSelect && 'pl-3',
+                                                                )}
+                                                            >
+                                                                {indexStart + index}
+                                                            </TableCell>
+                                                        ) : null}
+                                                        {columns.map((column) => (
+                                                            <TableCell
+                                                                key={column.id}
+                                                                className={cn(EDGE_CELL, column.className)}
+                                                            >
+                                                                {column.cell(row)}
+                                                            </TableCell>
+                                                        ))}
+                                                        {showActions ? (
+                                                            <TableCell
+                                                                className={cn(
+                                                                    EDGE_CELL,
+                                                                    'w-px text-center align-middle',
+                                                                )}
+                                                            >
+                                                                <div className="flex h-full items-center justify-center">
+                                                                    {renderActions(row)}
+                                                                </div>
+                                                            </TableCell>
+                                                        ) : null}
+                                                    </TableRow>
+                                                );
+                                            })
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+
+                            <ul className="flex flex-col gap-2 p-2.5 sm:hidden">
                                 {rows.length === 0 ? (
-                                    <TableRow className="hover:bg-transparent">
-                                        <TableCell colSpan={columnCount} className={cn(EDGE_CELL, 'h-20 text-center')}>
-                                            <p className="text-sm font-medium text-foreground">{noResults}</p>
-                                        </TableCell>
-                                    </TableRow>
+                                    <li className="rounded-[6px] bg-muted/30 px-3 py-6 text-center text-sm text-muted-foreground">
+                                        {noResults}
+                                    </li>
                                 ) : (
                                     rows.map((row, index) => {
                                         const id = getRowId(row);
@@ -425,102 +520,63 @@ export function DataTable<T>({
                                         const selected = selectedIds.includes(id);
 
                                         return (
-                                            <TableRow
+                                            <li
                                                 key={id}
-                                                data-state={selected ? 'selected' : undefined}
-                                                className="bg-card"
+                                                className={cn(
+                                                    'rounded-[6px] border border-border/70 bg-card px-3 py-2.5 shadow-[0_1px_2px_rgb(23_50_54/0.04)]',
+                                                    selected && 'border-primary/40 bg-primary/6',
+                                                )}
                                             >
-                                                {canSelect ? (
-                                                    <TableCell className={cn(EDGE_CELL, 'w-10 pr-0')}>
+                                                <div className="mb-1.5 flex items-center gap-2">
+                                                    {canSelect ? (
                                                         <TableCheckbox
                                                             checked={selected}
-                                                            disabled={! enabled}
+                                                            disabled={!enabled}
                                                             label={t('common.select_row')}
                                                             onChange={() => toggleRow(id, enabled)}
                                                         />
-                                                    </TableCell>
+                                                    ) : null}
+                                                    {numbered ? (
+                                                        <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
+                                                            {t('common.no')} {indexStart + index}
+                                                        </span>
+                                                    ) : null}
+                                                </div>
+                                                <div className="flex items-start justify-between gap-2.5">
+                                                    <div className="min-w-0">
+                                                        {mobileImage ? (
+                                                            <div className="min-w-0 text-[13px] font-semibold text-foreground">
+                                                                {mobileImage.cell(row)}
+                                                            </div>
+                                                        ) : null}
+                                                        {mobileTitle ? (
+                                                            <div className="min-w-0 text-[13px] font-semibold text-foreground">
+                                                                {mobileTitle.cell(row)}
+                                                            </div>
+                                                        ) : null}
+                                                        {mobileSubtitle ? (
+                                                            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                                                {mobileSubtitle.cell(row)}
+                                                            </p>
+                                                        ) : null}
+                                                    </div>
+                                                    {mobileBadge ? mobileBadge.cell(row) : null}
+                                                </div>
+                                                {mobileMeta ? (
+                                                    <p className="mt-1.5 font-mono text-[10px] text-muted-foreground">
+                                                        {mobileMeta.cell(row)}
+                                                    </p>
                                                 ) : null}
-                                                {numbered ? (
-                                                    <TableCell className={cn(EDGE_CELL, 'w-12 tabular-nums text-muted-foreground', canSelect && 'pl-3')}>
-                                                        {indexStart + index}
-                                                    </TableCell>
-                                                ) : null}
-                                                {columns.map((column) => (
-                                                    <TableCell key={column.id} className={cn(EDGE_CELL, column.className)}>
-                                                        {column.cell(row)}
-                                                    </TableCell>
-                                                ))}
                                                 {showActions ? (
-                                                    <TableCell className={cn(EDGE_CELL, 'w-px text-center align-middle')}>
-                                                        <div className="flex h-full items-center justify-center">{renderActions(row)}</div>
-                                                    </TableCell>
+                                                    <div className="mt-2 flex items-center justify-center border-t border-border/60 pt-2">
+                                                        {renderActions(row)}
+                                                    </div>
                                                 ) : null}
-                                            </TableRow>
+                                            </li>
                                         );
                                     })
                                 )}
-                            </TableBody>
-                        </Table>
-                    </div>
-
-                    <ul className="flex flex-col gap-2 p-2.5 sm:hidden">
-                        {rows.length === 0 ? (
-                            <li className="rounded-[6px] bg-muted/30 px-3 py-6 text-center text-sm text-muted-foreground">
-                                {noResults}
-                            </li>
-                        ) : (
-                            rows.map((row, index) => {
-                                const id = getRowId(row);
-                                const enabled = isRowSelectable?.(row) ?? true;
-                                const selected = selectedIds.includes(id);
-
-                                return (
-                                    <li
-                                        key={id}
-                                        className={cn(
-                                            'rounded-[6px] border border-border/70 bg-card px-3 py-2.5 shadow-[0_1px_2px_rgb(23_50_54/0.04)]',
-                                            selected && 'border-primary/40 bg-primary/6',
-                                        )}
-                                    >
-                                        <div className="mb-1.5 flex items-center gap-2">
-                                            {canSelect ? (
-                                                <TableCheckbox
-                                                    checked={selected}
-                                                    disabled={! enabled}
-                                                    label={t('common.select_row')}
-                                                    onChange={() => toggleRow(id, enabled)}
-                                                />
-                                            ) : null}
-                                            {numbered ? (
-                                                <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
-                                                    {t('common.no')} {indexStart + index}
-                                                </span>
-                                            ) : null}
-                                        </div>
-                                        <div className="flex items-start justify-between gap-2.5">
-                                            <div className="min-w-0">
-                                                {mobileTitle ? (
-                                                    <div className="min-w-0 text-[13px] font-semibold text-foreground">{mobileTitle.cell(row)}</div>
-                                                ) : null}
-                                                {mobileSubtitle ? (
-                                                    <p className="mt-0.5 truncate text-xs text-muted-foreground">{mobileSubtitle.cell(row)}</p>
-                                                ) : null}
-                                            </div>
-                                            {mobileBadge ? mobileBadge.cell(row) : null}
-                                        </div>
-                                        {mobileMeta ? (
-                                            <p className="mt-1.5 font-mono text-[10px] text-muted-foreground">{mobileMeta.cell(row)}</p>
-                                        ) : null}
-                                        {showActions ? (
-                                            <div className="mt-2 flex items-center justify-center border-t border-border/60 pt-2">
-                                                {renderActions(row)}
-                                            </div>
-                                        ) : null}
-                                    </li>
-                                );
-                            })
-                        )}
-                    </ul>
+                            </ul>
                         </div>
                     </div>
                     {pagination ? (
@@ -541,12 +597,15 @@ export function DataTable<T>({
                 <ConfirmDialog
                     open={confirmOpen}
                     onOpenChange={(open) => {
-                        if (! open && ! processing) {
+                        if (!open && !processing) {
                             setConfirmOpen(false);
                         }
                     }}
                     title={bulkDeleteTitle ?? t('common.bulk_delete_title')}
-                    description={(bulkDeleteDescription ?? t('common.bulk_delete_description')).replace(':count', String(selectedIds.length))}
+                    description={(bulkDeleteDescription ?? t('common.bulk_delete_description')).replace(
+                        ':count',
+                        String(selectedIds.length),
+                    )}
                     confirmLabel={t('common.delete')}
                     destructive
                     processing={processing}

@@ -21,13 +21,13 @@ class PromotionController extends Controller
         $listing = CmsListing::paginate(
             $request,
             Promotion::query(),
-            ['title', 'description'],
-            ['title', 'start_date', 'end_date', 'is_active', 'created_at'],
+            ['title_en', 'title_my', 'title_zh'],
+            ['title_en', 'title_my', 'title_zh', 'start_date', 'end_date', 'created_at'],
             statusColumn: 'is_active',
         );
 
         return Inertia::render('Cms/promotion/Index', [
-            'items' => $listing['paginator']->through(fn (Promotion $item) => $this->payload($item)),
+            'items' => $listing['paginator']->through(fn(Promotion $item) => $this->payload($item)),
             'filters' => $listing['filters'],
         ]);
     }
@@ -40,13 +40,19 @@ class PromotionController extends Controller
     public function store(StorePromotionRequest $request): RedirectResponse
     {
         $data = $request->safe()->except('image');
-        $data['image_path'] = StoresPublicImage::store($request->file('image'), 'cms/promotions');
+        $data = $request->safe()->except('image');
+
+        if ($request->hasFile('image')) {
+            $data['image_url'] = StoresPublicImage::store($request->file('image'), 'cms/promotions');
+        } else {
+            $data['image_url'] = null;
+        }
 
         $promotion = Promotion::query()->create($data);
 
         activity('cms')->causedBy($request->user())->performedOn($promotion)->event('created')->log('promotion_created');
 
-        return redirect()->route('cms.promotions.index')->with('success', 'cms.created');
+        return redirect()->route('cms.promotions.index')->with('success', 'cms.promotions.created');
     }
 
     public function edit(Promotion $promotion): RedirectResponse
@@ -59,24 +65,24 @@ class PromotionController extends Controller
         $data = $request->safe()->except('image');
 
         if ($request->hasFile('image')) {
-            $data['image_path'] = StoresPublicImage::store($request->file('image'), 'cms/promotions', $promotion->image_path);
+            $data['image_url'] = StoresPublicImage::store($request->file('image'), 'cms/promotions', $promotion->image_url);
         }
 
         $promotion->update($data);
 
         activity('cms')->causedBy($request->user())->performedOn($promotion)->event('updated')->log('promotion_updated');
 
-        return redirect()->route('cms.promotions.index')->with('success', 'cms.updated');
+        return redirect()->route('cms.promotions.index')->with('success', 'cms.promotions.updated');
     }
 
     public function destroy(Request $request, Promotion $promotion): RedirectResponse
     {
-        StoresPublicImage::delete($promotion->image_path);
+        StoresPublicImage::delete($promotion->image_url);
         $promotion->delete();
 
         activity('cms')->causedBy($request->user())->performedOn($promotion)->event('deleted')->log('promotion_deleted');
 
-        return redirect()->route('cms.promotions.index')->with('success', 'cms.deleted');
+        return redirect()->route('cms.promotions.index')->with('success', 'cms.promotions.deleted');
     }
 
     public function bulkDestroy(Request $request): RedirectResponse
@@ -86,7 +92,7 @@ class PromotionController extends Controller
             Promotion::query(),
             'cms.promotions.index',
             'promotion_deleted',
-            beforeDelete: fn (Promotion $promotion) => StoresPublicImage::delete($promotion->image_path),
+            beforeDelete: fn(Promotion $promotion) => StoresPublicImage::delete($promotion->image_url),
         );
     }
 
@@ -97,12 +103,17 @@ class PromotionController extends Controller
     {
         return [
             'id' => $promotion->id,
-            'title' => $promotion->title,
-            'description' => $promotion->description,
+            'title_en' => $promotion->title_en,
+            'title_my' => $promotion->title_my,
+            'title_zh' => $promotion->title_zh,
+            'description_en' => $promotion->description_en,
+            'description_my' => $promotion->description_my,
+            'description_zh' => $promotion->description_zh,
             'start_date' => $promotion->start_date?->toDateString(),
             'end_date' => $promotion->end_date?->toDateString(),
             'is_active' => $promotion->is_active,
-            'image_url' => StoresPublicImage::url($promotion->image_path),
+            'slug' => $promotion->slug,
+            'image_url' => StoresPublicImage::url($promotion->image_url),
             'created_at' => $promotion->created_at?->toDateString(),
         ];
     }

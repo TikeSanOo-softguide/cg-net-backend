@@ -3,29 +3,30 @@
 namespace App\Models;
 
 use App\Enums\ReviewStatus;
-use Database\Factories\InstallationApplicationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable([
-    'user_id',
-    'region_id',
-    'id_type',
-    'id_number',
-    'plan_id',
-    'photo_path',
-    'latitude',
-    'longitude',
-    'address',
-    'note',
-    'status',
-])]
+#[
+    Fillable([
+        'package_id',
+        'area_id',
+        'id_type',
+        'id_name',
+        'id_number',
+        'latitude',
+        'longitude',
+        'address',
+        'phone',
+        'note',
+        'status',
+        'user_id',
+    ]),
+]
 class InstallationApplication extends Model
 {
-    /** @use HasFactory<InstallationApplicationFactory> */
     use HasFactory, SoftDeletes;
 
     protected function casts(): array
@@ -37,18 +38,18 @@ class InstallationApplication extends Model
         ];
     }
 
+    public function package(): BelongsTo
+    {
+        return $this->belongsTo(Package::class);
+    }
+
+    public function area(): BelongsTo
+    {
+        return $this->belongsTo(Area::class);
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function region(): BelongsTo
-    {
-        return $this->belongsTo(Region::class);
-    }
-
-    public function plan(): BelongsTo
-    {
-        return $this->belongsTo(Package::class, 'plan_id');
     }
 }

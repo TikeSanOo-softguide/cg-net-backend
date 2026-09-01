@@ -18,6 +18,7 @@ import {
     UserRoundIcon,
     UsersIcon,
     WifiIcon,
+    Image,
     type LucideIcon,
 } from 'lucide-react';
 
@@ -51,4 +52,5 @@ export const DEFAULT_COLUMN_ICONS: Record<string, LucideIcon> = {
     slug: LinkIcon,
     category_name: FolderIcon,
     sort_order: ListOrderedIcon,
+    image: Image,
 };

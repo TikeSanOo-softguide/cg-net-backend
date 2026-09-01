@@ -5,14 +5,13 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('addons', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 255);
+            $table->string('name_en');
+            $table->string('name_zh');
+            $table->string('name_my');
             $table->decimal('price', 10, 2);
             $table->string('image_url', 500)->nullable();
             $table->boolean('is_active')->default(true);
@@ -21,9 +20,6 @@ return new class extends Migration {
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('addons');

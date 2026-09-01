@@ -8,16 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['mbps'])]
-class Speed extends Model
+#[Fillable(['name_en', 'name_zh', 'name_my'])]
+class State extends Model
 {
     use HasFactory, SoftDeletes;
 
-    /**
-     * The packages that belong to this speed tier.
-     */
-    public function packages(): HasMany
+    public function regions(): HasMany
     {
-        return $this->hasMany(Package::class);
+        return $this->hasMany(Region::class);
     }
 }

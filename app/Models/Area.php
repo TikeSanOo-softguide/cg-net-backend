@@ -9,18 +9,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['name_en', 'name_zh', 'name_my', 'state_id'])]
-class Region extends Model
+#[Fillable(['name_en', 'name_zh', 'name_my', 'region_id'])]
+class Area extends Model
 {
     use HasFactory, SoftDeletes;
 
-    public function state(): BelongsTo
+    public function region(): BelongsTo
     {
-        return $this->belongsTo(State::class);
+        return $this->belongsTo(Region::class);
     }
 
-    public function areas(): HasMany
+    public function installationApplications(): HasMany
     {
-        return $this->hasMany(Area::class);
+        return $this->hasMany(InstallationApplication::class);
     }
 }

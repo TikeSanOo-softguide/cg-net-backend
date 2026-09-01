@@ -9,10 +9,15 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 export type PromotionItem = {
     id: number;
-    title: string;
-    description: string | null;
+    title_en: string | null;
+    title_my: string | null;
+    title_zh: string | null;
+    description_en: string | null;
+    description_my: string | null;
+    description_zh: string | null;
     start_date: string | null;
     end_date: string | null;
+    slug: string | null;
     is_active: boolean;
     image_url: string | null;
 };
@@ -25,11 +30,16 @@ type PromotionFormDialogProps = {
 
 function emptyPromotionForm(): PromotionFormValues {
     return {
-        title: '',
-        description: '',
+        title_en: '',
+        title_my: '',
+        title_zh: '',
+        description_en: '',
+        description_my: '',
+        description_zh: '',
         start_date: '',
         end_date: '',
         is_active: true,
+        slug: '',
         image: null,
     };
 }
@@ -45,6 +55,7 @@ export function PromotionFormDialog({ open, onOpenChange, item }: PromotionFormD
             title={isEdit ? t('cms.edit_promotion') : t('cms.create_promotion')}
             description={isEdit ? t('cms.edit_promotion_description') : t('cms.create_promotion_description')}
             icon={isEdit ? SquarePenIcon : MegaphoneIcon}
+            size='3xl'
         >
             {open ? (
                 <PromotionFormDialogBody
@@ -62,13 +73,18 @@ function PromotionFormDialogBody({ item, onClose }: { item: PromotionItem | null
     const form = useForm<PromotionFormValues>(
         item
             ? {
-                  title: item.title,
-                  description: item.description ?? '',
-                  start_date: item.start_date ?? '',
-                  end_date: item.end_date ?? '',
-                  is_active: item.is_active,
-                  image: null,
-              }
+                title_en: item.title_en ?? '',
+                title_my: item.title_my ?? '',
+                title_zh: item.title_zh ?? '',
+                description_en: item.description_en ?? '',
+                description_my: item.description_my ?? '',
+                description_zh: item.description_zh ?? '',
+                start_date: item.start_date ?? '',
+                end_date: item.end_date ?? '',
+                is_active: item.is_active,
+                slug: item.slug ?? '',
+                image: null,
+            }
             : emptyPromotionForm(),
     );
 
@@ -82,7 +98,8 @@ function PromotionFormDialogBody({ item, onClose }: { item: PromotionItem | null
         };
 
         if (isEdit && item) {
-            form.transform((data) => ({ ...data, _method: 'put' })).post(`/cms/promotions/${item.id}`, options);
+            form.transform((data) => ({ ...data, _method: 'put' }));
+            form.post(`/cms/promotions/${item.id}`, options);
 
             return;
         }

@@ -17,7 +17,9 @@ class UpdateGalleryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'label' => ['nullable', 'string', 'max:255'],
+            'label_en' => ['nullable', 'string', 'max:255'],
+            'label_my' => ['nullable', 'string', 'max:255'],
+            'label_zh' => ['nullable', 'string', 'max:255'],
             'image' => CmsRules::image(false),
         ];
     }

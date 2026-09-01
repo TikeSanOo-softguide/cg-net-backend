@@ -12,9 +12,23 @@ type Props = {
 };
 
 export default function GalleryIndex({ items, filters }: Props) {
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
+
     const [formOpen, setFormOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<GalleryItem | null>(null);
+
+    const getLabel = (row: GalleryItem): string => {
+        switch (locale) {
+            case 'my':
+                return row.label_my ?? row.label_en ?? '';
+
+            case 'zh':
+                return row.label_zh ?? row.label_en ?? '';
+
+            default:
+                return row.label_en ?? '';
+        }
+    };
 
     return (
         <>
@@ -30,7 +44,14 @@ export default function GalleryIndex({ items, filters }: Props) {
                     setFormOpen(true);
                 }}
                 onEdit={(row) => {
-                    setEditingItem({ id: row.id, label: row.label, image_url: row.image_url });
+                    setEditingItem({
+                        id: row.id,
+                        label_en: row.label_en,
+                        label_my: row.label_my,
+                        label_zh: row.label_zh,
+                        image_url: row.image_url,
+                    });
+
                     setFormOpen(true);
                 }}
                 formDialog={
@@ -56,7 +77,7 @@ export default function GalleryIndex({ items, filters }: Props) {
                         cell: (row) => (
                             <span className="inline-flex items-center gap-2">
                                 {row.image_url ? <img src={row.image_url} alt="" className="size-8 rounded object-cover" /> : null}
-                                {row.label}
+                                {getLabel(row)}
                             </span>
                         ),
                     },
