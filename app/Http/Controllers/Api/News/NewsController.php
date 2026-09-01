@@ -12,7 +12,32 @@ class NewsController extends Controller
 {
     public function index(Request $request): JsonResource
     {
-        $news = News::with('category')->where('status', 'published')->latest()->paginate(6);
+        $perPage = $request->integer('per_page', 6);
+
+        $query = News::with('category')->where('status', 'published');
+
+        if ($request->filled('search')) {
+            $search = trim($request->input('search'));
+
+            $query->where(function ($q) use ($search) {
+                $q->where('title_en', 'like', "%{$search}%")
+                    ->orWhere('title_my', 'like', "%{$search}%")
+                    ->orWhere('title_zh', 'like', "%{$search}%")
+                    ->orWhere('description_en', 'like', "%{$search}%")
+                    ->orWhere('description_my', 'like', "%{$search}%")
+                    ->orWhere('description_zh', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('category')) {
+            $category = $request->input('category');
+
+            $query->whereHas('category', function ($q) use ($category) {
+                $q->where('slug', $category);
+            });
+        }
+
+        $news = $query->latest()->paginate($perPage);
 
         return NewsResource::collection($news);
     }

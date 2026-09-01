@@ -179,6 +179,8 @@ export function GalleryForm({
                 label={t('cms.image')}
                 htmlFor="dashboard-image-dashed"
                 error={imageError()}
+                className="sm:col-span-2"
+                required
             >
                 <SquareImageUpload
                     id="dashboard-image-dashed"

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['name', 'price', 'image_url', 'is_active'])]
+#[Fillable(['name_en', 'name_zh', 'name_my', 'price', 'image_url', 'is_active'])]
 class Addon extends Model
 {
     use HasFactory, SoftDeletes;
