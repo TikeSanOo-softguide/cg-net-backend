@@ -12,6 +12,7 @@ use App\Http\Controllers\Locale\LocaleController;
 use App\Http\Controllers\MenuPage\MenuPageController;
 use App\Http\Controllers\Staff\RoleController;
 use App\Http\Controllers\Staff\StaffController;
+use App\Http\Controllers\TopUpCard\TopUpCardController;
 use App\Support\MenuPages;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -75,6 +76,14 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         Route::get('/{role}/edit', [RoleController::class, 'edit'])->middleware('can:roles.update')->name('edit');
         Route::put('/{role}', [RoleController::class, 'update'])->middleware('can:roles.update')->name('update');
         Route::delete('/{role}', [RoleController::class, 'destroy'])->middleware('can:roles.delete')->name('destroy');
+    });
+
+    Route::prefix('top-up-cards')->name('top-up-cards.')->group(function () {
+        Route::get('/batch', [TopUpCardController::class, 'index'])->middleware('can:top-up-cards.view')->name('batch');
+        Route::post('/batch', [TopUpCardController::class, 'store'])->middleware('can:top-up-cards.create')->name('store');
+        Route::get('/export', [TopUpCardController::class, 'export'])->middleware('can:top-up-cards.view')->name('export');
+        Route::get('/redeem-history', [TopUpCardController::class, 'history'])->middleware('can:top-up-cards.view')->name('redeem-history');
+        Route::patch('/{topUpCard}/void', [TopUpCardController::class, 'void'])->middleware('can:top-up-cards.update')->name('void');
     });
 
     foreach (MenuPages::all() as $page) {

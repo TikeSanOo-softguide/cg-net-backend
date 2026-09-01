@@ -45,6 +45,7 @@ export const DEFAULT_COLUMN_ICONS: Record<string, LucideIcon> = {
     package: PackageIcon,
     package_name: PackageIcon,
     type: ShapesIcon,
+    serial_no: HashIcon,
     amount: BanknoteIcon,
     lang: LanguagesIcon,
     slug: LinkIcon,

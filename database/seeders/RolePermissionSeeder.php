@@ -41,7 +41,7 @@ class RolePermissionSeeder extends Seeder
                 'cpe',
                 'packages',
                 'billing',
-                'vouchers',
+                'top-up-cards',
                 'regions',
                 'cms',
             ], true);

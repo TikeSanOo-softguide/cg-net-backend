@@ -31,7 +31,5 @@ createInertiaApp({
         </ThemeProvider>
     ),
     strictMode: true,
-    progress: {
-        color: 'var(--primary)',
-    },
+    progress: false,
 });

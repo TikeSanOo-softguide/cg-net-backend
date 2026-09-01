@@ -1,24 +1,26 @@
 <?php
 
-$srcPath = dirname(__DIR__).'/public/images/smart-link-logo.jpg';
+$srcPath = dirname(__DIR__).'/public/images/smart-link-logo.png';
 $public = dirname(__DIR__).'/public';
 
-$src = imagecreatefromjpeg($srcPath);
+$src = imagecreatefrompng($srcPath);
 
 if ($src === false) {
-    fwrite(STDERR, "Unable to read logo JPEG.\n");
+    fwrite(STDERR, "Unable to read logo PNG.\n");
     exit(1);
 }
 
 $sw = imagesx($src);
 $sh = imagesy($src);
-$crop = (int) round($sw * 0.58);
+$crop = min($sw, $sh);
 $sx = (int) round(($sw - $crop) / 2);
-$sy = (int) round($sh * 0.08);
+$sy = (int) round(($sh - $crop) / 2);
 
 function savePng($src, int $sx, int $sy, int $crop, int $size, string $path): void
 {
     $dst = imagecreatetruecolor($size, $size);
+    imagealphablending($dst, false);
+    imagesavealpha($dst, true);
     imagecopyresampled($dst, $src, 0, 0, $sx, $sy, $size, $size, $crop, $crop);
     imagepng($dst, $path, 6);
     imagedestroy($dst);

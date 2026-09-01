@@ -2,6 +2,7 @@ import { FormEvent } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 import { KeyRoundIcon, ShieldCheckIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
@@ -46,7 +47,7 @@ export default function TwoFactorChallenge() {
                             />
                         </FormField>
                         <Button type="submit" variant="primary" size="md" disabled={form.processing}>
-                            <ShieldCheckIcon />
+                            {form.processing ? <Spinner size="xs" className="text-current" /> : <ShieldCheckIcon />}
                             Continue
                         </Button>
                     </form>

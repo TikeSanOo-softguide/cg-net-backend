@@ -17,24 +17,15 @@ export function BrandLockup({
     logoClassName,
     href = '/dashboard',
 }: BrandLockupProps) {
-    const showWordmark = ! compact && expanded;
+    const showWordmark = !compact && expanded;
 
     const content = (
         <>
-            <span
-                className={cn(
-                    'relative size-12 shrink-0 overflow-hidden rounded-[6px] bg-brand',
-                    logoClassName,
-                )}
-            >
-                <img
-                    src="/images/smart-link-logo.png"
-                    alt=""
-                    className="size-full object-cover"
-                />
+            <span className={cn('relative size-12 shrink-0 overflow-hidden rounded-[6px] bg-brand', logoClassName)}>
+                <img src="/images/smart-link-logo.png?v=2" alt="" className="size-full object-cover" />
             </span>
             {compact ? (
-                <span className="sr-only">Smart Link</span>
+                <span className="sr-only">Young Ni Oo</span>
             ) : (
                 <span
                     className={cn(
@@ -42,9 +33,9 @@ export function BrandLockup({
                         'motion-reduce:transition-none transition-[max-width,opacity,margin] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
                         showWordmark ? 'ml-0 max-w-[180px] opacity-100' : 'pointer-events-none max-w-0 opacity-0',
                     )}
-                    aria-hidden={! showWordmark}
+                    aria-hidden={!showWordmark}
                 >
-                    Smart Link
+                    Young Ni Oo
                 </span>
             )}
         </>

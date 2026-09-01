@@ -1,11 +1,12 @@
 import { FormEvent, useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { EyeIcon, EyeOffIcon, Loader2Icon, LockIcon, LogInIcon, UserIcon } from 'lucide-react';
+import { EyeIcon, EyeOffIcon, LockIcon, LogInIcon, UserIcon } from 'lucide-react';
 
 import { AuthOutlineInput } from '@/components/auth/AuthOutlineInput';
 import { LoginIllustration } from '@/components/auth/LoginIllustration';
 import { BrandLockup } from '@/components/layout/BrandLockup';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { Card, CardContent } from '@/components/ui/card';
 import { FormField } from '@/components/ui/form-field';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -141,7 +142,7 @@ export default function Login({ status }: LoginProps) {
                                 className="mt-1 w-full"
                                 disabled={form.processing}
                             >
-                                {form.processing ? <Loader2Icon className="animate-spin" /> : <LogInIcon />}
+                                {form.processing ? <Spinner size="xs" className="text-current" /> : <LogInIcon />}
                                 {t('auth.sign_in')}
                             </Button>
 

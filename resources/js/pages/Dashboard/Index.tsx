@@ -126,7 +126,7 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
                                 width={520}
                                 height={240}
                                 value={dashedImage}
-                                existingUrl="/images/smart-link-logo.png"
+                                existingUrl="/images/smart-link-logo.png?v=2"
                                 onChange={setDashedImage}
                                 radialMenu
                             />
@@ -137,7 +137,7 @@ export default function DashboardIndex({ stats, chart, recentRequests }: Dashboa
                                 width={180}
                                 height={180}
                                 value={tileImage}
-                                existingUrl="/images/smart-link-logo.png"
+                                existingUrl="/images/smart-link-logo.png?v=2"
                                 onChange={setTileImage}
                                 radialMenu
                             />

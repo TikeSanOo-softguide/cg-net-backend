@@ -23,7 +23,7 @@ final class AppPermissions
             ['module' => 'cpe', 'labelKey' => 'menu.cpe_management', 'actions' => ['view', 'create', 'update', 'delete']],
             ['module' => 'packages', 'labelKey' => 'menu.package_management', 'actions' => ['view', 'create', 'update', 'delete']],
             ['module' => 'billing', 'labelKey' => 'menu.billing', 'actions' => ['view', 'create', 'update', 'delete']],
-            ['module' => 'vouchers', 'labelKey' => 'menu.voucher_management', 'actions' => ['view', 'create', 'update', 'delete']],
+            ['module' => 'top-up-cards', 'labelKey' => 'menu.top_up_card_management', 'actions' => ['view', 'create', 'update', 'delete']],
             ['module' => 'service-requests', 'labelKey' => 'menu.service_requests', 'actions' => ['view', 'create', 'update', 'delete']],
             ['module' => 'regions', 'labelKey' => 'menu.region_management', 'actions' => ['view', 'create', 'update', 'delete']],
             ['module' => 'notifications', 'labelKey' => 'menu.notifications', 'actions' => ['view', 'create', 'update', 'delete']],

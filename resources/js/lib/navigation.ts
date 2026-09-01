@@ -117,12 +117,12 @@ export const navigation: NavGroup[] = [
         ],
     },
     {
-        id: 'vouchers',
-        labelKey: 'menu.voucher_management',
+        id: 'top-up-cards',
+        labelKey: 'menu.top_up_card_management',
         icon: Ticket,
         children: [
-            { labelKey: 'menu.voucher_batch', descriptionKey: 'menu.voucher_batch_description', href: '/vouchers/batch', icon: Ticket },
-            { labelKey: 'menu.redeem_history', descriptionKey: 'menu.redeem_history_description', href: '/vouchers/redeem-history', icon: History },
+            { labelKey: 'menu.top_up_card_batch', descriptionKey: 'menu.top_up_card_batch_description', href: '/top-up-cards/batch', icon: Ticket },
+            { labelKey: 'menu.redeem_history', descriptionKey: 'menu.redeem_history_description', href: '/top-up-cards/redeem-history', icon: History },
         ],
     },
     {
@@ -272,8 +272,8 @@ export function viewPermissionForHref(href: string): string | undefined {
         return 'billing.view';
     }
 
-    if (href.startsWith('/vouchers')) {
-        return 'vouchers.view';
+    if (href.startsWith('/top-up-cards')) {
+        return 'top-up-cards.view';
     }
 
     if (href.startsWith('/service-requests')) {

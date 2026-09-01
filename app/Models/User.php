@@ -51,9 +51,9 @@ class User extends Authenticatable
         return $this->hasOne(Wallet::class);
     }
 
-    public function redeemedVouchers(): HasMany
+    public function redeemedTopUpCards(): HasMany
     {
-        return $this->hasMany(Voucher::class, 'redeemed_by_user_id');
+        return $this->hasMany(TopUpCard::class, 'redeemed_by');
     }
 
     public function installationApplications(): HasMany

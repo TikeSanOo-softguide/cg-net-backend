@@ -2,7 +2,8 @@
 
 namespace App\Models;
 
-use Database\Factories\VoucherFactory;
+use App\Enums\TopUpCardStatus;
+use Database\Factories\TopUpCardFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,36 +12,34 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
-    'serial_number',
-    'pin_hash',
-    'package_id',
+    'serial_no',
+    'pin',
     'amount',
-    'is_redeemed',
-    'redeemed_by_user_id',
+    'expires_at',
     'redeemed_at',
+    'redeemed_by',
+    'status',
 ])]
-#[Hidden(['pin_hash'])]
-class Voucher extends Model
+#[Hidden(['pin'])]
+class TopUpCard extends Model
 {
-    /** @use HasFactory<VoucherFactory> */
+    /** @use HasFactory<TopUpCardFactory> */
     use HasFactory, SoftDeletes;
+
+    protected $table = 'top_up_card';
 
     protected function casts(): array
     {
         return [
             'amount' => 'decimal:2',
-            'is_redeemed' => 'boolean',
+            'expires_at' => 'date',
             'redeemed_at' => 'datetime',
+            'status' => TopUpCardStatus::class,
         ];
-    }
-
-    public function package(): BelongsTo
-    {
-        return $this->belongsTo(Package::class);
     }
 
     public function redeemedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'redeemed_by_user_id');
+        return $this->belongsTo(User::class, 'redeemed_by');
     }
 }

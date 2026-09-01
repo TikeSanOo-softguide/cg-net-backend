@@ -27,6 +27,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { FormControl } from '@/components/ui/form-control';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
@@ -215,7 +216,7 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
                                 />
                             </FormControl>
                             <Button type="submit" size="sm" disabled={bindForm.processing}>
-                                <Link2Icon />
+                                {bindForm.processing ? <Spinner size="xs" className="text-current" /> : <Link2Icon />}
                                 {t('customers.bind_account')}
                             </Button>
                         </form>
@@ -377,7 +378,7 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
                                 />
                             </FormControl>
                             <Button type="submit" size="sm" className="shrink-0" disabled={bindForm.processing}>
-                                <Link2Icon />
+                                {bindForm.processing ? <Spinner size="xs" className="text-current" /> : <Link2Icon />}
                                 {t('customers.bind_account')}
                             </Button>
                         </div>

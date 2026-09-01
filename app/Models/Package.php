@@ -65,11 +65,6 @@ class Package extends Model
         return $this->hasMany(CustomerPackage::class);
     }
 
-    public function vouchers(): HasMany
-    {
-        return $this->hasMany(Voucher::class);
-    }
-
     public function installationApplications(): HasMany
     {
         return $this->hasMany(InstallationApplication::class, 'plan_id');

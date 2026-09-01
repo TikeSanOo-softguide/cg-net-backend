@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { SaveIcon, SendIcon, XIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 
@@ -63,7 +64,7 @@ export function FormActionBar({
             </Button>
             {children ?? (
                 <Button type="submit" size="sm" variant="ghost" disabled={processing} className={formActionSubmitClass}>
-                    <SubmitIcon className="size-3.5" strokeWidth={1.85} />
+                    {processing ? <Spinner size="xs" className="text-current" /> : <SubmitIcon className="size-3.5" strokeWidth={1.85} />}
                     {actionLabel}
                 </Button>
             )}

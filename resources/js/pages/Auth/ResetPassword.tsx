@@ -2,6 +2,7 @@ import { FormEvent } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 import { LockIcon, UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
@@ -59,7 +60,7 @@ export default function ResetPassword({ username, token }: ResetPasswordProps) {
                             />
                         </FormField>
                         <Button type="submit" variant="primary" size="md" disabled={form.processing}>
-                            <LockIcon />
+                            {form.processing ? <Spinner size="xs" className="text-current" /> : <LockIcon />}
                             Reset password
                         </Button>
                     </form>

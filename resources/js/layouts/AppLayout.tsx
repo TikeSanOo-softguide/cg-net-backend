@@ -10,6 +10,7 @@ import { FlashToast } from '@/components/FlashToast';
 import { FloatingThemeSettingsButton } from '@/components/theme/FloatingThemeSettingsButton';
 import { SidebarToggle } from '@/components/layout/SidebarToggle';
 import { TopBar } from '@/components/layout/TopBar';
+import { VisitSpinner } from '@/components/VisitSpinner';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useCan } from '@/hooks/useCan';
@@ -172,6 +173,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <FloatingThemeSettingsButton />
                 <Toaster />
                 <FlashToast />
+                <VisitSpinner />
             </div>
         </TooltipProvider>
     );

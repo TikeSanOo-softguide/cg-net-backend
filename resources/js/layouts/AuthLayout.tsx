@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { VisitSpinner } from '@/components/VisitSpinner';
 import { useDocumentLang } from '@/hooks/useDocumentLang';
 
 type AuthLayoutProps = {
@@ -24,6 +25,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
             <div className="auth-shell relative z-[1] mx-auto flex w-full max-w-[820px] flex-1 flex-col justify-center text-foreground">
                 {children}
             </div>
+            <VisitSpinner />
         </div>
     );
 }

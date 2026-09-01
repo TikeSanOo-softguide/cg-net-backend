@@ -1,6 +1,6 @@
 # Smart Link — CG-Net Admin
 
-Staff admin for a broadband / ISP operator. Operators manage customers, CPE, packages, billing, vouchers, service requests, support chat, and settings from one web console.
+Staff admin for a broadband / ISP operator. Operators manage customers, CPE, packages, billing, top-up cards, service requests, support chat, and settings from one web console.
 
 The UI brand is **Smart Link**. The Laravel app name is **CG-Net Admin**.
 
@@ -30,11 +30,11 @@ This repo is the admin backend and Inertia React shell. Domain models and seed d
 
 **Data layer (models + migrations + seeders, no admin CRUD yet)**
 
-Customers, broadband accounts, CPE devices, packages, wallets, invoices/payments, vouchers, installation / failure / relocation / change-plan requests, regions, notifications, chat, banners, settings, staff admins.
+Customers, broadband accounts, CPE devices, packages, wallets, invoices/payments, top-up cards, installation / failure / relocation / change-plan requests, regions, notifications, chat, banners, settings, staff admins.
 
 **Placeholder menu pages** (title only, via `MenuPageController`)
 
-Customers, CPE, packages, billing, vouchers, service requests, regions, notifications, support, banners, staff/roles, activity logs, reports, settings.
+Customers, CPE, packages, billing, top-up cards, service requests, regions, notifications, support, banners, staff/roles, activity logs, reports, settings.
 
 Public API is a Sanctum stub (`GET /api/user`) only.
 

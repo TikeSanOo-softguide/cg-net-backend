@@ -1,6 +1,7 @@
 import { CheckIcon, CircleAlertIcon, CircleHelpIcon, Trash2Icon, XIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import {
     Dialog,
     DialogClose,
@@ -95,7 +96,7 @@ export function ConfirmDialog({
                         className="h-7 min-h-7 w-[100px] rounded-[6px] px-2.5 text-[11px]"
                         onClick={onConfirm}
                     >
-                        <ConfirmIcon className="size-3" strokeWidth={2} />
+                        {processing ? <Spinner size="xs" className="text-current" /> : <ConfirmIcon className="size-3" strokeWidth={2} />}
                         {confirmText}
                     </Button>
                 </DialogFooter>
