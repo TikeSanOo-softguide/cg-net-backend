@@ -74,11 +74,12 @@ export function BannerForm({
             processing={form.processing}
             mode={mode}
         >
+            <div>
             <FormField
                 label={t("cms.banner.image_en")}
                 htmlFor="banner-image-en"
                 required
-                className="sm:col-span-2"
+                className="mb-3"
                 error={
                     submitted && !imageEn && !imageUrls?.en
                         ? t("cms.banner.validation.image_en_required")
@@ -87,8 +88,8 @@ export function BannerForm({
             >
                 <SquareImageUpload
                     id="banner-image-en"
-                    width={520}
-                    height={150}
+                    width={600}
+                    height={200}
                     value={imageEn}
                     existingUrl={imageUrls?.en}
                     onChange={(file) => {
@@ -102,7 +103,7 @@ export function BannerForm({
                 label={t("cms.banner.image_zh")}
                 htmlFor="banner-image-zh"
                 required
-                className="sm:col-span-2"
+                className="mb-3"
                 error={
                     submitted && !imageZh && !imageUrls?.zh
                         ? t("validation.required")
@@ -111,8 +112,8 @@ export function BannerForm({
             >
                 <SquareImageUpload
                     id="banner-image-zh"
-                    width={520}
-                    height={150}
+                    width={600}
+                    height={200}
                     value={imageZh}
                     existingUrl={imageUrls?.zh}
                     onChange={(file) => {
@@ -122,11 +123,13 @@ export function BannerForm({
                     }}
                 />
             </FormField>
+            </div>
+            <div className="ml-3">
             <FormField
                 label={t("cms.banner.image_my")}
                 htmlFor="banner-image-my"
                 required
-                className="sm:col-span-2"
+                className="mb-3"
                 error={
                     submitted && !imageMy && !imageUrls?.my
                         ? t("validation.required")
@@ -135,8 +138,8 @@ export function BannerForm({
             >
                 <SquareImageUpload
                     id="banner-image-my"
-                    width={520}
-                    height={150}
+                    width={600}
+                    height={200}
                     value={imageMy}
                     existingUrl={imageUrls?.my}
                     onChange={(file) => {
@@ -146,6 +149,7 @@ export function BannerForm({
                     }}
                 />
             </FormField>
+            <div className="grid grid-cols-2 gap-3 mb-3">
             <FormField
                 label={t("cms.sort_order")}
                 htmlFor="sort_order"
@@ -185,7 +189,9 @@ export function BannerForm({
                     </SelectContent>
                 </Select>
             </FormField>
-            <FormField
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+             <FormField
                 label={t("cms.start_date")}
                 htmlFor="start_date"
                 error={form.errors.start_date}
@@ -215,6 +221,8 @@ export function BannerForm({
                     }
                 />
             </FormField>
+            </div>
+            </div>
         </CmsFormShell>
     );
 }

@@ -58,6 +58,7 @@ export function BannerFormDialog({
                     : t("cms.banner.create_description")
             }
             icon={isEdit ? SquarePenIcon : ImageIcon}
+                        size="3xl"
         >
             {open ? (
                 <BannerFormDialogBody
