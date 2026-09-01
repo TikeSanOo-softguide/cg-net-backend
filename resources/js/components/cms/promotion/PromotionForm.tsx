@@ -169,7 +169,7 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
                         }}
                     />
                 </FormField>
-                <FormField label={t('cms.news.description_en')} htmlFor="description_en" error={fieldError('description_en')} success={fieldSuccess('description_en')} icon={FileTextIcon} className="mb-3">
+                <FormField label={t('cms.news.description_en')} htmlFor="description_en" error={fieldError('description_en')} success={fieldSuccess('description_en')} required icon={FileTextIcon} className="mb-3">
                     <Textarea
                         id="description_en"
                         className={cn('min-h-40', formControlStateClass(fieldState('description_en')))}
@@ -179,7 +179,7 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
                         onChange={(event) => setField('description_en', event.target.value)}
                     />
                 </FormField>
-                <FormField label={t('cms.news.title_zh')} htmlFor="title_zh" error={fieldError('title_zh')} success={fieldSuccess('title_zh')}  icon={TypeIcon} className="mb-3">
+                <FormField label={t('cms.news.title_zh')} htmlFor="title_zh" error={fieldError('title_zh')} success={fieldSuccess('title_zh')} required icon={TypeIcon} className="mb-3">
                     <Input
                         id="title_zh"
                         value={form.data.title_zh}
@@ -190,7 +190,7 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
                         onChange={(event) => setField('title_zh', event.target.value)}
                     />
                 </FormField>
-                <FormField label={t('cms.news.description_zh')} htmlFor="description_zh" error={fieldError('description_zh')} success={fieldSuccess('description_zh')} icon={FileTextIcon} className="mb-3">
+                <FormField label={t('cms.news.description_zh')} htmlFor="description_zh" error={fieldError('description_zh')} success={fieldSuccess('description_zh')} required icon={FileTextIcon} className="mb-3">
                     <Textarea
                         id="description_zh"
                         className={cn('min-h-40', formControlStateClass(fieldState('description_zh')))}
@@ -200,25 +200,22 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
                         onChange={(event) => setField('description_zh', event.target.value)}
                     />
                 </FormField>
-                <FormField label={t('cms.news.title_my')} htmlFor="title_my" error={fieldError('title_my')} success={fieldSuccess('title_my')} icon={TypeIcon} className="mb-3">
+                <FormField
+                    label={t('cms.slug')}
+                    htmlFor="slug"
+                    error={fieldError('slug')}
+                    success={fieldSuccess('slug')}
+                    icon={Link2Icon}
+                    className="mb-3"
+                    required
+                >
                     <Input
-                        id="title_my"
-                        value={form.data.title_my}
-                        maxLength={PROMOTION_TITLE_MAX_LENGTH}
-                        aria-invalid={fieldState('title_my') === 'error'}
-                        className={formControlStateClass(fieldState('title_my'))}
-                        onBlur={() => markTouched('title_my')}
-                        onChange={(event) => setField('title_my', event.target.value)}
-                    />
-                </FormField>
-                <FormField label={t('cms.news.description_my')} htmlFor="description_my" error={fieldError('description_my')} success={fieldSuccess('description_my')}  icon={FileTextIcon} className="mb-3">
-                    <Textarea
-                        id="description_my"
-                        className={cn('min-h-40', formControlStateClass(fieldState('description_my')))}
-                        value={form.data.description_my}
-                        aria-invalid={fieldState('description_my') === 'error'}
-                        onBlur={() => markTouched('description_my')}
-                        onChange={(event) => setField('description_my', event.target.value)}
+                        id="slug"
+                        value={form.data.slug ?? ''}
+                        aria-invalid={fieldState('slug') === 'error'}
+                        className={formControlStateClass(fieldState('slug'))}
+                        onBlur={() => markTouched('slug')}
+                        onChange={(event) => setField('slug', event.target.value)}
                     />
                 </FormField>
             </div>
@@ -243,93 +240,99 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
                         }}
                     />
                 </FormField>
-                <FormField
-                    label={t('common.status')}
-                    htmlFor="is_active"
-                    error={fieldError('is_active')}
-                    success={fieldSuccess('is_active')}
-                    icon={CircleDotIcon}
-                    className="mb-3"
-                >
-                    <Select
-                        value={form.data.is_active ? '1' : '0'}
-                        onValueChange={(value) => {
-                            setField('is_active', value === '1');
-                            markTouched('is_active');
-                        }}
+                <FormField label={t('cms.news.title_my')} htmlFor="title_my" error={fieldError('title_my')} success={fieldSuccess('title_my')} required icon={TypeIcon} className="mb-3">
+                    <Input
+                        id="title_my"
+                        value={form.data.title_my}
+                        maxLength={PROMOTION_TITLE_MAX_LENGTH}
+                        aria-invalid={fieldState('title_my') === 'error'}
+                        className={formControlStateClass(fieldState('title_my'))}
+                        onBlur={() => markTouched('title_my')}
+                        onChange={(event) => setField('title_my', event.target.value)}
+                    />
+                </FormField>
+                <FormField label={t('cms.news.description_my')} htmlFor="description_my" error={fieldError('description_my')} success={fieldSuccess('description_my')} required icon={FileTextIcon} className="mb-3">
+                    <Textarea
+                        id="description_my"
+                        className={cn('min-h-40', formControlStateClass(fieldState('description_my')))}
+                        value={form.data.description_my}
+                        aria-invalid={fieldState('description_my') === 'error'}
+                        onBlur={() => markTouched('description_my')}
+                        onChange={(event) => setField('description_my', event.target.value)}
+                    />
+                </FormField>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <FormField
+                        label={t('common.status')}
+                        htmlFor="is_active"
+                        error={fieldError('is_active')}
+                        success={fieldSuccess('is_active')}
+                        icon={CircleDotIcon}
+                        className="mb-3"
+                        required
                     >
-                        <SelectTrigger
-                            id="is_active"
-                            className={formControlStateClass(fieldState('is_active'))}
-                            aria-invalid={fieldState('is_active') === 'error'}
+                        <Select
+                            value={form.data.is_active ? '1' : '0'}
+                            onValueChange={(value) => {
+                                setField('is_active', value === '1');
+                                markTouched('is_active');
+                            }}
                         >
-                            <SelectValue />
-                        </SelectTrigger>
+                            <SelectTrigger
+                                id="is_active"
+                                className={formControlStateClass(fieldState('is_active'))}
+                                aria-invalid={fieldState('is_active') === 'error'}
+                            >
+                                <SelectValue />
+                            </SelectTrigger>
 
-                        <SelectContent>
-                            <SelectItem value="1">{t('status.active')}</SelectItem>
-                            <SelectItem value="0">{t('status.inactive')}</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </FormField>
+                            <SelectContent>
+                                <SelectItem value="1">{t('status.active')}</SelectItem>
+                                <SelectItem value="0">{t('status.inactive')}</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </FormField>
 
-                <FormField
-                    label={t('cms.slug')}
-                    htmlFor="slug"
-                    error={fieldError('slug')}
-                    success={fieldSuccess('slug')}
-                    icon={Link2Icon}
-                    className="mb-3"
-                >
-                    <Input
-                        id="slug"
-                        value={form.data.slug ?? ''}
-                        aria-invalid={fieldState('slug') === 'error'}
-                        className={formControlStateClass(fieldState('slug'))}
-                        onBlur={() => markTouched('slug')}
-                        onChange={(event) => setField('slug', event.target.value)}
-                    />
-                </FormField>
+                    <FormField
+                        label={t('cms.start_date')}
+                        htmlFor="start_date"
+                        error={fieldError('start_date')}
+                        success={fieldSuccess('start_date')}
+                        icon={CalendarIcon}
+                        className="mb-3"
+                    >
+                        <Input
+                            id="start_date"
+                            type="date"
+                            value={form.data.start_date ?? ''}
+                            disabled={!form.data.is_active}
+                            aria-invalid={fieldState('start_date') === 'error'}
+                            className={formControlStateClass(fieldState('start_date'))}
+                            onBlur={() => markTouched('start_date')}
+                            onChange={(event) => setField('start_date', event.target.value)}
+                        />
+                    </FormField>
 
-                <FormField
-                    label={t('cms.start_date')}
-                    htmlFor="start_date"
-                    error={fieldError('start_date')}
-                    success={fieldSuccess('start_date')}
-                    icon={CalendarIcon}
-                    className="mb-3"
-                >
-                    <Input
-                        id="start_date"
-                        type="date"
-                        value={form.data.start_date ?? ''}
-                        disabled={!form.data.is_active}
-                        aria-invalid={fieldState('start_date') === 'error'}
-                        className={formControlStateClass(fieldState('start_date'))}
-                        onBlur={() => markTouched('start_date')}
-                        onChange={(event) => setField('start_date', event.target.value)}
-                    />
-                </FormField>
-
-                <FormField
-                    label={t('cms.end_date')}
-                    htmlFor="end_date"
-                    error={fieldError('end_date')}
-                    success={fieldSuccess('end_date')}
-                    icon={CalendarClockIcon}
-                    className="mb-3"
-                >
-                    <Input
-                        id="end_date"
-                        type="date"
-                        value={form.data.end_date ?? ''}
-                        disabled={!form.data.is_active}
-                        aria-invalid={fieldState('end_date') === 'error'}
-                        className={formControlStateClass(fieldState('end_date'))}
-                        onBlur={() => markTouched('end_date')}
-                        onChange={(event) => setField('end_date', event.target.value)}
-                    />
-                </FormField>
+                    <FormField
+                        label={t('cms.end_date')}
+                        htmlFor="end_date"
+                        error={fieldError('end_date')}
+                        success={fieldSuccess('end_date')}
+                        icon={CalendarClockIcon}
+                        className="mb-3"
+                    >
+                        <Input
+                            id="end_date"
+                            type="date"
+                            value={form.data.end_date ?? ''}
+                            disabled={!form.data.is_active}
+                            aria-invalid={fieldState('end_date') === 'error'}
+                            className={formControlStateClass(fieldState('end_date'))}
+                            onBlur={() => markTouched('end_date')}
+                            onChange={(event) => setField('end_date', event.target.value)}
+                        />
+                    </FormField>
+                </div>
             </div>
         </CmsFormShell>
     );
