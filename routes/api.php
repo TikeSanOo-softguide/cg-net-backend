@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\Package\PackageController;
 use App\Http\Controllers\Api\Package\SpeedController;
 use App\Http\Controllers\Api\Package\TermController;
 use App\Http\Controllers\Api\Promotion\PromotionController;
+use App\Http\Controllers\Api\Region\RegionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -38,4 +39,9 @@ Route::middleware('throttle:60,1')->group(function () {
         Route::get('/terms', [TermController::class, 'index']);
         Route::get('/addons', [AddonController::class, 'index']);
     });
+
+    Route::get('/locations', [RegionController::class, 'locations']);
+    Route::get('/states', [RegionController::class, 'states']);
+    Route::get('/states/{stateId}/regions', [RegionController::class, 'regions']);
+    Route::get('/regions/{regionId}/areas', [RegionController::class, 'areas']);
 });
