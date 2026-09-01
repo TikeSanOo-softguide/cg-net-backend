@@ -47,12 +47,12 @@ export function PackageFormDialog({
             title={
                 isEdit
                     ? t('package.edit')
-                    : t('package.create')
+                    : t('packages.create')
             }
             description={
                 isEdit
                     ? t('package.edit_description')
-                    : t('package.create_description')
+                    : t('packages.create_description')
             }
             icon={
                 isEdit

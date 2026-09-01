@@ -215,7 +215,10 @@
     "today": "今天",
     "clear": "清除",
     "previous_month": "上个月",
-    "next_month": "下个月"
+    "next_month": "下个月",
+    "name_en": "英文姓名",
+    "name_zh": "中文姓名",
+    "name_my": "缅甸语姓名"
   },
   "toast": {
     "success": "成功",
@@ -726,5 +729,44 @@
       "expires_required": "有效期为必填项。",
       "expires_future": "有效期必须是今天或之后。"
     }
+  },
+  "packages": {
+    "index_description": "搜索、筛选和管理互联网套餐及方案。",
+    "search_placeholder": "搜索套餐名称",
+    "filter_status": "按状态筛选",
+    "all_statuses": "全部状态",
+    "name": "名称",
+    "price": "价格",
+    "addon": "附加服务",
+    "network": "网络",
+    "term": "套餐期限",
+    "speed": "速度",
+    "months": "月数",
+    "free_iptv": "IPTV",
+    "free": "免费",
+    "paid": "付费",
+    "yes": "是",
+    "no": "否",
+    "validity": "有效期",
+    "status": "状态",
+    "create": "创建套餐",
+    "edit": "编辑套餐",
+    "create_description": "添加包含名称、价格、速度和有效期的互联网套餐。",
+    "edit_description": "更新此套餐的详细信息。",
+    "created": "套餐创建成功",
+    "updated": "套餐更新成功",
+    "deleted": "套餐删除成功",
+    "delete_title": "确定要删除此套餐吗？",
+    "delete_description": "删除后，客户将无法继续使用此套餐。",
+    "bulk_delete_title": "确定要删除所选套餐吗？",
+    "months_placeholder": "请输入月数",
+    "name_en_placeholder": "请输入英文名称",
+    "name_zh_placeholder": "请输入中文名称",
+    "name_my_placeholder": "请输入缅甸文名称",
+    "price_placeholder": "请输入价格",
+    "speed_placeholder": "请输入速度",
+    "validity_placeholder": "请输入有效期",
+    "installation_fee": "请输入安装费",
+    "recommended": "推荐"
   }
 }

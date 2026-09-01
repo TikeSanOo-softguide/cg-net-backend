@@ -98,7 +98,7 @@ export function PackageForm({
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <FormField
-                        label={t('package.network')}
+                        label={t('packages.network')}
                         htmlFor="network_id"
                         error={form.errors.network_id}
                         icon={NetworkIcon}
@@ -136,7 +136,7 @@ export function PackageForm({
                         </Select>
                     </FormField>
                     <FormField
-                        label={t('package.speed')}
+                        label={t('packages.speed')}
                         htmlFor="speed_id"
                         error={form.errors.speed_id}
                         icon={ZapIcon}
@@ -167,7 +167,7 @@ export function PackageForm({
                                         key={speed.id}
                                         value={String(speed.id)}
                                     >
-                                        {speed.mbps}
+                                        {speed.mbps} Mbps
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -175,7 +175,7 @@ export function PackageForm({
                     </FormField>
 
                     <FormField
-                        label={t('package.term')}
+                        label={t('packages.term')}
                         htmlFor="term_id"
                         error={form.errors.term_id}
                         icon={RouterIcon}
@@ -206,7 +206,7 @@ export function PackageForm({
                                         key={term.id}
                                         value={String(term.id)}
                                     >
-                                        {term.months}
+                                        {term.months} {t('packages.months')}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -214,7 +214,7 @@ export function PackageForm({
                     </FormField>
 
                     <FormField
-                        label={t('package.price')}
+                        label={t('packages.price')}
                         htmlFor="price"
                         error={form.errors.price}
                         icon={DollarSignIcon}
@@ -237,7 +237,7 @@ export function PackageForm({
                     </FormField>
 
                     <FormField
-                        label={t('package.installation_fee')}
+                        label={t('packages.installation_fee')}
                         htmlFor="installation_fee"
                         error={form.errors.installation_fee}
                         icon={DollarSignIcon}
@@ -262,7 +262,7 @@ export function PackageForm({
                     </FormField>
 
                     <FormField
-                        label={t('package.sort_order')}
+                        label={t('cms.sort_order')}
                         htmlFor="sort_order"
                         error={form.errors.sort_order}
                         icon={PercentIcon}
@@ -288,7 +288,7 @@ export function PackageForm({
                     </FormField>
 
                    <FormField
-                        label={t('package.image')}
+                        label={t('cms.image')}
                         htmlFor="package-image"
                         error={form.errors.image_url}
                         className="sm:col-span-2"
@@ -308,7 +308,7 @@ export function PackageForm({
                     </FormField>
                     
                     <FormField
-                        label={t('package.free_iptv')}
+                        label={t('packages.free_iptv')}
                         htmlFor="includes_free_iptv"
                         error={form.errors.includes_free_iptv}
                         icon={PackageIcon}
@@ -335,17 +335,17 @@ export function PackageForm({
 
                             <SelectContent>
                                 <SelectItem value="yes">
-                                    {t('common.yes')}
+                                    {t('packages.free')}
                                 </SelectItem>
                                 <SelectItem value="no">
-                                    {t('common.no')}
+                                    {t('packages.paid')}
                                 </SelectItem>
                             </SelectContent>
                         </Select>
                     </FormField>
 
                     <FormField
-                        label={t('package.recommended')}
+                        label={t('packages.recommended')}
                         htmlFor="recommended"
                         error={form.errors.recommended}
                         icon={StarIcon}
@@ -372,10 +372,10 @@ export function PackageForm({
 
                             <SelectContent>
                                 <SelectItem value="yes">
-                                    {t('common.yes')}
+                                    {t('packages.yes')}
                                 </SelectItem>
                                 <SelectItem value="no">
-                                    {t('common.no')}
+                                    {t('packages.no')}
                                 </SelectItem>
                             </SelectContent>
                         </Select>

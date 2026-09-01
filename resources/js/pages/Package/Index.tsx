@@ -111,7 +111,7 @@ export default function PackageIndex({
     const quickTables = [
         {
             key: 'network' as const,
-            title: t('package.network'),
+            title: t('packages.network'),
             data: networks,
             getRowId: (row: NetworkOption) => String(row.id),
             searchValue: (row: NetworkOption) =>String(row[`name_${locale}`] ?? ''),
@@ -135,7 +135,7 @@ export default function PackageIndex({
         },
         {
             key: 'speed' as const,
-            title: t('package.speed'),
+            title: t('packages.speed'),
             data: speeds,
             getRowId: (row: PackageOption) => String(row.id),
             searchValue: (row: PackageOption) => String(row.mbps ?? ''),
@@ -147,7 +147,7 @@ export default function PackageIndex({
         },
         {
             key: 'term' as const,
-            title: t('package.term'),
+            title: t('packages.term'),
             data: terms,
             getRowId: (row: PackageOption) => String(row.id),
             searchValue: (row: PackageOption) => String(row.months ?? ''),
@@ -159,7 +159,7 @@ export default function PackageIndex({
         },
         {
             key: 'addon' as const,
-            title: t('package.addon'),
+            title: t('packages.addon'),
             data: addons,
             getRowId: (row: AddonOption) => String(row.id),
             searchValue: (row: AddonOption) =>String(row[`name_${locale}`] ?? ''),
@@ -375,7 +375,7 @@ export default function PackageIndex({
                     columns={[
                         {
                             id: 'network',
-                            header: t('package.network'),
+                            header: t('packages.network'),
                             className: 'font-medium',
                             mobile: 'title',
                             cell: (row) => (
@@ -392,7 +392,7 @@ export default function PackageIndex({
                         },
                         {
                             id: 'speed',
-                            header: t('package.speed'),
+                            header: t('packages.speed'),
                             mobile: 'meta',
                             cell: (row) => (
                                 <span>
@@ -403,7 +403,7 @@ export default function PackageIndex({
 
                         {
                             id: 'term',
-                            header: t('package.term'),
+                            header: t('packages.term'),
                             mobile: 'meta',
                             cell: (row) => (
                                 <span>
@@ -414,7 +414,7 @@ export default function PackageIndex({
 
                         {
                             id: 'price',
-                            header: t('package.price'),
+                            header: t('packages.price'),
                             sortable: true,
                             cell: (row) => (
                                 <span>{row.price}</span>
@@ -423,7 +423,7 @@ export default function PackageIndex({
 
                         {
                             id: 'installation_fee',
-                            header: t('package.installation_fee'),
+                            header: t('packages.installation_fee'),
                             sortable: true,
                             cell: (row) => (
                                 <span>
@@ -432,39 +432,39 @@ export default function PackageIndex({
                             ),
                         },
 
-                        {
-                            id: 'is_active',
-                            header: t('common.status'),
-                            sortable: true,
-                            cell: (row) => (
-                                <StatusBadge
-                                    status={
-                                        row.is_active
-                                            ? 'active'
-                                            : 'inactive'
-                                    }
-                                />
-                            ),
-                        },
+                        // {
+                        //     id: 'is_active',
+                        //     header: t('common.status'),
+                        //     sortable: true,
+                        //     cell: (row) => (
+                        //         <StatusBadge
+                        //             status={
+                        //                 row.is_active
+                        //                     ? 'active'
+                        //                     : 'inactive'
+                        //             }
+                        //         />
+                        //     ),
+                        // },
 
-                        {
-                            id: 'recommended',
-                            header: t('package.recommended'),
-                            cell: (row) =>
-                                row.recommended
-                                    ? t('common.yes')
-                                    : t('common.no'),
-                        },
+                        // {
+                        //     id: 'recommended',
+                        //     header: t('packages.recommended'),
+                        //     cell: (row) =>
+                        //         row.recommended
+                        //             ? t('common.yes')
+                        //             : t('common.no'),
+                        // },
 
-                        {
-                            id: 'created_at',
-                            header: t('customers.joined'),
-                            className:
-                                'text-muted-foreground',
-                            sortable: true,
-                            cell: (row) =>
-                                row.created_at ?? '—',
-                        },
+                        // {
+                        //     id: 'created_at',
+                        //     header: t('customers.joined'),
+                        //     className:
+                        //         'text-muted-foreground',
+                        //     sortable: true,
+                        //     cell: (row) =>
+                        //         row.created_at ?? '—',
+                        // },
                     ]}
                 />
             </PageContent>

@@ -215,7 +215,10 @@
     "today": "Today",
     "clear": "Clear",
     "previous_month": "Previous month",
-    "next_month": "Next month"
+    "next_month": "Next month",
+    "name_en": "Name (English)",
+    "name_my": "Name (Myanmar)",
+    "name_zh": "Name (Chinese)"
   },
   "toast": {
     "success": "Success",
@@ -724,5 +727,44 @@
       "expires_required": "Expiry date is required.",
       "expires_future": "Expiry date must be today or later."
     }
+  },
+  "packages": {
+    "index_description": "Search, filter, and manage internet packages and plans.",
+    "search_placeholder": "Search package name",
+    "filter_status": "Filter by status",
+    "all_statuses": "All statuses",
+    "name": "Name",
+    "price": "Price",
+    "addon": "Add-ons",
+    "network": "Network",
+    "term": "Terms",
+    "speed": "Speed",
+    "months": "Months",
+    "free_iptv": "IPTV",
+    "free": "Free",
+    "paid": "Paid",
+    "yes": "Yes",
+    "no": "No",
+    "validity": "Validity",
+    "status": "Status",
+    "create": "Create package",
+    "edit": "Edit package",
+    "create_description": "Add an internet package with name, price, speed, and validity.",
+    "edit_description": "Update this package's details.",
+    "created": "Package created",
+    "updated": "Package updated",
+    "deleted": "Package deleted",
+    "delete_title": "Delete this package?",
+    "delete_description": "This package will no longer be available for customers.",
+    "bulk_delete_title": "Delete selected packages?",
+    "months_placeholder": "Enter number of months",
+    "name_en_placeholder": "Enter English name",
+    "name_zh_placeholder": "Enter Chinese name",
+    "name_my_placeholder": "Enter Myanmar name",
+    "price_placeholder": "Enter price",
+    "speed_placeholder": "Enter speed",
+    "validity_placeholder": "Enter validity",
+    "installation_fee": "Enter installation fee",
+    "recommended": "Recommended"
   }
 }

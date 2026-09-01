@@ -241,7 +241,7 @@ const [image, setImage] = useState<File | null>(null);
                 {kind === 'network' ? (
                     <div className="space-y-4">
                         <FormField
-                            label="Name (EN)"
+                            label={t('common.name_en')}
                             htmlFor="network-name-en"
                             error={form.errors.name_en}
                         >
@@ -256,12 +256,12 @@ const [image, setImage] = useState<File | null>(null);
                                         event.target.value,
                                     )
                                 }
-                                placeholder="English name"
+                                placeholder={t('packages.name_en_placeholder')}
                             />
                         </FormField>
 
                         <FormField
-                            label="Name (ZH)"
+                            label={t('common.name_zh')}
                             htmlFor="network-name-zh"
                             error={form.errors.name_zh}
                         >
@@ -276,12 +276,12 @@ const [image, setImage] = useState<File | null>(null);
                                         event.target.value,
                                     )
                                 }
-                                placeholder="Chinese name"
+                                placeholder={t('packages.name_zh_placeholder')}
                             />
                         </FormField>
 
                         <FormField
-                            label="Name (MY)"
+                            label={t('common.name_my')}
                             htmlFor="network-name-my"
                             error={form.errors.name_my}
                         >
@@ -296,7 +296,7 @@ const [image, setImage] = useState<File | null>(null);
                                         event.target.value,
                                     )
                                 }
-                                placeholder="Myanmar name"
+                                placeholder={t('packages.name_my_placeholder')}
                             />
                         </FormField>
                     </div>
@@ -330,7 +330,7 @@ const [image, setImage] = useState<File | null>(null);
                 {/* TERM */}
                 {kind === 'term' ? (
                     <FormField
-                        label="Months"
+                        label={t('packages.months')}
                         htmlFor="term-months"
                         error={form.errors.months}
                     >
@@ -347,7 +347,7 @@ const [image, setImage] = useState<File | null>(null);
                                     event.target.value,
                                 )
                             }
-                            placeholder="Months"
+                             placeholder={t('packages.months_placeholder')}
                         />
                     </FormField>
                 ) : null}
@@ -356,7 +356,7 @@ const [image, setImage] = useState<File | null>(null);
                 {kind === 'addon' ? (
                     <div className="space-y-4">
                         <FormField
-                            label="Name (EN)"
+                            label={t('common.name_en')}
                             htmlFor="addon-name-en"
                             error={form.errors.name_en}
                         >
@@ -371,12 +371,12 @@ const [image, setImage] = useState<File | null>(null);
                                         event.target.value,
                                     )
                                 }
-                                placeholder="English name"
+                                placeholder={t('packages.name_en_placeholder')}
                             />
                         </FormField>
 
                         <FormField
-                            label="Name (ZH)"
+                            label={t('common.name_zh')}
                             htmlFor="addon-name-zh"
                             error={form.errors.name_zh}
                         >
@@ -391,12 +391,12 @@ const [image, setImage] = useState<File | null>(null);
                                         event.target.value,
                                     )
                                 }
-                                placeholder="Chinese name"
+                                placeholder={t('packages.name_zh_placeholder')}
                             />
                         </FormField>
 
                         <FormField
-                            label="Name (MY)"
+                            label={t('common.name_my')}
                             htmlFor="addon-name-my"
                             error={form.errors.name_my}
                         >
@@ -411,12 +411,12 @@ const [image, setImage] = useState<File | null>(null);
                                         event.target.value,
                                     )
                                 }
-                                placeholder="Myanmar name"
+                                placeholder={t('packages.name_my_placeholder')}
                             />
                         </FormField>
 
                         <FormField
-                            label="Price"
+                            label={t('packages.price')}
                             htmlFor="addon-price"
                             error={form.errors.price}
                         >
@@ -434,52 +434,32 @@ const [image, setImage] = useState<File | null>(null);
                                         event.target.value,
                                     )
                                 }
-                                placeholder="0.00"
+                                placeholder={t('packages.price_placeholder')}
                             />
                         </FormField>
-                          <FormField
-            label="Image"
-            htmlFor="addon-image"
-            error={form.errors.image_url}
-        >
-            {/* <SquareImageUpload
-                id="addon-image"
-                width={520}
-                height={150}
-                value={image}
-                existingUrl={
-                    typeof form.data.image_url === 'string'
-                        ? form.data.image_url
-                        : null
-                }
-                onChange={(file) => {
-                    setImage(file);
-                    form.setData(
-                        'image_url',
-                        file ?? '',
-                    );
-                    form.clearErrors('image_url');
-                }}
-            /> */}
-             <SquareImageUpload
-        id="addon-image"
-        width={520}
-        height={150}
-        value={image}
-        existingUrl={item?.image_url ?? null}
-        onChange={(file) => {
-            setImage(file);
+                        <FormField
+                         label={t('cms.image')}
+                         htmlFor="addon-image"
+                         error={form.errors.image_url}
+                        >
+                          <SquareImageUpload
+                            id="addon-image"
+                            width={520}
+                            height={150}
+                            value={image}
+                            existingUrl={item?.image_url ?? null}
+                            onChange={(file) => {
+                                setImage(file);
 
-            if (file) {
-                form.setData('image_url', file);
-            } else {
-                form.setData('image_url', null);
-            }
-
-            form.clearErrors('image_url');
-        }}
-    />
-        </FormField>
+                                if (file) {
+                                  form.setData('image_url', file);
+                                } else {
+                                    form.setData('image_url', null);
+                                }
+                                form.clearErrors('image_url');
+                            }}
+                           />
+                     </FormField>
                     </div>
                 ) : null}
             </div>

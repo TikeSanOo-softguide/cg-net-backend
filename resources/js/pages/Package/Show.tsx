@@ -222,7 +222,7 @@ export default function PackageShow({
                         </FormField>
 
                         <FormField
-                            label={t('package.created_at')}
+                            label={t('packages.created_at')}
                             htmlFor="detail-created"
                             icon={CalendarIcon}
                         >

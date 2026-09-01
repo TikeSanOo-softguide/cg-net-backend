@@ -85,7 +85,7 @@ export function PackageDetailDialog({
                     <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
                         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                             <FormField
-                                label={t('package.network')}
+                                label={t('packages.network')}
                                 htmlFor="view-network"
                                 icon={NetworkIcon}
                             >
@@ -97,7 +97,7 @@ export function PackageDetailDialog({
                             </FormField>
 
                             <FormField
-                                label={t('package.speed')}
+                                label={t('packages.speed')}
                                 htmlFor="view-speed"
                                 icon={ZapIcon}
                             >
@@ -109,7 +109,7 @@ export function PackageDetailDialog({
                             </FormField>
 
                             <FormField
-                                label={t('package.term')}
+                                label={t('packages.term')}
                                 htmlFor="view-term"
                                 icon={RouterIcon}
                             >
@@ -121,7 +121,7 @@ export function PackageDetailDialog({
                             </FormField>
 
                             <FormField
-                                label={t('package.price')}
+                                label={t('packages.price')}
                                 htmlFor="view-price"
                                 icon={DollarSignIcon}
                             >
@@ -133,7 +133,7 @@ export function PackageDetailDialog({
                             </FormField>
 
                             <FormField
-                                label={t('package.installation_fee')}
+                                label={t('packages.installation_fee')}
                                 htmlFor="view-installation-fee"
                                 icon={DollarSignIcon}
                             >
@@ -145,7 +145,7 @@ export function PackageDetailDialog({
                             </FormField>
 
                             <FormField
-                                label={t('package.sort_order')}
+                                label={t('cms.sort_order')}
                                 htmlFor="view-sort-order"
                                 icon={PercentIcon}
                             >
@@ -176,7 +176,7 @@ export function PackageDetailDialog({
                             </FormField>
 
                             <FormField
-                                label={t('package.recommended')}
+                                label={t('packages.recommended')}
                                 htmlFor="view-recommended"
                                 icon={StarIcon}
                             >
@@ -208,7 +208,7 @@ export function PackageDetailDialog({
                             </FormField>
 
                             <FormField
-                                label={t('package.image')}
+                                label={t('cms.image')}
                                 htmlFor="view-image"
                                 icon={ImageIcon}
                                 className="sm:col-span-2"
@@ -247,7 +247,7 @@ export function PackageDetailDialog({
                             {t('common.close')}
                         </Button>
 
-                        {can('package.update') && onEdit ? (
+                        {can('packages.update') && onEdit ? (
                             <Button
                                 type="button"
                                 size="sm"
