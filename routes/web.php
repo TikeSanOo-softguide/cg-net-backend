@@ -10,6 +10,7 @@ use App\Http\Controllers\Customer\CustomerController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Locale\LocaleController;
 use App\Http\Controllers\MenuPage\MenuPageController;
+use App\Http\Controllers\Region\RegionManagementController;
 use App\Http\Controllers\Staff\RoleController;
 use App\Http\Controllers\Staff\StaffController;
 use App\Http\Controllers\TopUpCard\TopUpCardController;
@@ -20,7 +21,7 @@ use Inertia\Inertia;
 Route::post('/locale/{lang}', LocaleController::class)->name('locale.update');
 
 Route::middleware(['auth:web', 'admin.active'])->group(function () {
-    Route::get('/', fn () => redirect()->route('dashboard'))->name('home');
+    Route::get('/', fn() => redirect()->route('dashboard'))->name('home');
     Route::get('/dashboard', DashboardController::class)->middleware('can:dashboard.view')->name('dashboard');
     Route::delete('/dashboard/requests/bulk-destroy', [DashboardController::class, 'bulkDestroy'])
         ->middleware('can:service-requests.delete')
@@ -38,22 +39,39 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
     Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->middleware('can:customers.delete')->name('customers.destroy');
     Route::get('/customers/{customer}', [CustomerController::class, 'show'])->middleware('can:customers.view')->name('customers.show');
 
+    Route::prefix('regions')->middleware('can:regions.view')->group(function () {
+        Route::get('/', [RegionManagementController::class, 'index'])->name('regions.index');
+        Route::post('/states', [RegionManagementController::class, 'storeState'])->name('regions.states.store');
+        Route::put('/states/{state}', [RegionManagementController::class, 'updateState'])->name('regions.states.update');
+        Route::delete('/states/{state}', [RegionManagementController::class, 'destroyState'])->name('regions.states.destroy');
+
+        Route::post('/regions', [RegionManagementController::class, 'storeRegion'])->name('regions.regions.store');
+        Route::put('/regions/{region}', [RegionManagementController::class, 'updateRegion'])->name('regions.regions.update');
+        Route::delete('/regions/{region}', [RegionManagementController::class, 'destroyRegion'])->name('regions.regions.destroy');
+
+        Route::post('/areas', [RegionManagementController::class, 'storeArea'])->name('regions.areas.store');
+        Route::put('/areas/{area}', [RegionManagementController::class, 'updateArea'])->name('regions.areas.update');
+        Route::delete('/areas/{area}', [RegionManagementController::class, 'destroyArea'])->name('regions.areas.destroy');
+    });
+
     Route::prefix('cms')->name('cms.')->group(function () {
-        foreach ([
-            'promotions' => [PromotionController::class, 'promotion'],
-            'banners' => [BannerController::class, 'banner'],
-            'categories' => [CategoryController::class, 'category'],
-            'news' => [NewsController::class, 'news'],
-            'gallery' => [GalleryController::class, 'gallery'],
-            'contacts' => [ContactController::class, 'contact'],
-        ] as $name => [$controller, $parameter]) {
-            Route::get($name, [$controller, 'index'])->middleware('can:cms.view')->name($name.'.index');
-            Route::get($name.'/create', [$controller, 'create'])->middleware('can:cms.create')->name($name.'.create');
-            Route::post($name, [$controller, 'store'])->middleware('can:cms.create')->name($name.'.store');
-            Route::delete($name.'/bulk-destroy', [$controller, 'bulkDestroy'])->middleware('can:cms.delete')->name($name.'.bulk-destroy');
-            Route::get($name.'/{'.$parameter.'}/edit', [$controller, 'edit'])->middleware('can:cms.update')->name($name.'.edit');
-            Route::put($name.'/{'.$parameter.'}', [$controller, 'update'])->middleware('can:cms.update')->name($name.'.update');
-            Route::delete($name.'/{'.$parameter.'}', [$controller, 'destroy'])->middleware('can:cms.delete')->name($name.'.destroy');
+        foreach (
+            [
+                'promotions' => [PromotionController::class, 'promotion'],
+                'banners' => [BannerController::class, 'banner'],
+                'categories' => [CategoryController::class, 'category'],
+                'news' => [NewsController::class, 'news'],
+                'gallery' => [GalleryController::class, 'gallery'],
+                'contacts' => [ContactController::class, 'contact'],
+            ] as $name => [$controller, $parameter]
+        ) {
+            Route::get($name, [$controller, 'index'])->middleware('can:cms.view')->name($name . '.index');
+            Route::get($name . '/create', [$controller, 'create'])->middleware('can:cms.create')->name($name . '.create');
+            Route::post($name, [$controller, 'store'])->middleware('can:cms.create')->name($name . '.store');
+            Route::delete($name . '/bulk-destroy', [$controller, 'bulkDestroy'])->middleware('can:cms.delete')->name($name . '.bulk-destroy');
+            Route::get($name . '/{' . $parameter . '}/edit', [$controller, 'edit'])->middleware('can:cms.update')->name($name . '.edit');
+            Route::put($name . '/{' . $parameter . '}', [$controller, 'update'])->middleware('can:cms.update')->name($name . '.update');
+            Route::delete($name . '/{' . $parameter . '}', [$controller, 'destroy'])->middleware('can:cms.delete')->name($name . '.destroy');
         }
     });
 
@@ -89,7 +107,7 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
     foreach (MenuPages::all() as $page) {
         Route::get($page['path'], MenuPageController::class)
             ->defaults('titleKey', $page['titleKey'])
-            ->middleware('can:'.$page['permission'])
+            ->middleware('can:' . $page['permission'])
             ->name($page['name']);
     }
 });

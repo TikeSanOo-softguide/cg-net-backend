@@ -26,7 +26,6 @@ final class MenuPages
             ['path' => '/service-requests/failures', 'titleKey' => 'menu.failure_reports', 'name' => 'service-requests.failures', 'permission' => 'service-requests.view'],
             ['path' => '/service-requests/relocations', 'titleKey' => 'menu.relocation_requests', 'name' => 'service-requests.relocations', 'permission' => 'service-requests.view'],
             ['path' => '/service-requests/change-plan', 'titleKey' => 'menu.change_plan_requests', 'name' => 'service-requests.change-plan', 'permission' => 'service-requests.view'],
-            ['path' => '/regions', 'titleKey' => 'menu.region_management', 'name' => 'regions.index', 'permission' => 'regions.view'],
             ['path' => '/notifications/compose', 'titleKey' => 'menu.push_composer', 'name' => 'notifications.compose', 'permission' => 'notifications.view'],
             ['path' => '/notifications/categories', 'titleKey' => 'menu.notification_categories', 'name' => 'notifications.categories', 'permission' => 'notifications.view'],
             ['path' => '/support/conversations', 'titleKey' => 'menu.chat_conversations', 'name' => 'support.conversations', 'permission' => 'support.view'],
