@@ -7,7 +7,7 @@ import type { Paginated } from '@/components/Pagination';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
 import { FormControl } from '@/components/ui/form-control';
-import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SpinnerOverlay } from '@/components/ui/spinner';
 import { useCan } from '@/hooks/useCan';
@@ -116,17 +116,16 @@ export function TopUpCardRedeemTable({
                                     </Select>
                                 </FormControl>
                                 <FormControl icon={CalendarIcon} compact className="w-full shrink-0 sm:w-40">
-                                    <Input
-                                        type="date"
+                                    <DatePicker
                                         value={filters.from}
-                                        onChange={(event) => onFilter({ ...filters, from: event.target.value })}
+                                        onChange={(value) => onFilter({ ...filters, from: value })}
                                     />
                                 </FormControl>
                                 <FormControl icon={CalendarIcon} compact className="w-full shrink-0 sm:w-40">
-                                    <Input
-                                        type="date"
+                                    <DatePicker
                                         value={filters.to}
-                                        onChange={(event) => onFilter({ ...filters, to: event.target.value })}
+                                        min={filters.from || undefined}
+                                        onChange={(value) => onFilter({ ...filters, to: value })}
                                     />
                                 </FormControl>
                             </div>

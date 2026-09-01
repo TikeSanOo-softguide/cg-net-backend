@@ -49,6 +49,14 @@ export function formatTopUpAmount(value: string | number): string {
     return `${formatTopUpNumber(value)} ${TOP_UP_CARD_CURRENCY}`;
 }
 
+export function topUpCardQrValue(card: Pick<TopUpCardRow, 'serial_no' | 'pin'>): string {
+    if (card.pin) {
+        return JSON.stringify({ serial: card.serial_no, pin: card.pin });
+    }
+
+    return card.serial_no;
+}
+
 export function expiryDateIn(days: number): string {
     const date = new Date();
     date.setDate(date.getDate() + days);

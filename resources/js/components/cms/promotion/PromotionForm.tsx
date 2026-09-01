@@ -5,6 +5,7 @@ import { FileTextIcon, CalendarClockIcon, CalendarIcon, CircleDotIcon, TypeIcon,
 import { FormField } from '@/components/ui/form-field';
 import { CmsFormShell } from '@/components/cms/shared/CmsFormShell';
 import { SquareImageUpload } from '@/components/ui/square-image-upload';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -299,15 +300,15 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
                     icon={CalendarIcon}
                     className="mb-3"
                 >
-                    <Input
+                    <DatePicker
                         id="start_date"
-                        type="date"
                         value={form.data.start_date ?? ''}
+                        max={form.data.end_date || undefined}
                         disabled={!form.data.is_active}
                         aria-invalid={fieldState('start_date') === 'error'}
                         className={formControlStateClass(fieldState('start_date'))}
                         onBlur={() => markTouched('start_date')}
-                        onChange={(event) => setField('start_date', event.target.value)}
+                        onChange={(value) => setField('start_date', value)}
                     />
                 </FormField>
 
@@ -319,15 +320,15 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
                     icon={CalendarClockIcon}
                     className="mb-3"
                 >
-                    <Input
+                    <DatePicker
                         id="end_date"
-                        type="date"
                         value={form.data.end_date ?? ''}
+                        min={form.data.start_date || undefined}
                         disabled={!form.data.is_active}
                         aria-invalid={fieldState('end_date') === 'error'}
                         className={formControlStateClass(fieldState('end_date'))}
                         onBlur={() => markTouched('end_date')}
-                        onChange={(event) => setField('end_date', event.target.value)}
+                        onChange={(value) => setField('end_date', value)}
                     />
                 </FormField>
             </div>

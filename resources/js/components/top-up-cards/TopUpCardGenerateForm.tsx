@@ -15,11 +15,12 @@ import {
 
 import { FormControl } from '@/components/ui/form-control';
 import { FormField } from '@/components/ui/form-field';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
-import { expiryDateIn, formatTopUpAmount, formatTopUpNumber, TOP_UP_CARD_CURRENCY } from '@/lib/top-up-cards';
+import { expiryDateIn, formatTopUpAmount, formatTopUpNumber, isoDate, TOP_UP_CARD_CURRENCY } from '@/lib/top-up-cards';
 
 const QUICK_EXPIRY_DAYS = [30, 60, 90];
 
@@ -333,13 +334,15 @@ export function TopUpCardGenerateForm({
 
             <div>
                 <FormField label={t('top_up_cards.expires_at')} htmlFor="expires_at" icon={CalendarDaysIcon} required>
-                    <Input
+                    <DatePicker
                         id="expires_at"
-                        type="date"
                         value={expiresAt}
+                        min={isoDate()}
                         disabled={processing}
+                        required
+                        clearable={false}
                         className="h-9 text-[13px]"
-                        onChange={(event) => onExpiresAt(event.target.value)}
+                        onChange={onExpiresAt}
                     />
                 </FormField>
                 <div className="mt-2 flex flex-wrap gap-1.5">

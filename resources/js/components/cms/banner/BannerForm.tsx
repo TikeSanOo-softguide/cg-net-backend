@@ -11,6 +11,7 @@ import {
 
 import { FormField } from "@/components/ui/form-field";
 import { CmsFormShell } from "@/components/cms/shared/CmsFormShell";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import {
     Select,
@@ -191,13 +192,11 @@ export function BannerForm({
                 error={form.errors.start_date}
                 icon={CalendarIcon}
             >
-                <Input
+                <DatePicker
                     id="start_date"
-                    type="date"
                     value={form.data.start_date}
-                    onChange={(event) =>
-                        form.setData("start_date", event.target.value)
-                    }
+                    max={form.data.end_date || undefined}
+                    onChange={(value) => form.setData("start_date", value)}
                 />
             </FormField>
             <FormField
@@ -206,13 +205,11 @@ export function BannerForm({
                 error={form.errors.end_date}
                 icon={CalendarClockIcon}
             >
-                <Input
+                <DatePicker
                     id="end_date"
-                    type="date"
                     value={form.data.end_date}
-                    onChange={(event) =>
-                        form.setData("end_date", event.target.value)
-                    }
+                    min={form.data.start_date || undefined}
+                    onChange={(value) => form.setData("end_date", value)}
                 />
             </FormField>
         </CmsFormShell>

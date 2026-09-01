@@ -204,7 +204,12 @@
     "bulk_deleted": "已成功删除 :count 条记录。",
     "bulk_delete_failed": "无法删除所选记录，请重试。",
     "loading": "加载中",
-    "please_wait": "请稍候"
+    "please_wait": "请稍候",
+    "select_date": "选择日期",
+    "today": "今天",
+    "clear": "清除",
+    "previous_month": "上个月",
+    "next_month": "下个月"
   },
   "toast": {
     "success": "成功",
@@ -623,6 +628,7 @@
     "serial_no": "序列号",
     "amount": "金额",
     "pin": "PIN",
+    "qr_code": "二维码",
     "reveal_pin": "显示 PIN",
     "hide_pin": "隐藏 PIN",
     "copy_pin": "复制 PIN",

@@ -5,7 +5,9 @@ import { UserCogIcon, UserPlusIcon } from 'lucide-react';
 import { FormDialog } from '@/components/FormDialog';
 import { StaffCreateForm } from '@/components/staff/StaffCreateForm';
 import { StaffForm, emptyStaffForm, type StaffFormValues, type StaffRoleOption } from '@/components/staff/StaffForm';
+import { toast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/useTranslation';
+import { backendErrorMessages, translateFlash } from '@/lib/flash';
 
 export type StaffFormMember = {
     id: number;
@@ -62,6 +64,7 @@ function StaffFormDialogBody({
     onClose: () => void;
 }) {
     const isEdit = staff !== null;
+    const { t } = useTranslation();
     const form = useForm<StaffFormValues>(
         staff
             ? {
@@ -80,6 +83,21 @@ function StaffFormDialogBody({
         const options = {
             ...modalVisit,
             onSuccess: onClose,
+            onError: (errors: Record<string, string>) => {
+                backendErrorMessages(errors).forEach((message) => {
+                    const description = translateFlash(t, message);
+
+                    if (! description) {
+                        return;
+                    }
+
+                    toast({
+                        variant: 'error',
+                        title: t('toast.error'),
+                        description,
+                    });
+                });
+            },
         };
 
         if (isEdit && staff) {

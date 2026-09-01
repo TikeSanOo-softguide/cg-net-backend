@@ -58,22 +58,30 @@ export function FormField({
                     children
                 )}
             </div>
-            {error ? (
-                <p className="mt-1.5 flex items-center gap-1.5 text-[12px] font-medium leading-4 text-danger">
-                    <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-danger text-danger-foreground">
-                        <span className="text-[10px] font-bold leading-none">!</span>
+            <div
+                className="mt-1.5 flex min-h-4 items-start gap-1.5 text-[12px] font-medium leading-4"
+                aria-live="polite"
+            >
+                {error ? (
+                    <>
+                        <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-danger text-danger-foreground">
+                            <span className="text-[10px] font-bold leading-none">!</span>
+                        </span>
+                        <span className="text-danger">{error}</span>
+                    </>
+                ) : success ? (
+                    <>
+                        <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-success text-success-foreground">
+                            <CheckIcon className="size-2.5" strokeWidth={3} />
+                        </span>
+                        <span className="text-success">{success}</span>
+                    </>
+                ) : (
+                    <span className="invisible select-none" aria-hidden>
+                        &nbsp;
                     </span>
-                    {error}
-                </p>
-            ) : null}
-            {! error && success ? (
-                <p className="mt-1.5 flex items-center gap-1.5 text-[12px] font-medium leading-4 text-success">
-                    <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-success text-success-foreground">
-                        <CheckIcon className="size-2.5" strokeWidth={3} />
-                    </span>
-                    {success}
-                </p>
-            ) : null}
+                )}
+            </div>
         </div>
     );
 }

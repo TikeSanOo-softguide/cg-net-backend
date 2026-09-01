@@ -204,7 +204,12 @@
     "bulk_deleted": ":count records deleted successfully.",
     "bulk_delete_failed": "Failed to delete selected records. Please try again.",
     "loading": "Loading",
-    "please_wait": "Please wait"
+    "please_wait": "Please wait",
+    "select_date": "Select date",
+    "today": "Today",
+    "clear": "Clear",
+    "previous_month": "Previous month",
+    "next_month": "Next month"
   },
   "toast": {
     "success": "Success",
@@ -619,6 +624,7 @@
     "serial_no": "Serial no.",
     "amount": "Amount",
     "pin": "PIN",
+    "qr_code": "QR code",
     "reveal_pin": "Reveal PIN",
     "hide_pin": "Hide PIN",
     "copy_pin": "Copy PIN",

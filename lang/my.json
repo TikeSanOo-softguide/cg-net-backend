@@ -204,7 +204,12 @@
     "bulk_deleted": "မှတ်တမ်း :count ခုကို ဖျက်ပြီးပါပြီ။",
     "bulk_delete_failed": "ရွေးထားသော မှတ်တမ်းများကို ဖျက်၍ မရပါ။ ထပ်မံကြိုးစားပါ။",
     "loading": "ခေတ္တစောင့်ပါ",
-    "please_wait": "ခဏစောင့်ပါ"
+    "please_wait": "ခဏစောင့်ပါ",
+    "select_date": "ရက်စွဲ ရွေးရန်",
+    "today": "ယနေ့",
+    "clear": "ဖျက်ရန်",
+    "previous_month": "ယခင်လ",
+    "next_month": "နောက်လ"
   },
   "toast": {
     "success": "အောင်မြင်ပါသည်",
@@ -622,6 +627,7 @@
     "serial_no": "စီးရီးနံပါတ်",
     "amount": "တန်ဖိုး",
     "pin": "PIN",
+    "qr_code": "QR ကုဒ်",
     "reveal_pin": "PIN ပြရန်",
     "hide_pin": "PIN ဖုံးရန်",
     "copy_pin": "PIN ကူးယူရန်",
