@@ -1,161 +1,173 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { router } from '@inertiajs/react';
-import { CircleDotIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
-
+import { SquarePenIcon, Trash2Icon } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import type { Paginated } from '@/components/Pagination';
-import { PageContent } from '@/components/PageContent';
-import { PageHeader } from '@/components/PageHeader';
 import { TableActionButton } from '@/components/TableActionButton';
-import { FormControl } from '@/components/ui/form-control';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useCan } from '@/hooks/useCan';
 import { visitBulkDelete } from '@/lib/bulk-delete';
 
 export type RegionFilters = {
     search: string;
-    status: string;
-    sort: string;
-    direction: 'asc' | 'desc';
 };
 
 type RegionDataTableProps<T extends { id: number }> = {
     indexHref: string;
     destroyBase: string;
+
+    titleKey: string;
     createLabelKey: string;
     searchLabelKey: string;
+
+    /**
+     * Query parameter used only by this table.
+     *
+     * Example:
+     * - state_search
+     * - region_search
+     * - area_search
+     */
+    searchParam: string;
+
     items: Paginated<T>;
     filters: RegionFilters;
+
     columns: DataTableColumn<T>[];
-    statusFilter?: 'active' | 'news';
+
     onCreate?: () => void;
     onEdit?: (row: T) => void;
+
     formDialog?: ReactNode;
 };
 
 export function RegionDataTable<T extends { id: number }>({
     indexHref,
     destroyBase,
+    titleKey,
     createLabelKey,
     searchLabelKey,
+    searchParam,
     items,
     filters,
     columns,
-    statusFilter,
     onCreate,
     onEdit,
     formDialog,
 }: RegionDataTableProps<T>) {
     const { t } = useTranslation();
-    const can = useCan();
     const [search, setSearch] = useState(filters.search);
+
     const [pendingIds, setPendingIds] = useState<number[]>([]);
     const [processing, setProcessing] = useState(false);
-    const debounce = useRef<number>(0);
-    const canDelete = can('cms.delete');
 
+    const debounce = useRef<number>(0);
+
+    /**
+     * Keep local search value synchronized
+     * with the server-side filter.
+     */
     useEffect(() => {
-        setSearch(filters.search);
+        setSearch(filters.search ?? '');
     }, [filters.search]);
 
-    useEffect(() => () => window.clearTimeout(debounce.current), []);
+    /**
+     * Clear debounce timer when component unmounts.
+     */
+    useEffect(() => {
+        return () => {
+            window.clearTimeout(debounce.current);
+        };
+    }, []);
 
+    /**
+     * Visit the same index page while sending
+     * this table's search parameter.
+     *
+     * Example:
+     *
+     * State:
+     * /regions?state_search=shan
+     *
+     * Region:
+     * /regions?region_search=yangon
+     *
+     * Area:
+     * /regions?area_search=...
+     */
     const visit = (next: Partial<RegionFilters>) => {
-        router.get(indexHref, {
-            search: (next.search ?? filters.search) || undefined,
-            status: (next.status ?? filters.status) || undefined,
-            sort: next.sort ?? filters.sort,
-            direction: next.direction ?? filters.direction,
-        }, {
+        const params: Record<string, string | undefined> = {
+            /**
+             * IMPORTANT:
+             * Do NOT use `search` here.
+             *
+             * Each table has its own query parameter.
+             */
+            state_search: undefined,
+            region_search: undefined,
+            area_search: undefined,
+        };
+
+        const nextSearch = (next.search ?? filters.search) || undefined;
+
+        params[searchParam] = nextSearch;
+
+        router.get(indexHref, params, {
             preserveState: true,
             preserveScroll: true,
             replace: true,
         });
     };
 
+    /**
+     * Search with debounce.
+     */
     const onSearchChange = (value: string) => {
         setSearch(value);
+
         window.clearTimeout(debounce.current);
-        debounce.current = window.setTimeout(() => visit({ search: value }), 300);
+
+        debounce.current = window.setTimeout(() => {
+            visit({
+                search: value,
+            });
+        }, 300);
     };
-
-    const onSort = (column: string) => {
-        const nextDirection = filters.sort === column && filters.direction === 'asc' ? 'desc' : 'asc';
-        visit({ sort: column, direction: nextDirection });
-    };
-
-    const statusOptions: { value: string; label: string }[] = statusFilter === 'news'
-        ? [
-            { value: 'draft', label: t('status.draft') },
-            { value: 'published', label: t('status.published') },
-            { value: 'archived', label: t('status.archived') },
-        ]
-        : [
-            { value: 'active', label: t('status.active') },
-            { value: 'inactive', label: t('status.inactive') },
-        ];
-
-    const filterControls: ReactNode = (
-        <>
-            {statusFilter ? (
-                <FormControl icon={CircleDotIcon} compact className="w-full shrink-0 sm:w-48">
-                    <Select value={filters.status || 'all'} onValueChange={(value) => visit({ status: value === 'all' ? '' : value })}>
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder={t('common.status')} />
-                        </SelectTrigger>
-                        <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
-                            <SelectItem value="all">{t('customers.all_statuses')}</SelectItem>
-                            {statusOptions.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </FormControl>
-            ) : null}
-        </>
-    );
 
     return (
-        <PageContent>
-            <DataTable
-                data={items.data}
-                getRowId={(row) => String(row.id)}
-                search={search}
-                onSearchChange={onSearchChange}
-                searchPlaceholder={t(searchLabelKey)}
-                sort={filters.sort}
-                direction={filters.direction}
-                onSort={onSort}
-                pagination={items}
-                filters={filterControls}
-                onCreate={can('cms.create') ? onCreate : undefined}
-                createLabel={t(createLabelKey)}
-                onBulkDelete={canDelete ? (ids) => visitBulkDelete(`${destroyBase}/bulk-destroy`, ids.map(Number)) : undefined}
-                bulkDeleteTitle={t('cms.bulk_delete_title')}
-                actions={(row) => (
-                    <>
-                        {can('cms.update') ? (
+        <div className="flex h-full min-h-0 flex-col">
+            <div className="min-h-0 flex-1">
+                <DataTable
+                    data={items.data}
+                    getRowId={(row) => String(row.id)}
+                    search={search}
+                    onSearchChange={onSearchChange}
+                    searchPlaceholder={t(searchLabelKey)}
+                    title={t(titleKey)}
+                    pagination={items}
+                    onCreate={onCreate}
+                    createLabel={t(createLabelKey)}
+                    onBulkDelete={(ids) => visitBulkDelete(`${destroyBase}/bulk-destroy`, ids.map(Number))}
+                    actions={(row) => (
+                        <>
                             <TableActionButton
                                 label={t('common.edit')}
                                 icon={SquarePenIcon}
                                 tone="edit"
                                 onClick={onEdit ? () => onEdit(row) : undefined}
                             />
-                        ) : null}
-                        {canDelete ? (
                             <TableActionButton
                                 label={t('common.delete')}
                                 icon={Trash2Icon}
                                 tone="danger"
                                 onClick={() => setPendingIds([row.id])}
                             />
-                        ) : null}
-                    </>
-                )}
-                columns={columns}
-            />
+                        </>
+                    )}
+                    columns={columns}
+                />
+            </div>
+
             {formDialog}
             <ConfirmDialog
                 open={pendingIds.length === 1}
@@ -184,6 +196,6 @@ export function RegionDataTable<T extends { id: number }>({
                     });
                 }}
             />
-        </PageContent>
+        </div>
     );
 }

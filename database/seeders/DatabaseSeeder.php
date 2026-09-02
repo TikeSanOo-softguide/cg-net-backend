@@ -11,6 +11,7 @@ use App\Enums\ReviewStatus;
 use App\Enums\UserStatus;
 use App\Enums\WalletTransactionType;
 use App\Models\Admin;
+use App\Models\Announcement;
 use App\Models\Area;
 use App\Models\Banner;
 use App\Models\BroadbandAccount;
@@ -56,6 +57,7 @@ class DatabaseSeeder extends Seeder
         $this->seedBanners();
         $this->seedCms();
         $this->seedPermissions($admins);
+        $this->seedAnnouncements();
 
         Setting::factory()->create([
             'key' => 'support_hotline',
@@ -103,6 +105,14 @@ class DatabaseSeeder extends Seeder
         (new AreaSeeder())->run();
 
         return Area::all();
+    }
+
+    private function seedAnnouncements(): void
+    {
+        Announcement::factory()->active()->create();
+        Announcement::factory()->inactive()->create();
+        Announcement::factory()->upcoming()->create();
+        Announcement::factory()->expired()->create();
     }
 
     /**

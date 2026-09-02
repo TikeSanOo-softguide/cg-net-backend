@@ -44,29 +44,13 @@ export function PackageFormDialog({
         <FormDialog
             open={open}
             onOpenChange={onOpenChange}
-            title={
-                isEdit
-                    ? t('package.edit')
-                    : t('packages.create')
-            }
-            description={
-                isEdit
-                    ? t('package.edit_description')
-                    : t('packages.create_description')
-            }
-            icon={
-                isEdit
-                    ? PackageSearchIcon
-                    : PackagePlusIcon
-            }
+            title={isEdit ? t('packages.edit') : t('packages.create')}
+            description={isEdit ? t('packages.edit_description') : t('packages.create_description')}
+            icon={isEdit ? PackageSearchIcon : PackagePlusIcon}
         >
             {open ? (
                 <PackageFormDialogBody
-                    key={
-                        packageItem
-                            ? `edit-${packageItem.id}`
-                            : 'create'
-                    }
+                    key={packageItem ? `edit-${packageItem.id}` : 'create'}
                     package={packageItem}
                     networks={networks}
                     speeds={speeds}
@@ -100,11 +84,9 @@ function PackageFormDialogBody({
                   speed_id: packageItem.speed_id,
                   term_id: packageItem.term_id,
                   price: packageItem.price,
-                  image_url: packageItem.image_url ?? '',
-                  installation_fee:
-                      packageItem.installation_fee,
-                  includes_free_iptv:
-                      packageItem.includes_free_iptv,
+                  image_url: null,
+                  installation_fee: packageItem.installation_fee,
+                  includes_free_iptv: packageItem.includes_free_iptv,
                   is_active: packageItem.is_active,
                   sort_order: packageItem.sort_order,
                   recommended: packageItem.recommended,
@@ -112,45 +94,27 @@ function PackageFormDialogBody({
             : emptyPackageForm(),
     );
 
-    // const submit = (event: FormEvent) => {
-    //     event.preventDefault();
+    const submit = (event: FormEvent) => {
+        event.preventDefault();
 
-    //     const options = {
-    //         ...modalVisit,
-    //         onSuccess: onClose,
-    //     };
-    //     if (isEdit && packageItem) {
-    //         form.put(
-    //             `/packages/${packageItem.id}`,
-    //             options,
-    //         );
+        const options = {
+            ...modalVisit,
+            forceFormData: true,
+            onSuccess: onClose,
+        };
 
-    //         return;
-    //     }
+        if (isEdit && packageItem) {
+            form.transform((data) => ({
+                ...data,
+                _method: 'PUT',
+            }));
+            form.post(`/packages/${packageItem.id}`, options);
 
-    //     form.post('/packages', options);
-    // };
-const submit = (event: FormEvent) => {
-    event.preventDefault();
+            return;
+        }
 
-    const options = {
-        ...modalVisit,
-        forceFormData: true,
-        onSuccess: onClose,
+        form.post('/packages', options);
     };
-
-    if (isEdit && packageItem) {
-        form.transform((data) => ({
-            ...data,
-            _method: "PUT",
-        }))
-        form.post(`/packages/${packageItem.id}`, options);
-
-        return;
-    }
-
-    form.post('/packages', options);
-};
 
     return (
         <PackageForm
@@ -161,7 +125,7 @@ const submit = (event: FormEvent) => {
             onSubmit={submit}
             onCancel={onClose}
             mode={isEdit ? 'edit' : 'create'}
-           existingImageUrl={packageItem?.image_url ?? null}
+            existingImageUrl={packageItem?.image_url ?? null}
         />
     );
 }

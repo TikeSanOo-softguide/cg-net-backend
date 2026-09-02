@@ -41,7 +41,3 @@ export function validateCategory(
 
     return errors;
 }
-
-export function categorySuccessMessage(field: keyof CategoryFormValues, t: Translate): string {
-    return t(`cms.category.validation.${field}_ok`);
-}

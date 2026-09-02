@@ -9,7 +9,6 @@ import { useTranslation } from '@/hooks/useTranslation';
 import {
     CATEGORY_NAME_MAX_LENGTH,
     CATEGORY_SLUG_MAX_LENGTH,
-    categorySuccessMessage,
     validateCategory,
     validateCategoryField,
 } from '@/lib/category-validation';
@@ -74,10 +73,6 @@ export function CategoryForm({ form, onSubmit, onCancel, mode = 'create' }: Cate
         return form.errors[field] || validateCategoryField(field, form.data, t);
     };
 
-    const fieldSuccess = (field: keyof CategoryFormValues): string | undefined => {
-        return fieldState(field) === 'success' ? categorySuccessMessage(field, t) : undefined;
-    };
-
     const submit = (event: FormEvent) => {
         event.preventDefault();
         setSubmitted(true);
@@ -97,11 +92,17 @@ export function CategoryForm({ form, onSubmit, onCancel, mode = 'create' }: Cate
 
     return (
         <CmsFormShell onSubmit={submit} onCancel={onCancel} processing={form.processing} mode={mode}>
-            <FormField label={t('cms.category.name_en')} htmlFor="name_en" error={fieldError('name_en')} success={fieldSuccess('name_en')} required icon={TypeIcon} className="sm:col-span-2">
+            <FormField
+                label={t('cms.category.name_en')}
+                htmlFor="name_en"
+                error={fieldError('name_en')}
+                required
+                icon={TypeIcon}
+                className="sm:col-span-2"
+            >
                 <Input
                     id="name_en"
                     value={form.data.name_en}
-                    required
                     maxLength={CATEGORY_NAME_MAX_LENGTH}
                     aria-invalid={fieldState('name_en') === 'error'}
                     className={formControlStateClass(fieldState('name_en'))}
@@ -114,11 +115,17 @@ export function CategoryForm({ form, onSubmit, onCancel, mode = 'create' }: Cate
                     }}
                 />
             </FormField>
-            <FormField label={t('cms.category.name_zh')} htmlFor="name_zh" error={fieldError('name_zh')} success={fieldSuccess('name_zh')} required icon={TypeIcon} className="sm:col-span-2">
+            <FormField
+                label={t('cms.category.name_zh')}
+                htmlFor="name_zh"
+                error={fieldError('name_zh')}
+                required
+                icon={TypeIcon}
+                className="sm:col-span-2"
+            >
                 <Input
                     id="name_zh"
                     value={form.data.name_zh}
-                    required
                     maxLength={CATEGORY_NAME_MAX_LENGTH}
                     aria-invalid={fieldState('name_zh') === 'error'}
                     className={formControlStateClass(fieldState('name_zh'))}
@@ -128,11 +135,17 @@ export function CategoryForm({ form, onSubmit, onCancel, mode = 'create' }: Cate
                     }}
                 />
             </FormField>
-            <FormField label={t('cms.category.name_my')} htmlFor="name_my" error={fieldError('name_my')} success={fieldSuccess('name_my')} required icon={TypeIcon} className="sm:col-span-2">
+            <FormField
+                label={t('cms.category.name_my')}
+                htmlFor="name_my"
+                error={fieldError('name_my')}
+                required
+                icon={TypeIcon}
+                className="sm:col-span-2"
+            >
                 <Input
                     id="name_my"
                     value={form.data.name_my}
-                    required
                     maxLength={CATEGORY_NAME_MAX_LENGTH}
                     aria-invalid={fieldState('name_my') === 'error'}
                     className={formControlStateClass(fieldState('name_my'))}
@@ -142,11 +155,17 @@ export function CategoryForm({ form, onSubmit, onCancel, mode = 'create' }: Cate
                     }}
                 />
             </FormField>
-            <FormField label={t('cms.slug')} htmlFor="slug" error={fieldError('slug')} success={fieldSuccess('slug')} required icon={Link2Icon} className="sm:col-span-2">
+            <FormField
+                label={t('cms.slug')}
+                htmlFor="slug"
+                error={fieldError('slug')}
+                required
+                icon={Link2Icon}
+                className="sm:col-span-2"
+            >
                 <Input
                     id="slug"
                     value={form.data.slug}
-                    required
                     maxLength={CATEGORY_SLUG_MAX_LENGTH}
                     aria-invalid={fieldState('slug') === 'error'}
                     className={cn('w-full', formControlStateClass(fieldState('slug')))}

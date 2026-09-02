@@ -82,8 +82,18 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.customer_management',
         icon: Users,
         children: [
-            { labelKey: 'menu.customers_list', descriptionKey: 'menu.customers_list_description', href: '/customers', icon: UserRound },
-            { labelKey: 'menu.broadband_accounts', descriptionKey: 'menu.broadband_accounts_description', href: '/broadband-accounts', icon: Wifi },
+            {
+                labelKey: 'menu.customers_list',
+                descriptionKey: 'menu.customers_list_description',
+                href: '/customers',
+                icon: UserRound,
+            },
+            {
+                labelKey: 'menu.broadband_accounts',
+                descriptionKey: 'menu.broadband_accounts_description',
+                href: '/broadband-accounts',
+                icon: Wifi,
+            },
         ],
     },
     {
@@ -91,9 +101,24 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.cpe_management',
         icon: Router,
         children: [
-            { labelKey: 'menu.cpe_inventory', descriptionKey: 'menu.cpe_inventory_description', href: '/cpe/inventory', icon: Boxes },
-            { labelKey: 'menu.cpe_assignment', descriptionKey: 'menu.cpe_assignment_description', href: '/cpe/assignment', icon: Link2 },
-            { labelKey: 'menu.connection_status', descriptionKey: 'menu.connection_status_description', href: '/cpe/status', icon: Signal },
+            {
+                labelKey: 'menu.cpe_inventory',
+                descriptionKey: 'menu.cpe_inventory_description',
+                href: '/cpe/inventory',
+                icon: Boxes,
+            },
+            {
+                labelKey: 'menu.cpe_assignment',
+                descriptionKey: 'menu.cpe_assignment_description',
+                href: '/cpe/assignment',
+                icon: Link2,
+            },
+            {
+                labelKey: 'menu.connection_status',
+                descriptionKey: 'menu.connection_status_description',
+                href: '/cpe/status',
+                icon: Signal,
+            },
         ],
     },
     {
@@ -101,9 +126,24 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.package_management',
         icon: Package,
         children: [
-            { labelKey: 'menu.packages', descriptionKey: 'menu.packages_description', href: '/packages', icon: Package },
-            { labelKey: 'menu.auto_renew_rules', descriptionKey: 'menu.auto_renew_rules_description', href: '/packages/auto-renew', icon: RefreshCw },
-            { labelKey: 'menu.recommended_packages', descriptionKey: 'menu.recommended_packages_description', href: '/packages/recommended', icon: Sparkles },
+            {
+                labelKey: 'menu.packages',
+                descriptionKey: 'menu.packages_description',
+                href: '/packages',
+                icon: Package,
+            },
+            {
+                labelKey: 'menu.auto_renew_rules',
+                descriptionKey: 'menu.auto_renew_rules_description',
+                href: '/packages/auto-renew',
+                icon: RefreshCw,
+            },
+            {
+                labelKey: 'menu.recommended_packages',
+                descriptionKey: 'menu.recommended_packages_description',
+                href: '/packages/recommended',
+                icon: Sparkles,
+            },
         ],
     },
     {
@@ -111,9 +151,24 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.billing',
         icon: CreditCard,
         children: [
-            { labelKey: 'menu.invoices', descriptionKey: 'menu.invoices_description', href: '/billing/invoices', icon: FileText },
-            { labelKey: 'menu.payment_gateway_logs', descriptionKey: 'menu.payment_gateway_logs_description', href: '/billing/gateway-logs', icon: ScrollText },
-            { labelKey: 'menu.transactions', descriptionKey: 'menu.transactions_description', href: '/billing/transactions', icon: Receipt },
+            {
+                labelKey: 'menu.invoices',
+                descriptionKey: 'menu.invoices_description',
+                href: '/billing/invoices',
+                icon: FileText,
+            },
+            {
+                labelKey: 'menu.payment_gateway_logs',
+                descriptionKey: 'menu.payment_gateway_logs_description',
+                href: '/billing/gateway-logs',
+                icon: ScrollText,
+            },
+            {
+                labelKey: 'menu.transactions',
+                descriptionKey: 'menu.transactions_description',
+                href: '/billing/transactions',
+                icon: Receipt,
+            },
         ],
     },
     {
@@ -121,8 +176,18 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.top_up_card_management',
         icon: Ticket,
         children: [
-            { labelKey: 'menu.top_up_card_batch', descriptionKey: 'menu.top_up_card_batch_description', href: '/top-up-cards/batch', icon: Ticket },
-            { labelKey: 'menu.redeem_history', descriptionKey: 'menu.redeem_history_description', href: '/top-up-cards/redeem-history', icon: History },
+            {
+                labelKey: 'menu.top_up_card_batch',
+                descriptionKey: 'menu.top_up_card_batch_description',
+                href: '/top-up-cards/batch',
+                icon: Ticket,
+            },
+            {
+                labelKey: 'menu.redeem_history',
+                descriptionKey: 'menu.redeem_history_description',
+                href: '/top-up-cards/redeem-history',
+                icon: History,
+            },
         ],
     },
     {
@@ -130,10 +195,30 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.service_requests',
         icon: ClipboardList,
         children: [
-            { labelKey: 'menu.installation_applications', descriptionKey: 'menu.installation_applications_description', href: '/service-requests/installations', icon: Plug },
-            { labelKey: 'menu.failure_reports', descriptionKey: 'menu.failure_reports_description', href: '/service-requests/failures', icon: AlertTriangle },
-            { labelKey: 'menu.relocation_requests', descriptionKey: 'menu.relocation_requests_description', href: '/service-requests/relocations', icon: Move },
-            { labelKey: 'menu.change_plan_requests', descriptionKey: 'menu.change_plan_requests_description', href: '/service-requests/change-plan', icon: ArrowRightLeft },
+            {
+                labelKey: 'menu.installation_applications',
+                descriptionKey: 'menu.installation_applications_description',
+                href: '/service-requests/installations',
+                icon: Plug,
+            },
+            {
+                labelKey: 'menu.failure_reports',
+                descriptionKey: 'menu.failure_reports_description',
+                href: '/service-requests/failures',
+                icon: AlertTriangle,
+            },
+            {
+                labelKey: 'menu.relocation_requests',
+                descriptionKey: 'menu.relocation_requests_description',
+                href: '/service-requests/relocations',
+                icon: Move,
+            },
+            {
+                labelKey: 'menu.change_plan_requests',
+                descriptionKey: 'menu.change_plan_requests_description',
+                href: '/service-requests/change-plan',
+                icon: ArrowRightLeft,
+            },
         ],
     },
     {
@@ -148,8 +233,24 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.notifications',
         icon: Bell,
         children: [
-            { labelKey: 'menu.push_composer', descriptionKey: 'menu.push_composer_description', href: '/notifications/compose', icon: PenLine },
-            { labelKey: 'menu.notification_categories', descriptionKey: 'menu.notification_categories_description', href: '/notifications/categories', icon: Tags },
+            {
+                labelKey: 'menu.announcement',
+                descriptionKey: 'menu.announcement_description',
+                href: '/notifications/announcement',
+                icon: Megaphone,
+            },
+            {
+                labelKey: 'menu.push_composer',
+                descriptionKey: 'menu.push_composer_description',
+                href: '/notifications/compose',
+                icon: PenLine,
+            },
+            {
+                labelKey: 'menu.notification_categories',
+                descriptionKey: 'menu.notification_categories_description',
+                href: '/notifications/categories',
+                icon: Tags,
+            },
         ],
     },
     {
@@ -157,9 +258,24 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.support',
         icon: Headphones,
         children: [
-            { labelKey: 'menu.chat_conversations', descriptionKey: 'menu.chat_conversations_description', href: '/support/conversations', icon: MessageSquare },
-            { labelKey: 'menu.agent_assignment', descriptionKey: 'menu.agent_assignment_description', href: '/support/agents', icon: UserCog },
-            { labelKey: 'menu.quick_reply_templates', descriptionKey: 'menu.quick_reply_templates_description', href: '/support/quick-replies', icon: Reply },
+            {
+                labelKey: 'menu.chat_conversations',
+                descriptionKey: 'menu.chat_conversations_description',
+                href: '/support/conversations',
+                icon: MessageSquare,
+            },
+            {
+                labelKey: 'menu.agent_assignment',
+                descriptionKey: 'menu.agent_assignment_description',
+                href: '/support/agents',
+                icon: UserCog,
+            },
+            {
+                labelKey: 'menu.quick_reply_templates',
+                descriptionKey: 'menu.quick_reply_templates_description',
+                href: '/support/quick-replies',
+                icon: Reply,
+            },
         ],
     },
     {
@@ -167,12 +283,42 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.cms',
         icon: Files,
         children: [
-            { labelKey: 'menu.cms_promotions', descriptionKey: 'menu.cms_promotions_description', href: '/cms/promotions', icon: Megaphone },
-            { labelKey: 'menu.cms_banners', descriptionKey: 'menu.cms_banners_description', href: '/cms/banners', icon: Image },
-            { labelKey: 'menu.cms_categories', descriptionKey: 'menu.cms_categories_description', href: '/cms/categories', icon: FolderTree },
-            { labelKey: 'menu.cms_news', descriptionKey: 'menu.cms_news_description', href: '/cms/news', icon: Newspaper },
-            { labelKey: 'menu.cms_gallery', descriptionKey: 'menu.cms_gallery_description', href: '/cms/gallery', icon: Images },
-            { labelKey: 'menu.cms_contacts', descriptionKey: 'menu.cms_contacts_description', href: '/cms/contacts', icon: Contact },
+            {
+                labelKey: 'menu.cms_promotions',
+                descriptionKey: 'menu.cms_promotions_description',
+                href: '/cms/promotions',
+                icon: Megaphone,
+            },
+            {
+                labelKey: 'menu.cms_banners',
+                descriptionKey: 'menu.cms_banners_description',
+                href: '/cms/banners',
+                icon: Image,
+            },
+            {
+                labelKey: 'menu.cms_categories',
+                descriptionKey: 'menu.cms_categories_description',
+                href: '/cms/categories',
+                icon: FolderTree,
+            },
+            {
+                labelKey: 'menu.cms_news',
+                descriptionKey: 'menu.cms_news_description',
+                href: '/cms/news',
+                icon: Newspaper,
+            },
+            {
+                labelKey: 'menu.cms_gallery',
+                descriptionKey: 'menu.cms_gallery_description',
+                href: '/cms/gallery',
+                icon: Images,
+            },
+            {
+                labelKey: 'menu.cms_contacts',
+                descriptionKey: 'menu.cms_contacts_description',
+                href: '/cms/contacts',
+                icon: Contact,
+            },
         ],
     },
     {
@@ -180,7 +326,12 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.staff_role_management',
         icon: Shield,
         children: [
-            { labelKey: 'menu.staff_accounts', descriptionKey: 'menu.staff_accounts_description', href: '/staff', icon: UserRound },
+            {
+                labelKey: 'menu.staff_accounts',
+                descriptionKey: 'menu.staff_accounts_description',
+                href: '/staff',
+                icon: UserRound,
+            },
             { labelKey: 'menu.roles', descriptionKey: 'menu.roles_description', href: '/roles', icon: ShieldCheck },
         ],
     },
@@ -203,9 +354,24 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.settings',
         icon: Settings,
         children: [
-            { labelKey: 'menu.app_version', descriptionKey: 'menu.app_version_description', href: '/settings/app-version', icon: Smartphone },
-            { labelKey: 'menu.language_management', descriptionKey: 'menu.language_management_description', href: '/settings/languages', icon: Languages },
-            { labelKey: 'menu.general_settings', descriptionKey: 'menu.general_settings_description', href: '/settings/general', icon: SlidersHorizontal },
+            {
+                labelKey: 'menu.app_version',
+                descriptionKey: 'menu.app_version_description',
+                href: '/settings/app-version',
+                icon: Smartphone,
+            },
+            {
+                labelKey: 'menu.language_management',
+                descriptionKey: 'menu.language_management_description',
+                href: '/settings/languages',
+                icon: Languages,
+            },
+            {
+                labelKey: 'menu.general_settings',
+                descriptionKey: 'menu.general_settings_description',
+                href: '/settings/general',
+                icon: SlidersHorizontal,
+            },
         ],
     },
 ];
@@ -214,7 +380,12 @@ export const bottomNavItems: { id: string; labelKey: string; href: string; icon:
     { id: 'dashboard', labelKey: 'menu.dashboard', href: '/dashboard', icon: LayoutDashboard },
     { id: 'customers', labelKey: 'menu.customer_management', href: '/customers', icon: Users },
     { id: 'billing', labelKey: 'menu.billing', href: '/billing/invoices', icon: Wallet },
-    { id: 'service-requests', labelKey: 'menu.service_requests', href: '/service-requests/installations', icon: ClipboardList },
+    {
+        id: 'service-requests',
+        labelKey: 'menu.service_requests',
+        href: '/service-requests/installations',
+        icon: ClipboardList,
+    },
     { id: 'support', labelKey: 'menu.support', href: '/support/conversations', icon: MessageSquare },
 ];
 
@@ -239,7 +410,8 @@ export function isActivePath(current: string, href: string): boolean {
     }
 
     return !navHrefs.some(
-        (other) => other !== href && other.startsWith(`${href}/`) && (current === other || current.startsWith(`${other}/`)),
+        (other) =>
+            other !== href && other.startsWith(`${href}/`) && (current === other || current.startsWith(`${other}/`)),
     );
 }
 
@@ -359,11 +531,7 @@ export function menuPageContextForPath(current: string): MenuPageContext | null 
     return null;
 }
 
-export function resolvePageTitle(
-    t: (key: string) => string,
-    current: string,
-    explicitTitle?: string,
-): string {
+export function resolvePageTitle(t: (key: string) => string, current: string, explicitTitle?: string): string {
     if (explicitTitle) {
         return explicitTitle;
     }

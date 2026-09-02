@@ -13,6 +13,8 @@ export type CategoryItem = {
     name_zh: string;
     name_my: string;
     slug: string;
+    created_at: string | null;
+    updated_at: string | null;
 };
 
 type CategoryFormDialogProps = {

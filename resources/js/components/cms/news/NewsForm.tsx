@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/hooks/useTranslation';
-import { NEWS_TITLE_MAX_LENGTH, newsSuccessMessage, validateNews, validateNewsField } from '@/lib/news-validation';
+import { validateNews, validateNewsField } from '@/lib/news-validation';
 import { formControlStateClass } from '@/lib/form-control';
 import { cn } from '@/lib/utils';
 
@@ -103,10 +103,6 @@ export function NewsForm({
         return form.errors[field] || validateNewsField(field, form.data, t);
     };
 
-    const fieldSuccess = (field: keyof NewsFormValues): string | undefined => {
-        return fieldState(field) === 'success' ? newsSuccessMessage(field, t) : undefined;
-    };
-
     const handleImageDelete = (file: File | null) => {
         if (!file) {
             setField('image_url', '');
@@ -150,7 +146,6 @@ export function NewsForm({
                     label={t('cms.news.title_en')}
                     htmlFor="title_en"
                     error={fieldError('title_en')}
-                    success={fieldSuccess('title_en')}
                     required
                     icon={TypeIcon}
                     className="mb-3"
@@ -173,25 +168,43 @@ export function NewsForm({
                     label={t('cms.news.description_en')}
                     htmlFor="description_en"
                     error={fieldError('description_en')}
-                    success={fieldSuccess('description_en')}
                     required
                     icon={FileTextIcon}
                     className="mb-3"
                 >
                     <Textarea
                         id="description_en"
-                        className={cn('min-h-40', formControlStateClass(fieldState('description_en')))}
+                        className={cn('h-40', formControlStateClass(fieldState('description_en')))}
                         value={form.data.description_en}
                         aria-invalid={fieldState('description_en') === 'error'}
                         onBlur={() => markTouched('description_en')}
                         onChange={(event) => setField('description_en', event.target.value)}
                     />
                 </FormField>
+            </div>
+            <div className="md:ml-3">
+                <FormField label={t('cms.image')} htmlFor="image" error={fieldError('image')} className="mb-2">
+                    <SquareImageUpload
+                        id="image"
+                        width={620}
+                        height={260}
+                        value={image}
+                        existingUrl={imageUrl}
+                        className={cn('w-full', formControlStateClass(fieldState('image')))}
+                        onChange={(file) => {
+                            setImage(file);
+                            setField('image', file);
+                            markTouched('image');
+                            handleImageDelete(file);
+                        }}
+                    />
+                </FormField>
+            </div>
+            <div>
                 <FormField
                     label={t('cms.news.title_zh')}
                     htmlFor="title_zh"
                     error={fieldError('title_zh')}
-                    success={fieldSuccess('title_zh')}
                     required
                     icon={TypeIcon}
                     className="mb-3"
@@ -209,25 +222,25 @@ export function NewsForm({
                     label={t('cms.news.description_zh')}
                     htmlFor="description_zh"
                     error={fieldError('description_zh')}
-                    success={fieldSuccess('description_zh')}
                     required
                     icon={FileTextIcon}
                     className="mb-3"
                 >
                     <Textarea
                         id="description_zh"
-                        className={cn('min-h-40', formControlStateClass(fieldState('description_zh')))}
+                        className={cn('h-40', formControlStateClass(fieldState('description_zh')))}
                         value={form.data.description_zh}
                         aria-invalid={fieldState('description_zh') === 'error'}
                         onBlur={() => markTouched('description_zh')}
                         onChange={(event) => setField('description_zh', event.target.value)}
                     />
                 </FormField>
+            </div>
+            <div className="md:ml-3">
                 <FormField
                     label={t('cms.news.title_my')}
                     htmlFor="title_my"
                     error={fieldError('title_my')}
-                    success={fieldSuccess('title_my')}
                     required
                     icon={TypeIcon}
                     className="mb-3"
@@ -245,14 +258,13 @@ export function NewsForm({
                     label={t('cms.news.description_my')}
                     htmlFor="description_my"
                     error={fieldError('description_my')}
-                    success={fieldSuccess('description_my')}
                     required
                     icon={FileTextIcon}
                     className="mb-3"
                 >
                     <Textarea
                         id="description_my"
-                        className={cn('min-h-40', formControlStateClass(fieldState('description_my')))}
+                        className={cn('h-40', formControlStateClass(fieldState('description_my')))}
                         value={form.data.description_my}
                         aria-invalid={fieldState('description_my') === 'error'}
                         onBlur={() => markTouched('description_my')}
@@ -260,37 +272,8 @@ export function NewsForm({
                     />
                 </FormField>
             </div>
-            <div className="ml-3">
-                <FormField
-                    label={t('cms.image')}
-                    htmlFor="image"
-                    error={fieldError('image')}
-                    success={fieldSuccess('image')}
-                    className="mb-3"
-                >
-                    <SquareImageUpload
-                        id="image"
-                        width={620}
-                        height={240}
-                        value={image}
-                        existingUrl={imageUrl}
-                        onChange={(file) => {
-                            setImage(file);
-                            setField('image', file);
-                            markTouched('image');
-                            handleImageDelete(file);
-                        }}
-                    />
-                </FormField>
-                <FormField
-                    label={t('cms.slug')}
-                    htmlFor="slug"
-                    error={fieldError('slug')}
-                    success={fieldSuccess('slug')}
-                    required
-                    icon={Link2Icon}
-                    className="mb-3"
-                >
+            <div>
+                <FormField label={t('cms.slug')} htmlFor="slug" error={fieldError('slug')} required icon={Link2Icon}>
                     <Input
                         id="slug"
                         value={form.data.slug}
@@ -303,13 +286,13 @@ export function NewsForm({
                         }}
                     />
                 </FormField>
+            </div>
+            <div className="md:ml-3 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <FormField
                     label={t('cms.category.label')}
                     htmlFor="category_id"
                     error={fieldError('category_id')}
-                    success={fieldSuccess('category_id')}
                     required
-                    className="mb-3"
                 >
                     <FormControl icon={FolderTreeIcon}>
                         <Select
@@ -343,10 +326,8 @@ export function NewsForm({
                     label={t('common.status')}
                     htmlFor="status"
                     error={fieldError('status')}
-                    success={fieldSuccess('status')}
                     required
                     icon={CircleDotIcon}
-                    className="mb-3"
                 >
                     <Select
                         value={form.data.status}

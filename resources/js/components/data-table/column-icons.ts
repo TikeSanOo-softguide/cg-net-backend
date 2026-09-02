@@ -20,6 +20,7 @@ import {
     WifiIcon,
     Image,
     type LucideIcon,
+    CalendarClockIcon,
 } from 'lucide-react';
 
 export const DEFAULT_COLUMN_ICONS: Record<string, LucideIcon> = {
@@ -33,7 +34,8 @@ export const DEFAULT_COLUMN_ICONS: Record<string, LucideIcon> = {
     contact_point: PhoneIcon,
     status: CircleDotIcon,
     is_active: CircleDotIcon,
-    created_at: CalendarIcon,
+    created_at: CalendarClockIcon,
+    updated_at: CalendarClockIcon,
     date: CalendarIcon,
     start_date: CalendarIcon,
     end_date: CalendarIcon,

@@ -159,8 +159,8 @@ class BannerController extends Controller
             'image_url_my' => StoresPublicImage::url($banner->image_url_my),
             'sort_order' => $banner->sort_order,
             'is_active' => $banner->is_active,
-            'start_date' => $banner->start_date,
-            'end_date' => $banner->end_date,
+            'start_date' => $banner->start_date?->toDateString(),
+            'end_date' => $banner->end_date?->toDateString(),
             'created_at' => $banner->created_at?->toDateString(),
         ];
     }

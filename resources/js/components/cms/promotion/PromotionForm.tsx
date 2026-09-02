@@ -11,12 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formControlStateClass } from '@/lib/form-control';
-import {
-    PROMOTION_TITLE_MAX_LENGTH,
-    promotionSuccessMessage,
-    validatePromotion,
-    validatePromotionField,
-} from '@/lib/promotion-validation';
+import { PROMOTION_TITLE_MAX_LENGTH, validatePromotion, validatePromotionField } from '@/lib/promotion-validation';
 import { cn } from '@/lib/utils';
 
 export type PromotionFormValues = {
@@ -120,10 +115,6 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
         return form.errors[field] || validatePromotionField(field, form.data, t);
     };
 
-    const fieldSuccess = (field: keyof PromotionFormValues): string | undefined => {
-        return fieldState(field) === 'success' ? promotionSuccessMessage(field, t) : undefined;
-    };
-
     const submit = (event: FormEvent) => {
         event.preventDefault();
 
@@ -163,7 +154,6 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
                     label={t('cms.news.title_en')}
                     htmlFor="title_en"
                     error={fieldError('title_en')}
-                    success={fieldSuccess('title_en')}
                     required
                     icon={TypeIcon}
                     className="mb-3"
@@ -187,7 +177,6 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
                     label={t('cms.news.description_en')}
                     htmlFor="description_en"
                     error={fieldError('description_en')}
-                    success={fieldSuccess('description_en')}
                     required
                     icon={FileTextIcon}
                     className="mb-3"
@@ -205,7 +194,6 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
                     label={t('cms.news.title_zh')}
                     htmlFor="title_zh"
                     error={fieldError('title_zh')}
-                    success={fieldSuccess('title_zh')}
                     required
                     icon={TypeIcon}
                     className="mb-3"
@@ -224,7 +212,6 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
                     label={t('cms.news.description_zh')}
                     htmlFor="description_zh"
                     error={fieldError('description_zh')}
-                    success={fieldSuccess('description_zh')}
                     required
                     icon={FileTextIcon}
                     className="mb-3"
@@ -242,7 +229,6 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
                     label={t('cms.slug')}
                     htmlFor="slug"
                     error={fieldError('slug')}
-                    success={fieldSuccess('slug')}
                     icon={Link2Icon}
                     className="mb-3"
                     required
@@ -258,17 +244,11 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
                 </FormField>
             </div>
             <div className="ml-3">
-                <FormField
-                    label={t('cms.image')}
-                    htmlFor="image"
-                    error={fieldError('image')}
-                    success={fieldSuccess('image')}
-                    className="mb-3"
-                >
+                <FormField label={t('cms.image')} htmlFor="image" error={fieldError('image')} className="mb-3">
                     <SquareImageUpload
                         id="image"
                         width={620}
-                        height={240}
+                        height={258}
                         value={dashedImage}
                         existingUrl={imageUrl}
                         onChange={(file) => {
@@ -282,7 +262,6 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
                     label={t('cms.news.title_my')}
                     htmlFor="title_my"
                     error={fieldError('title_my')}
-                    success={fieldSuccess('title_my')}
                     required
                     icon={TypeIcon}
                     className="mb-3"
@@ -301,7 +280,6 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
                     label={t('cms.news.description_my')}
                     htmlFor="description_my"
                     error={fieldError('description_my')}
-                    success={fieldSuccess('description_my')}
                     required
                     icon={FileTextIcon}
                     className="mb-3"
@@ -320,7 +298,6 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
                         label={t('common.status')}
                         htmlFor="is_active"
                         error={fieldError('is_active')}
-                        success={fieldSuccess('is_active')}
                         icon={CircleDotIcon}
                         className="mb-3"
                         required
@@ -350,7 +327,6 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
                         label={t('cms.start_date')}
                         htmlFor="start_date"
                         error={fieldError('start_date')}
-                        success={fieldSuccess('start_date')}
                         icon={CalendarIcon}
                         className="mb-3"
                     >
@@ -369,7 +345,6 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
                         label={t('cms.end_date')}
                         htmlFor="end_date"
                         error={fieldError('end_date')}
-                        success={fieldSuccess('end_date')}
                         icon={CalendarClockIcon}
                         className="mb-3"
                     >

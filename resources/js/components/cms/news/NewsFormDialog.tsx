@@ -19,6 +19,8 @@ export type NewsItem = {
     slug: string;
     status: string;
     image_url: string | null;
+    created_at: string | null;
+    updated_at: string | null;
 };
 
 type NewsFormDialogProps = {

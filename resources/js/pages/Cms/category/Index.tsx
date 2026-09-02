@@ -5,6 +5,7 @@ import { CategoryFormDialog, type CategoryItem } from '@/components/cms/category
 import { CmsIndexPage, type CmsFilters } from '@/components/cms/shared/CmsIndexPage';
 import type { Paginated } from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatDateTime } from '@/lib/utils';
 
 type Props = {
     items: Paginated<CategoryItem & { news_count: number; created_at: string | null }>;
@@ -36,6 +37,8 @@ export default function CategoriesIndex({ items, filters }: Props) {
                         name_zh: row.name_zh,
                         name_my: row.name_my,
                         slug: row.slug,
+                        created_at: row.created_at,
+                        updated_at: row.updated_at,
                     });
                     setFormOpen(true);
                 }}
@@ -57,12 +60,35 @@ export default function CategoriesIndex({ items, filters }: Props) {
                         id: 'name_en',
                         header: t('cms.category.label'),
                         mobile: 'title',
-                        sortable: true,
                         className: 'font-medium',
-                        cell: (row) => locale === 'zh' ? row.name_zh || row.name_en : locale === 'my' ? row.name_my || row.name_en : row.name_en,
+                        cell: (row) =>
+                            locale === 'zh'
+                                ? row.name_zh || row.name_en
+                                : locale === 'my'
+                                    ? row.name_my || row.name_en
+                                    : row.name_en,
                     },
-                    { id: 'slug', header: t('cms.slug'), mobile: 'subtitle', sortable: true, cell: (row) => row.slug },
-                    { id: 'news_count', header: t('cms.category.news_count'), mobile: 'meta', cell: (row) => row.news_count },
+                    { id: 'slug', header: t('cms.slug'), mobile: 'subtitle', cell: (row) => row.slug },
+                    {
+                        id: 'news_count',
+                        header: t('cms.category.news_count'),
+                        mobile: 'meta',
+                        cell: (row) => row.news_count,
+                    },
+                    {
+                        id: 'created_at',
+                        header: t('common.created_at'),
+                        mobile: 'meta',
+                        className: 'text-muted-foreground',
+                        cell: (row) => formatDateTime(row.created_at),
+                    },
+                    {
+                        id: 'updated_at',
+                        header: t('common.updated_at'),
+                        mobile: 'meta',
+                        className: 'text-muted-foreground',
+                        cell: (row) => formatDateTime(row.updated_at),
+                    },
                 ]}
             />
         </>

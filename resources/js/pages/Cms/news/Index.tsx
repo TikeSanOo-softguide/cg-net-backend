@@ -7,6 +7,7 @@ import type { NewsOption } from '@/components/cms/news/NewsForm';
 import type { Paginated } from '@/components/Pagination';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatDateTime } from '@/lib/utils';
 
 type Props = {
     items: Paginated<
@@ -15,6 +16,7 @@ type Props = {
             category_name_zh: string;
             category_name_my: string;
             created_at: string | null;
+            updated_at: string | null;
         }
     >;
     filters: CmsFilters;
@@ -53,6 +55,8 @@ export default function NewsIndex({ items, filters, categories }: Props) {
                         slug: row.slug,
                         status: row.status,
                         image_url: row.image_url,
+                        created_at: row.created_at,
+                        updated_at: row.updated_at,
                     });
                     setFormOpen(true);
                 }}
@@ -96,8 +100,8 @@ export default function NewsIndex({ items, filters, categories }: Props) {
                             locale === 'zh'
                                 ? row.title_zh || row.title_en
                                 : locale === 'my'
-                                  ? row.title_my || row.title_en
-                                  : row.title_en,
+                                    ? row.title_my || row.title_en
+                                    : row.title_en,
                     },
                     {
                         id: 'category_name',
@@ -107,23 +111,28 @@ export default function NewsIndex({ items, filters, categories }: Props) {
                             locale === 'zh'
                                 ? row.category_name_zh || row.category_name_en
                                 : locale === 'my'
-                                  ? row.category_name_my || row.category_name_en
-                                  : row.category_name_en,
+                                    ? row.category_name_my || row.category_name_en
+                                    : row.category_name_en,
                     },
                     {
                         id: 'status',
                         header: t('common.status'),
-                        sortable: true,
                         mobile: 'badge',
                         cell: (row) => <StatusBadge status={row.status} />,
                     },
                     {
                         id: 'created_at',
-                        header: t('customers.joined'),
-                        sortable: true,
+                        header: t('common.created_at'),
                         mobile: 'meta',
                         className: 'text-muted-foreground',
-                        cell: (row) => row.created_at,
+                        cell: (row) => formatDateTime(row.created_at),
+                    },
+                    {
+                        id: 'updated_at',
+                        header: t('common.updated_at'),
+                        mobile: 'meta',
+                        className: 'text-muted-foreground',
+                        cell: (row) => formatDateTime(row.updated_at),
                     },
                 ]}
             />
