@@ -11,6 +11,7 @@ use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Locale\LocaleController;
 use App\Http\Controllers\MenuPage\MenuPageController;
 use App\Http\Controllers\Package\AddonController;
+use App\Http\Controllers\ServiceRequest\FailureReportController;
 use App\Http\Controllers\Package\NetworkController;
 use App\Http\Controllers\Package\PackageController;
 use App\Http\Controllers\Package\SpeedController;
@@ -58,6 +59,16 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         Route::put('/areas/{area}', [RegionManagementController::class, 'updateArea'])->name('regions.areas.update');
         Route::delete('/areas/{area}', [RegionManagementController::class, 'destroyArea'])->name('regions.areas.destroy');
     });
+
+        Route::get('/service-requests/failures', [FailureReportController::class, 'index'])
+        ->middleware('can:service-requests.view')
+        ->name('service-requests.failures');
+    Route::patch('/service-requests/failures/{failureReport}/status', [FailureReportController::class, 'updateStatus'])
+        ->middleware('can:service-requests.update')
+        ->name('service-requests.failures.status');
+    Route::delete('/service-requests/failures/{failureReport}', [FailureReportController::class, 'destroy'])
+        ->middleware('can:service-requests.delete')
+        ->name('service-requests.failures.destroy');
 
     Route::prefix('cms')->name('cms.')->group(function () {
         foreach (
