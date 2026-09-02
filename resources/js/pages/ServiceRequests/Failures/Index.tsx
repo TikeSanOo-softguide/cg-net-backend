@@ -1,16 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { AlertTriangleIcon, CheckCircle2Icon, ChevronDownIcon, CircleDotIcon, FilterIcon, Trash2Icon } from 'lucide-react';
+import { AlertTriangleIcon, CheckCircle2Icon, CircleDotIcon, EyeIcon, FilterIcon, SquarePenIcon, Trash2Icon, XIcon } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { FormDialog } from '@/components/FormDialog';
+import { formActionBarClass, formActionButtonClass, formActionSubmitClass } from '@/components/FormActionBar';
 import type { Paginated } from '@/components/Pagination';
+import { Pagination } from '@/components/Pagination';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { SearchInput } from '@/components/SearchInput';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EDGE_PAD } from '@/components/data-table/styles';
@@ -73,6 +76,7 @@ export default function FailureReportsIndex({ reports, filters }: FailureReports
     const can = useCan();
     const [search, setSearch] = useState(filters.search);
     const [pendingIds, setPendingIds] = useState<number[]>([]);
+    const [viewingReport, setViewingReport] = useState<FailureReportRow | null>(null);
     const debounce = useRef<number>(0);
     const canDelete = can('service-requests.delete');
 
@@ -175,10 +179,6 @@ export default function FailureReportsIndex({ reports, filters }: FailureReports
                                         <p>
                                             <span className="font-medium text-foreground">Contact:</span> {report.contact_name} / {report.contact_phone}
                                         </p>
-                                        <p>
-                                            <span className="font-medium text-foreground">Customer phone:</span> {report.customer_phone}
-                                        </p>
-                                        <p className="line-clamp-3">{report.description}</p>
                                     </div>
 
                                     {report.photos.length > 0 ? (
@@ -202,41 +202,14 @@ export default function FailureReportsIndex({ reports, filters }: FailureReports
                                 </div>
 
                                 <div className="flex shrink-0 items-center gap-1">
-                                    {can('service-requests.update') ? (
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <button
-                                                    type="button"
-                                                    className="inline-flex items-center gap-1.5 rounded-[6px] bg-primary px-2.5 py-1.5 text-[11px] font-medium text-white transition-all duration-200 ease-out hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:outline-none"
-                                                    aria-label={t('common.update')}
-                                                >
-                                                    <span>{t('common.update')}</span>
-                                                    <ChevronDownIcon className="size-3.5" strokeWidth={1.8} />
-                                                </button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" className="w-40">
-                                                <DropdownMenuItem onSelect={() => {
-                                                    router.patch(`/service-requests/failures/${report.id}/status`, { status: 'approved' }, {
-                                                        preserveScroll: true,
-                                                        preserveState: true,
-                                                    });
-                                                }}>
-                                                    <CheckCircle2Icon className="size-4" strokeWidth={1.8} />
-                                                    {t('status.approved')}
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem variant="destructive" onSelect={() => {
-                                                    router.patch(`/service-requests/failures/${report.id}/status`, { status: 'rejected' }, {
-                                                        preserveScroll: true,
-                                                        preserveState: true,
-                                                    });
-                                                }}>
-                                                    <span className="flex size-4 items-center justify-center rounded-full border border-current text-[10px]">×</span>
-                                                    {t('status.rejected')}
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                    {can('service-requests.view') ? (
+                                        <TableActionButton
+                                            label={t('common.view')}
+                                            icon={EyeIcon}
+                                            tone="edit"
+                                            onClick={() => setViewingReport(report)}
+                                        />
                                     ) : null}
-
                                     {canDelete ? (
                                         <TableActionButton
                                             label={t('common.delete')}
@@ -249,8 +222,32 @@ export default function FailureReportsIndex({ reports, filters }: FailureReports
                             </article>
                         ))}
                     </div>
+
+                    <Pagination
+                        meta={{
+                            from: reports.from,
+                            to: reports.to,
+                            total: reports.total,
+                            links: reports.links,
+                        }}
+                        summary={t('common.showing')
+                            .replace(':from', String(reports.from ?? 0))
+                            .replace(':to', String(reports.to ?? 0))
+                            .replace(':total', String(reports.total))}
+                    />
                 </Card>
             </PageContent>
+
+            <FailureReportDetailDialog
+                open={Boolean(viewingReport)}
+                onOpenChange={(open) => {
+                    if (! open) {
+                        setViewingReport(null);
+                    }
+                }}
+                report={viewingReport}
+            />
+
             <ConfirmDialog
                 open={pendingIds.length === 1}
                 onOpenChange={(open) => {
@@ -273,5 +270,124 @@ export default function FailureReportsIndex({ reports, filters }: FailureReports
                 }}
             />
         </>
+    );
+}
+
+function FailureReportDetailDialog({
+    open,
+    onOpenChange,
+    report,
+}: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    report: FailureReportRow | null;
+}) {
+    const { t } = useTranslation();
+    const can = useCan();
+
+    if (! report) {
+        return null;
+    }
+
+    return (
+        <FormDialog
+            open={open}
+            onOpenChange={onOpenChange}
+            title={report.customer_name}
+            description={report.account_number}
+            icon={AlertTriangleIcon}
+            size="lg"
+        >
+            <div className="flex min-h-0 flex-1 flex-col">
+                <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="rounded-[12px] border border-border/70 bg-white p-3 dark:bg-[#122326]">
+                            <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Customer</p>
+                            <p className="mt-1 text-[14px] font-semibold text-foreground">{report.customer_name}</p>
+                        </div>
+                        <div className="rounded-[12px] border border-border/70 bg-white p-3 dark:bg-[#122326]">
+                            <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Account</p>
+                            <p className="mt-1 text-[14px] font-semibold text-foreground">{report.account_number}</p>
+                        </div>
+                        <div className="rounded-[12px] border border-border/70 bg-white p-3 dark:bg-[#122326]">
+                            <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Contact</p>
+                            <p className="mt-1 text-[14px] font-semibold text-foreground">{report.contact_name} / {report.contact_phone}</p>
+                        </div>
+                        <div className="rounded-[12px] border border-border/70 bg-white p-3 dark:bg-[#122326]">
+                            <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Customer Phone</p>
+                            <p className="mt-1 text-[14px] font-semibold text-foreground">{report.customer_phone}</p>
+                        </div>
+                        <div className="rounded-[12px] border border-border/70 bg-white p-3 dark:bg-[#122326]">
+                            <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Failure Type</p>
+                            <p className="mt-1 text-[14px] font-semibold text-foreground">
+                                {failureTypeOptions.find((item) => item.value === report.failure_type)?.label ?? report.failure_type}
+                            </p>
+                        </div>
+                        <div className="rounded-[12px] border border-border/70 bg-white p-3 dark:bg-[#122326]">
+                            <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Status</p>
+                            <div className="mt-2"><StatusBadge status={report.status} /></div>
+                        </div>
+                    </div>
+
+                    <div className="mt-4 rounded-[12px] border border-border/70 bg-white p-3 dark:bg-[#122326]">
+                        <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Description</p>
+                        <p className="mt-2 whitespace-pre-wrap text-[13px] leading-6 text-foreground">{report.description}</p>
+                    </div>
+
+                    <div className="mt-4 rounded-[12px] border border-border/70 bg-white p-3 dark:bg-[#122326]">
+                        <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Evidence Photos</p>
+                        {report.photos.length > 0 ? (
+                            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                                {report.photos.map((photo) => (
+                                    <div key={photo.id} className="space-y-1">
+                                        <img
+                                            src={photo.image_url}
+                                            alt={photo.label ?? 'Failure report evidence'}
+                                            className="h-32 w-full rounded-md border border-border object-cover"
+                                        />
+                                        {photo.label ? (
+                                            <p className="text-[10px] text-muted-foreground">{photo.label}</p>
+                                        ) : null}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="mt-2 text-[12px] text-muted-foreground">No evidence photos available.</p>
+                        )}
+                    </div>
+                </div>
+
+                <div className={formActionBarClass}>
+                    <Button type="button" size="sm" variant="ghost" className={formActionButtonClass} onClick={() => onOpenChange(false)}>
+                        <XIcon className="size-3.5" strokeWidth={1.85} />
+                        {t('common.close')}
+                    </Button>
+                    {can('service-requests.update') ? (
+                        <>
+                            <Button type="button" size="sm" className={formActionSubmitClass} onClick={() => {
+                                router.patch(`/service-requests/failures/${report.id}/status`, { status: 'approved' }, {
+                                    preserveScroll: true,
+                                    preserveState: true,
+                                    onSuccess: () => onOpenChange(false),
+                                });
+                            }}>
+                                <CheckCircle2Icon className="size-3.5" strokeWidth={1.85} />
+                                {t('status.approved')}
+                            </Button>
+                            <Button type="button" size="sm" variant="destructive" className={formActionButtonClass} onClick={() => {
+                                router.patch(`/service-requests/failures/${report.id}/status`, { status: 'rejected' }, {
+                                    preserveScroll: true,
+                                    preserveState: true,
+                                    onSuccess: () => onOpenChange(false),
+                                });
+                            }}>
+                                <XIcon className="size-3.5" strokeWidth={1.85} />
+                                {t('status.rejected')}
+                            </Button>
+                        </>
+                    ) : null}
+                </div>
+            </div>
+        </FormDialog>
     );
 }
