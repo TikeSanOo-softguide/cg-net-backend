@@ -17,7 +17,7 @@ class TermController extends Controller
 
         Term::query()->create($data);
 
-        return redirect()->route('packages.index')->with('success', 'packages.reference_created');
+        return redirect()->route('packages.index')->with('success', 'packages.terms.created');
     }
 
     public function update(Request $request, Term $term): RedirectResponse
@@ -28,13 +28,13 @@ class TermController extends Controller
 
         $term->update($data);
 
-        return redirect()->route('packages.index')->with('success', 'packages.reference_updated');
+        return redirect()->route('packages.index')->with('success', 'packages.terms.updated');
     }
 
     public function destroy(Term $term): RedirectResponse
     {
         $term->delete();
 
-        return redirect()->route('packages.index')->with('success', 'packages.reference_deleted');
+        return redirect()->route('packages.index')->with('success', 'packages.terms.deleted');
     }
 }

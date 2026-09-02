@@ -1,19 +1,14 @@
-import { useState } from "react";
-import { Head } from "@inertiajs/react";
+import { useState } from 'react';
+import { Head } from '@inertiajs/react';
 
-import {
-    CmsIndexPage,
-    type CmsFilters,
-} from "@/components/cms/shared/CmsIndexPage";
-import {
-    ContactFormDialog,
-    type ContactItem,
-} from "@/components/cms/contact/ContactFormDialog";
-import type { Paginated } from "@/components/Pagination";
-import { useTranslation } from "@/hooks/useTranslation";
+import { CmsIndexPage, type CmsFilters } from '@/components/cms/shared/CmsIndexPage';
+import { ContactFormDialog, type ContactItem } from '@/components/cms/contact/ContactFormDialog';
+import type { Paginated } from '@/components/Pagination';
+import { useTranslation } from '@/hooks/useTranslation';
+import { formatDateTime } from '@/lib/utils';
 
 type Props = {
-    items: Paginated<ContactItem & { created_at: string | null }>;
+    items: Paginated<ContactItem & { created_at: string | null; updated_at: string | null }>;
     filters: CmsFilters;
 };
 
@@ -24,7 +19,7 @@ export default function ContactsIndex({ items, filters }: Props) {
 
     return (
         <>
-            <Head title={t("menu.cms_contacts")} />
+            <Head title={t('menu.cms_contacts')} />
             <CmsIndexPage
                 createLabelKey="cms.contact.create"
                 indexHref="/cms/contacts"
@@ -57,20 +52,28 @@ export default function ContactsIndex({ items, filters }: Props) {
                 }
                 columns={[
                     {
-                        id: "contact_point",
-                        header: t("cms.contact_point"),
-                        mobile: "title",
+                        id: 'contact_point',
+                        header: t('cms.contact_point'),
+                        mobile: 'title',
                         sortable: true,
-                        className: "font-medium",
+                        className: 'font-medium',
                         cell: (row) => row.contact_point,
                     },
                     {
-                        id: "created_at",
-                        header: t("customers.joined"),
+                        id: 'created_at',
+                        header: t('common.created_at'),
                         sortable: true,
-                        mobile: "meta",
-                        className: "text-muted-foreground",
-                        cell: (row) => row.created_at,
+                        mobile: 'meta',
+                        className: 'text-muted-foreground',
+                        cell: (row) => formatDateTime(row.created_at),
+                    },
+                    {
+                        id: 'updated_at',
+                        header: t('common.updated_at'),
+                        sortable: true,
+                        mobile: 'meta',
+                        className: 'text-muted-foreground',
+                        cell: (row) => formatDateTime(row.updated_at),
                     },
                 ]}
             />

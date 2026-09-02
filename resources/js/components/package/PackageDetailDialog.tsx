@@ -63,12 +63,7 @@ type PackageDetailDialogProps = {
     onEdit?: (packageItem: PackageDetailMember) => void;
 };
 
-export function PackageDetailDialog({
-    open,
-    onOpenChange,
-    package: packageItem,
-    onEdit,
-}: PackageDetailDialogProps) {
+export function PackageDetailDialog({ open, onOpenChange, package: packageItem, onEdit }: PackageDetailDialogProps) {
     const { t } = useTranslation();
     const can = useCan();
 
@@ -84,52 +79,20 @@ export function PackageDetailDialog({
                 <div className="flex min-h-0 flex-1 flex-col">
                     <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
                         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                            <FormField
-                                label={t('packages.network')}
-                                htmlFor="view-network"
-                                icon={NetworkIcon}
-                            >
-                                <Input
-                                    id="view-network"
-                                    value={packageItem.network?.name_en ?? '—'}
-                                    readOnly
-                                />
+                            <FormField label={t('packages.network')} htmlFor="view-network" icon={NetworkIcon}>
+                                <Input id="view-network" value={packageItem.network?.name_en ?? '—'} readOnly />
                             </FormField>
 
-                            <FormField
-                                label={t('packages.speed')}
-                                htmlFor="view-speed"
-                                icon={ZapIcon}
-                            >
-                                <Input
-                                    id="view-speed"
-                                    value={packageItem.speed?.mbps ?? '—'}
-                                    readOnly
-                                />
+                            <FormField label={t('packages.speed')} htmlFor="view-speed" icon={ZapIcon}>
+                                <Input id="view-speed" value={packageItem.speed?.mbps ?? '—'} readOnly />
                             </FormField>
 
-                            <FormField
-                                label={t('packages.term')}
-                                htmlFor="view-term"
-                                icon={RouterIcon}
-                            >
-                                <Input
-                                    id="view-term"
-                                    value={packageItem.term?.months ?? '—'}
-                                    readOnly
-                                />
+                            <FormField label={t('packages.term')} htmlFor="view-term" icon={RouterIcon}>
+                                <Input id="view-term" value={packageItem.term?.months ?? '—'} readOnly />
                             </FormField>
 
-                            <FormField
-                                label={t('packages.price')}
-                                htmlFor="view-price"
-                                icon={DollarSignIcon}
-                            >
-                                <Input
-                                    id="view-price"
-                                    value={packageItem.price}
-                                    readOnly
-                                />
+                            <FormField label={t('packages.price')} htmlFor="view-price" icon={DollarSignIcon}>
+                                <Input id="view-price" value={packageItem.price} readOnly />
                             </FormField>
 
                             <FormField
@@ -137,72 +100,31 @@ export function PackageDetailDialog({
                                 htmlFor="view-installation-fee"
                                 icon={DollarSignIcon}
                             >
-                                <Input
-                                    id="view-installation-fee"
-                                    value={packageItem.installation_fee}
-                                    readOnly
-                                />
+                                <Input id="view-installation-fee" value={packageItem.installation_fee} readOnly />
                             </FormField>
 
-                            <FormField
-                                label={t('cms.sort_order')}
-                                htmlFor="view-sort-order"
-                                icon={PercentIcon}
-                            >
-                                <Input
-                                    id="view-sort-order"
-                                    value={String(packageItem.sort_order)}
-                                    readOnly
-                                />
+                            <FormField label={t('cms.sort_order')} htmlFor="view-sort-order" icon={PercentIcon}>
+                                <Input id="view-sort-order" value={String(packageItem.sort_order)} readOnly />
                             </FormField>
 
-                            <FormField
-                                label={t('common.status')}
-                                htmlFor="view-status"
-                                icon={CircleDotIcon}
-                            >
-                                <div
-                                    id="view-status"
-                                    className="flex h-10 items-center"
-                                >
-                                    <StatusBadge
-                                        status={
-                                            packageItem.is_active
-                                                ? 'active'
-                                                : 'inactive'
-                                        }
-                                    />
+                            <FormField label={t('common.status')} htmlFor="view-status" icon={CircleDotIcon}>
+                                <div id="view-status" className="flex h-10 items-center">
+                                    <StatusBadge status={packageItem.is_active ? 'active' : 'inactive'} />
                                 </div>
                             </FormField>
 
-                            <FormField
-                                label={t('packages.recommended')}
-                                htmlFor="view-recommended"
-                                icon={StarIcon}
-                            >
+                            <FormField label={t('packages.recommended')} htmlFor="view-recommended" icon={StarIcon}>
                                 <Input
                                     id="view-recommended"
-                                    value={
-                                        packageItem.recommended
-                                            ? t('common.yes')
-                                            : t('common.no')
-                                    }
+                                    value={packageItem.recommended ? t('common.yes') : t('common.no')}
                                     readOnly
                                 />
                             </FormField>
 
-                            <FormField
-                                label={t('package.free_iptv')}
-                                htmlFor="view-free-iptv"
-                                icon={PackageIcon}
-                            >
+                            <FormField label={t('package.free_iptv')} htmlFor="view-free-iptv" icon={PackageIcon}>
                                 <Input
                                     id="view-free-iptv"
-                                    value={
-                                        packageItem.includes_free_iptv
-                                            ? t('common.yes')
-                                            : t('common.no')
-                                    }
+                                    value={packageItem.includes_free_iptv ? t('common.yes') : t('common.no')}
                                     readOnly
                                 />
                             </FormField>
@@ -213,11 +135,7 @@ export function PackageDetailDialog({
                                 icon={ImageIcon}
                                 className="sm:col-span-2"
                             >
-                                <Input
-                                    id="view-image"
-                                    value={packageItem.image_url ?? '—'}
-                                    readOnly
-                                />
+                                <Input id="view-image" value={packageItem.image_url ?? '—'} readOnly />
                             </FormField>
 
                             <FormField
@@ -226,11 +144,7 @@ export function PackageDetailDialog({
                                 icon={PackageIcon}
                                 className="sm:col-span-2"
                             >
-                                <Input
-                                    id="view-created-at"
-                                    value={packageItem.created_at ?? '—'}
-                                    readOnly
-                                />
+                                <Input id="view-created-at" value={packageItem.created_at ?? '—'} readOnly />
                             </FormField>
                         </div>
                     </div>
@@ -255,10 +169,7 @@ export function PackageDetailDialog({
                                 className={formActionButtonClass}
                                 onClick={() => onEdit(packageItem)}
                             >
-                                <SquarePenIcon
-                                    className="size-3.5"
-                                    strokeWidth={1.85}
-                                />
+                                <SquarePenIcon className="size-3.5" strokeWidth={1.85} />
                                 {t('common.edit')}
                             </Button>
                         ) : null}

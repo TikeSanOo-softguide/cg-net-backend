@@ -19,7 +19,7 @@ class NetworkController extends Controller
 
         Network::query()->create($data);
 
-        return redirect()->route('packages.index')->with('success', 'packages.reference_created');
+        return redirect()->route('packages.index')->with('success', 'packages.networks.created');
     }
 
     public function update(Request $request, Network $network): RedirectResponse
@@ -32,13 +32,13 @@ class NetworkController extends Controller
 
         $network->update($data);
 
-        return redirect()->route('packages.index')->with('success', 'packages.reference_updated');
+        return redirect()->route('packages.index')->with('success', 'packages.networks.updated');
     }
 
     public function destroy(Network $network): RedirectResponse
     {
         $network->delete();
 
-        return redirect()->route('packages.index')->with('success', 'packages.reference_deleted');
+        return redirect()->route('packages.index')->with('success', 'packages.networks.deleted');
     }
 }
