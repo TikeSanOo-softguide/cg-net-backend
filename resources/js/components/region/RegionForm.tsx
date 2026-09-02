@@ -1,29 +1,14 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { useForm } from '@inertiajs/react';
-import {
-    MapIcon,
-    MapPinIcon,
-    TagIcon,
-} from 'lucide-react';
+import { MapIcon, MapPinIcon, TagIcon } from 'lucide-react';
 
 import { CmsFormShell } from '@/components/cms/shared/CmsFormShell';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import { useTranslation } from '@/hooks/useTranslation';
-import {
-    type StateRow,
-    type RegionRow,
-    type AreaRow,
-    type RegionType,
-} from '@/components/region/RegionFormDialog';
+import { type StateRow, type RegionRow, type AreaRow, type RegionType } from '@/components/region/RegionFormDialog';
 
 const STATE_TITLE_MAX_LENGTH = 255;
 
@@ -38,11 +23,7 @@ export type RegionFormValues = {
 type RegionFormProps = {
     type: RegionType;
 
-    item:
-        | StateRow
-        | RegionRow
-        | AreaRow
-        | null;
+    item: StateRow | RegionRow | AreaRow | null;
 
     states: StateRow[];
     regions: RegionRow[];
@@ -52,75 +33,41 @@ type RegionFormProps = {
     onClose: () => void;
 };
 
-export function RegionForm({
-    type,
-    item,
-    states,
-    regions,
-    initialValues,
-    onClose,
-}: RegionFormProps) {
+export function RegionForm({ type, item, states, regions, initialValues, onClose }: RegionFormProps) {
     const { t, locale } = useTranslation();
 
     const [submitted, setSubmitted] = useState(false);
 
-    const form = useForm<RegionFormValues>(
-        initialValues,
-    );
+    const form = useForm<RegionFormValues>(initialValues);
 
     const filteredRegions = useMemo(() => {
         if (!form.data.state_id) {
             return [];
         }
 
-        return regions.filter(
-            (region) =>
-                region.state_id ===
-                Number(form.data.state_id),
-        );
+        return regions.filter((region) => region.state_id === Number(form.data.state_id));
     }, [form.data.state_id, regions]);
 
-    const getName = (
-        row: StateRow | RegionRow,
-    ) => {
+    const getName = (row: StateRow | RegionRow) => {
         switch (locale) {
             case 'my':
-                return (
-                    row.name_my ??
-                    row.name_en
-                );
+                return row.name_my ?? row.name_en;
 
             case 'zh':
-                return (
-                    row.name_zh ??
-                    row.name_en
-                );
+                return row.name_zh ?? row.name_en;
 
             default:
                 return row.name_en;
         }
     };
 
-    /*
-     * ============================================================
-     * VALIDATION
-     * ============================================================
-     */
-
-    const getRequiredError = (
-        field:
-            | 'name_en'
-            | 'name_my'
-            | 'name_zh',
-    ) => {
+    const getRequiredError = (field: 'name_en' | 'name_my' | 'name_zh') => {
         if (!submitted) {
             return form.errors[field];
         }
 
         if (!form.data[field].trim()) {
-            return t(
-                `regions.validation.${field}_required`,
-            );
+            return t(`regions.validation.${field}_required`);
         }
 
         return form.errors[field];
@@ -132,9 +79,7 @@ export function RegionForm({
             : form.errors.state_id;
 
     const regionError =
-        submitted &&
-        type === 'area' &&
-        !form.data.region_id
+        submitted && type === 'area' && !form.data.region_id
             ? t('regions.validation.region_required')
             : form.errors.region_id;
 
@@ -164,12 +109,6 @@ export function RegionForm({
         return valid;
     };
 
-    /*
-     * ============================================================
-     * SUBMIT
-     * ============================================================
-     */
-
     const submit = (event: FormEvent) => {
         event.preventDefault();
 
@@ -179,13 +118,7 @@ export function RegionForm({
             return;
         }
 
-        form.clearErrors(
-            'name_en',
-            'name_my',
-            'name_zh',
-            'state_id',
-            'region_id',
-        );
+        form.clearErrors('name_en', 'name_my', 'name_zh', 'state_id', 'region_id');
 
         if (type === 'state') {
             if (item) {
@@ -194,13 +127,10 @@ export function RegionForm({
                     _method: 'put',
                 }));
 
-                form.post(
-                    `/regions/states/${item.id}`,
-                    {
-                        preserveScroll: true,
-                        onSuccess: onClose,
-                    },
-                );
+                form.post(`/regions/states/${item.id}`, {
+                    preserveScroll: true,
+                    onSuccess: onClose,
+                });
 
                 return;
             }
@@ -220,13 +150,10 @@ export function RegionForm({
                     _method: 'put',
                 }));
 
-                form.post(
-                    `/regions/regions/${item.id}`,
-                    {
-                        preserveScroll: true,
-                        onSuccess: onClose,
-                    },
-                );
+                form.post(`/regions/regions/${item.id}`, {
+                    preserveScroll: true,
+                    onSuccess: onClose,
+                });
 
                 return;
             }
@@ -245,13 +172,10 @@ export function RegionForm({
                 _method: 'put',
             }));
 
-            form.post(
-                `/regions/areas/${item.id}`,
-                {
-                    preserveScroll: true,
-                    onSuccess: onClose,
-                },
-            );
+            form.post(`/regions/areas/${item.id}`, {
+                preserveScroll: true,
+                onSuccess: onClose,
+            });
 
             return;
         }
@@ -262,19 +186,7 @@ export function RegionForm({
         });
     };
 
-    /*
-     * ============================================================
-     * FIELD CHANGES
-     * ============================================================
-     */
-
-    const handleNameChange = (
-        field:
-            | 'name_en'
-            | 'name_my'
-            | 'name_zh',
-        value: string,
-    ) => {
+    const handleNameChange = (field: 'name_en' | 'name_my' | 'name_zh', value: string) => {
         form.setData(field, value);
 
         if (value.trim()) {
@@ -282,18 +194,13 @@ export function RegionForm({
         }
     };
 
-    const handleStateChange = (
-        value: string,
-    ) => {
+    const handleStateChange = (value: string) => {
         const stateId = Number(value);
 
         form.setData((data) => ({
             ...data,
             state_id: stateId,
-            region_id:
-                type === 'area'
-                    ? null
-                    : data.region_id,
+            region_id: type === 'area' ? null : data.region_id,
         }));
 
         form.clearErrors('state_id');
@@ -303,24 +210,14 @@ export function RegionForm({
         }
     };
 
-    const handleRegionChange = (
-        value: string,
-    ) => {
-        form.setData(
-            'region_id',
-            Number(value),
-        );
+    const handleRegionChange = (value: string) => {
+        form.setData('region_id', Number(value));
 
         form.clearErrors('region_id');
     };
 
     return (
-        <CmsFormShell
-            onSubmit={submit}
-            onCancel={onClose}
-            processing={form.processing}
-            mode={item ? 'edit' : 'create'}
-        >
+        <CmsFormShell onSubmit={submit} onCancel={onClose} processing={form.processing} mode={item ? 'edit' : 'create'}>
             <FormField
                 label={t('regions.name_en')}
                 htmlFor="name_en"
@@ -333,15 +230,8 @@ export function RegionForm({
                     id="name_en"
                     name="name_en"
                     value={form.data.name_en}
-                    onChange={(event) =>
-                        handleNameChange(
-                            'name_en',
-                            event.target.value,
-                        )
-                    }
-                    maxLength={
-                        STATE_TITLE_MAX_LENGTH
-                    }
+                    onChange={(event) => handleNameChange('name_en', event.target.value)}
+                    maxLength={STATE_TITLE_MAX_LENGTH}
                     disabled={form.processing}
                 />
             </FormField>
@@ -358,15 +248,8 @@ export function RegionForm({
                     id="name_my"
                     name="name_my"
                     value={form.data.name_my}
-                    onChange={(event) =>
-                        handleNameChange(
-                            'name_my',
-                            event.target.value,
-                        )
-                    }
-                    maxLength={
-                        STATE_TITLE_MAX_LENGTH
-                    }
+                    onChange={(event) => handleNameChange('name_my', event.target.value)}
+                    maxLength={STATE_TITLE_MAX_LENGTH}
                     disabled={form.processing}
                 />
             </FormField>
@@ -383,15 +266,8 @@ export function RegionForm({
                     id="name_zh"
                     name="name_zh"
                     value={form.data.name_zh}
-                    onChange={(event) =>
-                        handleNameChange(
-                            'name_zh',
-                            event.target.value,
-                        )
-                    }
-                    maxLength={
-                        STATE_TITLE_MAX_LENGTH
-                    }
+                    onChange={(event) => handleNameChange('name_zh', event.target.value)}
+                    maxLength={STATE_TITLE_MAX_LENGTH}
                     disabled={form.processing}
                 />
             </FormField>
@@ -406,43 +282,20 @@ export function RegionForm({
                     className="sm:col-span-2"
                 >
                     <Select
-                        value={
-                            form.data.state_id
-                                ? String(
-                                      form.data.state_id,
-                                  )
-                                : ''
-                        }
-                        onValueChange={
-                            handleStateChange
-                        }
-                        disabled={
-                            form.processing
-                        }
+                        value={form.data.state_id ? String(form.data.state_id) : ''}
+                        onValueChange={handleStateChange}
+                        disabled={form.processing}
                     >
                         <SelectTrigger id="state_id">
-                            <SelectValue
-                                placeholder={t(
-                                    'regions.select_state',
-                                )}
-                            />
+                            <SelectValue placeholder={t('regions.select_state')} />
                         </SelectTrigger>
 
                         <SelectContent>
-                            {states.map(
-                                (state) => (
-                                    <SelectItem
-                                        key={state.id}
-                                        value={String(
-                                            state.id,
-                                        )}
-                                    >
-                                        {getName(
-                                            state,
-                                        )}
-                                    </SelectItem>
-                                ),
-                            )}
+                            {states.map((state) => (
+                                <SelectItem key={state.id} value={String(state.id)}>
+                                    {getName(state)}
+                                </SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
                 </FormField>
@@ -458,44 +311,20 @@ export function RegionForm({
                     className="sm:col-span-2"
                 >
                     <Select
-                        value={
-                            form.data.region_id
-                                ? String(
-                                      form.data.region_id,
-                                  )
-                                : ''
-                        }
-                        onValueChange={
-                            handleRegionChange
-                        }
-                        disabled={
-                            form.processing ||
-                            !form.data.state_id
-                        }
+                        value={form.data.region_id ? String(form.data.region_id) : ''}
+                        onValueChange={handleRegionChange}
+                        disabled={form.processing || !form.data.state_id}
                     >
                         <SelectTrigger id="region_id">
-                            <SelectValue
-                                placeholder={t(
-                                    'regions.select_region',
-                                )}
-                            />
+                            <SelectValue placeholder={t('regions.select_region')} />
                         </SelectTrigger>
 
                         <SelectContent>
-                            {filteredRegions.map(
-                                (region) => (
-                                    <SelectItem
-                                        key={region.id}
-                                        value={String(
-                                            region.id,
-                                        )}
-                                    >
-                                        {getName(
-                                            region,
-                                        )}
-                                    </SelectItem>
-                                ),
-                            )}
+                            {filteredRegions.map((region) => (
+                                <SelectItem key={region.id} value={String(region.id)}>
+                                    {getName(region)}
+                                </SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
                 </FormField>

@@ -17,9 +17,7 @@ export const PROMOTION_IMAGE_ACCEPTED_TYPES = [
 
 type PromotionField = keyof PromotionFormValues;
 
-export type PromotionValidationErrors = Partial<
-    Record<PromotionField, string>
->;
+export type PromotionValidationErrors = Partial<Record<PromotionField, string>>;
 
 export function validatePromotionField(
     field: PromotionField,
@@ -38,15 +36,11 @@ export function validatePromotionField(
             const trimmed = value.trim();
 
             if (trimmed === '') {
-                return t(
-                    `cms.promotions.validation.${field}_required`,
-                );
+                return t(`cms.promotions.validation.${field}_required`);
             }
 
             if (trimmed.length > PROMOTION_TITLE_MAX_LENGTH) {
-                return t(
-                    `cms.promotions.validation.${field}_max`,
-                );
+                return t(`cms.promotions.validation.${field}_max`);
             }
 
             break;
@@ -60,18 +54,11 @@ export function validatePromotionField(
             const trimmed = value.trim();
 
             if (trimmed === '') {
-                return t(
-                    `cms.promotions.validation.${field}_required`,
-                );
+                return t(`cms.promotions.validation.${field}_required`);
             }
 
-            if (
-                trimmed.length >
-                PROMOTION_DESCRIPTION_MAX_LENGTH
-            ) {
-                return t(
-                    `cms.promotions.validation.${field}_max`,
-                );
+            if (trimmed.length > PROMOTION_DESCRIPTION_MAX_LENGTH) {
+                return t(`cms.promotions.validation.${field}_max`);
             }
 
             break;
@@ -79,21 +66,12 @@ export function validatePromotionField(
 
         case 'start_date': {
             // nullable
-            if (
-                value === null ||
-                value === undefined ||
-                value === ''
-            ) {
+            if (value === null || value === undefined || value === '') {
                 break;
             }
 
-            if (
-                typeof value === 'string' &&
-                !isValidDate(value)
-            ) {
-                return t(
-                    'cms.promotions.validation.start_date',
-                );
+            if (typeof value === 'string' && !isValidDate(value)) {
+                return t('cms.promotions.validation.start_date');
             }
 
             break;
@@ -101,21 +79,12 @@ export function validatePromotionField(
 
         case 'end_date': {
             // nullable
-            if (
-                value === null ||
-                value === undefined ||
-                value === ''
-            ) {
+            if (value === null || value === undefined || value === '') {
                 break;
             }
 
-            if (
-                typeof value === 'string' &&
-                !isValidDate(value)
-            ) {
-                return t(
-                    'cms.promotions.validation.end_date',
-                );
+            if (typeof value === 'string' && !isValidDate(value)) {
+                return t('cms.promotions.validation.end_date');
             }
 
             if (
@@ -124,9 +93,7 @@ export function validatePromotionField(
                 data.start_date !== '' &&
                 value < data.start_date
             ) {
-                return t(
-                    'cms.promotions.validation.end_date_after_or_equal',
-                );
+                return t('cms.promotions.validation.end_date_after_or_equal');
             }
 
             break;
@@ -134,9 +101,7 @@ export function validatePromotionField(
 
         case 'is_active': {
             if (typeof value !== 'boolean') {
-                return t(
-                    'cms.promotions.validation.is_active_required',
-                );
+                return t('cms.promotions.validation.is_active_required');
             }
 
             break;
@@ -161,40 +126,20 @@ export function validatePromotionField(
     }
 
     return undefined;
-
-
 }
 
-export function validatePromotion(
-    data: PromotionFormValues,
-    t: Translate,
-): PromotionValidationErrors {
+export function validatePromotion(data: PromotionFormValues, t: Translate): PromotionValidationErrors {
     const errors: PromotionValidationErrors = {};
 
-    (Object.keys(data) as PromotionField[]).forEach(
-        (field) => {
-            const message = validatePromotionField(
-                field,
-                data,
-                t,
-            );
+    (Object.keys(data) as PromotionField[]).forEach((field) => {
+        const message = validatePromotionField(field, data, t);
 
-            if (message) {
-                errors[field] = message;
-            }
-        },
-    );
+        if (message) {
+            errors[field] = message;
+        }
+    });
 
     return errors;
-}
-
-export function promotionSuccessMessage(
-    field: PromotionField,
-    t: Translate,
-): string {
-    return t(
-        `cms.promotions.validation.${field}_ok`,
-    );
 }
 
 function isValidDate(value: string): boolean {

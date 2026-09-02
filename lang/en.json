@@ -318,12 +318,12 @@
         "name_en": "Name (English)",
         "name_my": "Name (Myanmar)",
         "name_zh": "Name (Chinese)",
-        "area_name": "Area Name",
-        "region_name": "Region Name",
-        "state_name": "State Name",
-        "search_area": "Search Area name",
+        "area_name": "Area",
+        "region_name": "Region",
+        "state_name": "State",
+        "search_area": "Search Area, Region and State name",
         "search_state": "Search State name",
-        "search_region": "Search Region name",
+        "search_region": "Search Region and State name",
         "create_state": "Create State",
         "create_state_description": "Add a state with name",
         "create_region_description": "Add a region with name and state name.",
@@ -421,32 +421,21 @@
             "validation": {
                 "title_en_required": "Please enter an English title.",
                 "title_en_max": "The English title must not be greater than 255 characters.",
-                "title_en_ok": "English title looks good.",
                 "title_zh_required": "Please enter a Chinese title.",
                 "title_zh_max": "The Chinese title must not be greater than 255 characters.",
-                "title_zh_ok": "Chinese title looks good.",
                 "title_my_required": "Please enter a Myanmar title.",
                 "title_my_max": "The Myanmar title must not be greater than 255 characters.",
-                "title_my_ok": "Myanmar title looks good.",
                 "description_en_required": "Please enter an English description.",
-                "description_en_ok": "English description looks good.",
                 "description_zh_required": "Please enter a Chinese description.",
-                "description_zh_ok": "Chinese description looks good.",
                 "description_my_required": "Please enter a Myanmar description.",
-                "description_my_ok": "Myanmar description looks good.",
                 "slug_required": "Please enter a slug.",
                 "slug_max": "The slug must not be greater than 255 characters.",
-                "slug_ok": "Slug looks good.",
                 "is_active_required": "Please select a status.",
-                "is_active_ok": "Status looks good.",
                 "start_date": "Please enter a valid start date.",
-                "start_date_ok": "Start date looks good.",
                 "end_date": "Please enter a valid end date.",
-                "end_date_ok": "End date looks good.",
                 "end_date_after_or_equal": "The end date must be the same as or later than the start date.",
                 "image_invalid_type": "The image must be a valid image file.",
-                "image_max_size": "The image must not be greater than 5 MB.",
-                "image_ok": "Image looks good."
+                "image_max_size": "The image must not be greater than 5 MB."
             }
         },
         "gallery": {
@@ -459,14 +448,10 @@
             "validation": {
                 "image_required": "Image is required.",
                 "title_en_max": "The English title must not be greater than 255 characters.",
-                "title_en_ok": "English title looks good.",
                 "title_zh_max": "The Chinese title must not be greater than 255 characters.",
-                "title_zh_ok": "Chinese title looks good.",
                 "title_my_max": "The Myanmar title must not be greater than 255 characters.",
-                "title_my_ok": "Myanmar title looks good.",
                 "image_invalid_type": "The image must be a valid image file.",
-                "image_max_size": "The image must not be greater than 5 MB.",
-                "image_ok": "Image looks good."
+                "image_max_size": "The image must not be greater than 5 MB."
             }
         },
         "category": {

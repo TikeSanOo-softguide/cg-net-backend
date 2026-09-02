@@ -5,6 +5,7 @@ import { CmsIndexPage, type CmsFilters } from '@/components/cms/shared/CmsIndexP
 import { GalleryFormDialog, type GalleryItem } from '@/components/cms/gallery/GalleryFormDialog';
 import type { Paginated } from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatDateTime } from '@/lib/utils';
 
 type Props = {
     items: Paginated<GalleryItem & { created_at: string | null }>;
@@ -69,25 +70,38 @@ export default function GalleryIndex({ items, filters }: Props) {
                 }
                 columns={[
                     {
+                        id: 'image',
+                        header: t('cms.image'),
+                        mobile: 'image',
+                        className: 'font-medium',
+                        cell: (row) => {
+                            const imageUrl = row.image_url;
+                            return (
+                                <span className="inline-flex items-center justify-content-center">
+                                    {imageUrl ? (
+                                        <img src={imageUrl} alt="" className="size-8 rounded object-cover" />
+                                    ) : null}
+                                </span>
+                            );
+                        },
+                    },
+                    {
                         id: 'label',
                         header: t('cms.label'),
                         mobile: 'title',
                         sortable: true,
                         className: 'font-medium',
-                        cell: (row) => (
-                            <span className="inline-flex items-center gap-2">
-                                {row.image_url ? <img src={row.image_url} alt="" className="size-8 rounded object-cover" /> : null}
-                                {getLabel(row)}
-                            </span>
-                        ),
+                        cell: (row) => {
+                            return getLabel(row);
+                        },
                     },
                     {
                         id: 'created_at',
-                        header: t('customers.joined'),
+                        header: t('common.created_at'),
                         sortable: true,
                         mobile: 'meta',
                         className: 'text-muted-foreground',
-                        cell: (row) => row.created_at,
+                        cell: (row) => formatDateTime(row.created_at),
                     },
                 ]}
             />
