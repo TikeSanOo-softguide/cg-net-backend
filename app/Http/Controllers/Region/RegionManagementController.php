@@ -12,7 +12,6 @@ use App\Http\Requests\Region\UpdateStateRequest;
 use App\Models\Area;
 use App\Models\Region;
 use App\Models\State;
-use App\Support\CmsListing;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -25,61 +24,154 @@ class RegionManagementController extends Controller
      */
     public function index(Request $request): Response
     {
-        $states = CmsListing::paginate(
-            $request,
-            State::query(),
-            ['name_en', 'name_zh', 'name_my'],
-            ['name_en', 'name_zh', 'name_my', 'created_at'],
+        $stateSearch = trim(
+            $request->string('state_search')->toString()
         );
-        $regions = CmsListing::paginate(
-            $request,
-            Region::query()->with(
-                'state:id,name_en,name_zh,name_my'
-            ),
-            ['name_en', 'name_zh', 'name_my', 'state_id'],
-            ['name_en', 'name_zh', 'name_my', 'state_id', 'created_at'],
-        );
-        $areas = CmsListing::paginate(
-            $request,
-            Area::query()->with([
-                'region:id,name_en,name_zh,name_my,state_id',
-                'region.state:id,name_en,name_zh,name_my',
-            ]),
-            ['name_en', 'name_zh', 'name_my', 'region_id'],
-            ['name_en', 'name_zh', 'name_my', 'region_id', 'created_at'],
+        $states = State::query()
+            ->when(
+                $stateSearch !== '',
+                function ($query) use ($stateSearch) {
+                    $query->where(function ($query) use ($stateSearch) {
+                        $query
+                            ->where(
+                                'name_en',
+                                'like',
+                                '%' . $stateSearch . '%'
+                            )
+                            ->orWhere(
+                                'name_zh',
+                                'like',
+                                '%' . $stateSearch . '%'
+                            )
+                            ->orWhere(
+                                'name_my',
+                                'like',
+                                '%' . $stateSearch . '%'
+                            );
+                    });
+                }
+            )
+            ->paginate(
+                15,
+                ['*'],
+                'state_page'
+            )
+            ->withQueryString();
+
+        $regionSearch = trim(
+            $request->string('region_search')->toString()
         );
 
+        $regions = Region::query()
+            ->with(
+                'state:id,name_en,name_zh,name_my'
+            )
+            ->when(
+                $regionSearch !== '',
+                function ($query) use ($regionSearch) {
+                    $query->where(function ($query) use ($regionSearch) {
+                        $query
+                            // Region name
+                            ->where('name_en', 'like', '%' . $regionSearch . '%')
+                            ->orWhere('name_zh', 'like', '%' . $regionSearch . '%')
+                            ->orWhere('name_my', 'like', '%' . $regionSearch . '%')
+
+                            // State name
+                            ->orWhereHas('state', function ($query) use ($regionSearch) {
+                                $query
+                                    ->where('name_en', 'like', '%' . $regionSearch . '%')
+                                    ->orWhere('name_zh', 'like', '%' . $regionSearch . '%')
+                                    ->orWhere('name_my', 'like', '%' . $regionSearch . '%');
+                            });
+                    });
+                }
+            )
+            ->paginate(
+                15,
+                ['*'],
+                'region_page'
+            )
+            ->withQueryString();
+
+        $areaSearch = trim(
+            $request->string('area_search')->toString()
+        );
+        $areas = Area::query()
+            ->with([
+                'region:id,name_en,name_zh,name_my,state_id',
+                'region.state:id,name_en,name_zh,name_my',
+            ])
+            ->when(
+                $areaSearch !== '',
+                function ($query) use ($areaSearch) {
+                    $query->where(function ($query) use ($areaSearch) {
+                        $query
+                            ->where('name_en', 'like', '%' . $areaSearch . '%')
+                            ->orWhere('name_zh', 'like', '%' . $areaSearch . '%')
+                            ->orWhere('name_my', 'like', '%' . $areaSearch . '%')
+
+                            ->orWhereHas('region', function ($query) use ($areaSearch) {
+                                $query
+                                    ->where('name_en', 'like', '%' . $areaSearch . '%')
+                                    ->orWhere('name_zh', 'like', '%' . $areaSearch . '%')
+                                    ->orWhere('name_my', 'like', '%' . $areaSearch . '%')
+
+                                    ->orWhereHas('state', function ($query) use ($areaSearch) {
+                                        $query
+                                            ->where('name_en', 'like', '%' . $areaSearch . '%')
+                                            ->orWhere('name_zh', 'like', '%' . $areaSearch . '%')
+                                            ->orWhere('name_my', 'like', '%' . $areaSearch . '%');
+                                    });
+                            });
+                    });
+                }
+            )
+            ->paginate(
+                15,
+                ['*'],
+                'area_page'
+            )
+            ->withQueryString();
+
         return Inertia::render('Region/Index', [
-            'states' => $states['paginator']->through(
+            'states' => $states->through(
                 fn(State $state) => [
                     'id' => $state->id,
                     'name_en' => $state->name_en,
                     'name_zh' => $state->name_zh,
                     'name_my' => $state->name_my,
-                    'created_at' => $state->created_at?->toDateString(),
+                    'created_at' =>
+                    $state->created_at?->toDateString(),
                 ]
             ),
-            'stateFilters' => $states['filters'],
 
-            'regions' => $regions['paginator']->through(
+            'stateFilters' => [
+                'search' => $stateSearch,
+            ],
+
+            'regions' => $regions->through(
                 fn(Region $region) => [
                     'id' => $region->id,
                     'name_en' => $region->name_en,
                     'name_zh' => $region->name_zh,
                     'name_my' => $region->name_my,
-
                     'state_id' => $region->state_id,
-
-                    'state_name_en' => $region->state?->name_en,
-                    'state_name_zh' => $region->state?->name_zh,
-                    'state_name_my' => $region->state?->name_my,
-
-                    'created_at' => $region->created_at?->toDateString(),
+                    'state_name_en' =>
+                    $region->state?->name_en,
+                    'state_name_zh' =>
+                    $region->state?->name_zh,
+                    'state_name_my' =>
+                    $region->state?->name_my,
+                    'created_at' =>
+                    $region->created_at?->toDateString(),
                 ]
             ),
-            'regionFilters' => $regions['filters'],
 
-            'areas' => $areas['paginator']->through(
+            'regionFilters' => [
+                'search' => $regionSearch,
+            ],
+
+            'areas' => $areas->through(
                 fn(Area $area) => [
                     'id' => $area->id,
 
@@ -88,20 +180,36 @@ class RegionManagementController extends Controller
                     'name_my' => $area->name_my,
 
                     'region_id' => $area->region_id,
-                    'state_id' => $area->region?->state_id,
 
-                    'region_name_en' => $area->region?->name_en,
-                    'region_name_zh' => $area->region?->name_zh,
-                    'region_name_my' => $area->region?->name_my,
+                    'state_id' =>
+                    $area->region?->state_id,
 
-                    'state_name_en' => $area->region?->state?->name_en,
-                    'state_name_zh' => $area->region?->state?->name_zh,
-                    'state_name_my' => $area->region?->state?->name_my,
+                    'region_name_en' =>
+                    $area->region?->name_en,
 
-                    'created_at' => $area->created_at?->toDateString(),
+                    'region_name_zh' =>
+                    $area->region?->name_zh,
+
+                    'region_name_my' =>
+                    $area->region?->name_my,
+
+                    'state_name_en' =>
+                    $area->region?->state?->name_en,
+
+                    'state_name_zh' =>
+                    $area->region?->state?->name_zh,
+
+                    'state_name_my' =>
+                    $area->region?->state?->name_my,
+
+                    'created_at' =>
+                    $area->created_at?->toDateString(),
                 ]
             ),
-            'areaFilters' => $areas['filters'],
+
+            'areaFilters' => [
+                'search' => $areaSearch,
+            ],
         ]);
     }
 
