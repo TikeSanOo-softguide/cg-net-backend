@@ -38,7 +38,16 @@ class AnnouncementController extends Controller
             ->when(
                 $status !== '' && in_array($status, array_column(AnnouncementStatus::cases(), 'value'), true),
                 function ($query) use ($status): void {
-                    $query->where('status', $status);
+                    match ($status) {
+                        'active' => $query->where('is_active', true)->where(function ($query): void {
+                            $query->whereNull('end_date')->orWhere('end_date', '>=', now()); // or now('Asia/Tokyo') if needed
+                        }),
+                        'inactive' => $query->where('is_active', false),
+                        'expired' => $query
+                            ->where('is_active', true)
+                            ->whereNotNull('end_date')
+                            ->where('end_date', '<', now()),
+                    };
                 },
             )
             ->orderBy($sort, $direction)
@@ -69,12 +78,11 @@ class AnnouncementController extends Controller
 
         return redirect()
             ->route('notifications.announcement.index')
-            ->with('success', 'notifications.announcement.created');
+            ->with('success', 'notification.announcement.created');
     }
 
     public function update(UpdateAnnouncementRequest $request, Announcement $announcement): RedirectResponse
     {
-        $announcement = Announcement::findOrFail($announcement->id);
         $announcement->update($request->validated());
 
         activity('notifications')
@@ -85,7 +93,7 @@ class AnnouncementController extends Controller
 
         return redirect()
             ->route('notifications.announcement.index')
-            ->with('success', 'notifications.announcement.updated');
+            ->with('success', 'notification.announcement.updated');
     }
 
     public function destroy(Request $request, Announcement $announcement): RedirectResponse
@@ -100,7 +108,7 @@ class AnnouncementController extends Controller
 
         return redirect()
             ->route('notifications.announcement.index')
-            ->with('success', 'notifications.announcement.deleted');
+            ->with('success', 'notification.announcement.deleted');
     }
 
     public function bulkDestroy(Request $request): RedirectResponse
@@ -122,7 +130,8 @@ class AnnouncementController extends Controller
             $deleted++;
         }
 
-        $redirect = redirect()->route('notifications.announcement.index')
+        $redirect = redirect()
+            ->route('notifications.announcement.index')
             ->with('success', 'common.bulk_deleted')
             ->with('deleted_count', $deleted);
 
@@ -139,10 +148,11 @@ class AnnouncementController extends Controller
             'content_en' => $announcement->content_en,
             'content_my' => $announcement->content_my,
             'content_zh' => $announcement->content_zh,
-            'start_date' => $announcement->start_date?->toDateTimeString(),
-            'end_date' => $announcement->end_date?->toDateTimeString(),
+            'start_date' => $announcement->start_date,
+            'end_date' => $announcement->end_date,
             'is_active' => $announcement->is_active,
-            'created_at' => $announcement->created_at?->toDateString(),
+            'created_at' => $announcement->created_at,
+            'updated_at' => $announcement->updated_at,
         ];
     }
 }

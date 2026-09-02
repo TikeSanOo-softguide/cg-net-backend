@@ -568,6 +568,8 @@
             "description": "编写并向客户发送公告。",
             "create_description": "添加公告内容并设置时间安排。",
             "edit_description": "更新此公告的内容和时间安排。",
+            "delete_title": "删除此公告？",
+            "delete_description": "此公告将被永久删除。",
             "validation": {
                 "content_en_required": "请输入英文内容。",
                 "content_zh_required": "请输入中文内容。",

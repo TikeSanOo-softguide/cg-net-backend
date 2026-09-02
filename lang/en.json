@@ -569,6 +569,8 @@
             "description": "Write and send announcements to customers.",
             "create_description": "Add an announcement with content, and schedule.",
             "edit_description": "Update this announcement's content, and schedule.",
+            "delete_title": "Delete this announcement?",
+            "delete_description": "This announcement will be permanently deleted.",
             "validation": {
                 "content_en_required": "Please enter an English content.",
                 "content_zh_required": "Please enter a Chinese content.",
