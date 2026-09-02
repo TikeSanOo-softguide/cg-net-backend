@@ -165,7 +165,8 @@ class NewsController extends Controller
             'slug' => $news->slug,
             'status' => $news->status->value,
             'image_url' => StoresPublicImage::url($news->image_url),
-            'created_at' => $news->created_at?->toDateString(),
+            'created_at' => $news->created_at,
+            'updated_at' => $news->updated_at,
         ];
     }
 }

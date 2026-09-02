@@ -59,10 +59,20 @@ export default function CategoriesIndex({ items, filters }: Props) {
                         mobile: 'title',
                         sortable: true,
                         className: 'font-medium',
-                        cell: (row) => locale === 'zh' ? row.name_zh || row.name_en : locale === 'my' ? row.name_my || row.name_en : row.name_en,
+                        cell: (row) =>
+                            locale === 'zh'
+                                ? row.name_zh || row.name_en
+                                : locale === 'my'
+                                  ? row.name_my || row.name_en
+                                  : row.name_en,
                     },
                     { id: 'slug', header: t('cms.slug'), mobile: 'subtitle', sortable: true, cell: (row) => row.slug },
-                    { id: 'news_count', header: t('cms.category.news_count'), mobile: 'meta', cell: (row) => row.news_count },
+                    {
+                        id: 'news_count',
+                        header: t('cms.category.news_count'),
+                        mobile: 'meta',
+                        cell: (row) => row.news_count,
+                    },
                 ]}
             />
         </>
