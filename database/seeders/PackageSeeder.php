@@ -17,15 +17,30 @@ class PackageSeeder extends Seeder
         // Networks (缅甸网 / 晨光网 / CG-家庭网)
         // ------------------------------------------------------------
         collect([
-            'Myanmar Network', // 缅甸网
-            'Chenguang Network', // 晨光网 (中缅一体网)
-            'CG-Net', // CG-家庭网
+            [
+                'en' => 'Myanmar Network',
+                'zh' => '缅甸网',
+                'my' => 'မြန်မာ ကွန်ရက်',
+            ],
+            [
+                'en' => 'Chenguang Network',
+                'zh' => '晨光网',
+                'my' => 'ချင်းကွမ် ကွန်ရက်',
+            ],
+            [
+                'en' => 'CG-Net',
+                'zh' => 'CG-家庭网',
+                'my' => 'CG-အိမ်သုံးကွန်ရက်',
+            ],
         ])->each(
-            fn(string $name) => Network::firstOrCreate([
-                'name_en' => $name,
-                'name_zh' => $name,
-                'name_my' => $name,
-            ]),
+            fn(array $network) => Network::firstOrCreate(
+                ['name_en' => $network['en']], // Search criteria
+                [
+                    'name_en' => $network['en'],
+                    'name_zh' => $network['zh'],
+                    'name_my' => $network['my'],
+                ],
+            ),
         );
 
         // ------------------------------------------------------------
