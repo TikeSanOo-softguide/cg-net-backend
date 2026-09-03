@@ -25,8 +25,9 @@ import { TableActionButton } from '@/components/TableActionButton';
 import { Card } from '@/components/ui/card';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Button } from '@/components/ui/button';
+import { FormControl } from '@/components/ui/form-control';
 import { FormField } from '@/components/ui/form-field';
-import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { ToolbarIconButton } from '@/components/data-table/toolbar';
 import { EDGE_PAD } from '@/components/data-table/styles';
@@ -41,6 +42,7 @@ import { cn, formatDateTime } from '@/lib/utils';
 
 type Filters = {
     search: string;
+    status: string;
 };
 
 type Props = {
@@ -48,10 +50,13 @@ type Props = {
     filters: Filters;
 };
 
-function visitIndex(search: string) {
+function visitIndex(search: string, status: string) {
     router.get(
         '/notifications/announcement',
-        { search: search || undefined },
+        {
+            search: search || undefined,
+            status: status || undefined,
+        },
         { preserveState: true, preserveScroll: true, replace: true },
     );
 }
@@ -75,6 +80,7 @@ function getStatus(item: AnnouncementItem) {
 export default function AnnouncementsIndex({ announcement, filters }: Props) {
     const { t, locale } = useTranslation();
     const [search, setSearch] = useState(filters.search);
+    const [status, setStatus] = useState(filters.status);
     const [pendingIds, setPendingIds] = useState<number[]>([]);
     const [formOpen, setFormOpen] = useState(false);
     const [detailOpen, setDetailOpen] = useState(false);
@@ -85,6 +91,10 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
     useEffect(() => {
         setSearch(filters.search);
     }, [filters.search]);
+
+    useEffect(() => {
+        setStatus(filters.status);
+    }, [filters.status]);
 
     useEffect(() => () => window.clearTimeout(debounce.current), []);
 
@@ -113,12 +123,28 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
                             onChange={(value) => {
                                 setSearch(value);
                                 window.clearTimeout(debounce.current);
-                                debounce.current = window.setTimeout(() => visitIndex(value), 300);
+                                debounce.current = window.setTimeout(() => visitIndex(value, status), 300);
                             }}
                             placeholder={t('common.search')}
                             size="sm"
                             className="w-full sm:max-w-64"
                         />
+                        <FormControl icon={CircleDotIcon} compact className="w-full shrink-0 sm:w-44">
+                            <Select
+                                value={status || 'all'}
+                                onValueChange={(value) => visitIndex(search, value === 'all' ? '' : value)}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder={t('common.status')} />
+                                </SelectTrigger>
+                                <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                    <SelectItem value="all">{t('common.all')}</SelectItem>
+                                    <SelectItem value="active">{t('status.active')}</SelectItem>
+                                    <SelectItem value="inactive">{t('status.inactive')}</SelectItem>
+                                    <SelectItem value="expired">{t('status.expired')}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </FormControl>
                         <div className="flex shrink-0 items-center justify-end sm:ms-auto">
                             <ToolbarIconButton
                                 label={t('notification.announcement.create')}
@@ -266,11 +292,7 @@ function AnnouncementDetailDialog({
         <FormDialog
             open={open}
             onOpenChange={onOpenChange}
-            title={
-                item.start_date || item.end_date
-                    ? `${formatDateTime(item.start_date)} ~ ${formatDateTime(item.end_date)}`
-                    : t('notification.announcement.content')
-            }
+            title={t('notification.announcement.content')}
             description={t('notification.announcement.edit_description')}
             icon={MegaphoneIcon}
             size="3xl"
@@ -344,12 +366,13 @@ function AnnouncementDetailDialog({
                                         htmlFor="view-start-date"
                                         icon={CalendarIcon}
                                     >
-                                        <Input
+                                        <DateTimePicker
                                             id="view-start-date"
-                                            type="datetime-local"
                                             value={item.start_date ?? ''}
-                                            readOnly
-                                            className="border-0 bg-transparent shadow-none px-0"
+                                            disabled
+                                            clearable={false}
+                                            className="w-full border-0 bg-transparent shadow-none px-0"
+                                            onChange={() => undefined}
                                         />
                                     </FormField>
 
@@ -358,12 +381,13 @@ function AnnouncementDetailDialog({
                                         htmlFor="view-end-date"
                                         icon={CalendarClockIcon}
                                     >
-                                        <Input
+                                        <DateTimePicker
                                             id="view-end-date"
-                                            type="datetime-local"
                                             value={item.end_date ?? ''}
-                                            readOnly
-                                            className="border-0 bg-transparent shadow-none px-0"
+                                            disabled
+                                            clearable={false}
+                                            className="w-full border-0 bg-transparent shadow-none px-0"
+                                            onChange={() => undefined}
                                         />
                                     </FormField>
                                 </div>

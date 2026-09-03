@@ -115,7 +115,7 @@ class PackageController extends Controller
 
         activity('package')->causedBy($request->user())->performedOn($package)->event('created')->log('package_created');
 
-        return redirect()->route('packages.index')->with('success', 'package.created');
+        return redirect()->route('packages.index')->with('success', 'packages.created');
     }
 
     public function show(Package $package): Response
@@ -143,17 +143,15 @@ class PackageController extends Controller
         UpdatePackageRequest $request,
         Package $package
     ): RedirectResponse {
-        $package->update(
-            $this->attributes(
-                $request->validated(),
-                $request->file('image_url'),
-                $package->image_url,
-            )
-        );
+        $package = Package::findOrFail($package->id);
+        $package->update($this->attributes(
+            $request->validated(),
+            $request->file('image_url'),
+        ));
 
-        activity('package')->causedBy($request->user())->performedOn($package)->event('created')->log('package_created');
+        activity('package')->causedBy($request->user())->performedOn($package)->event('updated')->log('package_updated');
 
-        return redirect()->route('packages.index')->with('success', 'package.created');
+        return redirect()->route('packages.index')->with('success', 'packages.updated');
     }
 
     public function destroy(Request $request, Package $package): RedirectResponse
@@ -174,7 +172,7 @@ class PackageController extends Controller
 
     private function attributes(
         array $validated,
-        ?UploadedFile $image_url = null,
+        ?UploadedFile $imageUrl = null,
         ?string $previousPath = null,
     ): array {
         $data = [
@@ -189,14 +187,13 @@ class PackageController extends Controller
             'recommended' => $validated['recommended'],
         ];
 
-        if ($image_url) {
+        if ($imageUrl) {
             $data['image_url'] = StoresPublicImage::store(
-                $image_url,
+                $imageUrl,
                 'cms/packages',
                 $previousPath,
             );
         }
-
         return $data;
     }
 
@@ -220,9 +217,9 @@ class PackageController extends Controller
             ] : null,
             'term_id' => $package->term_id,
             'term' => $package->term ? ['id' => $package->term->id, 'months' => $package->term->months,] : null,
-            'price' => $package->price,
+            'price' => (int) $package->price,
             'image_url' => StoresPublicImage::url($package->image_url),
-            'installation_fee' => $package->installation_fee,
+            'installation_fee' => (int) $package->installation_fee,
             'includes_free_iptv' => $package->includes_free_iptv,
             'is_active' => $package->is_active,
             'sort_order' => $package->sort_order,
@@ -277,7 +274,7 @@ class PackageController extends Controller
                 'name_en' => $addon->name_en,
                 'name_zh' => $addon->name_zh,
                 'name_my' => $addon->name_my,
-                'price' => $addon->price,
+                'price' => (int) $addon->price,
                 'image_url' => StoresPublicImage::url(
                     $addon->image_url
                 ),

@@ -309,40 +309,91 @@ class DatabaseSeeder extends Seeder
     private function seedBanners(): void
     {
         Banner::factory()->create([
-            'image_url_en' => 'https://cdn.cg-net.test/banners/monsoon-promo-en.jpg',
+            'image_url_en' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
+            'image_url_zh' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
+            'image_url_my' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
             'sort_order' => 1,
         ]);
         Banner::factory()->create([
-            'image_url_en' => 'https://cdn.cg-net.test/banners/new-fiber-coverage-en.jpg',
+            'image_url_en' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
+            'image_url_zh' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
+            'image_url_my' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
             'sort_order' => 2,
         ]);
         Banner::factory()->create([
-            'image_url_en' => 'https://cdn.cg-net.test/banners/pay-with-kbzpay-en.jpg',
+            'image_url_en' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
+            'image_url_zh' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
+            'image_url_my' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
             'sort_order' => 3,
+        ]);
+        Banner::factory()->create([
+            'image_url_en' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
+            'image_url_zh' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
+            'image_url_my' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
+            'sort_order' => 4,
         ]);
     }
 
     private function seedCms(): void
     {
-        $offers = Category::factory()->create([
-            'name_en' => 'Offers',
-            'name_zh' => 'Offers',
-            'name_my' => 'Offers',
-            'slug' => 'offers',
+        $categories = Category::factory()->createMany([
+            [
+                'name_en' => 'Promotions',
+                'name_zh' => '促销',
+                'name_my' => 'ပရိုမိုးရှင်းများ',
+                'slug' => 'promotions',
+            ],
+            [
+                'name_en' => 'Awards',
+                'name_zh' => '奖项',
+                'name_my' => 'ဆုများ',
+                'slug' => 'awards',
+            ],
+            [
+                'name_en' => 'Games',
+                'name_zh' => '游戏',
+                'name_my' => 'ဂိမ်းများ',
+                'slug' => 'games',
+            ],
+            [
+                'name_en' => 'Charity',
+                'name_zh' => '慈善',
+                'name_my' => 'အလှူအတန်း',
+                'slug' => 'charity',
+            ],
         ]);
-        $article = News::factory()->create([
-            'category_id' => $offers->id,
-            'title_en' => 'New fiber coverage in Yangon',
-            'slug' => 'new-fiber-coverage-yangon',
-            'status' => NewsStatus::Published,
+
+        News::factory()
+            ->count(15)
+            ->state(
+                fn() => [
+                    'category_id' => $categories->random()->id,
+                    'status' => NewsStatus::Published,
+                ],
+            )
+            ->create();
+
+        Promotion::factory()->count(10)->create();
+
+        Gallery::factory()->count(5)->create();
+
+        Contact::factory()->createMany([
+            [
+                'contact_point' => '+959123456789',
+            ],
+            [
+                'contact_point' => '+959987654321',
+            ],
+            [
+                'contact_point' => '+959456789123',
+            ],
+            [
+                'contact_point' => 'support@cg-net.test',
+            ],
+            [
+                'contact_point' => 'No. 123, Mong La, Shan State, Myanmar',
+            ],
         ]);
-        Promotion::factory()->create([
-            'title_en' => 'Monsoon home broadband',
-            'slug' => 'monsoon-home-broadband',
-        ]);
-        Gallery::factory()->create(['label_en' => 'Yangon office']);
-        Contact::factory()->create(['contact_point' => '+959123456789']);
-        Contact::factory()->create(['contact_point' => 'support@cg-net.test']);
     }
 
     /**

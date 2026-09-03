@@ -10,34 +10,21 @@ import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
 import { FormControl } from '@/components/ui/form-control';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { visitBulkDelete } from '@/lib/bulk-delete';
 
-import {
-    PackageFormDialog,
-    type PackageFormMember,
-} from '@/components/package/PackageFormDialog';
+import { PackageFormDialog, type PackageFormMember } from '@/components/package/PackageFormDialog';
 import {
     ReferenceFormDialog,
     type ReferenceFormKind,
     type ReferenceFormRow,
 } from '@/components/package/ReferenceFormDialog';
 
-import type {
-    PackageDetailMember,
-} from '@/components/package/PackageDetailDialog';
+import type { PackageDetailMember } from '@/components/package/PackageDetailDialog';
 
-import type {
-    PackageOption,
-} from '@/components/package/PackageForm';
+import type { PackageOption } from '@/components/package/PackageForm';
 import { Card } from '@/components/ui/card';
 
 type PackageRow = PackageDetailMember;
@@ -89,15 +76,8 @@ function visitIndex(filters: Filters) {
     );
 }
 
-export default function PackageIndex({
-    packages,
-    filters,
-    networks,
-    speeds,
-    terms,
-    addons,
-}: PackageIndexProps) {
-    const { t,locale } = useTranslation();
+export default function PackageIndex({ packages, filters, networks, speeds, terms, addons }: PackageIndexProps) {
+    const { t, locale } = useTranslation();
     const can = useCan();
     const [search, setSearch] = useState(filters.search);
     const [pendingIds, setPendingIds] = useState<number[]>([]);
@@ -105,7 +85,10 @@ export default function PackageIndex({
     const canDelete = can('packages.delete');
     const [formOpen, setFormOpen] = useState(false);
     const [editingPackage, setEditingPackage] = useState<PackageFormMember | null>(null);
-    const [referenceForm, setReferenceForm] = useState<{ kind: ReferenceFormKind; item: ReferenceFormRow | null } | null>(null);
+    const [referenceForm, setReferenceForm] = useState<{
+        kind: ReferenceFormKind;
+        item: ReferenceFormRow | null;
+    } | null>(null);
     const [referenceDelete, setReferenceDelete] = useState<{ kind: ReferenceFormKind; id: number } | null>(null);
 
     const quickTables = [
@@ -114,8 +97,8 @@ export default function PackageIndex({
             title: t('packages.network'),
             data: networks,
             getRowId: (row: NetworkOption) => String(row.id),
-            searchValue: (row: NetworkOption) =>String(row[`name_${locale}`] ?? ''),
-            cell: (row: NetworkOption) =>row[`name_${locale}`] ?? '—',
+            searchValue: (row: NetworkOption) => String(row[`name_${locale}`] ?? ''),
+            cell: (row: NetworkOption) => row[`name_${locale}`] ?? '—',
             onCreate: () =>
                 setReferenceForm({
                     kind: 'network',
@@ -151,7 +134,7 @@ export default function PackageIndex({
             data: terms,
             getRowId: (row: PackageOption) => String(row.id),
             searchValue: (row: PackageOption) => String(row.months ?? ''),
-            cell: (row: PackageOption) => row.months ? `${row.months} ${row.months === 1 ? 'Month' : 'Months'}` : '—',
+            cell: (row: PackageOption) => (row.months ? `${row.months} ${row.months === 1 ? 'Month' : 'Months'}` : '—'),
             onCreate: () => setReferenceForm({ kind: 'term', item: null }),
             onEdit: (row: PackageOption) => setReferenceForm({ kind: 'term', item: row as ReferenceFormRow }),
             onDelete: (row: PackageOption) => setReferenceDelete({ kind: 'term', id: Number(row.id) }),
@@ -162,8 +145,8 @@ export default function PackageIndex({
             title: t('packages.addon'),
             data: addons,
             getRowId: (row: AddonOption) => String(row.id),
-            searchValue: (row: AddonOption) =>String(row[`name_${locale}`] ?? ''),
-            cell: (row: AddonOption) =>row[`name_${locale}`] ?? '—',
+            searchValue: (row: AddonOption) => String(row[`name_${locale}`] ?? ''),
+            cell: (row: AddonOption) => row[`name_${locale}`] ?? '—',
             onCreate: () =>
                 setReferenceForm({
                     kind: 'addon',
@@ -180,7 +163,7 @@ export default function PackageIndex({
                     id: Number(row.id),
                 }),
             createLabel: t('common.create'),
-        },        
+        },
     ];
     useEffect(() => {
         setSearch(filters.search);
@@ -251,7 +234,6 @@ export default function PackageIndex({
                         />
                     ))}
                 </div>
-                
 
                 <DataTable
                     data={packages.data}
@@ -271,11 +253,7 @@ export default function PackageIndex({
                     sort={filters.sort}
                     direction={filters.direction}
                     onSort={(column) => {
-                        const nextDirection =
-                            filters.sort === column &&
-                            filters.direction === 'asc'
-                                ? 'desc'
-                                : 'asc';
+                        const nextDirection = filters.sort === column && filters.direction === 'asc' ? 'desc' : 'asc';
 
                         visitIndex({
                             ...filters,
@@ -294,13 +272,7 @@ export default function PackageIndex({
                     createLabel={t('packages.create')}
                     pagination={packages}
                     onBulkDelete={
-                        canDelete
-                            ? (ids) =>
-                                  visitBulkDelete(
-                                      '/packages/bulk-destroy',
-                                      ids.map(Number),
-                                  )
-                            : undefined
+                        canDelete ? (ids) => visitBulkDelete('/packages/bulk-destroy', ids.map(Number)) : undefined
                     }
                     bulkDeleteTitle={t('packages.bulk_delete_title')}
                     actions={(row) => (
@@ -333,41 +305,26 @@ export default function PackageIndex({
                         </>
                     )}
                     filters={
-                        <FormControl
-                            icon={CircleDotIcon}
-                            compact
-                            className="w-full shrink-0 sm:w-48"
-                        >
+                        <FormControl icon={CircleDotIcon} compact className="w-full shrink-0 sm:w-48">
                             <Select
                                 value={filters.status || 'all'}
                                 onValueChange={(value) =>
                                     visitIndex({
                                         ...filters,
-                                        status:
-                                            value === 'all'
-                                                ? ''
-                                                : value,
+                                        status: value === 'all' ? '' : value,
                                     })
                                 }
                             >
                                 <SelectTrigger className="w-full">
-                                    <SelectValue
-                                        placeholder={t('common.status')}
-                                    />
+                                    <SelectValue placeholder={t('common.status')} />
                                 </SelectTrigger>
 
                                 <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
-                                    <SelectItem value="all">
-                                        {t('common.all')}
-                                    </SelectItem>
+                                    <SelectItem value="all">{t('common.all')}</SelectItem>
 
-                                    <SelectItem value="active">
-                                        {t('status.active')}
-                                    </SelectItem>
+                                    <SelectItem value="active">{t('status.active')}</SelectItem>
 
-                                    <SelectItem value="inactive">
-                                        {t('status.inactive')}
-                                    </SelectItem>
+                                    <SelectItem value="inactive">{t('status.inactive')}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </FormControl>
@@ -379,57 +336,41 @@ export default function PackageIndex({
                             className: 'font-medium',
                             mobile: 'title',
                             cell: (row) => (
-                               <span>
-                                {
-                                locale === 'en'
-                                 ? row.network?.name_en
-                                 : locale === 'zh'
-                                 ? row.network?.name_zh
-                                 : row.network?.name_my ?? '—'
-                                }
-                               </span>
+                                <span>
+                                    {locale === 'en'
+                                        ? row.network?.name_en
+                                        : locale === 'zh'
+                                          ? row.network?.name_zh
+                                          : (row.network?.name_my ?? '—')}
+                                </span>
                             ),
                         },
                         {
                             id: 'speed',
                             header: t('packages.speed'),
                             mobile: 'meta',
-                            cell: (row) => (
-                                <span>
-                                  {row.speed?.mbps ?? '—'}
-                                </span>
-                            ),
+                            cell: (row) => <span>{row.speed?.mbps ?? '—'}</span>,
                         },
 
                         {
                             id: 'term',
                             header: t('packages.term'),
                             mobile: 'meta',
-                            cell: (row) => (
-                                <span>
-                                    {row.term?.months ?? '—'}
-                                </span>
-                            ),
+                            cell: (row) => <span>{row.term?.months ?? '—'}</span>,
                         },
 
                         {
                             id: 'price',
                             header: t('packages.price'),
                             sortable: true,
-                            cell: (row) => (
-                                <span>{row.price}</span>
-                            ),
+                            cell: (row) => <span>{row.price}</span>,
                         },
 
                         {
                             id: 'installation_fee',
                             header: t('packages.installation_fee'),
                             sortable: true,
-                            cell: (row) => (
-                                <span>
-                                    {row.installation_fee}
-                                </span>
-                            ),
+                            cell: (row) => <span>{row.installation_fee}</span>,
                         },
 
                         // {
@@ -499,9 +440,7 @@ export default function PackageIndex({
                     }
                 }}
                 title={t('packages.delete_title')}
-                description={t(
-                    'packages.delete_description',
-                )}
+                description={t('packages.delete_description')}
                 destructive
                 confirmLabel={t('common.delete')}
                 onConfirm={() => {
@@ -509,13 +448,9 @@ export default function PackageIndex({
                         return;
                     }
 
-                    router.delete(
-                        `/packages/${pendingIds[0]}`,
-                        {
-                            onFinish: () =>
-                                setPendingIds([]),
-                        },
-                    );
+                    router.delete(`/packages/${pendingIds[0]}`, {
+                        onFinish: () => setPendingIds([]),
+                    });
                 }}
             />
 

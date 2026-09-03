@@ -81,7 +81,8 @@ class ContactController extends Controller
         return [
             'id' => $contact->id,
             'contact_point' => $contact->contact_point,
-            'created_at' => $contact->created_at?->toDateString(),
+            'created_at' => $contact->created_at?->toDateTimeString(),
+            'updated_at' => $contact->updated_at?->toDateTimeString(),
         ];
     }
 }

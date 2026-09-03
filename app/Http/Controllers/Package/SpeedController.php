@@ -17,7 +17,7 @@ class SpeedController extends Controller
 
         Speed::query()->create($data);
 
-        return redirect()->route('packages.index')->with('success', 'packages.reference_created');
+        return redirect()->route('packages.index')->with('success', 'packages.speeds.created');
     }
 
     public function update(Request $request, Speed $speed): RedirectResponse
@@ -28,13 +28,13 @@ class SpeedController extends Controller
 
         $speed->update($data);
 
-        return redirect()->route('packages.index')->with('success', 'packages.reference_updated');
+        return redirect()->route('packages.index')->with('success', 'packages.speeds.updated');
     }
 
     public function destroy(Speed $speed): RedirectResponse
     {
         $speed->delete();
 
-        return redirect()->route('packages.index')->with('success', 'packages.reference_deleted');
+        return redirect()->route('packages.index')->with('success', 'packages.speeds.deleted');
     }
 }

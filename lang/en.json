@@ -575,6 +575,8 @@
             "description": "Write and send announcements to customers.",
             "create_description": "Add an announcement with content, and schedule.",
             "edit_description": "Update this announcement's content, and schedule.",
+            "delete_title": "Delete this announcement?",
+            "delete_description": "This announcement will be permanently deleted.",
             "validation": {
                 "content_en_required": "Please enter an English content.",
                 "content_zh_required": "Please enter a Chinese content.",
@@ -780,6 +782,67 @@
         "speed_placeholder": "Enter speed",
         "validity_placeholder": "Enter validity",
         "installation_fee": "Enter installation fee",
-        "recommended": "Recommended"
+        "recommended": "Recommended",
+        "networks": {
+            "title": "Networks",
+            "created": "Network created",
+            "updated": "Network updated",
+            "deleted": "Network deleted",
+            "create": "Create network",
+            "edit": "Edit network",
+            "description": "Create or update a network"
+        },
+        "addons": {
+            "title": "Add-ons",
+            "created": "Add-on created",
+            "updated": "Add-on updated",
+            "deleted": "Add-on deleted",
+            "create": "Create add-on",
+            "edit": "Edit add-on",
+            "description": "Create or update addons"
+        },
+        "speeds": {
+            "title": "Speeds",
+            "created": "Speed created",
+            "updated": "Speed updated",
+            "deleted": "Speed deleted",
+            "create": "Create speed",
+            "edit": "Edit speed",
+            "description": "Create or update speed"
+        },
+        "terms": {
+            "title": "Terms",
+            "created": "Term created",
+            "updated": "Term updated",
+            "deleted": "Term deleted",
+            "create": "Create term",
+            "edit": "Edit term",
+            "description": "Create or update terms"
+        },
+        "validation": {
+            "network_required": "Please select a network.",
+            "speed_required": "Please select a speed.",
+            "term_required": "Please select a term.",
+            "price_required": "Please enter a price.",
+            "installation_fee_required": "Please enter an installation fee.",
+            "sort_order_required": "Please enter a sort order.",
+            "image_required": "Please upload a package image.",
+            "image_invalid_type": "The image must be a valid image file.",
+            "image_max_size": "The image must not be greater than 5 MB.",
+            "image_size": "The image size must be exactly 260 x 348 pixels.",
+            "name_en_required": "The English name is required.",
+            "name_en_string": "The English name must be a string.",
+            "name_en_max": "The English name may not be greater than 255 characters.",
+            "name_my_required": "The Myanmar name is required.",
+            "name_my_string": "The Myanmar name must be a string.",
+            "name_my_max": "The Myanmar name may not be greater than 255 characters.",
+            "name_zh_required": "The Chinese name is required.",
+            "name_zh_string": "The Chinese name must be a string.",
+            "name_zh_max": "The Chinese name may not be greater than 255 characters.",
+            "months_required": "Please enter the number of months.",
+            "months_integer": "The number of months must be an integer.",
+            "mbps_required": "Please enter the speed in Mbps.",
+            "mbps_integer": "The speed must be an integer."
+        }
     }
 }

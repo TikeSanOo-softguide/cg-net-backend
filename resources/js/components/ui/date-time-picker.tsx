@@ -15,9 +15,17 @@ function localeTag(locale: SupportedLocale): string {
 }
 
 function parseIsoDateTime(value: string): Date | null {
+    const trimmed = value?.trim?.() ?? '';
+    if (!trimmed) return null;
+
+    const direct = new Date(trimmed);
+    if (!Number.isNaN(direct.getTime())) {
+        return direct;
+    }
+
     // Accepts "YYYY-MM-DDTHH:mm:ss" or "YYYY-MM-DD HH:mm:ss"
     // Also tolerates missing seconds (treats as :00)
-    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?$/);
+    const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?$/);
     if (!match) return null;
 
     const [, y, m, d, h, min, sec = '0'] = match;
@@ -153,21 +161,21 @@ export function DateTimePicker({
 
     const display = selected
         ? (() => {
-              const datePart = new Intl.DateTimeFormat(tag, {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-              }).format(selected);
+            const datePart = new Intl.DateTimeFormat(tag, {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+            }).format(selected);
 
-              const timePart = new Intl.DateTimeFormat(tag, {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-                  hour12: true,
-              }).format(selected);
+            const timePart = new Intl.DateTimeFormat(tag, {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true,
+            }).format(selected);
 
-              return `${datePart} ${timePart}`;
-          })()
+            return `${datePart} ${timePart}`;
+        })()
         : '';
 
     const monthLabel = new Intl.DateTimeFormat(tag, {
@@ -336,8 +344,8 @@ export function DateTimePicker({
                                     selectedDay
                                         ? 'bg-primary text-primary-foreground shadow-[0_4px_10px_hsl(var(--primary)/0.28)]'
                                         : isToday
-                                          ? 'text-primary ring-1 ring-primary/40'
-                                          : 'text-foreground hover:bg-primary/10 hover:text-primary',
+                                            ? 'text-primary ring-1 ring-primary/40'
+                                            : 'text-foreground hover:bg-primary/10 hover:text-primary',
                                     dayDisabled && 'pointer-events-none opacity-35',
                                 )}
                             >

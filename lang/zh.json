@@ -574,6 +574,8 @@
             "description": "编写并向客户发送公告。",
             "create_description": "添加公告内容并设置时间安排。",
             "edit_description": "更新此公告的内容和时间安排。",
+            "delete_title": "删除此公告？",
+            "delete_description": "此公告将被永久删除。",
             "validation": {
                 "content_en_required": "请输入英文内容。",
                 "content_zh_required": "请输入中文内容。",
@@ -776,6 +778,67 @@
         "speed_placeholder": "请输入速度",
         "validity_placeholder": "请输入有效期",
         "installation_fee": "请输入安装费",
-        "recommended": "推荐"
+        "recommended": "推荐",
+        "networks": {
+            "title": "网络",
+            "created": "网络创建成功",
+            "updated": "网络更新成功",
+            "deleted": "网络删除成功",
+            "create": "创建网络",
+            "edit": "编辑网络",
+            "description": "创建或更新网络"
+        },
+        "addons": {
+            "title": "附加服务",
+            "created": "附加服务创建成功",
+            "updated": "附加服务更新成功",
+            "deleted": "附加服务删除成功",
+            "create": "创建附加服务",
+            "edit": "编辑附加服务",
+            "description": "创建或更新附加服务"
+        },
+        "speeds": {
+            "title": "网速",
+            "created": "网速创建成功",
+            "updated": "网速更新成功",
+            "deleted": "网速删除成功",
+            "create": "创建网速",
+            "edit": "编辑网速",
+            "description": "创建或更新网速"
+        },
+        "terms": {
+            "title": "期限",
+            "created": "期限创建成功",
+            "updated": "期限更新成功",
+            "deleted": "期限删除成功",
+            "create": "创建期限",
+            "edit": "编辑期限",
+            "description": "创建或更新期限"
+        },
+        "validation": {
+            "network_required": "请选择网络。",
+            "speed_required": "请选择网速。",
+            "term_required": "请选择期限。",
+            "price_required": "请输入价格。",
+            "installation_fee_required": "请输入安装费。",
+            "sort_order_required": "请输入排序顺序。",
+            "image_required": "请上传套餐图片。",
+            "image_invalid_type": "图片必须是有效的图片文件。",
+            "image_max_size": "图片大小不能超过 5 MB。",
+            "image_size": "图片尺寸必须为 260 x 348 像素。",
+            "name_en_required": "请输入英文名称。",
+            "name_en_string": "英文名称必须是字符串。",
+            "name_en_max": "英文名称不能超过 255 个字符。",
+            "name_my_required": "请输入缅甸语名称。",
+            "name_my_string": "缅甸语名称必须是字符串。",
+            "name_my_max": "缅甸语名称不能超过 255 个字符。",
+            "name_zh_required": "请输入中文名称。",
+            "name_zh_string": "中文名称必须是字符串。",
+            "name_zh_max": "中文名称不能超过 255 个字符。",
+            "months_required": "请输入月数。",
+            "months_integer": "月数必须是整数。",
+            "mbps_required": "请输入 Mbps 网速。",
+            "mbps_integer": "网速必须是整数。"
+        }
     }
 }
