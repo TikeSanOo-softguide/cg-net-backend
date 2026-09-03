@@ -358,7 +358,7 @@ function FailureReportDetailDialog({
                     </Button>
                     {can('service-requests.update') ? (
                         <Button type="button" size="sm" className={formActionSubmitClass} onClick={() => {
-                            router.patch(`/service-requests/failures/${report.id}/status`, { status: selectedStatus }, {
+                            router.patch(`/service-requests/failures/${report.id}/edit`, { status: selectedStatus }, {
                                 preserveScroll: true,
                                 preserveState: true,
                                 onSuccess: () => onOpenChange(false),

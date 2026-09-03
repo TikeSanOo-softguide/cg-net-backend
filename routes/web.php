@@ -61,15 +61,7 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         Route::delete('/areas/{area}', [RegionManagementController::class, 'destroyArea'])->name('regions.areas.destroy');
     });
 
-        Route::get('/service-requests/failures', [FailureReportController::class, 'index'])
-        ->middleware('can:service-requests.view')
-        ->name('service-requests.failures');
-    Route::patch('/service-requests/failures/{failureReport}/status', [FailureReportController::class, 'updateStatus'])
-        ->middleware('can:service-requests.update')
-        ->name('service-requests.failures.status');
-    Route::delete('/service-requests/failures/{failureReport}', [FailureReportController::class, 'destroy'])
-        ->middleware('can:service-requests.delete')
-        ->name('service-requests.failures.destroy');
+
 
     Route::prefix('cms')->name('cms.')->group(function () {
         foreach (
@@ -132,6 +124,13 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         Route::get('/export', [TopUpCardController::class, 'export'])->middleware('can:top-up-cards.view')->name('export');
         Route::get('/redeem-history', [TopUpCardController::class, 'history'])->middleware('can:top-up-cards.view')->name('redeem-history');
         Route::patch('/{topUpCard}/void', [TopUpCardController::class, 'void'])->middleware('can:top-up-cards.update')->name('void');
+    });
+
+    Route::prefix('service-requests')->name('service-requests.')->group(function () {
+        Route::prefix('failures')->name('failures.')->group(function () {
+            Route::get('/', [FailureReportController::class, 'index'])->middleware('can:failure.view')->name('index');
+            Route::patch('/{failureReport}/edit', [FailureReportController::class, 'updateStatus'])->middleware('can:service-requests.update')->name('edit');
+        });
     });
 
     foreach (MenuPages::all() as $page) {
