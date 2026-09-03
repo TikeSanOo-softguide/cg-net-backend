@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import { AlertTriangleIcon, CheckCircle2Icon, CircleDotIcon, EyeIcon, FilterIcon, SquarePenIcon, Trash2Icon, XIcon } from 'lucide-react';
 
-import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { FormDialog } from '@/components/FormDialog';
 import { formActionBarClass, formActionButtonClass, formActionSubmitClass } from '@/components/FormActionBar';
 import type { Paginated } from '@/components/Pagination';
@@ -210,14 +209,6 @@ export default function FailureReportsIndex({ reports, filters }: FailureReports
                                             onClick={() => setViewingReport(report)}
                                         />
                                     ) : null}
-                                    {canDelete ? (
-                                        <TableActionButton
-                                            label={t('common.delete')}
-                                            icon={Trash2Icon}
-                                            tone="danger"
-                                            onClick={() => setPendingIds([report.id])}
-                                        />
-                                    ) : null}
                                 </div>
                             </article>
                         ))}
@@ -246,28 +237,6 @@ export default function FailureReportsIndex({ reports, filters }: FailureReports
                     }
                 }}
                 report={viewingReport}
-            />
-
-            <ConfirmDialog
-                open={pendingIds.length === 1}
-                onOpenChange={(open) => {
-                    if (! open) {
-                        setPendingIds([]);
-                    }
-                }}
-                title={t('customers.delete_title')}
-                description={t('customers.delete_description')}
-                destructive
-                confirmLabel={t('common.delete')}
-                onConfirm={() => {
-                    if (pendingIds.length !== 1) {
-                        return;
-                    }
-
-                    router.delete(`/service-requests/failures/${pendingIds[0]}`, {
-                        onFinish: () => setPendingIds([]),
-                    });
-                }}
             />
         </>
     );
