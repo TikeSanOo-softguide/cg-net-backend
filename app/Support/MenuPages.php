@@ -16,8 +16,6 @@ final class MenuPages
             ['path' => '/cpe/assignment', 'titleKey' => 'menu.cpe_assignment', 'name' => 'cpe.assignment', 'permission' => 'cpe.view'],
             ['path' => '/cpe/status', 'titleKey' => 'menu.connection_status', 'name' => 'cpe.status', 'permission' => 'cpe.view'],
             ['path' => '/packages', 'titleKey' => 'menu.packages', 'name' => 'packages.index', 'permission' => 'packages.view'],
-            ['path' => '/packages/auto-renew', 'titleKey' => 'menu.auto_renew_rules', 'name' => 'packages.auto-renew', 'permission' => 'packages.view'],
-            ['path' => '/packages/recommended', 'titleKey' => 'menu.recommended_packages', 'name' => 'packages.recommended', 'permission' => 'packages.view'],
             ['path' => '/billing/invoices', 'titleKey' => 'menu.invoices', 'name' => 'billing.invoices', 'permission' => 'billing.view'],
             ['path' => '/billing/gateway-logs', 'titleKey' => 'menu.payment_gateway_logs', 'name' => 'billing.gateway-logs', 'permission' => 'billing.view'],
             ['path' => '/billing/transactions', 'titleKey' => 'menu.transactions', 'name' => 'billing.transactions', 'permission' => 'billing.view'],

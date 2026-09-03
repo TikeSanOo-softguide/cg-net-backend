@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { CircleDotIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
+import {
+    CalendarDaysIcon,
+    GaugeIcon,
+    NetworkIcon,
+    PuzzleIcon,
+    SquarePenIcon,
+    Trash2Icon,
+    type LucideIcon,
+} from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
@@ -32,6 +41,7 @@ type PackageRow = PackageDetailMember;
 type Filters = {
     search: string;
     status: string;
+    recommended: string;
     sort: string;
     direction: 'asc' | 'desc';
 };
@@ -42,7 +52,11 @@ type PackageIndexProps = {
     networks: PackageOption[];
     speeds: PackageOption[];
     terms: PackageOption[];
-    addons: PackageOption[];
+    addons: AddonOption[];
+    networkTable: Paginated<NetworkOption>;
+    speedTable: Paginated<SpeedOption>;
+    termTable: Paginated<TermOption>;
+    addonTable: Paginated<AddonOption>;
 };
 
 export type NetworkOption = {
@@ -59,12 +73,32 @@ export type AddonOption = {
     name_my: string | null;
 };
 
+type SpeedOption = Pick<PackageOption, 'id' | 'mbps'>;
+type TermOption = Pick<PackageOption, 'id' | 'months'>;
+type QuickTableRow = NetworkOption | SpeedOption | TermOption | AddonOption;
+
+type QuickTable = {
+    key: 'network' | 'speed' | 'term' | 'addon';
+    title: string;
+    icon: LucideIcon;
+    data: QuickTableRow[];
+    pagination: Paginated<QuickTableRow>;
+    getRowId: (row: QuickTableRow) => string;
+    searchValue: (row: QuickTableRow) => string;
+    cell: (row: QuickTableRow) => ReactNode;
+    onCreate: () => void;
+    onEdit: (row: QuickTableRow) => void;
+    onDelete: (row: QuickTableRow) => void;
+    createLabel: string;
+};
+
 function visitIndex(filters: Filters) {
     router.get(
         '/packages',
         {
             search: filters.search || undefined,
             status: filters.status || undefined,
+            recommended: filters.recommended || undefined,
             sort: filters.sort,
             direction: filters.direction,
         },
@@ -76,7 +110,18 @@ function visitIndex(filters: Filters) {
     );
 }
 
-export default function PackageIndex({ packages, filters, networks, speeds, terms, addons }: PackageIndexProps) {
+export default function PackageIndex({
+    packages,
+    filters,
+    networks,
+    speeds,
+    terms,
+    addons,
+    networkTable,
+    speedTable,
+    termTable,
+    addonTable,
+}: PackageIndexProps) {
     const { t, locale } = useTranslation();
     const can = useCan();
     const [search, setSearch] = useState(filters.search);
@@ -91,25 +136,32 @@ export default function PackageIndex({ packages, filters, networks, speeds, term
     } | null>(null);
     const [referenceDelete, setReferenceDelete] = useState<{ kind: ReferenceFormKind; id: number } | null>(null);
 
-    const quickTables = [
+    const quickTables: QuickTable[] = [
         {
             key: 'network' as const,
             title: t('packages.network'),
-            data: networks,
-            getRowId: (row: NetworkOption) => String(row.id),
-            searchValue: (row: NetworkOption) => String(row[`name_${locale}`] ?? ''),
-            cell: (row: NetworkOption) => row[`name_${locale}`] ?? '—',
+            icon: NetworkIcon,
+            data: networkTable.data,
+            pagination: networkTable,
+            getRowId: (row) => String(row.id),
+            searchValue: (row) => String((row as NetworkOption)[`name_${locale}`] ?? ''),
+            cell: (row) => (
+                <span className="inline-flex items-center gap-1.5">
+                    <NetworkIcon className="size-3.5 shrink-0 text-primary" strokeWidth={1.8} />
+                    {(row as NetworkOption)[`name_${locale}`] ?? '—'}
+                </span>
+            ),
             onCreate: () =>
                 setReferenceForm({
                     kind: 'network',
                     item: null,
                 }),
-            onEdit: (row: NetworkOption) =>
+            onEdit: (row) =>
                 setReferenceForm({
                     kind: 'network',
                     item: row as ReferenceFormRow,
                 }),
-            onDelete: (row: NetworkOption) =>
+            onDelete: (row) =>
                 setReferenceDelete({
                     kind: 'network',
                     id: Number(row.id),
@@ -119,45 +171,68 @@ export default function PackageIndex({ packages, filters, networks, speeds, term
         {
             key: 'speed' as const,
             title: t('packages.speed'),
-            data: speeds,
-            getRowId: (row: PackageOption) => String(row.id),
-            searchValue: (row: PackageOption) => String(row.mbps ?? ''),
-            cell: (row: PackageOption) => (row.mbps ? `${row.mbps} Mbps` : '—'),
+            icon: GaugeIcon,
+            data: speedTable.data,
+            pagination: speedTable,
+            getRowId: (row) => String(row.id),
+            searchValue: (row) => String((row as SpeedOption).mbps ?? ''),
+            cell: (row) => (
+                <span className="inline-flex items-center gap-1.5">
+                    <GaugeIcon className="size-3.5 shrink-0 text-primary" strokeWidth={1.8} />
+                    {(row as SpeedOption).mbps ? `${(row as SpeedOption).mbps} Mbps` : '—'}
+                </span>
+            ),
             onCreate: () => setReferenceForm({ kind: 'speed', item: null }),
-            onEdit: (row: PackageOption) => setReferenceForm({ kind: 'speed', item: row as ReferenceFormRow }),
-            onDelete: (row: PackageOption) => setReferenceDelete({ kind: 'speed', id: Number(row.id) }),
+            onEdit: (row) => setReferenceForm({ kind: 'speed', item: row as ReferenceFormRow }),
+            onDelete: (row) => setReferenceDelete({ kind: 'speed', id: Number(row.id) }),
             createLabel: t('common.create'),
         },
         {
             key: 'term' as const,
             title: t('packages.term'),
-            data: terms,
-            getRowId: (row: PackageOption) => String(row.id),
-            searchValue: (row: PackageOption) => String(row.months ?? ''),
-            cell: (row: PackageOption) => (row.months ? `${row.months} ${row.months === 1 ? 'Month' : 'Months'}` : '—'),
+            icon: CalendarDaysIcon,
+            data: termTable.data,
+            pagination: termTable,
+            getRowId: (row) => String(row.id),
+            searchValue: (row) => String((row as TermOption).months ?? ''),
+            cell: (row) => (
+                <span className="inline-flex items-center gap-1.5">
+                    <CalendarDaysIcon className="size-3.5 shrink-0 text-primary" strokeWidth={1.8} />
+                    {(row as TermOption).months
+                        ? `${(row as TermOption).months} ${(row as TermOption).months === 1 ? 'Month' : 'Months'}`
+                        : '—'}
+                </span>
+            ),
             onCreate: () => setReferenceForm({ kind: 'term', item: null }),
-            onEdit: (row: PackageOption) => setReferenceForm({ kind: 'term', item: row as ReferenceFormRow }),
-            onDelete: (row: PackageOption) => setReferenceDelete({ kind: 'term', id: Number(row.id) }),
+            onEdit: (row) => setReferenceForm({ kind: 'term', item: row as ReferenceFormRow }),
+            onDelete: (row) => setReferenceDelete({ kind: 'term', id: Number(row.id) }),
             createLabel: t('common.create'),
         },
         {
             key: 'addon' as const,
             title: t('packages.addon'),
-            data: addons,
-            getRowId: (row: AddonOption) => String(row.id),
-            searchValue: (row: AddonOption) => String(row[`name_${locale}`] ?? ''),
-            cell: (row: AddonOption) => row[`name_${locale}`] ?? '—',
+            icon: PuzzleIcon,
+            data: addonTable.data,
+            pagination: addonTable,
+            getRowId: (row) => String(row.id),
+            searchValue: (row) => String((row as AddonOption)[`name_${locale}`] ?? ''),
+            cell: (row) => (
+                <span className="inline-flex items-center gap-1.5">
+                    <PuzzleIcon className="size-3.5 shrink-0 text-primary" strokeWidth={1.8} />
+                    {(row as AddonOption)[`name_${locale}`] ?? '—'}
+                </span>
+            ),
             onCreate: () =>
                 setReferenceForm({
                     kind: 'addon',
                     item: null,
                 }),
-            onEdit: (row: AddonOption) =>
+            onEdit: (row) =>
                 setReferenceForm({
                     kind: 'addon',
                     item: row as ReferenceFormRow,
                 }),
-            onDelete: (row: AddonOption) =>
+            onDelete: (row) =>
                 setReferenceDelete({
                     kind: 'addon',
                     id: Number(row.id),
@@ -190,6 +265,7 @@ export default function PackageIndex({ packages, filters, networks, speeds, term
                             numbered={false}
                             title={table.title}
                             data={table.data}
+                            pagination={table.pagination}
                             getRowId={table.getRowId}
                             searchPlaceholder={t('dashboard.search_requests')}
                             onCreate={can('packages.create') ? table.onCreate : undefined}
@@ -228,7 +304,10 @@ export default function PackageIndex({ packages, filters, networks, speeds, term
                                     className: 'font-medium',
                                     mobile: 'title',
                                     searchValue: table.searchValue,
-                                    cell: table.cell,
+                                    cell: (row) => {
+                                        const Icon = table.icon;
+                                        return <div className="flex items-center gap-2">{table.cell(row)}</div>;
+                                    },
                                 },
                             ]}
                         />
@@ -305,13 +384,22 @@ export default function PackageIndex({ packages, filters, networks, speeds, term
                         </>
                     )}
                     filters={
-                        <FormControl icon={CircleDotIcon} compact className="w-full shrink-0 sm:w-48">
+                        <FormControl compact className="w-full shrink-0 sm:w-44">
                             <Select
-                                value={filters.status || 'all'}
+                                value={
+                                    filters.recommended === '1'
+                                        ? 'recommended'
+                                        : filters.status === '1'
+                                          ? 'active'
+                                          : filters.status === '0'
+                                            ? 'inactive'
+                                            : 'all'
+                                }
                                 onValueChange={(value) =>
                                     visitIndex({
                                         ...filters,
-                                        status: value === 'all' ? '' : value,
+                                        status: value === 'active' ? '1' : value === 'inactive' ? '0' : '',
+                                        recommended: value === 'recommended' ? '1' : '',
                                     })
                                 }
                             >
@@ -321,9 +409,8 @@ export default function PackageIndex({ packages, filters, networks, speeds, term
 
                                 <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
                                     <SelectItem value="all">{t('common.all')}</SelectItem>
-
+                                    <SelectItem value="recommended">{t('packages.recommended')}</SelectItem>
                                     <SelectItem value="active">{t('status.active')}</SelectItem>
-
                                     <SelectItem value="inactive">{t('status.inactive')}</SelectItem>
                                 </SelectContent>
                             </Select>
@@ -349,28 +436,28 @@ export default function PackageIndex({ packages, filters, networks, speeds, term
                             id: 'speed',
                             header: t('packages.speed'),
                             mobile: 'meta',
-                            cell: (row) => <span>{row.speed?.mbps ?? '—'}</span>,
+                            cell: (row) => <span>{row.speed?.mbps ?? '—'} Mbps</span>,
                         },
 
                         {
                             id: 'term',
                             header: t('packages.term'),
                             mobile: 'meta',
-                            cell: (row) => <span>{row.term?.months ?? '—'}</span>,
+                            cell: (row) => <span>{row.term?.months ?? '—'} Months</span>,
                         },
 
                         {
                             id: 'price',
                             header: t('packages.price'),
                             sortable: true,
-                            cell: (row) => <span>{row.price}</span>,
+                            cell: (row) => <span>{row.price ?? '—'} Pts</span>,
                         },
 
                         {
                             id: 'installation_fee',
                             header: t('packages.installation_fee'),
                             sortable: true,
-                            cell: (row) => <span>{row.installation_fee}</span>,
+                            cell: (row) => <span>{row.installation_fee ?? '—'} Pts</span>,
                         },
 
                         // {

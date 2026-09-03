@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Banner\BannerController;
 use App\Http\Controllers\Api\Category\CategoryController;
 use App\Http\Controllers\Api\Contact\ContactController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\Api\Package\SpeedController;
 use App\Http\Controllers\Api\Package\TermController;
 use App\Http\Controllers\Api\Promotion\PromotionController;
 use App\Http\Controllers\Api\Region\RegionController;
+use App\Http\Controllers\Api\Requests\RelocationRequestController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -46,4 +48,15 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::get('/states/{stateId}/regions', [RegionController::class, 'regions']);
     Route::get('/regions/{regionId}/areas', [RegionController::class, 'areas']);
     Route::get('/announcements', [AnnouncementController::class, 'index']);
+});
+
+Route::post('/login', [AuthController::class, 'login']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::prefix('relocation-requests')->group(function () {
+        Route::get('/', [RelocationRequestController::class, 'index']);
+        Route::post('/create', [RelocationRequestController::class, 'store']);
+        Route::put('/{relocationRequest}', [RelocationRequestController::class, 'update']);
+        Route::delete('/{relocationRequest}', [RelocationRequestController::class, 'destroy']);
+    });
 });

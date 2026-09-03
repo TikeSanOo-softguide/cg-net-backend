@@ -125,18 +125,6 @@ export const navigation: NavGroup[] = [
                 href: '/packages',
                 icon: Package,
             },
-            {
-                labelKey: 'menu.auto_renew_rules',
-                descriptionKey: 'menu.auto_renew_rules_description',
-                href: '/packages/auto-renew',
-                icon: RefreshCw,
-            },
-            {
-                labelKey: 'menu.recommended_packages',
-                descriptionKey: 'menu.recommended_packages_description',
-                href: '/packages/recommended',
-                icon: Sparkles,
-            },
         ],
     },
     {

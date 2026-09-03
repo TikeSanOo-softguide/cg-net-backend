@@ -28,6 +28,7 @@ import {
 } from '@/lib/package-validation';
 import { cn } from '@/lib/utils';
 import { formControlStateClass } from '@/lib/form-control';
+import { StaffStatusSwitch } from '../staff/StaffStatusSwitch';
 
 export type PackageOption = {
     id: number;
@@ -218,7 +219,7 @@ export function PackageForm({
                         >
                             <SelectTrigger
                                 id="speed_id"
-                                className="w-full"
+                                className={cn('w-full', formControlStateClass(fieldState('speed_id')))}
                                 aria-invalid={Boolean(form.errors.speed_id)}
                             >
                                 <SelectValue />
@@ -233,176 +234,193 @@ export function PackageForm({
                             </SelectContent>
                         </Select>
                     </FormField>
-
-                    <FormField
-                        label={t('packages.term')}
-                        htmlFor="term_id"
-                        error={fieldError('term_id')}
-                        required
-                        icon={RouterIcon}
-                    >
-                        <Select
-                            value={form.data.term_id === '' ? '' : String(form.data.term_id)}
-                            onValueChange={(value) => {
-                                setField('term_id', Number(value));
-                                markTouched('term_id');
-                            }}
-                        >
-                            <SelectTrigger id="term_id" className="w-full" aria-invalid={Boolean(form.errors.term_id)}>
-                                <SelectValue />
-                            </SelectTrigger>
-
-                            <SelectContent>
-                                {terms.map((term) => (
-                                    <SelectItem key={term.id} value={String(term.id)}>
-                                        {term.months} {t('packages.months')}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </FormField>
-
-                    <FormField
-                        label={t('packages.price')}
-                        htmlFor="price"
-                        error={fieldError('price')}
-                        required
-                        icon={DollarSignIcon}
-                    >
-                        <Input
-                            id="price"
-                            type="number"
-                            min="0"
-                            step="0"
-                            value={form.data.price}
-                            onChange={(event) => form.setData('price', event.target.value)}
+                    <div className="mb-3 grid grid-cols-2 gap-3">
+                        <FormField
+                            label={t('packages.term')}
+                            htmlFor="term_id"
+                            error={fieldError('term_id')}
                             required
-                            aria-invalid={Boolean(form.errors.price)}
-                        />
-                    </FormField>
+                            icon={RouterIcon}
+                            className="sm:col-span-2"
+                        >
+                            <Select
+                                value={form.data.term_id === '' ? '' : String(form.data.term_id)}
+                                onValueChange={(value) => {
+                                    setField('term_id', Number(value));
+                                    markTouched('term_id');
+                                }}
+                            >
+                                <SelectTrigger
+                                    id="term_id"
+                                    className={cn('w-full', formControlStateClass(fieldState('term_id')))}
+                                    aria-invalid={Boolean(form.errors.term_id)}
+                                >
+                                    <SelectValue />
+                                </SelectTrigger>
 
-                    <FormField
-                        label={t('packages.installation_fee')}
-                        htmlFor="installation_fee"
-                        error={fieldError('installation_fee')}
-                        required
-                        icon={DollarSignIcon}
-                    >
-                        <Input
-                            id="installation_fee"
-                            type="number"
-                            min="0"
-                            step="0"
-                            value={form.data.installation_fee}
-                            onChange={(event) => form.setData('installation_fee', event.target.value)}
+                                <SelectContent>
+                                    {terms.map((term) => (
+                                        <SelectItem key={term.id} value={String(term.id)}>
+                                            {term.months} {t('packages.months')}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </FormField>
+                        <FormField
+                            label={t('packages.price')}
+                            htmlFor="price"
+                            error={fieldError('price')}
                             required
-                            aria-invalid={Boolean(form.errors.installation_fee)}
-                        />
-                    </FormField>
-
-                    <FormField
-                        label={t('cms.sort_order')}
-                        htmlFor="sort_order"
-                        error={fieldError('sort_order')}
-                        required
-                        icon={PercentIcon}
-                    >
-                        <Input
-                            id="sort_order"
-                            type="number"
-                            min="0"
-                            value={form.data.sort_order}
-                            onChange={(event) =>
-                                form.setData('sort_order', event.target.value === '' ? '' : Number(event.target.value))
-                            }
+                            icon={DollarSignIcon}
+                        >
+                            <Input
+                                id="price"
+                                type="number"
+                                min="0"
+                                step="0"
+                                value={form.data.price}
+                                className={cn('w-full', formControlStateClass(fieldState('price')))}
+                                onChange={(event) => form.setData('price', event.target.value)}
+                                required
+                                aria-invalid={Boolean(form.errors.price)}
+                            />
+                        </FormField>
+                        <FormField
+                            label={t('packages.installation_fee')}
+                            htmlFor="installation_fee"
+                            error={fieldError('installation_fee')}
                             required
-                            aria-invalid={Boolean(form.errors.sort_order)}
-                        />
-                    </FormField>
-
-                    <FormField
-                        label={t('packages.free_iptv')}
-                        htmlFor="includes_free_iptv"
-                        error={form.errors.includes_free_iptv}
-                        icon={PackageIcon}
-                    >
-                        <Select
-                            value={form.data.includes_free_iptv ? 'yes' : 'no'}
-                            onValueChange={(value) => form.setData('includes_free_iptv', value === 'yes')}
+                            icon={DollarSignIcon}
                         >
-                            <SelectTrigger id="includes_free_iptv" className="w-full">
-                                <SelectValue />
-                            </SelectTrigger>
-
-                            <SelectContent>
-                                <SelectItem value="yes">{t('packages.free')}</SelectItem>
-                                <SelectItem value="no">{t('packages.paid')}</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </FormField>
-
-                    <FormField
-                        label={t('packages.recommended')}
-                        htmlFor="recommended"
-                        error={form.errors.recommended}
-                        icon={StarIcon}
-                    >
-                        <Select
-                            value={form.data.recommended ? 'yes' : 'no'}
-                            onValueChange={(value) => form.setData('recommended', value === 'yes')}
+                            <Input
+                                id="installation_fee"
+                                type="number"
+                                min="0"
+                                step="0"
+                                value={form.data.installation_fee}
+                                className={cn('w-full', formControlStateClass(fieldState('installation_fee')))}
+                                onChange={(event) => form.setData('installation_fee', event.target.value)}
+                                required
+                                aria-invalid={Boolean(form.errors.installation_fee)}
+                            />
+                        </FormField>
+                        <FormField
+                            label={t('cms.sort_order')}
+                            htmlFor="sort_order"
+                            error={fieldError('sort_order')}
+                            required
+                            icon={PercentIcon}
                         >
-                            <SelectTrigger id="recommended" className="w-full">
-                                <SelectValue />
-                            </SelectTrigger>
-
-                            <SelectContent>
-                                <SelectItem value="yes">{t('packages.yes')}</SelectItem>
-                                <SelectItem value="no">{t('packages.no')}</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </FormField>
-
-                    <FormField
-                        label={t('common.status')}
-                        htmlFor="is_active"
-                        error={form.errors.is_active}
-                        icon={CircleDotIcon}
-                        className="sm:col-span-2"
-                    >
-                        <Select
-                            value={form.data.is_active ? 'active' : 'inactive'}
-                            onValueChange={(value) => form.setData('is_active', value === 'active')}
+                            <Input
+                                id="sort_order"
+                                type="number"
+                                min="0"
+                                value={form.data.sort_order}
+                                className={cn('w-full', formControlStateClass(fieldState('sort_order')))}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'sort_order',
+                                        event.target.value === '' ? '' : Number(event.target.value),
+                                    )
+                                }
+                                required
+                                aria-invalid={Boolean(form.errors.sort_order)}
+                            />
+                        </FormField>
+                        <FormField
+                            label={t('packages.free_iptv')}
+                            htmlFor="includes_free_iptv"
+                            error={fieldError('includes_free_iptv')}
+                            icon={PackageIcon}
                         >
-                            <SelectTrigger id="is_active" className="w-full">
-                                <SelectValue />
-                            </SelectTrigger>
+                            <Select
+                                value={form.data.includes_free_iptv ? 'yes' : 'no'}
+                                onValueChange={(value) => {
+                                    markTouched('includes_free_iptv');
+                                    setField('includes_free_iptv', value === 'yes');
+                                }}
+                            >
+                                <SelectTrigger
+                                    id="includes_free_iptv"
+                                    className={cn('w-full', formControlStateClass(fieldState('includes_free_iptv')))}
+                                    aria-invalid={Boolean(form.errors.includes_free_iptv)}
+                                >
+                                    <SelectValue />
+                                </SelectTrigger>
 
-                            <SelectContent>
-                                <SelectItem value="active">{t('status.active')}</SelectItem>
-                                <SelectItem value="inactive">{t('status.inactive')}</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </FormField>
+                                <SelectContent>
+                                    <SelectItem value="yes">{t('packages.free')}</SelectItem>
+                                    <SelectItem value="no">{t('packages.paid')}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </FormField>
+                        <FormField
+                            label={t('packages.recommended')}
+                            htmlFor="recommended"
+                            error={fieldError('recommended')}
+                            icon={StarIcon}
+                        >
+                            <Select
+                                value={form.data.recommended ? 'yes' : 'no'}
+                                onValueChange={(value) => {
+                                    markTouched('recommended');
+                                    setField('recommended', value === 'yes');
+                                }}
+                            >
+                                <SelectTrigger
+                                    id="recommended"
+                                    className={cn('w-full', formControlStateClass(fieldState('recommended')))}
+                                    aria-invalid={Boolean(form.errors.recommended)}
+                                >
+                                    <SelectValue />
+                                </SelectTrigger>
 
-                    <FormField
-                        label={t('cms.image')}
-                        htmlFor="package-image"
-                        error={fieldError('image_url')}
-                        className="sm:col-span-2"
-                    >
-                        <SquareImageUpload
-                            id="package-image"
-                            width={PACKAGE_IMAGE_WIDTH}
-                            height={PACKAGE_IMAGE_HEIGHT}
-                            value={image}
-                            existingUrl={existingImageUrl}
-                            onChange={(file) => {
-                                setImage(file);
-                                setField('image_url', file);
-                                markTouched('image_url');
-                            }}
-                        />
-                    </FormField>
+                                <SelectContent>
+                                    <SelectItem value="yes">{t('packages.yes')}</SelectItem>
+                                    <SelectItem value="no">{t('packages.no')}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </FormField>
+                        <FormField
+                            label={t('common.status')}
+                            htmlFor="staff-create-status"
+                            error={fieldError('is_active')}
+                        >
+                            <StaffStatusSwitch
+                                id="staff-create-status"
+                                value={form.data.is_active ? 'active' : 'inactive'}
+                                onChange={(status) => {
+                                    setField('is_active', status === 'active');
+                                    markTouched('is_active');
+                                }}
+                            />
+                        </FormField>
+                    </div>
+                    <div className="mb-3 grid grid-cols-1 gap-3">
+                        <FormField
+                            label={t('cms.image')}
+                            htmlFor="package-image"
+                            error={fieldError('image_url')}
+                            className="sm:col-span-2"
+                        >
+                            <div className="flex justify-center">
+                                <SquareImageUpload
+                                    id="package-image"
+                                    width={PACKAGE_IMAGE_WIDTH}
+                                    height={PACKAGE_IMAGE_HEIGHT}
+                                    value={image}
+                                    existingUrl={existingImageUrl}
+                                    className={cn(formControlStateClass(fieldState('image_url')))}
+                                    onChange={(file) => {
+                                        setImage(file);
+                                        setField('image_url', file);
+                                        markTouched('image_url');
+                                    }}
+                                />
+                            </div>
+                        </FormField>
+                    </div>
                 </div>
             </div>
 

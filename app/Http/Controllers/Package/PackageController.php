@@ -14,6 +14,7 @@ use App\Support\StoresPublicImage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -23,9 +24,10 @@ class PackageController extends Controller
     {
         $search = trim((string) $request->string('search'));
         $status = $request->string('status')->toString();
+        $recommended = $request->string('recommended')->toString();
         $sort = $request->string('sort')->toString();
         $direction = $request->string('direction')->toString() === 'asc' ? 'asc' : 'desc';
-        $sortable = ['price', 'installation_fee', 'sort_order', 'created_at',];
+        $sortable = ['price', 'installation_fee', 'sort_order', 'created_at'];
 
         if (! in_array($sort, $sortable, true)) {
             $sort = 'created_at';
@@ -64,13 +66,15 @@ class PackageController extends Controller
                 });
             })
             ->when(
-                $status !== ''
-                    && in_array($status, ['active', 'inactive'], true),
+                in_array($status, ['0', '1'], true),
                 function ($query) use ($status): void {
-                    $query->where(
-                        'is_active',
-                        $status === 'active'
-                    );
+                    $query->where('is_active', $status === '1');
+                }
+            )
+            ->when(
+                in_array($recommended, ['0', '1'], true),
+                function ($query) use ($recommended): void {
+                    $query->where('recommended', $recommended === '1');
                 }
             )
             ->orderBy($sort, $direction)
@@ -85,6 +89,7 @@ class PackageController extends Controller
             'filters' => [
                 'search' => $request->string('search')->toString(),
                 'status' => $request->string('status')->toString(),
+                'recommended' => $recommended,
                 'sort' => $request->string('sort', 'created_at')->toString(),
                 'direction' => $request->string('direction', 'desc')->toString(),
             ],
@@ -92,6 +97,10 @@ class PackageController extends Controller
             'speeds' => $this->speedOptions(),
             'terms' => $this->termOptions(),
             'addons' => $this->addonOptions(),
+            'networkTable' => $this->networkTable(),
+            'speedTable' => $this->speedTable(),
+            'termTable' => $this->termTable(),
+            'addonTable' => $this->addonTable(),
             'stats' => [
                 'networks' => Network::query()->count(),
                 'speeds' => Speed::query()->count(),
@@ -148,9 +157,7 @@ class PackageController extends Controller
             $request->validated(),
             $request->file('image_url'),
         ));
-
         activity('package')->causedBy($request->user())->performedOn($package)->event('updated')->log('package_updated');
-
         return redirect()->route('packages.index')->with('success', 'packages.updated');
     }
 
@@ -162,10 +169,10 @@ class PackageController extends Controller
 
     public function bulkDestroy(Request $request): RedirectResponse
     {
-        $ids = $request->validate(['ids' => ['required', 'array', 'min:1'], 'ids.*' => ['integer', 'distinct', 'exists:packages,id',],])['ids'];
+        $ids = $request->validate(['ids' => ['required', 'array', 'min:1'], 'ids.*' => ['integer', 'distinct', 'exists:packages,id']])['ids'];
         $deleted = Package::query()->whereIn('id', $ids)->delete();
         if ($deleted === 0) {
-            return back()->withErrors(['delete' => 'common.bulk_delete_failed',]);
+            return back()->withErrors(['delete' => 'common.bulk_delete_failed']);
         }
         return redirect()->route('packages.index')->with('success', 'common.bulk_deleted')->with('deleted_count', $deleted);
     }
@@ -197,7 +204,8 @@ class PackageController extends Controller
         return $data;
     }
 
-    /** * @return array<string, mixed> */ private function payload(Package $package): array
+    /** * @return array<string, mixed> */
+    private function payload(Package $package): array
     {
         return [
             'id' => $package->id,
@@ -216,7 +224,7 @@ class PackageController extends Controller
                 'mbps' => $package->speed->mbps,
             ] : null,
             'term_id' => $package->term_id,
-            'term' => $package->term ? ['id' => $package->term->id, 'months' => $package->term->months,] : null,
+            'term' => $package->term ? ['id' => $package->term->id, 'months' => $package->term->months] : null,
             'price' => (int) $package->price,
             'image_url' => StoresPublicImage::url($package->image_url),
             'installation_fee' => (int) $package->installation_fee,
@@ -245,16 +253,22 @@ class PackageController extends Controller
 
     private function speedOptions(): array
     {
-        return Speed::query()->orderBy('mbps')->get(['id', 'mbps'])
-            ->map(fn(Speed $speed) => ['id' => $speed->id, 'mbps' => $speed->mbps,])
-            ->values()->all();
+        return Speed::query()
+            ->orderBy('mbps')
+            ->get(['id', 'mbps'])
+            ->map(fn(Speed $speed) => ['id' => $speed->id, 'mbps' => $speed->mbps])
+            ->values()
+            ->all();
     }
 
     private function termOptions(): array
     {
-        return Term::query()->orderBy('months')->get(['id', 'months'])
-            ->map(fn(Term $term) => ['id' => $term->id, 'months' => $term->months,])
-            ->values()->all();
+        return Term::query()
+            ->orderBy('months')
+            ->get(['id', 'months'])
+            ->map(fn(Term $term) => ['id' => $term->id, 'months' => $term->months])
+            ->values()
+            ->all();
     }
 
     private function addonOptions(): array
@@ -281,5 +295,60 @@ class PackageController extends Controller
             ])
             ->values()
             ->all();
+    }
+
+    private function networkTable(): LengthAwarePaginator
+    {
+        return Network::query()
+            ->orderBy('name_en')
+            ->paginate(5, ['id', 'name_en', 'name_zh', 'name_my'], 'network_page')
+            ->withQueryString()
+            ->through(fn(Network $network) => [
+                'id' => $network->id,
+                'name_en' => $network->name_en,
+                'name_zh' => $network->name_zh,
+                'name_my' => $network->name_my,
+            ]);
+    }
+
+    private function speedTable(): LengthAwarePaginator
+    {
+        return Speed::query()
+            ->orderBy('mbps')
+            ->paginate(5, ['id', 'mbps'], 'speed_page')
+            ->withQueryString()
+            ->through(fn(Speed $speed) => ['id' => $speed->id, 'mbps' => $speed->mbps]);
+    }
+
+    private function termTable(): LengthAwarePaginator
+    {
+        return Term::query()
+            ->orderBy('months')
+            ->paginate(5, ['id', 'months'], 'term_page')
+            ->withQueryString()
+            ->through(fn(Term $term) => ['id' => $term->id, 'months' => $term->months]);
+    }
+
+    private function addonTable(): LengthAwarePaginator
+    {
+        return Addon::query()
+            ->orderBy('name_en')
+            ->paginate(5, [
+                'id',
+                'name_en',
+                'name_zh',
+                'name_my',
+                'price',
+                'image_url',
+            ], 'addon_page')
+            ->withQueryString()
+            ->through(fn(Addon $addon) => [
+                'id' => $addon->id,
+                'name_en' => $addon->name_en,
+                'name_zh' => $addon->name_zh,
+                'name_my' => $addon->name_my,
+                'price' => (int) $addon->price,
+                'image_url' => StoresPublicImage::url($addon->image_url),
+            ]);
     }
 }

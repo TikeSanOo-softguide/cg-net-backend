@@ -38,7 +38,7 @@ class AddonController extends Controller
 
         return redirect()
             ->route('packages.index')
-            ->with('success', 'addon.created');
+            ->with('success', 'addons.created');
     }
 
     public function update(

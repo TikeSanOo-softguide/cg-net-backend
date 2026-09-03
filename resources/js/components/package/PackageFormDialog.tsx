@@ -47,6 +47,7 @@ export function PackageFormDialog({
             title={isEdit ? t('packages.edit') : t('packages.create')}
             description={isEdit ? t('packages.edit_description') : t('packages.create_description')}
             icon={isEdit ? PackageSearchIcon : PackagePlusIcon}
+            size="xl"
         >
             {open ? (
                 <PackageFormDialogBody
