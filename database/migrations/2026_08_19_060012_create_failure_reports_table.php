@@ -14,10 +14,10 @@ return new class extends Migration
             $table->foreignId('broadband_account_id')->constrained()->cascadeOnDelete();
             $table->string('failure_type', 24)->index();
             $table->text('description');
-            $table->json('photo_paths')->nullable();
             $table->string('contact_name');
             $table->string('contact_phone', 16);
             $table->string('status', 16)->default('under_review')->index();
+            $table->foreignId('admin_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
             $table->softDeletes();
         });

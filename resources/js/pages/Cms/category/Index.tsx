@@ -16,7 +16,7 @@ export default function CategoriesIndex({ items, filters }: Props) {
     const { t, locale } = useTranslation();
     const [formOpen, setFormOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<CategoryItem | null>(null);
-
+    
     return (
         <>
             <Head title={t('menu.cms_categories')} />
@@ -57,7 +57,7 @@ export default function CategoriesIndex({ items, filters }: Props) {
                 }
                 columns={[
                     {
-                        id: 'name_en',
+                        id: 'category',
                         header: t('cms.category.label'),
                         mobile: 'title',
                         className: 'font-medium',
@@ -65,8 +65,8 @@ export default function CategoriesIndex({ items, filters }: Props) {
                             locale === 'zh'
                                 ? row.name_zh || row.name_en
                                 : locale === 'my'
-                                    ? row.name_my || row.name_en
-                                    : row.name_en,
+                                  ? row.name_my || row.name_en
+                                  : row.name_en,
                     },
                     { id: 'slug', header: t('cms.slug'), mobile: 'subtitle', cell: (row) => row.slug },
                     {

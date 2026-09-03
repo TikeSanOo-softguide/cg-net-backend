@@ -22,7 +22,6 @@ final class MenuPages
             ['path' => '/billing/gateway-logs', 'titleKey' => 'menu.payment_gateway_logs', 'name' => 'billing.gateway-logs', 'permission' => 'billing.view'],
             ['path' => '/billing/transactions', 'titleKey' => 'menu.transactions', 'name' => 'billing.transactions', 'permission' => 'billing.view'],
             ['path' => '/service-requests/installations', 'titleKey' => 'menu.installation_applications', 'name' => 'service-requests.installations', 'permission' => 'service-requests.view'],
-            ['path' => '/service-requests/failures', 'titleKey' => 'menu.failure_reports', 'name' => 'service-requests.failures', 'permission' => 'service-requests.view'],
             ['path' => '/service-requests/relocations', 'titleKey' => 'menu.relocation_requests', 'name' => 'service-requests.relocations', 'permission' => 'service-requests.view'],
             ['path' => '/service-requests/change-plan', 'titleKey' => 'menu.change_plan_requests', 'name' => 'service-requests.change-plan', 'permission' => 'service-requests.view'],
             ['path' => '/notifications/compose', 'titleKey' => 'menu.push_composer', 'name' => 'notifications.compose', 'permission' => 'notifications.view'],

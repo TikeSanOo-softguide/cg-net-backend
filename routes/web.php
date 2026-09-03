@@ -12,6 +12,7 @@ use App\Http\Controllers\Locale\LocaleController;
 use App\Http\Controllers\MenuPage\MenuPageController;
 use App\Http\Controllers\Notification\AnnouncementController;
 use App\Http\Controllers\Package\AddonController;
+use App\Http\Controllers\ServiceRequest\FailureReportController;
 use App\Http\Controllers\Package\NetworkController;
 use App\Http\Controllers\Package\PackageController;
 use App\Http\Controllers\Package\SpeedController;
@@ -60,6 +61,8 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         Route::delete('/areas/{area}', [RegionManagementController::class, 'destroyArea'])->name('regions.areas.destroy');
     });
 
+
+
     Route::prefix('cms')->name('cms.')->group(function () {
         foreach (
             [
@@ -87,10 +90,10 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::get('/create', [AnnouncementController::class, 'create'])->middleware('can:notifications.create')->name('create');
             Route::post('/', [AnnouncementController::class, 'store'])->middleware('can:notifications.create')->name('store');
             Route::delete('/bulk-destroy', [AnnouncementController::class, 'bulkDestroy'])->middleware('can:notifications.delete')->name('bulk-destroy');
-            Route::get('/{admin}/edit', [AnnouncementController::class, 'edit'])->middleware('can:notifications.update')->name('edit');
-            Route::put('/{admin}', [AnnouncementController::class, 'update'])->middleware('can:notifications.update')->name('update');
-            Route::delete('/{admin}', [AnnouncementController::class, 'destroy'])->middleware('can:notifications.delete')->name('destroy');
-            Route::get('/{admin}', [AnnouncementController::class, 'show'])->middleware('can:notifications.view')->name('show');
+            Route::get('/{announcement}/edit', [AnnouncementController::class, 'edit'])->middleware('can:notifications.update')->name('edit');
+            Route::put('/{announcement}', [AnnouncementController::class, 'update'])->middleware('can:notifications.update')->name('update');
+            Route::delete('/{announcement}', [AnnouncementController::class, 'destroy'])->middleware('can:notifications.delete')->name('destroy');
+            Route::get('/{announcement}', [AnnouncementController::class, 'show'])->middleware('can:notifications.view')->name('show');
         });
     });
 
@@ -121,6 +124,13 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         Route::get('/export', [TopUpCardController::class, 'export'])->middleware('can:top-up-cards.view')->name('export');
         Route::get('/redeem-history', [TopUpCardController::class, 'history'])->middleware('can:top-up-cards.view')->name('redeem-history');
         Route::patch('/{topUpCard}/void', [TopUpCardController::class, 'void'])->middleware('can:top-up-cards.update')->name('void');
+    });
+
+    Route::prefix('service-requests')->name('service-requests.')->group(function () {
+        Route::prefix('failures')->name('failures.')->group(function () {
+            Route::get('/', [FailureReportController::class, 'index'])->middleware('can:failure.view')->name('index');
+            Route::patch('/{failureReport}/edit', [FailureReportController::class, 'updateStatus'])->middleware('can:service-requests.update')->name('edit');
+        });
     });
 
     foreach (MenuPages::all() as $page) {

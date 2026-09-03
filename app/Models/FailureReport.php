@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
@@ -16,10 +17,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'broadband_account_id',
     'failure_type',
     'description',
-    'photo_paths',
     'contact_name',
     'contact_phone',
     'status',
+    'admin_id',
 ])]
 class FailureReport extends Model
 {
@@ -30,7 +31,6 @@ class FailureReport extends Model
     {
         return [
             'failure_type' => FailureType::class,
-            'photo_paths' => 'array',
             'status' => ReviewStatus::class,
         ];
     }
@@ -43,5 +43,15 @@ class FailureReport extends Model
     public function broadbandAccount(): BelongsTo
     {
         return $this->belongsTo(BroadbandAccount::class);
+    }
+
+    public function admin(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class);
+    }
+
+    public function photos(): HasMany
+    {
+        return $this->hasMany(FailurePhoto::class);
     }
 }

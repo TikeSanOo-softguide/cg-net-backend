@@ -31,10 +31,9 @@ type AnnouncementFormProps = {
     onSubmit: (event: FormEvent) => void;
     onCancel?: () => void;
     mode?: 'create' | 'edit';
-    imageUrl?: string | null;
 };
 
-export function AnnouncementForm({ form, onSubmit, onCancel, mode = 'create', imageUrl }: AnnouncementFormProps) {
+export function AnnouncementForm({ form, onSubmit, onCancel, mode = 'create' }: AnnouncementFormProps) {
     const { t } = useTranslation();
     const [touched, setTouched] = useState<Record<keyof AnnouncementFormValues, boolean>>({
         content_en: false,
@@ -45,6 +44,7 @@ export function AnnouncementForm({ form, onSubmit, onCancel, mode = 'create', im
         is_active: false,
     });
     const [submitted, setSubmitted] = useState(false);
+    
 
     const markTouched = (field: keyof AnnouncementFormValues) => {
         setTouched((current) => ({ ...current, [field]: true }));
@@ -69,10 +69,6 @@ export function AnnouncementForm({ form, onSubmit, onCancel, mode = 'create', im
         }
 
         return form.errors[field] || validateAnnouncementField(field, form.data, t);
-    };
-
-    const fieldSuccess = (field: keyof AnnouncementFormValues): string | undefined => {
-        return fieldState(field) === 'success' ? announcementSuccessMessage(field, t) : undefined;
     };
 
     const submit = (event: FormEvent) => {

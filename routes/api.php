@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Category\CategoryController;
 use App\Http\Controllers\Api\Contact\ContactController;
 use App\Http\Controllers\Api\Gallery\GalleryController;
 use App\Http\Controllers\Api\News\NewsController;
+use App\Http\Controllers\Api\Notification\AnnouncementController;
 use App\Http\Controllers\Api\Package\AddonController;
 use App\Http\Controllers\Api\Package\NetworkController;
 use App\Http\Controllers\Api\Package\PackageController;
@@ -44,4 +45,5 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::get('/states', [RegionController::class, 'states']);
     Route::get('/states/{stateId}/regions', [RegionController::class, 'regions']);
     Route::get('/regions/{regionId}/areas', [RegionController::class, 'areas']);
+    Route::get('/announcements', [AnnouncementController::class, 'index']);
 });
