@@ -25,27 +25,6 @@ type AnnouncementFormDialogProps = {
     item: AnnouncementItem | null;
 };
 
-function normalizeDateTimeForInput(value: string | null | undefined): string {
-    if (!value) {
-        return '';
-    }
-
-    const trimmed = value.trim();
-
-    if (!trimmed) {
-        return '';
-    }
-
-    const withT = trimmed.includes('T') ? trimmed : trimmed.replace(' ', 'T');
-    const isoLike = withT.length === 10 ? `${withT}T00:00` : withT;
-
-    if (isoLike.length >= 16 && isoLike[10] === 'T') {
-        return isoLike.slice(0, 16);
-    }
-
-    return trimmed;
-}
-
 function emptyAnnouncementForm(): AnnouncementFormValues {
     return {
         content_en: '',
@@ -93,8 +72,8 @@ function AnnouncementFormDialogBody({ item, onClose }: { item: AnnouncementItem 
                   content_en: item.content_en ?? '',
                   content_zh: item.content_zh ?? '',
                   content_my: item.content_my ?? '',
-                  start_date: normalizeDateTimeForInput(item.start_date),
-                  end_date: normalizeDateTimeForInput(item.end_date),
+                  start_date: item.start_date ?? '',
+                  end_date: item.end_date ?? '',
                   is_active: item.is_active,
               }
             : emptyAnnouncementForm(),

@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 
-const liveStatuses = new Set(['under_review', 'good', 'active', 'valid']);
+const liveStatuses = new Set(['under_review', 'good', 'active', 'pending', 'valid']);
 
 function variantFor(status: string): 'default' | 'secondary' | 'outline' | 'destructive' | 'warning' | 'success' {
     switch (status) {

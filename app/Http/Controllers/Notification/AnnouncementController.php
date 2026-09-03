@@ -39,9 +39,21 @@ class AnnouncementController extends Controller
                 $status !== '' && in_array($status, array_column(AnnouncementStatus::cases(), 'value'), true),
                 function ($query) use ($status): void {
                     match ($status) {
-                        'active' => $query->where('is_active', true)->where(function ($query): void {
-                            $query->whereNull('end_date')->orWhere('end_date', '>=', now()); // or now('Asia/Tokyo') if needed
-                        }),
+                        'active' => $query
+                            ->where('is_active', true)
+                            ->where(function ($query): void {
+                                $query->whereNull('start_date')->orWhere('start_date', '<=', now());
+                            })
+                            ->where(function ($query): void {
+                                $query->whereNull('end_date')->orWhere('end_date', '>=', now());
+                            }),
+                        'pending' => $query
+                            ->where('is_active', true)
+                            ->whereNotNull('start_date')
+                            ->where('start_date', '>', now())
+                            ->where(function ($query): void {
+                                $query->whereNull('end_date')->orWhere('end_date', '>=', now());
+                            }),
                         'inactive' => $query->where('is_active', false),
                         'expired' => $query
                             ->where('is_active', true)

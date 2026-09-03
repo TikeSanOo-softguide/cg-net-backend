@@ -90,10 +90,10 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::get('/create', [AnnouncementController::class, 'create'])->middleware('can:notifications.create')->name('create');
             Route::post('/', [AnnouncementController::class, 'store'])->middleware('can:notifications.create')->name('store');
             Route::delete('/bulk-destroy', [AnnouncementController::class, 'bulkDestroy'])->middleware('can:notifications.delete')->name('bulk-destroy');
-            Route::get('/{admin}/edit', [AnnouncementController::class, 'edit'])->middleware('can:notifications.update')->name('edit');
-            Route::put('/{admin}', [AnnouncementController::class, 'update'])->middleware('can:notifications.update')->name('update');
-            Route::delete('/{admin}', [AnnouncementController::class, 'destroy'])->middleware('can:notifications.delete')->name('destroy');
-            Route::get('/{admin}', [AnnouncementController::class, 'show'])->middleware('can:notifications.view')->name('show');
+            Route::get('/{announcement}/edit', [AnnouncementController::class, 'edit'])->middleware('can:notifications.update')->name('edit');
+            Route::put('/{announcement}', [AnnouncementController::class, 'update'])->middleware('can:notifications.update')->name('update');
+            Route::delete('/{announcement}', [AnnouncementController::class, 'destroy'])->middleware('can:notifications.delete')->name('destroy');
+            Route::get('/{announcement}', [AnnouncementController::class, 'show'])->middleware('can:notifications.view')->name('show');
         });
     });
 

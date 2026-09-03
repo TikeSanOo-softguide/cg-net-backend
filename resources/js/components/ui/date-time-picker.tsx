@@ -18,86 +18,84 @@ function parseIsoDateTime(value: string): Date | null {
     const trimmed = value?.trim?.() ?? '';
     if (!trimmed) return null;
 
-    const direct = new Date(trimmed);
-    if (!Number.isNaN(direct.getTime())) {
-        return direct;
-    }
-
     // Accepts "YYYY-MM-DDTHH:mm:ss" or "YYYY-MM-DD HH:mm:ss"
     // Also tolerates missing seconds (treats as :00)
     const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?$/);
-    if (!match) return null;
+    if (match) {
+        const [, y, m, d, h, min, sec = '0'] = match;
+        const year = Number(y);
+        const month = Number(m);
+        const day = Number(d);
+        const hours = Number(h);
+        const minutes = Number(min);
+        const seconds = Number(sec);
 
-    const [, y, m, d, h, min, sec = '0'] = match;
-    const year = Number(y);
-    const month = Number(m);
-    const day = Number(d);
-    const hours = Number(h);
-    const minutes = Number(min);
-    const seconds = Number(sec);
+        const date = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds, 0));
 
-    const date = new Date(year, month - 1, day, hours, minutes, seconds, 0);
+        if (
+            date.getUTCFullYear() !== year ||
+            date.getUTCMonth() !== month - 1 ||
+            date.getUTCDate() !== day ||
+            date.getUTCHours() !== hours ||
+            date.getUTCMinutes() !== minutes ||
+            date.getUTCSeconds() !== seconds
+        ) {
+            return null;
+        }
 
-    if (
-        date.getFullYear() !== year ||
-        date.getMonth() !== month - 1 ||
-        date.getDate() !== day ||
-        date.getHours() !== hours ||
-        date.getMinutes() !== minutes ||
-        date.getSeconds() !== seconds
-    ) {
-        return null;
+        return date;
     }
 
-    return date;
+    const direct = new Date(trimmed);
+    return Number.isNaN(direct.getTime()) ? null : direct;
 }
 
 function toIsoDateTime(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(date.getUTCSeconds()).padStart(2, '0');
     return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
 }
 
 /** Convert Date → "HH:mm:ss" for native <input type="time"> */
 function toTimeValue(date: Date): string {
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(date.getUTCSeconds()).padStart(2, '0');
     return `${hours}:${minutes}:${seconds}`;
 }
 
 function startOfDay(date: Date): Date {
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 }
 
 function isSameDay(left: Date, right: Date): boolean {
     return (
-        left.getFullYear() === right.getFullYear() &&
-        left.getMonth() === right.getMonth() &&
-        left.getDate() === right.getDate()
+        left.getUTCFullYear() === right.getUTCFullYear() &&
+        left.getUTCMonth() === right.getUTCMonth() &&
+        left.getUTCDate() === right.getUTCDate()
     );
 }
 
 function weekdayLabels(tag: string): string[] {
     const formatter = new Intl.DateTimeFormat(tag, { weekday: 'narrow' });
     return Array.from({ length: WEEK_DAYS }, (_, index) => {
-        const date = new Date(2024, 8, index + 1);
+        const date = new Date(Date.UTC(2024, 8, index + 1));
         return formatter.format(date);
     });
 }
 
 function monthCells(view: Date): Array<Date | null> {
-    const first = new Date(view.getFullYear(), view.getMonth(), 1);
-    const daysInMonth = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
-    const leading = first.getDay();
+    const first = new Date(Date.UTC(view.getUTCFullYear(), view.getUTCMonth(), 1));
+    const daysInMonth = new Date(Date.UTC(view.getUTCFullYear(), view.getUTCMonth() + 1, 0)).getUTCDate();
+    const leading = first.getUTCDay();
     const cells: Array<Date | null> = Array.from({ length: leading }, () => null);
 
     for (let day = 1; day <= daysInMonth; day++) {
-        cells.push(new Date(view.getFullYear(), view.getMonth(), day));
+        cells.push(new Date(Date.UTC(view.getUTCFullYear(), view.getUTCMonth(), day)));
     }
 
     while (cells.length % WEEK_DAYS !== 0) {
@@ -165,6 +163,7 @@ export function DateTimePicker({
                 day: 'numeric',
                 month: 'short',
                 year: 'numeric',
+                timeZone: 'UTC',
             }).format(selected);
 
             const timePart = new Intl.DateTimeFormat(tag, {
@@ -172,6 +171,7 @@ export function DateTimePicker({
                 minute: '2-digit',
                 second: '2-digit',
                 hour12: true,
+                timeZone: 'UTC',
             }).format(selected);
 
             return `${datePart} ${timePart}`;
@@ -181,6 +181,7 @@ export function DateTimePicker({
     const monthLabel = new Intl.DateTimeFormat(tag, {
         month: 'long',
         year: 'numeric',
+        timeZone: 'UTC',
     }).format(view);
 
     // Sync when picker opens or external value changes
@@ -208,13 +209,15 @@ export function DateTimePicker({
         // timeStr is "HH:mm" or "HH:mm:ss"
         const [h = '0', m = '0', s = '0'] = timeStr.split(':');
         const next = new Date(
-            datePart.getFullYear(),
-            datePart.getMonth(),
-            datePart.getDate(),
-            Number(h),
-            Number(m),
-            Number(s),
-            0,
+            Date.UTC(
+                datePart.getUTCFullYear(),
+                datePart.getUTCMonth(),
+                datePart.getUTCDate(),
+                Number(h),
+                Number(m),
+                Number(s),
+                0,
+            ),
         );
 
         if (minDate && next < minDate) {
@@ -297,7 +300,7 @@ export function DateTimePicker({
                     <button
                         type="button"
                         className="inline-flex size-7 items-center justify-center rounded-[6px] text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
-                        onClick={() => setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))}
+                        onClick={() => setView(new Date(Date.UTC(view.getUTCFullYear(), view.getUTCMonth() - 1, 1)))}
                         aria-label={t('common.previous_month')}
                     >
                         <ChevronLeftIcon className="size-4" strokeWidth={1.9} />
@@ -306,7 +309,7 @@ export function DateTimePicker({
                     <button
                         type="button"
                         className="inline-flex size-7 items-center justify-center rounded-[6px] text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
-                        onClick={() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))}
+                        onClick={() => setView(new Date(Date.UTC(view.getUTCFullYear(), view.getUTCMonth() + 1, 1)))}
                         aria-label={t('common.next_month')}
                     >
                         <ChevronRightIcon className="size-4" strokeWidth={1.9} />
@@ -349,7 +352,7 @@ export function DateTimePicker({
                                     dayDisabled && 'pointer-events-none opacity-35',
                                 )}
                             >
-                                {date.getDate()}
+                                {date.getUTCDate()}
                             </button>
                         );
                     })}

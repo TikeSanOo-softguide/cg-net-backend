@@ -21,6 +21,8 @@ import {
     Image,
     type LucideIcon,
     CalendarClockIcon,
+    Tags,
+    Newspaper,
 } from 'lucide-react';
 
 export const DEFAULT_COLUMN_ICONS: Record<string, LucideIcon> = {
@@ -55,4 +57,6 @@ export const DEFAULT_COLUMN_ICONS: Record<string, LucideIcon> = {
     category_name: FolderIcon,
     sort_order: ListOrderedIcon,
     image: Image,
+    category: Tags,
+    news_count: Newspaper,
 };

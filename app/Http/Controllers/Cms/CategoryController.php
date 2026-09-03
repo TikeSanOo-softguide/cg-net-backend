@@ -106,7 +106,8 @@ class CategoryController extends Controller
             'name_my' => $category->name_my,
             'slug' => $category->slug,
             'news_count' => $category->news_count ?? $category->news()->count(),
-            'created_at' => $category->created_at?->toDateString(),
+            'created_at' => $category->created_at,
+            'updated_at' => $category->updated_at,
         ];
     }
 }

@@ -70,6 +70,7 @@ type DataTableProps<T> = {
     createLabel?: string;
     onCreate?: () => void;
     onExport?: () => void;
+    showExport?: boolean;
 };
 
 export function DataTable<T>({
@@ -105,6 +106,7 @@ export function DataTable<T>({
     createLabel,
     onCreate,
     onExport,
+    showExport = false,
 }: DataTableProps<T>) {
     const { t } = useTranslation();
     const [query, setQuery] = useState('');
@@ -343,12 +345,14 @@ export function DataTable<T>({
                                     <span className="mx-0.5 hidden h-6 w-px bg-border sm:block" aria-hidden />
                                 </>
                             ) : null}
-                            <ToolbarIconButton
-                                label={t('common.export')}
-                                icon={DownloadIcon}
-                                prominent
-                                onClick={exportRows}
-                            />
+                            {showExport || onExport ? (
+                                <ToolbarIconButton
+                                    label={t('common.export')}
+                                    icon={DownloadIcon}
+                                    prominent
+                                    onClick={exportRows}
+                                />
+                            ) : null}
                             {createHref || onCreate ? (
                                 <ToolbarIconButton
                                     label={createLabel ?? t('common.create')}

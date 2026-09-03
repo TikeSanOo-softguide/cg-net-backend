@@ -66,7 +66,13 @@ function getStatus(item: AnnouncementItem) {
         return 'inactive';
     }
 
-    // Active but the end date time has already passed → expired
+    if (item.start_date) {
+        const start = new Date(item.start_date);
+        if (!Number.isNaN(start.getTime()) && start > new Date()) {
+            return 'pending';
+        }
+    }
+
     if (item.end_date) {
         const end = new Date(item.end_date);
         if (!Number.isNaN(end.getTime()) && end < new Date()) {
@@ -87,7 +93,7 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
     const [editingItem, setEditingItem] = useState<AnnouncementItem | null>(null);
     const [viewingItem, setViewingItem] = useState<AnnouncementItem | null>(null);
     const debounce = useRef<number>(0);
-
+    
     useEffect(() => {
         setSearch(filters.search);
     }, [filters.search]);
@@ -118,6 +124,23 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
                 <PageHeader />
                 <Card className="flex min-h-0 flex-col gap-0 overflow-hidden border-0 py-0 shadow-[0_4px_16px_rgb(23_50_54/0.06)] dark:shadow-[0_4px_16px_rgb(0_0_0/0.22)]">
                     <div className={cn('flex flex-col gap-2.5 py-3 sm:flex-row sm:items-center', EDGE_PAD)}>
+                        <FormControl icon={CircleDotIcon} compact className="w-full shrink-0 sm:w-44">
+                            <Select
+                                value={status || 'all'}
+                                onValueChange={(value) => visitIndex(search, value === 'all' ? '' : value)}
+                            >
+                                <SelectTrigger className="w-full h-8">
+                                    <SelectValue placeholder={t('common.status')} />
+                                </SelectTrigger>
+                                <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                    <SelectItem value="all">{t('common.all')}</SelectItem>
+                                    <SelectItem value="active">{t('status.active')}</SelectItem>
+                                    <SelectItem value="pending">{t('status.pending')}</SelectItem>
+                                    <SelectItem value="inactive">{t('status.inactive')}</SelectItem>
+                                    <SelectItem value="expired">{t('status.expired')}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </FormControl>
                         <SearchInput
                             value={search}
                             onChange={(value) => {
@@ -129,22 +152,6 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
                             size="sm"
                             className="w-full sm:max-w-64"
                         />
-                        <FormControl icon={CircleDotIcon} compact className="w-full shrink-0 sm:w-44">
-                            <Select
-                                value={status || 'all'}
-                                onValueChange={(value) => visitIndex(search, value === 'all' ? '' : value)}
-                            >
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder={t('common.status')} />
-                                </SelectTrigger>
-                                <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
-                                    <SelectItem value="all">{t('common.all')}</SelectItem>
-                                    <SelectItem value="active">{t('status.active')}</SelectItem>
-                                    <SelectItem value="inactive">{t('status.inactive')}</SelectItem>
-                                    <SelectItem value="expired">{t('status.expired')}</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </FormControl>
                         <div className="flex shrink-0 items-center justify-end sm:ms-auto">
                             <ToolbarIconButton
                                 label={t('notification.announcement.create')}
@@ -158,7 +165,7 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
                         </div>
                     </div>
 
-                    <div className={cn(EDGE_PAD, 'grid gap-3 pb-4 grid-cols-1')}>
+                    <div className={cn(EDGE_PAD, 'grid gap-3 pb-4 grid-cols-2')}>
                         {announcement.data.length === 0 ? (
                             <p className="col-span-full py-12 text-center text-[13px] text-muted-foreground">
                                 {t('common.no_results')}
@@ -175,10 +182,9 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
                                 </span>
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-3">
-                                        <StatusBadge status={getStatus(item)} />
                                         <h2 className="text-[15px] font-semibold text-primary">
                                             {item.start_date || item.end_date
-                                                ? `${formatDateTime(item.start_date)} ~ ${formatDateTime(item.end_date)}`
+                                                ? `${formatDateTime(item.start_date, true)} ~ ${formatDateTime(item.end_date, true)}`
                                                 : '—'}
                                         </h2>
                                     </div>
@@ -187,6 +193,7 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
                                     </p>
                                 </div>
                                 <div className="flex shrink-0 items-center gap-1">
+                                    <StatusBadge status={getStatus(item)} />
                                     <TableActionButton
                                         label={t('common.view')}
                                         icon={EyeIcon}
