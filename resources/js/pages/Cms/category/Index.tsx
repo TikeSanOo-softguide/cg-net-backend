@@ -5,7 +5,7 @@ import { CategoryFormDialog, type CategoryItem } from '@/components/cms/category
 import { CmsIndexPage, type CmsFilters } from '@/components/cms/shared/CmsIndexPage';
 import type { Paginated } from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime, truncateText } from '@/lib/utils';
 
 type Props = {
     items: Paginated<CategoryItem & { news_count: number; created_at: string | null }>;
@@ -16,7 +16,7 @@ export default function CategoriesIndex({ items, filters }: Props) {
     const { t, locale } = useTranslation();
     const [formOpen, setFormOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<CategoryItem | null>(null);
-    
+
     return (
         <>
             <Head title={t('menu.cms_categories')} />
@@ -61,14 +61,36 @@ export default function CategoriesIndex({ items, filters }: Props) {
                         header: t('cms.category.label'),
                         mobile: 'title',
                         className: 'font-medium',
-                        cell: (row) =>
-                            locale === 'zh'
-                                ? row.name_zh || row.name_en
-                                : locale === 'my'
-                                  ? row.name_my || row.name_en
-                                  : row.name_en,
+                        cell: (row) => {
+                            const category =
+                                    locale === 'zh'
+                                        ? row.name_zh || row.name_en
+                                        : locale === 'my'
+                                          ? row.name_my || row.name_en
+                                          : row.name_en,
+                                displayCategory = truncateText(category, 50);
+
+                            return (
+                                <span className="block max-w-full truncate" title={category}>
+                                    {displayCategory}
+                                </span>
+                            );
+                        },
                     },
-                    { id: 'slug', header: t('cms.slug'), mobile: 'subtitle', cell: (row) => row.slug },
+                    {
+                        id: 'slug',
+                        header: t('cms.slug'),
+                        mobile: 'subtitle',
+                        cell: (row) => {
+                            const displaySlug = truncateText(row.slug, 50);
+
+                            return (
+                                <span className="block max-w-full truncate" title={row.slug}>
+                                    {displaySlug}
+                                </span>
+                            );
+                        },
+                    },
                     {
                         id: 'news_count',
                         header: t('cms.category.news_count'),

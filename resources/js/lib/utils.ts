@@ -33,3 +33,7 @@ export function formatDateTime(value: string | null | undefined, isUTC: boolean 
 
     return `${datePart} ${timePart}`;
 }
+
+export function truncateText(value: string, maxLength: number): string {
+    return value.length > maxLength ? `${value.slice(0, maxLength)}...` : value;
+}

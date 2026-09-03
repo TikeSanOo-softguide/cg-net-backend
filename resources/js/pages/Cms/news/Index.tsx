@@ -7,7 +7,7 @@ import type { NewsOption } from '@/components/cms/news/NewsForm';
 import type { Paginated } from '@/components/Pagination';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime, truncateText } from '@/lib/utils';
 
 type Props = {
     items: Paginated<
@@ -96,23 +96,41 @@ export default function NewsIndex({ items, filters, categories }: Props) {
                         header: t('cms.news.label'),
                         mobile: 'title',
                         className: 'font-medium',
-                        cell: (row) =>
-                            locale === 'zh'
-                                ? row.title_zh || row.title_en
-                                : locale === 'my'
-                                    ? row.title_my || row.title_en
-                                    : row.title_en,
+                        cell: (row) => {
+                            const title =
+                                    locale === 'zh'
+                                        ? row.title_zh || row.title_en
+                                        : locale === 'my'
+                                          ? row.title_my || row.title_en
+                                          : row.title_en,
+                                displayTitle = truncateText(title, 80);
+
+                            return (
+                                <span className="block max-w-full truncate" title={title}>
+                                    {displayTitle}
+                                </span>
+                            );
+                        },
                     },
                     {
                         id: 'category_name',
                         header: t('cms.category.label'),
                         mobile: 'subtitle',
-                        cell: (row) =>
-                            locale === 'zh'
-                                ? row.category_name_zh || row.category_name_en
-                                : locale === 'my'
-                                    ? row.category_name_my || row.category_name_en
-                                    : row.category_name_en,
+                        cell: (row) => {
+                            const category =
+                                    locale === 'zh'
+                                        ? row.category_name_zh || row.category_name_en
+                                        : locale === 'my'
+                                          ? row.category_name_my || row.category_name_en
+                                          : row.category_name_en,
+                                displayCategory = truncateText(category, 30);
+
+                            return (
+                                <span className="block max-w-full truncate" title={category}>
+                                    {displayCategory}
+                                </span>
+                            );
+                        },
                     },
                     {
                         id: 'status',

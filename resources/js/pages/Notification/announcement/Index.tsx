@@ -93,7 +93,7 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
     const [editingItem, setEditingItem] = useState<AnnouncementItem | null>(null);
     const [viewingItem, setViewingItem] = useState<AnnouncementItem | null>(null);
     const debounce = useRef<number>(0);
-    
+
     useEffect(() => {
         setSearch(filters.search);
     }, [filters.search]);
@@ -165,7 +165,7 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
                         </div>
                     </div>
 
-                    <div className={cn(EDGE_PAD, 'grid gap-3 pb-4 grid-cols-2')}>
+                    <div className={cn(EDGE_PAD, 'grid gap-3 pb-4 xl:grid-cols-2')}>
                         {announcement.data.length === 0 ? (
                             <p className="col-span-full py-12 text-center text-[13px] text-muted-foreground">
                                 {t('common.no_results')}
