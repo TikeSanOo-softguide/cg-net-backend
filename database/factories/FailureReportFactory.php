@@ -22,7 +22,6 @@ class FailureReportFactory extends Factory
             'broadband_account_id' => BroadbandAccount::factory(),
             'failure_type' => fake()->randomElement(FailureType::cases()),
             'description' => fake()->paragraph(),
-            // 'photo_paths' => ['failures/'.fake()->uuid().'.jpg'],
             'contact_name' => MyanmarFake::name(),
             'contact_phone' => MyanmarFake::phone(),
             'status' => fake()->randomElement(ReviewStatus::cases()),

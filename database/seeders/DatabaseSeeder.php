@@ -20,7 +20,6 @@ use App\Models\ChangePlanRequest;
 use App\Models\Contact;
 use App\Models\CpeDevice;
 use App\Models\CustomerPackage;
-use App\Models\FailureReport;
 use App\Models\Gallery;
 use App\Models\InstallationApplication;
 use App\Models\Invoice;
@@ -52,6 +51,7 @@ class DatabaseSeeder extends Seeder
         $packages = $this->seedPackages();
         $users = $this->seedCustomers($packages);
         $this->seedServiceRequests($users, $areas, $packages);
+        $this->seedFailureReports();
         $this->seedBilling($users);
         $this->seedNotifications();
         $this->seedBanners();
@@ -105,6 +105,11 @@ class DatabaseSeeder extends Seeder
         (new AreaSeeder())->run();
 
         return Area::all();
+    }
+
+    private function seedFailureReports(): void
+    {
+        (new FailureReportSeeder())->run();
     }
 
     private function seedAnnouncements(): void
@@ -214,17 +219,6 @@ class DatabaseSeeder extends Seeder
                 'user_id' => $user->id,
                 'area_id' => $areas->random()->id,
                 'package_id' => $packages->random()->id,
-                'status' => $status,
-            ]);
-        }
-
-        foreach ([ReviewStatus::UnderReview, ReviewStatus::Approved, ReviewStatus::Rejected] as $i => $status) {
-            $user = $sample[$i + 3];
-            $account = $user->broadbandAccounts()->first();
-
-            FailureReport::factory()->create([
-                'user_id' => $user->id,
-                'broadband_account_id' => $account->id,
                 'status' => $status,
             ]);
         }

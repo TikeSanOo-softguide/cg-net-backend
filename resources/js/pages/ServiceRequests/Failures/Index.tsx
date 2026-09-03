@@ -253,10 +253,19 @@ function FailureReportDetailDialog({
 }) {
     const { t } = useTranslation();
     const can = useCan();
+    const [selectedStatus, setSelectedStatus] = useState(report?.status ?? 'under_review');
+
+    useEffect(() => {
+        if (report) {
+            setSelectedStatus(report.status ?? 'under_review');
+        }
+    }, [report]);
 
     if (! report) {
         return null;
     }
+
+    const updateStatusOptions = statusOptions;
 
     return (
         <FormDialog
@@ -293,8 +302,24 @@ function FailureReportDetailDialog({
                             </p>
                         </div>
                         <div className="rounded-[12px] border border-border/70 bg-white p-3 dark:bg-[#122326]">
-                            <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Status</p>
-                            <div className="mt-2"><StatusBadge status={report.status} /></div>
+                            <div className="flex items-center justify-between gap-2">
+                                <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Status</p>
+                                <StatusBadge status={report.status} />
+                            </div>
+
+                            <div className="mt-2 space-y-2">
+                                <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Previous state</p>
+                                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                                    <SelectTrigger className="h-9 w-full text-[12px]">
+                                        <SelectValue placeholder={t('common.status')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {updateStatusOptions.map((item) => (
+                                            <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                     </div>
 
@@ -332,28 +357,16 @@ function FailureReportDetailDialog({
                         {t('common.close')}
                     </Button>
                     {can('service-requests.update') ? (
-                        <>
-                            <Button type="button" size="sm" className={formActionSubmitClass} onClick={() => {
-                                router.patch(`/service-requests/failures/${report.id}/status`, { status: 'approved' }, {
-                                    preserveScroll: true,
-                                    preserveState: true,
-                                    onSuccess: () => onOpenChange(false),
-                                });
-                            }}>
-                                <CheckCircle2Icon className="size-3.5" strokeWidth={1.85} />
-                                {t('status.approved')}
-                            </Button>
-                            <Button type="button" size="sm" variant="destructive" className={formActionButtonClass} onClick={() => {
-                                router.patch(`/service-requests/failures/${report.id}/status`, { status: 'rejected' }, {
-                                    preserveScroll: true,
-                                    preserveState: true,
-                                    onSuccess: () => onOpenChange(false),
-                                });
-                            }}>
-                                <XIcon className="size-3.5" strokeWidth={1.85} />
-                                {t('status.rejected')}
-                            </Button>
-                        </>
+                        <Button type="button" size="sm" className={formActionSubmitClass} onClick={() => {
+                            router.patch(`/service-requests/failures/${report.id}/status`, { status: selectedStatus }, {
+                                preserveScroll: true,
+                                preserveState: true,
+                                onSuccess: () => onOpenChange(false),
+                            });
+                        }}>
+                            <CheckCircle2Icon className="size-3.5" strokeWidth={1.85} />
+                            {t('common.update')}
+                        </Button>
                     ) : null}
                 </div>
             </div>
