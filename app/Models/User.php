@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use App\Casts\LanguagePrefCast;
 use App\Enums\UserStatus;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -17,12 +17,10 @@ use Laravel\Sanctum\HasApiTokens;
 #[Fillable([
     'phone',
     'name',
-    'nrc_number',
-    'email',
-    'address',
-    'language_pref',
+    'password',
     'status',
 ])]
+#[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -31,7 +29,7 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'language_pref' => LanguagePrefCast::class,
+            'password' => 'hashed',
             'status' => UserStatus::class,
         ];
     }

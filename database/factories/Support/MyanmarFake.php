@@ -37,22 +37,24 @@ final class MyanmarFake
     ];
 
     /**
-     * @var list<string>
+     * @var list<array{dial: string, length: int}>
      */
-    private const TOWNSHIP_CODES = [
-        'MaYaKa',
-        'AhGaYa',
-        'KhaAhHla',
-        'SaKaNa',
-        'DaGaSa',
-        'LaMaNa',
-        'PaBaTa',
-        'YaKaNa',
+    private const PHONE_COUNTRIES = [
+        ['dial' => '959', 'length' => 8], // Myanmar +959
+        ['dial' => '66', 'length' => 9],  // Thailand +66
+        ['dial' => '86', 'length' => 11], // China +86
     ];
 
-    public static function phone(): string
+    public static function phone(?string $country = null): string
     {
-        return '+959'.fake()->unique()->numerify('########');
+        $option = match ($country) {
+            'mm', 'myanmar' => self::PHONE_COUNTRIES[0],
+            'th', 'thailand' => self::PHONE_COUNTRIES[1],
+            'cn', 'china' => self::PHONE_COUNTRIES[2],
+            default => fake()->randomElement(self::PHONE_COUNTRIES),
+        };
+
+        return '+'.$option['dial'].fake()->unique()->numerify(str_repeat('#', $option['length']));
     }
 
     public static function name(): string
@@ -61,14 +63,6 @@ final class MyanmarFake
             ...self::ENGLISH_NAMES,
             ...self::MYANMAR_NAMES,
         ]);
-    }
-
-    public static function nrc(): string
-    {
-        $state = fake()->numberBetween(1, 14);
-        $code = fake()->randomElement(self::TOWNSHIP_CODES);
-
-        return $state.'/'.$code.'(N)'.fake()->numerify('######');
     }
 
     public static function address(): string

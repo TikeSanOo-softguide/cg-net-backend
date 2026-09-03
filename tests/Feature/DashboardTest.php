@@ -5,10 +5,13 @@ namespace Tests\Feature;
 use App\Enums\PaymentStatus;
 use App\Enums\ReviewStatus;
 use App\Models\Admin;
+use App\Models\Area;
 use App\Models\FailureReport;
 use App\Models\InstallationApplication;
 use App\Models\NotificationCustom;
 use App\Models\Payment;
+use App\Models\Region;
+use App\Models\RelocationRequest;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -49,11 +52,80 @@ class DashboardTest extends TestCase
                 ->where('stats.todays_revenue', '15000.00')
                 ->where('stats.pending_requests', fn ($count) => $count >= 1)
                 ->has('chart', 30)
+                ->has('regionChart')
+                ->has('requestTypeChart')
                 ->has('recentRequests')
                 ->has('unreadNotifications')
                 ->has('recentNotifications')
                 ->has('locale')
                 ->has('translations'));
+    }
+
+    public function test_dashboard_groups_installations_by_region(): void
+    {
+        $admin = Admin::factory()->create();
+        $yangon = Region::factory()->create(['name_en' => 'Yangon']);
+        $mandalay = Region::factory()->create(['name_en' => 'Mandalay']);
+        $yangonArea = Area::factory()->create(['region_id' => $yangon->id]);
+        $mandalayArea = Area::factory()->create(['region_id' => $mandalay->id]);
+
+        InstallationApplication::factory()->count(3)->create(['area_id' => $yangonArea->id]);
+        InstallationApplication::factory()->create(['area_id' => $mandalayArea->id]);
+
+        $this->actingAs($admin, 'web')
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('regionChart', 2)
+                ->where('regionChart.0.name_en', 'Yangon')
+                ->where('regionChart.0.value', 3)
+                ->where('regionChart.1.name_en', 'Mandalay')
+                ->where('regionChart.1.value', 1));
+    }
+
+    public function test_dashboard_rolls_extra_regions_into_other(): void
+    {
+        $admin = Admin::factory()->create();
+
+        foreach (range(1, 6) as $index) {
+            $region = Region::factory()->create(['name_en' => "Region {$index}"]);
+            $area = Area::factory()->create(['region_id' => $region->id]);
+            InstallationApplication::factory()->count(7 - $index)->create(['area_id' => $area->id]);
+        }
+
+        $this->actingAs($admin, 'web')
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('regionChart', 5)
+                ->where('regionChart.4.id', null)
+                ->where('regionChart.4.name_en', 'Other')
+                ->where('regionChart.4.value', 3));
+    }
+
+    public function test_dashboard_ranks_service_requests_highest_to_lowest(): void
+    {
+        $admin = Admin::factory()->create();
+
+        InstallationApplication::factory()->count(4)->create();
+        FailureReport::factory()->count(2)->create();
+        RelocationRequest::factory()->create();
+
+        $this->actingAs($admin, 'web')
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('requestTypeChart.items', 4)
+                ->where('requestTypeChart.items.0.type', 'installation')
+                ->where('requestTypeChart.items.0.value', 4)
+                ->where('requestTypeChart.items.0.percent', 57)
+                ->where('requestTypeChart.items.1.type', 'failure')
+                ->where('requestTypeChart.items.1.value', 2)
+                ->where('requestTypeChart.items.2.type', 'relocation')
+                ->where('requestTypeChart.items.2.value', 1)
+                ->where('requestTypeChart.items.3.type', 'change_plan')
+                ->where('requestTypeChart.items.3.value', 0)
+                ->where('requestTypeChart.change', 100));
     }
 
     public function test_authenticated_admins_receive_recent_notifications(): void

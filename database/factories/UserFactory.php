@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Enums\LanguagePref;
 use App\Enums\UserStatus;
 use App\Models\User;
 use Database\Factories\Support\MyanmarFake;
@@ -18,10 +17,7 @@ class UserFactory extends Factory
         return [
             'phone' => MyanmarFake::phone(),
             'name' => MyanmarFake::name(),
-            'nrc_number' => MyanmarFake::nrc(),
-            'email' => fake()->optional(0.7)->safeEmail(),
-            'address' => MyanmarFake::address(),
-            'language_pref' => fake()->randomElement(LanguagePref::cases()),
+            'password' => 'password',
             'status' => UserStatus::Active,
         ];
     }

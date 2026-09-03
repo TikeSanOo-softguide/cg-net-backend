@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -42,6 +43,8 @@ class DashboardController extends Controller
         return Inertia::render('Dashboard/Index', [
             'stats' => $this->stats(),
             'chart' => $this->chartSeries(),
+            'regionChart' => $this->regionChart(),
+            'requestTypeChart' => $this->requestTypeChart(),
             'recentRequests' => $this->recentRequests(),
         ]);
     }
@@ -145,6 +148,100 @@ class DashboardController extends Controller
             })
             ->values()
             ->all();
+    }
+
+    /**
+     * @return list<array{id: int|null, name_en: string, name_zh: string, name_my: string, value: int}>
+     */
+    private function regionChart(): array
+    {
+        $counts = InstallationApplication::query()
+            ->join('areas', 'areas.id', '=', 'installation_applications.area_id')
+            ->join('regions', 'regions.id', '=', 'areas.region_id')
+            ->whereNull('areas.deleted_at')
+            ->whereNull('regions.deleted_at')
+            ->select([
+                'regions.id',
+                'regions.name_en',
+                'regions.name_zh',
+                'regions.name_my',
+                DB::raw('COUNT(*) as total'),
+            ])
+            ->groupBy('regions.id', 'regions.name_en', 'regions.name_zh', 'regions.name_my')
+            ->orderByDesc('total')
+            ->get();
+
+        $toSlice = static fn ($row): array => [
+            'id' => (int) $row->id,
+            'name_en' => (string) $row->name_en,
+            'name_zh' => (string) $row->name_zh,
+            'name_my' => (string) $row->name_my,
+            'value' => (int) $row->total,
+        ];
+
+        if ($counts->count() <= 5) {
+            return $counts->map($toSlice)->values()->all();
+        }
+
+        $items = $counts->take(4)->map($toSlice)->values()->all();
+        $otherCount = (int) $counts->slice(4)->sum('total');
+
+        if ($otherCount > 0) {
+            $items[] = [
+                'id' => null,
+                'name_en' => 'Other',
+                'name_zh' => 'Other',
+                'name_my' => 'Other',
+                'value' => $otherCount,
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * @return array{change: int|null, items: list<array{type: string, value: int, percent: int}>}
+     */
+    private function requestTypeChart(): array
+    {
+        $items = collect(self::REQUEST_MODELS)
+            ->map(fn (string $class, string $type) => [
+                'type' => $type,
+                'value' => $class::query()->count(),
+            ])
+            ->sortByDesc('value')
+            ->values();
+
+        $total = (int) $items->sum('value');
+
+        return [
+            'change' => $this->requestVolumeChange(),
+            'items' => $items
+                ->map(fn (array $row) => [
+                    'type' => $row['type'],
+                    'value' => $row['value'],
+                    'percent' => $total > 0 ? (int) round($row['value'] / $total * 100) : 0,
+                ])
+                ->all(),
+        ];
+    }
+
+    private function requestVolumeChange(): ?int
+    {
+        $current = $this->requestCountBetween(now()->subDays(29)->startOfDay(), now()->endOfDay());
+        $previous = $this->requestCountBetween(now()->subDays(59)->startOfDay(), now()->subDays(30)->endOfDay());
+
+        if ($previous === 0) {
+            return $current > 0 ? 100 : null;
+        }
+
+        return (int) round((($current - $previous) / $previous) * 100);
+    }
+
+    private function requestCountBetween(Carbon $start, Carbon $end): int
+    {
+        return (int) collect(self::REQUEST_MODELS)
+            ->sum(fn (string $class) => $class::query()->whereBetween('created_at', [$start, $end])->count());
     }
 
     /**

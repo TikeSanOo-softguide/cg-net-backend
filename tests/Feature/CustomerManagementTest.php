@@ -11,6 +11,7 @@ use App\Models\Wallet;
 use App\Models\WalletTransaction;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
@@ -30,7 +31,6 @@ class CustomerManagementTest extends TestCase
         $match = User::factory()->create([
             'name' => 'Aung Aung',
             'phone' => '09111111111',
-            'nrc_number' => '12/ABC(N)111111',
             'status' => UserStatus::Active,
         ]);
         User::factory()->suspended()->create([
@@ -162,17 +162,14 @@ class CustomerManagementTest extends TestCase
 
         $this->actingAs($admin, 'web')
             ->get('/customers/create')
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->component('Customer/Create'));
+            ->assertRedirect('/customers');
 
         $response = $this->actingAs($admin, 'web')
             ->post('/customers', [
                 'name' => 'Hla Hla',
                 'phone' => '+95911112222',
-                'nrc_number' => '12/ABC(N)222222',
-                'email' => 'hla@example.test',
-                'address' => 'Bahan, Yangon',
-                'language_pref' => 'my',
+                'password' => 'password123',
+                'password_confirmation' => 'password123',
                 'status' => 'active',
             ]);
 
@@ -183,9 +180,8 @@ class CustomerManagementTest extends TestCase
         $this->assertDatabaseHas('users', [
             'name' => 'Hla Hla',
             'phone' => '+95911112222',
-            'nrc_number' => '12/ABC(N)222222',
-            'email' => 'hla@example.test',
         ]);
+        $this->assertTrue(Hash::check('password123', $customer->password));
         $this->assertDatabaseHas('wallets', [
             'user_id' => $customer->id,
             'balance_mmk' => '0.00',
@@ -206,8 +202,8 @@ class CustomerManagementTest extends TestCase
             ->post('/customers', [
                 'name' => 'Duplicate Phone',
                 'phone' => '+95933334444',
-                'nrc_number' => '12/ABC(N)333333',
-                'language_pref' => 'en',
+                'password' => 'password123',
+                'password_confirmation' => 'password123',
                 'status' => 'active',
             ])
             ->assertSessionHasErrors('phone');
@@ -224,20 +220,12 @@ class CustomerManagementTest extends TestCase
 
         $this->actingAs($admin, 'web')
             ->get('/customers/'.$customer->id.'/edit')
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('Customer/Edit')
-                ->where('customer.id', $customer->id)
-                ->where('customer.name', 'Old Name'));
+            ->assertRedirect('/customers/'.$customer->id);
 
         $this->actingAs($admin, 'web')
             ->put('/customers/'.$customer->id, [
                 'name' => 'New Name',
                 'phone' => '+95955556666',
-                'nrc_number' => $customer->nrc_number,
-                'email' => 'updated@example.test',
-                'address' => 'Kamayut, Yangon',
-                'language_pref' => 'en',
                 'status' => 'suspended',
             ])
             ->assertRedirect('/customers/'.$customer->id);
@@ -245,9 +233,6 @@ class CustomerManagementTest extends TestCase
         $this->assertDatabaseHas('users', [
             'id' => $customer->id,
             'name' => 'New Name',
-            'email' => 'updated@example.test',
-            'address' => 'Kamayut, Yangon',
-            'language_pref' => 'en',
             'status' => 'suspended',
         ]);
         $this->assertDatabaseHas('activity_log', [

@@ -134,7 +134,7 @@ function pick<T extends string>(value: unknown, allowed: readonly T[], fallback:
 }
 
 function migratePrimaryColor(hex: string): string {
-    return hex === '#173236' || hex === '#635bff' ? DEFAULT_PRIMARY : hex;
+    return hex === '#173236' || hex === '#635bff' || hex === '#e8912d' ? DEFAULT_PRIMARY : hex;
 }
 
 export function readStoredThemeSettings(): ThemeSettings {

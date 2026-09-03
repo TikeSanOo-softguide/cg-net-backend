@@ -45,7 +45,6 @@ import {
     UserRound,
     Users,
     Wallet,
-    Wifi,
 } from 'lucide-react';
 
 export type NavItem = {
@@ -87,12 +86,6 @@ export const navigation: NavGroup[] = [
                 descriptionKey: 'menu.customers_list_description',
                 href: '/customers',
                 icon: UserRound,
-            },
-            {
-                labelKey: 'menu.broadband_accounts',
-                descriptionKey: 'menu.broadband_accounts_description',
-                href: '/broadband-accounts',
-                icon: Wifi,
             },
         ],
     },
@@ -428,7 +421,7 @@ export function viewPermissionForHref(href: string): string | undefined {
         return 'dashboard.view';
     }
 
-    if (href.startsWith('/customers') || href === '/broadband-accounts') {
+    if (href.startsWith('/customers')) {
         return 'customers.view';
     }
 

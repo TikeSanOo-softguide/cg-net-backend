@@ -1,6 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
-import { SparklesIcon, TicketIcon, TicketsIcon } from 'lucide-react';
 
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
@@ -115,20 +114,15 @@ export default function TopUpCardsGenerate({ cards, generated = [], presets, amo
             <PageContent>
                 <PageHeader />
                 <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 print:block">
-                    <Card className="gap-4 py-4 print:hidden">
-                        <CardHeader className="flex flex-row items-start gap-2.5">
-                            <span className="flex size-8 shrink-0 items-center justify-center rounded-[8px] bg-primary/12 text-primary">
-                                <TicketIcon className="size-4" strokeWidth={1.85} />
-                            </span>
-                            <div className="min-w-0">
-                                <CardTitle className="text-[14px]">{t('top_up_cards.generate_title')}</CardTitle>
-                                <CardDescription className="text-[12px] leading-4">
-                                    {t('top_up_cards.generate_description')}
-                                </CardDescription>
-                            </div>
+                    <Card className="gap-3 py-4 print:hidden">
+                        <CardHeader>
+                            <CardTitle className="text-sm">{t('top_up_cards.generate_title')}</CardTitle>
+                            <CardDescription className="text-[12px] leading-4">
+                                {t('top_up_cards.generate_description')}
+                            </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <form onSubmit={submit} className="flex flex-col gap-4">
+                            <form onSubmit={submit} className="flex flex-col gap-3">
                                 <TopUpCardGenerateForm
                                     presets={presets}
                                     selected={selected}
@@ -169,33 +163,24 @@ export default function TopUpCardsGenerate({ cards, generated = [], presets, amo
                                     variant="primary"
                                     size="sm"
                                     disabled={! canGenerate || form.processing}
-                                    className="h-9 w-full text-[13px] shadow-[0_4px_12px_rgb(23_50_54/0.14)] transition-shadow hover:shadow-[0_6px_16px_rgb(23_50_54/0.2)] disabled:shadow-none"
+                                    className="h-8 w-full"
                                 >
-                                    {form.processing ? (
-                                        <Spinner size="xs" className="text-current" />
-                                    ) : (
-                                        <SparklesIcon className="size-3.5" strokeWidth={1.9} />
-                                    )}
+                                    {form.processing ? <Spinner size="xs" className="text-current" /> : null}
                                     {form.processing ? t('top_up_cards.generating') : t('top_up_cards.generate')}
                                 </Button>
                             </form>
                         </CardContent>
                     </Card>
-                    <Card className="gap-4 py-4 print:border-0 print:shadow-none">
-                        <CardHeader className="flex flex-row items-start gap-2.5 print:px-0">
-                            <span className="flex size-8 shrink-0 items-center justify-center rounded-[8px] bg-primary/12 text-primary">
-                                <TicketsIcon className="size-4" strokeWidth={1.85} />
-                            </span>
-                            <div className="min-w-0">
-                                <CardTitle className="text-[14px]">{t('top_up_cards.batch_title')}</CardTitle>
-                                <CardDescription className="text-[12px] leading-4">
-                                    {t('top_up_cards.batch_description')}
-                                </CardDescription>
-                            </div>
+                    <Card className="gap-3 py-4 print:border-0 print:shadow-none">
+                        <CardHeader className="print:px-0">
+                            <CardTitle className="text-sm">{t('top_up_cards.batch_title')}</CardTitle>
+                            <CardDescription className="text-[12px] leading-4">
+                                {t('top_up_cards.batch_description')}
+                            </CardDescription>
                         </CardHeader>
                         <CardContent className="relative print:px-0">
                             {form.processing ? (
-                                <SpinnerOverlay className="relative inset-auto min-h-[220px]" label={t('top_up_cards.generating')} />
+                                <SpinnerOverlay className="relative inset-auto min-h-[160px]" label={t('top_up_cards.generating')} />
                             ) : (
                                 <TopUpCardGeneratedBatch
                                     cards={generated}

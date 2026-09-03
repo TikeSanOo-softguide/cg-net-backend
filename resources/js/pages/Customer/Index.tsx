@@ -11,6 +11,8 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
 import { CustomerDetailDialog, type CustomerDetailMember } from '@/components/customer/CustomerDetailDialog';
 import { CustomerFormDialog, type CustomerFormMember } from '@/components/customer/CustomerFormDialog';
+import { PhoneDisplay } from '@/components/customer/PhoneDisplay';
+import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
 import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCan } from '@/hooks/useCan';
@@ -152,22 +154,19 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                             className: 'font-medium',
                             mobile: 'title',
                             sortable: true,
-                            cell: (row) => row.name,
+                            cell: (row) => (
+                                <span className="flex min-w-0 items-center gap-2.5">
+                                    <StaffListAvatar username={row.name} />
+                                    <span className="truncate">{row.name}</span>
+                                </span>
+                            ),
                         },
                         {
                             id: 'phone',
                             header: t('customers.phone'),
                             mobile: 'subtitle',
                             sortable: true,
-                            cell: (row) => row.phone,
-                        },
-                        {
-                            id: 'nrc_number',
-                            header: t('customers.nrc'),
-                            className: 'font-mono text-[12px]',
-                            mobile: 'meta',
-                            sortable: true,
-                            cell: (row) => row.nrc_number,
+                            cell: (row) => <PhoneDisplay phone={row.phone} />,
                         },
                         {
                             id: 'status',

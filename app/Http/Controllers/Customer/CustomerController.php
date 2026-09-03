@@ -13,6 +13,7 @@ use App\Models\BroadbandAccount;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -25,7 +26,7 @@ class CustomerController extends Controller
         $status = $request->string('status')->toString();
         $sort = $request->string('sort')->toString();
         $direction = $request->string('direction')->toString() === 'asc' ? 'asc' : 'desc';
-        $sortable = ['name', 'phone', 'nrc_number', 'status', 'created_at'];
+        $sortable = ['name', 'phone', 'status', 'created_at'];
 
         if (! in_array($sort, $sortable, true)) {
             $sort = 'created_at';
@@ -36,8 +37,7 @@ class CustomerController extends Controller
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query->where('name', 'like', '%'.$search.'%')
-                        ->orWhere('phone', 'like', '%'.$search.'%')
-                        ->orWhere('nrc_number', 'like', '%'.$search.'%');
+                        ->orWhere('phone', 'like', '%'.$search.'%');
                 });
             })
             ->when($status !== '' && in_array($status, array_column(UserStatus::cases(), 'value'), true), function ($query) use ($status): void {
@@ -50,10 +50,6 @@ class CustomerController extends Controller
                 'id' => $customer->id,
                 'name' => $customer->name,
                 'phone' => $customer->phone,
-                'nrc_number' => $customer->nrc_number,
-                'email' => $customer->email,
-                'address' => $customer->address,
-                'language_pref' => $customer->language_pref->value,
                 'status' => $customer->status->value,
                 'accounts_count' => $customer->broadband_accounts_count,
                 'created_at' => $customer->created_at?->toDateString(),
@@ -90,7 +86,7 @@ class CustomerController extends Controller
             ->causedBy($request->user())
             ->performedOn($customer)
             ->event('created')
-            ->withProperties($payload)
+            ->withProperties(Arr::except($payload, ['password']))
             ->log('customer_created');
 
         if ($request->headers->has('X-Modal')) {
@@ -164,7 +160,7 @@ class CustomerController extends Controller
             ->causedBy($request->user())
             ->performedOn($customer)
             ->event('updated')
-            ->withProperties($payload)
+            ->withProperties(Arr::except($payload, ['password']))
             ->log('customer_updated');
 
         if ($request->headers->has('X-Modal')) {
@@ -294,7 +290,7 @@ class CustomerController extends Controller
     }
 
     /**
-     * @return array{id: int, name: string, phone: string, nrc_number: string, email: string|null, address: string|null, language_pref: string, status: string, created_at: string|null}
+     * @return array{id: int, name: string, phone: string, status: string, created_at: string|null}
      */
     private function customerPayload(User $customer): array
     {
@@ -302,10 +298,6 @@ class CustomerController extends Controller
             'id' => $customer->id,
             'name' => $customer->name,
             'phone' => $customer->phone,
-            'nrc_number' => $customer->nrc_number,
-            'email' => $customer->email,
-            'address' => $customer->address,
-            'language_pref' => $customer->language_pref->value,
             'status' => $customer->status->value,
             'created_at' => $customer->created_at?->toDateString(),
         ];

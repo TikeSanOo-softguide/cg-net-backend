@@ -5,12 +5,7 @@ import {
     CalendarIcon,
     CircleDotIcon,
     HashIcon,
-    IdCardIcon,
-    LanguagesIcon,
     Link2Icon,
-    MailIcon,
-    MapPinIcon,
-    PhoneIcon,
     SquarePenIcon,
     UnlinkIcon,
     UserCheckIcon,
@@ -20,6 +15,8 @@ import {
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { CustomerFormDialog } from '@/components/customer/CustomerFormDialog';
+import { PhoneDisplay } from '@/components/customer/PhoneDisplay';
+import { formatPhoneLocal } from '@/lib/phone';
 import { DataTable } from '@/components/DataTable';
 import { DetailPanel } from '@/components/DetailPanel';
 import { PageContent } from '@/components/PageContent';
@@ -32,7 +29,6 @@ import { FormControl } from '@/components/ui/form-control';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 
@@ -40,10 +36,6 @@ type Customer = {
     id: number;
     name: string;
     phone: string;
-    nrc_number: string;
-    email: string | null;
-    address: string | null;
-    language_pref: string;
     status: string;
     created_at: string | null;
 };
@@ -114,7 +106,7 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
         <>
             <Head title={customer.name} />
             <PageContent className="pb-24 sm:pb-8">
-                <PageHeader title={customer.name} description={customer.phone} />
+                <PageHeader title={customer.name} description={formatPhoneLocal(customer.phone)} />
 
                 <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,560px)_minmax(0,1fr)]">
                     <DetailPanel
@@ -152,28 +144,18 @@ export default function CustomersShow({ customer, broadbandAccounts, packages, w
                         <FormField label={t('customers.name')} htmlFor="detail-name" icon={UserIcon} className="sm:col-span-2">
                             <Input id="detail-name" value={customer.name} readOnly />
                         </FormField>
-                        <FormField label={t('customers.phone')} htmlFor="detail-phone" icon={PhoneIcon}>
-                            <Input id="detail-phone" value={customer.phone} readOnly />
-                        </FormField>
-                        <FormField label={t('customers.nrc')} htmlFor="detail-nrc" icon={IdCardIcon}>
-                            <Input id="detail-nrc" value={customer.nrc_number} readOnly />
-                        </FormField>
-                        <FormField label={t('customers.email')} htmlFor="detail-email" icon={MailIcon}>
-                            <Input id="detail-email" value={customer.email ?? '—'} readOnly />
-                        </FormField>
-                        <FormField label={t('customers.language')} htmlFor="detail-language" icon={LanguagesIcon}>
-                            <Input id="detail-language" value={t(`language.${customer.language_pref}`)} readOnly />
+                        <FormField label={t('customers.phone')} htmlFor="detail-phone">
+                            <div id="detail-phone" className="flex h-10 items-center">
+                                <PhoneDisplay phone={customer.phone} />
+                            </div>
                         </FormField>
                         <FormField label={t('common.status')} htmlFor="detail-status" icon={CircleDotIcon}>
                             <div id="detail-status" className="flex h-10 items-center">
                                 <StatusBadge status={customer.status} />
                             </div>
                         </FormField>
-                        <FormField label={t('customers.joined')} htmlFor="detail-joined" icon={CalendarIcon}>
+                        <FormField label={t('customers.joined')} htmlFor="detail-joined" icon={CalendarIcon} className="sm:col-span-2">
                             <Input id="detail-joined" value={customer.created_at ?? '—'} readOnly />
-                        </FormField>
-                        <FormField label={t('customers.address')} htmlFor="detail-address" icon={MapPinIcon} className="sm:col-span-2">
-                            <Textarea id="detail-address" value={customer.address ?? '—'} readOnly rows={3} />
                         </FormField>
                     </DetailPanel>
 

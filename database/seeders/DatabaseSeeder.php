@@ -35,6 +35,7 @@ use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
 use App\Support\AppPermissions;
+use Database\Factories\Support\MyanmarFake;
 use Database\Seeders\AreaSeeder;
 use Database\Seeders\PackageSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -131,11 +132,20 @@ class DatabaseSeeder extends Seeder
      */
     private function seedCustomers($packages)
     {
-        return User::factory()
-            ->count(20)
-            ->create()
+        $showcasePhones = [
+            ['phone' => MyanmarFake::phone('mm'), 'name' => 'Myanmar User'],
+            ['phone' => MyanmarFake::phone('th'), 'name' => 'Thailand User'],
+            ['phone' => MyanmarFake::phone('cn'), 'name' => 'China User'],
+        ];
+
+        $users = collect($showcasePhones)
+            ->map(fn (array $row) => User::factory()->create($row))
+            ->concat(User::factory()->count(17)->create())
+            ->values();
+
+        return $users
             ->each(function (User $user, int $index) use ($packages): void {
-                if ($index < 3) {
+                if ($index >= 3 && $index < 6) {
                     $user->update(['status' => UserStatus::Suspended]);
                 }
 

@@ -2,11 +2,6 @@ import {
     CalendarIcon,
     CircleDotIcon,
     HashIcon,
-    IdCardIcon,
-    LanguagesIcon,
-    MailIcon,
-    MapPinIcon,
-    PhoneIcon,
     SquarePenIcon,
     UserIcon,
     XIcon,
@@ -16,10 +11,10 @@ import { FormDialog } from '@/components/FormDialog';
 import { formActionBarClass, formActionButtonClass } from '@/components/FormActionBar';
 import { StatusBadge } from '@/components/StatusBadge';
 import type { CustomerFormMember } from '@/components/customer/CustomerFormDialog';
+import { PhoneDisplay } from '@/components/customer/PhoneDisplay';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -54,17 +49,10 @@ export function CustomerDetailDialog({ open, onOpenChange, customer, onEdit }: C
                             <FormField label={t('customers.name')} htmlFor="view-name" icon={UserIcon} className="sm:col-span-2">
                                 <Input id="view-name" value={customer.name} readOnly />
                             </FormField>
-                            <FormField label={t('customers.phone')} htmlFor="view-phone" icon={PhoneIcon}>
-                                <Input id="view-phone" value={customer.phone} readOnly />
-                            </FormField>
-                            <FormField label={t('customers.nrc')} htmlFor="view-nrc" icon={IdCardIcon}>
-                                <Input id="view-nrc" value={customer.nrc_number} readOnly />
-                            </FormField>
-                            <FormField label={t('customers.email')} htmlFor="view-email" icon={MailIcon}>
-                                <Input id="view-email" value={customer.email ?? '—'} readOnly />
-                            </FormField>
-                            <FormField label={t('customers.language')} htmlFor="view-language" icon={LanguagesIcon}>
-                                <Input id="view-language" value={t(`language.${customer.language_pref}`)} readOnly />
+                            <FormField label={t('customers.phone')} htmlFor="view-phone">
+                                <div id="view-phone" className="flex h-10 items-center">
+                                    <PhoneDisplay phone={customer.phone} />
+                                </div>
                             </FormField>
                             <FormField label={t('common.status')} htmlFor="view-status" icon={CircleDotIcon}>
                                 <div id="view-status" className="flex h-10 items-center">
@@ -76,9 +64,6 @@ export function CustomerDetailDialog({ open, onOpenChange, customer, onEdit }: C
                             </FormField>
                             <FormField label={t('customers.joined')} htmlFor="view-joined" icon={CalendarIcon} className="sm:col-span-2">
                                 <Input id="view-joined" value={customer.created_at ?? '—'} readOnly />
-                            </FormField>
-                            <FormField label={t('customers.address')} htmlFor="view-address" icon={MapPinIcon} className="sm:col-span-2">
-                                <Textarea id="view-address" value={customer.address ?? '—'} readOnly rows={3} />
                             </FormField>
                         </div>
                     </div>

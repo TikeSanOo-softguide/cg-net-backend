@@ -22,7 +22,7 @@ export function BrandLockup({
     const content = (
         <>
             <span className={cn('relative size-12 shrink-0 overflow-hidden rounded-[6px] bg-brand', logoClassName)}>
-                <img src="/images/smart-link-logo.png?v=2" alt="" className="size-full object-cover" />
+                <img src="/images/cg-net-logo.png?v=3" alt="" className="size-full object-cover" />
             </span>
             {compact ? (
                 <span className="sr-only">Young Ni Oo</span>

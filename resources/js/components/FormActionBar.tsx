@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { SaveIcon, SendIcon, XIcon } from 'lucide-react';
+import { CircleXIcon, SaveIcon, SendIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -10,7 +10,7 @@ export const formActionBarClass =
     'flex w-full shrink-0 flex-wrap items-center justify-center gap-2 border-t border-border/70 bg-[#e8eef0] px-4 py-3 sm:px-5 sm:py-4 dark:bg-[#1a2e31]';
 
 const formActionButtonBase =
-    'h-8 w-[200px] shrink-0 rounded-[6px] border-transparent transition-all duration-200 ease-out hover:shadow-sm active:scale-[0.98]';
+    'h-7 min-h-7 w-[148px] shrink-0 rounded-[6px] border-transparent px-2.5 text-[12px] font-medium transition-all duration-200 ease-out hover:shadow-sm active:scale-[0.98]';
 
 export const formActionButtonClass = cn(
     formActionButtonBase,
@@ -19,12 +19,12 @@ export const formActionButtonClass = cn(
 
 export const formActionCancelClass = cn(
     formActionButtonBase,
-    'bg-danger/12 text-danger hover:bg-danger hover:text-danger-foreground',
+    'border-transparent bg-danger text-danger-foreground hover:bg-[color-mix(in_srgb,var(--danger)_88%,black)]',
 );
 
 export const formActionSubmitClass = cn(
     formActionButtonBase,
-    'bg-primary/12 text-primary hover:bg-primary hover:text-primary-foreground',
+    'border-transparent bg-primary text-primary-foreground hover:bg-[color-mix(in_srgb,hsl(var(--primary))_88%,black)]',
 );
 
 type FormActionBarProps = {
@@ -54,16 +54,16 @@ export function FormActionBar({
             <Button
                 type="button"
                 size="sm"
-                variant="ghost"
+                variant="destructive"
                 disabled={processing}
                 className={formActionCancelClass}
                 onClick={onCancel}
             >
-                <XIcon className="size-3.5" strokeWidth={1.85} />
+                <CircleXIcon className="size-3.5" strokeWidth={1.9} />
                 {cancelLabel}
             </Button>
             {children ?? (
-                <Button type="submit" size="sm" variant="ghost" disabled={processing} className={formActionSubmitClass}>
+                <Button type="submit" size="sm" variant="primary" disabled={processing} className={formActionSubmitClass}>
                     {processing ? <Spinner size="xs" className="text-current" /> : <SubmitIcon className="size-3.5" strokeWidth={1.85} />}
                     {actionLabel}
                 </Button>

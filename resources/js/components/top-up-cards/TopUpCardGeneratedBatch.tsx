@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CopyIcon, DownloadIcon, EyeIcon, EyeOffIcon, PrinterIcon, TicketIcon } from 'lucide-react';
+import { CopyIcon, DownloadIcon, EyeIcon, EyeOffIcon, PrinterIcon } from 'lucide-react';
 import QRCode from 'react-qr-code';
 
 import { StatusBadge } from '@/components/StatusBadge';
@@ -19,11 +19,8 @@ export function TopUpCardGeneratedBatch({ cards, onExport }: GeneratedBatchProps
 
     if (cards.length === 0) {
         return (
-            <div className="flex min-h-[220px] flex-col items-center justify-center gap-2 rounded-[10px] border border-dashed border-border/80 px-4 py-8 text-center">
-                <span className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <TicketIcon className="size-[18px]" strokeWidth={1.8} />
-                </span>
-                <p className="text-[13px] font-semibold text-foreground">{t('top_up_cards.empty_batch_title')}</p>
+            <div className="flex min-h-[160px] flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border px-4 py-6 text-center">
+                <p className="text-[13px] font-medium text-foreground">{t('top_up_cards.empty_batch_title')}</p>
                 <p className="max-w-[260px] text-[11px] leading-4 text-muted-foreground">
                     {t('top_up_cards.empty_batch_description')}
                 </p>

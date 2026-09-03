@@ -6,16 +6,13 @@ import {
     ChevronsUpDownIcon,
     DownloadIcon,
     EyeIcon,
-    HashIcon,
     PlusIcon,
     Trash2Icon,
-    type LucideIcon,
 } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { DEFAULT_COLUMN_ICONS } from '@/components/data-table/column-icons';
 import { RadialBubbleActions } from '@/components/data-table/RadialBubbleActions';
-import { csvEscape, EDGE_CELL, EDGE_PAD, headerCellClass } from '@/components/data-table/styles';
+import { csvEscape, EDGE_CELL, EDGE_PAD, headerCellClass, toolbarFiltersWrapperClass } from '@/components/data-table/styles';
 import { ColumnHeaderLabel, ToolbarIconButton } from '@/components/data-table/toolbar';
 import { Pagination, type Paginated } from '@/components/Pagination';
 import { SearchInput } from '@/components/SearchInput';
@@ -35,7 +32,6 @@ export type DataTableColumn<T> = {
     mobile?: 'image' | 'title' | 'subtitle' | 'meta' | 'badge' | false;
     searchValue?: (row: T) => string;
     sortable?: boolean;
-    icon?: LucideIcon;
 };
 type DataTableProps<T> = {
     title?: string;
@@ -314,7 +310,7 @@ export function DataTable<T>({
                         <CardTitle className="text-[13px] font-semibold tracking-tight sm:text-sm">{title}</CardTitle>
                     ) : null}
                     <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
-                        <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center [&_[data-slot=input]]:h-8 [&_[data-slot=input]]:rounded-[4px] [&_[data-slot=input]]:bg-muted/50 [&_[data-slot=input]]:py-0 [&_[data-slot=input]]:text-[11px] [&_[data-slot=input]]:placeholder:text-[11px] [&_[data-slot=select-trigger]]:h-8 [&_[data-slot=select-trigger]]:rounded-[4px] [&_[data-slot=select-trigger]]:bg-muted/50 [&_[data-slot=select-trigger]]:py-0 [&_[data-slot=select-trigger]]:text-[11px] [&_[data-slot=select-trigger]]:data-[placeholder]:text-[11px] [&_.h-10]:h-8 [&_.rounded-\[6px\]]:rounded-[4px]">
+                        <div className={cn('flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center', toolbarFiltersWrapperClass)}>
                             {filters}
                             <SearchInput
                                 value={searchValue}
@@ -363,11 +359,11 @@ export function DataTable<T>({
                 </CardHeader>
                 <CardContent className="flex min-h-0 flex-1 flex-col px-0 pb-0">
                     <div className={cn(EDGE_PAD, 'min-h-0 flex-1 pb-3')}>
-                        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[4px] border-0 bg-card shadow-[0_2px_8px_rgb(23_50_54/0.08)] dark:shadow-[0_2px_8px_rgb(0_0_0/0.28)]">
+                        <div className="flex h-full min-h-0 flex-col overflow-hidden bg-transparent">
                             <div className="hidden min-h-0 flex-1 overflow-x-auto sm:block">
                                 <Table>
-                                    <TableHeader className="bg-muted">
-                                        <TableRow className="hover:bg-transparent">
+                                    <TableHeader className="bg-transparent">
+                                        <TableRow className="border-b border-border hover:bg-transparent">
                                             {canSelect ? (
                                                 <TableHead className={cn(headerCellClass, EDGE_CELL, 'w-10 pr-0')}>
                                                     <TableCheckbox
@@ -388,14 +384,11 @@ export function DataTable<T>({
                                                         canSelect && 'pl-3',
                                                     )}
                                                 >
-                                                    <ColumnHeaderLabel icon={HashIcon} label={t('common.no')} />
+                                                    <ColumnHeaderLabel label={t('common.no')} />
                                                 </TableHead>
                                             ) : null}
                                             {columns.map((column) => {
-                                                const HeaderIcon = column.icon ?? DEFAULT_COLUMN_ICONS[column.id];
-                                                const label = (
-                                                    <ColumnHeaderLabel icon={HeaderIcon} label={column.header} />
-                                                );
+                                                const label = <ColumnHeaderLabel label={column.header} />;
 
                                                 return (
                                                     <TableHead
@@ -457,7 +450,6 @@ export function DataTable<T>({
                                                     <TableRow
                                                         key={id}
                                                         data-state={selected ? 'selected' : undefined}
-                                                        className="bg-card"
                                                     >
                                                         {canSelect ? (
                                                             <TableCell className={cn(EDGE_CELL, 'w-10 pr-0')}>

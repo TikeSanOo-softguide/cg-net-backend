@@ -20,6 +20,8 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
+import { PhoneDisplay } from '@/components/customer/PhoneDisplay';
+import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
 import { useTranslation } from '@/hooks/useTranslation';
 
 type Package = {
@@ -253,14 +255,19 @@ export default function PackageShow({
                                     header: t('customers.name'),
                                     mobile: 'title',
                                     searchValue: (row) => row.name,
-                                    cell: (row) => row.name,
+                                    cell: (row) => (
+                                        <span className="flex min-w-0 items-center gap-2.5">
+                                            <StaffListAvatar username={row.name} />
+                                            <span className="truncate">{row.name}</span>
+                                        </span>
+                                    ),
                                 },
                                 {
                                     id: 'phone',
                                     header: t('customers.phone'),
                                     mobile: 'subtitle',
                                     searchValue: (row) => row.phone,
-                                    cell: (row) => row.phone,
+                                    cell: (row) => <PhoneDisplay phone={row.phone} />,
                                 },
                                 {
                                     id: 'account_number',

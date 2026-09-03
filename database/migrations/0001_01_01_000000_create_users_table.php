@@ -15,10 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('phone', 16)->unique();
             $table->string('name');
-            $table->string('nrc_number')->index();
-            $table->string('email')->nullable()->index();
-            $table->text('address')->nullable();
-            $table->string('language_pref', 8)->default('en')->index();
+            $table->string('password');
             $table->string('status', 16)->default('active')->index();
             $table->timestamps();
             $table->softDeletes();

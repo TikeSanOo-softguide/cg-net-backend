@@ -6,6 +6,7 @@ import { FormDialog } from '@/components/FormDialog';
 import type { Paginated } from '@/components/Pagination';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
+import { PhoneDisplay } from '@/components/customer/PhoneDisplay';
 import { FormControl } from '@/components/ui/form-control';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -157,7 +158,7 @@ export function TopUpCardRedeemTable({
                                 <div className="min-w-0">
                                     <p className="truncate text-[13px] font-medium">{row.redeemed_by ?? t('top_up_cards.no_customer')}</p>
                                     {row.redeemed_by_phone ? (
-                                        <p className="truncate text-[11px] text-muted-foreground">{row.redeemed_by_phone}</p>
+                                        <PhoneDisplay phone={row.redeemed_by_phone} className="mt-0.5" />
                                     ) : null}
                                 </div>
                             ),
@@ -231,7 +232,9 @@ export function TopUpCardRedeemTable({
                                 </div>
                                 <div>
                                     <dt className="text-[11px] text-muted-foreground">{t('top_up_cards.customer_phone')}</dt>
-                                    <dd>{viewing.redeemed_by_phone ?? '—'}</dd>
+                                    <dd className="mt-1">
+                                        <PhoneDisplay phone={viewing.redeemed_by_phone} />
+                                    </dd>
                                 </div>
                                 <div>
                                     <dt className="text-[11px] text-muted-foreground">{t('top_up_cards.redeemed_at')}</dt>

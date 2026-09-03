@@ -109,7 +109,7 @@ function Toast({
             onOpenChange={onOpenChange}
             {...props}
         >
-            <span className={cn('w-1.5 shrink-0 self-stretch', style.bar)} aria-hidden />
+            <span className={cn('w-1 shrink-0 self-stretch', style.bar)} aria-hidden />
             <div className="flex min-w-0 flex-1 items-center gap-3 px-3.5 pr-9">
                 <span className={cn('flex size-7 shrink-0 items-center justify-center rounded-full', style.iconWrap)}>
                     {style.icon}

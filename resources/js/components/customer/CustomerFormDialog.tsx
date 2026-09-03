@@ -10,10 +10,6 @@ export type CustomerFormMember = {
     id: number;
     name: string;
     phone: string;
-    nrc_number: string;
-    email?: string | null;
-    address?: string | null;
-    language_pref: string;
     status: string;
 };
 
@@ -58,17 +54,14 @@ function CustomerFormDialogBody({
     customer: CustomerFormMember | null;
     onClose: () => void;
 }) {
-    const { t } = useTranslation();
     const isEdit = customer !== null;
     const form = useForm<CustomerFormValues>(
         customer
             ? {
                   name: customer.name,
                   phone: customer.phone,
-                  nrc_number: customer.nrc_number,
-                  email: customer.email ?? '',
-                  address: customer.address ?? '',
-                  language_pref: customer.language_pref,
+                  password: '',
+                  password_confirmation: '',
                   status: customer.status,
               }
             : emptyCustomerForm(),

@@ -16,6 +16,9 @@ class StoreCustomerRequest extends FormRequest
      */
     public function rules(): array
     {
-        return CustomerData::rules();
+        return [
+            ...CustomerData::rules(),
+            'password_confirmation' => ['required', 'string'],
+        ];
     }
 }

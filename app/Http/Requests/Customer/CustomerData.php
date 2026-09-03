@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests\Customer;
 
-use App\Enums\LanguagePref;
 use App\Enums\UserStatus;
 use App\Models\User;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 final class CustomerData
 {
@@ -19,31 +19,29 @@ final class CustomerData
         return [
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:16', 'regex:/^\+?[0-9]{8,15}$/', Rule::unique('users', 'phone')->ignore($ignore)],
-            'nrc_number' => ['required', 'string', 'max:64'],
-            'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($ignore)],
-            'address' => ['nullable', 'string', 'max:1000'],
-            'language_pref' => ['required', Rule::enum(LanguagePref::class)],
+            'password' => $customer === null
+                ? ['required', 'string', 'min:8', Password::defaults(), 'confirmed']
+                : ['nullable', 'string', 'min:8', Password::defaults(), 'confirmed'],
             'status' => ['required', Rule::enum(UserStatus::class)],
         ];
     }
 
     /**
      * @param  array<string, mixed>  $validated
-     * @return array{name: string, phone: string, nrc_number: string, email: string|null, address: string|null, language_pref: string, status: string}
+     * @return array{name: string, phone: string, status: string, password?: string}
      */
     public static function payload(array $validated): array
     {
-        $email = isset($validated['email']) ? trim((string) $validated['email']) : '';
-        $address = isset($validated['address']) ? trim((string) $validated['address']) : '';
-
-        return [
+        $payload = [
             'name' => $validated['name'],
             'phone' => $validated['phone'],
-            'nrc_number' => $validated['nrc_number'],
-            'email' => $email !== '' ? $email : null,
-            'address' => $address !== '' ? $address : null,
-            'language_pref' => $validated['language_pref'],
             'status' => $validated['status'],
         ];
+
+        if (! empty($validated['password'])) {
+            $payload['password'] = $validated['password'];
+        }
+
+        return $payload;
     }
 }

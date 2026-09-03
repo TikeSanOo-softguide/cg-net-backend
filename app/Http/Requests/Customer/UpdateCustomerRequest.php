@@ -22,4 +22,14 @@ class UpdateCustomerRequest extends FormRequest
 
         return CustomerData::rules($customer);
     }
+
+    protected function prepareForValidation(): void
+    {
+        if (! $this->filled('password')) {
+            $this->merge([
+                'password' => null,
+                'password_confirmation' => null,
+            ]);
+        }
+    }
 }

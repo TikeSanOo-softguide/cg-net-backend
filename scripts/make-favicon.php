@@ -1,6 +1,6 @@
 <?php
 
-$srcPath = dirname(__DIR__).'/public/images/smart-link-logo.png';
+$srcPath = dirname(__DIR__).'/public/images/cg-net-logo.png';
 $public = dirname(__DIR__).'/public';
 
 $src = imagecreatefrompng($srcPath);

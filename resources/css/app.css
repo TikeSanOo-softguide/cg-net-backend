@@ -463,6 +463,22 @@
     border-color: transparent;
 }
 
+.dashboard-chart .recharts-wrapper,
+.dashboard-chart .recharts-wrapper:focus,
+.dashboard-chart .recharts-wrapper:focus-visible,
+.dashboard-chart .recharts-surface,
+.dashboard-chart .recharts-surface:focus,
+.dashboard-chart svg,
+.dashboard-chart svg:focus,
+.dashboard-chart svg:focus-visible {
+    outline: none;
+    border: none;
+}
+
+.dashboard-chart .recharts-tooltip-cursor {
+    display: none;
+}
+
 .app-theme-panel {
     background-color: var(--right-panel-bg);
     backdrop-filter: var(--right-panel-backdrop-filter);
