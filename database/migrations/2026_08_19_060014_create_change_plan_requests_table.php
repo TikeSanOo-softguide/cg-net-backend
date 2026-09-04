@@ -14,10 +14,12 @@ return new class extends Migration
             $table->foreignId('broadband_account_id')->constrained()->cascadeOnDelete();
             $table->foreignId('current_package_id')->constrained('packages')->restrictOnDelete();
             $table->foreignId('new_package_id')->constrained('packages')->restrictOnDelete();
-            $table->date('preferred_date')->nullable();
-            $table->string('phone', 16);
+            $table->date('preferred_date');
+            $table->string('contact_name', 255);
+            $table->string('contact_phone', 16);
             $table->text('note')->nullable();
             $table->string('status', 16)->default('under_review')->index();
+            $table->foreignId('admin_id')->nullable()->constrained('admins')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
         });

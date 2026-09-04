@@ -13,6 +13,7 @@ use App\Http\Controllers\MenuPage\MenuPageController;
 use App\Http\Controllers\Notification\AnnouncementController;
 use App\Http\Controllers\Package\AddonController;
 use App\Http\Controllers\ServiceRequest\FailureReportController;
+use App\Http\Controllers\ServiceRequest\ChangePlanRequestController;
 use App\Http\Controllers\Package\NetworkController;
 use App\Http\Controllers\Package\PackageController;
 use App\Http\Controllers\Package\SpeedController;
@@ -131,6 +132,10 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         Route::prefix('failures')->name('failures.')->group(function () {
             Route::get('/', [FailureReportController::class, 'index'])->middleware('can:service-requests.view')->name('index');
             Route::patch('/{failureReport}/edit', [FailureReportController::class, 'updateStatus'])->middleware('can:service-requests.update')->name('edit');
+        });
+        Route::prefix('change-plan')->name('change-plan.')->group(function () {
+            Route::get('/', [ChangePlanRequestController::class, 'index'])->middleware('can:service-requests.view')->name('index');
+            Route::patch('/{changePlanRequest}/status', [ChangePlanRequestController::class, 'updateStatus'])->middleware('can:service-requests.update')->name('status');
         });
     });
 

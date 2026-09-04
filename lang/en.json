@@ -344,6 +344,25 @@
             "status_required": "Please select a status."
         }
     },
+    "change_plan": {
+        "packages": "Requested Packages",
+        "search_placeholder": "Search by account_no, app username",
+        "preferred_date": "Preferred date",
+        "overdue": "Overdue warning!",
+        "approved_by": "Approved By",
+        "request_details": "Change Plan Request Details",
+        "request_details_description": "View the details of this change plan request.",
+        "urgent_processing": "Please process as soon as possible.",
+        "contact": "Contact Information",
+        "broadband_account": "Broadband Account",
+        "migration": "Change plan migration",
+        "note": "Note",
+        "current_plan": "Current Plan",
+        "requested_plan": "Requested Plan",
+        "current_status": "Current Status",
+        "no_note": "No note provided",
+        "status_updated": "Request status updated"
+    },
     "regions": {
         "name_en": "Name (English)",
         "name_my": "Name (Myanmar)",

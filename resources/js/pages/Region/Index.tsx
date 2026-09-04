@@ -6,6 +6,7 @@ import { RegionDataTable, type RegionFilters } from '@/components/region/shared/
 import { RegionFormDialog, type StateRow, type RegionRow, type AreaRow } from '@/components/region/RegionFormDialog';
 import type { Paginated } from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
+import { truncateText } from '@/lib/utils';
 
 type RegionIndexProps = {
     states: Paginated<StateRow>;
@@ -106,7 +107,7 @@ export default function RegionIndex({
                                 header: t('regions.state_name'),
                                 mobile: 'title',
                                 className: 'font-medium',
-                                cell: (row) => getName(row),
+                                cell: (row) => truncateText(getName(row), 50),
                             },
                         ]}
                     />
@@ -128,7 +129,7 @@ export default function RegionIndex({
                                 header: t('regions.region_name'),
                                 mobile: 'title',
                                 className: 'font-medium',
-                                cell: (row) => getName(row),
+                                cell: (row) => truncateText(getName(row), 50),
                             },
                             {
                                 id: 'state',
@@ -136,10 +137,10 @@ export default function RegionIndex({
                                 mobile: 'subtitle',
                                 cell: (row) =>
                                     locale === 'my'
-                                        ? (row.state_name_my ?? row.state_name_en ?? '-')
+                                        ? truncateText(row.state_name_my ?? row.state_name_en ?? '-', 50)
                                         : locale === 'zh'
-                                          ? (row.state_name_zh ?? row.state_name_en ?? '-')
-                                          : (row.state_name_en ?? '-'),
+                                          ? truncateText(row.state_name_zh ?? row.state_name_en ?? '-', 50)
+                                          : truncateText(row.state_name_en ?? '-', 50),
                             },
                         ]}
                     />
@@ -162,7 +163,7 @@ export default function RegionIndex({
                             header: t('regions.area_name'),
                             mobile: 'title',
                             className: 'font-medium',
-                            cell: (row) => getName(row),
+                            cell: (row) => truncateText(getName(row), 50),
                         },
                         {
                             id: 'region',
@@ -170,10 +171,10 @@ export default function RegionIndex({
                             mobile: 'subtitle',
                             cell: (row) =>
                                 locale === 'my'
-                                    ? (row.region_name_my ?? row.region_name_en ?? '-')
+                                    ? truncateText(row.region_name_my ?? row.region_name_en ?? '-', 50)
                                     : locale === 'zh'
-                                      ? (row.region_name_zh ?? row.region_name_en ?? '-')
-                                      : (row.region_name_en ?? '-'),
+                                      ? truncateText(row.region_name_zh ?? row.region_name_en ?? '-', 50)
+                                      : truncateText(row.region_name_en ?? '-', 50),
                         },
                         {
                             id: 'state',
@@ -181,10 +182,10 @@ export default function RegionIndex({
                             mobile: 'meta',
                             cell: (row) =>
                                 locale === 'my'
-                                    ? (row.state_name_my ?? row.state_name_en ?? '-')
+                                    ? truncateText(row.state_name_my ?? row.state_name_en ?? '-', 50)
                                     : locale === 'zh'
-                                      ? (row.state_name_zh ?? row.state_name_en ?? '-')
-                                      : (row.state_name_en ?? '-'),
+                                      ? truncateText(row.state_name_zh ?? row.state_name_en ?? '-', 50)
+                                      : truncateText(row.state_name_en ?? '-', 50),
                         },
                     ]}
                 />

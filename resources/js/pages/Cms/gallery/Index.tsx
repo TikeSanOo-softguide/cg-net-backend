@@ -5,7 +5,7 @@ import { CmsIndexPage, type CmsFilters } from '@/components/cms/shared/CmsIndexP
 import { GalleryFormDialog, type GalleryItem } from '@/components/cms/gallery/GalleryFormDialog';
 import type { Paginated } from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime, truncateText } from '@/lib/utils';
 
 type Props = {
     items: Paginated<GalleryItem & { created_at: string | null }>;
@@ -92,7 +92,7 @@ export default function GalleryIndex({ items, filters }: Props) {
                         sortable: true,
                         className: 'font-medium',
                         cell: (row) => {
-                            return getLabel(row);
+                            return truncateText(getLabel(row), 50);
                         },
                     },
                     {

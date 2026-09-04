@@ -6,7 +6,7 @@ import { PromotionFormDialog, type PromotionItem } from '@/components/cms/promot
 import type { Paginated } from '@/components/Pagination';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatDateTime } from '@/lib/utils';
+import { formatDate, truncateText } from '@/lib/utils';
 
 type Props = {
     items: Paginated<PromotionItem>;
@@ -100,7 +100,7 @@ export default function PromotionsIndex({ items, filters }: Props) {
                         sortable: true,
                         className: 'font-medium',
                         cell: (row) => {
-                            return getLabel(row);
+                            return truncateText(getLabel(row), 50);
                         },
                     },
                     {
@@ -108,13 +108,13 @@ export default function PromotionsIndex({ items, filters }: Props) {
                         header: t('cms.start_date'),
                         sortable: true,
                         mobile: 'meta',
-                        cell: (row) => formatDateTime(row.start_date),
+                        cell: (row) => formatDate(row.start_date),
                     },
                     {
                         id: 'end_date',
                         header: t('cms.end_date'),
                         sortable: true,
-                        cell: (row) => formatDateTime(row.end_date) ?? '—',
+                        cell: (row) => formatDate(row.end_date) ?? '—',
                     },
                     {
                         id: 'is_active',

@@ -16,9 +16,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'current_package_id',
     'new_package_id',
     'preferred_date',
-    'phone',
+    'contact_name',
+    'contact_phone',
     'note',
     'status',
+    'admin_id',
 ])]
 class ChangePlanRequest extends Model
 {
@@ -51,5 +53,10 @@ class ChangePlanRequest extends Model
     public function newPackage(): BelongsTo
     {
         return $this->belongsTo(Package::class, 'new_package_id');
+    }
+
+    public function admin(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'admin_id');
     }
 }

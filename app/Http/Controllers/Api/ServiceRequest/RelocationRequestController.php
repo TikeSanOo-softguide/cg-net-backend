@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\Api\Requests;
+namespace App\Http\Controllers\Api\ServiceRequest;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\RelocationRequest\CreateRelocationRequest;
-use App\Http\Requests\RelocationRequest\UpdateRelocationRequest;
+use App\Http\Requests\ServiceRequest\CreateRelocationRequest;
+use App\Http\Requests\ServiceRequest\UpdateRelocationRequest;
 use App\Http\Resources\RelocationRequest\RelocationRequestResource;
 use App\Models\RelocationRequest;
 use Illuminate\Http\JsonResponse;
@@ -25,7 +25,6 @@ class RelocationRequestController extends Controller
         $validated = $request->validated();
         $relocation = RelocationRequest::query()->create([
             ...$validated,
-            'user_id' => $request->user()->id,
             'status' => 'under_review',
         ]);
 

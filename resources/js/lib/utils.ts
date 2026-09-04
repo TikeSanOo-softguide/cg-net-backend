@@ -5,6 +5,24 @@ export function cn(...inputs: ClassValue[]): string {
     return twMerge(clsx(inputs));
 }
 
+export function formatDate(value: string | null | undefined): string {
+    if (!value) {
+        return '—';
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+
+    return new Intl.DateTimeFormat(undefined, {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+    }).format(date);
+}
+
 export function formatDateTime(value: string | null | undefined, isUTC: boolean | null = false): string {
     if (!value) {
         return '—';
