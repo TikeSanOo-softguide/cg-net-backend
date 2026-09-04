@@ -5,7 +5,7 @@ import { CmsIndexPage, type CmsFilters } from '@/components/cms/shared/CmsIndexP
 import { ContactFormDialog, type ContactItem } from '@/components/cms/contact/ContactFormDialog';
 import type { Paginated } from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime, truncateText } from '@/lib/utils';
 
 type Props = {
     items: Paginated<ContactItem & { created_at: string | null; updated_at: string | null }>;
@@ -57,7 +57,7 @@ export default function ContactsIndex({ items, filters }: Props) {
                         mobile: 'title',
                         sortable: true,
                         className: 'font-medium',
-                        cell: (row) => row.contact_point,
+                        cell: (row) => truncateText(row.contact_point, 30),
                     },
                     {
                         id: 'created_at',

@@ -811,6 +811,7 @@
         "updated": "套餐更新成功",
         "deleted": "套餐删除成功",
         "delete_title": "确定要删除此套餐吗？",
+        "bulk_deleted": "已删除所选套餐",
         "delete_description": "删除后，客户将无法继续使用此套餐。",
         "bulk_delete_title": "确定要删除所选套餐吗？",
         "months_placeholder": "请输入月数",
@@ -829,7 +830,9 @@
             "deleted": "网络删除成功",
             "create": "创建网络",
             "edit": "编辑网络",
-            "description": "创建或更新网络"
+            "description": "创建或更新网络",
+            "search_placeholder": "搜索网络名称",
+            "bulk_deleted": "已删除所选网络"
         },
         "addons": {
             "title": "附加服务",
@@ -838,7 +841,9 @@
             "deleted": "附加服务删除成功",
             "create": "创建附加服务",
             "edit": "编辑附加服务",
-            "description": "创建或更新附加服务"
+            "description": "创建或更新附加服务",
+            "search_placeholder": "搜索附加服务名称",
+            "bulk_deleted": "已删除所选附加服务"
         },
         "speeds": {
             "title": "网速",
@@ -847,7 +852,9 @@
             "deleted": "网速删除成功",
             "create": "创建网速",
             "edit": "编辑网速",
-            "description": "创建或更新网速"
+            "description": "创建或更新网速",
+            "search_placeholder": "搜索速度名称",
+            "bulk_deleted": "已删除所选速度"
         },
         "terms": {
             "title": "期限",
@@ -856,7 +863,9 @@
             "deleted": "期限删除成功",
             "create": "创建期限",
             "edit": "编辑期限",
-            "description": "创建或更新期限"
+            "description": "创建或更新期限",
+            "search_placeholder": "搜索期限名称",
+            "bulk_deleted": "已删除所选期限"
         },
         "validation": {
             "network_required": "请选择网络。",

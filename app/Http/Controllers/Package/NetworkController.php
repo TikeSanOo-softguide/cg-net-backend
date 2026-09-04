@@ -41,4 +41,16 @@ class NetworkController extends Controller
 
         return redirect()->route('packages.index')->with('success', 'packages.networks.deleted');
     }
+
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $ids = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'distinct', 'exists:networks,id'],
+        ])['ids'];
+        $deleted = Network::query()->whereIn('id', $ids)->delete();
+        return $deleted === 0
+            ? back()->withErrors(['delete' => 'common.bulk_delete_failed'])
+            : redirect()->route('packages.index')->with('success', 'packages.networks.bulk_deleted');
+    }
 }

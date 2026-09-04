@@ -30,7 +30,7 @@ use Inertia\Inertia;
 Route::post('/locale/{lang}', LocaleController::class)->name('locale.update');
 
 Route::middleware(['auth:web', 'admin.active'])->group(function () {
-    Route::get('/', fn () => redirect()->to(AdminHome::path(auth()->user())))->name('home');
+    Route::get('/', fn() => redirect()->to(AdminHome::path(auth()->user())))->name('home');
     Route::get('/dashboard', DashboardController::class)->middleware('can:dashboard.view')->name('dashboard');
     Route::delete('/dashboard/requests/bulk-destroy', [DashboardController::class, 'bulkDestroy'])
         ->middleware('can:service-requests.delete')
@@ -147,53 +147,41 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
     }
 
     Route::prefix('packages')->name('packages.')->group(function () {
-        Route::get('/', [PackageController::class, 'index'])
-            ->middleware('can:packages.view')
-            ->name('index');
-        Route::get('/create', [PackageController::class, 'create'])
-            ->middleware('can:packages.create')
-            ->name('create');
-        Route::post('/', [PackageController::class, 'store'])
-            ->middleware('can:packages.create')
-            ->name('store');
-        Route::delete('/bulk-destroy', [PackageController::class, 'bulkDestroy'])
-            ->middleware('can:packages.delete')
-            ->name('bulk-destroy');
-        Route::get('/{package}/edit', [PackageController::class, 'edit'])
-            ->middleware('can:packages.update')
-            ->name('edit');
-        Route::put('/{package}', [PackageController::class, 'update'])
-            ->middleware('can:packages.update')
-            ->name('update');
-        Route::delete('/{package}', [PackageController::class, 'destroy'])
-            ->middleware('can:packages.delete')
-            ->name('destroy');
-        Route::get('/{package}', [PackageController::class, 'show'])
-            ->middleware('can:packages.view')
-            ->name('show');
+        Route::get('/', [PackageController::class, 'index'])->middleware('can:packages.view')->name('index');
+        Route::get('/create', [PackageController::class, 'create'])->middleware('can:packages.create')->name('create');
+        Route::post('/', [PackageController::class, 'store'])->middleware('can:packages.create')->name('store');
+        Route::delete('/bulk-destroy', [PackageController::class, 'bulkDestroy'])->middleware('can:packages.delete')->name('bulk-destroy');
+        Route::get('/{package}/edit', [PackageController::class, 'edit'])->middleware('can:packages.update')->name('edit');
+        Route::put('/{package}', [PackageController::class, 'update'])->middleware('can:packages.update')->name('update');
+        Route::delete('/{package}', [PackageController::class, 'destroy'])->middleware('can:packages.delete')->name('destroy');
+        Route::get('/{package}', [PackageController::class, 'show'])->middleware('can:packages.view')->name('show');
     });
 
     Route::prefix('networks')->name('networks.')->group(function () {
         Route::post('/', [NetworkController::class, 'store'])->middleware('can:packages.create')->name('store');
         Route::put('/{network}', [NetworkController::class, 'update'])->middleware('can:packages.update')->name('update');
+        Route::delete('/bulk-destroy', [NetworkController::class, 'bulkDestroy'])->middleware('can:packages.delete')->name('bulk-destroy');
         Route::delete('/{network}', [NetworkController::class, 'destroy'])->middleware('can:packages.delete')->name('destroy');
     });
 
     Route::prefix('speeds')->name('speeds.')->group(function () {
         Route::post('/', [SpeedController::class, 'store'])->middleware('can:packages.create')->name('store');
         Route::put('/{speed}', [SpeedController::class, 'update'])->middleware('can:packages.update')->name('update');
+        Route::delete('/bulk-destroy', [SpeedController::class, 'bulkDestroy'])->middleware('can:packages.delete')->name('bulk-destroy');
         Route::delete('/{speed}', [SpeedController::class, 'destroy'])->middleware('can:packages.delete')->name('destroy');
     });
 
     Route::prefix('terms')->name('terms.')->group(function () {
         Route::post('/', [TermController::class, 'store'])->middleware('can:packages.create')->name('store');
         Route::put('/{term}', [TermController::class, 'update'])->middleware('can:packages.update')->name('update');
+        Route::delete('/bulk-destroy', [TermController::class, 'bulkDestroy'])->middleware('can:packages.delete')->name('bulk-destroy');
         Route::delete('/{term}', [TermController::class, 'destroy'])->middleware('can:packages.delete')->name('destroy');
     });
 
     Route::prefix('addons')->name('addons.')->group(function () {
         Route::post('/', [AddonController::class, 'store'])->middleware('can:packages.create')->name('store');
         Route::put('/{addon}', [AddonController::class, 'update'])->middleware('can:packages.update')->name('update');
+        Route::delete('/bulk-destroy', [AddonController::class, 'bulkDestroy'])->middleware('can:packages.delete')->name('bulk-destroy');
         Route::delete('/{addon}', [AddonController::class, 'destroy'])->middleware('can:packages.delete')->name('destroy');
     });
 });

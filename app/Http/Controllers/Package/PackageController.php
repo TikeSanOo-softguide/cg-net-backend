@@ -14,7 +14,6 @@ use App\Support\StoresPublicImage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -23,6 +22,19 @@ class PackageController extends Controller
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search'));
+        $networkSearch = trim((string) $request->string('network_search'));
+        $speedSearch = trim((string) $request->string('speed_search'));
+        $termSearch = trim((string) $request->string('term_search'));
+        $addonSearch = trim((string) $request->string('addon_search'));
+        $networkIds = array_filter(array_map('intval', (array) $request->input('network_ids', [])));
+        $speedIds = array_filter(array_map('intval', (array) $request->input('speed_ids', [])));
+        $termIds = array_filter(array_map('intval', (array) $request->input('term_ids', [])));
+        $addonIds = array_filter(array_map('intval', (array) $request->input('addon_ids', [])));
+        $statusFilters = array_values(array_intersect(
+            ['active', 'inactive', 'recommended'],
+            (array) $request->input('status_filters', []),
+        ));
+
         $status = $request->string('status')->toString();
         $recommended = $request->string('recommended')->toString();
         $sort = $request->string('sort')->toString();
@@ -65,18 +77,14 @@ class PackageController extends Controller
                         });
                 });
             })
-            ->when(
-                in_array($status, ['0', '1'], true),
-                function ($query) use ($status): void {
-                    $query->where('is_active', $status === '1');
-                }
-            )
-            ->when(
-                in_array($recommended, ['0', '1'], true),
-                function ($query) use ($recommended): void {
-                    $query->where('recommended', $recommended === '1');
-                }
-            )
+            ->when($networkIds !== [], fn($query) => $query->whereIn('network_id', $networkIds))
+            ->when($speedIds !== [], fn($query) => $query->whereIn('speed_id', $speedIds))
+            ->when($termIds !== [], fn($query) => $query->whereIn('term_id', $termIds))
+            ->when($addonIds !== [], fn($query) => $query->whereHas('addons', fn($query) => $query->whereIn('addons.id', $addonIds)))
+            ->when(count(array_intersect($statusFilters, ['active', 'inactive'])) === 1, function ($query) use ($statusFilters): void {
+                $query->where('is_active', in_array('active', $statusFilters, true));
+            })
+            ->when(in_array('recommended', $statusFilters, true), fn($query) => $query->where('recommended', true))
             ->orderBy($sort, $direction)
             ->paginate(15)
             ->withQueryString()
@@ -88,7 +96,16 @@ class PackageController extends Controller
             'packages' => $packages,
             'filters' => [
                 'search' => $request->string('search')->toString(),
-                'status' => $request->string('status')->toString(),
+                'network_search' => $networkSearch,
+                'speed_search' => $speedSearch,
+                'term_search' => $termSearch,
+                'addon_search' => $addonSearch,
+                'network_ids' => array_map('strval', $networkIds),
+                'speed_ids' => array_map('strval', $speedIds),
+                'term_ids' => array_map('strval', $termIds),
+                'addon_ids' => array_map('strval', $addonIds),
+                'status_filters' => $statusFilters,
+                'status' => $status,
                 'recommended' => $recommended,
                 'sort' => $request->string('sort', 'created_at')->toString(),
                 'direction' => $request->string('direction', 'desc')->toString(),
@@ -97,10 +114,10 @@ class PackageController extends Controller
             'speeds' => $this->speedOptions(),
             'terms' => $this->termOptions(),
             'addons' => $this->addonOptions(),
-            'networkTable' => $this->networkTable(),
-            'speedTable' => $this->speedTable(),
-            'termTable' => $this->termTable(),
-            'addonTable' => $this->addonTable(),
+            'networkTable' => $this->networkTable($networkSearch),
+            'speedTable' => $this->speedTable($speedSearch),
+            'termTable' => $this->termTable($termSearch),
+            'addonTable' => $this->addonTable($addonSearch),
             'stats' => [
                 'networks' => Network::query()->count(),
                 'speeds' => Speed::query()->count(),
@@ -153,10 +170,18 @@ class PackageController extends Controller
         Package $package
     ): RedirectResponse {
         $package = Package::findOrFail($package->id);
-        $package->update($this->attributes(
+        $data = $this->attributes(
             $request->validated(),
             $request->file('image_url'),
-        ));
+            $package->image_url,
+        );
+
+        if ($request->exists('image_url') && blank($request->input('image_url'))) {
+            StoresPublicImage::delete($package->image_url);
+            $data['image_url'] = null;
+        }
+
+        $package->update($data);
         activity('package')->causedBy($request->user())->performedOn($package)->event('updated')->log('package_updated');
         return redirect()->route('packages.index')->with('success', 'packages.updated');
     }
@@ -297,58 +322,102 @@ class PackageController extends Controller
             ->all();
     }
 
-    private function networkTable(): LengthAwarePaginator
+    private function networkTable(?string $search = null): array
     {
         return Network::query()
+            ->when($search, function ($query) use ($search): void {
+                $query->where(function ($query) use ($search): void {
+                    $query
+                        ->where('name_en', 'like', '%' . $search . '%')
+                        ->orWhere('name_zh', 'like', '%' . $search . '%')
+                        ->orWhere('name_my', 'like', '%' . $search . '%');
+                });
+            })
             ->orderBy('name_en')
-            ->paginate(5, ['id', 'name_en', 'name_zh', 'name_my'], 'network_page')
-            ->withQueryString()
-            ->through(fn(Network $network) => [
+            ->get(['id', 'name_en', 'name_zh', 'name_my'])
+            ->map(fn(Network $network) => [
                 'id' => $network->id,
                 'name_en' => $network->name_en,
                 'name_zh' => $network->name_zh,
                 'name_my' => $network->name_my,
-            ]);
+            ])
+            ->values()
+            ->all();
     }
 
-    private function speedTable(): LengthAwarePaginator
+    private function speedTable(?string $search = null): array
     {
         return Speed::query()
+            ->when($search, function ($query) use ($search): void {
+                $query->where(
+                    'mbps',
+                    'like',
+                    '%' . $search . '%'
+                );
+            })
             ->orderBy('mbps')
-            ->paginate(5, ['id', 'mbps'], 'speed_page')
-            ->withQueryString()
-            ->through(fn(Speed $speed) => ['id' => $speed->id, 'mbps' => $speed->mbps]);
+            ->get(['id', 'mbps'])
+            ->map(
+                fn(Speed $speed) => [
+                    'id' => $speed->id,
+                    'mbps' => $speed->mbps,
+                ]
+            )
+            ->values()
+            ->all();
     }
 
-    private function termTable(): LengthAwarePaginator
+    private function termTable(?string $search = null): array
     {
         return Term::query()
+            ->when($search, function ($query) use ($search): void {
+                $query->where(
+                    'months',
+                    'like',
+                    '%' . $search . '%'
+                );
+            })
             ->orderBy('months')
-            ->paginate(5, ['id', 'months'], 'term_page')
-            ->withQueryString()
-            ->through(fn(Term $term) => ['id' => $term->id, 'months' => $term->months]);
+            ->get(['id', 'months'])
+            ->map(
+                fn(Term $term) => [
+                    'id' => $term->id,
+                    'months' => $term->months,
+                ]
+            )
+            ->values()
+            ->all();
     }
 
-    private function addonTable(): LengthAwarePaginator
+    private function addonTable(?string $search = null): array
     {
         return Addon::query()
+            ->when($search, function ($query) use ($search): void {
+                $query->where(function ($query) use ($search): void {
+                    $query
+                        ->where('name_en', 'like', '%' . $search . '%')
+                        ->orWhere('name_zh', 'like', '%' . $search . '%')
+                        ->orWhere('name_my', 'like', '%' . $search . '%');
+                });
+            })
             ->orderBy('name_en')
-            ->paginate(5, [
+            ->get([
                 'id',
                 'name_en',
                 'name_zh',
                 'name_my',
                 'price',
                 'image_url',
-            ], 'addon_page')
-            ->withQueryString()
-            ->through(fn(Addon $addon) => [
+            ])
+            ->map(fn(Addon $addon) => [
                 'id' => $addon->id,
                 'name_en' => $addon->name_en,
                 'name_zh' => $addon->name_zh,
                 'name_my' => $addon->name_my,
                 'price' => (int) $addon->price,
                 'image_url' => StoresPublicImage::url($addon->image_url),
-            ]);
+            ])
+            ->values()
+            ->all();
     }
 }

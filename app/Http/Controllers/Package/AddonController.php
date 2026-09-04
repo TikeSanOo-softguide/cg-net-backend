@@ -38,7 +38,7 @@ class AddonController extends Controller
 
         return redirect()
             ->route('packages.index')
-            ->with('success', 'addons.created');
+            ->with('success', 'packages.addons.created');
     }
 
     public function update(
@@ -50,7 +50,7 @@ class AddonController extends Controller
 
         if ($request->hasFile('image_url')) {
             $data['image_url'] = StoresPublicImage::store($request->file('image_url'), 'cms/addons', $addon->image_url);
-        } elseif (array_key_exists('image_url', $data) && !isset($data['image_url'])) {
+        } elseif ($request->exists('image_url') && blank($request->input('image_url'))) {
             $data['image_url'] = null;
             StoresPublicImage::delete($addon->image_url);
         } else {
@@ -81,9 +81,20 @@ class AddonController extends Controller
         Addon $addon
     ): RedirectResponse {
         $addon->delete();
-
         return redirect()
             ->route('packages.index')
             ->with('success', 'packages.addons.deleted');
+    }
+
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $ids = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'distinct', 'exists:addons,id'],
+        ])['ids'];
+        $deleted = Addon::query()->whereIn('id', $ids)->delete();
+        return $deleted === 0
+            ? back()->withErrors(['delete' => 'common.bulk_delete_failed'])
+            : redirect()->route('packages.index')->with('success', 'packages.addons.bulk_deleted');
     }
 }

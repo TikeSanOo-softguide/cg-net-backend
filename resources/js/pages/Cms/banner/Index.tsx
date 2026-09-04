@@ -6,7 +6,7 @@ import { CmsIndexPage, type CmsFilters } from '@/components/cms/shared/CmsIndexP
 import type { Paginated } from '@/components/Pagination';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatDateTime } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 
 type Props = {
     items: Paginated<BannerItem>;
@@ -63,7 +63,6 @@ export default function BannersIndex({ items, filters }: Props) {
                     {
                         id: 'image',
                         header: imageLabels[locale],
-                        sortable: true,
                         className: 'font-medium',
                         cell: (row) => {
                             const imageUrl =
@@ -91,7 +90,6 @@ export default function BannersIndex({ items, filters }: Props) {
                     {
                         id: 'is_active',
                         header: t('common.status'),
-                        sortable: true,
                         mobile: 'badge',
                         cell: (row) => {
                             const expired = isExpired(row.end_date);
@@ -103,13 +101,13 @@ export default function BannersIndex({ items, filters }: Props) {
                         id: 'start_date',
                         header: t('cms.start_date'),
                         sortable: true,
-                        cell: (row) => formatDateTime(row.start_date) ?? '—',
+                        cell: (row) => formatDate(row.start_date) ?? '—',
                     },
                     {
                         id: 'end_date',
                         header: t('cms.end_date'),
                         sortable: true,
-                        cell: (row) => formatDateTime(row.end_date) ?? '—',
+                        cell: (row) => formatDate(row.end_date) ?? '—',
                     },
                 ]}
             />

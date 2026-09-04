@@ -124,7 +124,6 @@
         "todays_revenue": "Today's Revenue",
         "pending_requests": "Pending Service Requests",
         "recent_requests": "Recent Service Requests",
-        "today_requests": "Today Service Requests",
         "search_requests": "Search service requests...",
         "revenue": "Revenue",
         "new_signups": "New signups",
@@ -141,8 +140,6 @@
         "other": "Other",
         "request_levels": "Service requests",
         "request_levels_description": "Highest to lowest by type",
-        "request_levels_duration": "Duration · Last 30 days",
-        "no_request_data": "No service requests yet.",
         "bulk_deleted": "Selected service requests deleted",
         "bulk_delete_failed": "None of the selected service requests could be deleted.",
         "bulk_delete_partial": "Some selected service requests could not be deleted.",
@@ -315,41 +312,13 @@
         "delete_title": "Delete this app user?",
         "delete_description": "This user will no longer be able to sign in to the app.",
         "bulk_delete_title": "Delete selected app users?",
-        "phone_placeholder": "+959xxxxxxxx",
-        "broadband": "Broadband",
-        "connected": "Connected",
-        "not_connected": "Not connected",
-        "broadband_hint": "Connect or disconnect broadband accounts.",
-        "current_package": "Current package",
-        "current_package_hint": "Active plan on this user.",
-        "no_current_package": "No active package",
-        "package_history": "Package history",
-        "package_history_hint": "Past and active subscriptions.",
-        "top_up_history": "Top-up history",
-        "top_up_history_hint": "Redeemed top-up cards.",
-        "search_top_ups": "Search serial or amount",
-        "no_top_ups": "No top-up redemptions",
-        "serial_no": "Serial",
-        "validation": {
-            "name_required": "Please enter a name.",
-            "name_min": "Name must be at least 2 characters.",
-            "name_max": "Name may not be greater than 255 characters.",
-            "phone_required": "Please enter a phone number.",
-            "phone_invalid": "Enter a valid Myanmar (+959), Thailand (+66), or China (+86) mobile number.",
-            "phone_taken": "This phone number is already in use.",
-            "password_required": "Please enter a password.",
-            "password_min": "Password must be at least 8 characters.",
-            "password_confirmation_required": "Please confirm the password.",
-            "password_confirmation_mismatch": "Password confirmation does not match.",
-            "status_required": "Please select a status."
-        }
+        "phone_placeholder": "+959xxxxxxxx"
     },
     "change_plan": {
         "packages": "Requested Packages",
         "search_placeholder": "Search by account_no, app username",
         "preferred_date": "Preferred date",
         "overdue": "Overdue warning!",
-        "approved_by": "Approved By",
         "request_details": "Change Plan Request Details",
         "request_details_description": "View the details of this change plan request.",
         "urgent_processing": "Please process as soon as possible.",
@@ -815,6 +784,7 @@
         "updated": "Package updated",
         "deleted": "Package deleted",
         "delete_title": "Delete this package?",
+        "bulk_deleted": "Selected package deleted",
         "delete_description": "This package will no longer be available for customers.",
         "bulk_delete_title": "Delete selected packages?",
         "months_placeholder": "Enter number of months",
@@ -833,7 +803,9 @@
             "deleted": "Network deleted",
             "create": "Create network",
             "edit": "Edit network",
-            "description": "Create or update a network"
+            "description": "Create or update a network",
+            "search_placeholder": "Search network name",
+            "bulk_deleted": "Selected network deleted"
         },
         "addons": {
             "title": "Add-ons",
@@ -842,7 +814,9 @@
             "deleted": "Add-on deleted",
             "create": "Create add-on",
             "edit": "Edit add-on",
-            "description": "Create or update addons"
+            "description": "Create or update addons",
+            "search_placeholder": "Search addons name",
+            "bulk_deleted": "Selected addons deleted"
         },
         "speeds": {
             "title": "Speeds",
@@ -851,7 +825,9 @@
             "deleted": "Speed deleted",
             "create": "Create speed",
             "edit": "Edit speed",
-            "description": "Create or update speed"
+            "description": "Create or update speed",
+            "search_placeholder": "Search speed name",
+            "bulk_deleted": "Selected speed deleted"
         },
         "terms": {
             "title": "Terms",
@@ -860,7 +836,9 @@
             "deleted": "Term deleted",
             "create": "Create term",
             "edit": "Edit term",
-            "description": "Create or update terms"
+            "description": "Create or update terms",
+            "search_placeholder": "Search terms name",
+            "bulk_deleted": "Selected terms deleted"
         },
         "validation": {
             "network_required": "Please select a network.",

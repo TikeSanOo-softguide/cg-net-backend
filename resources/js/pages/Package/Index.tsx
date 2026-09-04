@@ -7,19 +7,19 @@ import {
     NetworkIcon,
     PuzzleIcon,
     SquarePenIcon,
+    StarIcon,
     Trash2Icon,
     type LucideIcon,
 } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
+import { MultiSelect } from '@/components/MultiSelect';
 import type { Paginated } from '@/components/Pagination';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
-import { FormControl } from '@/components/ui/form-control';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { visitBulkDelete } from '@/lib/bulk-delete';
@@ -35,6 +35,8 @@ import type { PackageDetailMember } from '@/components/package/PackageDetailDial
 
 import type { PackageOption } from '@/components/package/PackageForm';
 import { Card } from '@/components/ui/card';
+import { truncateText } from '@/lib/utils';
+import { FormControl } from '@/components/ui/form-control';
 
 type PackageRow = PackageDetailMember;
 
@@ -44,6 +46,15 @@ type Filters = {
     recommended: string;
     sort: string;
     direction: 'asc' | 'desc';
+    network_search?: string;
+    speed_search?: string;
+    term_search?: string;
+    addon_search?: string;
+    network_ids?: string[];
+    speed_ids?: string[];
+    term_ids?: string[];
+    addon_ids?: string[];
+    status_filters?: string[];
 };
 
 type PackageIndexProps = {
@@ -53,10 +64,10 @@ type PackageIndexProps = {
     speeds: PackageOption[];
     terms: PackageOption[];
     addons: AddonOption[];
-    networkTable: Paginated<NetworkOption>;
-    speedTable: Paginated<SpeedOption>;
-    termTable: Paginated<TermOption>;
-    addonTable: Paginated<AddonOption>;
+    networkTable: NetworkOption[];
+    speedTable: SpeedOption[];
+    termTable: TermOption[];
+    addonTable: AddonOption[];
 };
 
 export type NetworkOption = {
@@ -97,6 +108,11 @@ function visitIndex(filters: Filters) {
         '/packages',
         {
             search: filters.search || undefined,
+            network_search: filters.network_search || undefined,
+            speed_search: filters.speed_search || undefined,
+            term_search: filters.term_search || undefined,
+            addon_search: filters.addon_search || undefined,
+            status_filters: filters.status_filters?.length ? filters.status_filters : undefined,
             status: filters.status || undefined,
             recommended: filters.recommended || undefined,
             sort: filters.sort,
@@ -125,6 +141,25 @@ export default function PackageIndex({
     const { t, locale } = useTranslation();
     const can = useCan();
     const [search, setSearch] = useState(filters.search);
+    const [networkSearch, setNetworkSearch] = useState('');
+    const [speedSearch, setSpeedSearch] = useState('');
+    const [termSearch, setTermSearch] = useState('');
+    const [addonSearch, setAddonSearch] = useState('');
+    const [networkIds, setNetworkIds] = useState(filters.network_ids ?? []);
+    const [speedIds, setSpeedIds] = useState(filters.speed_ids ?? []);
+    const [termIds, setTermIds] = useState(filters.term_ids ?? []);
+    const [addonIds, setAddonIds] = useState(filters.addon_ids ?? []);
+    const [statusFilters, setStatusFilters] = useState(
+        filters.status_filters ??
+            [
+                filters.status === '1' ? 'active' : filters.status === '0' ? 'inactive' : '',
+                filters.recommended === '1' ? 'recommended' : '',
+            ].filter(Boolean),
+    );
+    const networkDebounce = useRef<number>(0);
+    const speedDebounce = useRef<number>(0);
+    const termDebounce = useRef<number>(0);
+    const addonDebounce = useRef<number>(0);
     const [pendingIds, setPendingIds] = useState<number[]>([]);
     const debounce = useRef<number>(0);
     const canDelete = can('packages.delete');
@@ -135,118 +170,51 @@ export default function PackageIndex({
         item: ReferenceFormRow | null;
     } | null>(null);
     const [referenceDelete, setReferenceDelete] = useState<{ kind: ReferenceFormKind; id: number } | null>(null);
+    const iconClass = 'size-7 shrink-0 rounded-[6px] bg-primary/12 p-1 text-primary';
+    const Icon = ({ icon: Icon }: { icon: LucideIcon }) => <Icon className={iconClass} strokeWidth={1.8} />;
 
-    const quickTables: QuickTable[] = [
-        {
-            key: 'network' as const,
-            title: t('packages.network'),
-            icon: NetworkIcon,
-            data: networkTable.data,
-            pagination: networkTable,
-            getRowId: (row) => String(row.id),
-            searchValue: (row) => String((row as NetworkOption)[`name_${locale}`] ?? ''),
-            cell: (row) => (
-                <span className="inline-flex items-center gap-1.5">
-                    <NetworkIcon className="size-3.5 shrink-0 text-primary" strokeWidth={1.8} />
-                    {(row as NetworkOption)[`name_${locale}`] ?? '—'}
-                </span>
-            ),
-            onCreate: () =>
-                setReferenceForm({
-                    kind: 'network',
-                    item: null,
-                }),
-            onEdit: (row) =>
-                setReferenceForm({
-                    kind: 'network',
-                    item: row as ReferenceFormRow,
-                }),
-            onDelete: (row) =>
-                setReferenceDelete({
-                    kind: 'network',
-                    id: Number(row.id),
-                }),
-            createLabel: t('common.create'),
-        },
-        {
-            key: 'speed' as const,
-            title: t('packages.speed'),
-            icon: GaugeIcon,
-            data: speedTable.data,
-            pagination: speedTable,
-            getRowId: (row) => String(row.id),
-            searchValue: (row) => String((row as SpeedOption).mbps ?? ''),
-            cell: (row) => (
-                <span className="inline-flex items-center gap-1.5">
-                    <GaugeIcon className="size-3.5 shrink-0 text-primary" strokeWidth={1.8} />
-                    {(row as SpeedOption).mbps ? `${(row as SpeedOption).mbps} Mbps` : '—'}
-                </span>
-            ),
-            onCreate: () => setReferenceForm({ kind: 'speed', item: null }),
-            onEdit: (row) => setReferenceForm({ kind: 'speed', item: row as ReferenceFormRow }),
-            onDelete: (row) => setReferenceDelete({ kind: 'speed', id: Number(row.id) }),
-            createLabel: t('common.create'),
-        },
-        {
-            key: 'term' as const,
-            title: t('packages.term'),
-            icon: CalendarDaysIcon,
-            data: termTable.data,
-            pagination: termTable,
-            getRowId: (row) => String(row.id),
-            searchValue: (row) => String((row as TermOption).months ?? ''),
-            cell: (row) => (
-                <span className="inline-flex items-center gap-1.5">
-                    <CalendarDaysIcon className="size-3.5 shrink-0 text-primary" strokeWidth={1.8} />
-                    {(row as TermOption).months
-                        ? `${(row as TermOption).months} ${(row as TermOption).months === 1 ? 'Month' : 'Months'}`
-                        : '—'}
-                </span>
-            ),
-            onCreate: () => setReferenceForm({ kind: 'term', item: null }),
-            onEdit: (row) => setReferenceForm({ kind: 'term', item: row as ReferenceFormRow }),
-            onDelete: (row) => setReferenceDelete({ kind: 'term', id: Number(row.id) }),
-            createLabel: t('common.create'),
-        },
-        {
-            key: 'addon' as const,
-            title: t('packages.addon'),
-            icon: PuzzleIcon,
-            data: addonTable.data,
-            pagination: addonTable,
-            getRowId: (row) => String(row.id),
-            searchValue: (row) => String((row as AddonOption)[`name_${locale}`] ?? ''),
-            cell: (row) => (
-                <span className="inline-flex items-center gap-1.5">
-                    <PuzzleIcon className="size-3.5 shrink-0 text-primary" strokeWidth={1.8} />
-                    {(row as AddonOption)[`name_${locale}`] ?? '—'}
-                </span>
-            ),
-            onCreate: () =>
-                setReferenceForm({
-                    kind: 'addon',
-                    item: null,
-                }),
-            onEdit: (row) =>
-                setReferenceForm({
-                    kind: 'addon',
-                    item: row as ReferenceFormRow,
-                }),
-            onDelete: (row) =>
-                setReferenceDelete({
-                    kind: 'addon',
-                    id: Number(row.id),
-                }),
-            createLabel: t('common.create'),
-        },
-    ];
     useEffect(() => {
         setSearch(filters.search);
     }, [filters.search]);
 
     useEffect(() => {
+        setNetworkSearch(filters.network_search ?? '');
+    }, [filters.network_search]);
+
+    useEffect(() => {
+        setSpeedSearch(filters.speed_search ?? '');
+    }, [filters.speed_search]);
+
+    useEffect(() => {
+        setTermSearch(filters.term_search ?? '');
+    }, [filters.term_search]);
+
+    useEffect(() => {
+        setAddonSearch(filters.addon_search ?? '');
+    }, [filters.addon_search]);
+
+    useEffect(() => setNetworkIds(filters.network_ids ?? []), [filters.network_ids]);
+    useEffect(() => setSpeedIds(filters.speed_ids ?? []), [filters.speed_ids]);
+    useEffect(() => setTermIds(filters.term_ids ?? []), [filters.term_ids]);
+    useEffect(() => setAddonIds(filters.addon_ids ?? []), [filters.addon_ids]);
+    useEffect(() => {
+        setStatusFilters(
+            filters.status_filters ??
+                [
+                    filters.status === '1' ? 'active' : filters.status === '0' ? 'inactive' : '',
+                    filters.recommended === '1' ? 'recommended' : '',
+                ].filter(Boolean),
+        );
+    }, [filters.recommended, filters.status, filters.status_filters]);
+
+    useEffect(() => {
         return () => {
             window.clearTimeout(debounce.current);
+            window.clearTimeout(debounce.current);
+            window.clearTimeout(networkDebounce.current);
+            window.clearTimeout(speedDebounce.current);
+            window.clearTimeout(termDebounce.current);
+            window.clearTimeout(addonDebounce.current);
         };
     }, []);
 
@@ -258,60 +226,385 @@ export default function PackageIndex({
                 <PageHeader />
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    {quickTables.map((table) => (
-                        <DataTable
-                            key={table.key}
-                            className="min-w-0"
-                            numbered={false}
-                            title={table.title}
-                            data={table.data}
-                            pagination={table.pagination}
-                            getRowId={table.getRowId}
-                            searchPlaceholder={t('dashboard.search_requests')}
-                            onCreate={can('packages.create') ? table.onCreate : undefined}
-                            createLabel={table.createLabel}
-                            actions={(row) => (
-                                <>
-                                    {can('packages.update') ? (
-                                        <TableActionButton
-                                            label={t('common.edit')}
-                                            icon={SquarePenIcon}
-                                            tone="edit"
-                                            onClick={(event) => {
-                                                event.stopPropagation();
-                                                table.onEdit(row as PackageOption);
-                                            }}
-                                        />
-                                    ) : null}
+                    <DataTable
+                        data={networkTable}
+                        className={networkTable.length > 5 ? 'max-h-90 overflow-y-auto' : undefined}
+                        getRowId={(row) => String(row.id)}
+                        search={networkSearch}
+                        onSearchChange={(value) => {
+                            setNetworkSearch(value);
+                            if (networkDebounce.current) {
+                                window.clearTimeout(networkDebounce.current);
+                            }
+                            networkDebounce.current = window.setTimeout(() => {
+                                visitIndex({
+                                    ...filters,
+                                    network_search: value,
+                                });
+                            }, 300);
+                        }}
+                        searchPlaceholder={t('packages.networks.search_placeholder')}
+                        sort={filters.sort}
+                        direction={filters.direction}
+                        onSort={(column) => {
+                            const nextDirection =
+                                filters.sort === column && filters.direction === 'asc' ? 'desc' : 'asc';
 
-                                    {canDelete ? (
-                                        <TableActionButton
-                                            label={t('common.delete')}
-                                            icon={Trash2Icon}
-                                            tone="danger"
-                                            onClick={(event) => {
-                                                event.stopPropagation();
-                                                table.onDelete(row as PackageOption);
-                                            }}
+                            visitIndex({
+                                ...filters,
+                                sort: column,
+                                direction: nextDirection,
+                            });
+                        }}
+                        onCreate={() =>
+                            setReferenceForm({
+                                kind: 'network',
+                                item: null,
+                            })
+                        }
+                        createLabel={t('networks.create')}
+                        onBulkDelete={
+                            canDelete ? (ids) => visitBulkDelete('/networks/bulk-destroy', ids.map(Number)) : undefined
+                        }
+                        bulkDeleteTitle={t('networks.bulk_delete_title')}
+                        actions={(row) => (
+                            <>
+                                {can('networks.update') ? (
+                                    <TableActionButton
+                                        label={t('common.edit')}
+                                        icon={SquarePenIcon}
+                                        tone="edit"
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+
+                                            setReferenceForm({
+                                                kind: 'network',
+                                                item: row as ReferenceFormRow,
+                                            });
+                                        }}
+                                    />
+                                ) : null}
+
+                                {canDelete ? (
+                                    <TableActionButton
+                                        label={t('common.delete')}
+                                        icon={Trash2Icon}
+                                        tone="danger"
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            setReferenceDelete({ kind: 'network', id: row.id });
+                                        }}
+                                    />
+                                ) : null}
+                            </>
+                        )}
+                        columns={[
+                            {
+                                id: 'network',
+                                header: t('packages.network'),
+                                className: 'font-medium',
+                                mobile: 'title',
+                                sortable: true,
+                                searchValue: (row) =>
+                                    String(
+                                        locale === 'en'
+                                            ? (row.name_en ?? '')
+                                            : locale === 'zh'
+                                              ? (row.name_zh ?? '')
+                                              : (row.name_my ?? ''),
+                                    ),
+                                cell: (row) => (
+                                    <span className="inline-flex items-center gap-1.5">
+                                        <NetworkIcon
+                                            className="size-7 shrink-0 rounded-[6px] bg-primary/12 p-1 text-primary"
+                                            strokeWidth={1.8}
                                         />
-                                    ) : null}
-                                </>
-                            )}
-                            columns={[
-                                {
-                                    id: table.key,
-                                    header: table.title,
-                                    className: 'font-medium',
-                                    mobile: 'title',
-                                    searchValue: table.searchValue,
-                                    cell: (row) => {
-                                        const Icon = table.icon;
-                                        return <div className="flex items-center gap-2">{table.cell(row)}</div>;
-                                    },
-                                },
-                            ]}
-                        />
-                    ))}
+                                        {truncateText(
+                                            locale === 'en'
+                                                ? (row.name_en ?? '—')
+                                                : locale === 'zh'
+                                                  ? (row.name_zh ?? '—')
+                                                  : (row.name_my ?? '—'),
+                                            50,
+                                        )}
+                                    </span>
+                                ),
+                            },
+                        ]}
+                    />
+                    <DataTable
+                        data={speedTable}
+                        className={speedTable.length > 5 ? 'max-h-90 overflow-y-auto' : undefined}
+                        getRowId={(row) => String(row.id)}
+                        search={speedSearch}
+                        onSearchChange={(value) => {
+                            setSpeedSearch(value);
+                            if (speedDebounce.current) {
+                                window.clearTimeout(speedDebounce.current);
+                            }
+                            speedDebounce.current = window.setTimeout(() => {
+                                visitIndex({
+                                    ...filters,
+                                    speed_search: value,
+                                });
+                            }, 300);
+                        }}
+                        searchPlaceholder={t('packages.speeds.search_placeholder')}
+                        sort={filters.sort}
+                        direction={filters.direction}
+                        onSort={(column) => {
+                            const nextDirection =
+                                filters.sort === column && filters.direction === 'asc' ? 'desc' : 'asc';
+                            visitIndex({
+                                ...filters,
+                                sort: column,
+                                direction: nextDirection,
+                            });
+                        }}
+                        onCreate={() =>
+                            setReferenceForm({
+                                kind: 'speed',
+                                item: null,
+                            })
+                        }
+                        createLabel={t('packages.speeds.create')}
+                        onBulkDelete={
+                            canDelete ? (ids) => visitBulkDelete('/speeds/bulk-destroy', ids.map(Number)) : undefined
+                        }
+                        bulkDeleteTitle={t('speeds.bulk_delete_title')}
+                        actions={(row) => (
+                            <>
+                                {can('speeds.update') ? (
+                                    <TableActionButton
+                                        label={t('common.edit')}
+                                        icon={SquarePenIcon}
+                                        tone="edit"
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            setReferenceForm({
+                                                kind: 'speed',
+                                                item: row as ReferenceFormRow,
+                                            });
+                                        }}
+                                    />
+                                ) : null}
+
+                                {canDelete ? (
+                                    <TableActionButton
+                                        label={t('common.delete')}
+                                        icon={Trash2Icon}
+                                        tone="danger"
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            setReferenceDelete({ kind: 'speed', id: row.id });
+                                        }}
+                                    />
+                                ) : null}
+                            </>
+                        )}
+                        columns={[
+                            {
+                                id: 'speed',
+                                header: t('packages.speed'),
+                                className: 'font-medium',
+                                mobile: 'title',
+                                sortable: true,
+                                searchValue: (row) => String((row as SpeedOption).mbps ?? ''),
+                                cell: (row) => (
+                                    <span className="inline-flex items-center gap-1.5">
+                                        <Icon icon={GaugeIcon} />
+                                        {(row as SpeedOption).mbps ? `${(row as SpeedOption).mbps} Mbps` : '—'}
+                                    </span>
+                                ),
+                            },
+                        ]}
+                    />
+
+                    <DataTable
+                        data={termTable}
+                        className={termTable.length > 5 ? 'max-h-90 overflow-y-auto' : undefined}
+                        getRowId={(row) => String(row.id)}
+                        search={termSearch}
+                        onSearchChange={(value) => {
+                            setTermSearch(value);
+                            if (termDebounce.current) {
+                                window.clearTimeout(termDebounce.current);
+                            }
+                            termDebounce.current = window.setTimeout(() => {
+                                visitIndex({
+                                    ...filters,
+                                    term_search: value,
+                                });
+                            }, 300);
+                        }}
+                        searchPlaceholder={t('packages.terms.search_placeholder')}
+                        sort={filters.sort}
+                        direction={filters.direction}
+                        onSort={(column) => {
+                            const nextDirection =
+                                filters.sort === column && filters.direction === 'asc' ? 'desc' : 'asc';
+                            visitIndex({
+                                ...filters,
+                                sort: column,
+                                direction: nextDirection,
+                            });
+                        }}
+                        onCreate={() =>
+                            setReferenceForm({
+                                kind: 'term',
+                                item: null,
+                            })
+                        }
+                        createLabel={t('term.create')}
+                        onBulkDelete={
+                            canDelete ? (ids) => visitBulkDelete('/terms/bulk-destroy', ids.map(Number)) : undefined
+                        }
+                        bulkDeleteTitle={t('terms.bulk_delete_title')}
+                        actions={(row) => (
+                            <>
+                                {can('terms.update') ? (
+                                    <TableActionButton
+                                        label={t('common.edit')}
+                                        icon={SquarePenIcon}
+                                        tone="edit"
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            setReferenceForm({
+                                                kind: 'term',
+                                                item: row as ReferenceFormRow,
+                                            });
+                                        }}
+                                    />
+                                ) : null}
+
+                                {canDelete ? (
+                                    <TableActionButton
+                                        label={t('common.delete')}
+                                        icon={Trash2Icon}
+                                        tone="danger"
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            setReferenceDelete({ kind: 'term', id: row.id });
+                                        }}
+                                    />
+                                ) : null}
+                            </>
+                        )}
+                        columns={[
+                            {
+                                id: 'network',
+                                header: t('packages.network'),
+                                className: 'font-medium',
+                                mobile: 'title',
+                                sortable: true,
+                                searchValue: (row) => String((row as TermOption).months ?? ''),
+                                cell: (row) => (
+                                    <span className="inline-flex items-center gap-1.5">
+                                        <Icon icon={CalendarDaysIcon} />
+                                        {(row as TermOption).months
+                                            ? `${(row as TermOption).months} ${(row as TermOption).months === 1 ? 'Month' : 'Months'}`
+                                            : '—'}
+                                    </span>
+                                ),
+                            },
+                        ]}
+                    />
+
+                    <DataTable
+                        data={addonTable}
+                        className={addonTable.length > 5 ? 'max-h-90 overflow-y-auto' : undefined}
+                        getRowId={(row) => String(row.id)}
+                        search={addonSearch}
+                        onSearchChange={(value) => {
+                            setAddonSearch(value);
+                            if (addonDebounce.current) {
+                                window.clearTimeout(addonDebounce.current);
+                            }
+                            addonDebounce.current = window.setTimeout(() => {
+                                visitIndex({
+                                    ...filters,
+                                    addon_search: value,
+                                });
+                            }, 300);
+                        }}
+                        searchPlaceholder={t('packages.addons.search_placeholder')}
+                        sort={filters.sort}
+                        direction={filters.direction}
+                        onSort={(column) => {
+                            const nextDirection =
+                                filters.sort === column && filters.direction === 'asc' ? 'desc' : 'asc';
+                            visitIndex({
+                                ...filters,
+                                sort: column,
+                                direction: nextDirection,
+                            });
+                        }}
+                        onCreate={() =>
+                            setReferenceForm({
+                                kind: 'addon',
+                                item: null,
+                            })
+                        }
+                        createLabel={t('packages.addons.create')}
+                        onBulkDelete={
+                            canDelete ? (ids) => visitBulkDelete('/addons/bulk-destroy', ids.map(Number)) : undefined
+                        }
+                        bulkDeleteTitle={t('addons.bulk_delete_title')}
+                        actions={(row) => (
+                            <>
+                                {can('addons.update') ? (
+                                    <TableActionButton
+                                        label={t('common.edit')}
+                                        icon={SquarePenIcon}
+                                        tone="edit"
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+
+                                            setReferenceForm({
+                                                kind: 'addon',
+                                                item: row as ReferenceFormRow,
+                                            });
+                                        }}
+                                    />
+                                ) : null}
+
+                                {canDelete ? (
+                                    <TableActionButton
+                                        label={t('common.delete')}
+                                        icon={Trash2Icon}
+                                        tone="danger"
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            setReferenceDelete({ kind: 'addon', id: row.id });
+                                        }}
+                                    />
+                                ) : null}
+                            </>
+                        )}
+                        columns={[
+                            {
+                                id: 'addon',
+                                header: t('packages.addon'),
+                                className: 'font-medium',
+                                mobile: 'title',
+                                sortable: true,
+                                searchValue: (row) =>
+                                    String(
+                                        locale === 'en'
+                                            ? (row.name_en ?? '')
+                                            : locale === 'zh'
+                                              ? (row.name_zh ?? '')
+                                              : (row.name_my ?? ''),
+                                    ),
+                                cell: (row) => (
+                                    <span className="inline-flex items-center gap-1.5">
+                                        <Icon icon={PuzzleIcon} />
+                                        {truncateText((row as AddonOption)[`name_${locale}`] ?? '—', 30)}
+                                    </span>
+                                ),
+                            },
+                        ]}
+                    />
                 </div>
 
                 <DataTable
@@ -376,7 +669,6 @@ export default function PackageIndex({
                                     tone="danger"
                                     onClick={(event) => {
                                         event.stopPropagation();
-
                                         setPendingIds([row.id]);
                                     }}
                                 />
@@ -384,36 +676,25 @@ export default function PackageIndex({
                         </>
                     )}
                     filters={
-                        <FormControl compact className="w-full shrink-0 sm:w-44">
-                            <Select
-                                value={
-                                    filters.recommended === '1'
-                                        ? 'recommended'
-                                        : filters.status === '1'
-                                          ? 'active'
-                                          : filters.status === '0'
-                                            ? 'inactive'
-                                            : 'all'
-                                }
-                                onValueChange={(value) =>
+                        <FormControl compact className="w-full shrink-0 sm:w-90">
+                            <MultiSelect
+                                values={statusFilters}
+                                options={[
+                                    { value: 'active', label: t('status.active') },
+                                    { value: 'inactive', label: t('status.inactive') },
+                                    { value: 'recommended', label: t('packages.recommended') },
+                                ]}
+                                placeholder={t('common.status')}
+                                onChange={(values) => {
+                                    setStatusFilters(values);
                                     visitIndex({
                                         ...filters,
-                                        status: value === 'active' ? '1' : value === 'inactive' ? '0' : '',
-                                        recommended: value === 'recommended' ? '1' : '',
-                                    })
-                                }
-                            >
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder={t('common.status')} />
-                                </SelectTrigger>
-
-                                <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
-                                    <SelectItem value="all">{t('common.all')}</SelectItem>
-                                    <SelectItem value="recommended">{t('packages.recommended')}</SelectItem>
-                                    <SelectItem value="active">{t('status.active')}</SelectItem>
-                                    <SelectItem value="inactive">{t('status.inactive')}</SelectItem>
-                                </SelectContent>
-                            </Select>
+                                        status: '',
+                                        recommended: '',
+                                        status_filters: values,
+                                    });
+                                }}
+                            />
                         </FormControl>
                     }
                     columns={[
@@ -424,11 +705,14 @@ export default function PackageIndex({
                             mobile: 'title',
                             cell: (row) => (
                                 <span>
-                                    {locale === 'en'
-                                        ? row.network?.name_en
-                                        : locale === 'zh'
-                                          ? row.network?.name_zh
-                                          : (row.network?.name_my ?? '—')}
+                                    {truncateText(
+                                        locale === 'en'
+                                            ? (row.network?.name_en ?? '—')
+                                            : locale === 'zh'
+                                              ? (row.network?.name_zh ?? '—')
+                                              : (row.network?.name_my ?? '—'),
+                                        50,
+                                    )}
                                 </span>
                             ),
                         },
@@ -436,6 +720,7 @@ export default function PackageIndex({
                             id: 'speed',
                             header: t('packages.speed'),
                             mobile: 'meta',
+                            sortable: true,
                             cell: (row) => <span>{row.speed?.mbps ?? '—'} Mbps</span>,
                         },
 
@@ -443,6 +728,7 @@ export default function PackageIndex({
                             id: 'term',
                             header: t('packages.term'),
                             mobile: 'meta',
+                            sortable: true,
                             cell: (row) => <span>{row.term?.months ?? '—'} Months</span>,
                         },
 
@@ -459,45 +745,22 @@ export default function PackageIndex({
                             sortable: true,
                             cell: (row) => <span>{row.installation_fee ?? '—'} Pts</span>,
                         },
-
-                        // {
-                        //     id: 'is_active',
-                        //     header: t('common.status'),
-                        //     sortable: true,
-                        //     cell: (row) => (
-                        //         <StatusBadge
-                        //             status={
-                        //                 row.is_active
-                        //                     ? 'active'
-                        //                     : 'inactive'
-                        //             }
-                        //         />
-                        //     ),
-                        // },
-
-                        // {
-                        //     id: 'recommended',
-                        //     header: t('packages.recommended'),
-                        //     cell: (row) =>
-                        //         row.recommended
-                        //             ? t('common.yes')
-                        //             : t('common.no'),
-                        // },
-
-                        // {
-                        //     id: 'created_at',
-                        //     header: t('customers.joined'),
-                        //     className:
-                        //         'text-muted-foreground',
-                        //     sortable: true,
-                        //     cell: (row) =>
-                        //         row.created_at ?? '—',
-                        // },
+                        {
+                            id: 'recommended',
+                            header: t('packages.recommended'),
+                            cell: (row) => (
+                                <StarIcon
+                                    className={`size-4 ${
+                                        row.recommended ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                    }`}
+                                    strokeWidth={1.8}
+                                />
+                            ),
+                        },
                     ]}
                 />
             </PageContent>
 
-            {/* Create / Edit Package Dialog */}
             <PackageFormDialog
                 open={formOpen}
                 onOpenChange={setFormOpen}
@@ -507,7 +770,6 @@ export default function PackageIndex({
                 terms={terms}
             />
 
-            {/* Delete Confirmation */}
             <ReferenceFormDialog
                 open={referenceForm !== null}
                 onOpenChange={(open) => {
