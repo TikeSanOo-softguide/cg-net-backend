@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\ServiceRequests;
+namespace App\Http\Controllers\ServiceRequest;
 
 use App\Enums\ChangePlanStatus;
 use App\Http\Controllers\Controller;

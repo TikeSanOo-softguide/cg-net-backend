@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\Package\TermController;
 use App\Http\Controllers\Api\Promotion\PromotionController;
 use App\Http\Controllers\Api\Region\RegionController;
 use App\Http\Controllers\Api\ServiceRequest\FailureReportController;
+use App\Http\Controllers\Api\ServiceRequest\ChangePlanRequestController;
 use App\Http\Controllers\Api\ServiceRequest\RelocationRequestController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -62,5 +63,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/create', [FailureReportController::class, 'store']);
         Route::put('/{failureReport}', [FailureReportController::class, 'update']);
         Route::delete('/{failureReport}', [FailureReportController::class, 'destroy']);
+    });
+    Route::prefix('change-plan-requests')->group(function () {
+        Route::get('/', [ChangePlanRequestController::class, 'index']);
+        Route::post('/create', [ChangePlanRequestController::class, 'store']);
+        Route::get('/{changePlanRequest}', [ChangePlanRequestController::class, 'show']);
+        Route::put('/{changePlanRequest}', [ChangePlanRequestController::class, 'update']);
+        Route::delete('/{changePlanRequest}', [ChangePlanRequestController::class, 'destroy']);
     });
 });
