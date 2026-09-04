@@ -6,6 +6,7 @@ import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import type { Paginated } from '@/components/Pagination';
 import { TableActionButton } from '@/components/TableActionButton';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useCan } from '@/hooks/useCan';
 import { visitBulkDelete } from '@/lib/bulk-delete';
 
 export type RegionFilters = {
@@ -57,6 +58,7 @@ export function RegionDataTable<T extends { id: number }>({
 }: RegionDataTableProps<T>) {
     const { t } = useTranslation();
     const [search, setSearch] = useState(filters.search);
+    const can = useCan();
 
     const [pendingIds, setPendingIds] = useState<number[]>([]);
     const [processing, setProcessing] = useState(false);
@@ -150,18 +152,23 @@ export function RegionDataTable<T extends { id: number }>({
                     onBulkDelete={(ids) => visitBulkDelete(`${destroyBase}/bulk-destroy`, ids.map(Number))}
                     actions={(row) => (
                         <>
-                            <TableActionButton
-                                label={t('common.edit')}
-                                icon={SquarePenIcon}
-                                tone="edit"
-                                onClick={onEdit ? () => onEdit(row) : undefined}
-                            />
-                            <TableActionButton
-                                label={t('common.delete')}
-                                icon={Trash2Icon}
-                                tone="danger"
-                                onClick={() => setPendingIds([row.id])}
-                            />
+                            {can('regions.update') ? (
+                                <TableActionButton
+                                    label={t('common.edit')}
+                                    icon={SquarePenIcon}
+                                    tone="edit"
+                                    onClick={onEdit ? () => onEdit(row) : undefined}
+                                />
+                            ) : null}
+
+                            {can('regions.delete') ? (
+                                <TableActionButton
+                                    label={t('common.delete')}
+                                    icon={Trash2Icon}
+                                    tone="danger"
+                                    onClick={() => setPendingIds([row.id])}
+                                />
+                            ) : null}
                         </>
                     )}
                     columns={columns}

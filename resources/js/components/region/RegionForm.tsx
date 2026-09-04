@@ -22,14 +22,10 @@ export type RegionFormValues = {
 
 type RegionFormProps = {
     type: RegionType;
-
     item: StateRow | RegionRow | AreaRow | null;
-
     states: StateRow[];
     regions: RegionRow[];
-
     initialValues: RegionFormValues;
-
     onClose: () => void;
 };
 

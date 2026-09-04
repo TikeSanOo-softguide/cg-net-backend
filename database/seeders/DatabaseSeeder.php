@@ -144,7 +144,7 @@ class DatabaseSeeder extends Seeder
         ];
 
         $users = collect($showcasePhones)
-            ->map(fn (array $row) => User::factory()->create($row))
+            ->map(fn(array $row) => User::factory()->create($row))
             ->concat(User::factory()->count(17)->create())
             ->values();
 
@@ -221,6 +221,7 @@ class DatabaseSeeder extends Seeder
     private function seedServiceRequests($users, $areas, $packages): void
     {
         $sample = $users->take(8)->values();
+        $admin = Admin::query()->first();
 
         foreach ([ReviewStatus::UnderReview, ReviewStatus::Approved, ReviewStatus::Rejected] as $i => $status) {
             $user = $sample[$i];
@@ -247,23 +248,48 @@ class DatabaseSeeder extends Seeder
 
         $planUser = $sample[0];
         $account = $planUser->broadbandAccounts()->first();
-        $current = $account->current_package_id;
-        $new = $packages->first(fn(Package $package) => $package->id !== $current) ?? $packages->last();
 
-        ChangePlanRequest::factory()->create([
-            'user_id' => $planUser->id,
-            'broadband_account_id' => $account->id,
-            'current_package_id' => $current,
-            'new_package_id' => $new->id,
-            'status' => ChangePlanStatus::UnderReview,
-        ]);
-        ChangePlanRequest::factory()->create([
-            'user_id' => $sample[1]->id,
-            'broadband_account_id' => $sample[1]->broadbandAccounts()->first()->id,
-            'current_package_id' => $sample[1]->broadbandAccounts()->first()->current_package_id,
-            'new_package_id' => $new->id,
-            'status' => ChangePlanStatus::Approved,
-        ]);
+        foreach ($users as $index => $user) {
+            $account = $user->broadbandAccounts()->first();
+
+            if (! $account) {
+                continue;
+            }
+
+            $currentPackageId = $account->current_package_id;
+            $newPackage = Package::query()
+                ->whereKeyNot($currentPackageId)
+                ->first();
+
+            if (! $newPackage) {
+                continue;
+            }
+
+            $status = $index % 2 === 0
+                ? ChangePlanStatus::UnderReview
+                : ChangePlanStatus::Approved;
+
+            $adminId = $status === ChangePlanStatus::Approved
+                ? $admin?->id
+                : null;
+
+            ChangePlanRequest::query()->firstOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'broadband_account_id' => $account->id,
+                    'current_package_id' => $currentPackageId,
+                    'new_package_id' => $newPackage->id,
+                    'preferred_date' => now()->addDays($index + 7)->toDateString(),
+                ],
+                [
+                    'contact_name' => $user->name,
+                    'contact_phone' => $user->phone ?? '0912345678',
+                    'note' => 'Seeded change plan request.',
+                    'status' => $status,
+                    'admin_id' => $adminId,
+                ]
+            );
+        }
     }
 
     /**

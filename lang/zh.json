@@ -314,6 +314,24 @@
         "bulk_delete_title": "删除所选应用用户？",
         "phone_placeholder": "+959xxxxxxxx"
     },
+    "change_plan": {
+        "packages": "申请的套餐",
+        "search_placeholder": "按账号编号或应用用户名搜索",
+        "preferred_date": "首选日期",
+        "overdue": "逾期警告！",
+        "request_details": "套餐变更申请详情",
+        "request_details_description": "查看此套餐变更申请的详细信息。",
+        "urgent_processing": "请尽快处理。",
+        "contact": "联系信息",
+        "broadband_account": "宽带账户",
+        "migration": "套餐变更",
+        "note": "备注",
+        "current_plan": "当前套餐",
+        "requested_plan": "申请套餐",
+        "current_status": "当前状态",
+        "no_note": "未提供备注",
+        "status_updated": "申请状态已更新"
+    },
     "regions": {
         "name_en": "名称（英文）",
         "name_my": "名称（缅甸文）",

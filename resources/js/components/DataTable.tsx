@@ -12,7 +12,13 @@ import {
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { RadialBubbleActions } from '@/components/data-table/RadialBubbleActions';
-import { csvEscape, EDGE_CELL, EDGE_PAD, headerCellClass, toolbarFiltersWrapperClass } from '@/components/data-table/styles';
+import {
+    csvEscape,
+    EDGE_CELL,
+    EDGE_PAD,
+    headerCellClass,
+    toolbarFiltersWrapperClass,
+} from '@/components/data-table/styles';
 import { ColumnHeaderLabel, ToolbarIconButton } from '@/components/data-table/toolbar';
 import { Pagination, type Paginated } from '@/components/Pagination';
 import { SearchInput } from '@/components/SearchInput';
@@ -52,6 +58,7 @@ type DataTableProps<T> = {
     href?: (row: T) => string | undefined;
     onView?: (row: T) => void;
     actions?: (row: T) => ReactNode;
+    directActions?: boolean;
     numbered?: boolean;
     selectable?: boolean;
     selectedIds?: string[];
@@ -88,6 +95,7 @@ export function DataTable<T>({
     href,
     onView,
     actions,
+    directActions = false,
     numbered = true,
     selectable,
     selectedIds: selectedIdsProp,
@@ -191,8 +199,8 @@ export function DataTable<T>({
             return null;
         }
 
-        return (
-            <RadialBubbleActions>
+        const actionContent = (
+            <>
                 {canView ? (
                     <TableActionButton
                         label={t('common.view')}
@@ -209,7 +217,13 @@ export function DataTable<T>({
                     />
                 ) : null}
                 {actions?.(row)}
-            </RadialBubbleActions>
+            </>
+        );
+
+        return directActions ? (
+            <div className="flex items-center justify-center gap-1">{actionContent}</div>
+        ) : (
+            <RadialBubbleActions>{actionContent}</RadialBubbleActions>
         );
     };
 
@@ -312,7 +326,12 @@ export function DataTable<T>({
                         <CardTitle className="text-[13px] font-semibold tracking-tight sm:text-sm">{title}</CardTitle>
                     ) : null}
                     <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
-                        <div className={cn('flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center', toolbarFiltersWrapperClass)}>
+                        <div
+                            className={cn(
+                                'flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center',
+                                toolbarFiltersWrapperClass,
+                            )}
+                        >
                             {filters}
                             <SearchInput
                                 value={searchValue}
@@ -451,10 +470,7 @@ export function DataTable<T>({
                                                 const selected = selectedIds.includes(id);
 
                                                 return (
-                                                    <TableRow
-                                                        key={id}
-                                                        data-state={selected ? 'selected' : undefined}
-                                                    >
+                                                    <TableRow key={id} data-state={selected ? 'selected' : undefined}>
                                                         {canSelect ? (
                                                             <TableCell className={cn(EDGE_CELL, 'w-10 pr-0')}>
                                                                 <TableCheckbox
