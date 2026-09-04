@@ -16,14 +16,10 @@ class ChangePlanRequestController extends Controller
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search'));
-        $status = $request->string('status')->toString();
-        $sort = $request->string('sort')->toString();
-        $direction = $request->string('direction')->toString() === 'asc' ? 'asc' : 'desc';
-        $sortable = ['preferred_date', 'status', 'created_at'];
+        $status = $request->has('status')
+            ? $request->string('status')->toString()
+            : ChangePlanStatus::UnderReview->value;
 
-        if (! in_array($sort, $sortable, true)) {
-            $sort = 'created_at';
-        }
         $changePlanRequests = ChangePlanRequest::query()
             ->with([
                 'user:id,name,phone',
@@ -49,8 +45,8 @@ class ChangePlanRequestController extends Controller
                 $status !== '' && in_array($status, array_column(ChangePlanStatus::cases(), 'value'), true),
                 fn($query) => $query->where('status', $status),
             )
-            ->latest()
-            ->orderBy($sort, $direction)
+            ->orderBy('preferred_date')
+            ->latest('id')
             ->paginate(10)
             ->withQueryString();
 
@@ -59,8 +55,6 @@ class ChangePlanRequestController extends Controller
             'filters' => [
                 'search' => $search,
                 'status' => $status,
-                'sort' => $sort,
-                'direction' => $direction,
             ],
             'statuses' => array_column(ChangePlanStatus::cases(), 'value'),
         ]);

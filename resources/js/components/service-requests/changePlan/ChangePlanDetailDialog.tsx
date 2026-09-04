@@ -13,7 +13,6 @@ import {
 import { FormDialog } from '@/components/FormDialog';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
 import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
 import { cn, formatDate } from '@/lib/utils';
@@ -72,12 +71,20 @@ export function ChangePlanDetailDialog({
 }: ChangePlanDetailDialogProps) {
     const { t } = useTranslation();
     const { data, setData, patch, processing } = useForm({
-        status: request?.status || '',
+        status:
+            request?.status === CHANGE_PLAN_STATUS.UNDER_REVIEW
+                ? CHANGE_PLAN_STATUS.APPROVED
+                : CHANGE_PLAN_STATUS.UNDER_REVIEW,
     });
 
     useEffect(() => {
-        if (request?.status) {
-            setData('status', request.status);
+        if (request) {
+            setData(
+                'status',
+                request.status === CHANGE_PLAN_STATUS.UNDER_REVIEW
+                    ? CHANGE_PLAN_STATUS.APPROVED
+                    : CHANGE_PLAN_STATUS.UNDER_REVIEW,
+            );
         }
     }, [request?.id, request?.status]);
 
@@ -95,7 +102,10 @@ export function ChangePlanDetailDialog({
         request?.preferred_date &&
         new Date(request.preferred_date) < new Date();
 
-    const isButtonDisabled = processing || !request || (data.status || request.status) === request.status;
+    const nextStatus =
+        request?.status === CHANGE_PLAN_STATUS.UNDER_REVIEW
+            ? CHANGE_PLAN_STATUS.APPROVED
+            : CHANGE_PLAN_STATUS.UNDER_REVIEW;
 
     return (
         <FormDialog
@@ -223,30 +233,13 @@ export function ChangePlanDetailDialog({
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <Select
-                                value={data.status || request.status}
-                                onValueChange={(val) => setData('status', val)}
-                            >
-                                <SelectTrigger className="w-40 h-9 text-xs">
-                                    <SelectValue placeholder={t('common.select_status')} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {statuses.map((status) => (
-                                        <SelectItem key={status} value={status} className="text-xs">
-                                            {t(`status.${status}`)}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-
                             <Button
                                 type="button"
                                 size="sm"
-                                disabled={isButtonDisabled}
                                 onClick={handleStatusUpdate}
                                 className="h-9 px-4 text-xs font-semibold"
                             >
-                                {t('common.update')}
+                                {t(`status.${nextStatus}`)}
                             </Button>
                         </div>
                     </div>

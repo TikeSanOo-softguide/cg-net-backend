@@ -15,14 +15,13 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { Badge } from '@/components/ui/badge';
 import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn, formatDate } from '@/lib/utils';
 
 type Filters = {
     search: string;
     status: string;
-    sort: string;
-    direction: 'asc' | 'desc';
 };
 
 type Props = {
@@ -48,9 +47,7 @@ export default function ChangePlanIndex({ requests, filters, statuses }: Props) 
             '/service-requests/change-plan',
             {
                 search: (next.search ?? filters.search) || undefined,
-                status: (next.status ?? filters.status) || undefined,
-                sort: next.sort ?? filters.sort,
-                direction: next.direction ?? filters.direction,
+                status: next.status ?? filters.status,
             },
             { preserveState: true, preserveScroll: true, replace: true },
         );
@@ -83,20 +80,11 @@ export default function ChangePlanIndex({ requests, filters, statuses }: Props) 
                     onSearchChange={onSearchChange}
                     searchPlaceholder={t('change_plan.search_placeholder')}
                     pagination={requests}
-                    sort={filters.sort}
-                    direction={filters.direction}
-                    onSort={(column) => {
-                        const nextDirection = filters.sort === column && filters.direction === 'asc' ? 'desc' : 'asc';
-                        visit({ sort: column, direction: nextDirection });
-                    }}
                     onView={(row) => setSelectedRequest(row)}
                     directActions
                     filters={
                         <FormControl icon={WifiIcon} compact className="w-full shrink-0 sm:w-48">
-                            <Select
-                                value={filters.status || 'all'}
-                                onValueChange={(status) => visit({ status: status === 'all' ? '' : status })}
-                            >
+                            <Select value={filters.status || 'all'} onValueChange={(status) => visit({ status })}>
                                 <SelectTrigger className="w-full">
                                     <SelectValue placeholder={t('common.status')} />
                                 </SelectTrigger>
@@ -188,9 +176,9 @@ export default function ChangePlanIndex({ requests, filters, statuses }: Props) 
                             cell: (request) => (
                                 <div className="flex flex-col items-start gap-1">
                                     <StatusBadge status={request.status} />
-                                    {request.admin && (
+                                    {request.status === CHANGE_PLAN_STATUS.APPROVED && request.admin && (
                                         <span className="text-[11px] text-muted-foreground">
-                                            Approved By: {request.admin.username}
+                                            {t('change_plan.approved_by')}: {request.admin.username}
                                         </span>
                                     )}
                                 </div>
