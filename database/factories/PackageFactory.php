@@ -16,7 +16,7 @@ class PackageFactory extends Factory
     public function definition(): array
     {
         return [
-            'network_id' => Network::factory(),
+            'network_id' => Network::inRandomOrder()->value('id'),
             'speed_id' => Speed::factory(),
             'term_id' => Term::factory(),
 

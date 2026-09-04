@@ -16,6 +16,7 @@ use App\Models\Area;
 use App\Models\Banner;
 use App\Models\BroadbandAccount;
 use App\Models\Category;
+use App\Models\ChangePasswordRequest;
 use App\Models\ChangePlanRequest;
 use App\Models\Contact;
 use App\Models\CpeDevice;
@@ -252,26 +253,20 @@ class DatabaseSeeder extends Seeder
         foreach ($users as $index => $user) {
             $account = $user->broadbandAccounts()->first();
 
-            if (! $account) {
+            if (!$account) {
                 continue;
             }
 
             $currentPackageId = $account->current_package_id;
-            $newPackage = Package::query()
-                ->whereKeyNot($currentPackageId)
-                ->first();
+            $newPackage = Package::query()->whereKeyNot($currentPackageId)->first();
 
-            if (! $newPackage) {
+            if (!$newPackage) {
                 continue;
             }
 
-            $status = $index % 2 === 0
-                ? ChangePlanStatus::UnderReview
-                : ChangePlanStatus::Approved;
+            $status = $index % 2 === 0 ? ChangePlanStatus::UnderReview : ChangePlanStatus::Approved;
 
-            $adminId = $status === ChangePlanStatus::Approved
-                ? $admin?->id
-                : null;
+            $adminId = $status === ChangePlanStatus::Approved ? $admin?->id : null;
 
             ChangePlanRequest::query()->firstOrCreate(
                 [
@@ -279,7 +274,9 @@ class DatabaseSeeder extends Seeder
                     'broadband_account_id' => $account->id,
                     'current_package_id' => $currentPackageId,
                     'new_package_id' => $newPackage->id,
-                    'preferred_date' => now()->addDays($index + 7)->toDateString(),
+                    'preferred_date' => now()
+                        ->addDays($index + 7)
+                        ->toDateString(),
                 ],
                 [
                     'contact_name' => $user->name,
@@ -287,9 +284,12 @@ class DatabaseSeeder extends Seeder
                     'note' => 'Seeded change plan request.',
                     'status' => $status,
                     'admin_id' => $adminId,
-                ]
+                ],
             );
         }
+        ChangePasswordRequest::factory()->count(10)->underReview()->create();
+        ChangePasswordRequest::factory()->count(6)->approved()->create();
+        ChangePasswordRequest::factory()->count(4)->rejected()->create();
     }
 
     /**

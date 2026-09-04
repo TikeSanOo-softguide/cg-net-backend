@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\BannerType;
 use App\Models\Banner;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -17,6 +18,7 @@ class BannerFactory extends Factory
             'image_url_zh' => fake()->imageUrl(),
             'image_url_my' => fake()->imageUrl(),
             'sort_order' => fake()->numberBetween(1, 20),
+            'type' => fake()->randomElement(BannerType::cases()),
             'is_active' => true,
             'start_date' => now()->subDay()->toDateString(),
             'end_date' => now()->addMonth()->toDateString(),

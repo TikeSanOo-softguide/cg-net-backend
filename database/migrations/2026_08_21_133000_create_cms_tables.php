@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::create('banners', function (Blueprint $table) {
@@ -15,6 +14,7 @@ return new class extends Migration
             $table->string('image_url_my');
             $table->boolean('is_active')->default(true)->index();
             $table->unsignedInteger('sort_order')->default(0)->index();
+            $table->string('type')->index();
             $table->date('start_date')->nullable()->index();
             $table->date('end_date')->nullable()->index();
             $table->timestamps();

@@ -193,7 +193,7 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
                                     </p>
                                 </div>
                                 <div className="flex shrink-0 items-center gap-1">
-                                    <StatusBadge status={getStatus(item)} />
+                                    <StatusBadge className="mr-3" status={getStatus(item)} />
                                     <TableActionButton
                                         label={t('common.view')}
                                         icon={EyeIcon}
