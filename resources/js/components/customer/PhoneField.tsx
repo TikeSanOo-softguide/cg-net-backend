@@ -8,12 +8,23 @@ type PhoneFieldProps = {
     id: string;
     value: string;
     onChange: (phone: string) => void;
+    onBlur?: () => void;
     invalid?: boolean;
     required?: boolean;
     className?: string;
+    inputClassName?: string;
 };
 
-export function PhoneField({ id, value, onChange, invalid = false, required = false, className }: PhoneFieldProps) {
+export function PhoneField({
+    id,
+    value,
+    onChange,
+    onBlur,
+    invalid = false,
+    required = false,
+    className,
+    inputClassName,
+}: PhoneFieldProps) {
     const parsed = parsePhone(value);
     const country: PhoneCountry = parsed.country === 'unknown' ? 'mm' : parsed.country;
     const local = parsed.country === 'unknown' && value.trim() === '' ? '' : parsed.local;
@@ -53,12 +64,13 @@ export function PhoneField({ id, value, onChange, invalid = false, required = fa
                 id={id}
                 type="tel"
                 inputMode="numeric"
-                className="min-w-0 flex-1"
+                className={cn('min-w-0 flex-1', inputClassName)}
                 value={local}
                 required={required}
                 aria-invalid={invalid}
                 placeholder="97000000"
-                onChange={(event) => onChange(composePhone(country, event.target.value))}
+                onBlur={onBlur}
+                onChange={(event) => onChange(composePhone(country, event.target.value.replace(/\D+/g, '')))}
             />
         </div>
     );

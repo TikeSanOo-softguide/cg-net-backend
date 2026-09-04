@@ -21,7 +21,6 @@ type SliceLabelProps = {
     cx?: number;
     cy?: number;
     midAngle?: number;
-    innerRadius?: number;
     outerRadius?: number;
     percent?: number;
 };
@@ -29,7 +28,7 @@ type SliceLabelProps = {
 type TooltipEntry = {
     name?: string;
     value?: number;
-    payload?: RegionChartSlice & { fill?: string; percent?: number };
+    payload?: RegionChartSlice & { fill?: string; percent?: number; name?: string };
 };
 
 type ChartTooltipProps = {
@@ -39,7 +38,8 @@ type ChartTooltipProps = {
 
 const RADIAN = Math.PI / 180;
 
-const REGION_COLORS = ['#3B82F6', '#F97316', '#22C55E', '#EF4444', '#A855F7'];
+/** Matches the reference donut palette (compact market-share style). */
+const REGION_COLORS = ['#EC4899', '#3B82F6', '#F97316', '#22C55E', '#8B5CF6', '#94A3B8'];
 
 function sliceName(slice: RegionChartSlice, locale: SupportedLocale, otherLabel: string): string {
     if (slice.id === null) {
@@ -57,18 +57,25 @@ function sliceName(slice: RegionChartSlice, locale: SupportedLocale, otherLabel:
     return slice.name_en;
 }
 
-function percentLabel({ cx = 0, cy = 0, midAngle = 0, innerRadius = 0, outerRadius = 0, percent = 0 }: SliceLabelProps) {
-    if (percent < 0.06) {
+function outsidePercentLabel({ cx = 0, cy = 0, midAngle = 0, outerRadius = 0, percent = 0 }: SliceLabelProps) {
+    if (percent < 0.04) {
         return null;
     }
 
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.52;
+    const radius = outerRadius + 14;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
     return (
-        <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central" className="text-[11px] font-bold tabular-nums">
-            {(percent * 100).toFixed(1)}%
+        <text
+            x={x}
+            y={y}
+            fill="var(--muted-foreground)"
+            textAnchor={x > cx ? 'start' : 'end'}
+            dominantBaseline="central"
+            className="text-[10px] font-semibold tabular-nums"
+        >
+            {(percent * 100).toFixed(0)}%
         </text>
     );
 }
@@ -81,15 +88,15 @@ function RegionTooltip({ active, payload }: ChartTooltipProps) {
     const entry = payload[0];
 
     return (
-        <div className="min-w-[10rem] rounded-xl border border-border/80 bg-card/95 px-3.5 py-2.5 shadow-lg backdrop-blur-sm">
-            <p className="flex items-center gap-2 text-[13px] font-medium text-card-foreground">
-                <span className="size-2 rounded-full" style={{ background: entry.payload?.fill }} />
+        <div className="min-w-[9rem] rounded-[10px] border border-border/70 bg-card px-3 py-2 shadow-md">
+            <p className="flex items-center gap-1.5 text-[12px] font-medium text-foreground">
+                <span className="size-2 rounded-[2px]" style={{ background: entry.payload?.fill }} />
                 {entry.name}
             </p>
-            <p className="mt-1 text-[12px] text-muted-foreground">
-                <span className="font-semibold tabular-nums text-card-foreground">{Number(entry.value ?? 0).toLocaleString()}</span>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+                <span className="font-semibold tabular-nums text-foreground">{Number(entry.value ?? 0).toLocaleString()}</span>
                 {typeof entry.payload?.percent === 'number' ? (
-                    <span className="ml-1.5 tabular-nums">({(entry.payload.percent * 100).toFixed(1)}%)</span>
+                    <span className="ml-1 tabular-nums">({(entry.payload.percent * 100).toFixed(1)}%)</span>
                 ) : null}
             </p>
         </div>
@@ -107,56 +114,69 @@ export function DashboardRegionChart({ data }: DashboardRegionChartProps) {
     }));
 
     return (
-        <Card className="h-full gap-0 overflow-hidden py-0 transition-shadow duration-200 hover:shadow-md">
-            <CardHeader className="flex flex-row items-start gap-3 px-5 py-5 sm:px-6">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-800 dark:bg-violet-500/15 dark:text-violet-300">
-                    <MapPinIcon className="size-[22px]" strokeWidth={1.85} />
-                </div>
+        <Card className="h-full gap-0 overflow-hidden border-border/70 py-0 shadow-[0_8px_24px_rgb(23_50_54/0.06)]">
+            <CardHeader className="flex flex-row items-start gap-2.5 space-y-0 px-4 pb-2 pt-3.5 sm:px-5">
+                <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-[8px] bg-pink-50 text-pink-600 dark:bg-pink-500/15 dark:text-pink-300">
+                    <MapPinIcon className="size-3.5" strokeWidth={1.85} />
+                </span>
                 <div className="min-w-0">
-                    <CardTitle className="text-lg font-semibold">{t('dashboard.region')}</CardTitle>
-                    <CardDescription>{t('dashboard.installations_by_region')}</CardDescription>
+                    <CardTitle className="text-[14px] font-semibold tracking-tight text-foreground sm:text-[15px]">
+                        {t('dashboard.region')}
+                    </CardTitle>
+                    <CardDescription className="mt-0.5 text-[11px] leading-4">
+                        {t('dashboard.installations_by_region')}
+                    </CardDescription>
                 </div>
             </CardHeader>
-            <CardContent className="px-5 pb-5 sm:px-6 sm:pb-6">
+            <CardContent className="px-4 pb-3.5 pt-0 sm:px-5">
                 {slices.length === 0 || total === 0 ? (
-                    <div className="flex h-64 flex-col items-center justify-center gap-2 text-center sm:h-72">
-                        <MapPinIcon className="size-8 text-muted-foreground/60" strokeWidth={1.5} />
-                        <p className="max-w-[16rem] text-[13px] text-muted-foreground">{t('dashboard.no_region_data')}</p>
+                    <div className="flex h-40 flex-col items-center justify-center gap-1.5 text-center sm:h-44">
+                        <p className="max-w-[14rem] text-[12px] text-muted-foreground">{t('dashboard.no_region_data')}</p>
                     </div>
                 ) : (
-                    <div className="dashboard-chart flex h-64 flex-col sm:h-72">
+                    <div className="dashboard-chart flex h-40 flex-col sm:h-44">
                         <div className="min-h-0 flex-1 outline-none">
                             <ResponsiveContainer width="100%" height="100%">
-                                <PieChart accessibilityLayer={false} style={{ outline: 'none' }}>
+                                <PieChart accessibilityLayer={false} margin={{ top: 4, right: 8, bottom: 0, left: 8 }} style={{ outline: 'none' }}>
                                     <Pie
                                         data={slices}
                                         dataKey="value"
                                         nameKey="name"
                                         cx="50%"
-                                        cy="50%"
-                                        innerRadius="54%"
-                                        outerRadius="86%"
+                                        cy="48%"
+                                        innerRadius="58%"
+                                        outerRadius="78%"
                                         startAngle={90}
                                         endAngle={-270}
-                                        paddingAngle={2}
-                                        stroke="none"
-                                        label={percentLabel}
+                                        paddingAngle={1.5}
+                                        stroke="#fff"
+                                        strokeWidth={2}
+                                        label={outsidePercentLabel}
                                         labelLine={false}
                                         isAnimationActive={false}
                                     >
                                         {slices.map((slice) => (
-                                            <Cell key={`${slice.id ?? 'other'}-${slice.name}`} fill={slice.fill} stroke="none" style={{ outline: 'none' }} />
+                                            <Cell
+                                                key={`${slice.id ?? 'other'}-${slice.name}`}
+                                                fill={slice.fill}
+                                                stroke="#fff"
+                                                strokeWidth={2}
+                                                style={{ outline: 'none' }}
+                                            />
                                         ))}
                                     </Pie>
                                     <Tooltip cursor={false} content={<RegionTooltip />} />
                                 </PieChart>
                             </ResponsiveContainer>
                         </div>
-                        <ul className="flex shrink-0 flex-wrap justify-center gap-x-4 gap-y-2 px-1 py-2">
+                        <ul className="flex shrink-0 flex-wrap justify-center gap-x-3 gap-y-1 px-1 pt-1">
                             {slices.map((slice) => (
-                                <li key={`${slice.id ?? 'other'}-${slice.name}`} className="flex max-w-full items-center gap-2 text-[12px] text-card-foreground">
-                                    <span className="size-2.5 shrink-0 rounded-full" style={{ background: slice.fill }} />
-                                    <span className="truncate">{slice.name}</span>
+                                <li
+                                    key={`${slice.id ?? 'other'}-${slice.name}`}
+                                    className="flex max-w-full items-center gap-1.5 text-[10px] text-muted-foreground"
+                                >
+                                    <span className="size-2 shrink-0 rounded-[2px]" style={{ background: slice.fill }} />
+                                    <span className="truncate text-foreground/80">{slice.name}</span>
                                 </li>
                             ))}
                         </ul>

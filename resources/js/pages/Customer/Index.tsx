@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { CircleDotIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
+import {
+    CircleDotIcon,
+    PackageIcon,
+    SquarePenIcon,
+    Trash2Icon,
+    WalletIcon,
+    WifiIcon,
+} from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
@@ -9,8 +16,8 @@ import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
-import { CustomerDetailDialog, type CustomerDetailMember } from '@/components/customer/CustomerDetailDialog';
 import { CustomerFormDialog, type CustomerFormMember } from '@/components/customer/CustomerFormDialog';
+import { MetaCell } from '@/components/customer/MetaCell';
 import { PhoneDisplay } from '@/components/customer/PhoneDisplay';
 import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
 import { FormControl } from '@/components/ui/form-control';
@@ -19,7 +26,13 @@ import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { visitBulkDelete } from '@/lib/bulk-delete';
 
-type CustomerRow = CustomerDetailMember;
+type CustomerRow = CustomerFormMember & {
+    wallet_balance: string;
+    broadband_connected: boolean;
+    broadband_count: number;
+    current_package: string | null;
+    created_at: string | null;
+};
 
 type Filters = {
     search: string;
@@ -46,15 +59,17 @@ function visitIndex(filters: Filters) {
     });
 }
 
+function formatMmk(value: string): string {
+    return `${Number(value).toLocaleString()} MMK`;
+}
+
 export default function CustomersIndex({ customers, filters }: CustomersIndexProps) {
     const { t } = useTranslation();
     const can = useCan();
     const [search, setSearch] = useState(filters.search);
     const [pendingIds, setPendingIds] = useState<number[]>([]);
     const [formOpen, setFormOpen] = useState(false);
-    const [detailOpen, setDetailOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState<CustomerFormMember | null>(null);
-    const [viewingCustomer, setViewingCustomer] = useState<CustomerDetailMember | null>(null);
     const debounce = useRef<number>(0);
     const canDelete = can('customers.delete');
 
@@ -91,10 +106,7 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                     sort={filters.sort}
                     direction={filters.direction}
                     onSort={onSort}
-                    onView={(row) => {
-                        setViewingCustomer(row);
-                        setDetailOpen(true);
-                    }}
+                    href={(row) => `/customers/${row.id}`}
                     onCreate={can('customers.create') ? () => {
                         setEditingCustomer(null);
                         setFormOpen(true);
@@ -110,6 +122,7 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                                     label={t('common.edit')}
                                     icon={SquarePenIcon}
                                     tone="edit"
+                                    size="sm"
                                     onClick={(event) => {
                                         event.stopPropagation();
                                         setEditingCustomer(row);
@@ -122,6 +135,7 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                                     label={t('common.delete')}
                                     icon={Trash2Icon}
                                     tone="danger"
+                                    size="sm"
                                     onClick={(event) => {
                                         event.stopPropagation();
                                         setPendingIds([row.id]);
@@ -155,9 +169,9 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                             mobile: 'title',
                             sortable: true,
                             cell: (row) => (
-                                <span className="flex min-w-0 items-center gap-2.5">
+                                <span className="flex min-w-0 items-center gap-2">
                                     <StaffListAvatar username={row.name} />
-                                    <span className="truncate">{row.name}</span>
+                                    <span className="truncate text-[13px]">{row.name}</span>
                                 </span>
                             ),
                         },
@@ -176,38 +190,52 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                             cell: (row) => <StatusBadge status={row.status} />,
                         },
                         {
-                            id: 'accounts_count',
-                            header: t('customers.accounts'),
-                            className: 'text-muted-foreground',
-                            cell: (row) => row.accounts_count,
+                            id: 'wallet',
+                            header: t('customers.wallet'),
+                            className: 'tabular-nums',
+                            mobile: 'meta',
+                            cell: (row) => (
+                                <MetaCell icon={WalletIcon} muted={Number(row.wallet_balance) === 0}>
+                                    {formatMmk(row.wallet_balance)}
+                                </MetaCell>
+                            ),
+                        },
+                        {
+                            id: 'broadband',
+                            header: t('customers.broadband'),
+                            cell: (row) => (
+                                <MetaCell
+                                    icon={WifiIcon}
+                                    muted={! row.broadband_connected}
+                                    className={row.broadband_connected ? 'text-success' : undefined}
+                                >
+                                    {row.broadband_connected
+                                        ? `${t('customers.connected')}${row.broadband_count > 1 ? ` · ${row.broadband_count}` : ''}`
+                                        : t('customers.not_connected')}
+                                </MetaCell>
+                            ),
+                        },
+                        {
+                            id: 'current_package',
+                            header: t('customers.current_package'),
+                            cell: (row) => (
+                                <MetaCell icon={PackageIcon} muted={! row.current_package}>
+                                    {row.current_package ?? '—'}
+                                </MetaCell>
+                            ),
                         },
                         {
                             id: 'created_at',
                             header: t('customers.joined'),
                             className: 'text-muted-foreground',
                             sortable: true,
-                            cell: (row) => row.created_at,
+                            cell: (row) => (
+                                <span className="font-mono text-[11px] text-muted-foreground">{row.created_at ?? '—'}</span>
+                            ),
                         },
                     ]}
                 />
             </PageContent>
-            <CustomerDetailDialog
-                open={detailOpen}
-                onOpenChange={(open) => {
-                    setDetailOpen(open);
-
-                    if (! open) {
-                        setViewingCustomer(null);
-                    }
-                }}
-                customer={viewingCustomer}
-                onEdit={(customer) => {
-                    setDetailOpen(false);
-                    setViewingCustomer(null);
-                    setEditingCustomer(customer);
-                    setFormOpen(true);
-                }}
-            />
             <CustomerFormDialog
                 open={formOpen}
                 onOpenChange={(open) => {

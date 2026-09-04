@@ -33,10 +33,10 @@
                     }
 
                     var raw = localStorage.getItem('isp-admin-theme-settings');
-                    var hex = '#1d4ed8';
+                    var hex = '#0100ca';
                     if (raw) {
                         var settings = JSON.parse(raw);
-                        if (settings.primaryColor && String(settings.primaryColor).toLowerCase() !== '#173236' && String(settings.primaryColor).toLowerCase() !== '#635bff') {
+                        if (settings.primaryColor && String(settings.primaryColor).toLowerCase() !== '#173236' && String(settings.primaryColor).toLowerCase() !== '#635bff' && String(settings.primaryColor).toLowerCase() !== '#7c3aed' && String(settings.primaryColor).toLowerCase() !== '#1d4ed8' && String(settings.primaryColor).toLowerCase() !== '#e8912d') {
                             hex = settings.primaryColor;
                         }
                     }

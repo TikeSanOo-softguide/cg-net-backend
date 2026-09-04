@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from '@inertiajs/react';
+import type { LucideIcon } from 'lucide-react';
 import {
     ArrowDownIcon,
     ArrowUpIcon,
@@ -35,6 +36,7 @@ export type DataTableColumn<T> = {
 };
 type DataTableProps<T> = {
     title?: string;
+    titleIcon?: LucideIcon;
     data: T[];
     columns: DataTableColumn<T>[];
     getRowId: (row: T) => string;
@@ -67,10 +69,12 @@ type DataTableProps<T> = {
     onCreate?: () => void;
     onExport?: () => void;
     showExport?: boolean;
+    showSearch?: boolean;
 };
 
 export function DataTable<T>({
     title,
+    titleIcon: TitleIcon,
     data,
     columns,
     getRowId,
@@ -103,6 +107,7 @@ export function DataTable<T>({
     onCreate,
     onExport,
     showExport = false,
+    showSearch = true,
 }: DataTableProps<T>) {
     const { t } = useTranslation();
     const [query, setQuery] = useState('');
@@ -299,6 +304,16 @@ export function DataTable<T>({
         URL.revokeObjectURL(url);
     };
 
+    const hasToolbar =
+        Boolean(title) ||
+        Boolean(filters) ||
+        showSearch ||
+        showDelete ||
+        showExport ||
+        Boolean(onExport) ||
+        Boolean(createHref) ||
+        Boolean(onCreate);
+
     return (
         <TooltipProvider>
             <Card
@@ -307,20 +322,30 @@ export function DataTable<T>({
                     className,
                 )}
             >
+                {hasToolbar ? (
                 <CardHeader className={cn('flex flex-col gap-2.5 py-3', EDGE_PAD)}>
                     {title ? (
-                        <CardTitle className="text-[13px] font-semibold tracking-tight sm:text-sm">{title}</CardTitle>
+                        <CardTitle className="flex items-center gap-2 text-[13px] font-semibold tracking-tight sm:text-sm">
+                            {TitleIcon ? (
+                                <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-[7px] bg-primary/10 text-primary">
+                                    <TitleIcon className="size-3.5" strokeWidth={1.85} />
+                                </span>
+                            ) : null}
+                            {title}
+                        </CardTitle>
                     ) : null}
                     <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
                         <div className={cn('flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center', toolbarFiltersWrapperClass)}>
                             {filters}
-                            <SearchInput
-                                value={searchValue}
-                                onChange={onSearchChange ?? setQuery}
-                                placeholder={searchPlaceholder ?? t('common.search')}
-                                size="sm"
-                                className="w-full sm:max-w-64"
-                            />
+                            {showSearch ? (
+                                <SearchInput
+                                    value={searchValue}
+                                    onChange={onSearchChange ?? setQuery}
+                                    placeholder={searchPlaceholder ?? t('common.search')}
+                                    size="sm"
+                                    className="w-full sm:max-w-64"
+                                />
+                            ) : null}
                         </div>
                         <div className="flex shrink-0 items-center justify-end gap-2">
                             {showDelete ? (
@@ -361,6 +386,7 @@ export function DataTable<T>({
                         </div>
                     </div>
                 </CardHeader>
+                ) : null}
                 <CardContent className="flex min-h-0 flex-1 flex-col px-0 pb-0">
                     <div className={cn(EDGE_PAD, 'min-h-0 flex-1 pb-3')}>
                         <div className="flex h-full min-h-0 flex-col overflow-hidden bg-transparent">

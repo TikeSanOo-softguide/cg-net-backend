@@ -42,7 +42,7 @@ export default function Login({ status }: LoginProps) {
                             compact
                             href="/"
                             className="justify-center"
-                            logoClassName="size-14 sm:size-16 rounded-[6px]"
+                            logoClassName="size-14 sm:size-16"
                         />
                     </div>
 
@@ -64,7 +64,7 @@ export default function Login({ status }: LoginProps) {
                                 compact
                                 href="/"
                                 className="hidden justify-center md:flex"
-                                logoClassName="size-16 rounded-[6px]"
+                                logoClassName="size-16"
                             />
                         </div>
 

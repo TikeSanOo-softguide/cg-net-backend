@@ -2,6 +2,8 @@
 
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetLocale;
+use App\Support\AdminHome;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,6 +14,7 @@ use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -46,6 +49,23 @@ return Application::configure(basePath: dirname(__DIR__))
                 return back()->withErrors([
                     Fortify::username() => __('auth.throttle', ['seconds' => $retryAfter]),
                 ]);
+            }
+
+            $isForbidden = $response->getStatusCode() === 403
+                || $exception instanceof AuthorizationException
+                || ($exception instanceof HttpException && $exception->getStatusCode() === 403);
+
+            if (
+                $isForbidden
+                && $request->user()
+                && ! $request->is('api/*')
+                && ! $request->expectsJson()
+            ) {
+                $home = AdminHome::path($request->user());
+
+                if ($home !== '/login' && $request->path() !== ltrim($home, '/')) {
+                    return redirect()->to($home);
+                }
             }
 
             if ($response->getStatusCode() === 404 && ! $request->is('api/*') && ! $request->expectsJson()) {

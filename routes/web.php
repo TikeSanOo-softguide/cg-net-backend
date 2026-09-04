@@ -21,6 +21,7 @@ use App\Http\Controllers\Region\RegionManagementController;
 use App\Http\Controllers\Staff\RoleController;
 use App\Http\Controllers\Staff\StaffController;
 use App\Http\Controllers\TopUpCard\TopUpCardController;
+use App\Support\AdminHome;
 use App\Support\MenuPages;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -28,7 +29,7 @@ use Inertia\Inertia;
 Route::post('/locale/{lang}', LocaleController::class)->name('locale.update');
 
 Route::middleware(['auth:web', 'admin.active'])->group(function () {
-    Route::get('/', fn() => redirect()->route('dashboard'))->name('home');
+    Route::get('/', fn () => redirect()->to(AdminHome::path(auth()->user())))->name('home');
     Route::get('/dashboard', DashboardController::class)->middleware('can:dashboard.view')->name('dashboard');
     Route::delete('/dashboard/requests/bulk-destroy', [DashboardController::class, 'bulkDestroy'])
         ->middleware('can:service-requests.delete')
@@ -128,7 +129,7 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
 
     Route::prefix('service-requests')->name('service-requests.')->group(function () {
         Route::prefix('failures')->name('failures.')->group(function () {
-            Route::get('/', [FailureReportController::class, 'index'])->middleware('can:failure.view')->name('index');
+            Route::get('/', [FailureReportController::class, 'index'])->middleware('can:service-requests.view')->name('index');
             Route::patch('/{failureReport}/edit', [FailureReportController::class, 'updateStatus'])->middleware('can:service-requests.update')->name('edit');
         });
     });

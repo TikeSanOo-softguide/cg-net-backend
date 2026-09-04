@@ -9,8 +9,10 @@ use App\Http\Requests\Customer\CustomerData;
 use App\Http\Requests\Customer\StoreCustomerRequest;
 use App\Http\Requests\Customer\UpdateCustomerRequest;
 use App\Http\Requests\Customer\UpdateCustomerStatusRequest;
+use App\Enums\CustomerPackageStatus;
 use App\Models\BroadbandAccount;
 use App\Models\User;
+use App\Support\PackageLabel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -32,7 +34,16 @@ class CustomerController extends Controller
             $sort = 'created_at';
         }
 
+        $locale = app()->getLocale();
+
         $customers = User::query()
+            ->with([
+                'wallet:id,user_id,balance_mmk',
+                'broadbandAccounts:id,user_id,current_package_id',
+                'broadbandAccounts.currentPackage.network:id,name_en,name_zh,name_my',
+                'broadbandAccounts.currentPackage.speed:id,mbps',
+                'broadbandAccounts.currentPackage.term:id,months',
+            ])
             ->withCount('broadbandAccounts')
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
@@ -46,14 +57,24 @@ class CustomerController extends Controller
             ->orderBy($sort, $direction)
             ->paginate(15)
             ->withQueryString()
-            ->through(fn (User $customer) => [
-                'id' => $customer->id,
-                'name' => $customer->name,
-                'phone' => $customer->phone,
-                'status' => $customer->status->value,
-                'accounts_count' => $customer->broadband_accounts_count,
-                'created_at' => $customer->created_at?->toDateString(),
-            ]);
+            ->through(function (User $customer) use ($locale) {
+                $currentPackage = $customer->broadbandAccounts
+                    ->map(fn (BroadbandAccount $account) => $account->currentPackage)
+                    ->filter()
+                    ->first();
+
+                return [
+                    'id' => $customer->id,
+                    'name' => $customer->name,
+                    'phone' => $customer->phone,
+                    'status' => $customer->status->value,
+                    'wallet_balance' => number_format((float) ($customer->wallet?->balance_mmk ?? 0), 0, '.', ''),
+                    'broadband_connected' => $customer->broadband_accounts_count > 0,
+                    'broadband_count' => $customer->broadband_accounts_count,
+                    'current_package' => PackageLabel::make($currentPackage, $locale),
+                    'created_at' => $customer->created_at?->toDateString(),
+                ];
+            });
 
         return Inertia::render('Customer/Index', [
             'customers' => $customers,
@@ -102,12 +123,32 @@ class CustomerController extends Controller
 
     public function show(User $customer): Response
     {
+        $locale = app()->getLocale();
+
         $customer->load([
-            'broadbandAccounts.currentPackage:id,name',
-            'customerPackages.package:id,name,speed_mbps,data_gb',
+            'broadbandAccounts.currentPackage.network:id,name_en,name_zh,name_my',
+            'broadbandAccounts.currentPackage.speed:id,mbps',
+            'broadbandAccounts.currentPackage.term:id,months',
+            'customerPackages.package.network:id,name_en,name_zh,name_my',
+            'customerPackages.package.speed:id,mbps',
+            'customerPackages.package.term:id,months',
             'customerPackages.broadbandAccount:id,account_number',
-            'wallet.transactions' => fn ($query) => $query->latest()->limit(10),
+            'wallet',
+            'redeemedTopUpCards' => fn ($query) => $query->latest('redeemed_at')->limit(50),
         ]);
+
+        $packageRows = $customer->customerPackages
+            ->sortByDesc('start_date')
+            ->values()
+            ->map(fn ($row) => [
+                'id' => $row->id,
+                'package_name' => PackageLabel::make($row->package, $locale),
+                'account_number' => $row->broadbandAccount?->account_number,
+                'start_date' => $row->start_date?->toDateString(),
+                'expiry_date' => $row->expiry_date?->toDateString(),
+                'auto_renew' => $row->auto_renew,
+                'status' => $row->status->value,
+            ]);
 
         return Inertia::render('Customer/Show', [
             'customer' => $this->customerPayload($customer),
@@ -116,33 +157,22 @@ class CustomerController extends Controller
                 'account_number' => $account->account_number,
                 'customer_name' => $account->customer_name,
                 'status' => $account->status->value,
-                'package_name' => $account->currentPackage?->name,
+                'package_name' => PackageLabel::make($account->currentPackage, $locale),
             ]),
-            'packages' => $customer->customerPackages
-                ->sortByDesc('start_date')
-                ->values()
-                ->map(fn ($package) => [
-                    'id' => $package->id,
-                    'package_name' => $package->package?->name,
-                    'account_number' => $package->broadbandAccount?->account_number,
-                    'start_date' => $package->start_date?->toDateString(),
-                    'expiry_date' => $package->expiry_date?->toDateString(),
-                    'auto_renew' => $package->auto_renew,
-                    'status' => $package->status->value,
-                    'speed_mbps' => $package->package?->speed_mbps,
-                    'data_gb' => $package->package?->data_gb,
-                ]),
+            'currentPackages' => $packageRows
+                ->filter(fn (array $row) => $row['status'] === CustomerPackageStatus::Active->value)
+                ->values(),
+            'packageHistory' => $packageRows->values(),
             'wallet' => [
                 'balance_mmk' => number_format((float) ($customer->wallet?->balance_mmk ?? 0), 2, '.', ''),
-                'transactions' => $customer->wallet?->transactions->map(fn ($transaction) => [
-                    'id' => $transaction->id,
-                    'type' => $transaction->type->value,
-                    'amount' => number_format((float) $transaction->amount, 2, '.', ''),
-                    'reference_id' => $transaction->reference_id,
-                    'status' => $transaction->status->value,
-                    'created_at' => $transaction->created_at?->toDateString(),
-                ])->values() ?? [],
             ],
+            'topUpHistory' => $customer->redeemedTopUpCards->map(fn ($card) => [
+                'id' => $card->id,
+                'serial_no' => $card->serial_no,
+                'amount' => number_format((float) $card->amount, 0, '.', ''),
+                'status' => $card->status->value,
+                'redeemed_at' => $card->redeemed_at?->toDateString(),
+            ])->values(),
         ]);
     }
 

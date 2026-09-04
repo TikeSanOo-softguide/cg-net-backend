@@ -62,3 +62,22 @@ export function composePhone(country: PhoneCountry, local: string): string {
 export function formatPhoneLocal(value: string | null | undefined): string {
     return parsePhone(value).local || '—';
 }
+
+const LOCAL_LENGTH: Record<Exclude<PhoneCountry, 'unknown'>, { min: number; max: number }> = {
+    mm: { min: 7, max: 10 },
+    th: { min: 8, max: 9 },
+    cn: { min: 11, max: 11 },
+};
+
+export function isValidAppUserPhone(value: string | null | undefined): boolean {
+    const parsed = parsePhone(value);
+
+    if (parsed.country === 'unknown' || parsed.local === '') {
+        return false;
+    }
+
+    const length = LOCAL_LENGTH[parsed.country];
+
+    return parsed.local.length >= length.min && parsed.local.length <= length.max;
+}
+

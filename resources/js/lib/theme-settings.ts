@@ -1,11 +1,11 @@
 export const THEME_SETTINGS_KEY = 'isp-admin-theme-settings';
-export const DEFAULT_PRIMARY = '#1d4ed8';
+export const DEFAULT_PRIMARY = '#0100ca';
 
 export const PRIMARY_PRESETS = [
-    { name: 'Royal', hex: '#1d4ed8' },
+    { name: 'Blue', hex: '#0100ca' },
     { name: 'Brand Teal', hex: '#173236' },
     { name: 'Ocean', hex: '#0f766e' },
-    { name: 'Violet', hex: '#7c3aed' },
+    { name: 'Royal', hex: '#1d4ed8' },
     { name: 'Rose', hex: '#be123c' },
     { name: 'Amber', hex: '#b45309' },
     { name: 'Forest', hex: '#15803d' },
@@ -134,7 +134,9 @@ function pick<T extends string>(value: unknown, allowed: readonly T[], fallback:
 }
 
 function migratePrimaryColor(hex: string): string {
-    return hex === '#173236' || hex === '#635bff' || hex === '#e8912d' ? DEFAULT_PRIMARY : hex;
+    return hex === '#173236' || hex === '#635bff' || hex === '#e8912d' || hex === '#7c3aed' || hex === '#1d4ed8'
+        ? DEFAULT_PRIMARY
+        : hex;
 }
 
 export function readStoredThemeSettings(): ThemeSettings {

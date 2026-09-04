@@ -49,121 +49,104 @@ export default function DashboardIndex({ stats, chart, regionChart, requestTypeC
     const cards = [
         {
             key: 'dashboard.total_customers',
+            title: t('dashboard.total_customers'),
             value: stats.total_customers.toLocaleString(),
             icon: UsersIcon,
-            iconWrapperClassName: 'bg-teal-100 text-teal-800 dark:bg-teal-500/15 dark:text-teal-300',
-            accentClassName: 'bg-teal-500',
         },
         {
             key: 'dashboard.active_broadband_accounts',
+            title: t('dashboard.active_broadband_accounts'),
             value: stats.active_broadband_accounts.toLocaleString(),
             icon: WifiIcon,
-            iconWrapperClassName: 'bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-300',
-            accentClassName: 'bg-sky-500',
         },
         {
             key: 'dashboard.active_packages',
+            title: t('dashboard.active_packages'),
             value: stats.active_packages.toLocaleString(),
             icon: PackageIcon,
-            iconWrapperClassName: 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300',
-            accentClassName: 'bg-amber-500',
         },
         {
             key: 'dashboard.todays_revenue',
+            title: t('dashboard.todays_revenue'),
             value: `${Number(stats.todays_revenue).toLocaleString()} MMK`,
             icon: BanknoteIcon,
-            iconWrapperClassName: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300',
-            accentClassName: 'bg-emerald-500',
         },
         {
             key: 'dashboard.pending_requests',
+            title: t('dashboard.pending_requests'),
             value: stats.pending_requests.toLocaleString(),
             icon: ClipboardListIcon,
-            iconWrapperClassName: 'bg-orange-100 text-orange-800 dark:bg-orange-500/15 dark:text-orange-300',
-            accentClassName: 'bg-orange-500',
         },
     ];
 
     return (
         <>
             <Head title={t('menu.dashboard')} />
-            <PageContent className="gap-6 lg:gap-8">
+            <PageContent className="gap-3 lg:gap-3.5">
                 <PageHeader />
 
-                <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-                    {cards.map((card) => (
-                        <StatCard
-                            key={card.key}
-                            title={t(card.key)}
-                            value={card.value}
-                            icon={card.icon}
-                            iconWrapperClassName={card.iconWrapperClassName}
-                            accentClassName={card.accentClassName}
-                        />
-                    ))}
-                </section>
+                <StatCard items={cards} />
 
-                <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-2">
+                <div className="grid grid-cols-1 items-stretch gap-3 xl:grid-cols-3">
                     <DashboardTrendChart data={chart} isMobile={isMobile} />
                     <DashboardRegionChart data={regionChart} />
-                </div>
-
-                <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-                    <DataTable
-                        className="min-w-0"
-                        numbered={false}
-                        title={t('dashboard.recent_requests')}
-                        data={recentRequests}
-                        getRowId={(row) => row.id}
-                        searchPlaceholder={t('dashboard.search_requests')}
-                        onBulkDelete={canDelete ? (ids) => visitBulkDelete('/dashboard/requests/bulk-destroy', ids) : undefined}
-                        bulkDeleteTitle={t('dashboard.bulk_delete_title')}
-                        actions={canDelete ? (row) => (
-                            <TableActionButton
-                                label={t('common.delete')}
-                                icon={Trash2Icon}
-                                tone="danger"
-                                onClick={(event) => {
-                                    event.stopPropagation();
-                                    setPendingIds([row.id]);
-                                }}
-                            />
-                        ) : undefined}
-                        columns={[
-                            {
-                                id: 'customer',
-                                header: t('dashboard.customer'),
-                                className: 'font-medium',
-                                mobile: 'title',
-                                searchValue: (row) => row.customer,
-                                cell: (row) => row.customer,
-                            },
-                            {
-                                id: 'type',
-                                header: t('dashboard.type'),
-                                mobile: 'subtitle',
-                                searchValue: (row) => t(`type.${row.type}`),
-                                cell: (row) => t(`type.${row.type}`),
-                            },
-                            {
-                                id: 'status',
-                                header: t('dashboard.status'),
-                                mobile: 'badge',
-                                searchValue: (row) => t(`status.${row.status}`),
-                                cell: (row) => <StatusBadge status={row.status} />,
-                            },
-                            {
-                                id: 'date',
-                                header: t('dashboard.date'),
-                                className: 'font-mono text-[11px] text-muted-foreground',
-                                mobile: 'meta',
-                                searchValue: (row) => row.created_at ?? '',
-                                cell: (row) => row.created_at?.slice(0, 10),
-                            },
-                        ]}
-                    />
                     <DashboardRequestLevels data={requestTypeChart} />
                 </div>
+
+                <DataTable
+                    className="min-w-0"
+                    numbered={false}
+                    showSearch={false}
+                    title={t('dashboard.today_requests')}
+                    titleIcon={ClipboardListIcon}
+                    data={recentRequests}
+                    getRowId={(row) => row.id}
+                    onBulkDelete={canDelete ? (ids) => visitBulkDelete('/dashboard/requests/bulk-destroy', ids) : undefined}
+                    bulkDeleteTitle={t('dashboard.bulk_delete_title')}
+                    actions={canDelete ? (row) => (
+                        <TableActionButton
+                            label={t('common.delete')}
+                            icon={Trash2Icon}
+                            tone="danger"
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                setPendingIds([row.id]);
+                            }}
+                        />
+                    ) : undefined}
+                    columns={[
+                        {
+                            id: 'customer',
+                            header: t('dashboard.customer'),
+                            className: 'font-medium',
+                            mobile: 'title',
+                            searchValue: (row) => row.customer,
+                            cell: (row) => row.customer,
+                        },
+                        {
+                            id: 'type',
+                            header: t('dashboard.type'),
+                            mobile: 'subtitle',
+                            searchValue: (row) => t(`type.${row.type}`),
+                            cell: (row) => t(`type.${row.type}`),
+                        },
+                        {
+                            id: 'status',
+                            header: t('dashboard.status'),
+                            mobile: 'badge',
+                            searchValue: (row) => t(`status.${row.status}`),
+                            cell: (row) => <StatusBadge status={row.status} />,
+                        },
+                        {
+                            id: 'date',
+                            header: t('dashboard.date'),
+                            className: 'font-mono text-[11px] text-muted-foreground',
+                            mobile: 'meta',
+                            searchValue: (row) => row.created_at ?? '',
+                            cell: (row) => row.created_at?.slice(0, 10),
+                        },
+                    ]}
+                />
             </PageContent>
             <ConfirmDialog
                 open={pendingIds.length === 1}

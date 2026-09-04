@@ -47,7 +47,16 @@ export function FormField({
                 )}
             >
                 {label}
-                {required ? <span className="ms-0.5 text-primary">*</span> : null}
+                {required ? (
+                    <span
+                        className={cn(
+                            'ms-0.5',
+                            state === 'error' ? 'text-danger' : state === 'success' ? 'text-success' : 'text-primary',
+                        )}
+                    >
+                        *
+                    </span>
+                ) : null}
             </Label>
             <div className="mt-2.5">
                 {icon || rightSlot ? (
