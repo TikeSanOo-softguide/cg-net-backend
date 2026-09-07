@@ -26,12 +26,14 @@ export type PromotionFormValues = {
     is_active: boolean;
     slug: string;
     image: File | null;
+    image_url: string | null;
 };
 
 type PromotionFormProps = {
     form: InertiaFormProps<PromotionFormValues>;
     onSubmit: (event: FormEvent) => void;
     onCancel?: () => void;
+    onImageClear: () => void;
     mode?: 'create' | 'edit';
     imageUrl?: string | null;
 };
@@ -50,6 +52,7 @@ const untouched: TouchedFields = {
     is_active: false,
     slug: false,
     image: false,
+    image_url: false,
 };
 
 function toSlug(value: string): string {
@@ -60,7 +63,14 @@ function toSlug(value: string): string {
         .replace(/^-+|-+$/g, '');
 }
 
-export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', imageUrl }: PromotionFormProps) {
+export function PromotionForm({
+    form,
+    onSubmit,
+    onCancel,
+    onImageClear,
+    mode = 'create',
+    imageUrl,
+}: PromotionFormProps) {
     const { t } = useTranslation();
 
     const [touched, setTouched] = useState<TouchedFields>(untouched);
@@ -77,19 +87,7 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
 
     const setField = <K extends keyof PromotionFormValues>(field: K, value: PromotionFormValues[K]) => {
         form.setData(field, value as never);
-
-        // Clear Laravel error immediately when user changes the field.
         form.clearErrors(field);
-
-        // If start_date changes, end_date validation may change too.
-        if (field === 'start_date' && touched.end_date) {
-            form.clearErrors('end_date');
-        }
-
-        // If title_en changes, slug changes too.
-        if (field === 'title_en') {
-            form.clearErrors('slug');
-        }
     };
 
     const fieldState = (field: keyof PromotionFormValues): 'idle' | 'error' | 'success' => {
@@ -97,14 +95,7 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
             return 'idle';
         }
 
-        const serverError = form.errors[field];
-        const clientError = validatePromotionField(field, form.data, t);
-
-        if (serverError || clientError) {
-            return 'error';
-        }
-
-        return 'success';
+        return form.errors[field] || validatePromotionField(field, form.data, t) ? 'error' : 'success';
     };
 
     const fieldError = (field: keyof PromotionFormValues): string | undefined => {
@@ -132,6 +123,7 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
             is_active: true,
             slug: true,
             image: true,
+            image_url: true,
         });
 
         const errors = validatePromotion(form.data, t);
@@ -145,6 +137,13 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
         form.clearErrors();
 
         onSubmit(event);
+    };
+
+    const handleImageDelete = (file: File | null) => {
+        if (!file) {
+            setField('image_url', '');
+            onImageClear();
+        }
     };
 
     return (
@@ -255,6 +254,7 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
                             setDashedImage(file);
                             setField('image', file);
                             markTouched('image');
+                            handleImageDelete(file);
                         }}
                     />
                 </FormField>

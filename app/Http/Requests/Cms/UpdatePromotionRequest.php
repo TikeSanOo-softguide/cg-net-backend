@@ -29,6 +29,7 @@ class UpdatePromotionRequest extends FormRequest
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'is_active' => ['required', 'boolean'],
             'image' => CmsRules::image(false),
+            'image_url' => ['nullable', 'string', 'max:255'],
         ];
     }
 

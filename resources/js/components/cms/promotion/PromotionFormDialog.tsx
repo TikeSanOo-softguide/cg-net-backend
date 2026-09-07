@@ -41,6 +41,7 @@ function emptyPromotionForm(): PromotionFormValues {
         is_active: true,
         slug: '',
         image: null,
+        image_url: '',
     };
 }
 
@@ -55,7 +56,7 @@ export function PromotionFormDialog({ open, onOpenChange, item }: PromotionFormD
             title={isEdit ? t('cms.edit_promotion') : t('cms.create_promotion')}
             description={isEdit ? t('cms.edit_promotion_description') : t('cms.create_promotion_description')}
             icon={isEdit ? SquarePenIcon : MegaphoneIcon}
-            size='3xl'
+            size="3xl"
         >
             {open ? (
                 <PromotionFormDialogBody
@@ -73,18 +74,19 @@ function PromotionFormDialogBody({ item, onClose }: { item: PromotionItem | null
     const form = useForm<PromotionFormValues>(
         item
             ? {
-                title_en: item.title_en ?? '',
-                title_my: item.title_my ?? '',
-                title_zh: item.title_zh ?? '',
-                description_en: item.description_en ?? '',
-                description_my: item.description_my ?? '',
-                description_zh: item.description_zh ?? '',
-                start_date: item.start_date ?? '',
-                end_date: item.end_date ?? '',
-                is_active: item.is_active,
-                slug: item.slug ?? '',
-                image: null,
-            }
+                  title_en: item.title_en ?? '',
+                  title_my: item.title_my ?? '',
+                  title_zh: item.title_zh ?? '',
+                  description_en: item.description_en ?? '',
+                  description_my: item.description_my ?? '',
+                  description_zh: item.description_zh ?? '',
+                  start_date: item.start_date ?? '',
+                  end_date: item.end_date ?? '',
+                  is_active: item.is_active,
+                  slug: item.slug ?? '',
+                  image: null,
+                  image_url: item.image_url,
+              }
             : emptyPromotionForm(),
     );
 
@@ -107,11 +109,18 @@ function PromotionFormDialogBody({ item, onClose }: { item: PromotionItem | null
         form.post('/cms/promotions', options);
     };
 
+    const onImageClear = () => {
+        if (item) {
+            item.image_url = null;
+        }
+    };
+
     return (
         <PromotionForm
             form={form}
             onSubmit={submit}
             onCancel={onClose}
+            onImageClear={onImageClear}
             mode={isEdit ? 'edit' : 'create'}
             imageUrl={item?.image_url}
         />

@@ -66,6 +66,11 @@ class PromotionController extends Controller
 
         if ($request->hasFile('image')) {
             $data['image_url'] = StoresPublicImage::store($request->file('image'), 'cms/promotions', $promotion->image_url);
+        } elseif (array_key_exists('image_url', $data) && !isset($data['image_url'])) {
+            $data['image_url'] = null;
+            StoresPublicImage::delete($promotion->image_url);
+        } else {
+            $data['image_url'] = $promotion->image_url;
         }
 
         $promotion->update($data);
