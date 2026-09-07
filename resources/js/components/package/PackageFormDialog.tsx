@@ -21,6 +21,7 @@ type PackageFormDialogProps = {
     networks: PackageOption[];
     speeds: PackageOption[];
     terms: PackageOption[];
+    returnQuery?: string;
 };
 
 const modalVisit = {
@@ -35,6 +36,7 @@ export function PackageFormDialog({
     networks,
     speeds,
     terms,
+    returnQuery = '',
 }: PackageFormDialogProps) {
     const { t } = useTranslation();
 
@@ -56,6 +58,7 @@ export function PackageFormDialog({
                     networks={networks}
                     speeds={speeds}
                     terms={terms}
+                    returnQuery={returnQuery}
                     onClose={() => onOpenChange(false)}
                 />
             ) : null}
@@ -68,12 +71,14 @@ function PackageFormDialogBody({
     networks,
     speeds,
     terms,
+    returnQuery,
     onClose,
 }: {
     package: PackageFormMember | null;
     networks: PackageOption[];
     speeds: PackageOption[];
     terms: PackageOption[];
+    returnQuery: string;
     onClose: () => void;
 }) {
     const isEdit = packageItem !== null;
@@ -104,17 +109,19 @@ function PackageFormDialogBody({
             onSuccess: onClose,
         };
 
+        const actionUrl = (path: string) => `${path}${returnQuery}`;
+
         if (isEdit && packageItem) {
             form.transform((data) => ({
                 ...data,
                 _method: 'PUT',
             }));
-            form.post(`/packages/${packageItem.id}`, options);
+            form.post(actionUrl(`/packages/${packageItem.id}`), options);
 
             return;
         }
 
-        form.post('/packages', options);
+        form.post(actionUrl('/packages'), options);
     };
 
     return (

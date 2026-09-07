@@ -867,5 +867,21 @@
             "mbps_required": "Please enter the speed in Mbps.",
             "mbps_integer": "The speed must be an integer."
         }
+    },
+    "relocation_requests": {
+        "total_requests": "Total Requests",
+        "under_review_requests": "Under Review Requests",
+        "approved_requests": "Approved Requests",
+        "current_address": "Current Address",
+        "new_address": "New Address",
+        "phone": "Phone",
+        "preferred_date": "Preferred date",
+        "card_title": "Relocation Request Detail",
+        "service_transfer": "Service Transfer",
+        "current_location": "Current Location",
+        "new_location": "New Location",
+        "detail": "Detail",
+        "search": "Search by app user name,account_no",
+        "status_updated": "Request status updated"
     }
 }

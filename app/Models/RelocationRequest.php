@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'phone',
     'details',
     'status',
+    'admin_id',
 ])]
 class RelocationRequest extends Model
 {
@@ -41,5 +42,10 @@ class RelocationRequest extends Model
     public function broadbandAccount(): BelongsTo
     {
         return $this->belongsTo(BroadbandAccount::class);
+    }
+
+    public function admin(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'admin_id');
     }
 }

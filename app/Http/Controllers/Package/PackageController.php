@@ -141,7 +141,7 @@ class PackageController extends Controller
 
         activity('package')->causedBy($request->user())->performedOn($package)->event('created')->log('package_created');
 
-        return redirect()->route('packages.index')->with('success', 'packages.created');
+        return redirect()->route('packages.index', $request->query())->with('success', 'packages.created');
     }
 
     public function show(Package $package): Response
@@ -183,7 +183,7 @@ class PackageController extends Controller
 
         $package->update($data);
         activity('package')->causedBy($request->user())->performedOn($package)->event('updated')->log('package_updated');
-        return redirect()->route('packages.index')->with('success', 'packages.updated');
+        return redirect()->route('packages.index', $request->query())->with('success', 'packages.updated');
     }
 
     public function destroy(Request $request, Package $package): RedirectResponse

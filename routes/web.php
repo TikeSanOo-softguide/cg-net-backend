@@ -14,6 +14,7 @@ use App\Http\Controllers\Notification\AnnouncementController;
 use App\Http\Controllers\Package\AddonController;
 use App\Http\Controllers\ServiceRequest\FailureReportController;
 use App\Http\Controllers\ServiceRequest\ChangePlanRequestController;
+use App\Http\Controllers\ServiceRequest\RelocationRequestController;
 use App\Http\Controllers\Package\NetworkController;
 use App\Http\Controllers\Package\PackageController;
 use App\Http\Controllers\Package\SpeedController;
@@ -136,6 +137,10 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         Route::prefix('change-plan')->name('change-plan.')->group(function () {
             Route::get('/', [ChangePlanRequestController::class, 'index'])->middleware('can:service-requests.view')->name('index');
             Route::patch('/{changePlanRequest}/status', [ChangePlanRequestController::class, 'updateStatus'])->middleware('can:service-requests.update')->name('status');
+        });
+        Route::prefix('relocations')->name('relocations.')->group(function () {
+            Route::get('/', [RelocationRequestController::class, 'index'])->middleware('can:service-requests.view')->name('index');
+            Route::patch('/{relocationRequest}/status', [RelocationRequestController::class, 'updateStatus'])->middleware('can:service-requests.update')->name('status');
         });
     });
 

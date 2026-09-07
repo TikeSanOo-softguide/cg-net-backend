@@ -315,10 +315,6 @@ export default function PackageIndex({
                                     ),
                                 cell: (row) => (
                                     <span className="inline-flex items-center gap-1.5">
-                                        <NetworkIcon
-                                            className="size-7 shrink-0 rounded-[6px] bg-primary/12 p-1 text-primary"
-                                            strokeWidth={1.8}
-                                        />
                                         {truncateText(
                                             locale === 'en'
                                                 ? (row.name_en ?? '—')
@@ -412,7 +408,6 @@ export default function PackageIndex({
                                 searchValue: (row) => String((row as SpeedOption).mbps ?? ''),
                                 cell: (row) => (
                                     <span className="inline-flex items-center gap-1.5">
-                                        <Icon icon={GaugeIcon} />
                                         {(row as SpeedOption).mbps ? `${(row as SpeedOption).mbps} Mbps` : '—'}
                                     </span>
                                 ),
@@ -500,7 +495,6 @@ export default function PackageIndex({
                                 searchValue: (row) => String((row as TermOption).months ?? ''),
                                 cell: (row) => (
                                     <span className="inline-flex items-center gap-1.5">
-                                        <Icon icon={CalendarDaysIcon} />
                                         {(row as TermOption).months
                                             ? `${(row as TermOption).months} ${(row as TermOption).months === 1 ? 'Month' : 'Months'}`
                                             : '—'}
@@ -598,7 +592,6 @@ export default function PackageIndex({
                                     ),
                                 cell: (row) => (
                                     <span className="inline-flex items-center gap-1.5">
-                                        <Icon icon={PuzzleIcon} />
                                         {truncateText((row as AddonOption)[`name_${locale}`] ?? '—', 30)}
                                     </span>
                                 ),
@@ -768,6 +761,7 @@ export default function PackageIndex({
                 networks={networks}
                 speeds={speeds}
                 terms={terms}
+                returnQuery={window.location.search}
             />
 
             <ReferenceFormDialog

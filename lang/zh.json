@@ -893,5 +893,21 @@
             "mbps_required": "请输入 Mbps 网速。",
             "mbps_integer": "网速必须是整数。"
         }
+    },
+    "relocation_requests": {
+        "total_requests": "总请求数",
+        "under_review_requests": "审核中的请求",
+        "approved_requests": "已批准的请求",
+        "current_address": "当前地址",
+        "new_address": "新地址",
+        "phone": "电话号码",
+        "preferred_date": "首选日期",
+        "card_title": "迁移请求详情",
+        "service_transfer": "服务迁移",
+        "current_location": "当前位置",
+        "new_location": "新位置",
+        "detail": "详情",
+        "search": "按应用用户姓名、账号搜索",
+        "status_updated": "迁移请求状态已更新"
     }
 }
