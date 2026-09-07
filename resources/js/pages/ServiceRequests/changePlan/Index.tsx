@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { ArrowRightIcon, CalendarIcon, WifiIcon } from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, CalendarIcon, WifiIcon } from 'lucide-react';
 
 import {
     ChangePlanDetailDialog,
@@ -104,7 +104,6 @@ export default function ChangePlanIndex({ requests, filters, statuses }: Props) 
                             id: 'customer',
                             header: t('menu.customer_management'),
                             mobile: 'title' as const,
-                            sortable: true,
                             cell: (request) => (
                                 <div className="min-w-0">
                                     <p className="truncate font-semibold text-primary mb-1">{request.user.name}</p>
@@ -124,28 +123,48 @@ export default function ChangePlanIndex({ requests, filters, statuses }: Props) 
                                 `${request.user.name} ${request.broadband_account.account_number}`,
                         },
                         {
-                            id: 'plans',
-                            header: t('change_plan.packages'),
-                            mobile: 'subtitle' as const,
+                            id: 'current_plans',
+                            header: t('change_plan.current_packages'),
+                            mobile: false,
                             cell: (request) => (
-                                <span className="inline-flex items-center gap-2">
-                                    <span className="max-w-[140px] truncate rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                                        {packageName(request.current_package)}
-                                    </span>
-                                    <ArrowRightIcon className="size-4 shrink-0 text-muted-foreground/70" />
-                                    <span className="max-w-[140px] truncate rounded-md border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-                                        {packageName(request.new_package)}
-                                    </span>
+                                <span className="truncate font-semibold mb-1">
+                                    {packageName(request.current_package)}
                                 </span>
                             ),
-                            searchValue: (request) =>
-                                `${packageName(request.current_package)} ${packageName(request.new_package)}`,
+                            searchValue: (request) => packageName(request.current_package),
+                        },
+                        {
+                            id: 'requested_plans',
+                            header: t('change_plan.requested_packages'),
+                            mobile: 'subtitle' as const,
+                            cell: (request) => {
+                                const currentSpeed = request.current_package.speed?.mbps;
+                                const newSpeed = request.new_package.speed?.mbps;
+                                const SpeedIcon =
+                                    currentSpeed !== undefined && newSpeed !== undefined && newSpeed !== currentSpeed
+                                        ? newSpeed > currentSpeed
+                                            ? ArrowUpIcon
+                                            : ArrowDownIcon
+                                        : null;
+
+                                return (
+                                    <span className="truncate font-semibold text-primary mb-1">
+                                        {SpeedIcon && (
+                                            <SpeedIcon
+                                                className="mr-1 text-gray-500 inline size-3.5"
+                                                aria-hidden="true"
+                                            />
+                                        )}
+                                        {packageName(request.new_package)}
+                                    </span>
+                                );
+                            },
+                            searchValue: (request) => packageName(request.new_package),
                         },
                         {
                             id: 'preferred_date',
                             header: t('change_plan.preferred_date'),
                             mobile: 'meta' as const,
-                            sortable: true,
                             cell: (request) => {
                                 const isExpired = isPreferredDateExpired(request.preferred_date, request.status);
 
@@ -172,7 +191,6 @@ export default function ChangePlanIndex({ requests, filters, statuses }: Props) 
                             id: 'status',
                             header: t('common.status'),
                             mobile: 'badge' as const,
-                            sortable: true,
                             cell: (request) => (
                                 <div className="flex flex-col items-start gap-1">
                                     <StatusBadge status={request.status} />

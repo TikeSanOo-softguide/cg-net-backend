@@ -345,7 +345,8 @@
         }
     },
     "change_plan": {
-        "packages": "申请的套餐",
+        "current_packages": "目前軟體包",
+        "requested_pa​​ckages": "已要求的軟體包",
         "search_placeholder": "按账号编号或应用用户名搜索",
         "preferred_date": "首选日期",
         "overdue": "逾期警告！",

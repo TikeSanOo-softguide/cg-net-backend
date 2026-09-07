@@ -315,7 +315,8 @@
         "phone_placeholder": "+959xxxxxxxx"
     },
     "change_plan": {
-        "packages": "Requested Packages",
+        "current_packages": "Current Packages",
+        "requested_packages": "Requested Packages",
         "search_placeholder": "Search by account_no, app username",
         "preferred_date": "Preferred date",
         "overdue": "Overdue warning!",
