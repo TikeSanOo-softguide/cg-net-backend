@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { ArrowDownIcon, ArrowUpIcon, CalendarIcon, WifiIcon } from 'lucide-react';
+import { MoveUp, MoveDown, RefreshCcw, CalendarIcon, WifiIcon } from 'lucide-react';
 
 import {
     ChangePlanDetailDialog,
@@ -127,7 +127,7 @@ export default function ChangePlanIndex({ requests, filters, statuses }: Props) 
                             header: t('change_plan.current_packages'),
                             mobile: false,
                             cell: (request) => (
-                                <span className="truncate font-semibold mb-1">
+                                <span className="truncate text-xs text-muted-foreground mb-1">
                                     {packageName(request.current_package)}
                                 </span>
                             ),
@@ -140,18 +140,28 @@ export default function ChangePlanIndex({ requests, filters, statuses }: Props) 
                             cell: (request) => {
                                 const currentSpeed = request.current_package.speed?.mbps;
                                 const newSpeed = request.new_package.speed?.mbps;
-                                const SpeedIcon =
-                                    currentSpeed !== undefined && newSpeed !== undefined && newSpeed !== currentSpeed
-                                        ? newSpeed > currentSpeed
-                                            ? ArrowUpIcon
-                                            : ArrowDownIcon
-                                        : null;
+
+                                const speedChanged =
+                                    currentSpeed !== undefined && newSpeed !== undefined && newSpeed !== currentSpeed;
+
+                                const SpeedIcon = speedChanged
+                                    ? newSpeed > currentSpeed
+                                        ? MoveUp
+                                        : MoveDown
+                                    : RefreshCcw;
+
+                                const speedIconColor = speedChanged
+                                    ? newSpeed > currentSpeed
+                                        ? 'text-green-600'
+                                        : 'text-red-400'
+                                    : 'text-primary';
 
                                 return (
-                                    <span className="truncate font-semibold text-primary mb-1">
+                                    <span className="flex items-center gap-1.5 truncate font-semibold mb-1">
                                         {SpeedIcon && (
                                             <SpeedIcon
-                                                className="mr-1 text-gray-500 inline size-3.5"
+                                                className={`size-4 ${speedIconColor}`}
+                                                strokeWidth={3.5}
                                                 aria-hidden="true"
                                             />
                                         )}
