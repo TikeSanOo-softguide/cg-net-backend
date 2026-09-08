@@ -156,7 +156,7 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                                         <StaffListAvatar username={request.user.name} />
                                     </div>
 
-                                    <span className="min-w-0 truncate font-medium">{request.user.name}</span>
+                                    <span className="truncate font-semibold text-primary">{request.user.name}</span>
 
                                     <p className="truncate font-mono text-xs text-muted-foreground">
                                         {request.broadband_account.account_number}
