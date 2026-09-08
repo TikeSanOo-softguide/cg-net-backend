@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\ServiceRequest;
 
-use App\Enums\ReviewStatus;
+use App\Enums\RequestStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -26,6 +26,7 @@ class UpdateRelocationRequest extends FormRequest
             'preferred_date' => ['required', 'date'],
             'phone' => ['required', 'string', 'max:16'],
             'details' => ['nullable', 'string', 'max:5000'],
+            'status' => ['nullable',  Rule::enum(RequestStatus::class)],
         ];
     }
 }

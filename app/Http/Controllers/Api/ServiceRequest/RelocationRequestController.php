@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\ServiceRequest;
 
+use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ServiceRequest\CreateRelocationRequest;
 use App\Http\Requests\ServiceRequest\UpdateRelocationRequest;
@@ -39,6 +40,15 @@ class RelocationRequestController extends Controller
     public function update(UpdateRelocationRequest $request, RelocationRequest $relocationRequest): RelocationRequestResource
     {
         $relocationRequest->update($request->validated());
+        return new RelocationRequestResource($relocationRequest->refresh());
+    }
+
+    public function cancel(RelocationRequest $relocationRequest): RelocationRequestResource
+    {
+        $relocationRequest->update([
+            'status' => RequestStatus::Cancelled,
+        ]);
+
         return new RelocationRequestResource($relocationRequest->refresh());
     }
 

@@ -920,10 +920,23 @@
             "name_zh_required": "请输入中文名称。",
             "name_zh_string": "中文名称必须是字符串。",
             "name_zh_max": "中文名称不能超过 255 个字符。",
+            "network_name_en_required": "请输入英文名称。",
+            "network_name_en_string": "英文名称必须是字符串。",
+            "network_name_en_max": "英文名称不能超过 50 个字符。",
+            "network_name_zh_required": "请输入中文名称。",
+            "network_name_zh_string": "中文名称必须是字符串。",
+            "network_name_zh_max": "中文名称不能超过 50 个字符。",
+            "network_name_my_required": "请输入缅甸语名称。",
+            "network_name_my_string": "缅甸语名称必须是字符串。",
+            "network_name_my_max": "缅甸语名称不能超过 50 个字符。",
             "months_required": "请输入月数。",
             "months_integer": "月数必须是整数。",
+            "months_max": "月数不能超过 100000。",
             "mbps_required": "请输入 Mbps 网速。",
-            "mbps_integer": "网速必须是整数。"
+            "mbps_integer": "网速必须是整数。",
+            "mbps_max": "网速不能超过 100000 Mbps。",
+            "price_numeric": "价格必须是数字。",
+            "price_min": "价格不能小于 0。"
         }
     },
     "relocation_requests": {
@@ -940,6 +953,9 @@
         "new_location": "新位置",
         "detail": "详情",
         "search": "按应用用户姓名、账号搜索",
-        "status_updated": "迁移请求状态已更新"
+        "status_updated": "迁移请求状态已更新",
+        "copy_phone": "复制电话号码",
+        "copy_current_location": "复制当前位置",
+        "copy_new_location": "复制新位置"
     }
 }

@@ -1,19 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import {
-    ArrowRightIcon,
-    CalendarDaysIcon,
     CalendarIcon,
-    CheckCircle2Icon,
-    Clock3Icon,
-    FileTextIcon,
+    BookX,
+    CircleCheckBig,
+    ClipboardList,
+    ScanEye,
     MapPinIcon,
-    NavigationIcon,
-    PhoneCallIcon,
     PhoneIcon,
-    UserIcon,
     WifiIcon,
-    XIcon,
 } from 'lucide-react';
 
 import { DataTable } from '@/components/DataTable';
@@ -73,7 +68,12 @@ type Props = {
     requests: Paginated<RelocationRequest>;
     filters: Filters;
     statuses: string[];
-    stats: Stats;
+    stats: {
+        total_requests: number;
+        under_reviews_requests: number;
+        approved_requests: number;
+        cancelled_requests: number;
+    };
 };
 
 export default function RelocationRequestIndex({ requests, filters, statuses, stats }: Props) {
@@ -82,30 +82,34 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
     const [search, setSearch] = useState(filters.search);
     const [selectedRequest, setSelectedRequest] = useState<RelocationRequest | null>(null);
     const debounce = useRef<number>(0);
-    const totalRequests = stats.total;
-    const underReviewCount = stats.under_review;
-    const approvedCount = stats.approved;
 
     const cards = [
         {
-            key: 'relocation_requests.total_requests',
-            title: t('relocation_requests.total_requests'),
-            value: stats.total.toLocaleString(),
-            icon: NavigationIcon,
+            key: 'change_password.total_requests',
+            title: t('change_password.total_requests'),
+            value: stats.total_requests.toLocaleString(),
+            icon: ClipboardList,
         },
         {
-            key: 'relocation_requests.under_review_requests',
-            title: t('relocation_requests.under_review_requests'),
-            value: stats.under_review.toLocaleString(),
-            icon: Clock3Icon,
+            key: 'change_password.under_review_requests',
+            title: t('change_password.under_review_requests'),
+            value: stats.under_reviews_requests.toLocaleString(),
+            icon: ScanEye,
         },
         {
-            key: 'relocation_requests.approved_requests',
-            title: t('relocation_requests.approved_requests'),
-            value: stats.approved.toLocaleString(),
-            icon: CheckCircle2Icon,
+            key: 'change_password.approved_requests',
+            title: t('change_password.approved_requests'),
+            value: stats.approved_requests.toLocaleString(),
+            icon: CircleCheckBig,
+        },
+        {
+            key: 'change_password.cancelled_requests',
+            title: t('change_password.cancelled_requests'),
+            value: stats.cancelled_requests.toLocaleString(),
+            icon: BookX,
         },
     ];
+
     useEffect(() => {
         setSearch(filters.search);
     }, [filters.search]);
@@ -145,7 +149,7 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
 
             <PageContent>
                 <PageHeader />
-                <StatCard items={cards} />
+                <StatCard items={cards} className="xl:grid-cols-4" />
 
                 <DataTable
                     data={requests.data}
@@ -191,10 +195,11 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                                     <div className="row-span-2">
                                         <StaffListAvatar username={request.user.name} />
                                     </div>
+                                    <span className="min-w-0 truncate font-medium">
+                                        {truncateText(request.user.name, 20)}
+                                    </span>
 
-                                    <span className="min-w-0 truncate font-medium">{request.user.name}</span>
-
-                                    <p className="truncate font-mono text-xs text-muted-foreground">
+                                    <p className="truncate font-mono mt-1 text-xs text-muted-foreground">
                                         {request.broadband_account.account_number}
                                     </p>
                                 </div>
@@ -208,7 +213,7 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                             mobile: 'meta' as const,
                             sortable: true,
                             cell: (request) => (
-                                <span className="inline-flex max-w-[260px] items-center gap-1.5 text-xs">
+                                <span className="inline-flex max-w-[260px] items-center gap-1.5 text-muted-foreground mb-1">
                                     <MapPinIcon className="size-3.5 shrink-0 text-muted-foreground/60" />
                                     <span>{truncateText(request.current_address, 30)}</span>
                                 </span>
@@ -221,7 +226,7 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                             mobile: 'meta' as const,
                             sortable: true,
                             cell: (request) => (
-                                <span className="inline-flex max-w-[260px] items-center gap-1.5 text-xs ">
+                                <span className="inline-flex max-w-[260px] items-center gap-1.5">
                                     <MapPinIcon className="size-3.5 shrink-0 text-muted-foreground/60 text-success/70" />
                                     <span>{truncateText(request.new_address, 30)}</span>
                                 </span>

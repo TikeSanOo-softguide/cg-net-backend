@@ -370,28 +370,46 @@ class DatabaseSeeder extends Seeder
     private function seedBanners(): void
     {
         Banner::factory()->create([
-            'image_url_en' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
-            'image_url_zh' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
-            'image_url_my' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
+            'image_url_en' => 'seeder_images/banner/banner_en.png',
+            'image_url_zh' => 'seeder_images/banner/banner_zh.png',
+            'image_url_my' => 'seeder_images/banner/banner_my.png',
             'sort_order' => 1,
         ]);
         Banner::factory()->create([
-            'image_url_en' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
-            'image_url_zh' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
-            'image_url_my' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
+            'image_url_en' => 'seeder_images/banner/banner_en1.png',
+            'image_url_zh' => 'seeder_images/banner/banner_zh1.png',
+            'image_url_my' => 'seeder_images/banner/banner_my1.png',
             'sort_order' => 2,
         ]);
         Banner::factory()->create([
-            'image_url_en' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
-            'image_url_zh' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
-            'image_url_my' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
+            'image_url_en' => 'seeder_images/banner/banner_en2.png',
+            'image_url_zh' => 'seeder_images/banner/banner_zh2.png',
+            'image_url_my' => 'seeder_images/banner/banner_my2.png',
             'sort_order' => 3,
         ]);
         Banner::factory()->create([
-            'image_url_en' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
-            'image_url_zh' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
-            'image_url_my' => 'cms/banners/mlQcLNgXn10179i32Nz65TxxXEkRNrwwKyI5z2Xy.png',
+            'image_url_en' => 'seeder_images/banner/banner_en3.png',
+            'image_url_zh' => 'seeder_images/banner/banner_zh3.png',
+            'image_url_my' => 'seeder_images/banner/banner_my3.png',
             'sort_order' => 4,
+        ]);
+        Banner::factory()->create([
+            'image_url_en' => 'seeder_images/banner/banner_en4.png',
+            'image_url_zh' => 'seeder_images/banner/banner_zh4.png',
+            'image_url_my' => 'seeder_images/banner/banner_my4.png',
+            'sort_order' => 5,
+        ]);
+        Banner::factory()->create([
+            'image_url_en' => 'seeder_images/banner/banner_en5.png',
+            'image_url_zh' => 'seeder_images/banner/banner_zh5.png',
+            'image_url_my' => 'seeder_images/banner/banner_my5.png',
+            'sort_order' => 6,
+        ]);
+        Banner::factory()->create([
+            'image_url_en' => 'seeder_images/banner/banner_en6.png',
+            'image_url_zh' => 'seeder_images/banner/banner_zh6.png',
+            'image_url_my' => 'seeder_images/banner/banner_my6.png',
+            'sort_order' => 7,
         ]);
     }
 

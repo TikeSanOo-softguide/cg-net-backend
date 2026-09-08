@@ -176,9 +176,21 @@ class PackageController extends Controller
             $package->image_url,
         );
 
-        if ($request->exists('image_url') && blank($request->input('image_url'))) {
-            StoresPublicImage::delete($package->image_url);
+        if ($request->hasFile('image_url')) {
+            if ($package->image_url) {
+                StoresPublicImage::delete($package->image_url);
+            }
+            $data['image_url'] = StoresPublicImage::store(
+                $request->file('image_url'),
+                'cms/packages'
+            );
+        } elseif ($request->has('image_url') && blank($request->input('image_url'))) {
+            if ($package->image_url) {
+                StoresPublicImage::delete($package->image_url);
+            }
             $data['image_url'] = null;
+        } else {
+            unset($data['image_url']);
         }
 
         $package->update($data);

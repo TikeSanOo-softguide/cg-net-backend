@@ -249,7 +249,6 @@ export default function PackageIndex({
                         onSort={(column) => {
                             const nextDirection =
                                 filters.sort === column && filters.direction === 'asc' ? 'desc' : 'asc';
-
                             visitIndex({
                                 ...filters,
                                 sort: column,
@@ -276,7 +275,6 @@ export default function PackageIndex({
                                         tone="edit"
                                         onClick={(event) => {
                                             event.stopPropagation();
-
                                             setReferenceForm({
                                                 kind: 'network',
                                                 item: row as ReferenceFormRow,
@@ -315,14 +313,11 @@ export default function PackageIndex({
                                     ),
                                 cell: (row) => (
                                     <span className="inline-flex items-center gap-1.5">
-                                        {truncateText(
-                                            locale === 'en'
-                                                ? (row.name_en ?? '—')
-                                                : locale === 'zh'
-                                                  ? (row.name_zh ?? '—')
-                                                  : (row.name_my ?? '—'),
-                                            50,
-                                        )}
+                                        {locale === 'en'
+                                            ? truncateText(row.name_en ?? '—', 20)
+                                            : locale === 'zh'
+                                              ? truncateText(row.name_zh ?? '—', 12)
+                                              : truncateText(row.name_my ?? '—', 15)}
                                     </span>
                                 ),
                             },
@@ -487,8 +482,8 @@ export default function PackageIndex({
                         )}
                         columns={[
                             {
-                                id: 'network',
-                                header: t('packages.network'),
+                                id: 'term',
+                                header: t('packages.term'),
                                 className: 'font-medium',
                                 mobile: 'title',
                                 sortable: true,
@@ -553,7 +548,6 @@ export default function PackageIndex({
                                         tone="edit"
                                         onClick={(event) => {
                                             event.stopPropagation();
-
                                             setReferenceForm({
                                                 kind: 'addon',
                                                 item: row as ReferenceFormRow,
@@ -578,7 +572,7 @@ export default function PackageIndex({
                         columns={[
                             {
                                 id: 'addon',
-                                header: t('packages.addon'),
+                                header: t('packages.addons.title'),
                                 className: 'font-medium',
                                 mobile: 'title',
                                 sortable: true,
@@ -591,8 +585,12 @@ export default function PackageIndex({
                                               : (row.name_my ?? ''),
                                     ),
                                 cell: (row) => (
-                                    <span className="inline-flex items-center gap-1.5">
-                                        {truncateText((row as AddonOption)[`name_${locale}`] ?? '—', 30)}
+                                    <span className="block max-w-full whitespace-normal break-words">
+                                        {locale === 'en'
+                                            ? truncateText(row.name_en ?? '—', 20)
+                                            : locale === 'zh'
+                                              ? truncateText(row.name_zh ?? '—', 12)
+                                              : truncateText(row.name_my ?? '—', 15)}
                                     </span>
                                 ),
                             },
@@ -714,7 +712,7 @@ export default function PackageIndex({
                             header: t('packages.speed'),
                             mobile: 'meta',
                             sortable: true,
-                            cell: (row) => <span>{row.speed?.mbps ?? '—'} Mbps</span>,
+                            cell: (row) => <span>{row.speed?.mbps ? `${row.speed.mbps} Mbps` : '—'}</span>,
                         },
 
                         {
@@ -722,7 +720,7 @@ export default function PackageIndex({
                             header: t('packages.term'),
                             mobile: 'meta',
                             sortable: true,
-                            cell: (row) => <span>{row.term?.months ?? '—'} Months</span>,
+                            cell: (row) => <span>{row.term?.months ? `${row.term.months} Months` : '—'}</span>,
                         },
 
                         {

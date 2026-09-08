@@ -73,14 +73,14 @@ export default function BannersIndex({ items, filters }: Props) {
                                       : row.image_url_my;
 
                             return (
-                                <span className="inline-flex items-center p-2">
+                                <span className="p-1">
                                     {imageUrl ? (
                                         <img
                                             src={imageUrl}
                                             alt=""
                                             width={200}
                                             height={50}
-                                            className="h-20 w-[200px] rounded object-cover"
+                                            className="h-20 w-full rounded object-cover"
                                         />
                                     ) : null}
                                 </span>

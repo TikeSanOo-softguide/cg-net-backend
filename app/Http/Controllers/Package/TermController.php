@@ -12,7 +12,7 @@ class TermController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'months' => ['required', 'integer', 'min:1'],
+            'months' => ['required', 'integer', 'min:1', 'max:100000'],
         ]);
 
         Term::query()->create($data);
@@ -23,7 +23,7 @@ class TermController extends Controller
     public function update(Request $request, Term $term): RedirectResponse
     {
         $data = $request->validate([
-            'months' => ['required', 'integer', 'min:1'],
+            'months' => ['required', 'integer', 'min:1', 'max:100000'],
         ]);
 
         $term->update($data);

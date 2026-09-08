@@ -20,16 +20,16 @@ class BroadbandAccountFactory extends Factory
 
         return [
             'user_id' => User::factory(),
-            'account_number' => 'CG'.fake()->unique()->numerify('########'),
+            'account_number' => 'CG' . fake()->unique()->numerify('########'),
             'customer_name' => $name,
             'status' => BroadbandAccountStatus::Active,
-            'current_package_id' => Package::factory(),
+            'current_package_id' => Package::query()->inRandomOrder()->value('id'),
         ];
     }
 
     public function unbound(): static
     {
-        return $this->state(fn () => [
+        return $this->state(fn() => [
             'user_id' => null,
         ]);
     }

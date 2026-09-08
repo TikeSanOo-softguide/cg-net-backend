@@ -8,6 +8,8 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
+import { CopyValueButton } from '@/components/CopyValueButton';
+import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
 
 type RelocationRequest = {
     id: number;
@@ -29,9 +31,10 @@ type AddressCardProps = {
     label: string;
     value: string;
     accent?: boolean;
+    showCopy?: boolean;
 };
 
-function AddressCard({ label, value, accent = false }: AddressCardProps) {
+function AddressCard({ label, value, accent = false, showCopy = true }: AddressCardProps) {
     return (
         <div
             className={cn(
@@ -49,6 +52,7 @@ function AddressCard({ label, value, accent = false }: AddressCardProps) {
             >
                 <MapPinIcon className="mt-0.5 size-3.5 shrink-0" />
                 <span className="min-w-0">{value}</span>
+                {showCopy && <CopyValueButton value={value} label={label} />}
             </div>
         </div>
     );
@@ -68,19 +72,14 @@ export function RelocationRequestDetailDialog({
     canUpdate: boolean;
 }) {
     const { t } = useTranslation();
-    const { setData, patch, processing } = useForm({
-        status: request?.status ?? 'under_review',
-    });
-
+    const nextStatus =
+        request?.status === CHANGE_PLAN_STATUS.UNDER_REVIEW
+            ? CHANGE_PLAN_STATUS.APPROVED
+            : CHANGE_PLAN_STATUS.UNDER_REVIEW;
+    const { data, setData, patch } = useForm({ status: nextStatus });
+    const nextButton = request?.status === CHANGE_PLAN_STATUS.UNDER_REVIEW ? 'approve' : 'review';
     useEffect(() => {
         if (request) {
-            const nextStatus =
-                request.status === 'under_review'
-                    ? 'approved'
-                    : request.status === 'approved'
-                      ? 'under_review'
-                      : request.status;
-
             setData('status', nextStatus);
         }
     }, [request?.id, request?.status, statuses]);
@@ -89,13 +88,8 @@ export function RelocationRequestDetailDialog({
         return null;
     }
 
-    const nextStatus =
-        request.status === 'under_review' ? 'approved' : request.status === 'approved' ? 'under_review' : null;
-
     const handleStatusUpdate = () => {
-        if (!nextStatus || processing) {
-            return;
-        }
+        if (!request || !data.status) return;
 
         patch(`/service-requests/relocations/${request.id}/status`, {
             preserveScroll: true,
@@ -110,7 +104,7 @@ export function RelocationRequestDetailDialog({
             title={t('relocation_requests.card_title')}
             description={t('menu.relocation_requests_description')}
             icon={NavigationIcon}
-            size="lg"
+            size="xl"
         >
             {request ? (
                 <div className="mt-1 space-y-4 overflow-y-auto p-2">
@@ -125,7 +119,15 @@ export function RelocationRequestDetailDialog({
                             </p>
                             <p className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <PhoneIcon className="size-3" />
-                                {request.phone}
+                                <span className={request.status === 'cancelled' ? 'select-none' : ''}>
+                                    {request.phone}
+                                </span>
+                                {request.status !== 'cancelled' && (
+                                    <CopyValueButton
+                                        value={request.phone}
+                                        label={t('relocation_requests.copy_phone')}
+                                    />
+                                )}
                             </p>
                         </div>
 
@@ -139,9 +141,15 @@ export function RelocationRequestDetailDialog({
                             </p>
                             <p className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <UserIcon className="size-3" />
-                                <span className="font-mono">
-                                    {request.user.name} ({request.user.phone})
+                                <span className={`font-mono ${request.status === 'cancelled' ? 'select-none' : ''}`}>
+                                    ({request.user?.phone})
                                 </span>
+                                {request.status !== 'cancelled' && (
+                                    <CopyValueButton
+                                        value={request.user.phone}
+                                        label={t('relocation_requests.copy_phone')}
+                                    />
+                                )}
                             </p>
                         </div>
                     </div>
@@ -163,6 +171,7 @@ export function RelocationRequestDetailDialog({
                             <AddressCard
                                 label={t('relocation_requests.current_location')}
                                 value={request.current_address}
+                                showCopy={request.status !== 'cancelled'}
                             />
                             <div className="hidden sm:flex">
                                 <div className="flex size-9 items-center justify-center rounded-full border border-primary/20 bg-primary/5 text-primary">
@@ -173,6 +182,7 @@ export function RelocationRequestDetailDialog({
                                 label={t('relocation_requests.new_location')}
                                 value={request.new_address}
                                 accent
+                                showCopy={request.status !== 'cancelled'}
                             />
                         </div>
                     </div>
@@ -200,17 +210,16 @@ export function RelocationRequestDetailDialog({
                             <StatusBadge status={request.status} />
                         </div>
 
-                        {canUpdate && nextStatus ? (
+                        {canUpdate && request?.status !== 'cancelled' && (
                             <Button
                                 type="button"
                                 size="sm"
                                 onClick={handleStatusUpdate}
-                                className={formActionSubmitClass}
-                                disabled={processing}
+                                className="h-9 px-4 text-xs font-semibold"
                             >
-                                {t(`status.${nextStatus}`)}
+                                {t(`status.${nextButton}`)}
                             </Button>
-                        ) : null}
+                        )}
                     </div>
                 </div>
             ) : null}

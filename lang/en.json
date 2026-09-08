@@ -895,10 +895,23 @@
             "name_zh_required": "The Chinese name is required.",
             "name_zh_string": "The Chinese name must be a string.",
             "name_zh_max": "The Chinese name may not be greater than 255 characters.",
+            "network_name_en_required": "The English name is required.",
+            "network_name_en_string": "The English name must be a string.",
+            "network_name_en_max": "The English name may not be greater than 50 characters.",
+            "network_name_zh_required": "The Chinese name is required.",
+            "network_name_zh_string": "The Chinese name must be a string.",
+            "network_name_zh_max": "The Chinese name may not be greater than 50 characters.",
+            "network_name_my_required": "The Myanmar name is required.",
+            "network_name_my_string": "The Myanmar name must be a string.",
+            "network_name_my_max": "The Myanmar name may not be greater than 50 characters.",
             "months_required": "Please enter the number of months.",
             "months_integer": "The number of months must be an integer.",
+            "months_max": "The number of months may not be greater than 100000.",
             "mbps_required": "Please enter the speed in Mbps.",
-            "mbps_integer": "The speed must be an integer."
+            "mbps_integer": "The speed must be an integer.",
+            "mbps_max": "The speed may not be greater than 100000 Mbps.",
+            "price_numeric": "The price must be a number.",
+            "price_min": "The price must be at least 0."
         }
     },
     "relocation_requests": {
@@ -915,6 +928,9 @@
         "new_location": "New Location",
         "detail": "Detail",
         "search": "Search by app user name,account_no",
-        "status_updated": "Request status updated"
+        "status_updated": "Request status updated",
+        "copy_phone": "Copy Phone Number",
+        "copy_current_location": "Copy Current Location",
+        "copy_new_location": "Copy New Location"
     }
 }

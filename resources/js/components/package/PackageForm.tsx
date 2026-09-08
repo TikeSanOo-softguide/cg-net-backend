@@ -93,6 +93,7 @@ export function PackageForm({
 }: PackageFormProps) {
     const { t, locale } = useTranslation();
     const [image, setImage] = useState<File | null>(null);
+    const [imageChanged, setImageChanged] = useState(false);
     const [touched, setTouched] = useState<Record<keyof PackageFormValues, boolean>>({
         network_id: false,
         speed_id: false,
@@ -120,11 +121,9 @@ export function PackageForm({
         if (!touched[field] && !submitted) {
             return 'idle';
         }
-
         if (field === 'image_url' && mode === 'edit' && existingImageUrl && !form.data.image_url) {
             return form.errors.image_url ? 'error' : 'success';
         }
-
         return form.errors[field] || validatePackageField(field, form.data, t) ? 'error' : 'success';
     };
 
@@ -142,9 +141,7 @@ export function PackageForm({
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
-
         setSubmitted(true);
-
         setTouched({
             network_id: true,
             speed_id: true,
@@ -168,6 +165,7 @@ export function PackageForm({
         form.clearErrors();
         onSubmit(event);
     };
+
     return (
         <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
@@ -414,6 +412,7 @@ export function PackageForm({
                                     className={cn(formControlStateClass(fieldState('image_url')))}
                                     onChange={(file) => {
                                         setImage(file);
+                                        setImageChanged(true);
                                         setField('image_url', file);
                                         markTouched('image_url');
                                     }}

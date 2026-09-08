@@ -58,12 +58,17 @@ class PackageSeeder extends Seeder
         // ------------------------------------------------------------
         Addon::firstOrCreate(
             ['name_en' => 'IPTV Set-Top Box'], // 电视机顶盒
-            ['name_zh' => 'IPTV Set-Top Box', 'name_my' => 'IPTV Set-Top Box', 'price' => 288.0, 'is_active' => true],
+            ['name_zh' => 'IPTV 机顶盒', 'name_my' => 'IPTV Set-Top Box', 'price' => 288.0, 'is_active' => true],
         );
 
         Addon::firstOrCreate(
             ['name_en' => 'Wireless Receiver'], // 接收器 (CG-家庭网)
-            ['name_zh' => 'Wireless Receiver', 'name_my' => 'Wireless Receiver', 'price' => 350.0, 'is_active' => true],
+            [
+                'name_zh' => '无线接收器',
+                'name_my' => 'ကြိုးမဲ့ လက်ခံကိရိယာ',
+                'price' => 350.0,
+                'is_active' => true
+            ],
         );
 
         // ------------------------------------------------------------
@@ -110,7 +115,14 @@ class PackageSeeder extends Seeder
             ['CG-Net', 20, 12, 1999, 28],
         ];
 
-        foreach ($rows as [$networkName, $mbps, $months, $price, $sortOrder]) {
+        $imagePaths = [
+            'seeder_images/package/package1.png',
+            'seeder_images/package/package2.png',
+            'seeder_images/package/package3.png',
+            'seeder_images/package/package4.png',
+        ];
+
+        foreach ($rows as $index => [$networkName, $mbps, $months, $price, $sortOrder]) {
             $networkId = Network::where('name_en', $networkName)->value('id');
             $speedId = Speed::where('mbps', $mbps)->value('id');
             $termId = Term::where('months', $months)->value('id');
@@ -124,11 +136,10 @@ class PackageSeeder extends Seeder
                 [
                     'price' => $price,
                     'installation_fee' => $this->installationFee($months, $mbps),
-                    // 1-year plans bundle free install + free IPTV
                     'includes_free_iptv' => $months === 12,
                     'is_active' => true,
                     'sort_order' => $sortOrder,
-                    // Flag the top 150 Mbps / 1-year tiers as recommended
+                    'image_url' => $imagePaths[$index % count($imagePaths)],
                     'recommended' => $mbps === 150 || ($networkName === 'Myanmar Network' && $months === 12),
                 ],
             );

@@ -2,8 +2,7 @@
 
 namespace App\Http\Controllers\ServiceRequest;
 
-use App\Enums\ChangePlanStatus;
-use App\Enums\ReviewStatus;
+use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\RelocationRequest;
 use Illuminate\Http\RedirectResponse;
@@ -17,9 +16,7 @@ class RelocationRequestController extends Controller
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search'));
-        $status = $request->has('status')
-            ? $request->string('status')->toString()
-            : ChangePlanStatus::UnderReview->value;
+        $status = $request->string('status')->toString();
 
         $relocationRequests = RelocationRequest::query()
             ->with([
@@ -30,12 +27,31 @@ class RelocationRequestController extends Controller
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
-                        ->whereHas('user', fn($query) => $query->where('name', 'like', '%' . $search . '%'))
-                        ->orWhereHas('broadbandAccount', fn($query) => $query->where('account_number', 'like', '%' . $search . '%'));
+                        ->whereHas(
+                            'user',
+                            fn($query) => $query->where(
+                                'name',
+                                'like',
+                                '%' . $search . '%'
+                            )
+                        )
+                        ->orWhereHas(
+                            'broadbandAccount',
+                            fn($query) => $query->where(
+                                'account_number',
+                                'like',
+                                '%' . $search . '%'
+                            )
+                        );
                 });
             })
             ->when(
-                $status !== '' && in_array($status, array_column(ReviewStatus::cases(), 'value'), true),
+                $status !== ''
+                    && in_array(
+                        $status,
+                        array_column(RequestStatus::cases(), 'value'),
+                        true
+                    ),
                 fn($query) => $query->where('status', $status),
             )
             ->orderBy('preferred_date')
@@ -49,19 +65,15 @@ class RelocationRequestController extends Controller
                 'search' => $search,
                 'status' => $status,
             ],
-            'statuses' => array_column(ChangePlanStatus::cases(), 'value'),
-            'stats' => [
-                'total' => RelocationRequest::count(),
-                'under_review' => RelocationRequest::where('status', 'under_review')->count(),
-                'approved' => RelocationRequest::where('status', 'approved')->count(),
-            ],
+            'statuses' => array_column(RequestStatus::cases(), 'value'),
+            'stats' => $this->stats(),
         ]);
     }
 
     public function updateStatus(Request $request, RelocationRequest $relocationRequest): RedirectResponse
     {
         $validated = $request->validate([
-            'status' => ['required', new Enum(ChangePlanStatus::class)],
+            'status' => ['required', new Enum(RequestStatus::class)],
         ]);
 
         $relocationRequest->update([
@@ -70,5 +82,15 @@ class RelocationRequestController extends Controller
         ]);
 
         return back()->with('success', 'relocation_requests.status_updated');
+    }
+
+    private function stats(): array
+    {
+        return [
+            'total_requests' => RelocationRequest::query()->count(),
+            'under_reviews_requests' => RelocationRequest::query()->where('status', RequestStatus::UnderReview)->count(),
+            'approved_requests' => RelocationRequest::query()->where('status', RequestStatus::Approved)->count(),
+            'cancelled_requests' => RelocationRequest::query()->where('status', RequestStatus::Cancelled)->count(),
+        ];
     }
 }

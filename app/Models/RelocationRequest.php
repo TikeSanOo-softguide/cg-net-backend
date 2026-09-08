@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\ReviewStatus;
+use App\Enums\RequestStatus;
 use Database\Factories\RelocationRequestFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -30,7 +30,7 @@ class RelocationRequest extends Model
     {
         return [
             'preferred_date' => 'date',
-            'status' => ReviewStatus::class,
+            'status' => RequestStatus::class,
         ];
     }
 

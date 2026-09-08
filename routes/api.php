@@ -57,6 +57,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [RelocationRequestController::class, 'index']);
         Route::post('/create', [RelocationRequestController::class, 'store']);
         Route::put('/{relocationRequest}', [RelocationRequestController::class, 'update']);
+        Route::patch('/{relocationRequest}/cancel', [RelocationRequestController::class, 'cancel']);
         Route::delete('/{relocationRequest}', [RelocationRequestController::class, 'destroy']);
     });
     Route::prefix('failure-reports')->group(function () {

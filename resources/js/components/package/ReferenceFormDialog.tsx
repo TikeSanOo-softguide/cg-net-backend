@@ -138,6 +138,65 @@ const getFormValues = (kind: ReferenceFormKind, item: ReferenceFormRow | null): 
     }
 };
 
+const getValidationError = (
+    error: string | undefined,
+    field: string,
+    t: (key: string) => string,
+): string | undefined => {
+    if (!error) {
+        return undefined;
+    }
+
+    const validationKey = (rule: string) => {
+        const keyField = field === 'image_url' ? 'image' : field;
+        return t(`packages.validation.${keyField}_${rule}`);
+    };
+
+    if (error.includes('required')) {
+        return validationKey('required');
+    }
+
+    if (error.includes('string')) {
+        return validationKey('string');
+    }
+
+    if (error.includes('integer')) {
+        return validationKey('integer');
+    }
+
+    if (error.includes('numeric') || error.includes('number')) {
+        return validationKey('numeric');
+    }
+
+    if (
+        error.includes('max:50') ||
+        ((field.startsWith('name_') || field.startsWith('network_name_')) &&
+            (error.includes('50') || error.includes('255')))
+    ) {
+        return validationKey('max');
+    }
+
+    if (error.includes('100')) {
+        return validationKey('max');
+    }
+
+    if (error.includes('min:0') || error.includes('at least 0')) {
+        return validationKey('min');
+    }
+
+    if (field === 'image_url') {
+        if (error.includes('5120') || error.includes('kilobytes')) {
+            return validationKey('max_size');
+        }
+
+        if (error.includes('image') || error.includes('file')) {
+            return validationKey('invalid_type');
+        }
+    }
+
+    return error;
+};
+
 export function ReferenceFormDialog({ open, onOpenChange, kind, item }: ReferenceFormDialogProps) {
     const { t } = useTranslation();
 
@@ -221,17 +280,7 @@ function ReferenceFormDialogBody({
                         <FormField
                             label={t('common.name_en')}
                             htmlFor="network-name-en"
-                            error={
-                                form.errors.name_en
-                                    ? form.errors.name_en.includes('required')
-                                        ? t('packages.validation.name_en_required')
-                                        : form.errors.name_en.includes('string')
-                                          ? t('packages.validation.name_en_string')
-                                          : form.errors.name_en.includes('255')
-                                            ? t('packages.validation.name_en_max')
-                                            : form.errors.name_en
-                                    : undefined
-                            }
+                            error={getValidationError(form.errors.name_en, 'network_name_en', t)}
                         >
                             <Input
                                 id="network-name-en"
@@ -244,17 +293,7 @@ function ReferenceFormDialogBody({
                         <FormField
                             label={t('common.name_zh')}
                             htmlFor="network-name-zh"
-                            error={
-                                form.errors.name_zh
-                                    ? form.errors.name_zh.includes('required')
-                                        ? t('packages.validation.name_zh_required')
-                                        : form.errors.name_zh.includes('string')
-                                          ? t('packages.validation.name_zh_string')
-                                          : form.errors.name_zh.includes('255')
-                                            ? t('packages.validation.name_zh_max')
-                                            : form.errors.name_zh
-                                    : undefined
-                            }
+                            error={getValidationError(form.errors.name_zh, 'network_name_zh', t)}
                         >
                             <Input
                                 id="network-name-zh"
@@ -267,17 +306,7 @@ function ReferenceFormDialogBody({
                         <FormField
                             label={t('common.name_my')}
                             htmlFor="network-name-my"
-                            error={
-                                form.errors.name_my
-                                    ? form.errors.name_my.includes('required')
-                                        ? t('packages.validation.name_my_required')
-                                        : form.errors.name_my.includes('string')
-                                          ? t('packages.validation.name_my_string')
-                                          : form.errors.name_my.includes('255')
-                                            ? t('packages.validation.name_my_max')
-                                            : form.errors.name_my
-                                    : undefined
-                            }
+                            error={getValidationError(form.errors.name_my, 'network_name_my', t)}
                         >
                             <Input
                                 id="network-name-my"
@@ -293,15 +322,7 @@ function ReferenceFormDialogBody({
                     <FormField
                         label="Mbps"
                         htmlFor="speed-mbps"
-                        error={
-                            form.errors.mbps
-                                ? form.errors.mbps.includes('required')
-                                    ? t('packages.validation.mbps_required')
-                                    : form.errors.mbps.includes('integer')
-                                      ? t('packages.validation.mbps_integer')
-                                      : form.errors.mbps
-                                : undefined
-                        }
+                        error={getValidationError(form.errors.mbps, 'mbps', t)}
                     >
                         <Input
                             id="speed-mbps"
@@ -318,15 +339,7 @@ function ReferenceFormDialogBody({
                     <FormField
                         label={t('packages.months')}
                         htmlFor="term-months"
-                        error={
-                            form.errors.months
-                                ? form.errors.months.includes('required')
-                                    ? t('packages.validation.months_required')
-                                    : form.errors.months.includes('integer')
-                                      ? t('packages.validation.months_integer')
-                                      : form.errors.months
-                                : undefined
-                        }
+                        error={getValidationError(form.errors.months, 'months', t)}
                     >
                         <Input
                             id="term-months"
@@ -345,17 +358,7 @@ function ReferenceFormDialogBody({
                             <FormField
                                 label={t('common.name_en')}
                                 htmlFor="addon-name-en"
-                                error={
-                                    form.errors.name_en
-                                        ? form.errors.name_en.includes('required')
-                                            ? t('packages.validation.name_en_required')
-                                            : form.errors.name_en.includes('string')
-                                              ? t('packages.validation.name_en_string')
-                                              : form.errors.name_en.includes('255')
-                                                ? t('packages.validation.name_en_max')
-                                                : form.errors.name_en
-                                        : undefined
-                                }
+                                error={getValidationError(form.errors.name_en, 'name_en', t)}
                             >
                                 <Input
                                     id="addon-name-en"
@@ -368,17 +371,7 @@ function ReferenceFormDialogBody({
                             <FormField
                                 label={t('common.name_zh')}
                                 htmlFor="addon-name-zh"
-                                error={
-                                    form.errors.name_zh
-                                        ? form.errors.name_zh.includes('required')
-                                            ? t('packages.validation.name_zh_required')
-                                            : form.errors.name_zh.includes('string')
-                                              ? t('packages.validation.name_zh_string')
-                                              : form.errors.name_zh.includes('255')
-                                                ? t('packages.validation.name_zh_max')
-                                                : form.errors.name_zh
-                                        : undefined
-                                }
+                                error={getValidationError(form.errors.name_zh, 'name_zh', t)}
                             >
                                 <Input
                                     id="addon-name-zh"
@@ -392,17 +385,7 @@ function ReferenceFormDialogBody({
                             <FormField
                                 label={t('common.name_my')}
                                 htmlFor="addon-name-my"
-                                error={
-                                    form.errors.name_my
-                                        ? form.errors.name_my.includes('required')
-                                            ? t('packages.validation.name_my_required')
-                                            : form.errors.name_my.includes('string')
-                                              ? t('packages.validation.name_my_string')
-                                              : form.errors.name_my.includes('255')
-                                                ? t('packages.validation.name_my_max')
-                                                : form.errors.name_my
-                                        : undefined
-                                }
+                                error={getValidationError(form.errors.name_my, 'name_my', t)}
                             >
                                 <Input
                                     id="addon-name-my"
@@ -412,19 +395,27 @@ function ReferenceFormDialogBody({
                                 />
                             </FormField>
 
-                            <FormField label={t('packages.price')} htmlFor="addon-price" error={form.errors.price}>
+                            <FormField
+                                label={t('packages.price')}
+                                htmlFor="addon-price"
+                                error={getValidationError(form.errors.price, 'price', t)}
+                            >
                                 <Input
                                     id="addon-price"
                                     type="number"
                                     min="0"
-                                    step="0"
+                                    step="0.01"
                                     value={String(form.data.price ?? '')}
                                     onChange={(event) => form.setData('price', event.target.value)}
                                     placeholder={t('packages.price_placeholder')}
                                 />
                             </FormField>
                         </div>
-                        <FormField label={t('cms.image')} htmlFor="addon-image" error={form.errors.image_url}>
+                        <FormField
+                            label={t('cms.image')}
+                            htmlFor="addon-image"
+                            error={getValidationError(form.errors.image_url, 'image_url', t)}
+                        >
                             <SquareImageUpload
                                 id="addon-image"
                                 width={520}

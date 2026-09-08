@@ -12,9 +12,8 @@ class SpeedController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'mbps' => ['required', 'integer', 'min:1'],
+            'mbps' => ['required', 'integer', 'min:1', 'max:100000'],
         ]);
-
         Speed::query()->create($data);
 
         return redirect()->route('packages.index')->with('success', 'packages.speeds.created');
@@ -23,9 +22,8 @@ class SpeedController extends Controller
     public function update(Request $request, Speed $speed): RedirectResponse
     {
         $data = $request->validate([
-            'mbps' => ['required', 'integer', 'min:1'],
+            'mbps' => ['required', 'integer', 'min:1', 'max:100000'],
         ]);
-
         $speed->update($data);
 
         return redirect()->route('packages.index')->with('success', 'packages.speeds.updated');
