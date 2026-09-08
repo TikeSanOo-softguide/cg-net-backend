@@ -7,6 +7,7 @@ use App\Enums\CustomerPackageStatus;
 use App\Enums\InvoiceStatus;
 use App\Enums\NewsStatus;
 use App\Enums\PaymentStatus;
+use App\Enums\RequestStatus;
 use App\Enums\ReviewStatus;
 use App\Enums\UserStatus;
 use App\Enums\WalletTransactionType;
@@ -239,12 +240,12 @@ class DatabaseSeeder extends Seeder
         RelocationRequest::factory()->create([
             'user_id' => $relocUser->id,
             'broadband_account_id' => $relocUser->broadbandAccounts()->first()->id,
-            'status' => ReviewStatus::UnderReview,
+            'status' => RequestStatus::UnderReview,
         ]);
         RelocationRequest::factory()->create([
             'user_id' => $sample[7]->id,
             'broadband_account_id' => $sample[7]->broadbandAccounts()->first()->id,
-            'status' => ReviewStatus::Approved,
+            'status' => RequestStatus::Approved,
         ]);
 
         foreach ($users->take(20)->values() as $index => $user) {
