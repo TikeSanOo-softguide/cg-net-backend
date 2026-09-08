@@ -41,8 +41,9 @@
         "service_requests": "ဝန်ဆောင်မှု တောင်းဆိုမှုများ",
         "installation_applications": "ဘရော့ဒ်ဘန်း လျှောက်လွှာများ",
         "failure_reports": "ချို့ယွင်းမှု အစီရင်ခံစာများ",
-        "relocation_requests": "နေရာပြောင်းရွှေ့ တောင်းဆိုမှုများ",
-        "change_plan_requests": "ပက်ကေ့ဂျ် ပြောင်းလဲ တောင်းဆိုမှုများ",
+        "relocation_requests": "နေရာ ပြောင်းရွှေ့မှုများ",
+        "change_plan_requests": "ပက်ကေ့ဂျ် ပြောင်းလဲမှုများ",
+        "change_password_requests": "စကားဝှက် ပြောင်းလဲမှုများ",
         "region_management": "ပြည်နယ်နှင့် ဒေသ စီမံခန့်ခွဲမှု",
         "states": "ပြည်နယ်များ",
         "regions": "ဒေသများ",
@@ -91,6 +92,7 @@
         "failure_reports_description": "ဖောက်သည်ချို့ယွင်းမှု အစီရင်ခံစာများကို ခြေရာခံပြီး ဖြေရှင်းပါ။",
         "relocation_requests_description": "နေရာပြောင်းရွှေ့ ဝန်ဆောင်မှု တောင်းဆိုမှုများကို စီမံပါ။",
         "change_plan_requests_description": "ပက်ကေ့ဂ် ပြောင်းလဲ တောင်းဆိုမှုများကို စစ်ဆေးပါ။",
+        "change_password_requests_description": "Wi-Fi စကားဝှက်ပြောင်းရန် တောင်းဆိုမှုများကို စစ်ဆေးပါ။",
         "region_management_description": "ဝန်ဆောင်မှု ဒေသများနှင့် coverage ဧရိယာများကို စီမံပါ။",
         "states_description": "ပြည်နယ်များကို စီမံပါ။",
         "areas_description": "ဧရိယာများကို စီမံပါ။",
@@ -158,6 +160,8 @@
     "status": {
         "under_review": "စစ်ဆေးဆဲ",
         "approved": "အတည်ပြုပြီး",
+        "approve": "အတည်ပြုရန်",
+        "review": "စစ်ဆေးရန်",
         "rejected": "ငြင်းပယ်ခဲ့သည်",
         "good": "ကောင်းမွန်",
         "slow": "နှေးကွေး",
@@ -178,7 +182,17 @@
         "redeemed": "ရွေးယူပြီး",
         "void": "ပယ်ဖျက်",
         "valid": "အသုံးပြုနိုင်",
-        "invalid": "မမှန်ကန်"
+        "invalid": "မမှန်ကန်",
+        "cancelled": "ပယ်ဖျက်ပြီး"
+    },
+    "activity_logs": {
+        "username": "အသုံးပြုသူအမည်",
+        "description": "ဖြစ်ပျက်မှု",
+        "event": "ဖြစ်ရပ်",
+        "log": "မှတ်တမ်း",
+        "occurred_at": "ဖြစ်ပွားချိန်",
+        "from": "စတင်ရက်",
+        "to": "နောက်ဆုံးရက်"
     },
     "common": {
         "profile": "ပရိုဖိုင်",
@@ -365,6 +379,20 @@
         "requested_plan": "တောင်းဆိုထားသည့် ပက်ကေ့ဂျ်",
         "current_status": "လက်ရှိ အခြေအနေ",
         "no_note": "မှတ်ချက် မရှိပါ။",
+        "status_updated": "တောင်းဆိုချက်၏ အခြေအနေကို အပ်ဒိတ်လုပ်ပြီးပါပြီ။"
+    },
+    "change_password": {
+        "total_requests": "စုစုပေါင်း တောင်းဆိုချက်များ",
+        "under_review_requests": "စိစစ်နေဆဲ တောင်းဆိုချက်များ",
+        "approved_requests": "အတည်ပြုပြီး တောင်းဆိုချက်များ",
+        "cancelled_requests": "ပယ်ဖျက်လိုက်သော တောင်းဆိုချက်များ",
+        "request_title": "စကားဝှက်ပြောင်းရန် တောင်းဆိုချက်",
+        "wifi_name": "Wi-Fi အမည်",
+        "new_password": "စကားဝှက်အသစ်",
+        "copy_contact_phone": "ဆက်သွယ်ရန် ဖုန်းနံပါတ်ကို ကူးရန်",
+        "copy_account_phone": "အကောင့်ဖုန်းနံပါတ်ကို ကူးရန်",
+        "contact": "ဆက်သွယ်ရန် အချက်အလက်",
+        "broadband_account": "ဘရော့်ဒ်ဘန်းအကောင့်",
         "status_updated": "တောင်းဆိုချက်၏ အခြေအနေကို အပ်ဒိတ်လုပ်ပြီးပါပြီ။"
     },
     "regions": {

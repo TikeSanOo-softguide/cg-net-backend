@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\ReviewStatus;
+use App\Enums\ChangePasswordStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -29,7 +29,7 @@ class ChangePasswordRequest extends Model
     {
         return [
             'new_password' => 'encrypted',
-            'status' => ReviewStatus::class,
+            'status' => ChangePasswordStatus::class,
         ];
     }
 

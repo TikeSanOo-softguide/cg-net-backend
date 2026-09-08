@@ -41,8 +41,9 @@
         "service_requests": "Service Requests",
         "installation_applications": "Broadband Applications",
         "failure_reports": "Failure Reports",
-        "relocation_requests": "Relocation Requests",
-        "change_plan_requests": "Change Plan Requests",
+        "relocation_requests": "Relocation",
+        "change_plan_requests": "Change Plan",
+        "change_password_requests": "Change Password",
         "region_management": "States & Regions",
         "states": "States",
         "regions": "Regions",
@@ -91,6 +92,7 @@
         "failure_reports_description": "Track and resolve customer failure reports.",
         "relocation_requests_description": "Manage customer relocation service requests.",
         "change_plan_requests_description": "Review and process customer plan change requests.",
+        "change_password_requests_description": "Review and process Wi-Fi password change requests.",
         "region_management_description": "Manage service regions and coverage areas.",
         "states_description": "Manage states.",
         "regions_description": "Manage regions and their associated states.",
@@ -155,6 +157,8 @@
     "status": {
         "under_review": "Under Review",
         "approved": "Approved",
+        "approve": "Approve",
+        "review": "Review",
         "rejected": "Rejected",
         "good": "Good",
         "slow": "Slow",
@@ -175,7 +179,17 @@
         "redeemed": "Redeemed",
         "void": "Void",
         "valid": "Valid",
-        "invalid": "Invalid"
+        "invalid": "Invalid",
+        "cancelled": "Cancelled"
+    },
+    "activity_logs": {
+        "username": "Username",
+        "description": "What happened",
+        "event": "Event",
+        "log": "Log",
+        "occurred_at": "When",
+        "from": "From date",
+        "to": "To date"
     },
     "common": {
         "profile": "Profile",
@@ -335,6 +349,21 @@
         "requested_plan": "Requested Plan",
         "current_status": "Current Status",
         "no_note": "No note provided",
+        "status_updated": "Request status updated"
+    },
+    "change_password": {
+        "total_requests": "Total Requests",
+        "under_review_requests": "Under Review Requests",
+        "approved_requests": "Approved Requests",
+        "cancelled_requests": "Cancelled Requests",
+        "request_title": "Change Password Request",
+        "wifi_name": "Wi-Fi Name",
+        "new_password": "New Password",
+        "copy_contact_phone": "Copy contact phone",
+        "copy_account_phone": "Copy account phone",
+        "preferred_date": "Preferred date",
+        "contact": "Contact Information",
+        "broadband_account": "Broadband Account",
         "status_updated": "Request status updated"
     },
     "regions": {

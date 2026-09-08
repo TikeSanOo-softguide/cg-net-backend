@@ -337,74 +337,74 @@ export function DataTable<T>({
                 )}
             >
                 {hasToolbar ? (
-                <CardHeader className={cn('flex flex-col gap-2.5 py-3', EDGE_PAD)}>
-                    {title ? (
-                        <CardTitle className="flex items-center gap-2 text-[13px] font-semibold tracking-tight sm:text-sm">
-                            {TitleIcon ? (
-                                <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-[7px] bg-primary/10 text-primary">
-                                    <TitleIcon className="size-3.5" strokeWidth={1.85} />
-                                </span>
-                            ) : null}
-                            {title}
-                        </CardTitle>
-                    ) : null}
-                    <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
-                        <div
-                            className={cn(
-                                'flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center',
-                                toolbarFiltersWrapperClass,
-                            )}
-                        >
-                            {filters}
-                            {showSearch ? (
-                                <SearchInput
-                                    value={searchValue}
-                                    onChange={onSearchChange ?? setQuery}
-                                    placeholder={searchPlaceholder ?? t('common.search')}
-                                    size="sm"
-                                    className="w-full sm:max-w-64"
-                                />
-                            ) : null}
-                        </div>
-                        <div className="flex shrink-0 items-center justify-end gap-2">
-                            {showDelete ? (
-                                <>
-                                    <span className="inline-flex h-8 items-center rounded-[6px] bg-primary/12 px-2.5 text-[10px] font-semibold tabular-nums text-primary">
-                                        {t('common.selected_count').replace(':count', String(selectedIds.length))}
+                    <CardHeader className={cn('flex flex-col gap-2.5 py-3', EDGE_PAD)}>
+                        {title ? (
+                            <CardTitle className="flex items-center gap-2 text-[13px] font-semibold tracking-tight sm:text-sm">
+                                {TitleIcon ? (
+                                    <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-[7px] bg-primary/10 text-primary">
+                                        <TitleIcon className="size-3.5" strokeWidth={1.85} />
                                     </span>
-                                    {bulkActions ?? (
-                                        <ToolbarIconButton
-                                            label={t('common.delete')}
-                                            icon={Trash2Icon}
-                                            tone="danger"
-                                            prominent
-                                            disabled={processing}
-                                            onClick={requestBulkDelete}
-                                        />
-                                    )}
-                                    <span className="mx-0.5 hidden h-6 w-px bg-border sm:block" aria-hidden />
-                                </>
-                            ) : null}
-                            {showExport || onExport ? (
-                                <ToolbarIconButton
-                                    label={t('common.export')}
-                                    icon={DownloadIcon}
-                                    prominent
-                                    onClick={exportRows}
-                                />
-                            ) : null}
-                            {createHref || onCreate ? (
-                                <ToolbarIconButton
-                                    label={createLabel ?? t('common.create')}
-                                    icon={PlusIcon}
-                                    prominent
-                                    href={onCreate ? undefined : createHref}
-                                    onClick={onCreate}
-                                />
-                            ) : null}
+                                ) : null}
+                                {title}
+                            </CardTitle>
+                        ) : null}
+                        <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+                            <div
+                                className={cn(
+                                    'flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center',
+                                    toolbarFiltersWrapperClass,
+                                )}
+                            >
+                                {filters}
+                                {showSearch ? (
+                                    <SearchInput
+                                        value={searchValue}
+                                        onChange={onSearchChange ?? setQuery}
+                                        placeholder={searchPlaceholder ?? t('common.search')}
+                                        size="sm"
+                                        className="w-full sm:max-w-64"
+                                    />
+                                ) : null}
+                            </div>
+                            <div className="flex shrink-0 items-center justify-end gap-2">
+                                {showDelete ? (
+                                    <>
+                                        <span className="inline-flex h-8 items-center rounded-[6px] bg-primary/12 px-2.5 text-[10px] font-semibold tabular-nums text-primary">
+                                            {t('common.selected_count').replace(':count', String(selectedIds.length))}
+                                        </span>
+                                        {bulkActions ?? (
+                                            <ToolbarIconButton
+                                                label={t('common.delete')}
+                                                icon={Trash2Icon}
+                                                tone="danger"
+                                                prominent
+                                                disabled={processing}
+                                                onClick={requestBulkDelete}
+                                            />
+                                        )}
+                                        <span className="mx-0.5 hidden h-6 w-px bg-border sm:block" aria-hidden />
+                                    </>
+                                ) : null}
+                                {showExport || onExport ? (
+                                    <ToolbarIconButton
+                                        label={t('common.export')}
+                                        icon={DownloadIcon}
+                                        prominent
+                                        onClick={exportRows}
+                                    />
+                                ) : null}
+                                {createHref || onCreate ? (
+                                    <ToolbarIconButton
+                                        label={createLabel ?? t('common.create')}
+                                        icon={PlusIcon}
+                                        prominent
+                                        href={onCreate ? undefined : createHref}
+                                        onClick={onCreate}
+                                    />
+                                ) : null}
+                            </div>
                         </div>
-                    </div>
-                </CardHeader>
+                    </CardHeader>
                 ) : null}
                 <CardContent className="flex min-h-0 flex-1 flex-col px-0 pb-0">
                     <div className={cn(EDGE_PAD, 'min-h-0 flex-1 pb-3')}>
@@ -593,17 +593,17 @@ export function DataTable<T>({
                                                             </div>
                                                         ) : null}
                                                         {mobileSubtitle ? (
-                                                            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                                            <div className="mt-0.5 truncate text-xs text-muted-foreground">
                                                                 {mobileSubtitle.cell(row)}
-                                                            </p>
+                                                            </div>
                                                         ) : null}
                                                     </div>
                                                     {mobileBadge ? mobileBadge.cell(row) : null}
                                                 </div>
                                                 {mobileMeta ? (
-                                                    <p className="mt-1.5 font-mono text-[10px] text-muted-foreground">
+                                                    <div className="mt-1.5 font-mono text-[10px] text-muted-foreground">
                                                         {mobileMeta.cell(row)}
-                                                    </p>
+                                                    </div>
                                                 ) : null}
                                                 {showActions ? (
                                                     <div className="mt-2 flex items-center justify-center border-t border-border/60 pt-2">

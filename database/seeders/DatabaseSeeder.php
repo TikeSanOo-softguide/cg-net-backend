@@ -289,7 +289,7 @@ class DatabaseSeeder extends Seeder
         }
         ChangePasswordRequest::factory()->count(10)->underReview()->create();
         ChangePasswordRequest::factory()->count(6)->approved()->create();
-        ChangePasswordRequest::factory()->count(4)->rejected()->create();
+        ChangePasswordRequest::factory()->count(4)->cancelled()->create();
     }
 
     /**

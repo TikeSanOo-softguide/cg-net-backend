@@ -12,14 +12,15 @@ use App\Http\Controllers\Locale\LocaleController;
 use App\Http\Controllers\MenuPage\MenuPageController;
 use App\Http\Controllers\Notification\AnnouncementController;
 use App\Http\Controllers\Package\AddonController;
-use App\Http\Controllers\ServiceRequest\FailureReportController;
-use App\Http\Controllers\ServiceRequest\ChangePlanRequestController;
-use App\Http\Controllers\ServiceRequest\RelocationRequestController;
 use App\Http\Controllers\Package\NetworkController;
 use App\Http\Controllers\Package\PackageController;
 use App\Http\Controllers\Package\SpeedController;
 use App\Http\Controllers\Package\TermController;
 use App\Http\Controllers\Region\RegionManagementController;
+use App\Http\Controllers\ServiceRequest\ChangePasswordRequestController;
+use App\Http\Controllers\ServiceRequest\ChangePlanRequestController;
+use App\Http\Controllers\ServiceRequest\FailureReportController;
+use App\Http\Controllers\ServiceRequest\RelocationRequestController;
 use App\Http\Controllers\Staff\RoleController;
 use App\Http\Controllers\Staff\StaffController;
 use App\Http\Controllers\TopUpCard\TopUpCardController;
@@ -142,6 +143,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::get('/', [RelocationRequestController::class, 'index'])->middleware('can:service-requests.view')->name('index');
             Route::patch('/{relocationRequest}/status', [RelocationRequestController::class, 'updateStatus'])->middleware('can:service-requests.update')->name('status');
         });
+        Route::prefix('change-password')->name('change-password.')->group(function () {
+            Route::get('/', [ChangePasswordRequestController::class, 'index'])->middleware('can:service-requests.view')->name('index');
+            Route::patch('/{changePasswordRequest}/status', [ChangePasswordRequestController::class,'updateStatus'])->middleware('can:service-requests.update')->name('status');});
     });
 
     foreach (MenuPages::all() as $page) {

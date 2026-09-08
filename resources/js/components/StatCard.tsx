@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import type { LucideIcon } from 'lucide-react';
 
 import { Card } from '@/components/ui/card';
@@ -17,23 +18,13 @@ type StatCardProps = {
 
 export function StatCard({ items, className }: StatCardProps) {
     return (
-        <Card className={cn('gap-0 overflow-hidden py-0', className)}>
-            <ul className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5">
-                {items.map((item, index) => {
-                    const Icon = item.icon;
+        <ul className={cn('grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5', className)}>
+            {items.map((item) => {
+                const Icon = item.icon;
 
-                    return (
-                        <li
-                            key={item.key}
-                            className={cn(
-                                'flex h-[100px] min-w-0 items-center gap-3 px-4 sm:px-5',
-                                'border-b border-primary/10 last:border-b-0',
-                                'sm:border-b-0',
-                                index % 2 === 1 && 'sm:border-l sm:border-primary/10',
-                                index > 0 && 'xl:border-l xl:border-primary/10',
-                                index >= 2 && 'sm:border-t sm:border-primary/10 xl:border-t-0',
-                            )}
-                        >
+                return (
+                    <li key={item.key} className="min-w-0">
+                        <Card className="flex h-[100px] flex-row items-center gap-3 overflow-hidden rounded-[12px] border border-border/70 px-4 py-0 sm:px-5">
                             <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-[8px] bg-primary/10 text-primary">
                                 <Icon className="size-[18px]" strokeWidth={1.85} />
                             </span>
@@ -45,10 +36,10 @@ export function StatCard({ items, className }: StatCardProps) {
                                     {item.value}
                                 </p>
                             </div>
-                        </li>
-                    );
-                })}
-            </ul>
-        </Card>
+                        </Card>
+                    </li>
+                );
+            })}
+        </ul>
     );
 }

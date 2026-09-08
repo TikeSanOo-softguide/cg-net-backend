@@ -58,14 +58,13 @@ class ChangePasswordRequestFactory extends Factory
     }
 
     /**
-     * Request was rejected by an admin.
+     * Request was cancelled by a user.
      */
-    public function rejected(): static
+    public function cancelled(): static
     {
         return $this->state(
             fn(array $attributes) => [
-                'status' => 'rejected',
-                'admin_id' => User::factory(),
+                'status' => 'cancelled',
             ],
         );
     }

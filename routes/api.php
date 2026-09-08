@@ -13,8 +13,9 @@ use App\Http\Controllers\Api\Package\SpeedController;
 use App\Http\Controllers\Api\Package\TermController;
 use App\Http\Controllers\Api\Promotion\PromotionController;
 use App\Http\Controllers\Api\Region\RegionController;
-use App\Http\Controllers\Api\ServiceRequest\FailureReportController;
+use App\Http\Controllers\Api\ServiceRequest\ChangePasswordRequestController;
 use App\Http\Controllers\Api\ServiceRequest\ChangePlanRequestController;
+use App\Http\Controllers\Api\ServiceRequest\FailureReportController;
 use App\Http\Controllers\Api\ServiceRequest\RelocationRequestController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -70,5 +71,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{changePlanRequest}', [ChangePlanRequestController::class, 'show']);
         Route::put('/{changePlanRequest}', [ChangePlanRequestController::class, 'update']);
         Route::delete('/{changePlanRequest}', [ChangePlanRequestController::class, 'destroy']);
+    });
+    Route::prefix('change-password-requests')->group(function () {
+        Route::get('/', [ChangePasswordRequestController::class, 'index']);
+        Route::post('/create', [ChangePasswordRequestController::class, 'store']);
+        Route::get('/{changePasswordRequest}', [ChangePasswordRequestController::class, 'show']);
+        Route::put('/{changePasswordRequest}', [ChangePasswordRequestController::class, 'update']);
+        Route::delete('/{changePasswordRequest}', [ChangePasswordRequestController::class, 'destroy']);
     });
 });

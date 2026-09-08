@@ -43,6 +43,7 @@
         "failure_reports": "故障报告",
         "relocation_requests": "迁移请求",
         "change_plan_requests": "更改套餐请求",
+        "change_password_requests": "更改密码请求",
         "region_management": "州与地区",
         "states": "州",
         "regions": "地区",
@@ -91,6 +92,7 @@
         "failure_reports_description": "跟踪并处理客户故障报告。",
         "relocation_requests_description": "管理客户迁移服务请求。",
         "change_plan_requests_description": "审核和处理客户更改套餐请求。",
+        "change_password_requests_description": "审核和处理客户 Wi-Fi 密码更改请求。",
         "region_management_description": "管理服务区域和覆盖范围。",
         "states_description": "管理州/省。",
         "areas_description": "管理区域。",
@@ -158,6 +160,8 @@
     "status": {
         "under_review": "审核中",
         "approved": "已批准",
+        "approve": "批准",
+        "review": "审核",
         "rejected": "已拒绝",
         "good": "良好",
         "slow": "缓慢",
@@ -178,7 +182,17 @@
         "redeemed": "已兑换",
         "void": "作废",
         "valid": "有效",
-        "invalid": "无效"
+        "invalid": "无效",
+        "cancelled": "已取消"
+    },
+    "activity_logs": {
+        "username": "用户名",
+        "description": "操作内容",
+        "event": "事件",
+        "log": "日志",
+        "occurred_at": "时间",
+        "from": "开始日期",
+        "to": "结束日期"
     },
     "common": {
         "profile": "个人资料",
@@ -365,6 +379,20 @@
         "requested_plan": "申请套餐",
         "current_status": "当前状态",
         "no_note": "未提供备注",
+        "status_updated": "申请状态已更新"
+    },
+    "change_password": {
+        "total_requests": "总申请数",
+        "under_review_requests": "审核中的申请数",
+        "approved_requests": "已批准的申请数",
+        "cancelled_requests": "已取消的申請數",
+        "request_title": "更改密码请求",
+        "wifi_name": "Wi-Fi 名称",
+        "new_password": "新密码",
+        "copy_contact_phone": "复制联系人电话",
+        "copy_account_phone": "复制账户电话",
+        "contact": "联系信息",
+        "broadband_account": "宽带账户",
         "status_updated": "申请状态已更新"
     },
     "regions": {

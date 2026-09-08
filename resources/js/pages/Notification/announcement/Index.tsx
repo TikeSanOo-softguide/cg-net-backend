@@ -30,7 +30,7 @@ import { FormField } from '@/components/ui/form-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { ToolbarIconButton } from '@/components/data-table/toolbar';
-import { EDGE_PAD } from '@/components/data-table/styles';
+import { EDGE_PAD, toolbarFiltersWrapperClass } from '@/components/data-table/styles';
 import {
     AnnouncementFormDialog,
     type AnnouncementItem,
@@ -123,13 +123,19 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
             <PageContent>
                 <PageHeader />
                 <Card className="flex min-h-0 flex-col gap-0 overflow-hidden border-0 py-0 shadow-[0_4px_16px_rgb(23_50_54/0.06)] dark:shadow-[0_4px_16px_rgb(0_0_0/0.22)]">
-                    <div className={cn('flex flex-col gap-2.5 py-3 sm:flex-row sm:items-center', EDGE_PAD)}>
+                    <div
+                        className={cn(
+                            'flex flex-col gap-2.5 py-3 sm:flex-row sm:items-center',
+                            EDGE_PAD,
+                            toolbarFiltersWrapperClass,
+                        )}
+                    >
                         <FormControl icon={CircleDotIcon} compact className="w-full shrink-0 sm:w-44">
                             <Select
                                 value={status || 'all'}
                                 onValueChange={(value) => visitIndex(search, value === 'all' ? '' : value)}
                             >
-                                <SelectTrigger className="w-full h-8">
+                                <SelectTrigger className="w-full">
                                     <SelectValue placeholder={t('common.status')} />
                                 </SelectTrigger>
                                 <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
