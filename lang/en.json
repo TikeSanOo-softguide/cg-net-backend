@@ -332,6 +332,7 @@
         "total_requests": "Total Requests",
         "under_review_requests": "Under Review Requests",
         "approved_requests": "Approved Requests",
+        "cancelled_requests": "Cancelled Requests",
         "current_packages": "Current Packages",
         "requested_packages": "Requested Packages",
         "search_placeholder": "Search by account_no, app username",

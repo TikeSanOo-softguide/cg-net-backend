@@ -84,6 +84,7 @@ class ChangePlanRequestController extends Controller
             'total_requests' => ChangePlanRequest::query()->count(),
             'under_reviews_requests' => ChangePlanRequest::query()->where('status', ChangePlanStatus::UnderReview)->count(),
             'approved_requests' => ChangePlanRequest::query()->where('status', ChangePlanStatus::Approved)->count(),
+            'cancelled_requests' => ChangePlanRequest::query()->where('status', ChangePlanStatus::Cancelled)->count(),
         ];
     }
 }

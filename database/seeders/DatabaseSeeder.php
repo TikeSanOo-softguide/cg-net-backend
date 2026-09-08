@@ -247,10 +247,7 @@ class DatabaseSeeder extends Seeder
             'status' => ReviewStatus::Approved,
         ]);
 
-        $planUser = $sample[0];
-        $account = $planUser->broadbandAccounts()->first();
-
-        foreach ($users as $index => $user) {
+        foreach ($users->take(20)->values() as $index => $user) {
             $account = $user->broadbandAccounts()->first();
 
             if (!$account) {
@@ -258,15 +255,49 @@ class DatabaseSeeder extends Seeder
             }
 
             $currentPackageId = $account->current_package_id;
-            $newPackage = Package::query()->whereKeyNot($currentPackageId)->first();
+            $currentPackage = Package::query()
+                ->with('speed')
+                ->find($currentPackageId);
+
+            $condition = $index % 3;
+            $status = $index < 10
+                ? ChangePlanStatus::UnderReview
+                : ($index < 17 ? ChangePlanStatus::Approved : ChangePlanStatus::Cancelled);
+
+            $newPackage = match ($condition) {
+                0 => $currentPackage?->speed
+                    ? Package::query()
+                    ->whereKeyNot($currentPackageId)
+                    ->whereHas('speed', fn($query) => $query->where('mbps', '<', $currentPackage->speed->mbps))
+                    ->first()
+                    : null,
+                1 => $currentPackage?->speed
+                    ? Package::query()
+                    ->whereKeyNot($currentPackageId)
+                    ->whereHas('speed', fn($query) => $query->where('mbps', '>', $currentPackage->speed->mbps))
+                    ->first()
+                    : null,
+                default => $currentPackage?->speed
+                    ? Package::query()
+                    ->whereKeyNot($currentPackageId)
+                    ->where('network_id', '!=', $currentPackage->network_id)
+                    ->whereHas('speed', fn($query) => $query->where('mbps', $currentPackage->speed->mbps))
+                    ->first()
+                    : null,
+            };
+
+            $newPackage ??= Package::query()
+                ->whereKeyNot($currentPackageId)
+                ->first();
 
             if (!$newPackage) {
                 continue;
             }
 
-            $status = $index % 2 === 0 ? ChangePlanStatus::UnderReview : ChangePlanStatus::Approved;
-
             $adminId = $status === ChangePlanStatus::Approved ? $admin?->id : null;
+            do {
+                $contactPhone = MyanmarFake::phone();
+            } while ($contactPhone === $user->phone);
 
             ChangePlanRequest::query()->firstOrCreate(
                 [
@@ -275,12 +306,12 @@ class DatabaseSeeder extends Seeder
                     'current_package_id' => $currentPackageId,
                     'new_package_id' => $newPackage->id,
                     'preferred_date' => now()
-                        ->addDays($index + 7)
+                        ->{$index < 2 ? 'subDays' : 'addDays'}($index + 1)
                         ->toDateString(),
                 ],
                 [
                     'contact_name' => $user->name,
-                    'contact_phone' => $user->phone ?? '0912345678',
+                    'contact_phone' => $contactPhone,
                     'note' => 'Seeded change plan request.',
                     'status' => $status,
                     'admin_id' => $adminId,

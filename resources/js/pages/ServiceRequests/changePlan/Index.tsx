@@ -9,6 +9,7 @@ import {
     ClipboardList,
     ScanEye,
     CircleCheckBig,
+    BookX,
 } from 'lucide-react';
 
 import {
@@ -43,6 +44,7 @@ type Props = {
         total_requests: number;
         under_reviews_requests: number;
         approved_requests: number;
+        cancelled_requests: number;
     };
 };
 
@@ -70,6 +72,12 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
             title: t('change_plan.approved_requests'),
             value: stats.approved_requests.toLocaleString(),
             icon: CircleCheckBig,
+        },
+        {
+            key: 'change_plan.cancelled_requests',
+            title: t('change_plan.cancelled_requests'),
+            value: stats.cancelled_requests.toLocaleString(),
+            icon: BookX,
         },
     ];
 

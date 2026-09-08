@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
 import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
 import { cn, formatDate } from '@/lib/utils';
+import { CopyValueButton } from '@/components/CopyValueButton';
 
 export type RelationItem = {
     id: number;
@@ -70,21 +71,17 @@ export function ChangePlanDetailDialog({
     statuses = [CHANGE_PLAN_STATUS.UNDER_REVIEW, CHANGE_PLAN_STATUS.APPROVED],
 }: ChangePlanDetailDialogProps) {
     const { t } = useTranslation();
-    const { data, setData, patch, processing } = useForm({
-        status:
-            request?.status === CHANGE_PLAN_STATUS.UNDER_REVIEW
-                ? CHANGE_PLAN_STATUS.APPROVED
-                : CHANGE_PLAN_STATUS.UNDER_REVIEW,
-    });
+
+    const nextStatus =
+        request?.status === CHANGE_PLAN_STATUS.UNDER_REVIEW
+            ? CHANGE_PLAN_STATUS.APPROVED
+            : CHANGE_PLAN_STATUS.UNDER_REVIEW;
+
+    const { data, setData, patch } = useForm({ status: nextStatus });
 
     useEffect(() => {
         if (request) {
-            setData(
-                'status',
-                request.status === CHANGE_PLAN_STATUS.UNDER_REVIEW
-                    ? CHANGE_PLAN_STATUS.APPROVED
-                    : CHANGE_PLAN_STATUS.UNDER_REVIEW,
-            );
+            setData('status', nextStatus);
         }
     }, [request?.id, request?.status]);
 
@@ -102,10 +99,7 @@ export function ChangePlanDetailDialog({
         request?.preferred_date &&
         new Date(request.preferred_date) < new Date();
 
-    const nextStatus =
-        request?.status === CHANGE_PLAN_STATUS.UNDER_REVIEW
-            ? CHANGE_PLAN_STATUS.APPROVED
-            : CHANGE_PLAN_STATUS.UNDER_REVIEW;
+    const nextButton = request?.status === CHANGE_PLAN_STATUS.UNDER_REVIEW ? 'approve' : 'review';
 
     return (
         <FormDialog
@@ -145,7 +139,15 @@ export function ChangePlanDetailDialog({
                             </p>
                             <p className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <PhoneIcon className="size-3" />
-                                {request.contact_phone}
+                                <span className={request.status === 'cancelled' ? 'select-none' : ''}>
+                                    {request.contact_phone}
+                                </span>
+                                {request.status !== 'cancelled' && (
+                                    <CopyValueButton
+                                        value={request.contact_phone}
+                                        label={t('change_password.copy_contact_phone')}
+                                    />
+                                )}
                             </p>
                         </div>
 
@@ -159,9 +161,16 @@ export function ChangePlanDetailDialog({
                             </p>
                             <p className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <UserIcon className="size-3" />
-                                <span className="font-mono">
-                                    {request.user.name} ({request.user.phone})
+                                <span className="font-mono">{request.user.name}</span>
+                                <span className={`font-mono ${request.status === 'cancelled' ? 'select-none' : ''}`}>
+                                    ({request.user?.phone})
                                 </span>
+                                {request.status !== 'cancelled' && (
+                                    <CopyValueButton
+                                        value={request.user?.phone}
+                                        label={t('change_password.copy_account_phone')}
+                                    />
+                                )}
                             </p>
                         </div>
                     </div>
@@ -233,14 +242,16 @@ export function ChangePlanDetailDialog({
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <Button
-                                type="button"
-                                size="sm"
-                                onClick={handleStatusUpdate}
-                                className="h-9 px-4 text-xs font-semibold"
-                            >
-                                {t(`status.${nextStatus}`)}
-                            </Button>
+                            {request?.status !== 'cancelled' && (
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={handleStatusUpdate}
+                                    className="h-9 px-4 text-xs font-semibold"
+                                >
+                                    {t(`status.${nextButton}`)}
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </div>
