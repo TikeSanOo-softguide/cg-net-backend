@@ -118,7 +118,7 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
             <Head title={t('menu.change_plan_requests')} />
             <PageContent>
                 <PageHeader />
-                <StatCard items={cards} />
+                <StatCard items={cards} className="xl:grid-cols-4" />
                 <DataTable
                     data={requests.data}
                     getRowId={(row) => String(row.id)}
