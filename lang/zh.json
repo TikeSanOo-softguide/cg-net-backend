@@ -345,6 +345,9 @@
         }
     },
     "change_plan": {
+        "total_requests": "总申请数",
+        "under_review_requests": "审核中的申请数",
+        "approved_requests": "已批准的申请数",
         "current_packages": "目前軟體包",
         "requested_pa​​ckages": "已要求的軟體包",
         "search_placeholder": "按账号编号或应用用户名搜索",

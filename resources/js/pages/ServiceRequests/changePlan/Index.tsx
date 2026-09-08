@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { MoveUp, MoveDown, RefreshCcw, CalendarIcon, WifiIcon } from 'lucide-react';
+import {
+    ArrowUp,
+    ArrowDown,
+    RefreshCcw,
+    CalendarIcon,
+    WifiIcon,
+    ClipboardList,
+    ScanEye,
+    CircleCheckBig,
+} from 'lucide-react';
 
 import {
     ChangePlanDetailDialog,
@@ -18,6 +27,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn, formatDate } from '@/lib/utils';
+import { StatCard } from '@/components/StatCard';
+import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
 
 type Filters = {
     search: string;
@@ -28,13 +39,39 @@ type Props = {
     requests: Paginated<ChangePlanRequestItem>;
     filters: Filters;
     statuses: string[];
+    stats: {
+        total_requests: number;
+        under_reviews_requests: number;
+        approved_requests: number;
+    };
 };
 
-export default function ChangePlanIndex({ requests, filters, statuses }: Props) {
+export default function ChangePlanIndex({ requests, filters, statuses, stats }: Props) {
     const { t } = useTranslation();
     const [selectedRequest, setSelectedRequest] = useState<ChangePlanRequestItem | null>(null);
     const [search, setSearch] = useState(filters.search);
     const debounce = useRef<number>(0);
+
+    const cards = [
+        {
+            key: 'change_plan.total_requests',
+            title: t('change_plan.total_requests'),
+            value: stats.total_requests.toLocaleString(),
+            icon: ClipboardList,
+        },
+        {
+            key: 'change_plan.under_review_requests',
+            title: t('change_plan.under_review_requests'),
+            value: stats.under_reviews_requests.toLocaleString(),
+            icon: ScanEye,
+        },
+        {
+            key: 'change_plan.approved_requests',
+            title: t('change_plan.approved_requests'),
+            value: stats.approved_requests.toLocaleString(),
+            icon: CircleCheckBig,
+        },
+    ];
 
     useEffect(() => {
         setSearch(filters.search);
@@ -73,6 +110,7 @@ export default function ChangePlanIndex({ requests, filters, statuses }: Props) 
             <Head title={t('menu.change_plan_requests')} />
             <PageContent>
                 <PageHeader />
+                <StatCard items={cards} />
                 <DataTable
                     data={requests.data}
                     getRowId={(row) => String(row.id)}
@@ -105,18 +143,16 @@ export default function ChangePlanIndex({ requests, filters, statuses }: Props) 
                             header: t('menu.customer_management'),
                             mobile: 'title' as const,
                             cell: (request) => (
-                                <div className="min-w-0">
-                                    <p className="truncate font-semibold text-primary mb-1">{request.user.name}</p>
-                                    <p className="font-mono text-xs text-muted-foreground">
+                                <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-2.5">
+                                    <div className="row-span-2">
+                                        <StaffListAvatar username={request.user.name} />
+                                    </div>
+
+                                    <span className="min-w-0 truncate font-medium">{request.user.name}</span>
+
+                                    <p className="truncate font-mono text-xs text-muted-foreground">
                                         {request.broadband_account.account_number}
                                     </p>
-                                    {(request.contact_name || request.contact_phone) && (
-                                        <p className="mt-1 truncate text-[11px] text-muted-foreground">
-                                            <span className="font-medium text-foreground">Contact:</span>{' '}
-                                            {request.contact_name || request.user.name}
-                                            {request.contact_phone && ` / ${request.contact_phone}`}
-                                        </p>
-                                    )}
                                 </div>
                             ),
                             searchValue: (request) =>
@@ -146,8 +182,8 @@ export default function ChangePlanIndex({ requests, filters, statuses }: Props) 
 
                                 const SpeedIcon = speedChanged
                                     ? newSpeed > currentSpeed
-                                        ? MoveUp
-                                        : MoveDown
+                                        ? ArrowUp
+                                        : ArrowDown
                                     : RefreshCcw;
 
                                 const speedIconColor = speedChanged
@@ -160,12 +196,12 @@ export default function ChangePlanIndex({ requests, filters, statuses }: Props) 
                                     <span className="flex items-center gap-1.5 truncate font-semibold mb-1">
                                         {SpeedIcon && (
                                             <SpeedIcon
-                                                className={`size-4 ${speedIconColor}`}
-                                                strokeWidth={3.5}
+                                                className={`size-5 ${speedIconColor}`}
+                                                strokeWidth={2.5}
                                                 aria-hidden="true"
                                             />
                                         )}
-                                        {packageName(request.new_package)}
+                                        <span className="truncate">{packageName(request.new_package)}</span>
                                     </span>
                                 );
                             },

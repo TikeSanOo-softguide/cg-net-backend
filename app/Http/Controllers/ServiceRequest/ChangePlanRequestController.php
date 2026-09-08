@@ -57,6 +57,7 @@ class ChangePlanRequestController extends Controller
                 'status' => $status,
             ],
             'statuses' => array_column(ChangePlanStatus::cases(), 'value'),
+            'stats' => $this->stats(),
         ]);
     }
 
@@ -72,5 +73,17 @@ class ChangePlanRequestController extends Controller
         ]);
 
         return back()->with('success', 'change_plan.status_updated');
+    }
+
+    /**
+     * @return array{total_requests: int, under_reviews_requests: int, approved_requests: int}
+     */
+    private function stats(): array
+    {
+        return [
+            'total_requests' => ChangePlanRequest::query()->count(),
+            'under_reviews_requests' => ChangePlanRequest::query()->where('status', ChangePlanStatus::UnderReview)->count(),
+            'approved_requests' => ChangePlanRequest::query()->where('status', ChangePlanStatus::Approved)->count(),
+        ];
     }
 }
