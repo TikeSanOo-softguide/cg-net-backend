@@ -12,6 +12,15 @@ class PromotionController extends Controller
     public function index(Request $request)
     {
         $today = today();
+        $lang = $request->input('lang', 'en');
+        $supportedLanguages = ['en', 'my', 'zh'];
+
+        if (!in_array($lang, $supportedLanguages, true)) {
+            $lang = 'en';
+        }
+
+        $titleColumn = "title_{$lang}";
+
         $promotions = Promotion::query()
             ->where('is_active', true)
             ->where(function ($query) use ($today) {
@@ -20,15 +29,10 @@ class PromotionController extends Controller
             ->where(function ($query) use ($today) {
                 $query->whereNull('end_date')->orWhereDate('end_date', '>=', $today);
             })
-            ->when($request->filled('search'), function ($query) use ($request) {
+            ->when($request->filled('search'), function ($query) use ($request, $titleColumn) {
                 $search = trim($request->input('search'));
-                $query->where(function ($q) use ($search) {
-                    $q->where('title_en', 'like', "%{$search}%")
-                        ->orWhere('title_my', 'like', "%{$search}%")
-                        ->orWhere('title_zh', 'like', "%{$search}%")
-                        ->orWhere('description_en', 'like', "%{$search}%")
-                        ->orWhere('description_my', 'like', "%{$search}%")
-                        ->orWhere('description_zh', 'like', "%{$search}%");
+                $query->where(function ($q) use ($search, $titleColumn) {
+                    $q->where($titleColumn, 'like', "%{$search}%");
                 });
             })
             ->orderByDesc('start_date')

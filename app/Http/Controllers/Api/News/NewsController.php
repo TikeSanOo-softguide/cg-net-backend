@@ -13,19 +13,28 @@ class NewsController extends Controller
     public function index(Request $request): JsonResource
     {
         $perPage = $request->integer('per_page', 6);
+        $lang = $request->input('lang', 'en');
+        $supportedLanguages = ['en', 'my', 'zh'];
+
+        if (!in_array($lang, $supportedLanguages, true)) {
+            $lang = 'en';
+        }
+
+        $titleColumn = "title_{$lang}";
+        $descriptionColumn = "description_{$lang}";
+        $categoryColumn = "name_{$lang}";
 
         $query = News::with('category')->where('status', 'published');
 
         if ($request->filled('search')) {
             $search = trim($request->input('search'));
 
-            $query->where(function ($q) use ($search) {
-                $q->where('title_en', 'like', "%{$search}%")
-                    ->orWhere('title_my', 'like', "%{$search}%")
-                    ->orWhere('title_zh', 'like', "%{$search}%")
-                    ->orWhere('description_en', 'like', "%{$search}%")
-                    ->orWhere('description_my', 'like', "%{$search}%")
-                    ->orWhere('description_zh', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search, $titleColumn, $descriptionColumn, $categoryColumn) {
+                $q->where($titleColumn, 'like', "%{$search}%")
+                    ->orWhere($descriptionColumn, 'like', "%{$search}%")
+                    ->orWhereHas('category', function ($categoryQuery) use ($search, $categoryColumn) {
+                        $categoryQuery->where($categoryColumn, 'like', "%{$search}%");
+                    });
             });
         }
 
