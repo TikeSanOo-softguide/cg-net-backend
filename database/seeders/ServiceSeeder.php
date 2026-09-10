@@ -42,7 +42,7 @@ class ServiceSeeder extends Seeder
                 🔧 တပ်ဆင်ခအခမဲ့ (၆ လနှင့် ၁ နှစ် အစီအစဉ်များအတွက်)
                 TEXT
                 ,
-                'image_url' => 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80&fit=crop',
+                'image_url' => 'seeder_images/service/service-image1.png',
                 'status' => 'published',
                 'slug' => 'myanmar-network',
             ],
@@ -79,7 +79,7 @@ class ServiceSeeder extends Seeder
                 🛡️ တပ်ဆင်ခအခမဲ့ (၆ လနှင့် ၁ နှစ် အစီအစဉ်များအတွက်)
                 TEXT
                 ,
-                'image_url' => 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80&fit=crop',
+                'image_url' => 'seeder_images/service/service-image2.png',
                 'status' => 'published',
                 'slug' => 'chen-guang-network',
             ],
@@ -116,7 +116,7 @@ class ServiceSeeder extends Seeder
                 ⚙️ တပ်ဆင်ခအခမဲ့ (၆ လနှင့် ၁ နှစ် အစီအစဉ်များအတွက်)
                 TEXT
                 ,
-                'image_url' => 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80&fit=crop',
+                'image_url' => 'seeder_images/service/service-image3.png',
                 'status' => 'published',
                 'slug' => 'cg-net-network',
             ],
@@ -159,7 +159,7 @@ class ServiceSeeder extends Seeder
                 ⚙️ CG-NET Add-on ဝန်ဆောင်မှုဖြင့် လွယ်ကူရိုးရှင်းစွာ ချိန်ညှိပြင်ဆင်နိုင်ပါသည်
                 TEXT
                 ,
-                'image_url' => 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80&fit=crop',
+                'image_url' => 'seeder_images/service/service-image4.png',
                 'status' => 'published',
                 'slug' => 'other-services',
             ],
