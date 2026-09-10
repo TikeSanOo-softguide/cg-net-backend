@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 
+import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 
 /** Shared logo frame — same on login and dashboard */
@@ -24,19 +25,17 @@ export function BrandLockup({
     logoClassName,
     href = '/dashboard',
 }: BrandLockupProps) {
+    const { t } = useTranslation();
     const showWordmark = !compact && expanded;
+    const brandName = t('brand.name');
 
     const content = (
         <>
             <span className={cn(brandLogoFrameClass, 'size-11', logoClassName)}>
-                <img
-                    src="/images/cg-net-logo.png?v=3"
-                    alt=""
-                    className="size-full object-contain p-0.5"
-                />
+                <img src="/images/cg-net-logo.png?v=3" alt="" className="size-full object-contain p-0.5" />
             </span>
             {compact ? (
-                <span className="sr-only">Young Ni Oo</span>
+                <span className="sr-only">{brandName}</span>
             ) : (
                 <span
                     className={cn(
@@ -46,7 +45,7 @@ export function BrandLockup({
                     )}
                     aria-hidden={!showWordmark}
                 >
-                    Young Ni Oo
+                    {brandName}
                 </span>
             )}
         </>

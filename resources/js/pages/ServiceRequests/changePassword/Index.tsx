@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { CircleCheckBig, ClipboardList, KeyRoundIcon, PhoneIcon, ScanEye, UserIcon, WifiIcon } from 'lucide-react';
+import {
+    CircleCheckBig,
+    ClipboardList,
+    KeyRoundIcon,
+    OctagonX,
+    PhoneIcon,
+    ScanEye,
+    UserIcon,
+    WifiIcon,
+} from 'lucide-react';
 
 import { DataTable } from '@/components/DataTable';
 import { CopyValueButton } from '@/components/CopyValueButton';
@@ -82,7 +91,7 @@ export default function ChangePasswordIndex({ requests, filters, statuses, stats
             key: 'change_password.cancelled_requests',
             title: t('change_password.cancelled_requests'),
             value: stats.cancelled_requests.toLocaleString(),
-            icon: CircleCheckBig,
+            icon: OctagonX,
         },
     ];
 
@@ -106,7 +115,7 @@ export default function ChangePasswordIndex({ requests, filters, statuses, stats
                     getRowId={(row) => String(row.id)}
                     search={search}
                     onSearchChange={onSearchChange}
-                    searchPlaceholder={t('common.search')}
+                    searchPlaceholder={t('change_password.search_placeholder')}
                     pagination={requests}
                     onView={(row) => setSelectedRequest(row)}
                     directActions
@@ -139,11 +148,11 @@ export default function ChangePasswordIndex({ requests, filters, statuses, stats
                             mobile: 'title',
                             cell: (request) => (
                                 <span className="flex min-w-0 items-center gap-2.5">
-                                    <StaffListAvatar username={(request.user?.name ?? request.contact_name) || ''} />
-                                    <div>
-                                        <p className="truncate font-semibold text-primary">
-                                            {request.user?.name ?? request.contact_name}
-                                        </p>
+                                    <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-2.5">
+                                        <div className="row-span-2">
+                                            <StaffListAvatar username={request.user?.name || ''} />
+                                        </div>
+                                        <span className="min-w-0 truncate font-medium">{request.user?.name || ''}</span>
                                         <p className="truncate font-mono text-xs text-muted-foreground">
                                             {request.broadband_account?.account_number}
                                         </p>

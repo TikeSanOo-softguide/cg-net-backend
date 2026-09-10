@@ -76,6 +76,24 @@ return new class extends Migration {
             $table->foreignId('deleted_by')->nullable()->constrained('admins')->nullOnDelete();
         });
 
+        Schema::create('services', function (Blueprint $table) {
+            $table->id();
+            $table->string('title_en');
+            $table->string('title_zh');
+            $table->string('title_my');
+            $table->text('description_en');
+            $table->text('description_zh');
+            $table->text('description_my');
+            $table->string('image_url', 500)->nullable();
+            $table->string('status', 20)->default('draft')->index();
+            $table->string('slug')->unique();
+            $table->timestamps();
+            $table->softDeletes();
+            $table->foreignId('created_by')->nullable()->constrained('admins')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('admins')->nullOnDelete();
+            $table->foreignId('deleted_by')->nullable()->constrained('admins')->nullOnDelete();
+        });
+
         Schema::create('gallery', function (Blueprint $table) {
             $table->id();
             $table->string('image_url', 500);
@@ -104,6 +122,7 @@ return new class extends Migration {
     {
         Schema::dropIfExists('banners');
         Schema::dropIfExists('news');
+        Schema::dropIfExists('services');
         Schema::dropIfExists('gallery');
         Schema::dropIfExists('contacts');
         Schema::dropIfExists('promotions');

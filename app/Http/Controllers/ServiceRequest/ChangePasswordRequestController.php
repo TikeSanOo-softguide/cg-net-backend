@@ -35,6 +35,7 @@ class ChangePasswordRequestController extends Controller
                         ->where('contact_name', 'like', '%' . $search . '%')
                         ->orWhere('contact_phone', 'like', '%' . $search . '%')
                         ->orWhere('new_wifi_name', 'like', '%' . $search . '%')
+                        ->orWhereHas('user', fn($query) => $query->where('name', 'like', '%' . $search . '%'))
                         ->orWhereHas(
                             'broadbandAccount',
                             fn($query) => $query->where('account_number', 'like', '%' . $search . '%'),

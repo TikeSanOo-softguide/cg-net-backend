@@ -1,11 +1,13 @@
 <?php
 
+use App\Http\Controllers\ActivityLog\ActivityLogController;
 use App\Http\Controllers\Cms\BannerController;
 use App\Http\Controllers\Cms\CategoryController;
 use App\Http\Controllers\Cms\ContactController;
 use App\Http\Controllers\Cms\GalleryController;
 use App\Http\Controllers\Cms\NewsController;
 use App\Http\Controllers\Cms\PromotionController;
+use App\Http\Controllers\Cms\ServiceController;
 use App\Http\Controllers\Customer\CustomerController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Locale\LocaleController;
@@ -76,6 +78,7 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 'news' => [NewsController::class, 'news'],
                 'gallery' => [GalleryController::class, 'gallery'],
                 'contacts' => [ContactController::class, 'contact'],
+                'services' => [ServiceController::class, 'service'],
             ] as $name => [$controller, $parameter]
         ) {
             Route::get($name, [$controller, 'index'])->middleware('can:cms.view')->name($name . '.index');
@@ -193,6 +196,8 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         Route::delete('/bulk-destroy', [AddonController::class, 'bulkDestroy'])->middleware('can:packages.delete')->name('bulk-destroy');
         Route::delete('/{addon}', [AddonController::class, 'destroy'])->middleware('can:packages.delete')->name('destroy');
     });
+    Route::get('/activity-logs', [ActivityLogController::class, 'index'])->middleware('can:activity.view')->name('activity-logs.index');
+    Route::get('/activity-logs/export', [ActivityLogController::class, 'export'])->middleware('can:activity.view')->name('activity-logs.export');
 });
 
 Route::fallback(function () {

@@ -46,6 +46,7 @@ import {
     UserRound,
     Users,
     Wallet,
+    Wrench,
 } from 'lucide-react';
 
 export type NavItem = {
@@ -294,6 +295,12 @@ export const navigation: NavGroup[] = [
                 descriptionKey: 'menu.cms_news_description',
                 href: '/cms/news',
                 icon: Newspaper,
+            },
+            {
+                labelKey: 'menu.cms_services',
+                descriptionKey: 'menu.cms_services_description',
+                href: '/cms/services',
+                icon: Wrench,
             },
             {
                 labelKey: 'menu.cms_gallery',

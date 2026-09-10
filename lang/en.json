@@ -1,4 +1,7 @@
 {
+    "brand": {
+        "name": "Yaung Ni Oo"
+    },
     "auth": {
         "email": "Email",
         "username": "Username",
@@ -63,6 +66,7 @@
         "cms_tags": "Tags",
         "cms_categories": "Categories",
         "cms_news": "News",
+        "cms_services": "Services",
         "cms_gallery": "Gallery",
         "cms_contacts": "Contacts",
         "staff_role_management": "Staff & Role",
@@ -107,6 +111,7 @@
         "cms_banners_description": "Manage homepage and in-app banners.",
         "cms_categories_description": "Manage news categories.",
         "cms_news_description": "Write and publish news articles.",
+        "cms_services_description": "Manage service offers.",
         "cms_gallery_description": "Manage gallery images.",
         "cms_contacts_description": "Manage public contact points.",
         "staff_accounts_description": "Create admin accounts and assign one or more roles.",
@@ -183,13 +188,20 @@
         "cancelled": "Cancelled"
     },
     "activity_logs": {
+        "admin": "Actor",
+        "details": "Activity Log Details",
         "username": "Username",
-        "description": "What happened",
+        "description": "Action",
+        "subject": "Subject",
+        "field": "Field",
+        "old_value": "Old Value",
+        "new_value": "New Value",
+        "no_changes": "No changed values recorded.",
         "event": "Event",
         "log": "Log",
-        "occurred_at": "When",
-        "from": "From date",
-        "to": "To date"
+        "additional_filters": "Additional filters",
+        "occurred_at": "Occurred at",
+        "invalid_date_range": "To date must be equal to or after the from date."
     },
     "common": {
         "profile": "Profile",
@@ -357,6 +369,7 @@
         "under_review_requests": "Under Review Requests",
         "approved_requests": "Approved Requests",
         "cancelled_requests": "Cancelled Requests",
+        "search_placeholder": "Search by app username, account_no",
         "request_title": "Change Password Request",
         "wifi_name": "Wi-Fi Name",
         "new_password": "New Password",
@@ -532,6 +545,39 @@
                 "name_my_max": "The Myanmar name may not be greater than 100 characters.",
                 "slug_required": "Please enter a slug.",
                 "slug_max": "The slug may not be greater than 100 characters."
+            }
+        },
+        "service": {
+            "label": "Service",
+            "description": "Manage public service offerings.",
+            "create": "Create service",
+            "edit": "Edit service",
+            "create_description": "Add a service listing.",
+            "edit_description": "Update this service detail and content.",
+            "title_en": "Title (English)",
+            "title_zh": "Title (Chinese)",
+            "title_my": "Title (Myanmar)",
+            "description_en": "Description (English)",
+            "description_zh": "Description (Chinese)",
+            "description_my": "Description (Myanmar)",
+            "created": "Service created",
+            "updated": "Service updated",
+            "deleted": "Service deleted",
+            "validation": {
+                "title_en_required": "Please enter an English title.",
+                "title_en_max": "The English title must not be greater than 255 characters.",
+                "title_zh_required": "Please enter a Chinese title.",
+                "title_zh_max": "The Chinese title must not be greater than 255 characters.",
+                "title_my_required": "Please enter a Myanmar title.",
+                "title_my_max": "The Myanmar title must not be greater than 255 characters.",
+                "description_en_required": "Please enter an English description.",
+                "description_zh_required": "Please enter a Chinese description.",
+                "description_my_required": "Please enter a Myanmar description.",
+                "slug_required": "Please enter a slug.",
+                "slug_max": "The slug must not be greater than 255 characters.",
+                "status_required": "Please select a status.",
+                "image_invalid_type": "The image must be a valid image file.",
+                "image_max_size": "The image must not be greater than 5 MB."
             }
         },
         "news": {

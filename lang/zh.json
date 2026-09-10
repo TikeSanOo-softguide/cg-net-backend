@@ -1,4 +1,7 @@
 {
+    "brand": {
+        "name": "晨光"
+    },
     "auth": {
         "email": "电子邮箱",
         "username": "用户名",
@@ -63,6 +66,7 @@
         "cms_tags": "标签",
         "cms_categories": "分类",
         "cms_news": "新闻",
+        "cms_services": "服务",
         "cms_gallery": "图库",
         "cms_contacts": "联系方式",
         "staff_role_management": "员工与角色",
@@ -107,6 +111,7 @@
         "cms_banners_description": "管理首页和应用横幅。",
         "cms_categories_description": "管理新闻分类。",
         "cms_news_description": "撰写并发布新闻文章。",
+        "cms_services_description": "管理公开服务内容。",
         "cms_gallery_description": "管理图库图片。",
         "cms_contacts_description": "管理对外联系方式。",
         "staff_accounts_description": "创建管理员账户并分配一个或多个角色。",
@@ -186,13 +191,20 @@
         "cancelled": "已取消"
     },
     "activity_logs": {
+        "admin": "管理员",
+        "details": "活动日志详情",
         "username": "用户名",
         "description": "操作内容",
+        "subject": "相关对象",
+        "field": "字段",
+        "old_value": "旧值",
+        "new_value": "新值",
+        "no_changes": "没有记录变更值。",
         "event": "事件",
         "log": "日志",
+        "additional_filters": "更多筛选",
         "occurred_at": "时间",
-        "from": "开始日期",
-        "to": "结束日期"
+        "invalid_date_range": "结束日期必须等于或晚于开始日期。"
     },
     "common": {
         "profile": "个人资料",
@@ -387,6 +399,7 @@
         "under_review_requests": "审核中的申请数",
         "approved_requests": "已批准的申请数",
         "cancelled_requests": "已取消的申請數",
+        "search_placeholder": "按应用用户姓名、账号搜索",
         "request_title": "更改密码请求",
         "wifi_name": "Wi-Fi 名称",
         "new_password": "新密码",
@@ -560,6 +573,39 @@
                 "name_my_max": "缅甸语名称不能超过 100 个字符。",
                 "slug_required": "请输入别名。",
                 "slug_max": "别名不能超过 100 个字符。"
+            }
+        },
+        "service": {
+            "label": "服务",
+            "description": "管理公开服务内容。",
+            "create": "创建服务",
+            "edit": "编辑服务",
+            "create_description": "添加一条服务列表。",
+            "edit_description": "更新此服务的详细信息和内容。",
+            "title_en": "标题（英文）",
+            "title_zh": "标题（中文）",
+            "title_my": "标题（缅甸语）",
+            "description_en": "描述（英文）",
+            "description_zh": "描述（中文）",
+            "description_my": "描述（缅甸语）",
+            "created": "服务已创建",
+            "updated": "服务已更新",
+            "deleted": "服务已删除",
+            "validation": {
+                "title_en_required": "请输入英文标题。",
+                "title_en_max": "英文标题不能超过 255 个字符。",
+                "title_zh_required": "请输入中文标题。",
+                "title_zh_max": "中文标题不能超过 255 个字符。",
+                "title_my_required": "请输入缅甸语标题。",
+                "title_my_max": "缅甸语标题不能超过 255 个字符。",
+                "description_en_required": "请输入英文描述。",
+                "description_zh_required": "请输入中文描述。",
+                "description_my_required": "请输入缅甸语描述。",
+                "slug_required": "请输入 slug。",
+                "slug_max": "slug 不能超过 255 个字符。",
+                "status_required": "请选择状态。",
+                "image_invalid_type": "图片必须是有效的图片文件。",
+                "image_max_size": "图片大小不能超过 5 MB。"
             }
         },
         "news": {

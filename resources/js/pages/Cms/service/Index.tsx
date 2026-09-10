@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Head } from '@inertiajs/react';
 
 import { CmsIndexPage, type CmsFilters } from '@/components/cms/shared/CmsIndexPage';
-import { NewsFormDialog, type NewsItem } from '@/components/cms/news/NewsFormDialog';
-import type { NewsOption } from '@/components/cms/news/NewsForm';
+import { ServiceFormDialog, type ServiceItem } from '@/components/cms/service/ServiceFormDialog';
 import type { Paginated } from '@/components/Pagination';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -11,30 +10,26 @@ import { formatDateTime, truncateText } from '@/lib/utils';
 
 type Props = {
     items: Paginated<
-        NewsItem & {
-            category_name_en: string;
-            category_name_zh: string;
-            category_name_my: string;
+        ServiceItem & {
             created_at: string | null;
             updated_at: string | null;
         }
     >;
     filters: CmsFilters;
-    categories: NewsOption[];
 };
 
-export default function NewsIndex({ items, filters, categories }: Props) {
+export default function ServiceIndex({ items, filters }: Props) {
     const { t, locale } = useTranslation();
     const [formOpen, setFormOpen] = useState(false);
-    const [editingItem, setEditingItem] = useState<NewsItem | null>(null);
+    const [editingItem, setEditingItem] = useState<ServiceItem | null>(null);
 
     return (
         <>
-            <Head title={t('menu.cms_news')} />
+            <Head title={t('menu.cms_services')} />
             <CmsIndexPage
-                createLabelKey="cms.news.create"
-                indexHref="/cms/news"
-                destroyBase="/cms/news"
+                createLabelKey="cms.service.create"
+                indexHref="/cms/services"
+                destroyBase="/cms/services"
                 items={items}
                 filters={filters}
                 statusFilter="news"
@@ -45,7 +40,6 @@ export default function NewsIndex({ items, filters, categories }: Props) {
                 onEdit={(row) => {
                     setEditingItem({
                         id: row.id,
-                        category_id: row.category_id,
                         title_en: row.title_en,
                         title_zh: row.title_zh,
                         title_my: row.title_my,
@@ -61,17 +55,15 @@ export default function NewsIndex({ items, filters, categories }: Props) {
                     setFormOpen(true);
                 }}
                 formDialog={
-                    <NewsFormDialog
+                    <ServiceFormDialog
                         open={formOpen}
                         onOpenChange={(open) => {
                             setFormOpen(open);
-
                             if (!open) {
                                 setEditingItem(null);
                             }
                         }}
                         item={editingItem}
-                        categories={categories}
                     />
                 }
                 columns={[
@@ -83,7 +75,7 @@ export default function NewsIndex({ items, filters, categories }: Props) {
                         cell: (row) => {
                             const imageUrl = row.image_url;
                             return (
-                                <span className="inline-flex items-center justify-content-center">
+                                <span className="inline-flex items-center justify-center">
                                     {imageUrl ? (
                                         <img
                                             src={imageUrl}
@@ -99,7 +91,7 @@ export default function NewsIndex({ items, filters, categories }: Props) {
                     },
                     {
                         id: 'title',
-                        header: t('cms.news.label'),
+                        header: t('cms.service.label'),
                         mobile: 'title',
                         className: 'font-medium',
                         cell: (row) => {
@@ -114,26 +106,6 @@ export default function NewsIndex({ items, filters, categories }: Props) {
                             return (
                                 <span className="block max-w-full truncate" title={title}>
                                     {displayTitle}
-                                </span>
-                            );
-                        },
-                    },
-                    {
-                        id: 'category_name',
-                        header: t('cms.category.label'),
-                        mobile: 'subtitle',
-                        cell: (row) => {
-                            const category =
-                                    locale === 'zh'
-                                        ? row.category_name_zh || row.category_name_en
-                                        : locale === 'my'
-                                          ? row.category_name_my || row.category_name_en
-                                          : row.category_name_en,
-                                displayCategory = truncateText(category, 20);
-
-                            return (
-                                <span className="block max-w-full truncate" title={category}>
-                                    {displayCategory}
                                 </span>
                             );
                         },

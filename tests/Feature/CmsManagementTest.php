@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Contact;
 use App\Models\News;
 use App\Models\Promotion;
+use App\Models\Service;
 use App\Support\CmsPermissions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -40,7 +41,7 @@ class CmsManagementTest extends TestCase
         $admin = Admin::factory()->create(['username' => 'admin']);
 
         $permissions = collect(CmsPermissions::all())->map(
-            fn (string $name) => Permission::query()->firstOrCreate([
+            fn(string $name) => Permission::query()->firstOrCreate([
                 'name' => $name,
                 'guard_name' => 'web',
             ]),
@@ -69,10 +70,12 @@ class CmsManagementTest extends TestCase
         $this->actingAs($admin, 'web')
             ->get('/cms/promotions?search=Monsoon&status=active')
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('Cms/promotion/Index')
-                ->has('items.data', 1)
-                ->where('items.data.0.title', 'Monsoon offer'));
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->component('Cms/promotion/Index')
+                    ->has('items.data', 1)
+                    ->where('items.data.0.title', 'Monsoon offer'),
+            );
     }
 
     public function test_admins_can_create_update_and_delete_a_promotion(): void
@@ -95,7 +98,7 @@ class CmsManagementTest extends TestCase
         Storage::disk('public')->assertExists($promotion->image_path);
 
         $this->actingAs($admin, 'web')
-            ->put('/cms/promotions/'.$promotion->id, [
+            ->put('/cms/promotions/' . $promotion->id, [
                 'title' => 'Summer promo updated',
                 'description' => 'Save this month',
                 'start_date' => '2026-08-01',
@@ -108,7 +111,7 @@ class CmsManagementTest extends TestCase
         $this->assertFalse($promotion->fresh()->is_active);
 
         $this->actingAs($admin, 'web')
-            ->delete('/cms/promotions/'.$promotion->id)
+            ->delete('/cms/promotions/' . $promotion->id)
             ->assertRedirect('/cms/promotions');
 
         $this->assertSoftDeleted($promotion);
@@ -122,13 +125,9 @@ class CmsManagementTest extends TestCase
         $this->actingAs($admin, 'web')
             ->get('/cms/banners')
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('Cms/banner/Index')
-                ->has('items.data', 1));
+            ->assertInertia(fn(Assert $page) => $page->component('Cms/banner/Index')->has('items.data', 1));
 
-        $this->actingAs($admin, 'web')
-            ->get('/banners')
-            ->assertNotFound();
+        $this->actingAs($admin, 'web')->get('/banners')->assertNotFound();
     }
 
     public function test_news_can_be_created_with_category(): void
@@ -151,6 +150,56 @@ class CmsManagementTest extends TestCase
         Storage::disk('public')->assertExists($news->image_path);
     }
 
+    public function test_services_can_be_created_updated_and_deleted_from_cms(): void
+    {
+        $admin = Admin::factory()->create();
+
+        $this->actingAs($admin, 'web')
+            ->get('/cms/services')
+            ->assertOk()
+            ->assertInertia(fn(Assert $page) => $page->component('Cms/service/Index'));
+
+        $this->actingAs($admin, 'web')
+            ->post('/cms/services', [
+                'title_en' => 'Business Internet',
+                'title_zh' => '商业宽带',
+                'title_my' => 'စီးပွားရေးအင်တာနက်',
+                'description_en' => 'Reliable business connectivity.',
+                'description_zh' => '可靠的商业连接服务。',
+                'description_my' => 'စစ်မှန်သောစီးပွားရေးကွန်ယက်ဆက်သွယ်မှု။',
+                'slug' => 'business-internet',
+                'status' => 'published',
+                'image' => UploadedFile::fake()->image('service.jpg'),
+            ])
+            ->assertRedirect('/cms/services');
+
+        $service = Service::query()->firstOrFail();
+        $this->assertSame('Business Internet', $service->title_en);
+        Storage::disk('public')->assertExists($service->image_path);
+
+        $this->actingAs($admin, 'web')
+            ->put('/cms/services/' . $service->id, [
+                'title_en' => 'Business Internet Plus',
+                'title_zh' => '商业宽带增强版',
+                'title_my' => 'စီးပွားရေးအင်တာနက်အတိုး',
+                'description_en' => 'Updated business connectivity.',
+                'description_zh' => '更新后的商业连接服务。',
+                'description_my' => 'ပြင်ဆင်ထားသောစီးပွားရေးကွန်ယက်ဆက်သွယ်မှု။',
+                'slug' => 'business-internet-plus',
+                'status' => 'archived',
+            ])
+            ->assertRedirect('/cms/services');
+
+        $this->assertSame('Business Internet Plus', $service->fresh()->title_en);
+        $this->assertSame('archived', $service->fresh()->status->value);
+
+        $this->actingAs($admin, 'web')
+            ->delete('/cms/services/' . $service->id)
+            ->assertRedirect('/cms/services');
+
+        $this->assertSoftDeleted($service);
+    }
+
     public function test_category_with_news_cannot_be_deleted(): void
     {
         $admin = Admin::factory()->create();
@@ -159,7 +208,7 @@ class CmsManagementTest extends TestCase
 
         $this->actingAs($admin, 'web')
             ->from('/cms/categories')
-            ->delete('/cms/categories/'.$category->id)
+            ->delete('/cms/categories/' . $category->id)
             ->assertRedirect('/cms/categories')
             ->assertSessionHasErrors('delete');
 
@@ -176,7 +225,7 @@ class CmsManagementTest extends TestCase
 
         $contact = Contact::query()->firstOrFail();
         $this->actingAs($admin, 'web')
-            ->put('/cms/contacts/'.$contact->id, ['contact_point' => 'support@cg-net.test'])
+            ->put('/cms/contacts/' . $contact->id, ['contact_point' => 'support@cg-net.test'])
             ->assertRedirect('/cms/contacts');
 
         $this->actingAs($admin, 'web')

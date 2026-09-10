@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\Package\SpeedController;
 use App\Http\Controllers\Api\Package\TermController;
 use App\Http\Controllers\Api\Promotion\PromotionController;
 use App\Http\Controllers\Api\Region\RegionController;
+use App\Http\Controllers\Api\Service\ServiceController;
 use App\Http\Controllers\Api\ServiceRequest\ChangePasswordRequestController;
 use App\Http\Controllers\Api\ServiceRequest\ChangePlanRequestController;
 use App\Http\Controllers\Api\ServiceRequest\FailureReportController;
@@ -28,6 +29,7 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::prefix('web-app')->group(function () {
         Route::get('/categories', [CategoryController::class, 'index']);
         Route::get('/categories/{slug}', [CategoryController::class, 'show']);
+        Route::get('/services', [ServiceController::class, 'index']);
         Route::get('/news', [NewsController::class, 'index']);
         Route::get('/news/feed', [NewsController::class, 'feed']);
         Route::get('/news/{slug}', [NewsController::class, 'show']);

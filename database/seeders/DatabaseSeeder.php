@@ -39,6 +39,7 @@ use App\Support\AppPermissions;
 use Database\Factories\Support\MyanmarFake;
 use Database\Seeders\AreaSeeder;
 use Database\Seeders\PackageSeeder;
+use Database\Seeders\ServiceSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
@@ -256,40 +257,39 @@ class DatabaseSeeder extends Seeder
             }
 
             $currentPackageId = $account->current_package_id;
-            $currentPackage = Package::query()
-                ->with('speed')
-                ->find($currentPackageId);
+            $currentPackage = Package::query()->with('speed')->find($currentPackageId);
 
             $condition = $index % 3;
-            $status = $index < 10
-                ? ChangePlanStatus::UnderReview
-                : ($index < 17 ? ChangePlanStatus::Approved : ChangePlanStatus::Cancelled);
+            $status =
+                $index < 10
+                    ? ChangePlanStatus::UnderReview
+                    : ($index < 17
+                        ? ChangePlanStatus::Approved
+                        : ChangePlanStatus::Cancelled);
 
             $newPackage = match ($condition) {
                 0 => $currentPackage?->speed
                     ? Package::query()
-                    ->whereKeyNot($currentPackageId)
-                    ->whereHas('speed', fn($query) => $query->where('mbps', '<', $currentPackage->speed->mbps))
-                    ->first()
+                        ->whereKeyNot($currentPackageId)
+                        ->whereHas('speed', fn($query) => $query->where('mbps', '<', $currentPackage->speed->mbps))
+                        ->first()
                     : null,
                 1 => $currentPackage?->speed
                     ? Package::query()
-                    ->whereKeyNot($currentPackageId)
-                    ->whereHas('speed', fn($query) => $query->where('mbps', '>', $currentPackage->speed->mbps))
-                    ->first()
+                        ->whereKeyNot($currentPackageId)
+                        ->whereHas('speed', fn($query) => $query->where('mbps', '>', $currentPackage->speed->mbps))
+                        ->first()
                     : null,
                 default => $currentPackage?->speed
                     ? Package::query()
-                    ->whereKeyNot($currentPackageId)
-                    ->where('network_id', '!=', $currentPackage->network_id)
-                    ->whereHas('speed', fn($query) => $query->where('mbps', $currentPackage->speed->mbps))
-                    ->first()
+                        ->whereKeyNot($currentPackageId)
+                        ->where('network_id', '!=', $currentPackage->network_id)
+                        ->whereHas('speed', fn($query) => $query->where('mbps', $currentPackage->speed->mbps))
+                        ->first()
                     : null,
             };
 
-            $newPackage ??= Package::query()
-                ->whereKeyNot($currentPackageId)
-                ->first();
+            $newPackage ??= Package::query()->whereKeyNot($currentPackageId)->first();
 
             if (!$newPackage) {
                 continue;
@@ -452,6 +452,8 @@ class DatabaseSeeder extends Seeder
                 ],
             )
             ->create();
+
+        (new ServiceSeeder())->run();
 
         Promotion::factory()->count(10)->create();
 

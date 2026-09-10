@@ -25,7 +25,6 @@ final class MenuPages
             ['path' => '/support/conversations', 'titleKey' => 'menu.chat_conversations', 'name' => 'support.conversations', 'permission' => 'support.view'],
             ['path' => '/support/agents', 'titleKey' => 'menu.agent_assignment', 'name' => 'support.agents', 'permission' => 'support.view'],
             ['path' => '/support/quick-replies', 'titleKey' => 'menu.quick_reply_templates', 'name' => 'support.quick-replies', 'permission' => 'support.view'],
-            ['path' => '/activity-logs', 'titleKey' => 'menu.activity_logs', 'name' => 'activity-logs.index', 'permission' => 'activity.view'],
             ['path' => '/reports', 'titleKey' => 'menu.reports', 'name' => 'reports.index', 'permission' => 'reports.view'],
             ['path' => '/settings/app-version', 'titleKey' => 'menu.app_version', 'name' => 'settings.app-version', 'permission' => 'settings.view'],
             ['path' => '/settings/languages', 'titleKey' => 'menu.language_management', 'name' => 'settings.languages', 'permission' => 'settings.view'],
