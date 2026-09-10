@@ -169,7 +169,6 @@ class PackageController extends Controller
         UpdatePackageRequest $request,
         Package $package
     ): RedirectResponse {
-        $package = Package::findOrFail($package->id);
         $data = $this->attributes(
             $request->validated(),
             $request->file('image_url'),
@@ -180,22 +179,32 @@ class PackageController extends Controller
             if ($package->image_url) {
                 StoresPublicImage::delete($package->image_url);
             }
+
             $data['image_url'] = StoresPublicImage::store(
                 $request->file('image_url'),
                 'cms/packages'
             );
-        } elseif ($request->has('image_url') && blank($request->input('image_url'))) {
+        } elseif ($request->has('image_url') && $request->input('image_url') === null) {
             if ($package->image_url) {
                 StoresPublicImage::delete($package->image_url);
             }
+
             $data['image_url'] = null;
         } else {
-            unset($data['image_url']);
+            $data['image_url'] = $package->image_url;
         }
 
         $package->update($data);
-        activity('package')->causedBy($request->user())->performedOn($package)->event('updated')->log('package_updated');
-        return redirect()->route('packages.index', $request->query())->with('success', 'packages.updated');
+
+        activity('package')
+            ->causedBy($request->user())
+            ->performedOn($package)
+            ->event('updated')
+            ->log('package_updated');
+
+        return redirect()
+            ->route('packages.index', $request->query())
+            ->with('success', 'packages.updated');
     }
 
     public function destroy(Request $request, Package $package): RedirectResponse

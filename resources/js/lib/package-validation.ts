@@ -59,17 +59,81 @@ export function validatePackageField(
     field: keyof PackageFormValues,
     data: PackageFormValues,
     t: Translate,
+    mode: 'create' | 'edit' = 'create',
+    hasExistingImage = false,
 ): string | undefined {
     const value = data[field];
 
-    if (field === 'image_url') {
-        if (!value) {
-            return undefined;
+    if (field === 'network_id') {
+        if (value === '' || value === null || value === undefined) {
+            return t('packages.validation.network_required');
         }
 
-        if (!(value instanceof File)) {
-            return undefined;
+        return undefined;
+    }
+
+    if (field === 'speed_id') {
+        if (value === '' || value === null || value === undefined) {
+            return t('packages.validation.speed_required');
         }
+
+        return undefined;
+    }
+
+    if (field === 'term_id') {
+        if (value === '' || value === null || value === undefined) {
+            return t('packages.validation.term_required');
+        }
+
+        return undefined;
+    }
+
+    if (field === 'price') {
+        if (value === '') {
+            return t('packages.validation.price_required');
+        }
+
+        const numericValue = Number(value);
+
+        if (Number.isNaN(numericValue)) {
+            return t('packages.validation.price_numeric');
+        }
+
+        if (numericValue < 0) {
+            return t('packages.validation.price_min');
+        }
+
+        return undefined;
+    }
+
+    if (field === 'installation_fee') {
+        if (value === '') {
+            return t('packages.validation.installation_fee_required');
+        }
+
+        const numericValue = Number(value);
+
+        if (Number.isNaN(numericValue)) {
+            return t('packages.validation.price_numeric');
+        }
+
+        if (numericValue < 0) {
+            return t('packages.validation.price_min');
+        }
+
+        return undefined;
+    }
+
+    if (field === 'sort_order') {
+        if (value === '' || value === null || value === undefined) {
+            return t('packages.validation.sort_order_required');
+        }
+
+        if (!Number.isInteger(Number(value))) {
+            return t('packages.validation.sort_order_required');
+        }
+
+        return undefined;
     }
 
     return undefined;
@@ -78,11 +142,13 @@ export function validatePackageField(
 export function validatePackage(
     data: PackageFormValues,
     t: Translate,
+    mode: 'create' | 'edit' = 'create',
+    hasExistingImage = false,
 ): Partial<Record<keyof PackageFormValues, string>> {
     const errors: Partial<Record<keyof PackageFormValues, string>> = {};
 
     (Object.keys(data) as (keyof PackageFormValues)[]).forEach((field) => {
-        const message = validatePackageField(field, data, t);
+        const message = validatePackageField(field, data, t, mode, hasExistingImage);
 
         if (message) {
             errors[field] = message;
@@ -90,4 +156,25 @@ export function validatePackage(
     });
 
     return errors;
+}
+
+export function packageSuccessMessage(field: keyof PackageFormValues, t: Translate): string {
+    switch (field) {
+        case 'network_id':
+            return t('common.valid');
+        case 'speed_id':
+            return t('common.valid');
+        case 'term_id':
+            return t('common.valid');
+        case 'price':
+            return t('common.valid');
+        case 'installation_fee':
+            return t('common.valid');
+        case 'sort_order':
+            return t('common.valid');
+        case 'image_url':
+            return t('common.valid');
+        default:
+            return '';
+    }
 }

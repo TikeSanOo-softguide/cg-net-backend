@@ -163,6 +163,12 @@ export function PackageForm({
         }
 
         form.clearErrors();
+        if (mode === 'edit' && !imageChanged) {
+            form.transform((data) => {
+                const { image_url, ...rest } = data;
+                return rest;
+            });
+        }
         onSubmit(event);
     };
 

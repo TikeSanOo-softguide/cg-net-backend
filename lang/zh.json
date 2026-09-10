@@ -597,6 +597,17 @@
             }
         },
         "banner": {
+            "type": "横幅类型",
+            "types": {
+                "web_background": "网页背景",
+                "web_popup": "网页弹窗",
+                "app_entry": "应用入口",
+                "app_popup": "应用弹窗"
+            },
+            "preview": "预览",
+            "images": "横幅图片",
+            "image_size": "图片尺寸",
+            "schedule": "时间表",
             "image_en": "英文横幅图片",
             "image_zh": "中文横幅图片",
             "image_my": "缅甸文横幅图片",
@@ -611,7 +622,8 @@
             "validation": {
                 "image_en_required": "请选择英文图片。",
                 "image_zh_required": "请选择中文图片。",
-                "image_my_required": "请选择缅甸语图片。"
+                "image_my_required": "请选择缅甸文图片。",
+                "type_required": "请选择横幅类型。"
             }
         },
         "contact": {
@@ -865,7 +877,8 @@
             "edit": "编辑网络",
             "description": "创建或更新网络",
             "search_placeholder": "搜索网络名称",
-            "bulk_deleted": "已删除所选网络"
+            "bulk_deleted": "已删除所选网络",
+            "bulk_delete_title": "删除选中的网络？"
         },
         "addons": {
             "title": "附加服务",
@@ -876,7 +889,8 @@
             "edit": "编辑附加服务",
             "description": "创建或更新附加服务",
             "search_placeholder": "搜索附加服务名称",
-            "bulk_deleted": "已删除所选附加服务"
+            "bulk_deleted": "已删除所选附加服务",
+            "bulk_delete_title": "删除选中的插件？"
         },
         "speeds": {
             "title": "网速",
@@ -887,7 +901,8 @@
             "edit": "编辑网速",
             "description": "创建或更新网速",
             "search_placeholder": "搜索速度名称",
-            "bulk_deleted": "已删除所选速度"
+            "bulk_deleted": "已删除所选速度",
+            "bulk_delete_title": "删除选中的速率？"
         },
         "terms": {
             "title": "期限",
@@ -898,7 +913,8 @@
             "edit": "编辑期限",
             "description": "创建或更新期限",
             "search_placeholder": "搜索期限名称",
-            "bulk_deleted": "已删除所选期限"
+            "bulk_deleted": "已删除所选期限",
+            "bulk_delete_title": "删除选中的条款？"
         },
         "validation": {
             "network_required": "请选择网络。",

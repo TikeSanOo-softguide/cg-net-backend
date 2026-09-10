@@ -569,6 +569,17 @@
             }
         },
         "banner": {
+            "type": "Banner type",
+            "types": {
+                "web_background": "Web background",
+                "web_popup": "Web pop-up",
+                "app_entry": "App entry",
+                "app_popup": "App pop-up"
+            },
+            "preview": "Preview Image",
+            "images": "Banner Images",
+            "image_size": "Image Size",
+            "schedule": "Schedule",
             "image_en": "English Banner Image",
             "image_zh": "Chinese Banner Image",
             "image_my": "Myanmar Banner Image",
@@ -583,7 +594,8 @@
             "validation": {
                 "image_en_required": "Please select English image.",
                 "image_zh_required": "Please select Chinese image.",
-                "image_my_required": "Please select Myanmar image."
+                "image_my_required": "Please select Myanmar image.",
+                "type_required": "Please select a banner type."
             }
         },
         "contact": {
@@ -840,7 +852,8 @@
             "edit": "Edit network",
             "description": "Create or update a network",
             "search_placeholder": "Search network name",
-            "bulk_deleted": "Selected network deleted"
+            "bulk_deleted": "Selected network deleted",
+            "bulk_delete_title": "Delete selected networks?"
         },
         "addons": {
             "title": "Add-ons",
@@ -851,7 +864,8 @@
             "edit": "Edit add-on",
             "description": "Create or update addons",
             "search_placeholder": "Search addons name",
-            "bulk_deleted": "Selected addons deleted"
+            "bulk_deleted": "Selected addons deleted",
+            "bulk_delete_title": "Delete selected addons?"
         },
         "speeds": {
             "title": "Speeds",
@@ -861,8 +875,9 @@
             "create": "Create speed",
             "edit": "Edit speed",
             "description": "Create or update speed",
-            "search_placeholder": "Search speed name",
-            "bulk_deleted": "Selected speed deleted"
+            "search_placeholder": "Search speed mbps",
+            "bulk_deleted": "Selected speed deleted",
+            "bulk_delete_title": "Delete selected speeds?"
         },
         "terms": {
             "title": "Terms",
@@ -872,8 +887,9 @@
             "create": "Create term",
             "edit": "Edit term",
             "description": "Create or update terms",
-            "search_placeholder": "Search terms name",
-            "bulk_deleted": "Selected terms deleted"
+            "search_placeholder": "Search terms month",
+            "bulk_deleted": "Selected terms deleted",
+            "bulk_delete_title": "Delete selected terms?"
         },
         "validation": {
             "network_required": "Please select a network.",

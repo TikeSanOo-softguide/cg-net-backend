@@ -60,6 +60,10 @@ export function validateBannerField(
         return undefined;
     }
 
+    if (field === 'type' && !data.type) {
+        return t('cms.banner.validation.type_required');
+    }
+
     if (field === 'is_active') {
         if (typeof value !== 'boolean') {
             return t('validation.boolean');

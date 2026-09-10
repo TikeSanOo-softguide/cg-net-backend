@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Cms;
 
+use App\Enums\BannerType;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreBannerRequest extends FormRequest
 {
@@ -20,6 +22,7 @@ class StoreBannerRequest extends FormRequest
             'image_url_en' => CmsRules::image(true),
             'image_url_zh' => CmsRules::image(true),
             'image_url_my' => CmsRules::image(true),
+            'type' => ['required', 'string', Rule::enum(BannerType::class)],
             'sort_order' => ['required', 'integer', 'min:0', 'max:9999'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],

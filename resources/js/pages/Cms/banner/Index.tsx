@@ -73,16 +73,28 @@ export default function BannersIndex({ items, filters }: Props) {
                                       : row.image_url_my;
 
                             return (
-                                <span className="p-1">
+                                <span className="block w-[200px] p-1">
                                     {imageUrl ? (
                                         <img
                                             src={imageUrl}
                                             alt=""
                                             width={200}
                                             height={50}
-                                            className="h-20 w-full rounded object-cover"
+                                            className="h-[50px] w-[200px] rounded object-cover"
                                         />
                                     ) : null}
+                                </span>
+                            );
+                        },
+                    },
+                    {
+                        id: 'type',
+                        header: t('cms.banner.type'),
+                        cell: (row) => {
+                            const bannerType = row.type;
+                            return (
+                                <span className="font-medium">
+                                    {bannerType ? t(`cms.banner.types.${bannerType}`) : '—'}
                                 </span>
                             );
                         },
@@ -93,7 +105,6 @@ export default function BannersIndex({ items, filters }: Props) {
                         mobile: 'badge',
                         cell: (row) => {
                             const expired = isExpired(row.end_date);
-
                             return <StatusBadge status={expired ? 'expired' : row.is_active ? 'active' : 'inactive'} />;
                         },
                     },

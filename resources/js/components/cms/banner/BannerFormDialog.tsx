@@ -1,20 +1,18 @@
-import { FormEvent } from "react";
-import { useForm } from "@inertiajs/react";
-import { ImageIcon, SquarePenIcon } from "lucide-react";
+import { FormEvent } from 'react';
+import { useForm } from '@inertiajs/react';
+import { ImageIcon, SquarePenIcon } from 'lucide-react';
 
-import {
-    BannerForm,
-    type BannerFormValues,
-} from "@/components/cms/banner/BannerForm";
-import { FormDialog } from "@/components/FormDialog";
-import { cmsModalVisit } from "@/lib/cms-modal";
-import { useTranslation } from "@/hooks/useTranslation";
+import { BannerForm, type BannerFormValues, type BannerType } from '@/components/cms/banner/BannerForm';
+import { FormDialog } from '@/components/FormDialog';
+import { cmsModalVisit } from '@/lib/cms-modal';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export type BannerItem = {
     id: number;
     image_url_en: string | null;
     image_url_zh: string | null;
     image_url_my: string | null;
+    type: BannerType;
     sort_order: number;
     start_date: string | null;
     end_date: string | null;
@@ -32,18 +30,15 @@ function emptyBannerForm(): BannerFormValues {
         image_url_en: null,
         image_url_zh: null,
         image_url_my: null,
+        type: 'web_background',
         sort_order: 0,
-        start_date: "",
-        end_date: "",
+        start_date: '',
+        end_date: '',
         is_active: true,
     };
 }
 
-export function BannerFormDialog({
-    open,
-    onOpenChange,
-    item,
-}: BannerFormDialogProps) {
+export function BannerFormDialog({ open, onOpenChange, item }: BannerFormDialogProps) {
     const { t } = useTranslation();
     const isEdit = item !== null;
 
@@ -51,18 +46,14 @@ export function BannerFormDialog({
         <FormDialog
             open={open}
             onOpenChange={onOpenChange}
-            title={isEdit ? t("cms.banner.edit") : t("cms.banner.create")}
-            description={
-                isEdit
-                    ? t("cms.banner.edit_description")
-                    : t("cms.banner.create_description")
-            }
+            title={isEdit ? t('cms.banner.edit') : t('cms.banner.create')}
+            description={isEdit ? t('cms.banner.edit_description') : t('cms.banner.create_description')}
             icon={isEdit ? SquarePenIcon : ImageIcon}
-                        size="3xl"
+            size="3xl"
         >
             {open ? (
                 <BannerFormDialogBody
-                    key={item ? `edit-${item.id}` : "create"}
+                    key={item ? `edit-${item.id}` : 'create'}
                     item={item}
                     onClose={() => onOpenChange(false)}
                 />
@@ -71,16 +62,10 @@ export function BannerFormDialog({
     );
 }
 
-function BannerFormDialogBody({
-    item,
-    onClose,
-}: {
-    item: BannerItem | null;
-    onClose: () => void;
-}) {
+function BannerFormDialogBody({ item, onClose }: { item: BannerItem | null; onClose: () => void }) {
     const isEdit = item !== null;
     const formatDateForInput = (date: string | null) => {
-        if (!date) return "";
+        if (!date) return '';
 
         return date.slice(0, 10);
     };
@@ -91,9 +76,10 @@ function BannerFormDialogBody({
                   image_url_en: null,
                   image_url_zh: null,
                   image_url_my: null,
+                  type: item.type,
                   sort_order: item.sort_order,
-                  start_date: formatDateForInput(item.start_date) ?? "",
-                  end_date: formatDateForInput(item.end_date) ?? "",
+                  start_date: formatDateForInput(item.start_date) ?? '',
+                  end_date: formatDateForInput(item.end_date) ?? '',
                   is_active: item.is_active,
               }
             : emptyBannerForm(),
@@ -109,13 +95,13 @@ function BannerFormDialogBody({
         };
 
         if (isEdit && item) {
-            form.transform((data) => ({ ...data, _method: "put" }));
+            form.transform((data) => ({ ...data, _method: 'put' }));
             form.post(`/cms/banners/${item.id}`, options);
 
             return;
         }
 
-        form.post("/cms/banners", options);
+        form.post('/cms/banners', options);
     };
 
     return (
@@ -123,7 +109,7 @@ function BannerFormDialogBody({
             form={form}
             onSubmit={submit}
             onCancel={onClose}
-            mode={isEdit ? "edit" : "create"}
+            mode={isEdit ? 'edit' : 'create'}
             imageUrls={{
                 en: item?.image_url_en,
                 zh: item?.image_url_zh,

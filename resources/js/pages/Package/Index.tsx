@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 import { Head, router } from '@inertiajs/react';
 import {
     CalendarDaysIcon,
+    CheckCircle2Icon,
+    CircleXIcon,
     GaugeIcon,
     NetworkIcon,
     PuzzleIcon,
@@ -265,7 +267,7 @@ export default function PackageIndex({
                         onBulkDelete={
                             canDelete ? (ids) => visitBulkDelete('/networks/bulk-destroy', ids.map(Number)) : undefined
                         }
-                        bulkDeleteTitle={t('networks.bulk_delete_title')}
+                        bulkDeleteTitle={t('packages.networks.bulk_delete_title')}
                         actions={(row) => (
                             <>
                                 {can('networks.update') ? (
@@ -362,7 +364,7 @@ export default function PackageIndex({
                         onBulkDelete={
                             canDelete ? (ids) => visitBulkDelete('/speeds/bulk-destroy', ids.map(Number)) : undefined
                         }
-                        bulkDeleteTitle={t('speeds.bulk_delete_title')}
+                        bulkDeleteTitle={t('packages.speeds.bulk_delete_title')}
                         actions={(row) => (
                             <>
                                 {can('speeds.update') ? (
@@ -449,7 +451,7 @@ export default function PackageIndex({
                         onBulkDelete={
                             canDelete ? (ids) => visitBulkDelete('/terms/bulk-destroy', ids.map(Number)) : undefined
                         }
-                        bulkDeleteTitle={t('terms.bulk_delete_title')}
+                        bulkDeleteTitle={t('packages.terms.bulk_delete_title')}
                         actions={(row) => (
                             <>
                                 {can('terms.update') ? (
@@ -538,7 +540,7 @@ export default function PackageIndex({
                         onBulkDelete={
                             canDelete ? (ids) => visitBulkDelete('/addons/bulk-destroy', ids.map(Number)) : undefined
                         }
-                        bulkDeleteTitle={t('addons.bulk_delete_title')}
+                        bulkDeleteTitle={t('packages.addons.bulk_delete_title')}
                         actions={(row) => (
                             <>
                                 {can('addons.update') ? (
@@ -671,9 +673,9 @@ export default function PackageIndex({
                             <MultiSelect
                                 values={statusFilters}
                                 options={[
-                                    { value: 'active', label: t('status.active') },
-                                    { value: 'inactive', label: t('status.inactive') },
-                                    { value: 'recommended', label: t('packages.recommended') },
+                                    { value: 'active', label: t('status.active'), icon: CheckCircle2Icon },
+                                    { value: 'inactive', label: t('status.inactive'), icon: CircleXIcon },
+                                    { value: 'recommended', label: t('packages.recommended'), icon: StarIcon },
                                 ]}
                                 placeholder={t('common.status')}
                                 onChange={(values) => {

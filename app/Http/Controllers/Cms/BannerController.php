@@ -113,6 +113,7 @@ class BannerController extends Controller
         ?string $previousPathMy = null,
     ): array {
         $data = [
+            'type' => $validated['type'],
             'sort_order' => $validated['sort_order'],
             'is_active' => $validated['is_active'],
             'start_date' => $validated['start_date'] ?? null,
@@ -157,6 +158,7 @@ class BannerController extends Controller
             'image_url_en' => StoresPublicImage::url($banner->image_url_en),
             'image_url_zh' => StoresPublicImage::url($banner->image_url_zh),
             'image_url_my' => StoresPublicImage::url($banner->image_url_my),
+            'type' => $banner->type?->value,
             'sort_order' => $banner->sort_order,
             'is_active' => $banner->is_active,
             'start_date' => $banner->start_date?->toDateString(),
