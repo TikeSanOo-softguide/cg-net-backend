@@ -97,7 +97,6 @@ export default function PromotionsIndex({ items, filters }: Props) {
                         id: 'title',
                         header: t('cms.title'),
                         mobile: 'title',
-                        sortable: true,
                         className: 'font-medium',
                         cell: (row) => {
                             return truncateText(getLabel(row), 50);
@@ -106,20 +105,17 @@ export default function PromotionsIndex({ items, filters }: Props) {
                     {
                         id: 'start_date',
                         header: t('cms.start_date'),
-                        sortable: true,
                         mobile: 'meta',
                         cell: (row) => formatDate(row.start_date),
                     },
                     {
                         id: 'end_date',
                         header: t('cms.end_date'),
-                        sortable: true,
                         cell: (row) => formatDate(row.end_date) ?? '—',
                     },
                     {
                         id: 'is_active',
                         header: t('common.status'),
-                        sortable: true,
                         mobile: 'badge',
                         cell: (row) => {
                             const expired = isExpired(row.end_date);

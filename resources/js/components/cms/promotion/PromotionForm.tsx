@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formControlStateClass } from '@/lib/form-control';
-import { PROMOTION_TITLE_MAX_LENGTH, validatePromotion, validatePromotionField } from '@/lib/promotion-validation';
+import { validatePromotion, validatePromotionField } from '@/lib/promotion-validation';
 import { cn } from '@/lib/utils';
 
 export type PromotionFormValues = {
@@ -127,15 +127,11 @@ export function PromotionForm({
         });
 
         const errors = validatePromotion(form.data, t);
-
         if (Object.keys(errors).length > 0) {
             form.setError(errors);
-
             return;
         }
-
         form.clearErrors();
-
         onSubmit(event);
     };
 
@@ -160,7 +156,6 @@ export function PromotionForm({
                     <Input
                         id="title_en"
                         value={form.data.title_en}
-                        maxLength={PROMOTION_TITLE_MAX_LENGTH}
                         aria-invalid={fieldState('title_en') === 'error'}
                         className={formControlStateClass(fieldState('title_en'))}
                         onBlur={() => markTouched('title_en')}
@@ -200,7 +195,6 @@ export function PromotionForm({
                     <Input
                         id="title_zh"
                         value={form.data.title_zh}
-                        maxLength={PROMOTION_TITLE_MAX_LENGTH}
                         aria-invalid={fieldState('title_zh') === 'error'}
                         className={formControlStateClass(fieldState('title_zh'))}
                         onBlur={() => markTouched('title_zh')}
@@ -269,7 +263,6 @@ export function PromotionForm({
                     <Input
                         id="title_my"
                         value={form.data.title_my}
-                        maxLength={PROMOTION_TITLE_MAX_LENGTH}
                         aria-invalid={fieldState('title_my') === 'error'}
                         className={formControlStateClass(fieldState('title_my'))}
                         onBlur={() => markTouched('title_my')}

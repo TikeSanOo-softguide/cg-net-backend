@@ -89,7 +89,6 @@ export default function GalleryIndex({ items, filters }: Props) {
                         id: 'label',
                         header: t('cms.label'),
                         mobile: 'title',
-                        sortable: true,
                         className: 'font-medium',
                         cell: (row) => {
                             return truncateText(getLabel(row), 50);
@@ -98,7 +97,6 @@ export default function GalleryIndex({ items, filters }: Props) {
                     {
                         id: 'created_at',
                         header: t('common.created_at'),
-                        sortable: true,
                         mobile: 'meta',
                         className: 'text-muted-foreground',
                         cell: (row) => formatDateTime(row.created_at),
