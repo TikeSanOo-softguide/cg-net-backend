@@ -11,19 +11,20 @@ class BannerController extends Controller
 {
     public function show()
     {
-        $banners = Banner::where('is_active', 1)->where(function ($query) {
-            $query->whereIn('type', [
+        $banners = Banner::where('is_active', true)
+            ->whereIn('type', [
                 BannerType::WebBackground->value,
                 BannerType::WebPopUp->value,
             ])
-                ->whereNull('start_date')
-                ->orWhere('start_date', '<=', now());
-        })
+            ->where(function ($query) {
+                $query->whereNull('start_date')
+                    ->orWhere('start_date', '<=', now());
+            })
             ->where(function ($query) {
                 $query->whereNull('end_date')
                     ->orWhere('end_date', '>=', now());
-            })->get();
-
+            })
+            ->get();
         return BannerResource::collection($banners);
     }
 }
