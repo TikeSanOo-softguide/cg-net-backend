@@ -16,7 +16,11 @@ class RelocationRequestController extends Controller
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search'));
-        $status = $request->string('status')->toString();
+        $status = $request->has('status')
+            ? ($request->string('status')->toString() === 'all'
+                ? ''
+                : $request->string('status')->toString())
+            : RequestStatus::UnderReview->value;
 
         $relocationRequests = RelocationRequest::query()
             ->with([
@@ -81,7 +85,7 @@ class RelocationRequestController extends Controller
             'admin_id' => $request->user()->id,
         ]);
 
-        return back()->with('success', 'relocation_requests.status_updated');
+        return back()->with('success', 'requests.status_updated');
     }
 
     private function stats(): array

@@ -1002,12 +1002,8 @@
         }
     },
     "relocation_requests": {
-        "total_requests": "总请求数",
-        "under_review_requests": "审核中的请求",
-        "approved_requests": "已批准的请求",
         "current_address": "当前地址",
         "new_address": "新地址",
-        "phone": "电话号码",
         "preferred_date": "首选日期",
         "card_title": "迁移请求详情",
         "service_transfer": "服务迁移",
@@ -1015,9 +1011,28 @@
         "new_location": "新位置",
         "detail": "详情",
         "search": "按应用用户姓名、账号搜索",
-        "status_updated": "迁移请求状态已更新",
         "copy_phone": "复制电话号码",
         "copy_current_location": "复制当前位置",
         "copy_new_location": "复制新位置"
+    },
+    "broadband_application": {
+        "location": "位置",
+        "identity": "身份信息"
+    },
+    "requests": {
+        "phone": "电话",
+        "note": "备注",
+        "address": "地址",
+        "images": "图片",
+        "total_requests": "请求总数",
+        "current_status": "当前状态",
+        "under_review_requests": "审核中的请求",
+        "approved_requests": "已批准的请求",
+        "cancelled_requests": "已取消的请求",
+        "status_updated": "请求状态已更新",
+        "approved_by": "批准人",
+        "contact_information": "联系信息",
+        "requested_packages": "申请的套餐",
+        "requested_date": "申请日期"
     }
 }

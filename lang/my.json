@@ -885,7 +885,7 @@
         "network": "ကွန်ရက်",
         "term": "သက်တမ်း",
         "speed": "အမြန်နှုန်း",
-        "months": "လများ",
+        "months": "လ",
         "free_iptv": "IPTV",
         "free": "အခမဲ့",
         "paid": "အခကြေးငွေဖြင့်",
@@ -1001,12 +1001,8 @@
         }
     },
     "relocation_requests": {
-        "total_requests": "တောင်းဆိုမှု စုစုပေါင်း",
-        "under_review_requests": "စီစစ်နေသော တောင်းဆိုမှုများ",
-        "approved_requests": "အတည်ပြုပြီး တောင်းဆိုမှုများ",
         "current_address": "လက်ရှိလိပ်စာ",
         "new_address": "လိပ်စာအသစ်",
-        "phone": "ဖုန်းနံပါတ်",
         "preferred_date": "နှစ်သက်ရာရက်စွဲ",
         "card_title": "နေရာပြောင်းရွှေ့ရန် တောင်းဆိုမှုအသေးစိတ်",
         "service_transfer": "ဝန်ဆောင်မှု လွှဲပြောင်းခြင်း",
@@ -1014,9 +1010,28 @@
         "new_location": "နေရာအသစ်",
         "detail": "အသေးစိတ်",
         "search": "အသုံးပြုသူအမည်၊ အကောင့်နံပါတ်ဖြင့် ရှာဖွေရန်",
-        "status_updated": "တောင်းဆိုချက်၏ အခြေအနေကို အပ်ဒိတ်လုပ်ပြီးပါပြီ။",
         "copy_phone": "ဆက်သွယ်ရန် ဖုန်းနံပါတ်ကို ကူးရန်",
         "copy_current_location": "လိပ်စာအသစ် ကို ကူးရန်",
         "copy_new_location": "လက်ရှိလိပ်စာ ကို ကူးရန်"
+    },
+    "broadband_application": {
+        "location": "တည်နေရာ",
+        "identity": "အထောက်အထား"
+    },
+    "requests": {
+        "phone": "ဖုန်း",
+        "note": "မှတ်ချက်",
+        "address": "လိပ်စာ",
+        "images": "ပုံများ",
+        "total_requests": "တောင်းဆိုမှု စုစုပေါင်း",
+        "current_status": "လက်ရှိအခြေအနေ",
+        "under_review_requests": "စိစစ်နေသော တောင်းဆိုမှုများ",
+        "approved_requests": "အတည်ပြုထားသော တောင်းဆိုမှုများ",
+        "cancelled_requests": "ပယ်ဖျက်ထားသော တောင်းဆိုမှုများ",
+        "status_updated": "တောင်းဆိုမှုအခြေအနေကို အပ်ဒိတ်လုပ်ပြီးပါပြီ",
+        "approved_by": "အတည်ပြုသူ",
+        "contact_information": "ဆက်သွယ်ရန် အချက်အလက်",
+        "requested_packages": "တောင်းဆိုထားသော Package များ",
+        "requested_date": "တောင်းဆိုသည့် ရက်စွဲ"
     }
 }

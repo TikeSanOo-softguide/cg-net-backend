@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
-use App\Enums\ReviewStatus;
+use App\Enums\RequestStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[
@@ -16,13 +17,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
         'id_type',
         'id_name',
         'id_number',
-        'latitude',
-        'longitude',
         'address',
         'phone',
         'note',
         'status',
         'user_id',
+        'admin_id'
     ]),
 ]
 class InstallationApplication extends Model
@@ -32,9 +32,7 @@ class InstallationApplication extends Model
     protected function casts(): array
     {
         return [
-            'latitude' => 'decimal:7',
-            'longitude' => 'decimal:7',
-            'status' => ReviewStatus::class,
+            'status' => RequestStatus::class,
         ];
     }
 
@@ -51,5 +49,15 @@ class InstallationApplication extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function admin(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'admin_id');
+    }
+
+    public function photos(): HasMany
+    {
+        return $this->hasMany(IdPhoto::class);
     }
 }

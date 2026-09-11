@@ -977,12 +977,8 @@
         }
     },
     "relocation_requests": {
-        "total_requests": "Total Requests",
-        "under_review_requests": "Under Review Requests",
-        "approved_requests": "Approved Requests",
         "current_address": "Current Address",
         "new_address": "New Address",
-        "phone": "Phone",
         "preferred_date": "Preferred date",
         "card_title": "Relocation Request Detail",
         "service_transfer": "Service Transfer",
@@ -990,9 +986,28 @@
         "new_location": "New Location",
         "detail": "Detail",
         "search": "Search by app user name,account_no",
-        "status_updated": "Request status updated",
         "copy_phone": "Copy Phone Number",
         "copy_current_location": "Copy Current Location",
         "copy_new_location": "Copy New Location"
+    },
+    "broadband_application": {
+        "location": "Location",
+        "identity": "Identity"
+    },
+    "requests": {
+        "phone": "Phone",
+        "note": "Note",
+        "address": "Address",
+        "images": "Images",
+        "total_requests": "Total Requests",
+        "current_status": "Current Status",
+        "under_review_requests": "Under Review Requests",
+        "approved_requests": "Approved Requests",
+        "cancelled_requests": "Cancelled Requests",
+        "status_updated": "Request status updated",
+        "approved_by": "Approved By",
+        "contact_information": "Contact Information",
+        "requested_packages": "Requested Packages",
+        "requested_date": "Requested Date"
     }
 }

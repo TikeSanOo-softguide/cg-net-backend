@@ -141,6 +141,7 @@ export function RelocationRequestDetailDialog({
                             </p>
                             <p className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <UserIcon className="size-3" />
+                                <span className="font-mono">{request.user.name}</span>
                                 <span className={`font-mono ${request.status === 'cancelled' ? 'select-none' : ''}`}>
                                     ({request.user?.phone})
                                 </span>
@@ -206,7 +207,7 @@ export function RelocationRequestDetailDialog({
 
                     <div className="mt-4 flex flex-col gap-2 rounded-xl border border-border/60 bg-muted/10 p-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground">{t('common.status')}:</span>
+                            <span className="text-xs text-muted-foreground">{t('requests.current_status')}:</span>
                             <StatusBadge status={request.status} />
                         </div>
 

@@ -19,6 +19,7 @@ use App\Http\Controllers\Package\PackageController;
 use App\Http\Controllers\Package\SpeedController;
 use App\Http\Controllers\Package\TermController;
 use App\Http\Controllers\Region\RegionManagementController;
+use App\Http\Controllers\ServiceRequest\BroadbandApplicationRequestController;
 use App\Http\Controllers\ServiceRequest\ChangePasswordRequestController;
 use App\Http\Controllers\ServiceRequest\ChangePlanRequestController;
 use App\Http\Controllers\ServiceRequest\FailureReportController;
@@ -134,6 +135,10 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
     });
 
     Route::prefix('service-requests')->name('service-requests.')->group(function () {
+        Route::prefix('/installations')->name('installations.')->group(function () {
+            Route::get('/', [BroadbandApplicationRequestController::class, 'index'])->middleware('can:service-requests.view')->name('index');
+            Route::patch('/{installationApplication}/status', [BroadbandApplicationRequestController::class, 'updateStatus'])->middleware('can:service-requests.update')->name('status');
+        });
         Route::prefix('failures')->name('failures.')->group(function () {
             Route::get('/', [FailureReportController::class, 'index'])->middleware('can:service-requests.view')->name('index');
             Route::patch('/{failureReport}/edit', [FailureReportController::class, 'updateStatus'])->middleware('can:service-requests.update')->name('edit');
@@ -148,7 +153,8 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         });
         Route::prefix('change-password')->name('change-password.')->group(function () {
             Route::get('/', [ChangePasswordRequestController::class, 'index'])->middleware('can:service-requests.view')->name('index');
-            Route::patch('/{changePasswordRequest}/status', [ChangePasswordRequestController::class,'updateStatus'])->middleware('can:service-requests.update')->name('status');});
+            Route::patch('/{changePasswordRequest}/status', [ChangePasswordRequestController::class, 'updateStatus'])->middleware('can:service-requests.update')->name('status');
+        });
     });
 
     foreach (MenuPages::all() as $page) {

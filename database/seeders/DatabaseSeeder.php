@@ -226,7 +226,7 @@ class DatabaseSeeder extends Seeder
         $sample = $users->take(8)->values();
         $admin = Admin::query()->first();
 
-        foreach ([ReviewStatus::UnderReview, ReviewStatus::Approved, ReviewStatus::Rejected] as $i => $status) {
+        foreach ([RequestStatus::UnderReview, RequestStatus::Approved, RequestStatus::Cancelled] as $i => $status) {
             $user = $sample[$i];
 
             InstallationApplication::factory()->create([
@@ -262,30 +262,30 @@ class DatabaseSeeder extends Seeder
             $condition = $index % 3;
             $status =
                 $index < 10
-                    ? ChangePlanStatus::UnderReview
-                    : ($index < 17
-                        ? ChangePlanStatus::Approved
-                        : ChangePlanStatus::Cancelled);
+                ? ChangePlanStatus::UnderReview
+                : ($index < 17
+                    ? ChangePlanStatus::Approved
+                    : ChangePlanStatus::Cancelled);
 
             $newPackage = match ($condition) {
                 0 => $currentPackage?->speed
                     ? Package::query()
-                        ->whereKeyNot($currentPackageId)
-                        ->whereHas('speed', fn($query) => $query->where('mbps', '<', $currentPackage->speed->mbps))
-                        ->first()
+                    ->whereKeyNot($currentPackageId)
+                    ->whereHas('speed', fn($query) => $query->where('mbps', '<', $currentPackage->speed->mbps))
+                    ->first()
                     : null,
                 1 => $currentPackage?->speed
                     ? Package::query()
-                        ->whereKeyNot($currentPackageId)
-                        ->whereHas('speed', fn($query) => $query->where('mbps', '>', $currentPackage->speed->mbps))
-                        ->first()
+                    ->whereKeyNot($currentPackageId)
+                    ->whereHas('speed', fn($query) => $query->where('mbps', '>', $currentPackage->speed->mbps))
+                    ->first()
                     : null,
                 default => $currentPackage?->speed
                     ? Package::query()
-                        ->whereKeyNot($currentPackageId)
-                        ->where('network_id', '!=', $currentPackage->network_id)
-                        ->whereHas('speed', fn($query) => $query->where('mbps', $currentPackage->speed->mbps))
-                        ->first()
+                    ->whereKeyNot($currentPackageId)
+                    ->where('network_id', '!=', $currentPackage->network_id)
+                    ->whereHas('speed', fn($query) => $query->where('mbps', $currentPackage->speed->mbps))
+                    ->first()
                     : null,
             };
 

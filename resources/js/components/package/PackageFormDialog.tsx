@@ -13,6 +13,7 @@ import type { PackageDetailMember } from '@/components/package/PackageDetailDial
 import { useTranslation } from '@/hooks/useTranslation';
 
 export type PackageFormMember = PackageDetailMember;
+type PackageImageAction = 'keep' | 'replace' | 'remove';
 
 type PackageFormDialogProps = {
     open: boolean;
@@ -100,7 +101,7 @@ function PackageFormDialogBody({
             : emptyPackageForm(),
     );
 
-    const submit = (event: FormEvent) => {
+    const submit = (event: FormEvent, imageAction: PackageImageAction = 'keep') => {
         event.preventDefault();
 
         const options = {
@@ -112,10 +113,18 @@ function PackageFormDialogBody({
         const actionUrl = (path: string) => `${path}${returnQuery}`;
 
         if (isEdit && packageItem) {
-            form.transform((data) => ({
-                ...data,
-                _method: 'PUT',
-            }));
+            form.transform((data) => {
+                if (imageAction === 'keep') {
+                    const { image_url: _imageUrl, ...rest } = data;
+                    return { ...rest, _method: 'PUT' };
+                }
+
+                if (imageAction === 'remove') {
+                    return { ...data, image_url: null, _method: 'PUT' };
+                }
+
+                return { ...data, _method: 'PUT' };
+            });
             form.post(actionUrl(`/packages/${packageItem.id}`), options);
 
             return;

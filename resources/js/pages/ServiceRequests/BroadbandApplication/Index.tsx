@@ -1,52 +1,85 @@
 import { useEffect, useRef, useState } from 'react';
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import {
-    CalendarIcon,
     BookX,
+    CalendarIcon,
     CircleCheckBig,
     ClipboardList,
-    ScanEye,
     MapPinIcon,
     PhoneIcon,
+    ScanEye,
     WifiIcon,
 } from 'lucide-react';
 
+import { BroadbandApplicationDetailDialog } from '@/components/service-requests/BroadbandApplication/BroadbandApplicationDetailDialog';
 import { DataTable } from '@/components/DataTable';
-import { FormDialog } from '@/components/FormDialog';
-import { formActionBarClass, formActionButtonClass, formActionSubmitClass } from '@/components/FormActionBar';
 import type { Paginated } from '@/components/Pagination';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
+import { StatCard } from '@/components/StatCard';
 import { StatusBadge } from '@/components/StatusBadge';
-import { Button } from '@/components/ui/button';
+import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
 import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
-import { cn, formatDate, truncateText } from '@/lib/utils';
-import { StatCard } from '@/components/StatCard';
-import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
-import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
-import { RelocationRequestDetailDialog } from '@/components/service-requests/RelocationRequest/RelocationRequestDetailDialog';
+import { formatDate, truncateText } from '@/lib/utils';
 
-type RelocationRequest = {
+type BroadbandApplication = {
     id: number;
-    current_address: string;
-    new_address: string;
-    preferred_date: string | null;
     phone: string;
-    details: string | null;
+    address: string;
+    note: string | null;
     status: string;
+    created_at: string;
+    id_type: string;
+    id_name: string;
+    id_number: string;
+    photos: {
+        id: number;
+        image_url: string;
+    }[];
     user: {
         id: number;
         name: string;
         phone: string;
-    };
-    broadband_account: {
+    } | null;
+    area: {
         id: number;
-        account_number: string;
-        customer_name: string;
-    };
+        name_en: string;
+        name_zh: string;
+        name_my: string;
+        region?: {
+            id: number;
+            name_en: string;
+            name_zh: string;
+            name_my: string;
+            state?: {
+                id: number;
+                name_en: string;
+                name_zh: string;
+                name_my: string;
+            } | null;
+        } | null;
+    } | null;
+    package: {
+        id: number;
+        price?: string | number;
+        network?: {
+            id: number;
+            name_en: string;
+            name_zh: string;
+            name_my: string;
+        } | null;
+        speed?: {
+            id: number;
+            mbps: number;
+        } | null;
+        term?: {
+            id: number;
+            months: number;
+        } | null;
+    } | null;
     admin: {
         id: number;
         username: string;
@@ -58,14 +91,8 @@ type Filters = {
     status: string;
 };
 
-type Stats = {
-    total: number;
-    under_review: number;
-    approved: number;
-};
-
 type Props = {
-    requests: Paginated<RelocationRequest>;
+    requests: Paginated<BroadbandApplication>;
     filters: Filters;
     statuses: string[];
     stats: {
@@ -76,53 +103,74 @@ type Props = {
     };
 };
 
-export default function RelocationRequestIndex({ requests, filters, statuses, stats }: Props) {
+function packageName(pkg: BroadbandApplication['package']): string {
+    if (!pkg) {
+        return 'N/A';
+    }
+
+    const parts = [
+        pkg.network?.name_en ?? pkg.network?.name_my ?? pkg.network?.name_zh ?? null,
+        pkg.speed ? `${pkg.speed.mbps} Mbps` : null,
+        pkg.term ? `${pkg.term.months} months` : null,
+    ].filter(Boolean);
+
+    return parts.length > 0 ? parts.join(' - ') : `Package #${pkg.id}`;
+}
+
+function areaName(area: BroadbandApplication['area']): string {
+    if (!area) {
+        return 'N/A';
+    }
+
+    const parts = [
+        area.name_en ?? area.name_my ?? area.name_zh ?? null,
+        area.region?.name_en ?? area.region?.name_my ?? area.region?.name_zh ?? null,
+        area.region?.state?.name_en ?? area.region?.state?.name_my ?? area.region?.state?.name_zh ?? null,
+    ].filter(Boolean);
+
+    return parts.length > 0 ? parts.join(' - ') : `Area #${area.id}`;
+}
+
+export default function BroadbandApplicationIndex({ requests, filters, statuses, stats }: Props) {
     const { t } = useTranslation();
     const can = useCan();
     const [search, setSearch] = useState(filters.search);
-    const [selectedRequest, setSelectedRequest] = useState<RelocationRequest | null>(null);
+    const [selectedRequest, setSelectedRequest] = useState<BroadbandApplication | null>(null);
     const debounce = useRef<number>(0);
 
     const cards = [
         {
-            key: 'relocations.total_requests',
+            key: 'broadband.total_requests',
             title: t('requests.total_requests'),
             value: stats.total_requests.toLocaleString(),
             icon: ClipboardList,
         },
         {
-            key: 'relocations.under_review_requests',
+            key: 'broadband.under_review_requests',
             title: t('requests.under_review_requests'),
             value: stats.under_reviews_requests.toLocaleString(),
             icon: ScanEye,
         },
         {
-            key: 'relocations.approved_requests',
+            key: 'broadband.approved_requests',
             title: t('requests.approved_requests'),
             value: stats.approved_requests.toLocaleString(),
             icon: CircleCheckBig,
         },
         {
-            key: 'relocations.cancelled_requests',
+            key: 'broadband.cancelled_requests',
             title: t('requests.cancelled_requests'),
             value: stats.cancelled_requests.toLocaleString(),
             icon: BookX,
         },
     ];
 
-    useEffect(() => {
-        setSearch(filters.search);
-    }, [filters.search]);
-
-    useEffect(() => {
-        return () => {
-            window.clearTimeout(debounce.current);
-        };
-    }, []);
+    useEffect(() => setSearch(filters.search), [filters.search]);
+    useEffect(() => () => window.clearTimeout(debounce.current), []);
 
     const visit = (next: Partial<Filters>) => {
         router.get(
-            '/service-requests/relocations',
+            '/service-requests/installations',
             {
                 search: (next.search ?? filters.search) || undefined,
                 status: next.status ?? filters.status,
@@ -145,7 +193,7 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
 
     return (
         <>
-            <Head title={t('menu.relocation_requests')} />
+            <Head title={t('menu.installation_applications')} />
 
             <PageContent>
                 <PageHeader />
@@ -156,7 +204,7 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                     getRowId={(request) => String(request.id)}
                     search={search}
                     onSearchChange={onSearchChange}
-                    searchPlaceholder={t('relocation_requests.search')}
+                    searchPlaceholder={t('common.search')}
                     pagination={requests}
                     onView={(request) => setSelectedRequest(request)}
                     directActions
@@ -193,71 +241,77 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                             cell: (request) => (
                                 <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-2.5">
                                     <div className="row-span-2">
-                                        <StaffListAvatar username={request.user.name} />
+                                        <StaffListAvatar
+                                            username={(request.user?.name ?? request.id_name) || 'Customer'}
+                                        />
                                     </div>
                                     <span className="min-w-0 truncate font-medium">
-                                        {truncateText(request.user.name, 20)}
+                                        {truncateText(request.user?.name ?? request.id_name, 20)}
                                     </span>
 
-                                    <p className="truncate font-mono mt-1 text-xs text-muted-foreground">
-                                        {request.broadband_account.account_number}
+                                    <p className="mt-1 truncate font-mono text-muted-foreground">
+                                        {request.id_number || request.phone}
                                     </p>
                                 </div>
                             ),
                             searchValue: (request) =>
-                                `${request.user.name} ${request.broadband_account.account_number} ${request.phone}`,
+                                `${request.user?.name ?? ''} ${request.id_name} ${request.id_number} ${request.phone}`,
                         },
                         {
-                            id: 'current_address',
-                            header: t('relocation_requests.current_address'),
-                            mobile: 'meta' as const,
-                            sortable: true,
-                            cell: (request) => (
-                                <span className="inline-flex max-w-[260px] items-center gap-1.5 text-muted-foreground mb-1">
-                                    <MapPinIcon className="size-3.5 shrink-0 text-muted-foreground/60" />
-                                    <span>{truncateText(request.current_address, 30)}</span>
-                                </span>
-                            ),
-                            searchValue: (request) => request.current_address,
-                        },
-                        {
-                            id: 'new_address',
-                            header: t('relocation_requests.new_address'),
+                            id: 'package',
+                            header: t('requests.requested_packages'),
                             mobile: 'meta' as const,
                             sortable: true,
                             cell: (request) => (
                                 <span className="inline-flex max-w-[260px] items-center gap-1.5">
-                                    <MapPinIcon className="size-3.5 shrink-0 text-muted-foreground/60 text-success/70" />
-                                    <span>{truncateText(request.new_address, 30)}</span>
+                                    <span>{truncateText(packageName(request.package) ?? '—', 40)}</span>
                                 </span>
                             ),
-                            searchValue: (request) => request.new_address,
+                            searchValue: (request) => `${packageName(request.package)}`,
                         },
                         {
-                            id: 'phone',
-                            header: t('requests.phone'),
+                            id: 'address',
+                            header: t('requests.contact_information'),
                             mobile: 'meta' as const,
                             sortable: true,
                             cell: (request) => (
-                                <span className="inline-flex items-center gap-1.5 text-xs">
-                                    <PhoneIcon className="size-3.5" />
-                                    {request.phone}
-                                </span>
+                                <div className="min-w-0 space-y-1">
+                                    <div className="flex min-w-0 items-center gap-2">
+                                        <MapPinIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                                        <span className="truncate">{truncateText(request.address, 35)}</span>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                        <span>({request.phone})</span>
+                                    </div>
+                                </div>
                             ),
                             searchValue: (request) => request.phone,
                         },
                         {
-                            id: 'preferred_date',
-                            header: t('relocation_requests.preferred_date'),
+                            id: 'area',
+                            header: t('broadband_application.location'),
                             mobile: 'meta' as const,
                             sortable: true,
                             cell: (request) => (
-                                <span className="inline-flex items-center gap-1.5 text-xs">
-                                    <CalendarIcon className="size-3.5" />
-                                    {formatDate(request.preferred_date)}
+                                <span className="inline-flex max-w-[260px] items-center gap-1.5">
+                                    <span> {truncateText(areaName(request.area) ?? '—', 35)}</span>
                                 </span>
                             ),
-                            searchValue: (request) => formatDate(request.preferred_date),
+                            searchValue: (request) => `${areaName(request.area)}`,
+                        },
+                        {
+                            id: 'created_at',
+                            header: t('requests.requested_date'),
+                            mobile: 'meta' as const,
+                            sortable: true,
+                            cell: (request) => (
+                                <span className="inline-flex items-center gap-1.5">
+                                    <CalendarIcon className="size-3.5" />
+                                    {formatDate(request.created_at)}
+                                </span>
+                            ),
+                            searchValue: (request) => formatDate(request.created_at),
                         },
                         {
                             id: 'status',
@@ -266,7 +320,7 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                             cell: (request) => (
                                 <div className="flex flex-col items-start gap-1">
                                     <StatusBadge status={request.status} />
-                                    {request.status === CHANGE_PLAN_STATUS.APPROVED && request.admin && (
+                                    {request.status === 'approved' && request.admin && (
                                         <span className="text-[11px] text-muted-foreground">
                                             {t('requests.approved_by')}: {request.admin.username}
                                         </span>
@@ -279,12 +333,12 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                 />
             </PageContent>
 
-            <RelocationRequestDetailDialog
+            <BroadbandApplicationDetailDialog
                 open={selectedRequest !== null}
                 onOpenChange={(open) => !open && setSelectedRequest(null)}
                 request={selectedRequest}
-                statuses={statuses}
                 canUpdate={can('service-requests.update')}
+                statuses={statuses}
             />
         </>
     );

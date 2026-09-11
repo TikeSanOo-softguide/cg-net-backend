@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Enums\ReviewStatus;
+use App\Enums\RequestStatus;
 use App\Models\Area;
 use App\Models\InstallationApplication;
 use App\Models\Package;
@@ -22,15 +22,13 @@ class InstallationApplicationFactory extends Factory
             'id_type' => fake()->randomElement(['NRC', 'Passport', 'Other']),
             'id_name' => fake()->name(),
             'id_number' => fake()->bothify('??######'),
-            'latitude' => fake()->latitude(),
-            'longitude' => fake()->longitude(),
             'address' => fake()->address(),
             'phone' => fake()->phoneNumber(),
             'note' => fake()->optional()->sentence(),
             'status' => fake()->randomElement([
-                ReviewStatus::Approved,
-                ReviewStatus::UnderReview,
-                ReviewStatus::Rejected,
+                RequestStatus::Approved,
+                RequestStatus::UnderReview,
+                RequestStatus::Cancelled,
             ]),
             'user_id' => User::factory(),
         ];

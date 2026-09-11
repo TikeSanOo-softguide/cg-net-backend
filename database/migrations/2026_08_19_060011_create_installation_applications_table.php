@@ -14,13 +14,12 @@ return new class extends Migration {
             $table->string('id_type', 16);
             $table->string('id_name');
             $table->string('id_number');
-            $table->decimal('latitude', 10, 7);
-            $table->decimal('longitude', 10, 7);
             $table->text('address');
             $table->string('phone');
             $table->text('note')->nullable();
             $table->string('status', 16);
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('admin_id')->nullable()->constrained()->cascadeOnDelete();
             $table->timestamps();
             $table->softDeletes();
         });

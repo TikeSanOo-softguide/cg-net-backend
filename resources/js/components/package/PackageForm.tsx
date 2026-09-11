@@ -68,6 +68,8 @@ export function emptyPackageForm(): PackageFormValues {
     };
 }
 
+type PackageImageAction = 'keep' | 'replace' | 'remove';
+
 type PackageFormProps = {
     form: InertiaFormProps<PackageFormValues>;
     networks: PackageOption[];
@@ -76,7 +78,7 @@ type PackageFormProps = {
     mode?: 'create' | 'edit';
     submitLabel?: string;
     existingImageUrl?: string | null;
-    onSubmit: (event: FormEvent) => void;
+    onSubmit: (event: FormEvent, imageAction?: PackageImageAction) => void;
     onCancel?: () => void;
 };
 
@@ -93,7 +95,9 @@ export function PackageForm({
 }: PackageFormProps) {
     const { t, locale } = useTranslation();
     const [image, setImage] = useState<File | null>(null);
-    const [imageChanged, setImageChanged] = useState(false);
+    const [imageAction, setImageAction] = useState<PackageImageAction>(
+        mode === 'edit' && existingImageUrl ? 'keep' : 'replace',
+    );
     const [touched, setTouched] = useState<Record<keyof PackageFormValues, boolean>>({
         network_id: false,
         speed_id: false,
@@ -163,13 +167,7 @@ export function PackageForm({
         }
 
         form.clearErrors();
-        if (mode === 'edit' && !imageChanged) {
-            form.transform((data) => {
-                const { image_url, ...rest } = data;
-                return rest;
-            });
-        }
-        onSubmit(event);
+        onSubmit(event, imageAction);
     };
 
     return (
@@ -418,7 +416,7 @@ export function PackageForm({
                                     className={cn(formControlStateClass(fieldState('image_url')))}
                                     onChange={(file) => {
                                         setImage(file);
-                                        setImageChanged(true);
+                                        setImageAction(file ? 'replace' : existingImageUrl ? 'remove' : 'replace');
                                         setField('image_url', file);
                                         markTouched('image_url');
                                     }}
