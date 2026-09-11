@@ -455,9 +455,119 @@ class DatabaseSeeder extends Seeder
 
         (new ServiceSeeder())->run();
 
-        Promotion::factory()->count(10)->create();
+        collect([
+            [
+                'slug' => 'thingyan-fiber-special-promo',
+                'title_en' => 'Thingyan Special: 50% Off Fiber Installation',
+                'title_my' => 'သင်္ကြန် အထူးအစီအစဉ် - ဖိုက်ဘာ တပ်ဆင်ခ ၅၀% လျှော့စျေး',
+                'title_zh' => '泼水节特惠：光纤安装费 50% 折扣',
+                'description_en' => 'Get connected this Thingyan with our exclusive fiber internet promotion. Sign up for any 1Gbps plan and get 50% off installation plus free router upgrade.',
+                'description_my' => 'ယခု သင်္ကြန်ပွဲတော်တွင် ကျွန်ုပ်တို့၏ အထူးဖိုက်ဘာ အင်တာနက် ပရိုမိုးရှင်းဖြင့် ချိတ်ဆက်လိုက်ပါ။ 1Gbps အစီအစဉ် မည်သည့်ဟာကိုမဆို ရွေးချယ်ပြီး တပ်ဆင်ခ ၅၀% လျှော့စျေးနှင့် ရောက်တာ အခမဲ့ မြှင့်တင်မှုကို ရယူလိုက်ပါ။',
+                'description_zh' => '通过我们的独家光纤互联网促销活动连接泼水节。注册任何 1Gbps 套餐即可享受 50% 安装折扣以及免费路由器升级。',
+                'start_date' => '2026-04-01',
+                'end_date' => '2026-12-30',
+                'is_active' => true,
+                'image_url' => 'seeder_images/promotions/thingyan_promo.png',
+            ],
+            [
+                'slug' => 'upgrade-speed-bonus-data',
+                'title_en' => 'Speed Booster: Double Your Bandwidth',
+                'title_my' => 'မြန်နှုန်းမြှင့်တင်မှု - သင်၏ ဘန်းဝဒ်ကို နှစ်ဆတိုးယူပါ',
+                'title_zh' => '提速计划：带宽直接翻倍',
+                'description_en' => 'Existing customers can now upgrade their plans and enjoy double bandwidth speed for the first three months without extra costs.',
+                'description_my' => 'လက်ရှိ ဖောက်သည်များအနေဖြင့် ၎င်းတို့၏ အစီအစဉ်များကို မြှင့်တင်နိုင်ပြီး အပိုကုန်ကျစရိတ်မရှိဘဲ ပထမသုံးလအတွက် နှစ်ဆမြန်နှုန်းကို ခံစားနိုင်ပါပြီ။',
+                'description_zh' => '现有客户现在可以升级套餐，在前三个月内免费享受双倍带宽速度。',
+                'start_date' => '2026-05-01',
+                'end_date' => '2026-12-30',
+                'is_active' => true,
+                'image_url' => 'seeder_images/promotions/upgrade_promo.png',
+            ],
+            [
+                'slug' => 'unlimited-weekend-gaming-pass',
+                'title_en' => 'Weekend Gamer Pack: Zero Lag Guaranteed',
+                'title_my' => 'စနေ၊ တနင်္ဂနွေ ဂိမ်းပက်ကေ့ချ် - လုံးဝ Lag မရှိစေရ',
+                'title_zh' => '周末玩家包：保证零延迟',
+                'description_en' => 'Level up your gaming experience. Subscribe to our gaming add-on and get prioritized routing and zero packet loss every weekend.',
+                'description_my' => 'သင်၏ ဂိမ်းကစားခြင်း အတွေ့အကြုံကို မြှင့်တင်လိုက်ပါ။ ကျွန်ုပ်တို့၏ ဂိမ်း add-on ကို စာရင်းသွင်းပြီး စနေ၊ တနင်္ဂနွေတိုင်းတွင် ဦးစားပေးလိုင်းနှင့် packet loss ကင်းစင်မှုကို ရယူလိုက်ပါ။',
+                'description_zh' => '提升您的游戏体验。订阅我们的游戏附加组件，每个周末享受优先路由和零丢包。',
+                'start_date' => null,
+                'end_date' => null,
+                'is_active' => true,
+                'image_url' => 'seeder_images/promotions/unlimited_promo.png',
+            ],
+            [
+                'slug' => 'smarthome-router-bundle',
+                'title_en' => 'Smart Home Wi-Fi 6 Mesh Bundle',
+                'title_my' => 'စမတ်ဟုန်း Wi-Fi 6 Mesh ပက်ကေ့ချ်',
+                'title_zh' => '智能家居 Wi-Fi 6 Mesh 套装',
+                'description_en' => 'Eliminate dead zones in your house. Get a dual-pack Wi-Fi 6 mesh router system with free professional setup when you sign a 12-month contract.',
+                'description_my' => 'သင့်အိမ်ရှိ အင်တာနက်မမိသော နေရာများကို ဖယ်ရှားလိုက်ပါ။ ၁၂ လစာချုပ် ချုပ်ဆိုပါက အခမဲ့ ကျွမ်းကျင်သူ တပ်ဆင်မှုနှင့်အတူ Wi-Fi 6 mesh router အစုံကို ရယူလိုက်ပါ။',
+                'description_zh' => '消除您家中的死角。签订 12 个月合同，即可获得双包 Wi-Fi 6 mesh 路由器系统并免费进行专业设置。',
+                'start_date' => null,
+                'end_date' => '2026-12-31',
+                'is_active' => true,
+                'image_url' => 'seeder_images/promotions/smarthome_promo.png',
+            ],
+            [
+                'slug' => 'refer-a-friend-cashback',
+                'title_en' => 'Refer a Friend, Get 1 Month Free',
+                'title_my' => 'သူငယ်ချင်းကို မိတ်ဆက်ပေးပြီး ၁ လ အခမဲ့ ရယူပါ',
+                'title_zh' => '推荐朋友，获得 1 个月免费',
+                'description_en' => 'Share the high-speed internet joy! Refer a friend to our fiber service, and both of you will receive 1 month of subscription fee credited back.',
+                'description_my' => 'အမြန်နှုန်းမြင့် အင်တာနက် အတွေ့အကြုံကို မျှဝေလိုက်ပါ။ ကျွန်ုပ်တို့၏ ဖိုင်ဘာ ဝန်ဆောင်မှုသို့ သူငယ်ချင်းတစ်ဦးကို မိတ်ဆက်ပေးပြီး နှစ်ဦးစလုံး ၁ လစာ အခမဲ့ ရယူလိုက်ပါ။',
+                'description_zh' => '分享高速互联网的乐趣！向朋友推荐我们的光纤服务，你们两人都将获得 1 个月的订阅费返还。',
+                'start_date' => '2026-08-01',
+                'end_date' => null,
+                'is_active' => true,
+                'image_url' => 'seeder_images/promotions/refer_promo.png',
+            ],
+            [
+                'slug' => 'thadingyut-festival-promo',
+                'title_en' => 'Thadingyut Special: Free Installation & TV Box',
+                'title_my' => 'သီတင်းကျွတ် အထူးအစီအစဉ် - အခမဲ့ တပ်ဆင်ခနှင့် တီဗွီဘောက်စ်',
+                'title_zh' => '点灯节特惠：免费安装 & 电视盒子',
+                'description_en' => 'Celebrate the festival of lights with our new broadband plan. Enjoy completely free installation and a complimentary 4K Android TV box.',
+                'description_my' => 'သီတင်းကျွတ် မီးထွန်းပွဲတော်ကို ကျွန်ုပ်တို့၏ ဘရော့ဘန်း အစီအစဉ်သစ်ဖြင့် ဆင်နွှဲလိုက်ပါ။ လုံးဝ အခမဲ့ တပ်ဆင်မှုနှင့်အတူ 4K Android TV box ကို လက်ဆောင်ရယူလိုက်ပါ။',
+                'description_zh' => '通过我们的新宽带计划庆祝点灯节。享受完全免费的安装和赠送的 4K Android 电视盒子。',
+                'start_date' => '2026-10-01',
+                'end_date' => '2026-12-31',
+                'is_active' => true,
+                'image_url' => 'seeder_images/promotions/thadingyut_promo.png',
+            ],
+        ])->each(fn(array $promotion) => Promotion::create($promotion));
 
-        Gallery::factory()->count(5)->create();
+        collect([
+            [
+                'image_url' => 'seeder_images/gallery/service_center.png',
+                'label_en' => 'Our modern service center',
+                'label_my' => 'ကျွန်ုပ်တို့၏ ခေတ်မီ ဝန်ဆောင်မှုစင်တာ',
+                'label_zh' => '我们的现代服务中心',
+            ],
+            [
+                'image_url' => 'seeder_images/gallery/reliable.png',
+                'label_en' => 'Fast and reliable connectivity',
+                'label_my' => 'မြန်ဆန်ပြီး ယုံကြည်စိတ်ချရသော ချိတ်ဆက်မှု',
+                'label_zh' => '快速可靠的网络连接',
+            ],
+            [
+                'image_url' => 'seeder_images/gallery/future.png',
+                'label_en' => 'Built for a connected future',
+                'label_my' => 'ချိတ်ဆက်ထားသော အနာဂတ်အတွက် တည်ဆောက်ထားသည်',
+                'label_zh' => '为互联未来而建',
+            ],
+            [
+                'image_url' => 'seeder_images/gallery/technoloy.png',
+                'label_en' => 'Technology that brings people together',
+                'label_my' => 'လူများကို ပေါင်းစည်းပေးသော နည်းပညာ',
+                'label_zh' => '让人们紧密相连的科技',
+            ],
+            [
+                'image_url' => 'seeder_images/gallery/forward.png',
+                'label_en' => 'Together, we move forward',
+                'label_my' => 'အတူတကွ ရှေ့ဆက်လှမ်းကြမည်',
+                'label_zh' => '携手共创美好未来',
+            ],
+        ])->each(fn(array $gallery) => Gallery::create($gallery));
 
         Contact::factory()->createMany([
             [
