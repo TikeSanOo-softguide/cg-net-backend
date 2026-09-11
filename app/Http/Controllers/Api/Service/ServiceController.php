@@ -12,7 +12,8 @@ class ServiceController extends Controller
 {
     public function index(Request $request): JsonResource
     {
-        $services = Service::query()->where('status', 'published')->get();
+        $perPage = $request->input('per_page', 6);
+        $services = Service::query()->where('status', 'published')->paginate($perPage);
 
         return ServiceResource::collection($services);
     }
