@@ -156,9 +156,7 @@ class DatabaseSeeder extends Seeder
                 if ($index >= 3 && $index < 6) {
                     $user->update(['status' => UserStatus::Suspended]);
                 }
-
                 $package = $packages->random();
-
                 $account = BroadbandAccount::factory()->create([
                     'user_id' => $user->id,
                     'customer_name' => $user->name,
@@ -374,43 +372,64 @@ class DatabaseSeeder extends Seeder
             'image_url_en' => 'seeder_images/banner/banner_en.png',
             'image_url_zh' => 'seeder_images/banner/banner_zh.png',
             'image_url_my' => 'seeder_images/banner/banner_my.png',
+            'type' => 'web_background',
             'sort_order' => 1,
         ]);
         Banner::factory()->create([
             'image_url_en' => 'seeder_images/banner/banner_en1.png',
             'image_url_zh' => 'seeder_images/banner/banner_zh1.png',
             'image_url_my' => 'seeder_images/banner/banner_my1.png',
+            'type' => 'web_background',
             'sort_order' => 2,
         ]);
         Banner::factory()->create([
             'image_url_en' => 'seeder_images/banner/banner_en2.png',
             'image_url_zh' => 'seeder_images/banner/banner_zh2.png',
             'image_url_my' => 'seeder_images/banner/banner_my2.png',
+            'type' => 'web_background',
             'sort_order' => 3,
         ]);
         Banner::factory()->create([
             'image_url_en' => 'seeder_images/banner/banner_en3.png',
             'image_url_zh' => 'seeder_images/banner/banner_zh3.png',
             'image_url_my' => 'seeder_images/banner/banner_my3.png',
+            'type' => 'web_background',
             'sort_order' => 4,
         ]);
         Banner::factory()->create([
             'image_url_en' => 'seeder_images/banner/banner_en4.png',
             'image_url_zh' => 'seeder_images/banner/banner_zh4.png',
             'image_url_my' => 'seeder_images/banner/banner_my4.png',
+            'type' => 'web_background',
             'sort_order' => 5,
         ]);
         Banner::factory()->create([
             'image_url_en' => 'seeder_images/banner/banner_en5.png',
             'image_url_zh' => 'seeder_images/banner/banner_zh5.png',
             'image_url_my' => 'seeder_images/banner/banner_my5.png',
+            'type' => 'web_background',
             'sort_order' => 6,
         ]);
         Banner::factory()->create([
             'image_url_en' => 'seeder_images/banner/banner_en6.png',
             'image_url_zh' => 'seeder_images/banner/banner_zh6.png',
             'image_url_my' => 'seeder_images/banner/banner_my6.png',
+            'type' => 'web_background',
             'sort_order' => 7,
+        ]);
+        Banner::factory()->create([
+            'image_url_en' => 'seeder_images/banner/web_popup/popup1.png',
+            'image_url_zh' => 'seeder_images/banner/web_popup/popup1.png',
+            'image_url_my' => 'seeder_images/banner/web_popup/popup1.png',
+            'type' => 'web_popup',
+            'sort_order' => 8,
+        ]);
+        Banner::factory()->create([
+            'image_url_en' => 'seeder_images/banner/web_popup/popup2.png',
+            'image_url_zh' => 'seeder_images/banner/web_popup/popup2.png',
+            'image_url_my' => 'seeder_images/banner/web_popup/popup2.png',
+            'type' => 'web_popup',
+            'sort_order' => 9,
         ]);
     }
 
@@ -571,19 +590,19 @@ class DatabaseSeeder extends Seeder
 
         Contact::factory()->createMany([
             [
-                'contact_point' => '+959123456789',
+                'contact_point' => '📞 +959887288882',
             ],
             [
-                'contact_point' => '+959987654321',
+                'contact_point' => '📞 +959421823339',
             ],
             [
-                'contact_point' => '+959456789123',
+                'contact_point' => '📩 contact@chenguangnetwork.com',
             ],
             [
-                'contact_point' => 'support@cg-net.test',
+                'contact_point' => '🏠 130/A Eain Twin Hmu Street,Mae Khong Ward,Tachileik.',
             ],
             [
-                'contact_point' => 'No. 123, Mong La, Shan State, Myanmar',
+                'contact_point' => '🧭 Monday to Sunday: 9:00 AM - 9:00 PM, Serving you 7 days a week',
             ],
         ]);
     }
