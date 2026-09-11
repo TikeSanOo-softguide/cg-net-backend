@@ -19,6 +19,7 @@ class BannerResource extends JsonResource
             'image_url_en' => $this->image_url_en,
             'image_url_zh' => $this->image_url_zh,
             'image_url_my' => $this->image_url_my,
+            'type' => $this->type,
         ];
     }
 }
