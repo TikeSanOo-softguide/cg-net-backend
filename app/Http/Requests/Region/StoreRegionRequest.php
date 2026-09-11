@@ -25,7 +25,9 @@ class StoreRegionRequest extends FormRequest
             'name_en' => ['required', 'string', 'max:255'],
             'name_zh' => ['required', 'string', 'max:255'],
             'name_my' => ['required', 'string', 'max:255'],
-            'state_id' => ['required', 'integer', 'exists:states,id']
+            'state_id' => ['required', 'integer', 'exists:states,id'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
         ];
     }
 }

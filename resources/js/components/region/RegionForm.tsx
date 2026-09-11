@@ -16,6 +16,8 @@ export type RegionFormValues = {
     name_en: string;
     name_my: string;
     name_zh: string;
+    latitude: string | null;
+    longitude: string | null;
     state_id: number | null;
     region_id: number | null;
 };
@@ -206,6 +208,14 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
         }
     };
 
+    const handleCoordinateChange = (field: 'latitude' | 'longitude', value: string) => {
+        form.setData(field, value === '' ? null : value);
+
+        if (value !== '') {
+            form.clearErrors(field);
+        }
+    };
+
     const handleRegionChange = (value: string) => {
         form.setData('region_id', Number(value));
 
@@ -264,6 +274,46 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
                     value={form.data.name_zh}
                     onChange={(event) => handleNameChange('name_zh', event.target.value)}
                     maxLength={STATE_TITLE_MAX_LENGTH}
+                    disabled={form.processing}
+                />
+            </FormField>
+
+            <FormField
+                label={t('regions.latitude')}
+                htmlFor="latitude"
+                error={form.errors.latitude}
+                icon={MapPinIcon}
+                className="sm:col-span-1"
+            >
+                <Input
+                    id="latitude"
+                    name="latitude"
+                    type="number"
+                    step="any"
+                    min="-90"
+                    max="90"
+                    value={form.data.latitude ?? ''}
+                    onChange={(event) => handleCoordinateChange('latitude', event.target.value)}
+                    disabled={form.processing}
+                />
+            </FormField>
+
+            <FormField
+                label={t('regions.longitude')}
+                htmlFor="longitude"
+                error={form.errors.longitude}
+                icon={MapPinIcon}
+                className="sm:col-span-1"
+            >
+                <Input
+                    id="longitude"
+                    name="longitude"
+                    type="number"
+                    step="any"
+                    min="-180"
+                    max="180"
+                    value={form.data.longitude ?? ''}
+                    onChange={(event) => handleCoordinateChange('longitude', event.target.value)}
                     disabled={form.processing}
                 />
             </FormField>

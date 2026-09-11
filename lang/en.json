@@ -384,6 +384,8 @@
         "name_en": "Name (English)",
         "name_my": "Name (Myanmar)",
         "name_zh": "Name (Chinese)",
+        "latitude": "Latitude",
+        "longitude": "Longitude",
         "area_name": "Area",
         "region_name": "Region",
         "state_name": "State",

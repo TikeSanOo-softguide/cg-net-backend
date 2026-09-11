@@ -413,6 +413,8 @@
         "name_en": "名称（英文）",
         "name_my": "名称（缅甸文）",
         "name_zh": "名称（中文）",
+        "latitude": "纬度",
+        "longitude": "经度",
         "area_name": "区域",
         "region_name": "地区",
         "state_name": "省/邦",

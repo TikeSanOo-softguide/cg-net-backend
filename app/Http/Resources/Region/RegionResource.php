@@ -22,9 +22,9 @@ class RegionResource extends JsonResource
                 'my' => $this->name_my,
                 'zh' => $this->name_zh,
             ],
-            'areas' => AreaResource::collection(
-                $this->whenLoaded('areas')
-            ),
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
+            'areas' => AreaResource::collection($this->whenLoaded('areas')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

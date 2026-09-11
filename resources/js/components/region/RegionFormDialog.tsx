@@ -1,22 +1,16 @@
 import { useTranslation } from '@/hooks/useTranslation';
-import {
-    MapIcon,
-    MapPinIcon,
-    SquareStackIcon,
-    SquarePenIcon,
-} from 'lucide-react';
+import { MapIcon, MapPinIcon, SquareStackIcon, SquarePenIcon } from 'lucide-react';
 
 import { FormDialog } from '@/components/FormDialog';
-import {
-    RegionForm,
-    type RegionFormValues,
-} from '@/components/region/RegionForm';
+import { RegionForm, type RegionFormValues } from '@/components/region/RegionForm';
 
 export type StateRow = {
     id: number;
     name_en: string;
     name_zh: string;
     name_my: string;
+    latitude: string | null;
+    longitude: string | null;
     created_at: string | null;
 };
 
@@ -26,6 +20,8 @@ export type RegionRow = {
     name_zh: string;
     name_my: string;
     state_id: number;
+    latitude: string | null;
+    longitude: string | null;
     state_name_en: string | null;
     state_name_zh: string | null;
     state_name_my: string | null;
@@ -38,6 +34,8 @@ export type AreaRow = {
     name_zh: string;
     name_my: string;
     region_id: number;
+    latitude: string | null;
+    longitude: string | null;
     region_name_en: string | null;
     region_name_zh: string | null;
     region_name_my: string | null;
@@ -47,10 +45,7 @@ export type AreaRow = {
     created_at: string | null;
 };
 
-export type RegionType =
-    | 'state'
-    | 'region'
-    | 'area';
+export type RegionType = 'state' | 'region' | 'area';
 
 type RegionFormDialogProps = {
     open: boolean;
@@ -58,56 +53,34 @@ type RegionFormDialogProps = {
 
     type: RegionType;
 
-    item:
-        | StateRow
-        | RegionRow
-        | AreaRow
-        | null;
+    item: StateRow | RegionRow | AreaRow | null;
 
     states: StateRow[];
     regions: RegionRow[];
 };
 
-function getTitleKey(
-    type: RegionType,
-    edit: boolean,
-): string {
+function getTitleKey(type: RegionType, edit: boolean): string {
     if (type === 'state') {
-        return edit
-            ? 'regions.edit_state'
-            : 'regions.create_state';
+        return edit ? 'regions.edit_state' : 'regions.create_state';
     }
 
     if (type === 'region') {
-        return edit
-            ? 'regions.edit_region'
-            : 'regions.create_region';
+        return edit ? 'regions.edit_region' : 'regions.create_region';
     }
 
-    return edit
-        ? 'regions.edit_area'
-        : 'regions.create_area';
+    return edit ? 'regions.edit_area' : 'regions.create_area';
 }
 
-function getDescriptionKey(
-    type: RegionType,
-    edit: boolean,
-): string {
+function getDescriptionKey(type: RegionType, edit: boolean): string {
     if (type === 'state') {
-        return edit
-            ? 'regions.edit_state_description'
-            : 'regions.create_state_description';
+        return edit ? 'regions.edit_state_description' : 'regions.create_state_description';
     }
 
     if (type === 'region') {
-        return edit
-            ? 'regions.edit_region_description'
-            : 'regions.create_region_description';
+        return edit ? 'regions.edit_region_description' : 'regions.create_region_description';
     }
 
-    return edit
-        ? 'regions.edit_area_description'
-        : 'regions.create_area_description';
+    return edit ? 'regions.edit_area_description' : 'regions.create_area_description';
 }
 
 function getIcon(type: RegionType, edit: boolean) {
@@ -127,14 +100,7 @@ function getIcon(type: RegionType, edit: boolean) {
     }
 }
 
-export function RegionFormDialog({
-    open,
-    onOpenChange,
-    type,
-    item,
-    states,
-    regions,
-}: RegionFormDialogProps) {
+export function RegionFormDialog({ open, onOpenChange, type, item, states, regions }: RegionFormDialogProps) {
     const { t } = useTranslation();
 
     const isEdit = item !== null;
@@ -143,6 +109,8 @@ export function RegionFormDialog({
         name_en: item?.name_en ?? '',
         name_my: item?.name_my ?? '',
         name_zh: item?.name_zh ?? '',
+        latitude: item?.latitude ?? null,
+        longitude: item?.longitude ?? null,
         state_id: null,
         region_id: null,
     };
@@ -158,12 +126,9 @@ export function RegionFormDialog({
 
         initialValues.region_id = area.region_id;
 
-        const parentRegion = regions.find(
-            (region) => region.id === area.region_id,
-        );
+        const parentRegion = regions.find((region) => region.id === area.region_id);
 
-        initialValues.state_id =
-            parentRegion?.state_id ?? null;
+        initialValues.state_id = parentRegion?.state_id ?? null;
     }
 
     const Icon = getIcon(type, isEdit);
@@ -172,29 +137,19 @@ export function RegionFormDialog({
         <FormDialog
             open={open}
             onOpenChange={onOpenChange}
-            title={t(
-                getTitleKey(type, isEdit),
-            )}
-            description={t(
-                getDescriptionKey(type, isEdit),
-            )}
+            title={t(getTitleKey(type, isEdit))}
+            description={t(getDescriptionKey(type, isEdit))}
             icon={Icon}
         >
             {open ? (
                 <RegionFormDialogBody
-                    key={
-                        item
-                            ? `${type}-edit-${item.id}`
-                            : `${type}-create`
-                    }
+                    key={item ? `${type}-edit-${item.id}` : `${type}-create`}
                     type={type}
                     item={item}
                     states={states}
                     regions={regions}
                     initialValues={initialValues}
-                    onClose={() =>
-                        onOpenChange(false)
-                    }
+                    onClose={() => onOpenChange(false)}
                 />
             ) : null}
         </FormDialog>
@@ -204,11 +159,7 @@ export function RegionFormDialog({
 type RegionFormDialogBodyProps = {
     type: RegionType;
 
-    item:
-        | StateRow
-        | RegionRow
-        | AreaRow
-        | null;
+    item: StateRow | RegionRow | AreaRow | null;
 
     states: StateRow[];
     regions: RegionRow[];
@@ -218,14 +169,7 @@ type RegionFormDialogBodyProps = {
     onClose: () => void;
 };
 
-function RegionFormDialogBody({
-    type,
-    item,
-    states,
-    regions,
-    initialValues,
-    onClose,
-}: RegionFormDialogBodyProps) {
+function RegionFormDialogBody({ type, item, states, regions, initialValues, onClose }: RegionFormDialogBodyProps) {
     return (
         <RegionForm
             type={type}

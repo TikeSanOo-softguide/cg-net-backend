@@ -21,6 +21,8 @@ class AreaResource extends JsonResource
                 'my' => $this->name_my,
                 'zh' => $this->name_zh,
             ],
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
