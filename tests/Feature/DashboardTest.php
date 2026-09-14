@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\PaymentStatus;
-use App\Enums\ReviewStatus;
+use App\Enums\RequestStatus;
 use App\Models\Admin;
 use App\Models\Area;
 use App\Models\FailureReport;
@@ -38,19 +38,19 @@ class DashboardTest extends TestCase
             'paid_at' => now(),
         ]);
         InstallationApplication::factory()->create([
-            'status' => ReviewStatus::UnderReview,
+            'status' => RequestStatus::UnderReview,
         ]);
 
         $this->actingAs($admin, 'web')
             ->get('/dashboard')
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
+            ->assertInertia(fn(Assert $page) => $page
                 ->component('Dashboard/Index')
                 ->has('stats.total_customers')
                 ->has('stats.active_broadband_accounts')
                 ->has('stats.active_packages')
                 ->where('stats.todays_revenue', '15000.00')
-                ->where('stats.pending_requests', fn ($count) => $count >= 1)
+                ->where('stats.pending_requests', fn($count) => $count >= 1)
                 ->has('chart', 30)
                 ->has('regionChart')
                 ->has('requestTypeChart')
@@ -75,7 +75,7 @@ class DashboardTest extends TestCase
         $this->actingAs($admin, 'web')
             ->get('/dashboard')
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
+            ->assertInertia(fn(Assert $page) => $page
                 ->has('regionChart', 2)
                 ->where('regionChart.0.name_en', 'Yangon')
                 ->where('regionChart.0.value', 3)
@@ -96,7 +96,7 @@ class DashboardTest extends TestCase
         $this->actingAs($admin, 'web')
             ->get('/dashboard')
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
+            ->assertInertia(fn(Assert $page) => $page
                 ->has('regionChart', 5)
                 ->where('regionChart.4.id', null)
                 ->where('regionChart.4.name_en', 'Other')
@@ -114,7 +114,7 @@ class DashboardTest extends TestCase
         $this->actingAs($admin, 'web')
             ->get('/dashboard')
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
+            ->assertInertia(fn(Assert $page) => $page
                 ->has('requestTypeChart.items', 4)
                 ->where('requestTypeChart.items.0.type', 'installation')
                 ->where('requestTypeChart.items.0.value', 4)
@@ -141,7 +141,7 @@ class DashboardTest extends TestCase
         $this->actingAs($admin, 'web')
             ->get('/dashboard')
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
+            ->assertInertia(fn(Assert $page) => $page
                 ->where('unreadNotifications', 1)
                 ->has('recentNotifications', 1)
                 ->where('recentNotifications.0.title', 'Event Today')
@@ -157,7 +157,7 @@ class DashboardTest extends TestCase
         $this->actingAs($admin, 'web')
             ->from('/dashboard')
             ->delete('/dashboard/requests/bulk-destroy', [
-                'ids' => ['installation-'.$install->id, 'failure-'.$failure->id],
+                'ids' => ['installation-' . $install->id, 'failure-' . $failure->id],
             ])
             ->assertRedirect('/dashboard')
             ->assertSessionHas('success', 'common.bulk_deleted');
@@ -177,7 +177,7 @@ class DashboardTest extends TestCase
 
         $this->actingAs($admin, 'web')
             ->delete('/dashboard/requests/bulk-destroy', [
-                'ids' => ['installation-'.$install->id],
+                'ids' => ['installation-' . $install->id],
             ])
             ->assertForbidden();
 

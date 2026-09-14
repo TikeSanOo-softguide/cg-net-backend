@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('contact_name');
             $table->string('contact_phone', 16);
             $table->string('status', 16)->default('under_review')->index();
-            $table->foreignId('admin_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('admin_id')->nullable()->constrained()->cascadeOnDelete();
             $table->timestamps();
             $table->softDeletes();
         });

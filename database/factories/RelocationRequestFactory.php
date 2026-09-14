@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Enums\ReviewStatus;
+use App\Enums\RequestStatus;
 use App\Models\BroadbandAccount;
 use App\Models\RelocationRequest;
 use App\Models\User;
@@ -24,7 +24,7 @@ class RelocationRequestFactory extends Factory
             'preferred_date' => fake()->dateTimeBetween('now', '+30 days'),
             'phone' => MyanmarFake::phone(),
             'details' => fake()->optional()->sentence(),
-            'status' => fake()->randomElement(ReviewStatus::cases()),
+            'status' => fake()->randomElement(RequestStatus::cases()),
         ];
     }
 }

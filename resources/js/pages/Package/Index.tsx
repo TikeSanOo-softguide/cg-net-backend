@@ -493,7 +493,7 @@ export default function PackageIndex({
                                 cell: (row) => (
                                     <span className="inline-flex items-center gap-1.5">
                                         {(row as TermOption).months
-                                            ? `${(row as TermOption).months} ${(row as TermOption).months === 1 ? 'Month' : 'Months'}`
+                                            ? `${(row as TermOption).months} ${(row as TermOption).months === 1 ? t('packages.months') : t('packages.months')}`
                                             : '—'}
                                     </span>
                                 ),
@@ -722,7 +722,9 @@ export default function PackageIndex({
                             header: t('packages.term'),
                             mobile: 'meta',
                             sortable: true,
-                            cell: (row) => <span>{row.term?.months ? `${row.term.months} Months` : '—'}</span>,
+                            cell: (row) => (
+                                <span>{row.term?.months ? `${row.term.months} ${t('packages.months')} ` : '—'}</span>
+                            ),
                         },
 
                         {

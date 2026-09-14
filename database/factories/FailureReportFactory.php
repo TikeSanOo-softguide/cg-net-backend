@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\FailureType;
-use App\Enums\ReviewStatus;
+use App\Enums\RequestStatus;
 use App\Models\BroadbandAccount;
 use App\Models\FailureReport;
 use App\Models\User;
@@ -24,7 +24,7 @@ class FailureReportFactory extends Factory
             'description' => fake()->paragraph(),
             'contact_name' => MyanmarFake::name(),
             'contact_phone' => MyanmarFake::phone(),
-            'status' => fake()->randomElement(ReviewStatus::cases()),
+            'status' => fake()->randomElement(RequestStatus::cases()),
             'admin_id' => 1
         ];
     }

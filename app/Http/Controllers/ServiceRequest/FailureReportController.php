@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\ServiceRequest;
 
 use App\Enums\FailureType;
-use App\Enums\ReviewStatus;
+use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\FailureReport;
 use Illuminate\Http\RedirectResponse;
@@ -35,20 +35,20 @@ class FailureReportController extends Controller
             ])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
-                    $query->where('contact_name', 'like', '%'.$search.'%')
-                        ->orWhere('contact_phone', 'like', '%'.$search.'%')
-                        ->orWhere('description', 'like', '%'.$search.'%')
+                    $query->where('contact_name', 'like', '%' . $search . '%')
+                        ->orWhere('contact_phone', 'like', '%' . $search . '%')
+                        ->orWhere('description', 'like', '%' . $search . '%')
                         ->orWhereHas('user', function ($query) use ($search): void {
-                            $query->where('name', 'like', '%'.$search.'%')
-                                ->orWhere('phone', 'like', '%'.$search.'%');
+                            $query->where('name', 'like', '%' . $search . '%')
+                                ->orWhere('phone', 'like', '%' . $search . '%');
                         })
                         ->orWhereHas('broadbandAccount', function ($query) use ($search): void {
-                            $query->where('account_number', 'like', '%'.$search.'%')
-                                ->orWhere('customer_name', 'like', '%'.$search.'%');
+                            $query->where('account_number', 'like', '%' . $search . '%')
+                                ->orWhere('customer_name', 'like', '%' . $search . '%');
                         });
                 });
             })
-            ->when($status !== '' && in_array($status, array_column(ReviewStatus::cases(), 'value'), true), function ($query) use ($status): void {
+            ->when($status !== '' && in_array($status, array_column(RequestStatus::cases(), 'value'), true), function ($query) use ($status): void {
                 $query->where('status', $status);
             })
             ->when($type !== '' && in_array($type, array_column(FailureType::cases(), 'value'), true), function ($query) use ($type): void {
@@ -57,7 +57,7 @@ class FailureReportController extends Controller
             ->orderBy($sort, $direction)
             ->paginate(15)
             ->withQueryString()
-            ->through(fn (FailureReport $report) => [
+            ->through(fn(FailureReport $report) => [
                 'id' => $report->id,
                 'customer_name' => $report->user?->name ?? '—',
                 'customer_phone' => $report->user?->phone ?? '—',
@@ -69,7 +69,7 @@ class FailureReportController extends Controller
                 'description' => $report->description,
                 'status' => $report->status->value,
                 'created_at' => $report->created_at?->toDateString(),
-                'photos' => $report->photos->map(fn ($photo) => [
+                'photos' => $report->photos->map(fn($photo) => [
                     'id' => $photo->id,
                     'image_url' => $photo->image_url,
                     'label' => $photo->label ?? null,
@@ -91,7 +91,7 @@ class FailureReportController extends Controller
     public function updateStatus(Request $request, FailureReport $failureReport): RedirectResponse
     {
         $status = $request->validate([
-            'status' => ['required', Rule::enum(ReviewStatus::class)],
+            'status' => ['required', Rule::enum(RequestStatus::class)],
         ])['status'];
 
         if ($failureReport->status !== $status) {

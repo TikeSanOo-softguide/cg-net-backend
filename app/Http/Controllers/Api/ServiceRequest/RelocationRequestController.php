@@ -11,6 +11,7 @@ use App\Models\RelocationRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class RelocationRequestController extends Controller
 {
@@ -26,25 +27,29 @@ class RelocationRequestController extends Controller
         $validated = $request->validated();
         $relocation = RelocationRequest::query()->create([
             ...$validated,
+            'user_id' => $request->user()->id,
             'status' => 'under_review',
         ]);
 
         return new RelocationRequestResource($relocation);
     }
 
-    public function show(RelocationRequest $relocationRequest): RelocationRequestResource
+    public function show(Request $request, RelocationRequest $relocationRequest): RelocationRequestResource
     {
+        $this->ensureOwner($request, $relocationRequest);
         return new RelocationRequestResource($relocationRequest);
     }
 
     public function update(UpdateRelocationRequest $request, RelocationRequest $relocationRequest): RelocationRequestResource
     {
+        $this->ensureOwner($request, $relocationRequest);
         $relocationRequest->update($request->validated());
         return new RelocationRequestResource($relocationRequest->refresh());
     }
 
-    public function cancel(RelocationRequest $relocationRequest): RelocationRequestResource
+    public function cancel(Request $request, RelocationRequest $relocationRequest): RelocationRequestResource
     {
+        $this->ensureOwner($request, $relocationRequest);
         $relocationRequest->update([
             'status' => RequestStatus::Cancelled,
         ]);
@@ -52,10 +57,17 @@ class RelocationRequestController extends Controller
         return new RelocationRequestResource($relocationRequest->refresh());
     }
 
-    public function destroy(RelocationRequest $relocationRequest): JsonResponse
+    public function destroy(Request $request, RelocationRequest $relocationRequest): JsonResponse
     {
+        $this->ensureOwner($request, $relocationRequest);
         $relocationRequest->delete();
-
         return response()->json(null, 204);
+    }
+
+    private function ensureOwner(Request $request, RelocationRequest $relocationRequest): void
+    {
+        if ($relocationRequest->user_id !== $request->user()->id) {
+            throw new AccessDeniedHttpException();
+        }
     }
 }

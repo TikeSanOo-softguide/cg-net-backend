@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\ServiceRequest;
 
-use App\Enums\ReviewStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -24,8 +23,14 @@ class CreateRelocationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id' => ['required', 'integer', Rule::exists('users', 'id')],
-            'broadband_account_id' => ['required', 'integer', Rule::exists('broadband_accounts', 'id')->where('user_id', $this->user_id)],
+            'broadband_account_id' => [
+                'required',
+                'integer',
+                Rule::exists('broadband_accounts', 'id')
+                    ->where(function ($query) {
+                        $query->where('user_id', $this->user()->id);
+                    }),
+            ],
             'current_address' => ['required', 'string', 'max:5000'],
             'new_address' => ['required', 'string', 'max:5000'],
             'preferred_date' => ['nullable', 'date'],

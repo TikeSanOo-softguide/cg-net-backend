@@ -8,7 +8,6 @@ use App\Enums\InvoiceStatus;
 use App\Enums\NewsStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\RequestStatus;
-use App\Enums\ReviewStatus;
 use App\Enums\UserStatus;
 use App\Enums\WalletTransactionType;
 use App\Models\Admin;
@@ -602,7 +601,10 @@ class DatabaseSeeder extends Seeder
                 'contact_point' => '🏠 130/A Eain Twin Hmu Street,Mae Khong Ward,Tachileik.',
             ],
             [
-                'contact_point' => '🧭 Monday to Sunday: 9:00 AM - 9:00 PM, Serving you 7 days a week',
+                'contact_point' => '🧭 Monday to Sunday: 9:00 AM - 9:00 PM',
+            ],
+            [
+                'contact_point' => '📅 Serving you 7 days a week',
             ],
         ]);
     }

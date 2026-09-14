@@ -3,7 +3,7 @@
 namespace App\Http\Requests\ServiceRequest;
 
 use App\Enums\FailureType;
-use App\Enums\ReviewStatus;
+use App\Enums\RequestStatus;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -26,14 +26,21 @@ class UpdateFailureReport extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id' => ['required', 'integer', Rule::exists('users', 'id')],
-            'broadband_account_id' => ['required', 'integer', Rule::exists('broadband_accounts', 'id')->where('user_id', $this->user_id),],
+            'broadband_account_id' => [
+                'required',
+                'integer',
+                Rule::exists('broadband_accounts', 'id')
+                    ->where(function ($query) {
+                        $query->where('user_id', $this->user()->id);
+                    }),
+            ],
             'failure_type' => ['required', Rule::enum(FailureType::class)],
             'description' => ['required', 'string', 'max:5000'],
             'contact_name' => ['required', 'string', 'max:255'],
             'contact_phone' => ['required', 'string', 'max:16'],
             'photos' => ['nullable', 'array', 'size:3'],
             'photos.*' => ['required', 'image', 'max:5120'],
+            'status' => ['nullable',  Rule::enum(RequestStatus::class)],
         ];
     }
 }

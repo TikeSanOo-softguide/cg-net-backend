@@ -19,8 +19,12 @@ class UpdateRelocationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id' => ['required', 'integer', Rule::exists('users', 'id')],
-            'broadband_account_id' => ['required', 'integer', Rule::exists('broadband_accounts', 'id')->where('user_id', $this->user_id)],
+            'broadband_account_id' => [
+                'sometimes',
+                'integer',
+                Rule::exists('broadband_accounts', 'id')
+                    ->where('user_id', $this->user()->id),
+            ],
             'current_address' => ['required', 'string', 'max:5000'],
             'new_address' => ['required', 'string', 'max:5000'],
             'preferred_date' => ['required', 'date'],

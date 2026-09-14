@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\FailureType;
-use App\Enums\ReviewStatus;
+use App\Enums\RequestStatus;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -39,7 +39,7 @@ class FailureReportSeeder extends Seeder
                 'description' => 'Customer reports no internet connection after 8:00 PM in the area.',
                 'contact_name' => 'Aye Aye',
                 'contact_phone' => '09770000001',
-                'status' => ReviewStatus::UnderReview->value,
+                'status' => RequestStatus::UnderReview->value,
                 'admin_id' => $adminId,
             ],
             [
@@ -49,7 +49,7 @@ class FailureReportSeeder extends Seeder
                 'description' => 'Line speed is slower than expected during evening hours.',
                 'contact_name' => 'Moe Moe',
                 'contact_phone' => '09770000002',
-                'status' => ReviewStatus::Approved->value,
+                'status' => RequestStatus::Approved->value,
                 'admin_id' => $adminId,
             ],
             [
@@ -59,7 +59,7 @@ class FailureReportSeeder extends Seeder
                 'description' => 'Customer reports router and modem power issue at the home connection.',
                 'contact_name' => 'Hla Hla',
                 'contact_phone' => '09770000003',
-                'status' => ReviewStatus::Rejected->value,
+                'status' => RequestStatus::Cancelled->value,
                 'admin_id' => $adminId,
             ],
         ];

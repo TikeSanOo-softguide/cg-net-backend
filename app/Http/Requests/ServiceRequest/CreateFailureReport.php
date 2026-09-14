@@ -25,8 +25,14 @@ class CreateFailureReport extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id' => ['required', 'integer', Rule::exists('users', 'id')],
-            'broadband_account_id' => ['required', 'integer', Rule::exists('broadband_accounts', 'id')->where('user_id', $this->user_id)],
+            'broadband_account_id' => [
+                'required',
+                'integer',
+                Rule::exists('broadband_accounts', 'id')
+                    ->where(function ($query) {
+                        $query->where('user_id', $this->user()->id);
+                    }),
+            ],
             'failure_type' => ['required', Rule::enum(FailureType::class)],
             'description' => ['required', 'string', 'max:5000'],
             'contact_name' => ['required', 'string', 'max:255'],

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Banner\BannerController;
 use App\Http\Controllers\Api\Category\CategoryController;
 use App\Http\Controllers\Api\Contact\ContactController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Api\Package\TermController;
 use App\Http\Controllers\Api\Promotion\PromotionController;
 use App\Http\Controllers\Api\Region\RegionController;
 use App\Http\Controllers\Api\Service\ServiceController;
+use App\Http\Controllers\Api\ServiceRequest\BroadbandApplicationRequestController;
 use App\Http\Controllers\Api\ServiceRequest\ChangePasswordRequestController;
 use App\Http\Controllers\Api\ServiceRequest\ChangePlanRequestController;
 use App\Http\Controllers\Api\ServiceRequest\FailureReportController;
@@ -65,7 +67,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('failure-reports')->group(function () {
         Route::get('/', [FailureReportController::class, 'index']);
         Route::post('/create', [FailureReportController::class, 'store']);
+        Route::get('/{failureReport}', [FailureReportController::class, 'show']);
         Route::put('/{failureReport}', [FailureReportController::class, 'update']);
+        Route::patch('/{failureReport}/cancel', [FailureReportController::class, 'cancel']);
         Route::delete('/{failureReport}', [FailureReportController::class, 'destroy']);
     });
     Route::prefix('change-plan-requests')->group(function () {
@@ -82,4 +86,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{changePasswordRequest}', [ChangePasswordRequestController::class, 'update']);
         Route::delete('/{changePasswordRequest}', [ChangePasswordRequestController::class, 'destroy']);
     });
+    Route::prefix('broadband-applications')->group(function () {
+        Route::get('/', [BroadbandApplicationRequestController::class, 'index']);
+        Route::post('/create', [BroadbandApplicationRequestController::class, 'store']);
+        Route::get('/{installationApplication}', [BroadbandApplicationRequestController::class, 'show']);
+        Route::put('/{installationApplication}', [BroadbandApplicationRequestController::class, 'update']);
+        Route::patch('/{installationApplication}/cancel', [BroadbandApplicationRequestController::class, 'cancel']);
+        Route::delete('/{installationApplication}', [BroadbandApplicationRequestController::class, 'destroy']);
+    });
 });
+
+Route::post('/login', [AuthController::class, 'login']);

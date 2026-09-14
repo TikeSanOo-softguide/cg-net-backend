@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Enums\FailureType;
-use App\Enums\ReviewStatus;
+use App\Enums\RequestStatus;
 use Database\Factories\FailureReportFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -31,7 +31,7 @@ class FailureReport extends Model
     {
         return [
             'failure_type' => FailureType::class,
-            'status' => ReviewStatus::class,
+            'status' => RequestStatus::class,
         ];
     }
 
