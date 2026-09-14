@@ -14,13 +14,16 @@ class AreaSeeder extends Seeder
     {
         // 1. Seed State
         $stateName = 'ရှမ်းပြည်နယ်';
+        $stateNames = [
+            'name_en' => 'Shan State',
+            'name_zh' => '掸邦',
+            'name_my' => $stateName,
+        ];
 
         DB::table('states')->updateOrInsert(
-            ['name_en' => $stateName],
+            ['name_my' => $stateName],
             [
-                'name_en' => $stateName,
-                'name_zh' => $stateName,
-                'name_my' => $stateName,
+                ...$stateNames,
                 'latitude' => 21.500000,
                 'longitude' => 98.000000,
                 'created_at' => now(),
@@ -28,7 +31,7 @@ class AreaSeeder extends Seeder
             ],
         );
 
-        $shanState = DB::table('states')->where('name_en', $stateName)->first();
+        $shanState = DB::table('states')->where('name_en', $stateNames['name_en'])->first();
 
         // 2. Seed Regions + Areas
         $regionsData = [
@@ -104,6 +107,79 @@ class AreaSeeder extends Seeder
             'မိုင်းစော' => ['latitude' => 21.572760, 'longitude' => 100.846440],
         ];
 
+        $regionNames = [
+            'မိုင်းလား' => ['name_en' => 'Mong La', 'name_zh' => '勐拉', 'name_my' => 'မိုင်းလား'],
+            'ကျင်းခန်း' => ['name_en' => 'Keng Kham', 'name_zh' => '景康', 'name_my' => 'ကျင်းခန်း'],
+            'မိုင်းစော' => ['name_en' => 'Mong Hsu', 'name_zh' => '勐扫', 'name_my' => 'မိုင်းစော'],
+        ];
+
+        $areaNames = [
+            'မိုင်းလား' => [
+                ['Wan Mai Taing', '万迈丁'],
+                ['Ho Mein', '霍敏'],
+                ['Wan Mai Ho Kho', '万迈霍科'],
+                ['Wan Pun', '万奔'],
+                ['Wan Taung', '万东'],
+                ['Wan Hlyam', '万良'],
+                ['Wan Kap', '万甲'],
+                ['Wan Hlyo Market', '万略市场'],
+                ['A Khe Auk', '阿克奥'],
+                ['Wan San', '万山'],
+                ['Mong Ma', '勐玛'],
+                ['Wan Kauk', '万高'],
+                ['Wan Paung', '万邦'],
+                ['Wan Laung', '万隆'],
+                ['Mong Pun', '勐奔'],
+                ['Lin Ai', '林艾'],
+                ['Mai Kaw Lung', '迈高隆'],
+                ['Pan Man', '班曼'],
+                ['Pan Haw', '班豪'],
+                ['Pa Kha', '帕卡'],
+                ['Mong La Town', '勐拉镇'],
+                ['Mong La Market', '勐拉市场'],
+                ['Lyan Dwon', '良端'],
+                ['Wan Kyin Fa', '万景坡'],
+                ['Wan Ping', '万平'],
+                ['Wan Hwe', '万惠'],
+                ['Wan Nwe', '万内'],
+            ],
+            'ကျင်းခန်း' => [
+                ['Wan Hote', '万厚'],
+                ['Wan Kham', '万康'],
+                ['Wan Ta', '万达'],
+                ['Wan Ya', '万雅'],
+                ['Weng Long', '温隆'],
+                ['Weng Tai', '温泰'],
+                ['Wanna Lan', '瓦纳兰'],
+                ['Wan Ha', '万哈'],
+                ['Wan Kap', '万甲'],
+                ['Wan La Long', '万拉隆'],
+                ['Kyaing Kham', '景康'],
+                ['Wan Ho Nar', '万霍纳'],
+            ],
+            'မိုင်းစော' => [
+                ['Na Phi Auk', '纳菲奥'],
+                ['Than Lan', '丹兰'],
+                ['Na De Auk', '纳德奥'],
+                ['Di Shi', '迪希'],
+                ['Na Nga', '纳伽'],
+                ['Wan Pha Kyant (Na Bar Nwe)', '万帕坚（纳巴内）'],
+                ['Shi Le', '希莱'],
+                ['Le Shi', '莱希'],
+                ['Bye Nye', '别内'],
+                ['Wan Sar', '万萨'],
+                ['Mong Hae', '勐海'],
+                ['Nang Lin', '南林'],
+                ['Wan Sai', '万赛'],
+                ['Wan Ho Nar', '万霍纳'],
+                ['Mong Hsaw', '勐扫'],
+                ['Bar Chae', '巴切'],
+                ['Bar Le', '巴莱'],
+                ['Mong Nang', '勐囊'],
+                ['Mong On', '勐温'],
+            ],
+        ];
+
         $areaCoordinates = [
             'မိုင်းလား' => [
                 [21.650000, 99.883333],
@@ -177,13 +253,11 @@ class AreaSeeder extends Seeder
             // Seed Region
             DB::table('regions')->updateOrInsert(
                 [
-                    'name_en' => $regionName,
+                    'name_my' => $regionName,
                     'state_id' => $shanState->id,
                 ],
                 [
-                    'name_en' => $regionName,
-                    'name_zh' => $regionName,
-                    'name_my' => $regionName,
+                    ...$regionNames[$regionName],
                     'state_id' => $shanState->id,
                     'latitude' => $coordinates['latitude'],
                     'longitude' => $coordinates['longitude'],
@@ -192,20 +266,24 @@ class AreaSeeder extends Seeder
                 ],
             );
 
-            $region = DB::table('regions')->where('name_en', $regionName)->where('state_id', $shanState->id)->first();
+            $region = DB::table('regions')
+                ->where('name_my', $regionName)
+                ->where('state_id', $shanState->id)
+                ->first();
 
             // Seed Areas
             foreach ($areas as $index => $areaName) {
                 [$areaLatitude, $areaLongitude] = $areaCoordinates[$regionName][$index];
+                [$areaNameEn, $areaNameZh] = $areaNames[$regionName][$index];
 
                 DB::table('areas')->updateOrInsert(
                     [
-                        'name_en' => $areaName,
+                        'name_my' => $areaName,
                         'region_id' => $region->id,
                     ],
                     [
-                        'name_en' => $areaName,
-                        'name_zh' => $areaName,
+                        'name_en' => $areaNameEn,
+                        'name_zh' => $areaNameZh,
                         'name_my' => $areaName,
                         'region_id' => $region->id,
                         'latitude' => $areaLatitude,
