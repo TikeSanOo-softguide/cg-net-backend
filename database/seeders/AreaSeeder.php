@@ -21,6 +21,8 @@ class AreaSeeder extends Seeder
                 'name_en' => $stateName,
                 'name_zh' => $stateName,
                 'name_my' => $stateName,
+                'latitude' => 21.500000,
+                'longitude' => 98.000000,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -96,7 +98,82 @@ class AreaSeeder extends Seeder
             ],
         ];
 
+        $regionCoordinates = [
+            'မိုင်းလား' => ['latitude' => 21.666667, 'longitude' => 100.000000],
+            'ကျင်းခန်း' => ['latitude' => 21.550000, 'longitude' => 100.150000],
+            'မိုင်းစော' => ['latitude' => 21.572760, 'longitude' => 100.846440],
+        ];
+
+        $areaCoordinates = [
+            'မိုင်းလား' => [
+                [21.650000, 99.883333],
+                [21.688889, 99.908333],
+                [21.679167, 99.887500],
+                [21.637500, 99.845833],
+                [21.663889, 99.883333],
+                [21.561111, 99.987500],
+                [21.720833, 99.905556],
+                [21.669444, 99.861111],
+                [21.622222, 99.804167],
+                [21.675000, 99.879167],
+                [21.645833, 99.833333],
+                [21.653333, 99.831944],
+                [21.701389, 99.869444],
+                [21.698611, 99.893056],
+                [21.570833, 99.962500],
+                [21.519444, 99.972222],
+                [21.711111, 99.913889],
+                [21.668056, 100.036667],
+                [21.656944, 100.061111],
+                [21.680556, 100.076389],
+                [21.694722, 100.031389],
+                [21.693056, 100.034722],
+                [21.716667, 100.054167],
+                [21.705556, 100.019444],
+                [21.463889, 100.094444],
+                [21.437500, 100.105556],
+                [21.476389, 100.069444],
+            ],
+            'ကျင်းခန်း' => [
+                [21.411111, 99.922222],
+                [21.387500, 99.943056],
+                [21.441667, 99.886111],
+                [21.418056, 99.913889],
+                [21.698611, 99.893056],
+                [21.380556, 99.954167],
+                [21.402778, 99.934722],
+                [21.326389, 99.811111],
+                [21.720833, 99.905556],
+                [21.365278, 99.975000],
+                [21.512500, 99.770000],
+                [21.522222, 99.759722],
+            ],
+            'မိုင်းစော' => [
+                [21.755556, 99.704167],
+                [21.786111, 99.743056],
+                [21.745833, 99.686111],
+                [21.775000, 99.718056],
+                [21.804167, 99.713889],
+                [21.765278, 99.755556],
+                [21.790278, 99.737500],
+                [21.818056, 99.694444],
+                [21.736667, 99.675000],
+                [21.877778, 99.806944],
+                [21.904167, 99.830556],
+                [21.852778, 99.784722],
+                [21.891667, 99.854167],
+                [21.918056, 99.812500],
+                [21.886111, 99.838889],
+                [21.840278, 99.770000],
+                [21.866667, 99.826389],
+                [21.938889, 99.877778],
+                [21.929167, 99.851389],
+            ],
+        ];
+
         foreach ($regionsData as $regionName => $areas) {
+            $coordinates = $regionCoordinates[$regionName];
+
             // Seed Region
             DB::table('regions')->updateOrInsert(
                 [
@@ -108,6 +185,8 @@ class AreaSeeder extends Seeder
                     'name_zh' => $regionName,
                     'name_my' => $regionName,
                     'state_id' => $shanState->id,
+                    'latitude' => $coordinates['latitude'],
+                    'longitude' => $coordinates['longitude'],
                     'created_at' => now(),
                     'updated_at' => now(),
                 ],
@@ -116,7 +195,9 @@ class AreaSeeder extends Seeder
             $region = DB::table('regions')->where('name_en', $regionName)->where('state_id', $shanState->id)->first();
 
             // Seed Areas
-            foreach ($areas as $areaName) {
+            foreach ($areas as $index => $areaName) {
+                [$areaLatitude, $areaLongitude] = $areaCoordinates[$regionName][$index];
+
                 DB::table('areas')->updateOrInsert(
                     [
                         'name_en' => $areaName,
@@ -127,6 +208,8 @@ class AreaSeeder extends Seeder
                         'name_zh' => $areaName,
                         'name_my' => $areaName,
                         'region_id' => $region->id,
+                        'latitude' => $areaLatitude,
+                        'longitude' => $areaLongitude,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ],
