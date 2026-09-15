@@ -995,6 +995,19 @@
         "location": "Location",
         "identity": "Identity"
     },
+    "failure_report": {
+        "failure_type": "Failure Type",
+        "no_internet": "No Internet",
+        "slow": "Slow",
+        "unstable": "Unstable",
+        "password": "Password",
+        "equipment": "Equipment",
+        "other": "Other",
+        "request_info": "Request Information",
+        "expiry_date": "Expiry Date",
+        "current_package": "Current Package",
+        "month": "Month"
+    },
     "requests": {
         "phone": "Phone",
         "note": "Note",
@@ -1009,6 +1022,8 @@
         "approved_by": "Approved By",
         "contact_information": "Contact Information",
         "requested_packages": "Requested Packages",
-        "requested_date": "Requested Date"
+        "requested_date": "Requested Date",
+        "customer_information": "Customer Information",
+        "broadband_account": "Broadband Account"
     }
 }

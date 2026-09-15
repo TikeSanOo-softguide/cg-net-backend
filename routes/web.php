@@ -141,7 +141,7 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         });
         Route::prefix('failures')->name('failures.')->group(function () {
             Route::get('/', [FailureReportController::class, 'index'])->middleware('can:service-requests.view')->name('index');
-            Route::patch('/{failureReport}/edit', [FailureReportController::class, 'updateStatus'])->middleware('can:service-requests.update')->name('edit');
+            Route::patch('/{failureReport}/status', [FailureReportController::class, 'updateStatus'])->middleware('can:service-requests.update')->name('status');
         });
         Route::prefix('change-plan')->name('change-plan.')->group(function () {
             Route::get('/', [ChangePlanRequestController::class, 'index'])->middleware('can:service-requests.view')->name('index');

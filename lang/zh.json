@@ -1020,6 +1020,19 @@
         "location": "位置",
         "identity": "身份信息"
     },
+    "failure_report": {
+        "failure_type": "故障类型",
+        "no_internet": "无法上网",
+        "slow": "网络速度慢",
+        "unstable": "网络不稳定",
+        "password": "密码",
+        "equipment": "设备",
+        "other": "其他",
+        "request_info": "请求信息",
+        "expiry_date": "到期日期",
+        "current_package": "当前套餐",
+        "month": "个月"
+    },
     "requests": {
         "phone": "电话",
         "note": "备注",
@@ -1034,6 +1047,8 @@
         "approved_by": "批准人",
         "contact_information": "联系信息",
         "requested_packages": "申请的套餐",
-        "requested_date": "申请日期"
+        "requested_date": "申请日期",
+        "customer_information": "客户信息",
+        "broadband_account": "宽带账户"
     }
 }
