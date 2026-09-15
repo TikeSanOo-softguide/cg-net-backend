@@ -3,9 +3,10 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title inertia>{{ config('app.name', 'CG-Net Admin') }}</title>
-        <link rel="icon" type="image/png" href="/images/cg-net-logo.png?v=3">
-        <link rel="apple-touch-icon" href="/images/cg-net-logo.png?v=3">
+        <title inertia>{{ config('app.name', 'YNO Admin') }}</title>
+        <link rel="icon" type="image/png" href="/images/cg-net-logo.png?v=5">
+        <link rel="shortcut icon" type="image/png" href="/favicon.ico?v=5">
+        <link rel="apple-touch-icon" href="/images/cg-net-logo.png?v=5">
         <script>
             (function () {
                 function hexToHsl(raw) {

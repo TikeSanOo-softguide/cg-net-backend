@@ -7,7 +7,7 @@ import ErrorLayout from '@/layouts/ErrorLayout';
 import { ThemeProvider } from '@/providers/ThemeProvider';
 import { ThemeSettingsProvider } from '@/providers/ThemeSettingsProvider';
 
-const appName = import.meta.env.VITE_APP_NAME || 'CG-Net Admin';
+const appName = import.meta.env.VITE_APP_NAME || 'YNO Admin';
 
 createInertiaApp({
     pages: './pages',
