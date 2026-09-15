@@ -470,6 +470,30 @@ class DatabaseSeeder extends Seeder
         collect([
             [
                 'category_id' => 1,
+                'title_en' => 'Our Mobile App Is Now Available',
+                'title_my' => 'Mobile App ကို အသုံးပြုနိုင်ပါပြီ',
+                'title_zh' => '我们的移动应用现已推出',
+                'description_en' => 'Our mobile application is now available for you to enjoy convenient access to our services. Easily check your account, manage your services, purchase data cards, and more, anytime and anywhere.',
+                'description_my' => 'ကျွန်ုပ်တို့၏ Mobile App ကို ယခုအခါ အသုံးပြုနိုင်ပါပြီ။ Account စစ်ဆေးခြင်း၊ ဝန်ဆောင်မှုများ စီမံခြင်း၊ Data Card များ ဝယ်ယူခြင်းနှင့် အခြားဝန်ဆောင်မှုများကို အချိန်မရွေး၊ နေရာမရွေး လွယ်ကူစွာ အသုံးပြုနိုင်ပါသည်။',
+                'description_zh' => '我们的移动应用现已推出，为您提供更加便捷的服务。您可以随时随地查看账户、管理服务、购买数据卡以及使用更多功能。',
+                'image_url' => 'seeder_images/news/intro_mobile_app.png',
+                'status' => NewsStatus::Published,
+                'slug' => 'mobile-app-now-available'
+            ],
+            [
+                'category_id' => 1,
+                'title_en' => 'New Branch Opening Announcement',
+                'title_my' => 'ရုံးခွဲသစ် ဖွင့်လှစ်ခြင်း ကြေညာခြင်း',
+                'title_zh' => '新分公司开业公告',
+                'description_en' => 'We are pleased to announce the opening of our new branch. Our new branch is now ready to provide convenient and reliable services to customers in the area. We look forward to serving you at our new location.',
+                'description_my' => 'လူကြီးမင်းတို့အတွက် ပိုမိုလွယ်ကူအဆင်ပြေစွာ ဝန်ဆောင်မှုပေးနိုင်ရန် ရုံးခွဲသစ်ကို ဖွင့်လှစ်လိုက်ပြီဖြစ်ကြောင်း ဝမ်းမြောက်စွာ အသိပေးအပ်ပါသည်။ ရုံးခွဲသစ်တွင် အင်တာနက်နှင့် ဆက်သွယ်ရေးဝန်ဆောင်မှုများကို အဆင်ပြေစွာ လာရောက်အသုံးပြုနိုင်ပါသည်။ လူကြီးမင်းတို့အား ရုံးခွဲသစ်တွင် နွေးထွေးစွာ ကြိုဆိုပါသည်။',
+                'description_zh' => '我们很高兴地宣布新分公司正式开业。欢迎前往新分公司，享受更加便捷的服务。',
+                'image_url' => 'seeder_images/news/open_new_branch.png',
+                'status' => NewsStatus::Published,
+                'slug' => 'new-branch-opening'
+            ],
+            [
+                'category_id' => 1,
                 'title_en' => 'Get Data Card Easily with Our Application',
                 'title_my' => 'Application မှာ အကြိုက်သုံး‌ဒေတာကဒ်များကို လွယ်ကူစွာ မှာယူနိုင်ပါပြီ',
                 'title_zh' => '在我们的应用上轻松订购您喜欢的数据卡',
@@ -492,48 +516,11 @@ class DatabaseSeeder extends Seeder
                 'status' => NewsStatus::Published,
                 'slug' => 'hiring'
             ],
-            [
-                'category_id' => 1,
-                'title_en' => 'Our Mobile App Is Now Available',
-                'title_my' => 'Mobile App ကို အသုံးပြုနိုင်ပါပြီ',
-                'title_zh' => '我们的移动应用现已推出',
-                'description_en' => 'Our mobile application is now available for you to enjoy convenient access to our services. Easily check your account, manage your services, purchase data cards, and more, anytime and anywhere.',
-                'description_my' => 'ကျွန်ုပ်တို့၏ Mobile App ကို ယခုအခါ အသုံးပြုနိုင်ပါပြီ။ Account စစ်ဆေးခြင်း၊ ဝန်ဆောင်မှုများ စီမံခြင်း၊ Data Card များ ဝယ်ယူခြင်းနှင့် အခြားဝန်ဆောင်မှုများကို အချိန်မရွေး၊ နေရာမရွေး လွယ်ကူစွာ အသုံးပြုနိုင်ပါသည်။',
-                'description_zh' => '我们的移动应用现已推出，为您提供更加便捷的服务。您可以随时随地查看账户、管理服务、购买数据卡以及使用更多功能。',
-                'image_url' => 'seeder_images/news/intro_mobile_app.png',
-                'status' => NewsStatus::Published,
-                'slug' => 'mobile-app-now-available'
-            ],
-            [
-                'category_id' => 1,
-                'title_en' => 'New Branch Opening Announcement',
-                'title_my' => 'ရုံးခွဲသစ် ဖွင့်လှစ်ခြင်း ကြေညာခြင်း',
-                'title_zh' => '新分公司开业公告',
-                'description_en' => 'We are pleased to announce the opening of our new branch. Our new branch is now ready to provide convenient and reliable services to customers in the area. We look forward to serving you at our new location.',
-                'description_my' => 'လူကြီးမင်းတို့အတွက် ပိုမိုလွယ်ကူအဆင်ပြေစွာ ဝန်ဆောင်မှုပေးနိုင်ရန် ရုံးခွဲသစ်ကို ဖွင့်လှစ်လိုက်ပြီဖြစ်ကြောင်း ဝမ်းမြောက်စွာ အသိပေးအပ်ပါသည်။ ရုံးခွဲသစ်တွင် အင်တာနက်နှင့် ဆက်သွယ်ရေးဝန်ဆောင်မှုများကို အဆင်ပြေစွာ လာရောက်အသုံးပြုနိုင်ပါသည်။ လူကြီးမင်းတို့အား ရုံးခွဲသစ်တွင် နွေးထွေးစွာ ကြိုဆိုပါသည်။',
-                'description_zh' => '我们很高兴地宣布新分公司正式开业。欢迎前往新分公司，享受更加便捷的服务。',
-                'image_url' => 'seeder_images/news/open_new_branch.png',
-                'status' => NewsStatus::Published,
-                'slug' => 'new-branch-opening'
-            ]
         ])->each(fn(array $news) => News::create($news));
 
         (new ServiceSeeder())->run();
 
         collect([
-            [
-                'slug' => 'thadingyut-wifi-promotion',
-                'title_en' => 'Thadingyut Special Promotion: Wi-Fi Installation Discount',
-                'title_my' => 'သီတင်းကျွတ် အထူးအစီအစဉ် - Wi-Fi တပ်ဆင်ခ လျှော့စျေး',
-                'title_zh' => '点灯节特别促销：Wi-Fi 安装费优惠',
-                'description_en' => 'Celebrate Thadingyut with a special discount on Wi-Fi installation services.',
-                'description_my' => 'သီတင်းကျွတ် အထူးပရိုမိုးရှင်းကာလအတွင်း Wi-Fi တပ်ဆင်ခကို အထူးလျှော့စျေးဖြင့် ရယူလိုက်ပါ။',
-                'description_zh' => '点灯节期间，Wi-Fi 安装服务享受特别优惠。',
-                'start_date' => '2026-8-24',
-                'end_date' => '2027-10-28',
-                'is_active' => true,
-                'image_url' => 'seeder_images/promotion/thadingyut-promotion.png',
-            ],
             [
                 'slug' => 'monsoon-special-promotion',
                 'title_en' => 'Monsoon Special Promotion',
@@ -546,6 +533,19 @@ class DatabaseSeeder extends Seeder
                 'end_date' => '2027-07-31',
                 'is_active' => true,
                 'image_url' => 'seeder_images/promotion/monsoon-promotion.png',
+            ],
+            [
+                'slug' => 'thadingyut-wifi-promotion',
+                'title_en' => 'Thadingyut Special Promotion: Wi-Fi Installation Discount',
+                'title_my' => 'သီတင်းကျွတ် အထူးအစီအစဉ် - Wi-Fi တပ်ဆင်ခ လျှော့စျေး',
+                'title_zh' => '点灯节特别促销：Wi-Fi 安装费优惠',
+                'description_en' => 'Celebrate Thadingyut with a special discount on Wi-Fi installation services.',
+                'description_my' => 'သီတင်းကျွတ် အထူးပရိုမိုးရှင်းကာလအတွင်း Wi-Fi တပ်ဆင်ခကို အထူးလျှော့စျေးဖြင့် ရယူလိုက်ပါ။',
+                'description_zh' => '点灯节期间，Wi-Fi 安装服务享受特别优惠。',
+                'start_date' => '2026-8-24',
+                'end_date' => '2027-10-28',
+                'is_active' => true,
+                'image_url' => 'seeder_images/promotion/thadingyut-promotion.png',
             ],
             [
                 'slug' => 'chinese-new-year-package-promotion',
@@ -577,40 +577,34 @@ class DatabaseSeeder extends Seeder
 
         collect([
             [
-                'image_url' => 'seeder_images/gallery/gallery_1.png',
-                'label_en' => 'Ultra-Fast Fiber Optic Network',
-                'label_my' => 'အလွန်လျင်မြန်သော ဖိုင်ဘာအော့ပတစ် ကွန်ရက်',
-                'label_zh' => '超高速光纤网络',
+                'image_url' => 'seeder_images/gallery/thingyan.jfif',
+                'label_en' => 'Thingyan Water Festival Celebration',
+                'label_my' => 'သင်္ကြန်ရေသဘင်ပွဲတော် ဆင်နွှဲခြင်း',
+                'label_zh' => '泼水节欢庆活动',
             ],
             [
-                'image_url' => 'seeder_images/gallery/gallery_2.png',
-                'label_en' => 'Smart Home High-Speed Wi-Fi',
-                'label_my' => 'စမတ်အိမ်သုံး မြန်နှုန်းမြင့် ဝိုင်ဖိုင်',
-                'label_zh' => '智能家居高速 Wi-Fi',
+                'image_url' => 'seeder_images/gallery/chinesenewyear.jfif',
+                'label_en' => 'Traditional Chinese New Year Lion Dance',
+                'label_my' => 'တရုတ်နှစ်သစ်ကူး ခြင်္သေ့အက ဖျော်ဖြေပွဲ',
+                'label_zh' => '传统农历新年舞狮表演',
             ],
             [
-                'image_url' => 'seeder_images/gallery/gallery_3.png',
-                'label_en' => '24/7 Enterprise Dedicated Data Center',
-                'label_my' => '၂၄ နာရီပတ်လုံး လုပ်ငန်းသုံး သီးသန့် ဒေတာစင်တာ',
-                'label_zh' => '24/7 企业专用数据中心',
+                'image_url' => 'seeder_images/gallery/newyear.jfif',
+                'label_en' => 'New Year 2026 Sparkler Celebration',
+                'label_my' => '၂၀၂၆ ခုနှစ် သစ်ဆန်းနှစ်သစ်ကူး ကြိုဆိုပွဲတော်',
+                'label_zh' => '2026跨年烟花棒庆祝',
             ],
             [
-                'image_url' => 'seeder_images/gallery/gallery_4.jpg',
-                'label_en' => 'Next-Gen Fiber Infrastructure Deployment',
-                'label_my' => 'မျိုးဆက်သစ် ဖိုင်ဘာအခြေခံအဆောက်အအုံ တပ်ဆင်ခြင်း',
-                'label_zh' => '下一代光纤基础设施部署',
+                'image_url' => 'seeder_images/gallery/staffparty.jfif',
+                'label_en' => 'Company Staff Party & Office Event',
+                'label_my' => 'ဝန်ထမ်းများ၏ ရုံးတွင်း ပျော်ပွဲရွှင်ပွဲ ပွဲတော်',
+                'label_zh' => '公司员工聚会与办公室活动',
             ],
             [
-                'image_url' => 'seeder_images/gallery/gallery_5.jpg',
-                'label_en' => 'Seamless Low-Latency Gaming & Streaming',
-                'label_my' => 'နှောင့်နှေးမှုနည်းပြီး ချောမွေ့သည့် ဂိမ်းကစားခြင်းနှင့် တိုက်ရိုက်ထုတ်လွှင့်ခြင်း',
-                'label_zh' => '无缝无延迟游戏与直播',
-            ],
-            [
-                'image_url' => 'seeder_images/gallery/gallery_6.jpg',
-                'label_en' => 'Moving Forward Together in Every Home',
-                'label_my' => 'အိမ်တိုင်းအတွက် အတူတကွ တိုးတက်ပြောင်းလဲခြင်း',
-                'label_zh' => '联结千家万户，共创美好未来',
+                'image_url' => 'seeder_images/gallery/thadingyut.jfif',
+                'label_en' => 'Thadingyut Festival of Lights & Lanterns',
+                'label_my' => 'သီတင်းကျွတ် မီးထွန်းပွဲတော်နှင့် မီးပုံးပျံလွှတ်တင်ခြင်း',
+                'label_zh' => '点灯节与放天灯活动',
             ],
         ])->each(fn(array $gallery) => Gallery::create($gallery));
 
