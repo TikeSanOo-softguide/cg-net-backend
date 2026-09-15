@@ -4,11 +4,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 
 /** Shared logo frame — same on login and dashboard */
-export const brandLogoFrameClass = cn(
-    'relative shrink-0 overflow-hidden rounded-[8px] bg-white',
-    'border border-primary/20',
-    'shadow-[0_2px_10px_hsl(var(--primary)/0.16),0_1px_2px_hsl(var(--primary)/0.10)]',
-);
+export const brandLogoFrameClass = cn('relative shrink-0 overflow-hidden rounded-[12px] bg-transparent');
 
 type BrandLockupProps = {
     compact?: boolean;
@@ -32,7 +28,7 @@ export function BrandLockup({
     const content = (
         <>
             <span className={cn(brandLogoFrameClass, 'size-11', logoClassName)}>
-                <img src="/images/cg-net-logo.png?v=3" alt="" className="size-full object-contain p-0.5" />
+                <img src="/images/cg-net-logo.png?v=4" alt="" className="size-full object-contain" />
             </span>
             {compact ? (
                 <span className="sr-only">{brandName}</span>
@@ -55,7 +51,7 @@ export function BrandLockup({
         'group/brand flex min-w-0 items-center',
         'motion-reduce:transition-none transition-[gap] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
         showWordmark ? 'gap-2.5' : 'gap-0',
-        href !== false && 'rounded-[10px] outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+        href !== false && 'rounded-[8px] outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
         className,
     );
 

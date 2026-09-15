@@ -12,7 +12,6 @@
         "forgot_password": "Forgot password?",
         "show_password": "Show password",
         "hide_password": "Hide password",
-        "illustration_credit": "Illustration by Storyset",
         "failed": "These credentials do not match our records.",
         "inactive": "This account is inactive and cannot sign in.",
         "throttle": "Too many login attempts. Please try again in :seconds seconds."

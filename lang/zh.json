@@ -12,7 +12,6 @@
         "forgot_password": "忘记密码？",
         "show_password": "显示密码",
         "hide_password": "隐藏密码",
-        "illustration_credit": "插图来自 Storyset",
         "failed": "账号或密码不正确。",
         "inactive": "此账号已停用，无法登录。",
         "throttle": "尝试次数过多，请在 :seconds 秒后重试。"

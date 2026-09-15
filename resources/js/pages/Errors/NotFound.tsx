@@ -18,14 +18,6 @@ export default function NotFound() {
                 <Card className="w-full min-w-0 max-w-[820px] gap-0 overflow-hidden rounded-[12px] border-0 bg-[#FFFFFF] py-0 shadow-[0_8px_30px_rgb(23_50_54/0.08)]">
                     <CardContent className="flex flex-col items-center px-6 py-8 text-center sm:px-10 sm:py-10">
                         <NotFoundIllustration className="max-h-52 w-full max-w-[420px] sm:max-h-64 md:max-h-72" />
-                        <a
-                            href="https://storyset.com/illustration/404-error-with-people-holding-the-numbers/pana"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="mt-3 text-[11px] tracking-wide text-muted-foreground transition-colors hover:text-primary"
-                        >
-                            {t('auth.illustration_credit')}
-                        </a>
                         <h1 className="mt-5 font-heading text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
                             {t('errors.not_found_title')}
                         </h1>

@@ -12,10 +12,10 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
     useDocumentLang();
 
     return (
-        <div className="relative flex min-h-dvh flex-col overflow-x-hidden bg-[color-mix(in_srgb,hsl(var(--primary))_8%,#f3f5f7)] px-4 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 lg:px-10 lg:py-12">
+        <div className="relative flex min-h-dvh flex-col overflow-x-hidden bg-[color-mix(in_srgb,hsl(var(--primary))_8%,var(--background))] px-4 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 lg:px-10 lg:py-12">
             <div
                 aria-hidden
-                className="pointer-events-none absolute inset-0 bg-[radial-gradient(900px_circle_at_50%_-8%,hsl(var(--primary)/0.18),transparent_58%),linear-gradient(180deg,color-mix(in_srgb,hsl(var(--primary))_6%,white),transparent_42%)]"
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(900px_circle_at_50%_-8%,hsl(var(--primary)/0.18),transparent_58%),linear-gradient(180deg,color-mix(in_srgb,hsl(var(--primary))_8%,var(--background)),transparent_42%)] dark:bg-[radial-gradient(900px_circle_at_50%_-8%,hsl(var(--primary)/0.22),transparent_58%),linear-gradient(180deg,color-mix(in_srgb,hsl(var(--primary))_12%,var(--background)),transparent_48%)]"
             />
 
             <div className="absolute top-4 right-4 z-10 sm:top-6 sm:right-6">

@@ -35,27 +35,19 @@ export default function Login({ status }: LoginProps) {
         <>
             <Head title={t('auth.sign_in')} />
 
-            <Card className="relative w-full min-w-0 gap-0 overflow-hidden rounded-[12px] border-0 bg-card py-0 shadow-[0_12px_40px_rgb(23_50_54/0.12)]">
+            <Card className="relative w-full min-w-0 gap-0 overflow-hidden rounded-[12px] border-0 bg-card py-0 shadow-[0_12px_40px_rgb(23_50_54/0.12)] dark:shadow-[0_12px_40px_rgb(0_0_0/0.45)]">
                 <div className="grid w-full grid-cols-1 md:grid-cols-2">
                     <div className="order-1 flex justify-center px-5 pt-5 md:hidden">
                         <BrandLockup
                             compact
                             href="/"
                             className="justify-center"
-                            logoClassName="size-14 sm:size-16"
+                            logoClassName="size-10 sm:size-11"
                         />
                     </div>
 
-                    <div className="relative order-2 flex flex-col items-center justify-center bg-primary/[0.04] px-5 py-4 sm:px-6 sm:py-5 md:order-1 md:min-h-[360px] md:border-r md:border-border/80 md:px-6 md:py-8 lg:px-8">
+                    <div className="relative order-2 flex flex-col items-center justify-center bg-primary/[0.04] px-5 py-4 sm:px-6 sm:py-5 md:order-1 md:min-h-[360px] md:border-r md:border-border/80 md:px-6 md:py-8 lg:px-8 dark:bg-primary/[0.08]">
                         <LoginIllustration className="relative z-[1] max-h-28 w-full max-w-[180px] sm:max-h-36 sm:max-w-[220px] md:max-h-[280px] md:max-w-none lg:max-h-[300px]" />
-                        <a
-                            href="https://storyset.com/illustration/online-world/amico"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="relative z-[1] mt-2 text-[11px] tracking-wide text-muted-foreground transition-colors hover:text-primary"
-                        >
-                            {t('auth.illustration_credit')}
-                        </a>
                     </div>
 
                     <CardContent className="order-3 flex min-w-0 flex-col justify-center px-5 pt-4 pb-5 sm:px-6 sm:pb-6 md:order-2 md:px-6 md:py-8 lg:px-8">
@@ -64,7 +56,7 @@ export default function Login({ status }: LoginProps) {
                                 compact
                                 href="/"
                                 className="hidden justify-center md:flex"
-                                logoClassName="size-16"
+                                logoClassName="size-12"
                             />
                         </div>
 
