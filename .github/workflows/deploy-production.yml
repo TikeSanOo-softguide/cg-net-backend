@@ -37,6 +37,11 @@ jobs:
             git reset --hard origin/production
 
             composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
+
+            # Prefer Node 22+ (concurrently engine requirement)
+            if command -v node >/dev/null 2>&1; then
+              node -v
+            fi
             npm ci
             npm run build
 
