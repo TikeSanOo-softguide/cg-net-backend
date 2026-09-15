@@ -1,0 +1,53 @@
+name: Deploy Production
+
+on:
+  push:
+    branches: [production]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          port: ${{ secrets.PROD_PORT }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            APP_DIR="${{ secrets.PROD_APP_PATH }}"
+            cd "$APP_DIR"
+
+            git fetch origin production
+            git checkout production
+            git reset --hard origin/production
+
+            composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
+            npm ci
+            npm run build
+
+            php artisan migrate --force
+            php artisan storage:link || true
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan queue:restart
+
+            if command -v sudo >/dev/null 2>&1; then
+              sudo systemctl reload php8.3-fpm || true
+              sudo systemctl reload nginx || true
+            fi
