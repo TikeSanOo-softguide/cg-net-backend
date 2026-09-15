@@ -123,7 +123,7 @@ class ServiceSeeder extends Seeder
                 📶 288 channels
                 ♾️ HD digital TV content
                 📺 IPTV service
-                ⚙️ Easy installation
+                👨‍🔧 Easy installation
                 📡 High-speed network extension
                 ⚙️ Easy configuration and setup with CG-NET add-on service
                 TEXT,
@@ -133,7 +133,7 @@ class ServiceSeeder extends Seeder
                 📶 288 个频道
                 ♾️ 高清数字电视内容
                 📺 IPTV 服务
-                ⚙️ 轻松安装
+                👨‍🔧 轻松安装
                 📡 高速网络扩展
                 ⚙️ 借助 CG-NET 附加服务，轻松进行配置与设置
                 TEXT,
@@ -143,7 +143,7 @@ class ServiceSeeder extends Seeder
                 📶 ၂၈၈ ချန်နယ်
                 ♾️ HD ဒစ်ဂျစ်တယ် ရုပ်မြင်သံကြား အကြောင်းအရာ
                 📺 IPTV ဝန်ဆောင်မှု
-                ⚙️ လွယ်ကူသော တပ်ဆင်မှု
+                👨‍🔧 လွယ်ကူသော တပ်ဆင်မှု
                 📡 အမြန်နှုန်းမြင့် ကွန်ရက် တိုးချဲ့မှု
                 ⚙️ CG-NET Add-on ဝန်ဆောင်မှုဖြင့် လွယ်ကူရိုးရှင်းစွာ ချိန်ညှိပြင်ဆင်နိုင်ပါသည်
                 TEXT,
