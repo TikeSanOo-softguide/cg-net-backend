@@ -888,10 +888,10 @@ class DatabaseSeeder extends Seeder
 
         Contact::factory()->createMany([
             [
-                'contact_point' => '📞 +959887288882',
+                'contact_point' => '📞 09 887288882',
             ],
             [
-                'contact_point' => '📞 +959421823339',
+                'contact_point' => '📞 09 421823339',
             ],
             [
                 'contact_point' => '📩 contact@chenguangnetwork.com',

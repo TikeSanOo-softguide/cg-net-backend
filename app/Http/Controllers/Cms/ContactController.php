@@ -21,7 +21,7 @@ class ContactController extends Controller
             $request,
             Contact::query(),
             ['contact_point'],
-            ['contact_point', 'created_at'],
+            ['created_at', 'updated_at'],
         );
 
         return Inertia::render('Cms/contact/Index', [

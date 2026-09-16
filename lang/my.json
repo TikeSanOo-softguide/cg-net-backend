@@ -646,9 +646,9 @@
             "type": "ဘန်နာ အမျိုးအစား",
             "types": {
                 "web_background": "Web နောက်ခံ",
-                "web_popup": "Web Pop-up ကြော်ငြာ",
+                "web_popup": "Web Popup ကြော်ငြာ",
                 "app_entry": "App ဝင်ရောက်စာမျက်နှာ",
-                "app_popup": "App Pop-up ကြော်ငြာ"
+                "app_popup": "App Popup ကြော်ငြာ"
             },
             "preview": "ပုံကြိုတင်ကြည့်ရှုရန်",
             "images": "ဘန်နာ ပုံများ",

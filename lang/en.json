@@ -618,10 +618,10 @@
         "banner": {
             "type": "Banner type",
             "types": {
-                "web_background": "Web background",
-                "web_popup": "Web pop-up",
-                "app_entry": "App entry",
-                "app_popup": "App pop-up"
+                "web_background": "Web Background",
+                "web_popup": "Web Popup",
+                "app_entry": "App Entry",
+                "app_popup": "App Popup"
             },
             "preview": "Preview Image",
             "images": "Banner Images",
