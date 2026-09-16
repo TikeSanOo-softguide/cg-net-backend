@@ -25,7 +25,7 @@ class PackageSeeder extends Seeder
             [
                 'en' => 'Chenguang Network',
                 'zh' => '晨光网',
-                'my' => 'ချင်းကွမ် ကွန်ရက်',
+                'my' => 'ချန်ကွမ်း ကွန်ရက်',
             ],
             [
                 'en' => 'CG-Net',
@@ -121,11 +121,18 @@ class PackageSeeder extends Seeder
             'seeder_images/package/package3.png',
             'seeder_images/package/package4.png',
         ];
+        $imageIndex = 0;
 
         foreach ($rows as $index => [$networkName, $mbps, $months, $price, $sortOrder]) {
             $networkId = Network::where('name_en', $networkName)->value('id');
             $speedId = Speed::where('mbps', $mbps)->value('id');
             $termId = Term::where('months', $months)->value('id');
+            $imageUrl = null;
+
+            if ($mbps === 20 && $networkName === 'CG-Net') {
+                $imageUrl = $imagePaths[$imageIndex] ?? null;
+                $imageIndex++;
+            }
 
             $package = Package::updateOrCreate(
                 [
@@ -139,8 +146,8 @@ class PackageSeeder extends Seeder
                     'includes_free_iptv' => $months === 12,
                     'is_active' => true,
                     'sort_order' => $sortOrder,
-                    'image_url' => $imagePaths[$index % count($imagePaths)],
-                    'recommended' => $mbps === 150 || ($networkName === 'Myanmar Network' && $months === 12),
+                    'image_url' => $imageUrl,
+                    'recommended' => $mbps === 20 && $networkName === 'CG-Net',
                 ],
             );
         }

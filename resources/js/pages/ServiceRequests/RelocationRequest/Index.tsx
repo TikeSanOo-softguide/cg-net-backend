@@ -58,12 +58,6 @@ type Filters = {
     status: string;
 };
 
-type Stats = {
-    total: number;
-    under_review: number;
-    approved: number;
-};
-
 type Props = {
     requests: Paginated<RelocationRequest>;
     filters: Filters;

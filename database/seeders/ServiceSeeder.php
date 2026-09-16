@@ -14,7 +14,6 @@ class ServiceSeeder extends Seeder
                 'title_en' => 'Myanmar Network',
                 'title_zh' => '缅甸网络',
                 'title_my' => 'မြန်မာလိုင်း',
-
                 'description_en' => <<<'TEXT'
                 Myanmar broadband service with 20Mbps, 50Mbps, 100Mbps, and 150Mbps speed plans for reliable home internet.
 
@@ -48,7 +47,6 @@ class ServiceSeeder extends Seeder
                 'title_en' => 'Chen Guang Network',
                 'title_zh' => '晨光网',
                 'title_my' => 'တရုတ်လိုင်း',
-
                 'description_en' => <<<'TEXT'
                 Chen Guang broadband service offering 50Mbps and 100Mbps plans with reliable connectivity.
 
@@ -82,7 +80,6 @@ class ServiceSeeder extends Seeder
                 'title_en' => 'CG-NET Network',
                 'title_zh' => 'CG-NET 家庭网',
                 'title_my' => 'CG-NETလိုင်း',
-
                 'description_en' => <<<'TEXT'
                 Reliable CG-NET home internet service with a 20Mbps plan and convenient home connectivity.
 
@@ -113,44 +110,69 @@ class ServiceSeeder extends Seeder
             ],
 
             [
-                'title_en' => 'Other Services',
-                'title_zh' => '其他服务',
-                'title_my' => 'အခြားဝန်ဆောင်မှုများ',
-
+                'title_en' => 'IPTV',
+                'title_zh' => 'IPTV',
+                'title_my' => 'IPTV',
                 'description_en' => <<<'TEXT'
-                Digital television service featuring 288 channels, bundled with extra CG-NET add-on network booster and extension services.
+                    Digital television service featuring 288 channels with high-definition digital TV content.
 
-                📶 288 channels
-                ♾️ HD digital TV content
-                📺 IPTV service
-                ⚙️ Easy installation
-                📡 High-speed network extension
-                ⚙️ Easy configuration and setup with CG-NET add-on service
-                TEXT,
+                    📶 288 channels
+                    ♾️ HD digital TV content
+                    📺 IPTV service
+                    👨‍🔧 Easy installation
+                    TEXT,
                 'description_zh' => <<<'TEXT'
-                提供 288 个频道的数字电视服务，并搭配 CG-NET 附加网络加速和扩展服务。
+                    提供 288 个频道的数字电视服务，享受高清数字电视内容。
 
-                📶 288 个频道
-                ♾️ 高清数字电视内容
-                📺 IPTV 服务
-                ⚙️ 轻松安装
-                📡 高速网络扩展
-                ⚙️ 借助 CG-NET 附加服务，轻松进行配置与设置
-                TEXT,
+                    📶 288 个频道
+                    ♾️ 高清数字电视内容
+                    📺 IPTV 服务
+                    👨‍🔧 轻松安装
+                    TEXT,
                 'description_my' => <<<'TEXT'
-                ချန်နယ် ၂၈၈ ခုပါဝင်သော ဒစ်ဂျစ်တယ် ရုပ်မြင်သံကြား ဝန်ဆောင်မှုနှင့်အတူ CG-NET ထပ်ဆောင်း ကွန်ရက်မြှင့်တင်မှုနှင့် တိုးချဲ့ဝန်ဆောင်မှုများ။
+                    ချန်နယ် ၂၈၈ ခုပါဝင်သော ဒစ်ဂျစ်တယ် ရုပ်မြင်သံကြား ဝန်ဆောင်မှုနှင့် ကြည်လင်ပြတ်သားသော HD အကြောင်းအရာများ။
 
-                📶 ၂၈၈ ချန်နယ်
-                ♾️ HD ဒစ်ဂျစ်တယ် ရုပ်မြင်သံကြား အကြောင်းအရာ
-                📺 IPTV ဝန်ဆောင်မှု
-                ⚙️ လွယ်ကူသော တပ်ဆင်မှု
-                📡 အမြန်နှုန်းမြင့် ကွန်ရက် တိုးချဲ့မှု
-                ⚙️ CG-NET Add-on ဝန်ဆောင်မှုဖြင့် လွယ်ကူရိုးရှင်းစွာ ချိန်ညှိပြင်ဆင်နိုင်ပါသည်
-                TEXT,
+                    📶 ၂၈၈ ချန်နယ်
+                    ♾️ HD ဒစ်ဂျစ်တယ် ရုပ်မြင်သံကြား အကြောင်းအရာ
+                    📺 IPTV ဝန်ဆောင်မှု
+                    👨‍🔧 လွယ်ကူသော တပ်ဆင်မှု
+                    TEXT,
                 'image_url' => 'seeder_images/service/iptv.png',
                 'status' => 'published',
-                'slug' => 'other-services',
+                'slug' => 'iptv-service',
             ],
+            [
+                'title_en' => 'CG-NET Router',
+                'title_zh' => 'CG-NET 路由器',
+                'title_my' => 'CG-NET ရောက်တာ',
+                'description_en' => <<<'TEXT'
+                High-performance Wi-Fi router offering extended signal range, high-speed coverage, and seamless multi-device connectivity.
+
+                📶 High-speed Wi-Fi performance
+                📡 Extended signal coverage
+                ⚡ Multi-device optimization
+                👨‍🔧 Professional setup & support
+                TEXT,
+                'description_zh' => <<<'TEXT'
+                高性能 Wi-Fi 路由器，提供更广的网络信号覆盖、高速连接以及无缝多设备接入。
+
+                📶 高速 Wi-Fi 性能
+                📡 强劲信号广覆盖
+                ⚡ 多设备连接优化
+                👨‍🔧 专业安装与技术支持
+                TEXT,
+                'description_my' => <<<'TEXT'
+                ကျယ်ဝန်းသော လိုင်းလွှမ်းခြုံမှု၊ မြန်ဆန်သော လိုင်းအမြန်နှုန်းနှင့် စက်ပစ္စည်းအများအပြားကို အဆင်ပြေစွာ ချိတ်ဆက်နိုင်သည့် စွမ်းဆောင်ရည်မြင့် CG-NET ရောက်တာ။
+
+                📶 မြန်ဆန်သော Wi-Fi စွမ်းဆောင်ရည်
+                📡 ကျယ်ဝန်းသော လိုင်းလွှမ်းခြုံမှု
+                ⚡ စက်ပစ္စည်းအများအပြား သီးသန့်ချိတ်ဆက်နိုင်မှု
+                👨‍🔧 ကျွမ်းကျင်သော တပ်ဆင်မှုနှင့် အကူအညီ
+                TEXT,
+                'image_url' => 'seeder_images/service/router.png',
+                'status' => 'published',
+                'slug' => 'cg-net-router',
+            ]
         ];
 
         foreach ($services as $service) {
