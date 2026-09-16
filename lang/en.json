@@ -130,6 +130,7 @@
         "todays_revenue": "Today's Revenue",
         "pending_requests": "Pending Service Requests",
         "recent_requests": "Recent Service Requests",
+        "today_requests": "Today Requests",
         "search_requests": "Search service requests...",
         "revenue": "Revenue",
         "new_signups": "New signups",

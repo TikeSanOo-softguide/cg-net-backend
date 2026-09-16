@@ -702,8 +702,8 @@ class DatabaseSeeder extends Seeder
                     不要错过限时雨季特别促销。立即查看可用优惠，在促销期间享受更多服务福利。
                     TEXT,
 
-                'start_date' => '2026-07-24',
-                'end_date' => '2027-07-31',
+                'start_date' => null,
+                'end_date' => null,
                 'is_active' => true,
                 'image_url' => 'seeder_images/promotion/monsoon-promotion.png',
             ],
