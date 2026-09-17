@@ -25,7 +25,6 @@ import {
     TOP_UP_CARD_CURRENCY,
 } from '@/lib/top-up-cards';
 
-const QUICK_EXPIRY_YEARS = [2];
 const MAX_QUANTITY = 8999;
 
 function denominationCardClass(checked: boolean, dashed = false): string {
@@ -301,14 +300,12 @@ export function TopUpCardGenerateForm({
                             onChange={onExpiresAt}
                         />
                     </FormControl>
-                    {QUICK_EXPIRY_YEARS.map((years) => {
-                        const value = expiryDateInYears(years);
+                    {(() => {
+                        const value = expiryDateInYears(2);
                         const active = value === expiresAt;
-                        const label = `${years} year${years > 1 ? 's' : ''}`;
 
                         return (
                             <button
-                                key={years}
                                 type="button"
                                 disabled={processing}
                                 aria-pressed={active}
@@ -320,10 +317,10 @@ export function TopUpCardGenerateForm({
                                         : 'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground',
                                 )}
                             >
-                                {label}
+                                {t('top_up_cards.2year')}
                             </button>
                         );
-                    })}
+                    })()}
                 </div>
             </div>
 

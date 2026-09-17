@@ -868,6 +868,7 @@
         "range_7d": "၇ ရက်",
         "range_month": "ယခုလ",
         "batch_no": "Batch နံပါတ်",
+        "2year": "၂ နှစ်",
         "validation": {
             "amounts_required": "တန်ဖိုး အနည်းဆုံး တစ်ခု ရွေးပါ။",
             "amount_required": "တန်ဖိုး လိုအပ်သည်။",

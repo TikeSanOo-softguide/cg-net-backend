@@ -869,6 +869,7 @@
         "range_7d": "近 7 天",
         "range_month": "本月",
         "batch_no": "批次编号",
+        "2year": "2 年",
         "validation": {
             "amounts_required": "请至少选择一个面额。",
             "amount_required": "金额为必填项。",

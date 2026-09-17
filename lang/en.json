@@ -845,6 +845,7 @@
         "range_7d": "Last 7 days",
         "range_month": "This month",
         "batch_no": "Batch Number",
+        "2year": "2 Years",
         "validation": {
             "amounts_required": "Select at least one denomination.",
             "amount_required": "Amount is required.",
