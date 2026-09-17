@@ -1,24 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import {
-    ArrowRightIcon,
     Calendar1Icon,
     FileTextIcon,
     ImageIcon,
     ImageOffIcon,
-    MapPinIcon,
     NavigationIcon,
+    PackageIcon,
     PhoneIcon,
-    RouteIcon,
-    RouteOffIcon,
-    Router,
     UserIcon,
     WifiIcon,
     WifiOffIcon,
 } from 'lucide-react';
 
 import { FormDialog } from '@/components/FormDialog';
-import { formActionBarClass, formActionSubmitClass } from '@/components/FormActionBar';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -215,7 +210,7 @@ export function FailureReportDetailDialog({
                                     <div key={customerPackage.id} className="...">
                                         <div className="flex items-center justify-between gap-3 mt-3">
                                             <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                                <Router className="size-4 shrink-0 text-muted-foreground" />
+                                                <PackageIcon className="size-4 shrink-0 text-muted-foreground" />
                                                 {t('customers.package')}
                                             </span>
                                             <div className="flex flex-wrap items-center gap-x-1.5 text-sm font-semibold text-foreground">

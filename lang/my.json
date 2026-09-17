@@ -184,9 +184,11 @@
         "published": "ထုတ်ဝေပြီး",
         "archived": "သိမ်းဆည်းပြီး",
         "redeemed": "ရွေးယူပြီး",
+        "used": "အသုံးပြုပြီး",
         "void": "ပယ်ဖျက်",
         "valid": "အသုံးပြုနိုင်",
         "invalid": "မမှန်ကန်",
+        "blocked": "ပိတ်ဆို့ထား",
         "cancelled": "ပယ်ဖျက်ပြီး"
     },
     "activity_logs": {
@@ -865,6 +867,7 @@
         "range_today": "ယနေ့",
         "range_7d": "၇ ရက်",
         "range_month": "ယခုလ",
+        "batch_no": "Batch နံပါတ်",
         "validation": {
             "amounts_required": "တန်ဖိုး အနည်းဆုံး တစ်ခု ရွေးပါ။",
             "amount_required": "တန်ဖိုး လိုအပ်သည်။",
@@ -1017,7 +1020,8 @@
     },
     "broadband_application": {
         "location": "တည်နေရာ",
-        "identity": "အထောက်အထား"
+        "identity": "အထောက်အထား",
+        "search_placeholder": "Search by app username,phone"
     },
     "failure_report": {
         "failure_type": "ချို့ယွင်းမှုအမျိုးအစား",

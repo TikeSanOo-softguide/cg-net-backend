@@ -103,36 +103,62 @@ type Props = {
     };
 };
 
-function packageName(pkg: BroadbandApplication['package']): string {
+function packageName(pkg: BroadbandApplication['package'], locale: string, t: (key: string) => string): string {
     if (!pkg) {
         return 'N/A';
     }
 
+    const networkName =
+        pkg.network?.[`name_${locale}` as 'name_en' | 'name_zh' | 'name_my'] ??
+        pkg.network?.name_en ??
+        pkg.network?.name_my ??
+        pkg.network?.name_zh;
+
     const parts = [
-        pkg.network?.name_en ?? pkg.network?.name_my ?? pkg.network?.name_zh ?? null,
+        networkName,
         pkg.speed ? `${pkg.speed.mbps} Mbps` : null,
-        pkg.term ? `${pkg.term.months} months` : null,
+        pkg.term
+            ? `${pkg.term.months} ${pkg.term.months === 1 ? t('failure_report.month') : t('packages.months')}`
+            : null,
     ].filter(Boolean);
 
     return parts.length > 0 ? parts.join(' - ') : `Package #${pkg.id}`;
 }
 
-function areaName(area: BroadbandApplication['area']): string {
+function areaName(area: BroadbandApplication['area'], locale: string): string {
     if (!area) {
         return 'N/A';
     }
 
-    const parts = [
-        area.name_en ?? area.name_my ?? area.name_zh ?? null,
-        area.region?.name_en ?? area.region?.name_my ?? area.region?.name_zh ?? null,
-        area.region?.state?.name_en ?? area.region?.state?.name_my ?? area.region?.state?.name_zh ?? null,
-    ].filter(Boolean);
+    const getLocalizedName = (
+        item?: {
+            name_en?: string | null;
+            name_zh?: string | null;
+            name_my?: string | null;
+        } | null,
+    ) => {
+        if (!item) {
+            return null;
+        }
+
+        return (
+            item[`name_${locale}` as 'name_en' | 'name_zh' | 'name_my'] ??
+            item.name_en ??
+            item.name_my ??
+            item.name_zh ??
+            null
+        );
+    };
+
+    const parts = [getLocalizedName(area), getLocalizedName(area.region), getLocalizedName(area.region?.state)].filter(
+        Boolean,
+    );
 
     return parts.length > 0 ? parts.join(' - ') : `Area #${area.id}`;
 }
 
 export default function BroadbandApplicationIndex({ requests, filters, statuses, stats }: Props) {
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
     const can = useCan();
     const [search, setSearch] = useState(filters.search);
     const [selectedRequest, setSelectedRequest] = useState<BroadbandApplication | null>(null);
@@ -204,7 +230,7 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                     getRowId={(request) => String(request.id)}
                     search={search}
                     onSearchChange={onSearchChange}
-                    searchPlaceholder={t('common.search')}
+                    searchPlaceholder={t('customers.search_placeholder')}
                     pagination={requests}
                     onView={(request) => setSelectedRequest(request)}
                     directActions
@@ -250,7 +276,7 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                                     </span>
 
                                     <p className="mt-1 truncate font-mono text-muted-foreground">
-                                        {request.id_number || request.phone}
+                                        {request.user?.phone || request.id_number}
                                     </p>
                                 </div>
                             ),
@@ -264,10 +290,10 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                             sortable: true,
                             cell: (request) => (
                                 <span className="inline-flex max-w-[260px] items-center gap-1.5">
-                                    <span>{truncateText(packageName(request.package) ?? '—', 40)}</span>
+                                    <span>{truncateText(packageName(request.package, locale, t), 40)}</span>{' '}
                                 </span>
                             ),
-                            searchValue: (request) => `${packageName(request.package)}`,
+                            searchValue: (request) => packageName(request.package, locale, t),
                         },
                         {
                             id: 'address',
@@ -295,10 +321,10 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                             sortable: true,
                             cell: (request) => (
                                 <span className="inline-flex max-w-[260px] items-center gap-1.5">
-                                    <span> {truncateText(areaName(request.area) ?? '—', 35)}</span>
+                                    <span> {truncateText(areaName(request.area, locale) ?? '—', 35)}</span>
                                 </span>
                             ),
-                            searchValue: (request) => `${areaName(request.area)}`,
+                            searchValue: (request) => areaName(request.area, locale),
                         },
                         {
                             id: 'created_at',

@@ -17,21 +17,27 @@ import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
-import { expiryDateIn, formatTopUpAmount, formatTopUpNumber, isoDate, TOP_UP_CARD_CURRENCY } from '@/lib/top-up-cards';
+import {
+    expiryDateInYears,
+    formatTopUpAmount,
+    formatTopUpNumber,
+    isoDate,
+    TOP_UP_CARD_CURRENCY,
+} from '@/lib/top-up-cards';
 
-const QUICK_EXPIRY_DAYS = [30, 60, 90];
-const MAX_QUANTITY = 100;
+const QUICK_EXPIRY_YEARS = [2];
+const MAX_QUANTITY = 8999;
 
 function denominationCardClass(checked: boolean, dashed = false): string {
     return cn(
-        'relative overflow-hidden rounded-md border px-2 py-1.5 transition-colors',
+        'relative overflow-hidden rounded-md border px-1 py-1.5 transition-colors',
         dashed && 'border-dashed',
         checked
             ? 'border-primary/35 bg-primary/5 before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-primary'
             : cn(
-                dashed ? 'border-primary/25 bg-background' : 'border-border/60 bg-background',
-                'hover:border-primary/25 hover:bg-muted/20',
-            ),
+                  dashed ? 'border-primary/25 bg-background' : 'border-border/60 bg-background',
+                  'hover:border-primary/25 hover:bg-muted/20',
+              ),
     );
 }
 
@@ -108,10 +114,17 @@ function AmountLabel({ amount, muted = false }: { amount: number; muted?: boolea
                 strokeWidth={2}
             />
             <span className="min-w-0 text-left">
-                <span className={cn('block truncate text-[13px] font-semibold leading-none tabular-nums', muted ? 'text-muted-foreground' : 'text-foreground')}>
+                <span
+                    className={cn(
+                        'block truncate text-[13px] font-semibold leading-none tabular-nums',
+                        muted ? 'text-muted-foreground' : 'text-foreground',
+                    )}
+                >
                     {formatTopUpNumber(amount)}
                 </span>
-                <span className="mt-0.5 block text-[10px] leading-none text-muted-foreground">{TOP_UP_CARD_CURRENCY}</span>
+                <span className="mt-0.5 block text-[10px] leading-none text-muted-foreground">
+                    {TOP_UP_CARD_CURRENCY}
+                </span>
             </span>
         </span>
     );
@@ -146,11 +159,11 @@ export function TopUpCardGenerateForm({
     const totalCards = entries.reduce((sum, [, quantity]) => sum + quantity, 0);
     const totalValue = entries.reduce((sum, [value, quantity]) => sum + Number(value) * quantity, 0);
     const customAmount = Number(customValue);
-    const customActive = customOpen && customAmount >= 100;
+    const customActive = customOpen && customAmount >= 50;
     const customQuantity = selected[String(customAmount)] ?? 1;
 
     useEffect(() => {
-        if (! customOpen) {
+        if (!customOpen) {
             setMenuOpen(false);
         }
     }, [customOpen]);
@@ -160,7 +173,7 @@ export function TopUpCardGenerateForm({
             <div>
                 <SectionLabel icon={BanknoteIcon}>{t('top_up_cards.denominations')}</SectionLabel>
                 <p className="mt-0.5 ps-5 text-[11px] text-muted-foreground">{t('top_up_cards.denominations_hint')}</p>
-                <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                <div className="mt-2 grid grid-cols-2 gap-1 sm:grid-cols-5">
                     {presets.map((amount) => {
                         const key = String(amount);
                         const quantity = selected[key] ?? 0;
@@ -175,7 +188,7 @@ export function TopUpCardGenerateForm({
                                     onClick={() => onToggle(amount)}
                                     className="w-full text-left disabled:pointer-events-none disabled:opacity-60"
                                 >
-                                    <AmountLabel amount={amount} muted={! checked} />
+                                    <AmountLabel amount={amount} muted={!checked} />
                                 </button>
                                 {checked ? (
                                     <QuantityStepper
@@ -197,7 +210,7 @@ export function TopUpCardGenerateForm({
 
                             if (open) {
                                 onCustomOpen(true);
-                            } else if (customAmount < 100) {
+                            } else if (customAmount < 50) {
                                 onCustomOpen(false);
                             }
                         }}
@@ -214,14 +227,20 @@ export function TopUpCardGenerateForm({
                                         <AmountLabel amount={customAmount} />
                                     ) : (
                                         <span className="flex min-w-0 items-center gap-2">
-                                            <CirclePlusIcon className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={2} />
+                                            <CirclePlusIcon
+                                                className="size-3.5 shrink-0 text-muted-foreground"
+                                                strokeWidth={2}
+                                            />
                                             <span className="truncate text-[12px] text-muted-foreground">
                                                 {t('top_up_cards.custom_amount')}
                                             </span>
                                         </span>
                                     )}
                                     <ChevronDownIcon
-                                        className={cn('size-3 shrink-0 text-muted-foreground', menuOpen && 'rotate-180')}
+                                        className={cn(
+                                            'size-3 shrink-0 text-muted-foreground',
+                                            menuOpen && 'rotate-180',
+                                        )}
                                         strokeWidth={2}
                                     />
                                 </button>
@@ -246,7 +265,7 @@ export function TopUpCardGenerateForm({
                                 <Input
                                     id="custom-amount"
                                     type="number"
-                                    min={100}
+                                    min={50}
                                     value={customValue}
                                     disabled={processing}
                                     placeholder="2500"
@@ -282,13 +301,14 @@ export function TopUpCardGenerateForm({
                             onChange={onExpiresAt}
                         />
                     </FormControl>
-                    {QUICK_EXPIRY_DAYS.map((days) => {
-                        const value = expiryDateIn(days);
+                    {QUICK_EXPIRY_YEARS.map((years) => {
+                        const value = expiryDateInYears(years);
                         const active = value === expiresAt;
+                        const label = `${years} year${years > 1 ? 's' : ''}`;
 
                         return (
                             <button
-                                key={days}
+                                key={years}
                                 type="button"
                                 disabled={processing}
                                 aria-pressed={active}
@@ -300,7 +320,7 @@ export function TopUpCardGenerateForm({
                                         : 'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground',
                                 )}
                             >
-                                {t('top_up_cards.expires_in_days').replace(':days', String(days))}
+                                {label}
                             </button>
                         );
                     })}

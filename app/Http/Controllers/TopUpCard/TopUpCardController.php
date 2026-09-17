@@ -19,7 +19,7 @@ class TopUpCardController extends Controller
     /**
      * @var list<int>
      */
-    public const Presets = [1000, 3000, 5000, 10000, 20000, 50000];
+    public const Presets = [50, 100, 250, 500];
 
     public function index(Request $request): Response
     {
@@ -38,8 +38,9 @@ class TopUpCardController extends Controller
 
         $cards = TopUpCard::query()
             ->with('redeemedBy:id,name,phone')
+            ->with('batch:id,batch_no')
             ->when($search !== '', function ($query) use ($search): void {
-                $query->where('serial_no', 'like', '%'.$search.'%');
+                $query->where('serial_no', 'like', '%' . $search . '%');
             })
             ->when($status !== '' && in_array($status, array_column(TopUpCardStatus::cases(), 'value'), true), function ($query) use ($status): void {
                 $query->where('status', $status);
@@ -56,7 +57,7 @@ class TopUpCardController extends Controller
             ->orderBy($sort, $direction)
             ->paginate(15)
             ->withQueryString()
-            ->through(fn (TopUpCard $card) => $this->payload($card));
+            ->through(fn(TopUpCard $card) => $this->payload($card));
 
         return Inertia::render('TopUpCards/Generate', [
             'cards' => $cards,
@@ -97,7 +98,7 @@ class TopUpCardController extends Controller
 
         abort_if($batch === [], 404);
 
-        $filename = 'top-up-cards-'.now()->format('Ymd-His').'.csv';
+        $filename = 'top-up-cards-' . now()->format('Ymd-His') . '.csv';
 
         return response()->streamDownload(function () use ($batch): void {
             $stream = fopen('php://output', 'w');
@@ -126,11 +127,11 @@ class TopUpCardController extends Controller
 
     public function void(Request $request, TopUpCard $topUpCard): RedirectResponse
     {
-        if ($topUpCard->status !== TopUpCardStatus::Valid) {
+        if ($topUpCard->status !== TopUpCardStatus::Active) {
             return back()->with('error', 'top_up_cards.cannot_void');
         }
 
-        $topUpCard->update(['status' => TopUpCardStatus::Invalid]);
+        $topUpCard->update(['status' => TopUpCardStatus::Blocked]);
 
         activity('top-up-cards')
             ->causedBy($request->user())
@@ -157,13 +158,13 @@ class TopUpCardController extends Controller
 
         $cards = TopUpCard::query()
             ->with('redeemedBy:id,name,phone')
-            ->where('status', TopUpCardStatus::Redeemed)
+            ->where('status', TopUpCardStatus::Used)
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
-                    $query->where('serial_no', 'like', '%'.$search.'%')
+                    $query->where('serial_no', 'like', '%' . $search . '%')
                         ->orWhereHas('redeemedBy', function ($query) use ($search): void {
-                            $query->where('name', 'like', '%'.$search.'%')
-                                ->orWhere('phone', 'like', '%'.$search.'%');
+                            $query->where('name', 'like', '%' . $search . '%')
+                                ->orWhere('phone', 'like', '%' . $search . '%');
                         });
                 });
             })
@@ -179,15 +180,15 @@ class TopUpCardController extends Controller
             ->orderBy($sort, $direction)
             ->paginate(15)
             ->withQueryString()
-            ->through(fn (TopUpCard $card) => $this->payload($card));
+            ->through(fn(TopUpCard $card) => $this->payload($card));
 
         $recent = TopUpCard::query()
             ->with('redeemedBy:id,name,phone')
-            ->where('status', TopUpCardStatus::Redeemed)
+            ->where('status', TopUpCardStatus::Used)
             ->latest('redeemed_at')
             ->limit(8)
             ->get()
-            ->map(fn (TopUpCard $card) => $this->payload($card))
+            ->map(fn(TopUpCard $card) => $this->payload($card))
             ->values()
             ->all();
 
@@ -214,8 +215,8 @@ class TopUpCardController extends Controller
     {
         $status = $card->status;
 
-        if ($status === TopUpCardStatus::Valid && $card->expires_at?->copy()->endOfDay()->isPast()) {
-            $status = TopUpCardStatus::Invalid;
+        if ($status === TopUpCardStatus::Active && $card->expires_at?->copy()->endOfDay()->isPast()) {
+            $status = TopUpCardStatus::Expired;
         }
 
         return [
@@ -228,6 +229,7 @@ class TopUpCardController extends Controller
             'redeemed_by_id' => $card->redeemed_by,
             'redeemed_by' => $card->redeemedBy?->name,
             'redeemed_by_phone' => $card->redeemedBy?->phone,
+            'batch_no' => $card->batch?->batch_no,
         ];
     }
 
@@ -236,7 +238,7 @@ class TopUpCardController extends Controller
      */
     private function historyStats(): array
     {
-        $redeemed = TopUpCard::query()->where('status', TopUpCardStatus::Redeemed);
+        $redeemed = TopUpCard::query()->where('status', TopUpCardStatus::Used);
 
         return [
             'total' => $redeemed->clone()->count(),
@@ -259,12 +261,12 @@ class TopUpCardController extends Controller
             ->distinct()
             ->orderBy('amount')
             ->pluck('amount')
-            ->map(fn ($amount): string => (string) $amount);
+            ->map(fn($amount): string => (string) $amount);
 
         return Collection::make(self::Presets)
-            ->map(fn (int $amount): string => number_format($amount, 2, '.', ''))
+            ->map(fn(int $amount): string => number_format($amount, 2, '.', ''))
             ->merge($stored)
-            ->map(fn (string $amount): string => number_format((float) $amount, 2, '.', ''))
+            ->map(fn(string $amount): string => number_format((float) $amount, 2, '.', ''))
             ->unique()
             ->values()
             ->all();

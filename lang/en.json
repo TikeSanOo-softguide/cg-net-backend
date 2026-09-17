@@ -182,9 +182,11 @@
         "published": "Published",
         "archived": "Archived",
         "redeemed": "Redeemed",
+        "used": "Used",
         "void": "Void",
         "valid": "Valid",
         "invalid": "Invalid",
+        "blocked": "Blocked",
         "cancelled": "Cancelled"
     },
     "activity_logs": {
@@ -804,7 +806,7 @@
         "empty_batch_description": "Generate a batch to see printable cards with serial numbers and PINs.",
         "empty_table": "No top-up cards match these filters.",
         "search_placeholder": "Search serial number",
-        "serial_no": "Serial no.",
+        "serial_no": "Serial no",
         "amount": "Amount",
         "pin": "PIN",
         "qr_code": "QR code",
@@ -842,6 +844,7 @@
         "range_today": "Today",
         "range_7d": "Last 7 days",
         "range_month": "This month",
+        "batch_no": "Batch Number",
         "validation": {
             "amounts_required": "Select at least one denomination.",
             "amount_required": "Amount is required.",
