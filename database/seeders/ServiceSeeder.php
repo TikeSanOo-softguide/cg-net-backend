@@ -172,6 +172,38 @@ class ServiceSeeder extends Seeder
                 'image_url' => 'seeder_images/service/router.png',
                 'status' => 'published',
                 'slug' => 'cg-net-router',
+            ],
+            [
+                'title_en' => 'DIA - Dedicated Internet Access',
+                'title_zh' => 'DIA 专线网络',
+                'title_my' => 'DIA - သီးသန့် အင်တာနက် အသုံးပြုခွင့်',
+                'description_en' => <<<'TEXT'
+                    High-speed, reliable, and secure Dedicated Internet Access tailored for business performance and seamless connectivity.
+
+                    🚀 Guaranteed bandwidth & symmetrical speeds
+                    🔒 Secure & private dedicated line
+                    📈 High reliability with minimal latency
+                    👨‍🔧 24/7 technical support & monitoring
+                    TEXT,
+                'description_zh' => <<<'TEXT'
+                    高速、稳定且安全的专线网络服务，专为企业需求打造，提供卓越的连接体验。
+
+                    🚀 独享带宽与上下行对称网速
+                    🔒 安全私密的专用网络连接
+                    📈 高稳定性与极低延迟
+                    👨‍🔧 24/7 全天候技术支持与监控
+                    TEXT,
+                'description_my' => <<<'TEXT'
+                    စီးပွားရေးလုပ်ငန်းများအတွက် အထူးသီးသန့် စိတ်ချယုံကြည်ရပြီး လုံခြုံမှုရှိသော မြန်နှုန်းမြင့် DIA အင်တာနက်ဝန်ဆောင်မှု။
+
+                    🚀 အာမခံချက်ရှိသော လိုင်းအမြန်နှုန်းနှင့် သီးသန့် ဘန်းဝစ်
+                    🔒 လုံခြုံစိတ်ချရသော သီးသန့်လိုင်းစနစ်
+                    📈 တည်ငြိမ်မှုရှိပြီး ကြလွန်မှုနည်းပါးခြင်း
+                    👨‍🔧 ၂၄ နာရီပတ်လုံး ကျွမ်းကျင်သူများ၏ နည်းပညာအကူအညီ
+                    TEXT,
+                'image_url' => 'seeder_images/service/DIA-service.png',
+                'status' => 'published',
+                'slug' => 'dedicated-internet-access',
             ]
         ];
 
