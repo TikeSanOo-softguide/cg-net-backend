@@ -110,10 +110,17 @@ class TopUpCardController extends Controller
             fputcsv($stream, ['serial_no', 'pin', 'amount', 'expires_at', 'status']);
 
             foreach ($batch as $card) {
+                $amount = $card['amount'] ?? 0;
+                $numericAmount = is_numeric($amount)
+                    ? (string) ((float) $amount)
+                    : '0';
+                $numericAmount = preg_replace('/\.0+$/', '', $numericAmount);
+                $numericAmount = preg_replace('/(\.\d*?)0+$/', '$1', $numericAmount) ?? $numericAmount;
+
                 fputcsv($stream, [
                     $card['serial_no'] ?? '',
                     $card['pin'] ?? '',
-                    $card['amount'] ?? '',
+                    $numericAmount,
                     $card['expires_at'] ?? '',
                     $card['status'] ?? '',
                 ]);
