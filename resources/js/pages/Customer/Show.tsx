@@ -72,7 +72,7 @@ type CustomersShowProps = {
     currentPackages: PackageRow[];
     packageHistory: PackageRow[];
     wallet: {
-        balance_mmk: string;
+        balance: string;
     };
     topUpHistory: TopUpRow[];
 };
@@ -127,7 +127,11 @@ export default function CustomersShow({
                 />
             </FormControl>
             <Button type="submit" size="sm" className="h-8 gap-1 px-2.5 text-[11px]" disabled={bindForm.processing}>
-                {bindForm.processing ? <Spinner size="xs" className="text-current" /> : <Link2Icon className="size-3.5" strokeWidth={1.85} />}
+                {bindForm.processing ? (
+                    <Spinner size="xs" className="text-current" />
+                ) : (
+                    <Link2Icon className="size-3.5" strokeWidth={1.85} />
+                )}
                 {t('customers.bind_account')}
             </Button>
         </form>
@@ -142,7 +146,9 @@ export default function CustomersShow({
                     onClick={() => setPackageTab(tab)}
                     className={cn(
                         'h-full rounded-[3px] px-2.5 text-[10px] font-medium transition-colors duration-200',
-                        packageTab === tab ? 'bg-primary/12 text-primary' : 'text-muted-foreground hover:text-foreground',
+                        packageTab === tab
+                            ? 'bg-primary/12 text-primary'
+                            : 'text-muted-foreground hover:text-foreground',
                     )}
                 >
                     {t(`status.${tab}`)}
@@ -162,7 +168,7 @@ export default function CustomersShow({
                     phone={customer.phone}
                     status={customer.status}
                     joined={customer.created_at}
-                    walletBalance={formatMmk(wallet.balance_mmk)}
+                    walletBalance={formatMmk(wallet.balance)}
                     onEdit={() => setFormOpen(true)}
                     onToggleStatus={() => setStatusOpen(true)}
                 />
@@ -205,7 +211,7 @@ export default function CustomersShow({
                                     mobile: 'subtitle',
                                     searchValue: (row) => row.package_name ?? '',
                                     cell: (row) => (
-                                        <MetaCell icon={PackageIcon} muted={! row.package_name}>
+                                        <MetaCell icon={PackageIcon} muted={!row.package_name}>
                                             {row.package_name ?? '—'}
                                         </MetaCell>
                                     ),
@@ -219,7 +225,9 @@ export default function CustomersShow({
                                 },
                             ]}
                         />
-                        {errors.account_number ? <p className="mt-2 px-1 text-[11px] text-danger">{errors.account_number}</p> : null}
+                        {errors.account_number ? (
+                            <p className="mt-2 px-1 text-[11px] text-danger">{errors.account_number}</p>
+                        ) : null}
                     </DetailSection>
 
                     <DetailSection
@@ -425,24 +433,32 @@ export default function CustomersShow({
                 open={statusOpen}
                 onOpenChange={setStatusOpen}
                 title={customer.status === 'active' ? t('customers.suspend_title') : t('customers.reactivate_title')}
-                description={customer.status === 'active' ? t('customers.suspend_description') : t('customers.reactivate_description')}
+                description={
+                    customer.status === 'active'
+                        ? t('customers.suspend_description')
+                        : t('customers.reactivate_description')
+                }
                 confirmLabel={customer.status === 'active' ? t('customers.suspend') : t('customers.reactivate')}
                 destructive={customer.status === 'active'}
                 processing={statusProcessing}
                 onConfirm={() => {
-                    router.patch(`/customers/${customer.id}/status`, { status: nextStatus }, {
-                        preserveScroll: true,
-                        onStart: () => setStatusProcessing(true),
-                        onFinish: () => setStatusProcessing(false),
-                        onSuccess: () => setStatusOpen(false),
-                    });
+                    router.patch(
+                        `/customers/${customer.id}/status`,
+                        { status: nextStatus },
+                        {
+                            preserveScroll: true,
+                            onStart: () => setStatusProcessing(true),
+                            onFinish: () => setStatusProcessing(false),
+                            onSuccess: () => setStatusOpen(false),
+                        },
+                    );
                 }}
             />
 
             <ConfirmDialog
                 open={unbindAccount !== null}
                 onOpenChange={(open) => {
-                    if (! open) {
+                    if (!open) {
                         setUnbindAccount(null);
                     }
                 }}
@@ -452,7 +468,7 @@ export default function CustomersShow({
                 destructive
                 processing={unbindProcessing}
                 onConfirm={() => {
-                    if (! unbindAccount) {
+                    if (!unbindAccount) {
                         return;
                     }
 

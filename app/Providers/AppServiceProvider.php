@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use App\Models\Admin;
+use App\Services\Auth\Otp\MockOtpProvider;
+use App\Services\Auth\Otp\OtpProviderInterface;
+use App\Services\Auth\Otp\SmsPohOtpProvider;
 use App\Support\AppPermissions;
 use App\Support\JsonTranslations;
 use Illuminate\Support\Facades\Gate;
@@ -17,6 +20,14 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->useLangPath(base_path('lang'));
+
+        $this->app->singleton(OtpProviderInterface::class, function (): OtpProviderInterface {
+            return match (config('otp.provider')) {
+                'mock' => new MockOtpProvider(),
+                'smspoh' => new SmsPohOtpProvider(),
+                default => throw new \InvalidArgumentException('Unsupported OTP provider.'),
+            };
+        });
 
         if ($this->app->environment('local') && class_exists(\Laravel\Telescope\TelescopeServiceProvider::class)) {
             $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);

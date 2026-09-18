@@ -1,7 +1,8 @@
 <?php
 
-use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Banner\BannerController;
+use App\Http\Controllers\Api\Auth\LoginController;
+use App\Http\Controllers\Api\Auth\RegistrationController;
 use App\Http\Controllers\Api\Category\CategoryController;
 use App\Http\Controllers\Api\Contact\ContactController;
 use App\Http\Controllers\Api\Gallery\GalleryController;
@@ -22,6 +23,15 @@ use App\Http\Controllers\Api\ServiceRequest\FailureReportController;
 use App\Http\Controllers\Api\ServiceRequest\RelocationRequestController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+Route::prefix('auth')
+    ->middleware('throttle:60,1')
+    ->group(function () {
+        Route::post('/register/request-otp', [RegistrationController::class, 'requestOtp']);
+        Route::post('/register/verify-otp', [RegistrationController::class, 'verifyOtp']);
+        Route::post('/register/complete', [RegistrationController::class, 'complete']);
+        Route::post('/login', LoginController::class)->middleware('throttle:30,1');
+    });
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -56,7 +66,9 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::get('/announcements', [AnnouncementController::class, 'index']);
 });
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+    Route::post('/auth/logout', [LoginController::class, 'logout']);
+
     Route::prefix('relocation-requests')->group(function () {
         Route::get('/', [RelocationRequestController::class, 'index']);
         Route::post('/create', [RelocationRequestController::class, 'store']);
@@ -95,5 +107,3 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{installationApplication}', [BroadbandApplicationRequestController::class, 'destroy']);
     });
 });
-
-Route::post('/login', [AuthController::class, 'login']);

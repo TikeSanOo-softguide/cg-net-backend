@@ -15,7 +15,7 @@ class WalletFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'balance_mmk' => fake()->randomFloat(2, 0, 150000),
+            'balance' => fake()->numberBetween(0, 150000),
         ];
     }
 }

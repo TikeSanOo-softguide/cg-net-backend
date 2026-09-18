@@ -30,7 +30,7 @@ class CustomerController extends Controller
         $direction = $request->string('direction')->toString() === 'asc' ? 'asc' : 'desc';
         $sortable = ['name', 'phone', 'status', 'created_at'];
 
-        if (! in_array($sort, $sortable, true)) {
+        if (!in_array($sort, $sortable, true)) {
             $sort = 'created_at';
         }
 
@@ -38,7 +38,7 @@ class CustomerController extends Controller
 
         $customers = User::query()
             ->with([
-                'wallet:id,user_id,balance_mmk',
+                'wallet:id,user_id,balance',
                 'broadbandAccounts:id,user_id,current_package_id',
                 'broadbandAccounts.currentPackage.network:id,name_en,name_zh,name_my',
                 'broadbandAccounts.currentPackage.speed:id,mbps',
@@ -47,11 +47,12 @@ class CustomerController extends Controller
             ->withCount('broadbandAccounts')
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
-                    $query->where('name', 'like', '%'.$search.'%')
-                        ->orWhere('phone', 'like', '%'.$search.'%');
+                    $query->where('name', 'like', '%' . $search . '%')->orWhere('phone', 'like', '%' . $search . '%');
                 });
             })
-            ->when($status !== '' && in_array($status, array_column(UserStatus::cases(), 'value'), true), function ($query) use ($status): void {
+            ->when($status !== '' && in_array($status, array_column(UserStatus::cases(), 'value'), true), function (
+                $query,
+            ) use ($status): void {
                 $query->where('status', $status);
             })
             ->orderBy($sort, $direction)
@@ -59,7 +60,7 @@ class CustomerController extends Controller
             ->withQueryString()
             ->through(function (User $customer) use ($locale) {
                 $currentPackage = $customer->broadbandAccounts
-                    ->map(fn (BroadbandAccount $account) => $account->currentPackage)
+                    ->map(fn(BroadbandAccount $account) => $account->currentPackage)
                     ->filter()
                     ->first();
 
@@ -68,7 +69,7 @@ class CustomerController extends Controller
                     'name' => $customer->name,
                     'phone' => $customer->phone,
                     'status' => $customer->status->value,
-                    'wallet_balance' => number_format((float) ($customer->wallet?->balance_mmk ?? 0), 0, '.', ''),
+                    'wallet_balance' => number_format((float) ($customer->wallet?->balance ?? 0), 0, '.', ''),
                     'broadband_connected' => $customer->broadband_accounts_count > 0,
                     'broadband_count' => $customer->broadband_accounts_count,
                     'current_package' => PackageLabel::make($currentPackage, $locale),
@@ -98,7 +99,7 @@ class CustomerController extends Controller
 
         $customer = DB::transaction(function () use ($payload) {
             $customer = User::query()->create($payload);
-            $customer->wallet()->create(['balance_mmk' => 0]);
+            $customer->wallet()->create(['balance' => 0]);
 
             return $customer;
         });
@@ -111,14 +112,10 @@ class CustomerController extends Controller
             ->log('customer_created');
 
         if ($request->headers->has('X-Modal')) {
-            return redirect()
-                ->route('customers.index')
-                ->with('success', 'customers.created');
+            return redirect()->route('customers.index')->with('success', 'customers.created');
         }
 
-        return redirect()
-            ->route('customers.show', $customer)
-            ->with('success', 'customers.created');
+        return redirect()->route('customers.show', $customer)->with('success', 'customers.created');
     }
 
     public function show(User $customer): Response
@@ -134,13 +131,11 @@ class CustomerController extends Controller
             'customerPackages.package.term:id,months',
             'customerPackages.broadbandAccount:id,account_number',
             'wallet',
-            'redeemedTopUpCards' => fn ($query) => $query->latest('redeemed_at')->limit(50),
+            'redeemedTopUpCards' => fn($query) => $query->latest('redeemed_at')->limit(50),
         ]);
 
-        $packageRows = $customer->customerPackages
-            ->sortByDesc('start_date')
-            ->values()
-            ->map(fn ($row) => [
+        $packageRows = $customer->customerPackages->sortByDesc('start_date')->values()->map(
+            fn($row) => [
                 'id' => $row->id,
                 'package_name' => PackageLabel::make($row->package, $locale),
                 'account_number' => $row->broadbandAccount?->account_number,
@@ -148,31 +143,38 @@ class CustomerController extends Controller
                 'expiry_date' => $row->expiry_date?->toDateString(),
                 'auto_renew' => $row->auto_renew,
                 'status' => $row->status->value,
-            ]);
+            ],
+        );
 
         return Inertia::render('Customer/Show', [
             'customer' => $this->customerPayload($customer),
-            'broadbandAccounts' => $customer->broadbandAccounts->map(fn (BroadbandAccount $account) => [
-                'id' => $account->id,
-                'account_number' => $account->account_number,
-                'customer_name' => $account->customer_name,
-                'status' => $account->status->value,
-                'package_name' => PackageLabel::make($account->currentPackage, $locale),
-            ]),
+            'broadbandAccounts' => $customer->broadbandAccounts->map(
+                fn(BroadbandAccount $account) => [
+                    'id' => $account->id,
+                    'account_number' => $account->account_number,
+                    'customer_name' => $account->customer_name,
+                    'status' => $account->status->value,
+                    'package_name' => PackageLabel::make($account->currentPackage, $locale),
+                ],
+            ),
             'currentPackages' => $packageRows
-                ->filter(fn (array $row) => $row['status'] === CustomerPackageStatus::Active->value)
+                ->filter(fn(array $row) => $row['status'] === CustomerPackageStatus::Active->value)
                 ->values(),
             'packageHistory' => $packageRows->values(),
             'wallet' => [
-                'balance_mmk' => number_format((float) ($customer->wallet?->balance_mmk ?? 0), 2, '.', ''),
+                'balance' => number_format((float) ($customer->wallet?->balance ?? 0), 2, '.', ''),
             ],
-            'topUpHistory' => $customer->redeemedTopUpCards->map(fn ($card) => [
-                'id' => $card->id,
-                'serial_no' => $card->serial_no,
-                'amount' => number_format((float) $card->amount, 0, '.', ''),
-                'status' => $card->status->value,
-                'redeemed_at' => $card->redeemed_at?->toDateString(),
-            ])->values(),
+            'topUpHistory' => $customer->redeemedTopUpCards
+                ->map(
+                    fn($card) => [
+                        'id' => $card->id,
+                        'serial_no' => $card->serial_no,
+                        'amount' => number_format((float) $card->amount, 0, '.', ''),
+                        'status' => $card->status->value,
+                        'redeemed_at' => $card->redeemed_at?->toDateString(),
+                    ],
+                )
+                ->values(),
         ]);
     }
 
@@ -197,16 +199,18 @@ class CustomerController extends Controller
             return back()->with('success', 'customers.updated');
         }
 
-        return redirect()
-            ->route('customers.show', $customer)
-            ->with('success', 'customers.updated');
+        return redirect()->route('customers.show', $customer)->with('success', 'customers.updated');
     }
 
     public function destroy(Request $request, User $customer): RedirectResponse
     {
         $customer->delete();
 
-        activity('customers')->causedBy($request->user())->performedOn($customer)->event('deleted')->log('customer_deleted');
+        activity('customers')
+            ->causedBy($request->user())
+            ->performedOn($customer)
+            ->event('deleted')
+            ->log('customer_deleted');
 
         return redirect()->route('customers.index')->with('success', 'customers.deleted');
     }
@@ -222,7 +226,11 @@ class CustomerController extends Controller
 
         foreach (User::query()->whereIn('id', $ids)->get() as $customer) {
             $customer->delete();
-            activity('customers')->causedBy($request->user())->performedOn($customer)->event('deleted')->log('customer_deleted');
+            activity('customers')
+                ->causedBy($request->user())
+                ->performedOn($customer)
+                ->event('deleted')
+                ->log('customer_deleted');
             $deleted++;
         }
 
@@ -230,7 +238,8 @@ class CustomerController extends Controller
             return back()->withErrors(['delete' => 'common.bulk_delete_failed']);
         }
 
-        return redirect()->route('customers.index')
+        return redirect()
+            ->route('customers.index')
             ->with('success', 'common.bulk_deleted')
             ->with('deleted_count', $deleted);
     }
@@ -256,9 +265,10 @@ class CustomerController extends Controller
             ])
             ->log('customer_status_updated');
 
-        return back()->with('success', $status === UserStatus::Suspended
-            ? 'customers.suspended'
-            : 'customers.reactivated');
+        return back()->with(
+            'success',
+            $status === UserStatus::Suspended ? 'customers.suspended' : 'customers.reactivated',
+        );
     }
 
     public function bindAccount(BindBroadbandAccountRequest $request, User $customer): RedirectResponse
@@ -266,7 +276,7 @@ class CustomerController extends Controller
         $accountNumber = trim($request->validated('account_number'));
         $account = BroadbandAccount::query()->where('account_number', $accountNumber)->first();
 
-        if (! $account) {
+        if (!$account) {
             return back()->withErrors(['account_number' => __('customers.account_not_found')]);
         }
 
