@@ -55,7 +55,6 @@ export default function ContactsIndex({ items, filters }: Props) {
                         id: 'contact_point',
                         header: t('cms.contact_point'),
                         mobile: 'title',
-                        sortable: true,
                         className: 'font-medium',
                         cell: (row) => truncateText(row.contact_point, 30),
                     },

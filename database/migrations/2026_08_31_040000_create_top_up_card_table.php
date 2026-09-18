@@ -17,10 +17,12 @@ return new class extends Migration
             $table->string('serial_no', 32)->unique();
             $table->string('pin', 64);
             $table->decimal('amount', 10, 2);
-            $table->date('expires_at')->nullable()->index();
+            $table->string('status', 16)->default('active')->index();
+            $table->date('expires_at')->index();
             $table->timestamp('redeemed_at')->nullable();
             $table->foreignId('redeemed_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->string('status', 16)->default('valid')->index();
+            $table->foreignId('batch_id')->nullable()->constrained('batches')->cascadeOnUpdate()->nullOnDelete();
+            $table->foreignId('wallet_transaction_id')->nullable()->constrained('wallet_transactions')->cascadeOnUpdate()->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
         });

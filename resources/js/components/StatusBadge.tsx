@@ -22,11 +22,13 @@ function dotClass(status: string): string {
         case 'failed':
         case 'archived':
         case 'invalid':
+        case 'blocked':
             return 'bg-red-500';
         case 'suspended':
         case 'slow':
         case 'unpaid':
         case 'redeemed':
+        case 'used':
             return 'bg-orange-400';
         default:
             return 'bg-muted-foreground/45';

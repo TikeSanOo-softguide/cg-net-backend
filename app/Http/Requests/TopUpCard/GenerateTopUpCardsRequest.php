@@ -19,7 +19,7 @@ class GenerateTopUpCardsRequest extends FormRequest
     {
         return [
             'amounts' => ['required', 'array', 'min:1', 'max:12'],
-            'amounts.*.value' => ['required', 'numeric', 'min:100', 'max:1000000'],
+            'amounts.*.value' => ['required', 'numeric', 'min:50', 'max:1000000'],
             'amounts.*.quantity' => ['required', 'integer', 'min:1', 'max:100'],
             'expires_at' => ['required', 'date', 'after_or_equal:today'],
         ];
@@ -44,7 +44,7 @@ class GenerateTopUpCardsRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
-            $total = collect($this->input('amounts', []))->sum(fn ($tier): int => (int) ($tier['quantity'] ?? 0));
+            $total = collect($this->input('amounts', []))->sum(fn($tier): int => (int) ($tier['quantity'] ?? 0));
 
             if ($total > 200) {
                 $validator->errors()->add('amounts', __('top_up_cards.validation.quantity_total'));

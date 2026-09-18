@@ -36,7 +36,7 @@ const bannerTypes = [
         value: 'web_popup',
         labelKey: 'cms.banner.types.web_popup',
         width: 800,
-        height: 350,
+        height: 150,
     },
     {
         value: 'app_entry',

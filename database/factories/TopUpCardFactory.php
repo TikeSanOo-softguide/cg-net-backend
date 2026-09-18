@@ -17,20 +17,20 @@ class TopUpCardFactory extends Factory
     public function definition(): array
     {
         return [
-            'serial_no' => GeneratesTopUpCards::serialNo(),
+            'serial_no' => GeneratesTopUpCards::serialNo((string) fake()->randomElement([50, 100, 250, 500])),
             'pin' => Hash::make(GeneratesTopUpCards::pin()),
-            'amount' => fake()->randomElement([1000, 3000, 5000, 10000, 20000, 50000]),
-            'expires_at' => now()->addDays(90),
+            'amount' => fake()->randomElement([50, 100, 250, 500]),
+            'expires_at' => now()->addYears(2),
             'redeemed_at' => null,
             'redeemed_by' => null,
-            'status' => TopUpCardStatus::Valid,
+            'status' => TopUpCardStatus::Active,
         ];
     }
 
     public function redeemed(?User $user = null): static
     {
-        return $this->state(fn () => [
-            'status' => TopUpCardStatus::Redeemed,
+        return $this->state(fn() => [
+            'status' => TopUpCardStatus::Used,
             'redeemed_by' => $user?->id ?? User::factory(),
             'redeemed_at' => now()->subDays(fake()->numberBetween(1, 20)),
         ]);
@@ -38,8 +38,8 @@ class TopUpCardFactory extends Factory
 
     public function invalid(): static
     {
-        return $this->state(fn () => [
-            'status' => TopUpCardStatus::Invalid,
+        return $this->state(fn() => [
+            'status' => TopUpCardStatus::Blocked,
         ]);
     }
 }

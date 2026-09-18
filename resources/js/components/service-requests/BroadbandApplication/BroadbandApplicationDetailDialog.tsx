@@ -3,9 +3,7 @@ import { useForm } from '@inertiajs/react';
 import {
     BadgeIcon,
     CalendarDaysIcon,
-    CircleCheckIcon,
     GaugeIcon,
-    HashIcon,
     HouseIcon,
     IdCardIcon,
     ImageOffIcon,

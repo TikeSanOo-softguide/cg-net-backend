@@ -6,8 +6,13 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatTopUpNumber, TOP_UP_CARD_CURRENCY, topUpCardQrValue, type TopUpCardRow } from '@/lib/top-up-cards';
-
+import {
+    formatTopUpNumber,
+    formatTopUpPin,
+    TOP_UP_CARD_CURRENCY,
+    topUpCardQrValue,
+    type TopUpCardRow,
+} from '@/lib/top-up-cards';
 type GeneratedBatchProps = {
     cards: TopUpCardRow[];
     onExport: () => void;
@@ -40,7 +45,13 @@ export function TopUpCardGeneratedBatch({ cards, onExport }: GeneratedBatchProps
                     <DownloadIcon className="size-3.5" strokeWidth={1.9} />
                     {t('common.export')}
                 </Button>
-                <Button type="button" size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => window.print()}>
+                <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-[11px]"
+                    onClick={() => window.print()}
+                >
                     <PrinterIcon className="size-3.5" strokeWidth={1.9} />
                     {t('top_up_cards.print_all')}
                 </Button>
@@ -83,16 +94,24 @@ export function TopUpCardGeneratedBatch({ cards, onExport }: GeneratedBatchProps
                                     </p>
                                     <div className="mt-2 flex items-center justify-between gap-2 rounded-[6px] border border-dashed border-primary/25 bg-card/70 px-2 py-1">
                                         <p className="font-mono text-[12px] tracking-wider text-foreground">
-                                            {open && card.pin ? card.pin : '••••••'}
+                                            {open && card.pin ? formatTopUpPin(card.pin) : formatTopUpPin(null)}{' '}
                                         </p>
                                         {card.pin ? (
                                             <button
                                                 type="button"
                                                 className="inline-flex size-6 shrink-0 items-center justify-center rounded-[5px] text-primary transition-colors hover:bg-primary/10 print:hidden"
-                                                onClick={() => setRevealed((current) => ({ ...current, [card.id]: ! open }))}
-                                                aria-label={open ? t('top_up_cards.hide_pin') : t('top_up_cards.reveal_pin')}
+                                                onClick={() =>
+                                                    setRevealed((current) => ({ ...current, [card.id]: !open }))
+                                                }
+                                                aria-label={
+                                                    open ? t('top_up_cards.hide_pin') : t('top_up_cards.reveal_pin')
+                                                }
                                             >
-                                                {open ? <EyeOffIcon className="size-3.5" /> : <EyeIcon className="size-3.5" />}
+                                                {open ? (
+                                                    <EyeOffIcon className="size-3.5" />
+                                                ) : (
+                                                    <EyeIcon className="size-3.5" />
+                                                )}
                                             </button>
                                         ) : null}
                                     </div>
