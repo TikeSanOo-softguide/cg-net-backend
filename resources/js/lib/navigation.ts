@@ -46,6 +46,7 @@ import {
     UserRound,
     Users,
     Wallet,
+    Workflow,
     Wrench,
 } from 'lucide-react';
 
@@ -264,6 +265,12 @@ export const navigation: NavGroup[] = [
                 descriptionKey: 'menu.quick_reply_templates_description',
                 href: '/support/quick-replies',
                 icon: Reply,
+            },
+            {
+                labelKey: 'menu.chatbot_flows',
+                descriptionKey: 'menu.chatbot_flows_description',
+                href: '/support/chatbot-flows',
+                icon: Workflow,
             },
         ],
     },

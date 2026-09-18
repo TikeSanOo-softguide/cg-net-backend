@@ -26,6 +26,7 @@ use App\Http\Controllers\ServiceRequest\FailureReportController;
 use App\Http\Controllers\ServiceRequest\RelocationRequestController;
 use App\Http\Controllers\Staff\RoleController;
 use App\Http\Controllers\Staff\StaffController;
+use App\Http\Controllers\Support\ChatFlows\ChatbotFlowsController;
 use App\Http\Controllers\TopUpCard\TopUpCardController;
 use App\Support\AdminHome;
 use App\Support\MenuPages;
@@ -102,6 +103,19 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::put('/{announcement}', [AnnouncementController::class, 'update'])->middleware('can:notifications.update')->name('update');
             Route::delete('/{announcement}', [AnnouncementController::class, 'destroy'])->middleware('can:notifications.delete')->name('destroy');
             Route::get('/{announcement}', [AnnouncementController::class, 'show'])->middleware('can:notifications.view')->name('show');
+        });
+    });
+
+    Route::prefix('support')->name('support.')->group(function () {
+        Route::prefix('chatbot-flows')->name('chatbot-flows.')->controller(ChatbotFlowsController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/steps', 'storeStep')->name('steps.store');
+            Route::put('/steps/{step}', 'updateStep')->name('steps.update');
+            Route::delete('/steps/{step}', 'destroyStep')->name('steps.destroy');
+            Route::post('/steps/{step}/options', 'storeOption')->name('options.store');
+            Route::put('/steps/{step}/options/{option}', 'updateOption')->name('options.update');
+            Route::delete('/steps/{step}/options/{option}', 'destroyOption')->name('options.destroy');
+            Route::post('/steps/{step}/options/create-step', 'createStepFromOption')->name('options.create-step');
         });
     });
 

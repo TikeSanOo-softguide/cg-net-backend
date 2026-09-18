@@ -8,18 +8,20 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('chat_messages', function (Blueprint $table) {
+        Schema::create('chat_flow_step_translations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('conversation_id')->constrained('chat_conversations')->cascadeOnDelete();
-            $table->string('sender_type', 16)->index();
+            $table->foreignId('step_id')
+                ->constrained('chat_flow_steps')
+                ->cascadeOnDelete();
+            $table->string('language', 10);
             $table->text('message');
-            $table->string('attachment_path')->nullable();
             $table->timestamps();
+            $table->unique(['step_id', 'language']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('chat_messages');
+        Schema::dropIfExists('chat_flow_step_translations');
     }
 };

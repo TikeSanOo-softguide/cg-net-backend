@@ -4,7 +4,7 @@ namespace App\Enums;
 
 enum ChatSenderType: string
 {
-    case User = 'user';
-    case Bot = 'bot';
+    case Customer = 'customer';
     case Agent = 'agent';
+    case System = 'system';
 }

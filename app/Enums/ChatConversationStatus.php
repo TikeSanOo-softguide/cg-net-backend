@@ -4,7 +4,9 @@ namespace App\Enums;
 
 enum ChatConversationStatus: string
 {
+    case Open = 'open';
     case Bot = 'bot';
-    case Agent = 'agent';
+    case WaitingAgent = 'waiting_agent';
+    case WithAgent = 'with_agent';
     case Closed = 'closed';
 }
