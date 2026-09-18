@@ -172,7 +172,7 @@ export function TopUpCardGenerateForm({
             <div>
                 <SectionLabel icon={BanknoteIcon}>{t('top_up_cards.denominations')}</SectionLabel>
                 <p className="mt-0.5 ps-5 text-[11px] text-muted-foreground">{t('top_up_cards.denominations_hint')}</p>
-                <div className="mt-2 grid grid-cols-2 gap-1 sm:grid-cols-5">
+                <div className="mt-2 grid grid-cols-2 gap-1 sm:grid-cols-4">
                     {presets.map((amount) => {
                         const key = String(amount);
                         const quantity = selected[key] ?? 0;
