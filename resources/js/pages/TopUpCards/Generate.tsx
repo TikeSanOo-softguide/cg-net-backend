@@ -23,21 +23,25 @@ type GenerateProps = {
 };
 
 function visitIndex(filters: TopUpCardFilters, onStart?: () => void, onFinish?: () => void) {
-    router.get('/top-up-cards/batch', {
-        search: filters.search || undefined,
-        status: filters.status || undefined,
-        amount: filters.amount || undefined,
-        from: filters.from || undefined,
-        to: filters.to || undefined,
-        sort: filters.sort,
-        direction: filters.direction,
-    }, {
-        preserveState: true,
-        preserveScroll: true,
-        replace: true,
-        onStart,
-        onFinish,
-    });
+    router.get(
+        '/top-up-cards/batch',
+        {
+            search: filters.search || undefined,
+            status: filters.status || undefined,
+            amount: filters.amount || undefined,
+            from: filters.from || undefined,
+            to: filters.to || undefined,
+            sort: filters.sort,
+            direction: filters.direction,
+        },
+        {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            onStart,
+            onFinish,
+        },
+    );
 }
 
 export default function TopUpCardsGenerate({ cards, generated = [], presets, amounts, filters }: GenerateProps) {
@@ -69,12 +73,12 @@ export default function TopUpCardsGenerate({ cards, generated = [], presets, amo
         const copy = { ...next };
 
         Object.keys(copy).forEach((key) => {
-            if (! presets.includes(Number(key))) {
+            if (!presets.includes(Number(key))) {
                 delete copy[key];
             }
         });
 
-        if (open && Number(value) >= 100) {
+        if (open && Number(value) >= 50) {
             copy[String(Number(value))] = copy[String(Number(value))] ?? 1;
         }
 
@@ -103,7 +107,11 @@ export default function TopUpCardsGenerate({ cards, generated = [], presets, amo
     };
 
     const filterTable = (next: TopUpCardFilters) => {
-        visitIndex(next, () => setTableLoading(true), () => setTableLoading(false));
+        visitIndex(
+            next,
+            () => setTableLoading(true),
+            () => setTableLoading(false),
+        );
     };
 
     const canGenerate = can('top-up-cards.create') && Object.values(selected).some((quantity) => quantity > 0);
@@ -162,7 +170,7 @@ export default function TopUpCardsGenerate({ cards, generated = [], presets, amo
                                     type="submit"
                                     variant="primary"
                                     size="sm"
-                                    disabled={! canGenerate || form.processing}
+                                    disabled={!canGenerate || form.processing}
                                     className="h-8 w-full"
                                 >
                                     {form.processing ? <Spinner size="xs" className="text-current" /> : null}
@@ -180,7 +188,10 @@ export default function TopUpCardsGenerate({ cards, generated = [], presets, amo
                         </CardHeader>
                         <CardContent className="relative print:px-0">
                             {form.processing ? (
-                                <SpinnerOverlay className="relative inset-auto min-h-[160px]" label={t('top_up_cards.generating')} />
+                                <SpinnerOverlay
+                                    className="relative inset-auto min-h-[160px]"
+                                    label={t('top_up_cards.generating')}
+                                />
                             ) : (
                                 <TopUpCardGeneratedBatch
                                     cards={generated}

@@ -35,7 +35,6 @@ class PromotionController extends Controller
                     $q->where($titleColumn, 'like', "%{$search}%");
                 });
             })
-            ->orderByDesc('start_date')
             ->latest()
             ->paginate(6);
 

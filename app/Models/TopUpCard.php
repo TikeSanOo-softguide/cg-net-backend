@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'redeemed_at',
     'redeemed_by',
     'status',
+    'batch_id',
+    'wallet_transaction_id',
 ])]
 #[Hidden(['pin'])]
 class TopUpCard extends Model
@@ -38,8 +40,21 @@ class TopUpCard extends Model
         ];
     }
 
+    public function batch(): BelongsTo
+    {
+        return $this->belongsTo(Batch::class);
+    }
+
     public function redeemedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'redeemed_by');
+    }
+
+    public function walletTransaction(): BelongsTo
+    {
+        return $this->belongsTo(
+            WalletTransaction::class,
+            'wallet_transaction_id'
+        );
     }
 }

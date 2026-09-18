@@ -4,7 +4,8 @@ namespace App\Enums;
 
 enum TopUpCardStatus: string
 {
-    case Valid = 'valid';
-    case Redeemed = 'redeemed';
-    case Invalid = 'invalid';
+    case Active = 'active';
+    case Used = 'used';
+    case Expired = 'expired';
+    case Blocked = 'blocked';
 }

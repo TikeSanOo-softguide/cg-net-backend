@@ -1,6 +1,6 @@
-export const TOP_UP_CARD_PRESETS = [1000, 3000, 5000, 10000, 20000, 50000] as const;
+export const TOP_UP_CARD_PRESETS = [50, 100, 250, 500] as const;
 
-export const TOP_UP_CARD_CURRENCY = 'MMK';
+export const TOP_UP_CARD_CURRENCY = 'Points';
 
 export type TopUpCardRow = {
     id: number;
@@ -13,6 +13,7 @@ export type TopUpCardRow = {
     redeemed_by_id?: number | null;
     redeemed_by: string | null;
     redeemed_by_phone?: string | null;
+    batch_no: string | null;
 };
 
 export type TopUpCardFilters = {
@@ -49,6 +50,16 @@ export function formatTopUpAmount(value: string | number): string {
     return `${formatTopUpNumber(value)} ${TOP_UP_CARD_CURRENCY}`;
 }
 
+export function formatTopUpPin(value: string | null | undefined): string {
+    const digits = (value ?? '').replace(/\D/g, '');
+
+    if (digits.length === 0) {
+        return '•••• - •••• - •••• - ••••';
+    }
+
+    return digits.match(/.{1,4}/g)?.join(' - ') ?? digits;
+}
+
 export function topUpCardQrValue(card: Pick<TopUpCardRow, 'serial_no' | 'pin'>): string {
     if (card.pin) {
         return JSON.stringify({ serial: card.serial_no, pin: card.pin });
@@ -68,8 +79,19 @@ export function expiryDateIn(days: number): string {
     return `${year}-${month}-${day}`;
 }
 
+export function expiryDateInYears(years: number): string {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() + years);
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+}
+
 export function defaultExpiryDate(): string {
-    return expiryDateIn(90);
+    return expiryDateInYears(2);
 }
 
 export function isoDate(date = new Date()): string {
@@ -95,7 +117,7 @@ export function startOfMonthDate(): string {
 }
 
 export function formatTopUpDateTime(value: string | null): string {
-    if (! value) {
+    if (!value) {
         return '—';
     }
 

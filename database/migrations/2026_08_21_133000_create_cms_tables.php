@@ -36,7 +36,7 @@ return new class extends Migration {
             $table->date('end_date')->nullable()->index();
             $table->boolean('is_active')->default(true)->index();
             $table->string('image_url', 500)->nullable();
-            $table->string('slug')->unique();
+            $table->string('slug');
             $table->timestamps();
             $table->softDeletes();
             $table->foreignId('created_by')->nullable()->constrained('admins')->nullOnDelete();
@@ -49,7 +49,7 @@ return new class extends Migration {
             $table->string('name_en');
             $table->string('name_zh');
             $table->string('name_my');
-            $table->string('slug')->unique();
+            $table->string('slug');
             $table->timestamps();
             $table->softDeletes();
             $table->foreignId('created_by')->nullable()->constrained('admins')->nullOnDelete();
@@ -68,7 +68,7 @@ return new class extends Migration {
             $table->text('description_my');
             $table->string('image_url', 500)->nullable();
             $table->string('status', 20)->default('draft')->index();
-            $table->string('slug')->unique();
+            $table->string('slug');
             $table->timestamps();
             $table->softDeletes();
             $table->foreignId('created_by')->nullable()->constrained('admins')->nullOnDelete();
@@ -86,7 +86,7 @@ return new class extends Migration {
             $table->text('description_my');
             $table->string('image_url', 500)->nullable();
             $table->string('status', 20)->default('draft')->index();
-            $table->string('slug')->unique();
+            $table->string('slug');
             $table->timestamps();
             $table->softDeletes();
             $table->foreignId('created_by')->nullable()->constrained('admins')->nullOnDelete();

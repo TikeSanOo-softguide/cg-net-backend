@@ -12,11 +12,11 @@ return new class extends Migration
             return;
         }
 
-        DB::table('top_up_card')->whereIn('status', ['unused', 'active'])->update(['status' => 'valid']);
-        DB::table('top_up_card')->whereIn('status', ['expired', 'void'])->update(['status' => 'invalid']);
+        DB::table('top_up_card')->whereIn('status', ['unused', 'active', 'valid'])->update(['status' => 'active']);
+        DB::table('top_up_card')->whereIn('status', ['void', 'invalid'])->update(['status' => 'blocked']);
 
         if (Schema::getConnection()->getDriverName() === 'mysql') {
-            DB::statement("ALTER TABLE top_up_card MODIFY status VARCHAR(16) NOT NULL DEFAULT 'valid'");
+            DB::statement("ALTER TABLE top_up_card MODIFY status VARCHAR(16) NOT NULL DEFAULT 'active'");
         }
     }
 
@@ -26,8 +26,8 @@ return new class extends Migration
             return;
         }
 
-        DB::table('top_up_card')->where('status', 'valid')->update(['status' => 'active']);
-        DB::table('top_up_card')->where('status', 'invalid')->update(['status' => 'void']);
+        DB::table('top_up_card')->where('status', 'active')->update(['status' => 'valid']);
+        DB::table('top_up_card')->where('status', 'blocked')->update(['status' => 'void']);
 
         if (Schema::getConnection()->getDriverName() === 'mysql') {
             DB::statement("ALTER TABLE top_up_card MODIFY status VARCHAR(16) NOT NULL DEFAULT 'active'");
