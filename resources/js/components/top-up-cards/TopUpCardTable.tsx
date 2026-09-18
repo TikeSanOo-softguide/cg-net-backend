@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
-import { BanIcon, CalendarIcon, CircleDotIcon, CopyIcon, EyeIcon } from 'lucide-react';
+import { BanIcon, CircleDotIcon, EyeIcon } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
@@ -9,13 +9,13 @@ import type { Paginated } from '@/components/Pagination';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
 import { FormControl } from '@/components/ui/form-control';
-import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SpinnerOverlay } from '@/components/ui/spinner';
 import { toast } from '@/hooks/use-toast';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatTopUpAmount, type TopUpCardFilters, type TopUpCardRow } from '@/lib/top-up-cards';
+import { formatDate } from '@/lib/utils';
 
 type TopUpCardTableProps = {
     cards: Paginated<TopUpCardRow>;
@@ -91,6 +91,7 @@ export function TopUpCardTable({
                                         <SelectItem value="active">{t('status.active')}</SelectItem>
                                         <SelectItem value="used">{t('status.used')}</SelectItem>
                                         <SelectItem value="blocked">{t('status.blocked')}</SelectItem>
+                                        <SelectItem value="expired">{t('status.expired')}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </FormControl>
@@ -114,26 +115,12 @@ export function TopUpCardTable({
                                     </SelectContent>
                                 </Select>
                             </FormControl>
-                            <FormControl icon={CalendarIcon} compact className="w-full shrink-0 sm:w-40">
-                                <DatePicker
-                                    value={filters.from}
-                                    onChange={(value) => onFilter({ ...filters, from: value })}
-                                />
-                            </FormControl>
-                            <FormControl icon={CalendarIcon} compact className="w-full shrink-0 sm:w-40">
-                                <DatePicker
-                                    value={filters.to}
-                                    min={filters.from || undefined}
-                                    onChange={(value) => onFilter({ ...filters, to: value })}
-                                />
-                            </FormControl>
                         </div>
                     }
                     columns={[
                         {
                             id: 'serial_no',
                             header: t('top_up_cards.serial_no'),
-                            sortable: true,
                             mobile: 'title',
                             className: 'font-mono text-[12px]',
                             cell: (row) => row.serial_no,
@@ -141,48 +128,30 @@ export function TopUpCardTable({
                         {
                             id: 'amount',
                             header: t('top_up_cards.amount'),
-                            sortable: true,
                             mobile: 'meta',
                             cell: (row) => formatTopUpAmount(row.amount),
                         },
                         {
                             id: 'status',
                             header: t('common.status'),
-                            sortable: true,
                             mobile: 'badge',
                             cell: (row) => <StatusBadge status={row.status} />,
                         },
                         {
                             id: 'expires_at',
                             header: t('top_up_cards.expires_at'),
-                            sortable: true,
                             className: 'text-muted-foreground',
-                            cell: (row) => row.expires_at ?? '—',
+                            cell: (row) => formatDate(row.expires_at) ?? '—',
                         },
+
                         {
-                            id: 'redeemed_at',
-                            header: t('top_up_cards.redeemed_at'),
-                            sortable: true,
-                            className: 'text-muted-foreground',
-                            cell: (row) => row.redeemed_at ?? '—',
-                        },
-                        {
-                            id: 'redeemed_by',
-                            header: t('top_up_cards.redeemed_by'),
-                            cell: (row) => row.redeemed_by ?? '—',
+                            id: 'batch_no',
+                            header: t('top_up_cards.batch_no'),
+                            cell: (row) => row.batch_no ?? '—',
                         },
                     ]}
                     actions={(row) => (
                         <>
-                            <TableActionButton
-                                label={t('top_up_cards.copy_pin')}
-                                icon={CopyIcon}
-                                tone="neutral"
-                                onClick={(event) => {
-                                    event.stopPropagation();
-                                    void copyPin(row);
-                                }}
-                            />
                             <TableActionButton
                                 label={t('top_up_cards.redemption')}
                                 icon={EyeIcon}
@@ -240,10 +209,10 @@ export function TopUpCardTable({
                         setViewing(null);
                     }
                 }}
-                title={viewing?.serial_no ?? t('top_up_cards.redemption')}
-                description={t('top_up_cards.redemption_description')}
+                title={t('top_up_cards.detail')}
+                description={t('top_up_cards.description')}
                 icon={EyeIcon}
-                size="md"
+                size="xl"
             >
                 {viewing ? (
                     <div className="px-6 py-5 space-y-6">
@@ -265,14 +234,16 @@ export function TopUpCardTable({
                         </div>
 
                         <div className="space-y-4">
-                            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-[13px]">
+                            <dl className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4 text-[13px]">
                                 <div className="space-y-1">
                                     <dt className="text-muted-foreground">{t('top_up_cards.serial_no')}</dt>
                                     <dd className="font-mono font-medium text-foreground">{viewing.serial_no}</dd>
                                 </div>
                                 <div className="space-y-1">
                                     <dt className="text-muted-foreground">{t('top_up_cards.expires_at')}</dt>
-                                    <dd className="font-medium text-foreground">{viewing.expires_at ?? '—'}</dd>
+                                    <dd className="font-medium text-foreground">
+                                        {formatDate(viewing.expires_at) ?? '—'}
+                                    </dd>
                                 </div>
                                 <div className="space-y-1">
                                     <dt className="text-muted-foreground">{t('top_up_cards.batch_no')}</dt>
@@ -284,18 +255,58 @@ export function TopUpCardTable({
                         <hr className="border-border/60" />
 
                         <div className="space-y-4">
-                            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-[13px]">
-                                <div className="space-y-1">
-                                    <dt className="text-muted-foreground">{t('top_up_cards.redeemed_at')}</dt>
-                                    <dd className="font-medium text-foreground">{viewing.redeemed_at ?? '—'}</dd>
-                                </div>
-
+                            <dl className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4 text-[13px]">
                                 <div className="space-y-1">
                                     <dt className="text-muted-foreground">{t('top_up_cards.redeemed_by')}</dt>
                                     <dd className="font-medium text-foreground">{viewing.redeemed_by ?? '—'}</dd>
                                 </div>
+                                <div className="space-y-1">
+                                    <dt className="text-muted-foreground">{t('top_up_cards.redeemed_at')}</dt>
+                                    <dd className="font-medium text-foreground">
+                                        {formatDate(viewing.redeemed_at) ?? '—'}
+                                    </dd>
+                                </div>
                             </dl>
                         </div>
+
+                        {viewing.transaction_id ? (
+                            <>
+                                <hr className="border-border/60" />
+
+                                <div className="space-y-4">
+                                    <dl className="grid grid-cols-1 gap-x-6 gap-y-4 text-[13px] sm:grid-cols-3">
+                                        <div className="space-y-1">
+                                            <dt className="text-muted-foreground">
+                                                {t('top_up_cards.transaction_type')}
+                                            </dt>
+                                            <dd className="font-medium text-foreground">
+                                                {viewing.transaction_type ?? '—'}
+                                            </dd>
+                                        </div>
+
+                                        <div className="space-y-1">
+                                            <dt className="text-muted-foreground">
+                                                {t('top_up_cards.transaction_status')}
+                                            </dt>
+                                            <dd className="font-medium text-foreground">
+                                                {viewing.transaction_status ?? '—'}
+                                            </dd>
+                                        </div>
+
+                                        <div className="space-y-1">
+                                            <dt className="text-muted-foreground">
+                                                {t('top_up_cards.transaction_amount')}
+                                            </dt>
+                                            <dd className="font-medium text-foreground">
+                                                {viewing.transaction_amount !== null
+                                                    ? formatTopUpAmount(viewing.transaction_amount)
+                                                    : '—'}
+                                            </dd>
+                                        </div>
+                                    </dl>
+                                </div>
+                            </>
+                        ) : null}
                     </div>
                 ) : null}
             </FormDialog>

@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Enums\BatchStatus;
 use App\Enums\TopUpCardStatus;
 use App\Models\Batch;
 use App\Models\TopUpCard;
@@ -153,7 +154,7 @@ final class GeneratesTopUpCards
             'batch_no' => now('Asia/Yangon')->format('ymdHis'),
             'amount' => $amount,
             'quantity' => $quantity,
-            'status' => 'active',
+            'status' => BatchStatus::Active,
             'expires_at' => $expiresAt,
         ]);
     }

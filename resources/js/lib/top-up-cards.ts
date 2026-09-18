@@ -14,6 +14,11 @@ export type TopUpCardRow = {
     redeemed_by: string | null;
     redeemed_by_phone?: string | null;
     batch_no: string | null;
+    batch_status: string | null;
+    transaction_id: string | number;
+    transaction_type: string | null;
+    transaction_status: string | null;
+    transaction_amount: number | null;
 };
 
 export type TopUpCardFilters = {

@@ -808,6 +808,11 @@
         "bulk_delete_roles_description": "员工将失去这些角色。其他角色的权限不受影响。"
     },
     "top_up_cards": {
+        "detail": "充值卡详情",
+        "description": "查看充值卡的面值、状态、有效期和兑换详情。",
+        "transaction_type": "交易类型",
+        "transaction_status": "交易状态",
+        "transaction_amount": "交易金额",
         "generate_title": "生成充值卡",
         "generate_description": "选择面额、设置有效期并生成充值卡。",
         "batch_title": "已生成批次",

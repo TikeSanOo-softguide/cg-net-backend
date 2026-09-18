@@ -30,7 +30,8 @@ class TopUpCardController extends Controller
         $to = $request->string('to')->toString();
         $sort = $request->string('sort')->toString();
         $direction = $request->string('direction')->toString() === 'asc' ? 'asc' : 'desc';
-        $sortable = ['serial_no', 'amount', 'status', 'expires_at', 'redeemed_at', 'created_at'];
+        $sortable = ['serial_no', 'amount', 'status', 'created_at'];
+        $latestExpiryDate = TopUpCard::query()->max('expires_at');
 
         if (! in_array($sort, $sortable, true)) {
             $sort = 'created_at';
@@ -38,22 +39,22 @@ class TopUpCardController extends Controller
 
         $cards = TopUpCard::query()
             ->with('redeemedBy:id,name,phone')
-            ->with('batch:id,batch_no')
+            ->with('batch:id,batch_no,status')
+            ->with('walletTransaction:id,type,amount,status')
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where('serial_no', 'like', '%' . $search . '%');
             })
-            ->when($status !== '' && in_array($status, array_column(TopUpCardStatus::cases(), 'value'), true), function ($query) use ($status): void {
-                $query->where('status', $status);
-            })
+            ->when(
+                $status !== '' &&
+                    in_array($status, array_column(TopUpCardStatus::cases(), 'value'), true),
+                function ($query) use ($status): void {
+                    $query->where('status', $status);
+                }
+            )
             ->when($amount !== '' && is_numeric($amount), function ($query) use ($amount): void {
                 $query->where('amount', $amount);
             })
-            ->when($from !== '', function ($query) use ($from): void {
-                $query->whereDate('expires_at', '>=', $from);
-            })
-            ->when($to !== '', function ($query) use ($to): void {
-                $query->whereDate('expires_at', '<=', $to);
-            })
+            ->whereDate('expires_at', $latestExpiryDate)
             ->orderBy($sort, $direction)
             ->paginate(15)
             ->withQueryString()
@@ -222,7 +223,10 @@ class TopUpCardController extends Controller
     {
         $status = $card->status;
 
-        if ($status === TopUpCardStatus::Active && $card->expires_at?->copy()->endOfDay()->isPast()) {
+        if (
+            $status === TopUpCardStatus::Active &&
+            $card->expires_at?->copy()->endOfDay()->isPast()
+        ) {
             $status = TopUpCardStatus::Expired;
         }
 
@@ -237,6 +241,13 @@ class TopUpCardController extends Controller
             'redeemed_by' => $card->redeemedBy?->name,
             'redeemed_by_phone' => $card->redeemedBy?->phone,
             'batch_no' => $card->batch?->batch_no,
+            'batch_status' => $card->batch?->status,
+            'transaction_id' => $card->walletTransaction?->id,
+            'transaction_type' => $card->walletTransaction?->type,
+            'transaction_status' => $card->walletTransaction?->status,
+            'transaction_amount' => $card->walletTransaction?->amount !== null
+                ? (int) $card->walletTransaction->amount
+                : null,
         ];
     }
 

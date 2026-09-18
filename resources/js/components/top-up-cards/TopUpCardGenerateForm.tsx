@@ -75,16 +75,16 @@ function QuantityStepper({
         <div className="mt-1.5 flex h-6 items-center overflow-hidden rounded border border-border/70 bg-background">
             <button
                 type="button"
-                disabled={processing || quantity <= 1}
+                disabled={processing || quantity <= 0}
                 className={stepClass}
-                onClick={() => onQuantity(Math.max(1, quantity - 1))}
+                onClick={() => onQuantity(Math.max(0, quantity - 1))}
                 aria-label={decreaseLabel}
             >
                 <MinusIcon className="size-3" strokeWidth={2} />
             </button>
             <input
                 type="number"
-                min={1}
+                min={0}
                 max={MAX_QUANTITY}
                 value={quantity}
                 disabled={processing}

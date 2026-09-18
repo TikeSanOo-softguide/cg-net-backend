@@ -784,6 +784,11 @@
         "bulk_delete_roles_description": "Staff will lose these roles. Permissions on other roles are unchanged."
     },
     "top_up_cards": {
+        "detail": "Top-up-card Detail",
+        "description": "Manage top-up cards, including their status, value, expiry date, and redemption details.",
+        "transaction_type": "Transaction Type",
+        "transaction_status": "Transaction Status",
+        "transaction_amount": "Transaction Amount",
         "generate_title": "Generate Cards",
         "generate_description": "Choose denominations, set expiry, and create top-up cards.",
         "batch_title": "Generated Batch",

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\BatchStatus;
 use Database\Factories\BatchFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -28,6 +29,7 @@ class Batch extends Model
             'amount' => 'decimal:2',
             'quantity' => 'integer',
             'expires_at' => 'date',
+            'status' => BatchStatus::class,
         ];
     }
 
