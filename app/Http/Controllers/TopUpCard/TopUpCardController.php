@@ -5,6 +5,7 @@ namespace App\Http\Controllers\TopUpCard;
 use App\Enums\TopUpCardStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TopUpCard\GenerateTopUpCardsRequest;
+use App\Models\Batch;
 use App\Models\TopUpCard;
 use App\Support\GeneratesTopUpCards;
 use Illuminate\Http\RedirectResponse;
@@ -216,6 +217,112 @@ class TopUpCardController extends Controller
         ]);
     }
 
+
+    public function cardHistory(Request $request): Response
+    {
+        $search = trim($request->string('search')->toString());
+        $status = $request->string('status')->toString();
+        $amount = $request->string('amount')->toString();
+        $batch = $request->string('batch')->toString();
+        $from = $request->string('from')->toString();
+        $to = $request->string('to')->toString();
+        $sort = $request->string('sort')->toString();
+
+        $direction = $request->string('direction')->toString() === 'asc'
+            ? 'asc'
+            : 'desc';
+
+        $sortable = [
+            'serial_no',
+            'amount',
+            'status',
+            'created_at',
+        ];
+
+        if (! in_array($sort, $sortable, true)) {
+            $sort = 'created_at';
+        }
+
+        $validStatuses = array_column(
+            TopUpCardStatus::cases(),
+            'value'
+        );
+
+        $batches = Batch::query()
+            ->select(['id', 'batch_no'])
+            ->orderByDesc('id')
+            ->get();
+
+        $cards = TopUpCard::query()
+            ->with([
+                'redeemedBy:id,name,phone',
+                'batch:id,batch_no,status',
+                'walletTransaction:id,type,amount,status',
+            ])
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where(
+                    'serial_no',
+                    'like',
+                    "%{$search}%"
+                );
+            })
+            ->when(
+                in_array($status, $validStatuses, true),
+                function ($query) use ($status): void {
+                    $query->where('status', $status);
+                }
+            )
+            ->when(
+                $amount !== '' && is_numeric($amount),
+                function ($query) use ($amount): void {
+                    $query->where('amount', $amount);
+                }
+            )
+            ->when(
+                $batch !== '' && ctype_digit($batch),
+                function ($query) use ($batch): void {
+                    $query->where('batch_id', (int) $batch);
+                }
+            )
+            ->when($from !== '', function ($query) use ($from): void {
+                $query->whereDate('created_at', '>=', $from);
+            })
+            ->when($to !== '', function ($query) use ($to): void {
+                $query->whereDate('created_at', '<=', $to);
+            })
+            ->orderBy($sort, $direction)
+            ->paginate(15)
+            ->withQueryString()
+            ->through(
+                fn(TopUpCard $card) => $this->payload($card)
+            );
+
+        return Inertia::render('TopUpCards/CardHistory', [
+            'cards' => $cards,
+
+            'generated' => $request->session()->get(
+                'top_up_card_export_batch',
+                []
+            ),
+
+            'presets' => self::Presets,
+            'amounts' => $this->amountOptions(),
+            'batches' => $batches,
+            'stats' => $this->stats(),
+
+            'filters' => [
+                'search' => $search,
+                'status' => $status,
+                'amount' => $amount,
+                'batch' => $batch,
+                'from' => $from,
+                'to' => $to,
+                'sort' => $sort,
+                'direction' => $direction,
+            ],
+        ]);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -288,5 +395,16 @@ class TopUpCardController extends Controller
             ->unique()
             ->values()
             ->all();
+    }
+
+    private function stats(): array
+    {
+        return [
+            'total' => TopUpCard::query()->count(),
+            'active' => TopUpCard::query()->where('status', TopUpCardStatus::Active)->count(),
+            'used' => TopUpCard::query()->where('status', TopUpCardStatus::Used)->count(),
+            'expired' => TopUpCard::query()->where('status', TopUpCardStatus::Expired)->count(),
+            'blocked' => TopUpCard::query()->where('status', TopUpCardStatus::Blocked)->count(),
+        ];
     }
 }

@@ -40,6 +40,8 @@
         "top_up_card_management": "充值卡管理",
         "top_up_card_batch": "批量生成",
         "redeem_history": "兑换记录",
+        "card_history": "充值卡记录",
+        "card_history_description": "管理充值卡批次。",
         "service_requests": "服务请求",
         "installation_applications": "宽带申请",
         "failure_reports": "故障报告",
@@ -808,6 +810,7 @@
         "bulk_delete_roles_description": "员工将失去这些角色。其他角色的权限不受影响。"
     },
     "top_up_cards": {
+        "total": "充值卡总数",
         "detail": "充值卡详情",
         "description": "查看充值卡的面值、状态、有效期和兑换详情。",
         "transaction_type": "交易类型",

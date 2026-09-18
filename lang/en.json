@@ -40,6 +40,8 @@
         "top_up_card_management": "Top-Up Cards",
         "top_up_card_batch": "Batch Generation",
         "redeem_history": "Redeem History",
+        "card_history": "Card History",
+        "card_history_description": "Manage top-up card batches.",
         "service_requests": "Service Requests",
         "installation_applications": "Broadband Applications",
         "failure_reports": "Failure Reports",
@@ -786,6 +788,7 @@
         "bulk_delete_roles_description": "Staff will lose these roles. Permissions on other roles are unchanged."
     },
     "top_up_cards": {
+        "total": "Top-up-card Total",
         "detail": "Top-up-card Detail",
         "description": "Manage top-up cards, including their status, value, expiry date, and redemption details.",
         "transaction_type": "Transaction Type",

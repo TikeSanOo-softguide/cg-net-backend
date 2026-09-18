@@ -167,6 +167,12 @@ export const navigation: NavGroup[] = [
                 icon: Ticket,
             },
             {
+                labelKey: 'menu.card_history',
+                descriptionKey: 'menu.card_history_description',
+                href: '/top-up-cards/card-history',
+                icon: CreditCard,
+            },
+            {
                 labelKey: 'menu.redeem_history',
                 descriptionKey: 'menu.redeem_history_description',
                 href: '/top-up-cards/redeem-history',

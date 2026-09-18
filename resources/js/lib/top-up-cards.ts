@@ -31,6 +31,17 @@ export type TopUpCardFilters = {
     direction: 'asc' | 'desc';
 };
 
+export type CardHistoryFilters = {
+    search: string;
+    status: string;
+    amount: string;
+    batch: string;
+    from: string;
+    to: string;
+    sort: string;
+    direction: 'asc' | 'desc';
+};
+
 export type RedeemHistoryFilters = {
     search: string;
     amount: string;
