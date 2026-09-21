@@ -175,9 +175,7 @@ class RegionManagementController extends Controller
     public function destroyState(State $state): RedirectResponse
     {
         if ($state->regions()->exists()) {
-            return back()->withErrors([
-                'delete' => 'This state cannot be deleted because it has regions.',
-            ]);
+            return back()->withErrors(['delete' => 'regions.state_delete_failed']);
         }
 
         $state->delete();
@@ -237,9 +235,7 @@ class RegionManagementController extends Controller
     public function destroyRegion(Region $region): RedirectResponse
     {
         if ($region->areas()->exists()) {
-            return back()->withErrors([
-                'delete' => 'This region cannot be deleted because it has areas.',
-            ]);
+            return back()->withErrors(['delete' => 'regions.region_delete_failed']);
         }
 
         $region->delete();
@@ -267,9 +263,7 @@ class RegionManagementController extends Controller
             ->delete();
 
         if ($deletedCount === 0) {
-            return back()->withErrors([
-                'delete' => 'common.bulk_delete_failed',
-            ]);
+            return back()->withErrors(['delete' => 'common.bulk_delete_failed']);
         }
 
         return redirect()
