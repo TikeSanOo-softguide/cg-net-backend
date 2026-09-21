@@ -704,8 +704,10 @@
             "contacts_description": "管理对外联系方式。",
             "create_description": "添加面向客户的公开联系方式。",
             "edit_description": "更新此联系方式的详细信息。",
+            "search": "按联系方式搜索",
             "validation": {
-                "contact_point_required": "请输入联系方式。"
+                "contact_point_required": "请输入联系方式。",
+                "contact_point_max": "联系信息不能超过255个字符。"
             }
         }
     },
@@ -735,11 +737,8 @@
             "delete_description": "此公告将被永久删除。",
             "validation": {
                 "content_en_required": "请输入英文内容。",
-                "content_en_max": "英文内容不能超过 5000 个字符。",
                 "content_zh_required": "请输入中文内容。",
-                "content_zh_max": "中文内容不能超过 5000 个字符。",
                 "content_my_required": "请输入缅甸文内容。",
-                "content_my_max": "缅甸文内容不能超过 5000 个字符。",
                 "start_date_required": "请选择开始日期。",
                 "end_date_required": "请选择结束日期。",
                 "end_date_after_or_equal": "结束日期和时间必须与开始日期和时间相同或晚于开始日期和时间。"
@@ -958,7 +957,8 @@
             "description": "创建或更新网络",
             "search_placeholder": "搜索网络名称",
             "bulk_deleted": "已删除所选网络",
-            "bulk_delete_title": "删除选中的网络？"
+            "bulk_delete_title": "删除选中的网络？",
+            "cannot_delete_has_package": "由于该网络已关联套餐，因此无法删除。"
         },
         "addons": {
             "title": "附加服务",
@@ -982,7 +982,8 @@
             "description": "创建或更新网速",
             "search_placeholder": "搜索速度名称",
             "bulk_deleted": "已删除所选速度",
-            "bulk_delete_title": "删除选中的速率？"
+            "bulk_delete_title": "删除选中的速率？",
+            "cannot_delete_has_package": "由于该速率已关联套餐，因此无法删除。"
         },
         "terms": {
             "title": "期限",
@@ -994,7 +995,8 @@
             "description": "创建或更新期限",
             "search_placeholder": "搜索期限名称",
             "bulk_deleted": "已删除所选期限",
-            "bulk_delete_title": "删除选中的条款？"
+            "bulk_delete_title": "删除选中的条款？",
+            "cannot_delete_has_package": "由于该术语已关联套餐，因此无法删除。"
         },
         "validation": {
             "network_required": "请选择网络。",
@@ -1027,10 +1029,15 @@
             "network_name_my_max": "缅甸语名称不能超过 50 个字符。",
             "months_required": "请输入月数。",
             "months_integer": "月数必须是整数。",
-            "months_max": "月数不能超过 100000。",
+            "months_max": "月数不能超过 3 位数字。",
             "mbps_required": "请输入 Mbps 网速。",
             "mbps_integer": "网速必须是整数。",
-            "mbps_max": "网速不能超过 100000 Mbps。",
+            "mbps_max": "网速不能超过 3 位数字。",
+            "network_name_en_unique": "该英文名称已存在。",
+            "network_name_zh_unique": "该中文名称已存在。",
+            "network_name_my_unique": "该缅甸文名称已存在。",
+            "mbps_unique": "该网速已存在。",
+            "months_unique": "该套餐期限已存在。",
             "price_numeric": "价格必须是数字。",
             "price_min": "价格不能小于 0。"
         }

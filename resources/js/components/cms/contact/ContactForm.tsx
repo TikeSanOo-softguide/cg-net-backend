@@ -1,10 +1,10 @@
-import { FormEvent, useState } from "react";
-import type { InertiaFormProps } from "@inertiajs/react";
-import { ContactIcon } from "lucide-react";
-import { FormField } from "@/components/ui/form-field";
-import { CmsFormShell } from "../shared/CmsFormShell";
-import { Input } from "@/components/ui/input";
-import { useTranslation } from "@/hooks/useTranslation";
+import { FormEvent, useState } from 'react';
+import type { InertiaFormProps } from '@inertiajs/react';
+import { ContactIcon } from 'lucide-react';
+import { FormField } from '@/components/ui/form-field';
+import { CmsFormShell } from '../shared/CmsFormShell';
+import { Input } from '@/components/ui/input';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export type ContactFormValues = {
     contact_point: string;
@@ -14,15 +14,10 @@ type ContactFormProps = {
     form: InertiaFormProps<ContactFormValues>;
     onSubmit: (event: FormEvent) => void;
     onCancel?: () => void;
-    mode?: "create" | "edit";
+    mode?: 'create' | 'edit';
 };
 
-export function ContactForm({
-    form,
-    onSubmit,
-    onCancel,
-    mode = "create",
-}: ContactFormProps) {
+export function ContactForm({ form, onSubmit, onCancel, mode = 'create' }: ContactFormProps) {
     const { t } = useTranslation();
     const [submitted, setSubmitted] = useState(false);
 
@@ -34,32 +29,29 @@ export function ContactForm({
             return;
         }
 
-        form.clearErrors("contact_point");
+        form.clearErrors('contact_point');
         onSubmit(event);
     };
 
     const handleChange = (value: string) => {
-        form.setData("contact_point", value);
+        form.setData('contact_point', value);
 
         if (value.trim()) {
-            form.clearErrors("contact_point");
+            form.clearErrors('contact_point');
         }
     };
 
     const contactPointError =
         submitted && !form.data.contact_point.trim()
-            ? t("cms.contact.validation.contact_point_required")
-            : form.errors.contact_point;
+            ? t('cms.contact.validation.contact_point_required')
+            : form.data.contact_point.length > 255
+              ? t('cms.contact.validation.contact_point_max')
+              : form.errors.contact_point;
 
     return (
-        <CmsFormShell
-            onSubmit={handleSubmit}
-            onCancel={onCancel}
-            processing={form.processing}
-            mode={mode}
-        >
+        <CmsFormShell onSubmit={handleSubmit} onCancel={onCancel} processing={form.processing} mode={mode}>
             <FormField
-                label={t("cms.contact_point")}
+                label={t('cms.contact_point')}
                 htmlFor="contact_point"
                 error={contactPointError}
                 icon={ContactIcon}
@@ -70,6 +62,7 @@ export function ContactForm({
                     id="contact_point"
                     name="contact_point"
                     value={form.data.contact_point}
+                    maxLength={255}
                     onChange={(event) => handleChange(event.target.value)}
                 />
             </FormField>

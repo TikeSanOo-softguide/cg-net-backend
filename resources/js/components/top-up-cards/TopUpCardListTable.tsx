@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { router } from '@inertiajs/react';
 import { BanIcon, CalendarIcon, CircleDotIcon, EyeIcon } from 'lucide-react';
 
@@ -17,6 +17,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { CardHistoryFilters, formatTopUpAmount, type TopUpCardRow } from '@/lib/top-up-cards';
 import { formatDate } from '@/lib/utils';
 import { DatePicker } from '../ui/date-picker';
+import { SearchableSelect } from '../SearchableSelect';
 
 type TopUpCardListTableProps = {
     cards: Paginated<TopUpCardRow>;
@@ -49,17 +50,32 @@ export function TopUpCardListTable({
     const [voiding, setVoiding] = useState<TopUpCardRow | null>(null);
     const [viewing, setViewing] = useState<TopUpCardRow | null>(null);
 
-    const copyPin = async (card: TopUpCardRow) => {
-        const pin = generatedPins[card.id] ?? card.pin;
+    const batchOptions = React.useMemo(
+        () => [
+            {
+                value: '',
+                label: 'All',
+            },
+            ...batches.map((batch) => ({
+                value: String(batch.id),
+                label: batch.batch_no,
+            })),
+        ],
+        [batches],
+    );
 
-        if (!pin) {
-            toast({ variant: 'error', title: t('toast.error'), description: t('top_up_cards.pin_unavailable') });
-
-            return;
-        }
-
-        await navigator.clipboard.writeText(pin.replace(/\D/g, ''));
-        toast({ variant: 'success', title: t('toast.success'), description: t('top_up_cards.copied_pin') });
+    const handleSelect = (value: string) => {
+        router.get(
+            '/top-up-cards/card-history',
+            {
+                ...filters,
+                batch: value,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            },
+        );
     };
 
     return (
@@ -121,30 +137,15 @@ export function TopUpCardListTable({
                                     </SelectContent>
                                 </Select>
                             </FormControl>
-                            <FormControl compact className="w-full shrink-0 sm:w-48">
-                                <Select
-                                    value={filters.batch || 'all'}
-                                    onValueChange={(value) =>
-                                        onFilter({
-                                            ...filters,
-                                            batch: value === 'all' ? '' : value,
-                                        })
-                                    }
-                                >
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder={t('top_up_cards.batch_no')} />
-                                    </SelectTrigger>
-
-                                    <SelectContent>
-                                        <SelectItem value="all">{t('common.all')}</SelectItem>
-
-                                        {batches.map((batch) => (
-                                            <SelectItem key={batch.id} value={String(batch.id)}>
-                                                {batch.batch_no}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                            <FormControl compact className="w-full shrink-0 sm:w-50">
+                                <SearchableSelect
+                                    value={String(filters.batch ?? '')}
+                                    onValueChange={handleSelect}
+                                    options={batchOptions}
+                                    placeholder="All"
+                                    searchPlaceholder={t('top_up_cards.batch_no') as string}
+                                    className="w-full"
+                                />
                             </FormControl>
                             <FormControl icon={CalendarIcon} compact className="w-full shrink-0 sm:w-40">
                                 <DatePicker

@@ -12,6 +12,7 @@ return new class extends Migration {
             $table->integer('months');
             $table->timestamps();
             $table->softDeletes();
+            $table->unique(['months', 'deleted_at']);
         });
     }
 

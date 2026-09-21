@@ -12,6 +12,7 @@ return new class extends Migration {
             $table->integer('mbps');
             $table->timestamps();
             $table->softDeletes();
+            $table->unique(['mbps', 'deleted_at']);
         });
     }
 

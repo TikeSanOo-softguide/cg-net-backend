@@ -22,6 +22,7 @@ export default function ContactsIndex({ items, filters }: Props) {
             <Head title={t('menu.cms_contacts')} />
             <CmsIndexPage
                 createLabelKey="cms.contact.create"
+                searchPlaceholderKey="cms.contact.search"
                 indexHref="/cms/contacts"
                 destroyBase="/cms/contacts"
                 items={items}

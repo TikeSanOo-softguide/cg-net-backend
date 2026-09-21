@@ -156,6 +156,10 @@ const getValidationError = (
         return validationKey('required');
     }
 
+    if (error.includes('unique') || error.toLowerCase().includes('already been taken')) {
+        return validationKey('unique');
+    }
+
     if (error.includes('string')) {
         return validationKey('string');
     }
@@ -195,6 +199,28 @@ const getValidationError = (
     }
 
     return error;
+};
+
+const validateThreeDigitNumber = (
+    value: string,
+    field: 'months' | 'mbps',
+    t: (key: string) => string,
+): string | undefined => {
+    if (!/^\d+$/.test(value)) {
+        return t(`packages.validation.${field}_integer`);
+    }
+
+    const number = Number(value);
+
+    if (number < 1) {
+        return t(`packages.validation.${field}_min`);
+    }
+
+    if (value.length > 3) {
+        return t(`packages.validation.${field}_max`);
+    }
+
+    return undefined;
 };
 
 export function ReferenceFormDialog({ open, onOpenChange, kind, item }: ReferenceFormDialogProps) {
@@ -237,7 +263,10 @@ function ReferenceFormDialogBody({
     const isEdit = item !== null;
     const config = kindConfig[kind];
     const form = useForm<ReferenceFormValues>(getFormValues(kind, item));
-
+    const [touched, setTouched] = useState({
+        months: false,
+        mbps: false,
+    });
     useEffect(() => {
         if (!item) {
             form.clearErrors();
@@ -322,14 +351,30 @@ function ReferenceFormDialogBody({
                     <FormField
                         label="Mbps"
                         htmlFor="speed-mbps"
-                        error={getValidationError(form.errors.mbps, 'mbps', t)}
+                        error={
+                            getValidationError(form.errors.mbps, 'mbps', t) ??
+                            (touched.mbps
+                                ? validateThreeDigitNumber(String(form.data.mbps ?? ''), 'mbps', t)
+                                : undefined)
+                        }
                     >
                         <Input
                             id="speed-mbps"
                             type="number"
                             min="1"
+                            max="999"
                             value={String(form.data.mbps ?? '')}
-                            onChange={(event) => form.setData('mbps', event.target.value)}
+                            onChange={(event) => {
+                                const value = event.target.value;
+
+                                setTouched((prev) => ({
+                                    ...prev,
+                                    mbps: true,
+                                }));
+
+                                form.setData('mbps', value);
+                                form.clearErrors('mbps');
+                            }}
                             placeholder="Mbps"
                         />
                     </FormField>
@@ -339,14 +384,30 @@ function ReferenceFormDialogBody({
                     <FormField
                         label={t('packages.months')}
                         htmlFor="term-months"
-                        error={getValidationError(form.errors.months, 'months', t)}
+                        error={
+                            getValidationError(form.errors.months, 'months', t) ??
+                            (touched.months
+                                ? validateThreeDigitNumber(String(form.data.months ?? ''), 'months', t)
+                                : undefined)
+                        }
                     >
                         <Input
                             id="term-months"
                             type="number"
                             min="1"
+                            max="999"
                             value={String(form.data.months ?? '')}
-                            onChange={(event) => form.setData('months', event.target.value)}
+                            onChange={(event) => {
+                                const value = event.target.value;
+
+                                setTouched((prev) => ({
+                                    ...prev,
+                                    months: true,
+                                }));
+
+                                form.setData('months', value);
+                                form.clearErrors('months');
+                            }}
                             placeholder={t('packages.months_placeholder')}
                         />
                     </FormField>

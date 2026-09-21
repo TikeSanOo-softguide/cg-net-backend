@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Term;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class TermController extends Controller
 {
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'months' => ['required', 'integer', 'min:1', 'max:100000'],
+            'months' => ['required', 'integer', 'min:1', 'max:999', Rule::unique('terms', 'months')->withoutTrashed()],
         ]);
 
         Term::query()->create($data);
@@ -23,7 +24,13 @@ class TermController extends Controller
     public function update(Request $request, Term $term): RedirectResponse
     {
         $data = $request->validate([
-            'months' => ['required', 'integer', 'min:1', 'max:100000'],
+            'months' => [
+                'required',
+                'integer',
+                'min:1',
+                'max:999',
+                Rule::unique('terms', 'months')->ignore($term->id)->withoutTrashed(),
+            ],
         ]);
 
         $term->update($data);
@@ -33,6 +40,12 @@ class TermController extends Controller
 
     public function destroy(Term $term): RedirectResponse
     {
+        if ($term->packages()->exists()) {
+            return back()->withErrors([
+                'delete' => __('packages.terms.cannot_delete_has_package'),
+            ]);
+        }
+
         $term->delete();
 
         return redirect()->route('packages.index')->with('success', 'packages.terms.deleted');
@@ -44,6 +57,14 @@ class TermController extends Controller
             'ids' => ['required', 'array', 'min:1'],
             'ids.*' => ['integer', 'distinct', 'exists:terms,id'],
         ])['ids'];
+
+        $deletableIds = Term::query()->whereIn('id', $ids)->whereDoesntHave('packages')->pluck('id');
+        $deletedCount = Term::query()->whereIn('id', $deletableIds)->delete();
+
+        if ($deletedCount === 0) {
+            return back()->withErrors(['delete' => __('common.bulk_delete_failed')]);
+        }
+
         $deleted = Term::query()->whereIn('id', $ids)->delete();
         return $deleted === 0
             ? back()->withErrors(['delete' => 'common.bulk_delete_failed'])

@@ -34,7 +34,7 @@ class TopUpCardController extends Controller
         $sortable = ['serial_no', 'amount', 'status', 'created_at'];
         $latestExpiryDate = TopUpCard::query()->max('expires_at');
 
-        if (! in_array($sort, $sortable, true)) {
+        if (!in_array($sort, $sortable, true)) {
             $sort = 'created_at';
         }
 
@@ -46,11 +46,10 @@ class TopUpCardController extends Controller
                 $query->where('serial_no', 'like', '%' . $search . '%');
             })
             ->when(
-                $status !== '' &&
-                    in_array($status, array_column(TopUpCardStatus::cases(), 'value'), true),
+                $status !== '' && in_array($status, array_column(TopUpCardStatus::cases(), 'value'), true),
                 function ($query) use ($status): void {
                     $query->where('status', $status);
-                }
+                },
             )
             ->when($amount !== '' && is_numeric($amount), function ($query) use ($amount): void {
                 $query->where('amount', $amount);
@@ -102,36 +101,38 @@ class TopUpCardController extends Controller
 
         $filename = 'top-up-cards-' . now()->format('Ymd-His') . '.csv';
 
-        return response()->streamDownload(function () use ($batch): void {
-            $stream = fopen('php://output', 'w');
+        return response()->streamDownload(
+            function () use ($batch): void {
+                $stream = fopen('php://output', 'w');
 
-            if ($stream === false) {
-                return;
-            }
+                if ($stream === false) {
+                    return;
+                }
 
-            fputcsv($stream, ['serial_no', 'pin', 'amount', 'expires_at', 'status']);
+                fputcsv($stream, ['serial_no', 'pin', 'amount', 'expires_at', 'status']);
 
-            foreach ($batch as $card) {
-                $amount = $card['amount'] ?? 0;
-                $numericAmount = is_numeric($amount)
-                    ? (string) ((float) $amount)
-                    : '0';
-                $numericAmount = preg_replace('/\.0+$/', '', $numericAmount);
-                $numericAmount = preg_replace('/(\.\d*?)0+$/', '$1', $numericAmount) ?? $numericAmount;
+                foreach ($batch as $card) {
+                    $amount = $card['amount'] ?? 0;
+                    $numericAmount = is_numeric($amount) ? (string) ((float) $amount) : '0';
+                    $numericAmount = preg_replace('/\.0+$/', '', $numericAmount);
+                    $numericAmount = preg_replace('/(\.\d*?)0+$/', '$1', $numericAmount) ?? $numericAmount;
 
-                fputcsv($stream, [
-                    $card['serial_no'] ?? '',
-                    $card['pin'] ?? '',
-                    $numericAmount,
-                    $card['expires_at'] ?? '',
-                    $card['status'] ?? '',
-                ]);
-            }
+                    fputcsv($stream, [
+                        $card['serial_no'] ?? '',
+                        $card['pin'] ?? '',
+                        $numericAmount,
+                        $card['expires_at'] ?? '',
+                        $card['status'] ?? '',
+                    ]);
+                }
 
-            fclose($stream);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-        ]);
+                fclose($stream);
+            },
+            $filename,
+            [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+            ],
+        );
     }
 
     public function void(Request $request, TopUpCard $topUpCard): RedirectResponse
@@ -161,7 +162,7 @@ class TopUpCardController extends Controller
         $direction = $request->string('direction')->toString() === 'asc' ? 'asc' : 'desc';
         $sortable = ['serial_no', 'amount', 'redeemed_at'];
 
-        if (! in_array($sort, $sortable, true)) {
+        if (!in_array($sort, $sortable, true)) {
             $sort = 'redeemed_at';
         }
 
@@ -170,9 +171,11 @@ class TopUpCardController extends Controller
             ->where('status', TopUpCardStatus::Used)
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
-                    $query->where('serial_no', 'like', '%' . $search . '%')
+                    $query
+                        ->where('serial_no', 'like', '%' . $search . '%')
                         ->orWhereHas('redeemedBy', function ($query) use ($search): void {
-                            $query->where('name', 'like', '%' . $search . '%')
+                            $query
+                                ->where('name', 'like', '%' . $search . '%')
                                 ->orWhere('phone', 'like', '%' . $search . '%');
                         });
                 });
@@ -217,7 +220,6 @@ class TopUpCardController extends Controller
         ]);
     }
 
-
     public function cardHistory(Request $request): Response
     {
         $search = trim($request->string('search')->toString());
@@ -228,25 +230,15 @@ class TopUpCardController extends Controller
         $to = $request->string('to')->toString();
         $sort = $request->string('sort')->toString();
 
-        $direction = $request->string('direction')->toString() === 'asc'
-            ? 'asc'
-            : 'desc';
+        $direction = $request->string('direction')->toString() === 'asc' ? 'asc' : 'desc';
 
-        $sortable = [
-            'serial_no',
-            'amount',
-            'status',
-            'created_at',
-        ];
+        $sortable = ['serial_no', 'amount', 'status', 'created_at'];
 
-        if (! in_array($sort, $sortable, true)) {
+        if (!in_array($sort, $sortable, true)) {
             $sort = 'created_at';
         }
 
-        $validStatuses = array_column(
-            TopUpCardStatus::cases(),
-            'value'
-        );
+        $validStatuses = array_column(TopUpCardStatus::cases(), 'value');
 
         $batches = Batch::query()
             ->select(['id', 'batch_no'])
@@ -254,36 +246,25 @@ class TopUpCardController extends Controller
             ->get();
 
         $cards = TopUpCard::query()
-            ->with([
-                'redeemedBy:id,name,phone',
-                'batch:id,batch_no,status',
-                'walletTransaction:id,type,amount,status',
-            ])
+            ->with(['redeemedBy:id,name,phone', 'batch:id,batch_no,status', 'walletTransaction:id,type,amount,status'])
             ->when($search !== '', function ($query) use ($search): void {
-                $query->where(
-                    'serial_no',
-                    'like',
-                    "%{$search}%"
-                );
+                $query->where('serial_no', 'like', "%{$search}%");
             })
-            ->when(
-                in_array($status, $validStatuses, true),
-                function ($query) use ($status): void {
-                    $query->where('status', $status);
-                }
-            )
-            ->when(
-                $amount !== '' && is_numeric($amount),
-                function ($query) use ($amount): void {
-                    $query->where('amount', $amount);
-                }
-            )
-            ->when(
-                $batch !== '' && ctype_digit($batch),
-                function ($query) use ($batch): void {
+            ->when(in_array($status, $validStatuses, true), function ($query) use ($status): void {
+                $query->where('status', $status);
+            })
+            ->when($amount !== '' && is_numeric($amount), function ($query) use ($amount): void {
+                $query->where('amount', $amount);
+            })
+            ->when($batch !== '', function ($query) use ($batch): void {
+                if (ctype_digit($batch)) {
                     $query->where('batch_id', (int) $batch);
+                } else {
+                    $query->whereHas('batch', function ($q) use ($batch) {
+                        $q->where('batch_no', $batch);
+                    });
                 }
-            )
+            })
             ->when($from !== '', function ($query) use ($from): void {
                 $query->whereDate('created_at', '>=', $from);
             })
@@ -293,17 +274,12 @@ class TopUpCardController extends Controller
             ->orderBy($sort, $direction)
             ->paginate(15)
             ->withQueryString()
-            ->through(
-                fn(TopUpCard $card) => $this->payload($card)
-            );
+            ->through(fn(TopUpCard $card) => $this->payload($card));
 
         return Inertia::render('TopUpCards/CardHistory', [
             'cards' => $cards,
 
-            'generated' => $request->session()->get(
-                'top_up_card_export_batch',
-                []
-            ),
+            'generated' => $request->session()->get('top_up_card_export_batch', []),
 
             'presets' => self::Presets,
             'amounts' => $this->amountOptions(),
@@ -330,10 +306,7 @@ class TopUpCardController extends Controller
     {
         $status = $card->status;
 
-        if (
-            $status === TopUpCardStatus::Active &&
-            $card->expires_at?->copy()->endOfDay()->isPast()
-        ) {
+        if ($status === TopUpCardStatus::Active && $card->expires_at?->copy()->endOfDay()->isPast()) {
             $status = TopUpCardStatus::Expired;
         }
 
@@ -352,9 +325,8 @@ class TopUpCardController extends Controller
             'transaction_id' => $card->walletTransaction?->id,
             'transaction_type' => $card->walletTransaction?->type,
             'transaction_status' => $card->walletTransaction?->status,
-            'transaction_amount' => $card->walletTransaction?->amount !== null
-                ? (int) $card->walletTransaction->amount
-                : null,
+            'transaction_amount' =>
+                $card->walletTransaction?->amount !== null ? (int) $card->walletTransaction->amount : null,
         ];
     }
 
@@ -369,7 +341,8 @@ class TopUpCardController extends Controller
             'total' => $redeemed->clone()->count(),
             'value' => number_format((float) $redeemed->clone()->sum('amount'), 2, '.', ''),
             'month' => $redeemed->clone()->where('redeemed_at', '>=', now()->startOfMonth())->count(),
-            'customers' => (int) $redeemed->clone()
+            'customers' => (int) $redeemed
+                ->clone()
                 ->whereNotNull('redeemed_by')
                 ->selectRaw('count(distinct redeemed_by) as aggregate')
                 ->value('aggregate'),

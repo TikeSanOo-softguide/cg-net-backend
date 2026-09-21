@@ -11,18 +11,21 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable([
-    'serial_no',
-    'pin',
-    'amount',
-    'expires_at',
-    'redeemed_at',
-    'redeemed_by',
-    'status',
-    'batch_id',
-    'wallet_transaction_id',
-])]
-#[Hidden(['pin'])]
+#[
+    Fillable([
+        'serial_no',
+        'pin',
+        'pin_lookup',
+        'amount',
+        'expires_at',
+        'redeemed_at',
+        'redeemed_by',
+        'status',
+        'batch_id',
+        'wallet_transaction_id',
+    ]),
+]
+#[Hidden(['pin', 'pin_lookup'])]
 class TopUpCard extends Model
 {
     /** @use HasFactory<TopUpCardFactory> */
@@ -52,9 +55,6 @@ class TopUpCard extends Model
 
     public function walletTransaction(): BelongsTo
     {
-        return $this->belongsTo(
-            WalletTransaction::class,
-            'wallet_transaction_id'
-        );
+        return $this->belongsTo(WalletTransaction::class, 'wallet_transaction_id');
     }
 }

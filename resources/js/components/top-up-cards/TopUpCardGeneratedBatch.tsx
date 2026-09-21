@@ -6,6 +6,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/useTranslation';
+import { createPortal } from 'react-dom';
 import {
     formatTopUpNumber,
     formatTopUpPin,
@@ -21,6 +22,9 @@ type GeneratedBatchProps = {
 export function TopUpCardGeneratedBatch({ cards, onExport }: GeneratedBatchProps) {
     const { t } = useTranslation();
     const [revealed, setRevealed] = useState<Record<number, boolean>>({});
+    const handlePrint = () => {
+        window.print();
+    };
 
     if (cards.length === 0) {
         return (
@@ -33,43 +37,11 @@ export function TopUpCardGeneratedBatch({ cards, onExport }: GeneratedBatchProps
         );
     }
 
-    const copySerials = async () => {
-        await navigator.clipboard.writeText(cards.map((card) => card.serial_no).join('\n'));
-        toast({ variant: 'success', title: t('toast.success'), description: t('top_up_cards.copied_serials') });
-    };
-
-    return (
-        <div className="flex flex-col gap-2.5">
-            <div className="flex flex-wrap gap-1.5 print:hidden">
-                <Button type="button" size="sm" variant="outline" className="h-7 text-[11px]" onClick={onExport}>
-                    <DownloadIcon className="size-3.5" strokeWidth={1.9} />
-                    {t('common.export')}
-                </Button>
-                <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-[11px]"
-                    onClick={() => window.print()}
-                >
-                    <PrinterIcon className="size-3.5" strokeWidth={1.9} />
-                    {t('top_up_cards.print_all')}
-                </Button>
-                <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-[11px]"
-                    onClick={() => void copySerials()}
-                >
-                    <CopyIcon className="size-3.5" strokeWidth={1.9} />
-                    {t('top_up_cards.copy_serials')}
-                </Button>
-            </div>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+    const printContent = (
+        <div id="top-up-card-print-area">
+            <div className="top-up-card-grid grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                 {cards.map((card) => {
                     const open = Boolean(revealed[card.id]);
-
                     return (
                         <article
                             key={card.id}
@@ -92,10 +64,16 @@ export function TopUpCardGeneratedBatch({ cards, onExport }: GeneratedBatchProps
                                             {TOP_UP_CARD_CURRENCY}
                                         </span>
                                     </p>
-                                    <div className="mt-2 flex items-center justify-between gap-2 rounded-[6px] border border-dashed border-primary/25 bg-card/70 px-2 py-1">
-                                        <p className="font-mono text-[12px] tracking-wider text-foreground">
-                                            {open && card.pin ? formatTopUpPin(card.pin) : formatTopUpPin(null)}{' '}
+                                    <div className="mt-2 flex items-center justify-between gap-2 rounded-[6px] border border-dashed border-primary/25 bg-card/70 px-2 py-1 print:border-gray-400 print:bg-gray-50">
+                                        <p className="font-mono text-[12px] tracking-wider text-foreground print:text-black font-semibold">
+                                            <span className="print:hidden">
+                                                {open && card.pin ? formatTopUpPin(card.pin) : formatTopUpPin(null)}
+                                            </span>
+                                            <span className="hidden print:inline">
+                                                {card.pin ? formatTopUpPin(card.pin) : formatTopUpPin(null)}
+                                            </span>
                                         </p>
+
                                         {card.pin ? (
                                             <button
                                                 type="button"
@@ -135,6 +113,25 @@ export function TopUpCardGeneratedBatch({ cards, onExport }: GeneratedBatchProps
                     );
                 })}
             </div>
+        </div>
+    );
+
+    return (
+        <div className="flex flex-col gap-2.5">
+            <div className="flex flex-wrap gap-1.5 print:hidden">
+                <Button type="button" size="sm" variant="outline" className="h-7 text-[11px]" onClick={onExport}>
+                    <DownloadIcon className="size-3.5" strokeWidth={1.9} />
+                    {t('common.export')}
+                </Button>
+                <Button type="button" size="sm" variant="outline" className="h-7 text-[11px]" onClick={handlePrint}>
+                    <PrinterIcon className="size-3.5" strokeWidth={1.9} />
+                    {t('top_up_cards.print_all')}
+                </Button>
+            </div>
+            <div className="print:hidden">{printContent}</div>
+
+            {typeof document !== 'undefined' &&
+                createPortal(<div className="hidden print:block">{printContent}</div>, document.body)}
         </div>
     );
 }

@@ -9,11 +9,15 @@ return new class extends Migration {
     {
         Schema::create('networks', function (Blueprint $table) {
             $table->id();
-            $table->string('name_en', 50);
-            $table->string('name_zh', 50);
-            $table->string('name_my', 50);
+            $table->string('name_en', 50)->unique();
+            $table->string('name_zh', 50)->unique();
+            $table->string('name_my', 50)->unique();
             $table->timestamps();
             $table->softDeletes();
+
+            $table->unique(['name_en', 'deleted_at']);
+            $table->unique(['name_zh', 'deleted_at']);
+            $table->unique(['name_my', 'deleted_at']);
         });
     }
 

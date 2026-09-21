@@ -32,11 +32,7 @@ final class GeneratesTopUpCards
                 }
             }
 
-            $total = array_reduce(
-                $created,
-                fn(float $sum, array $card): float => $sum + (float) $card['amount'],
-                0.0,
-            );
+            $total = array_reduce($created, fn(float $sum, array $card): float => $sum + (float) $card['amount'], 0.0);
 
             activity('top-up-cards')
                 ->causedBy($actor)
@@ -57,18 +53,21 @@ final class GeneratesTopUpCards
      */
     private static function createCard(string $amount, string $expiresAt, int &$dailyCounter, int $batchId): array
     {
-        $pin = self::ensureUniquePin();
         $attempts = 0;
-        $maxAttempts = 9000;
+        $maxAttempts = 100;
 
         while ($attempts < $maxAttempts) {
             $attempts++;
+
+            $pin = self::pin();
+            $pinLookup = self::pinLookup($pin);
 
             try {
                 $serialNo = self::allocateUniqueSerial($amount, $dailyCounter);
                 $card = TopUpCard::query()->create([
                     'serial_no' => $serialNo,
                     'pin' => Hash::make($pin),
+                    'pin_lookup' => $pinLookup,
                     'amount' => $amount,
                     'expires_at' => $expiresAt,
                     'status' => TopUpCardStatus::Active,
@@ -88,11 +87,11 @@ final class GeneratesTopUpCards
                     'status' => $card->status->value,
                 ];
             } catch (UniqueConstraintViolationException) {
-                $dailyCounter = self::nextDailyCounter($dailyCounter);
+                continue;
             }
         }
 
-        throw new RuntimeException('Unable to allocate a unique top-up card serial.');
+        throw new RuntimeException('Unable to create a unique top-up card.');
     }
 
     private static function allocateUniqueSerial(string $amount, int &$dailyCounter): string
@@ -134,13 +133,21 @@ final class GeneratesTopUpCards
         return (string) random_int(1000000000000000, 9999999999999999);
     }
 
+    private static function pinLookup(string $pin): string
+    {
+        return hash('sha256', $pin);
+    }
+
     private static function ensureUniquePin(): string
     {
         $candidate = self::pin();
 
-        while (TopUpCard::query()->whereNotNull('pin')->get()->contains(
-            fn(TopUpCard $card): bool => Hash::check($candidate, $card->pin),
-        )) {
+        while (
+            TopUpCard::query()
+                ->whereNotNull('pin')
+                ->get()
+                ->contains(fn(TopUpCard $card): bool => Hash::check($candidate, $card->pin))
+        ) {
             $candidate = self::pin();
         }
 
@@ -149,9 +156,8 @@ final class GeneratesTopUpCards
 
     private static function ensureBatch(string $amount, string $expiresAt, int $quantity): Batch
     {
-
         return Batch::query()->create([
-            'batch_no' => now('Asia/Yangon')->format('ymdHis'),
+            'batch_no' => now('Asia/Yangon')->format('ymdHis') . (int) $amount,
             'amount' => $amount,
             'quantity' => $quantity,
             'status' => BatchStatus::Active,
