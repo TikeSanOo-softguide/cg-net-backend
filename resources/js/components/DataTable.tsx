@@ -284,10 +284,10 @@ export function DataTable<T>({
         try {
             await onBulkDelete(selectedIds);
             setSelectedIds([]);
-            setConfirmOpen(false);
         } catch {
             // Keep selection and the dialog open so the user can retry.
         } finally {
+            setConfirmOpen(false);
             setProcessing(false);
         }
     };

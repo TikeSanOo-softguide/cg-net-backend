@@ -22,9 +22,9 @@ class StoreRegionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name_en' => ['required', 'string', 'max:255'],
-            'name_zh' => ['required', 'string', 'max:255'],
-            'name_my' => ['required', 'string', 'max:255'],
+            'name_en' => ['required', 'string', 'max:50'],
+            'name_zh' => ['required', 'string', 'max:50'],
+            'name_my' => ['required', 'string', 'max:50'],
             'state_id' => ['required', 'integer', 'exists:states,id'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],

@@ -10,8 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useTranslation } from '@/hooks/useTranslation';
 import { type StateRow, type RegionRow, type AreaRow, type RegionType } from '@/components/region/RegionFormDialog';
 
-const STATE_TITLE_MAX_LENGTH = 255;
-
 export type RegionFormValues = {
     name_en: string;
     name_my: string;
@@ -237,7 +235,6 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
                     name="name_en"
                     value={form.data.name_en}
                     onChange={(event) => handleNameChange('name_en', event.target.value)}
-                    maxLength={STATE_TITLE_MAX_LENGTH}
                     disabled={form.processing}
                 />
             </FormField>
@@ -255,7 +252,6 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
                     name="name_my"
                     value={form.data.name_my}
                     onChange={(event) => handleNameChange('name_my', event.target.value)}
-                    maxLength={STATE_TITLE_MAX_LENGTH}
                     disabled={form.processing}
                 />
             </FormField>
@@ -273,7 +269,6 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
                     name="name_zh"
                     value={form.data.name_zh}
                     onChange={(event) => handleNameChange('name_zh', event.target.value)}
-                    maxLength={STATE_TITLE_MAX_LENGTH}
                     disabled={form.processing}
                 />
             </FormField>

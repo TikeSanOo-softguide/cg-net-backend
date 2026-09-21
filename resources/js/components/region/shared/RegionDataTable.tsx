@@ -65,38 +65,16 @@ export function RegionDataTable<T extends { id: number }>({
 
     const debounce = useRef<number>(0);
 
-    /**
-     * Keep local search value synchronized
-     * with the server-side filter.
-     */
     useEffect(() => {
         setSearch(filters.search ?? '');
     }, [filters.search]);
 
-    /**
-     * Clear debounce timer when component unmounts.
-     */
     useEffect(() => {
         return () => {
             window.clearTimeout(debounce.current);
         };
     }, []);
 
-    /**
-     * Visit the same index page while sending
-     * this table's search parameter.
-     *
-     * Example:
-     *
-     * State:
-     * /regions?state_search=shan
-     *
-     * Region:
-     * /regions?region_search=yangon
-     *
-     * Area:
-     * /regions?area_search=...
-     */
     const visit = (next: Partial<RegionFilters>) => {
         const params: Record<string, string | undefined> = {
             /**
@@ -149,7 +127,11 @@ export function RegionDataTable<T extends { id: number }>({
                     pagination={items}
                     onCreate={onCreate}
                     createLabel={t(createLabelKey)}
-                    onBulkDelete={(ids) => visitBulkDelete(`${destroyBase}/bulk-destroy`, ids.map(Number))}
+                    onBulkDelete={
+                        can('regions.delete')
+                            ? (ids) => visitBulkDelete(`${destroyBase}/bulk-destroy`, ids.map(Number))
+                            : undefined
+                    }
                     actions={(row) => (
                         <>
                             {can('regions.update') ? (

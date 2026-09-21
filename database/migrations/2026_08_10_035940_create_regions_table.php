@@ -9,9 +9,9 @@ return new class extends Migration {
     {
         Schema::create('regions', function (Blueprint $table) {
             $table->id();
-            $table->string('name_en');
-            $table->string('name_zh');
-            $table->string('name_my');
+            $table->string('name_en', 50);
+            $table->string('name_zh', 50);
+            $table->string('name_my', 50);
             $table->foreignId('state_id')->constrained('states')->cascadeOnDelete();
             $table->decimal('latitude', 10, 7)->nullable();
             $table->decimal('longitude', 10, 7)->nullable();

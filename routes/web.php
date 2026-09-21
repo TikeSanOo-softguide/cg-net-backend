@@ -54,19 +54,26 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
     Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->middleware('can:customers.delete')->name('customers.destroy');
     Route::get('/customers/{customer}', [CustomerController::class, 'show'])->middleware('can:customers.view')->name('customers.show');
 
-    Route::prefix('regions')->middleware('can:regions.view')->group(function () {
-        Route::get('/', [RegionManagementController::class, 'index'])->name('regions.index');
-        Route::post('/states', [RegionManagementController::class, 'storeState'])->name('regions.states.store');
-        Route::put('/states/{state}', [RegionManagementController::class, 'updateState'])->name('regions.states.update');
-        Route::delete('/states/{state}', [RegionManagementController::class, 'destroyState'])->name('regions.states.destroy');
+    Route::prefix('regions')->name('regions.')->group(function () {
+        Route::get('/', [RegionManagementController::class, 'index'])->middleware('can:regions.view')->name('index');
 
-        Route::post('/regions', [RegionManagementController::class, 'storeRegion'])->name('regions.regions.store');
-        Route::put('/regions/{region}', [RegionManagementController::class, 'updateRegion'])->name('regions.regions.update');
-        Route::delete('/regions/{region}', [RegionManagementController::class, 'destroyRegion'])->name('regions.regions.destroy');
+        // States
+        Route::post('/states', [RegionManagementController::class, 'storeState'])->middleware('can:regions.create')->name('states.store');
+        Route::put('/states/{state}', [RegionManagementController::class, 'updateState'])->middleware('can:regions.update')->name('states.update');
+        Route::delete('/states/bulk-destroy', [RegionManagementController::class, 'bulkDestroyStates'])->middleware('can:regions.delete')->name('states.bulk-destroy');
+        Route::delete('/states/{state}', [RegionManagementController::class, 'destroyState'])->middleware('can:regions.delete')->name('states.destroy');
 
-        Route::post('/areas', [RegionManagementController::class, 'storeArea'])->name('regions.areas.store');
-        Route::put('/areas/{area}', [RegionManagementController::class, 'updateArea'])->name('regions.areas.update');
-        Route::delete('/areas/{area}', [RegionManagementController::class, 'destroyArea'])->name('regions.areas.destroy');
+        // Regions
+        Route::post('/regions', [RegionManagementController::class, 'storeRegion'])->middleware('can:regions.create')->name('regions.store');
+        Route::put('/regions/{region}', [RegionManagementController::class, 'updateRegion'])->middleware('can:regions.update')->name('regions.update');
+        Route::delete('/regions/bulk-destroy', [RegionManagementController::class, 'bulkDestroyRegions'])->middleware('can:regions.delete')->name('regions.bulk-destroy');
+        Route::delete('/regions/{region}', [RegionManagementController::class, 'destroyRegion'])->middleware('can:regions.delete')->name('regions.destroy');
+
+        // Areas
+        Route::post('/areas', [RegionManagementController::class, 'storeArea'])->middleware('can:regions.create')->name('areas.store');
+        Route::put('/areas/{area}', [RegionManagementController::class, 'updateArea'])->middleware('can:regions.update')->name('areas.update');
+        Route::delete('/areas/bulk-destroy', [RegionManagementController::class, 'bulkDestroyAreas'])->middleware('can:regions.delete')->name('areas.bulk-destroy');
+        Route::delete('/areas/{area}', [RegionManagementController::class, 'destroyArea'])->middleware('can:regions.delete')->name('areas.destroy');
     });
 
 
