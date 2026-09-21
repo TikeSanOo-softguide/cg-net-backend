@@ -29,6 +29,7 @@ type CmsIndexPageProps<T extends { id: number }> = {
     filters: CmsFilters;
     columns: DataTableColumn<T>[];
     statusFilter?: 'active' | 'news';
+    searchPlaceholderKey?: string;
     onCreate?: () => void;
     onEdit?: (row: T) => void;
     formDialog?: ReactNode;
@@ -42,6 +43,7 @@ export function CmsIndexPage<T extends { id: number }>({
     filters,
     columns,
     statusFilter,
+    searchPlaceholderKey = 'cms.search',
     onCreate,
     onEdit,
     formDialog,
@@ -61,16 +63,20 @@ export function CmsIndexPage<T extends { id: number }>({
     useEffect(() => () => window.clearTimeout(debounce.current), []);
 
     const visit = (next: Partial<CmsFilters>) => {
-        router.get(indexHref, {
-            search: (next.search ?? filters.search) || undefined,
-            status: (next.status ?? filters.status) || undefined,
-            sort: next.sort ?? filters.sort,
-            direction: next.direction ?? filters.direction,
-        }, {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        });
+        router.get(
+            indexHref,
+            {
+                search: (next.search ?? filters.search) || undefined,
+                status: (next.status ?? filters.status) || undefined,
+                sort: next.sort ?? filters.sort,
+                direction: next.direction ?? filters.direction,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
+        );
     };
 
     const onSearchChange = (value: string) => {
@@ -84,29 +90,35 @@ export function CmsIndexPage<T extends { id: number }>({
         visit({ sort: column, direction: nextDirection });
     };
 
-    const statusOptions: { value: string; label: string }[] = statusFilter === 'news'
-        ? [
-            { value: 'draft', label: t('status.draft') },
-            { value: 'published', label: t('status.published') },
-            { value: 'archived', label: t('status.archived') },
-        ]
-        : [
-            { value: 'active', label: t('status.active') },
-            { value: 'inactive', label: t('status.inactive') },
-        ];
+    const statusOptions: { value: string; label: string }[] =
+        statusFilter === 'news'
+            ? [
+                  { value: 'draft', label: t('status.draft') },
+                  { value: 'published', label: t('status.published') },
+                  { value: 'archived', label: t('status.archived') },
+              ]
+            : [
+                  { value: 'active', label: t('status.active') },
+                  { value: 'inactive', label: t('status.inactive') },
+              ];
 
     const filterControls: ReactNode = (
         <>
             {statusFilter ? (
                 <FormControl icon={CircleDotIcon} compact className="w-full shrink-0 sm:w-48">
-                    <Select value={filters.status || 'all'} onValueChange={(value) => visit({ status: value === 'all' ? '' : value })}>
+                    <Select
+                        value={filters.status || 'all'}
+                        onValueChange={(value) => visit({ status: value === 'all' ? '' : value })}
+                    >
                         <SelectTrigger className="w-full">
                             <SelectValue placeholder={t('common.status')} />
                         </SelectTrigger>
                         <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
                             <SelectItem value="all">{t('customers.all_statuses')}</SelectItem>
                             {statusOptions.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
@@ -123,7 +135,7 @@ export function CmsIndexPage<T extends { id: number }>({
                 getRowId={(row) => String(row.id)}
                 search={search}
                 onSearchChange={onSearchChange}
-                searchPlaceholder={t('cms.search')}
+                searchPlaceholder={t(searchPlaceholderKey)}
                 sort={filters.sort}
                 direction={filters.direction}
                 onSort={onSort}
@@ -131,7 +143,9 @@ export function CmsIndexPage<T extends { id: number }>({
                 filters={filterControls}
                 onCreate={can('cms.create') ? onCreate : undefined}
                 createLabel={t(createLabelKey)}
-                onBulkDelete={canDelete ? (ids) => visitBulkDelete(`${destroyBase}/bulk-destroy`, ids.map(Number)) : undefined}
+                onBulkDelete={
+                    canDelete ? (ids) => visitBulkDelete(`${destroyBase}/bulk-destroy`, ids.map(Number)) : undefined
+                }
                 bulkDeleteTitle={t('cms.bulk_delete_title')}
                 actions={(row) => (
                     <>
