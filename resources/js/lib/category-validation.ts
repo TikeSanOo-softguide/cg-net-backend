@@ -2,8 +2,8 @@ import type { CategoryFormValues } from '@/components/cms/category/CategoryForm'
 
 type Translate = (key: string) => string;
 
-export const CATEGORY_NAME_MAX_LENGTH = 100;
-export const CATEGORY_SLUG_MAX_LENGTH = 100;
+export const CATEGORY_NAME_MAX_LENGTH = 50;
+export const CATEGORY_SLUG_MAX_LENGTH = 50;
 
 export function validateCategoryField(
     field: keyof CategoryFormValues,

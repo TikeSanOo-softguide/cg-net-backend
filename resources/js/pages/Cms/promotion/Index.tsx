@@ -3,6 +3,7 @@ import { Head } from '@inertiajs/react';
 
 import { CmsIndexPage, type CmsFilters } from '@/components/cms/shared/CmsIndexPage';
 import { PromotionFormDialog, type PromotionItem } from '@/components/cms/promotion/PromotionFormDialog';
+import { NoImage } from '@/components/ui/no-image';
 import type { Paginated } from '@/components/Pagination';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -84,12 +85,16 @@ export default function PromotionsIndex({ items, filters }: Props) {
                         className: 'font-medium',
                         cell: (row) => {
                             const imageUrl = row.image_url;
-                            return (
-                                <span className="inline-flex items-center justify-content-center">
-                                    {imageUrl ? (
-                                        <img src={imageUrl} alt="" className="size-8 rounded object-cover" />
-                                    ) : null}
-                                </span>
+                            return imageUrl ? (
+                                <img
+                                    src={imageUrl}
+                                    alt=""
+                                    width={220}
+                                    height={90}
+                                    className="h-[90px] w-[220px] rounded object-cover"
+                                />
+                            ) : (
+                                <NoImage width={220} height={90} />
                             );
                         },
                     },

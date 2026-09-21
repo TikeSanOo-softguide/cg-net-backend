@@ -2,7 +2,9 @@ import type { NewsFormValues } from '@/components/cms/news/NewsForm';
 
 type Translate = (key: string) => string;
 
-export const NEWS_TITLE_MAX_LENGTH = 255;
+export const NEWS_TITLE_MAX_LENGTH = 120;
+export const NEWS_SLUG_MAX_LENGTH = 120;
+export const NEWS_DESCRIPTION_MAX_LENGTH = 5000;
 export const NEWS_IMAGE_MAX_SIZE_KB = 5120; // 5MB, matches File::image()->max(5120)
 export const NEWS_IMAGE_ACCEPTED_TYPES = [
     'image/jpeg',
@@ -29,8 +31,7 @@ export function validateNewsField(field: keyof NewsFormValues, data: NewsFormVal
 
         case 'title_en':
         case 'title_zh':
-        case 'title_my':
-        case 'slug': {
+        case 'title_my': {
             if (typeof value !== 'string') break;
             const trimmed = value.trim();
 
@@ -43,6 +44,19 @@ export function validateNewsField(field: keyof NewsFormValues, data: NewsFormVal
             break;
         }
 
+        case 'slug': {
+            if (typeof value !== 'string') break;
+            const trimmed = value.trim();
+
+            if (trimmed === '') {
+                return t('cms.news.validation.slug_required');
+            }
+            if (trimmed.length > NEWS_SLUG_MAX_LENGTH) {
+                return t('cms.news.validation.slug_max');
+            }
+            break;
+        }
+
         case 'description_en':
         case 'description_zh':
         case 'description_my': {
@@ -51,6 +65,9 @@ export function validateNewsField(field: keyof NewsFormValues, data: NewsFormVal
 
             if (trimmed === '') {
                 return t(`cms.news.validation.${field}_required`);
+            }
+            if (trimmed.length > NEWS_DESCRIPTION_MAX_LENGTH) {
+                return t(`cms.news.validation.${field}_max`);
             }
             break;
         }

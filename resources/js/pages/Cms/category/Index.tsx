@@ -26,6 +26,7 @@ export default function CategoriesIndex({ items, filters }: Props) {
                 destroyBase="/cms/categories"
                 items={items}
                 filters={filters}
+                searchPlaceholderKey="cms.category.search_placeholder"
                 onCreate={() => {
                     setEditingItem(null);
                     setFormOpen(true);
@@ -71,7 +72,7 @@ export default function CategoriesIndex({ items, filters }: Props) {
                                 displayCategory = truncateText(category, 50);
 
                             return (
-                                <span className="block max-w-full truncate" title={category}>
+                                <span className="block max-w-full truncate leading-[1.7]" title={category}>
                                     {displayCategory}
                                 </span>
                             );

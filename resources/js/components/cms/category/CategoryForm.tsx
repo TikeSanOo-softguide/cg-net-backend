@@ -6,12 +6,7 @@ import { CmsFormShell } from '@/components/cms/shared/CmsFormShell';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/hooks/useTranslation';
-import {
-    CATEGORY_NAME_MAX_LENGTH,
-    CATEGORY_SLUG_MAX_LENGTH,
-    validateCategory,
-    validateCategoryField,
-} from '@/lib/category-validation';
+import { validateCategory, validateCategoryField } from '@/lib/category-validation';
 import { formControlStateClass } from '@/lib/form-control';
 import { cn } from '@/lib/utils';
 
@@ -103,7 +98,6 @@ export function CategoryForm({ form, onSubmit, onCancel, mode = 'create' }: Cate
                 <Input
                     id="name_en"
                     value={form.data.name_en}
-                    maxLength={CATEGORY_NAME_MAX_LENGTH}
                     aria-invalid={fieldState('name_en') === 'error'}
                     className={formControlStateClass(fieldState('name_en'))}
                     onBlur={() => markTouched('name_en')}
@@ -126,7 +120,6 @@ export function CategoryForm({ form, onSubmit, onCancel, mode = 'create' }: Cate
                 <Input
                     id="name_zh"
                     value={form.data.name_zh}
-                    maxLength={CATEGORY_NAME_MAX_LENGTH}
                     aria-invalid={fieldState('name_zh') === 'error'}
                     className={formControlStateClass(fieldState('name_zh'))}
                     onBlur={() => markTouched('name_zh')}
@@ -146,7 +139,6 @@ export function CategoryForm({ form, onSubmit, onCancel, mode = 'create' }: Cate
                 <Input
                     id="name_my"
                     value={form.data.name_my}
-                    maxLength={CATEGORY_NAME_MAX_LENGTH}
                     aria-invalid={fieldState('name_my') === 'error'}
                     className={formControlStateClass(fieldState('name_my'))}
                     onBlur={() => markTouched('name_my')}
@@ -166,7 +158,6 @@ export function CategoryForm({ form, onSubmit, onCancel, mode = 'create' }: Cate
                 <Input
                     id="slug"
                     value={form.data.slug}
-                    maxLength={CATEGORY_SLUG_MAX_LENGTH}
                     aria-invalid={fieldState('slug') === 'error'}
                     className={cn('w-full', formControlStateClass(fieldState('slug')))}
                     onBlur={() => markTouched('slug')}

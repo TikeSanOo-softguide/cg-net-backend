@@ -31,13 +31,13 @@ class UpdateServiceRequest extends FormRequest
         $service = $this->route('service');
 
         return [
-            'title_en' => ['required', 'string', 'max:255'],
-            'title_zh' => ['required', 'string', 'max:255'],
-            'title_my' => ['required', 'string', 'max:255'],
-            'description_en' => ['required', 'string'],
-            'description_zh' => ['required', 'string'],
-            'description_my' => ['required', 'string'],
-            'slug' => CmsRules::slug('services', $service->id),
+            'title_en' => ['required', 'string', 'max:120'],
+            'title_zh' => ['required', 'string', 'max:120'],
+            'title_my' => ['required', 'string', 'max:120'],
+            'description_en' => ['required', 'string', 'max:5000'],
+            'description_zh' => ['required', 'string', 'max:5000'],
+            'description_my' => ['required', 'string', 'max:5000'],
+            'slug' => CmsRules::slug('services', $service->id, 120),
             'status' => ['required', Rule::enum(ServiceStatus::class)],
             'image' => CmsRules::image(false),
             'image_url' => ['nullable', 'string', 'max:255'],

@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/hooks/useTranslation';
 import { validateService, validateServiceField } from '@/lib/service-validation';
-import { formControlStateClass } from '@/lib/form-control';
+import { formControlStateClass, formLabelClass } from '@/lib/form-control';
 import { cn } from '@/lib/utils';
 
 export type ServiceFormValues = {
@@ -163,22 +163,28 @@ export function ServiceForm({ form, onSubmit, onCancel, onImageClear, mode = 'cr
                 </FormField>
             </div>
             <div className="md:ml-3">
-                <FormField label={t('cms.image')} htmlFor="image" error={fieldError('image')} className="mb-2">
-                    <SquareImageUpload
-                        id="image"
-                        width={620}
-                        height={260}
-                        value={image}
-                        existingUrl={imageUrl}
-                        className={cn('w-full', formControlStateClass(fieldState('image')))}
-                        onChange={(file) => {
-                            setImage(file);
-                            setField('image', file);
-                            markTouched('image');
-                            handleImageDelete(file);
-                        }}
-                    />
-                </FormField>
+                <div className="mb-4 flex items-center justify-between border-b border-border/40">
+                    <div className="flex items-center gap-2">
+                        <h3 className={cn('text-sm font-medium leading-none', formLabelClass)}>{t('cms.image')}</h3>
+                    </div>
+                    <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                        {t('cms.service.image_size')} : 1080 × 420 px
+                    </span>
+                </div>
+                <SquareImageUpload
+                    id="image"
+                    width={1080}
+                    aspectRatio="1080 / 420"
+                    value={image}
+                    existingUrl={imageUrl}
+                    className={cn('w-full', formControlStateClass(fieldState('image')))}
+                    onChange={(file) => {
+                        setImage(file);
+                        setField('image', file);
+                        markTouched('image');
+                        handleImageDelete(file);
+                    }}
+                />
             </div>
             <div>
                 <FormField
