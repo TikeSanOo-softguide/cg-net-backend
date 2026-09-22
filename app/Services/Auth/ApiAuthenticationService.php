@@ -27,9 +27,27 @@ final class ApiAuthenticationService
         return $this->otp->request($phone, $ip, !$phoneIsRegistered);
     }
 
+    public function requestLoginOtp(string $phone, string $ip): array
+    {
+        return $this->otp->request($phone, $ip, true, 'login');
+    }
+
     public function verifyRegistrationOtp(string $challengeId, string $code): string
     {
         return $this->otp->verify($challengeId, $code);
+    }
+
+    /** @return array{user: User, token: string} */
+    public function verifyLoginOtp(string $challengeId, string $code): array
+    {
+        $phone = $this->otp->verify($challengeId, $code, 'login');
+        $user = User::query()->where('phone', $phone)->first();
+
+        if (!$user || $user->status !== UserStatus::Active) {
+            abort(422, 'The verification code is invalid or the account is unavailable.');
+        }
+
+        return ['user' => $user, 'token' => $this->createToken($user)];
     }
 
     /** @return array{user: User, token: string} */

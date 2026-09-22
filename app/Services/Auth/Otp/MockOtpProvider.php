@@ -21,7 +21,11 @@ final class MockOtpProvider implements OtpProviderInterface
 
         $exposeCode = config('otp.mock.expose_code') && app()->environment(['local', 'testing']);
 
-        return new OtpChallenge(providerReference: $reference, debugCode: $exposeCode ? $code : null);
+        return new OtpChallenge(
+            providerReference: $reference,
+            debugCode: $exposeCode ? $code : null,
+            otpHash: hash_hmac('sha256', $code, (string) config('app.key')),
+        );
     }
 
     public function verify(string $providerReference, string $code): bool

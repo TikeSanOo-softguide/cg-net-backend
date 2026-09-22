@@ -36,7 +36,7 @@ Customers, broadband accounts, CPE devices, packages, wallets, invoices/payments
 
 Customers, CPE, packages, billing, top-up cards, service requests, regions, notifications, support, banners, staff/roles, activity logs, reports, settings.
 
-Public API is a Sanctum stub (`GET /api/user`) only.
+Public API uses Sanctum bearer tokens for customer OTP authentication. The auth endpoints include OTP request, verification, resend, logout, and `GET /api/auth/me`; `GET /api/user` remains available for compatibility.
 
 ## Requirements
 

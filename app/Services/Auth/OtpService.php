@@ -2,10 +2,12 @@
 
 namespace App\Services\Auth;
 
+use App\Models\OtpChallenge;
 use App\Services\Auth\Otp\OtpProviderInterface;
 use Closure;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
@@ -14,7 +16,7 @@ final class OtpService
     public function __construct(private readonly OtpProviderInterface $provider) {}
 
     /** @return array{challenge_id: string, debug_otp: ?string} */
-    public function request(string $phone, string $ip, bool $sendProviderOtp = true): array
+    public function request(string $phone, string $ip, bool $sendProviderOtp = true, string $purpose = 'registration'): array
     {
         $this->ensureCooldown($phone);
         $this->ensureRateLimit('otp:request:' . hash('sha256', $phone . '|' . $ip), 'otp_request');
@@ -31,11 +33,23 @@ final class OtpService
 
         $challenge = $this->provider->send($phone);
 
+        $expiresAt = now()->addSeconds((int) config('otp.challenge_ttl'));
+
+        OtpChallenge::create([
+            'challenge_id' => $challengeId,
+            'phone' => $phone,
+            'otp_hash' => $challenge->otpHash,
+            'provider_reference' => $challenge->providerReference,
+            'purpose' => $purpose,
+            'expires_at' => $expiresAt,
+        ]);
+
         $this->store()->put(
             $this->challengeKey($challengeId),
             [
                 'phone' => $phone,
                 'provider_reference' => $challenge->providerReference,
+                'purpose' => $purpose,
                 'attempts' => 0,
                 'locked_until' => null,
             ],
@@ -48,7 +62,7 @@ final class OtpService
         ];
     }
 
-    public function verify(string $challengeId, string $code): string
+    public function verify(string $challengeId, string $code, string $purpose = 'registration'): string
     {
         $this->ensureRateLimit('otp:verify:' . hash('sha256', $challengeId), 'otp_verify');
 
@@ -56,11 +70,25 @@ final class OtpService
             return Cache::lock($this->lockKey($challengeId), 10)->block(3, function () use (
                 $challengeId,
                 $code,
+                $purpose,
             ): string {
                 $key = $this->challengeKey($challengeId);
                 $state = $this->store()->get($key);
-                dd($state, $key, $challengeId, $code);
                 if (!is_array($state)) {
+                    $this->invalidOtp();
+                }
+
+                $challenge = DB::transaction(function () use ($challengeId, $purpose): ?OtpChallenge {
+                    $challenge = OtpChallenge::query()
+                        ->where('challenge_id', $challengeId)
+                        ->where('purpose', $purpose)
+                        ->lockForUpdate()
+                        ->first();
+
+                    return $challenge;
+                });
+
+                if (!$challenge || $challenge->consumed_at || $challenge->expires_at->isPast()) {
                     $this->invalidOtp();
                 }
 
@@ -77,10 +105,22 @@ final class OtpService
                             ? now()->addSeconds((int) config('otp.challenge_ttl'))->timestamp
                             : null;
                     $this->store()->put($key, $state, (int) config('otp.challenge_ttl'));
+                    $challenge->increment('failed_attempts');
                     $this->invalidOtp();
                 }
 
                 $phone = (string) $state['phone'];
+                $consumed = DB::transaction(function () use ($challenge): int {
+                    return OtpChallenge::query()
+                        ->whereKey($challenge->getKey())
+                        ->whereNull('consumed_at')
+                        ->update(['consumed_at' => now(), 'updated_at' => now()]);
+                });
+
+                if ($consumed !== 1) {
+                    $this->invalidOtp();
+                }
+
                 $this->store()->forget($key);
 
                 $verificationToken = bin2hex(random_bytes(32));

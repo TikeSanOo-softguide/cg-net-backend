@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Banner\BannerController;
 use App\Http\Controllers\Api\Auth\LoginController;
+use App\Http\Controllers\Api\Auth\OtpController;
 use App\Http\Controllers\Api\Auth\RegistrationController;
 use App\Http\Controllers\Api\Category\CategoryController;
 use App\Http\Controllers\Api\Contact\ContactController;
@@ -27,6 +28,9 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('auth')
     ->middleware('throttle:60,1')
     ->group(function () {
+        Route::post('/otp/request', [OtpController::class, 'request']);
+        Route::post('/otp/verify', [OtpController::class, 'verify']);
+        Route::post('/otp/resend', [OtpController::class, 'resend']);
         Route::post('/register/request-otp', [RegistrationController::class, 'requestOtp']);
         Route::post('/register/verify-otp', [RegistrationController::class, 'verifyOtp']);
         Route::post('/register/complete', [RegistrationController::class, 'complete']);
@@ -35,6 +39,10 @@ Route::prefix('auth')
 
 Route::get('/user', function (Request $request) {
     return $request->user();
+})->middleware('auth:sanctum');
+
+Route::get('/auth/me', function (Request $request) {
+    return new \App\Http\Resources\UserResource($request->user());
 })->middleware('auth:sanctum');
 
 Route::middleware('throttle:60,1')->group(function () {
