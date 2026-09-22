@@ -34,12 +34,15 @@ class AgentController extends Controller
             ->get();
 
         $cards = TopUpCard::query()
+            ->select('top_up_card.*')
             ->with('agent:id,name')
+            ->leftJoin('batches', 'batches.id', '=', 'top_up_card.batch_id')
             ->when($cardSearch !== '', fn($query) => $query->where('serial_no', 'like', '%' . $cardSearch . '%'))
             ->when($batch !== '', fn($query) => $query->where('batch_id', (int) $batch))
             ->when($agent === 'unassigned', fn($query) => $query->whereNull('agent_id'))
             ->when($agent !== '' && $agent !== 'unassigned', fn($query) => $query->where('agent_id', (int) $agent))
-            ->latest()
+            ->orderBy('batches.batch_no')
+            ->orderBy('top_up_card.serial_no')
             ->get()
             ->map(fn(TopUpCard $card) => $this->cardPayload($card))
             ->values();
