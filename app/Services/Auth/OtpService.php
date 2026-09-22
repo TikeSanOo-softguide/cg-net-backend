@@ -59,7 +59,6 @@ final class OtpService
             ): string {
                 $key = $this->challengeKey($challengeId);
                 $state = $this->store()->get($key);
-                dd($state, $key, $challengeId, $code);
                 if (!is_array($state)) {
                     $this->invalidOtp();
                 }
