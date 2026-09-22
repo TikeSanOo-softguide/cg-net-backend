@@ -4,6 +4,7 @@ namespace App\Services\Auth\Otp;
 
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 final class SmsPohOtpProvider implements OtpProviderInterface
@@ -31,6 +32,10 @@ final class SmsPohOtpProvider implements OtpProviderInterface
         }
 
         if ($response->failed() || !$response->json('requestId')) {
+            Log::warning('SMSPoh OTP request was rejected.', [
+                'status' => $response->status(),
+                'body' => str($response->body())->limit(1000)->toString(),
+            ]);
             throw new RuntimeException('OTP provider rejected the request.');
         }
 
@@ -52,6 +57,13 @@ final class SmsPohOtpProvider implements OtpProviderInterface
                 ->post(rtrim((string) config('otp.smspoh.base_url'), '/') . '/verify');
         } catch (ConnectionException $exception) {
             throw new RuntimeException('OTP provider is unavailable.', 0, $exception);
+        }
+
+        if (!$response->successful()) {
+            Log::warning('SMSPoh OTP verification was rejected.', [
+                'status' => $response->status(),
+                'body' => str($response->body())->limit(1000)->toString(),
+            ]);
         }
 
         return $response->successful();

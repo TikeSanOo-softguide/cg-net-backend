@@ -32,6 +32,17 @@ final class ApiAuthenticationService
         return $this->otp->request($phone, $ip, true, 'login');
     }
 
+    /** @return array{challenge_id: string, debug_otp: ?string, flow: string} */
+    public function requestCustomerOtp(string $phone, string $ip): array
+    {
+        $flow = $this->userByPhone($phone, true) !== null
+            ? 'login'
+            : 'registration';
+        $result = $this->otp->request($phone, $ip, true, $flow);
+
+        return [...$result, 'flow' => $flow];
+    }
+
     public function verifyRegistrationOtp(string $challengeId, string $code): string
     {
         return $this->otp->verify($challengeId, $code);
@@ -41,7 +52,7 @@ final class ApiAuthenticationService
     public function verifyLoginOtp(string $challengeId, string $code): array
     {
         $phone = $this->otp->verify($challengeId, $code, 'login');
-        $user = User::query()->where('phone', $phone)->first();
+        $user = $this->userByPhone($phone);
 
         if (!$user || $user->status !== UserStatus::Active) {
             abort(422, 'The verification code is invalid or the account is unavailable.');
@@ -50,13 +61,30 @@ final class ApiAuthenticationService
         return ['user' => $user, 'token' => $this->createToken($user)];
     }
 
+    /** @return array{flow: string, token?: string, verification_token?: string} */
+    public function verifyCustomerOtp(string $challengeId, string $code, ?string $flow = null): array
+    {
+        $purpose = $this->otp->purposeFor($challengeId);
+
+        if ($purpose === 'registration') {
+            return [
+                'flow' => $purpose,
+                'verification_token' => $this->verifyRegistrationOtp($challengeId, $code),
+            ];
+        }
+
+        $result = $this->verifyLoginOtp($challengeId, $code);
+
+        return ['flow' => $purpose, 'token' => $result['token']];
+    }
+
     /** @return array{user: User, token: string} */
     public function completeRegistration(string $token, array $data): array
     {
         return $this->otp->consumeVerificationToken($token, function (string $phone) use ($data): array {
             try {
                 return DB::transaction(function () use ($phone, $data): array {
-                    $existingUser = User::withTrashed()->where('phone', $phone)->first();
+                    $existingUser = $this->userByPhone($phone, true);
 
                     if ($existingUser && !$existingUser->trashed()) {
                         abort(422, 'The registration details are already in use.');
@@ -187,6 +215,16 @@ final class ApiAuthenticationService
     {
         return in_array($user->status, self::RESTRICTED_USER_STATUSES, true) ||
             in_array($wallet?->status, self::RESTRICTED_WALLET_STATUSES, true);
+    }
+
+    private function userByPhone(string $phone, bool $withTrashed = false): ?User
+    {
+        $query = $withTrashed ? User::withTrashed() : User::query();
+        $digits = ltrim($phone, '+');
+
+        return $query
+            ->whereRaw("REPLACE(phone, '+', '') = ?", [$digits])
+            ->first();
     }
 
     private function createToken(User $user): string

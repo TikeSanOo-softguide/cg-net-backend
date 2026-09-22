@@ -137,6 +137,19 @@ final class OtpService
         }
     }
 
+    public function purposeFor(string $challengeId): string
+    {
+        $purpose = OtpChallenge::query()
+            ->where('challenge_id', $challengeId)
+            ->value('purpose');
+
+        if (!is_string($purpose) || !in_array($purpose, ['login', 'registration'], true)) {
+            $this->invalidOtp();
+        }
+
+        return $purpose;
+    }
+
     public function consumeVerificationToken(string $token, Closure $callback): mixed
     {
         try {
@@ -175,6 +188,11 @@ final class OtpService
 
     private function ensureCooldown(string $phone): void
     {
+        $cooldown = (int) config('otp.resend_cooldown');
+        if ($cooldown <= 0) {
+            return;
+        }
+
         $key = 'otp:resend:' . hash('sha256', $phone);
 
         if (RateLimiter::tooManyAttempts($key, 1)) {
@@ -184,7 +202,7 @@ final class OtpService
             );
         }
 
-        RateLimiter::hit($key, (int) config('otp.resend_cooldown'));
+        RateLimiter::hit($key, $cooldown);
     }
 
     private function invalidOtp(): never

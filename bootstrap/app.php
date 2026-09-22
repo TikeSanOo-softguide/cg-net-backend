@@ -26,7 +26,6 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [SetLocale::class, HandleInertiaRequests::class]);
-        $middleware->statefulApi();
 
         $middleware->alias([
             'role' => RoleMiddleware::class,

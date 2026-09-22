@@ -16,6 +16,7 @@ class VerifyOtpRequest extends FormRequest
         return [
             'challenge_id' => ['required', 'string', 'size:64'],
             'code' => ['required', 'digits:6'],
+            'flow' => ['sometimes', 'string', 'in:login,registration'],
         ];
     }
 }
