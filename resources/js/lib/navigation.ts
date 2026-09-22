@@ -173,6 +173,12 @@ export const navigation: NavGroup[] = [
                 icon: CreditCard,
             },
             {
+                labelKey: 'menu.top_up_card_agents',
+                descriptionKey: 'menu.top_up_card_agents_description',
+                href: '/top-up-cards/agents',
+                icon: UserRound,
+            },
+            {
                 labelKey: 'menu.redeem_history',
                 descriptionKey: 'menu.redeem_history_description',
                 href: '/top-up-cards/redeem-history',
