@@ -29,6 +29,7 @@ use App\Http\Controllers\Staff\StaffController;
 use App\Http\Controllers\Support\ChatFlows\ChatbotFlowsController;
 use App\Http\Controllers\TopUpCard\AgentController;
 use App\Http\Controllers\TopUpCard\TopUpCardController;
+use App\Http\Controllers\Transaction\TransactionController;
 use App\Support\AdminHome;
 use App\Support\MenuPages;
 use Illuminate\Support\Facades\Route;
@@ -54,6 +55,8 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
     Route::delete('/customers/{customer}/accounts/{account}', [CustomerController::class, 'unbindAccount'])->middleware('can:customers.update')->name('customers.accounts.unbind');
     Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->middleware('can:customers.delete')->name('customers.destroy');
     Route::get('/customers/{customer}', [CustomerController::class, 'show'])->middleware('can:customers.view')->name('customers.show');
+
+    Route::get('/billing/transactions', [TransactionController::class, 'index'])->middleware('can:billing.view')->name('billing.transactions');
 
     Route::prefix('regions')->name('regions.')->group(function () {
         Route::get('/', [RegionManagementController::class, 'index'])->middleware('can:regions.view')->name('index');

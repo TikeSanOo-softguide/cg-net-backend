@@ -183,28 +183,34 @@ export function NewsForm({
                 </FormField>
             </div>
             <div className="md:ml-3">
-                <div className="mb-3 flex items-center justify-between border-b border-border/40">
-                    <div className="flex items-center gap-2">
-                        <h3 className={cn('text-sm font-medium leading-none', formLabelClass)}>{t('cms.image')}</h3>
-                    </div>
-                    <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-                        {t('cms.news.image_size')} : 925 × 390 px
-                    </span>
-                </div>
-                <SquareImageUpload
-                    id="image"
-                    width={925}
-                    aspectRatio="925 / 390"
-                    value={image}
-                    existingUrl={imageUrl}
-                    className={cn('w-full', formControlStateClass(fieldState('image')))}
-                    onChange={(file) => {
-                        setImage(file);
-                        setField('image', file);
-                        markTouched('image');
-                        handleImageDelete(file);
-                    }}
-                />
+                <FormField
+                    label={
+                        <div className="flex w-full items-center justify-between border-b border-border/40 pb-3">
+                            <span>{t('cms.image')}</span>
+                            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                                {t('cms.news.image_size')} : 925 × 390 px
+                            </span>
+                        </div>
+                    }
+                    htmlFor="image"
+                    error={fieldError('image')}
+                    className=""
+                >
+                    <SquareImageUpload
+                        id="image"
+                        width={925}
+                        aspectRatio="925 / 390"
+                        value={image}
+                        existingUrl={imageUrl}
+                        className={cn('w-full', formControlStateClass(fieldState('image')))}
+                        onChange={(file) => {
+                            setImage(file);
+                            setField('image', file);
+                            markTouched('image');
+                            handleImageDelete(file);
+                        }}
+                    />
+                </FormField>
             </div>
             <div>
                 <FormField

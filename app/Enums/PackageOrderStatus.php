@@ -2,11 +2,9 @@
 
 namespace App\Enums;
 
-enum WalletTransactionStatus: string
+enum PackageOrderStatus: string
 {
-    case Pending = 'pending';
     case Processing = 'processing';
     case Completed = 'completed';
     case Failed = 'failed';
-    case Reversed = 'reversed';
 }

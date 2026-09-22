@@ -48,6 +48,7 @@ type DataTableProps<T> = {
     getRowId: (row: T) => string;
     searchPlaceholder?: string;
     emptyLabel?: string;
+    emptyStateClassName?: string;
     className?: string;
     search?: string;
     onSearchChange?: (value: string) => void;
@@ -88,6 +89,7 @@ export function DataTable<T>({
     getRowId,
     searchPlaceholder,
     emptyLabel,
+    emptyStateClassName,
     className,
     search,
     onSearchChange,
@@ -490,7 +492,7 @@ export function DataTable<T>({
                                             <TableRow className="hover:bg-transparent">
                                                 <TableCell
                                                     colSpan={columnCount}
-                                                    className={cn(EDGE_CELL, 'h-20 text-center')}
+                                                    className={cn(EDGE_CELL, 'h-20 text-center', emptyStateClassName)}
                                                 >
                                                     <p className="text-sm font-medium text-foreground">{noResults}</p>
                                                 </TableCell>
@@ -554,7 +556,12 @@ export function DataTable<T>({
 
                             <ul className="flex flex-col gap-2 p-2.5 sm:hidden">
                                 {rows.length === 0 ? (
-                                    <li className="rounded-[6px] bg-muted/30 px-3 py-6 text-center text-sm text-muted-foreground">
+                                    <li
+                                        className={cn(
+                                            'rounded-[6px] bg-muted/30 px-3 py-6 text-center text-sm text-muted-foreground',
+                                            emptyStateClassName,
+                                        )}
+                                    >
                                         {noResults}
                                     </li>
                                 ) : (

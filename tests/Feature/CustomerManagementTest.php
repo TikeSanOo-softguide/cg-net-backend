@@ -89,7 +89,7 @@ class CustomerManagementTest extends TestCase
                     ->where('customer.name', $customer->name)
                     ->has('broadbandAccounts', 1)
                     ->has('packages', 1)
-                    ->where('wallet.balance', '15000.00')
+                    ->where('wallet.balance', '15000')
                     ->has('wallet.transactions', 1),
             );
     }

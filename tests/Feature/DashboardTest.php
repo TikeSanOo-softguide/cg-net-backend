@@ -2,17 +2,22 @@
 
 namespace Tests\Feature;
 
-use App\Enums\PaymentStatus;
+use App\Enums\BillPaymentStatus;
 use App\Enums\RequestStatus;
 use App\Models\Admin;
 use App\Models\Area;
+use App\Models\BillPayment;
+use App\Models\BroadbandAccount;
 use App\Models\FailureReport;
 use App\Models\InstallationApplication;
 use App\Models\NotificationCustom;
-use App\Models\Payment;
 use App\Models\Region;
 use App\Models\RelocationRequest;
 use App\Models\User;
+use App\Models\WalletTransaction;
+use App\Enums\WalletActorType;
+use App\Enums\WalletTransactionStatus;
+use App\Enums\WalletTransactionType;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -32,10 +37,19 @@ class DashboardTest extends TestCase
     {
         $admin = Admin::factory()->create();
         User::factory()->count(3)->create();
-        Payment::factory()->create([
-            'status' => PaymentStatus::Paid,
+        $walletTransaction = WalletTransaction::factory()->create([
+            'type' => WalletTransactionType::FtthBill,
+            'status' => WalletTransactionStatus::Completed,
             'amount' => 15000,
-            'paid_at' => now(),
+            'actor_type' => WalletActorType::System,
+            'actor_id' => User::query()->value('id'),
+        ]);
+
+        BillPayment::query()->create([
+            'wallet_transaction_id' => $walletTransaction->id,
+            'broadband_account_id' => BroadbandAccount::factory()->create()->id,
+            'status' => BillPaymentStatus::Completed,
+            'confirmed_at' => now(),
         ]);
         InstallationApplication::factory()->create([
             'status' => RequestStatus::UnderReview,
@@ -44,21 +58,23 @@ class DashboardTest extends TestCase
         $this->actingAs($admin, 'web')
             ->get('/dashboard')
             ->assertOk()
-            ->assertInertia(fn(Assert $page) => $page
-                ->component('Dashboard/Index')
-                ->has('stats.total_customers')
-                ->has('stats.active_broadband_accounts')
-                ->has('stats.active_packages')
-                ->where('stats.todays_revenue', '15000.00')
-                ->where('stats.pending_requests', fn($count) => $count >= 1)
-                ->has('chart', 30)
-                ->has('regionChart')
-                ->has('requestTypeChart')
-                ->has('recentRequests')
-                ->has('unreadNotifications')
-                ->has('recentNotifications')
-                ->has('locale')
-                ->has('translations'));
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->component('Dashboard/Index')
+                    ->has('stats.total_customers')
+                    ->has('stats.active_broadband_accounts')
+                    ->has('stats.active_packages')
+                    ->where('stats.todays_revenue', '15000.00')
+                    ->where('stats.pending_requests', fn($count) => $count >= 1)
+                    ->has('chart', 30)
+                    ->has('regionChart')
+                    ->has('requestTypeChart')
+                    ->has('recentRequests')
+                    ->has('unreadNotifications')
+                    ->has('recentNotifications')
+                    ->has('locale')
+                    ->has('translations'),
+            );
     }
 
     public function test_dashboard_groups_installations_by_region(): void
@@ -69,18 +85,22 @@ class DashboardTest extends TestCase
         $yangonArea = Area::factory()->create(['region_id' => $yangon->id]);
         $mandalayArea = Area::factory()->create(['region_id' => $mandalay->id]);
 
-        InstallationApplication::factory()->count(3)->create(['area_id' => $yangonArea->id]);
+        InstallationApplication::factory()
+            ->count(3)
+            ->create(['area_id' => $yangonArea->id]);
         InstallationApplication::factory()->create(['area_id' => $mandalayArea->id]);
 
         $this->actingAs($admin, 'web')
             ->get('/dashboard')
             ->assertOk()
-            ->assertInertia(fn(Assert $page) => $page
-                ->has('regionChart', 2)
-                ->where('regionChart.0.name_en', 'Yangon')
-                ->where('regionChart.0.value', 3)
-                ->where('regionChart.1.name_en', 'Mandalay')
-                ->where('regionChart.1.value', 1));
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->has('regionChart', 2)
+                    ->where('regionChart.0.name_en', 'Yangon')
+                    ->where('regionChart.0.value', 3)
+                    ->where('regionChart.1.name_en', 'Mandalay')
+                    ->where('regionChart.1.value', 1),
+            );
     }
 
     public function test_dashboard_rolls_extra_regions_into_other(): void
@@ -90,17 +110,21 @@ class DashboardTest extends TestCase
         foreach (range(1, 6) as $index) {
             $region = Region::factory()->create(['name_en' => "Region {$index}"]);
             $area = Area::factory()->create(['region_id' => $region->id]);
-            InstallationApplication::factory()->count(7 - $index)->create(['area_id' => $area->id]);
+            InstallationApplication::factory()
+                ->count(7 - $index)
+                ->create(['area_id' => $area->id]);
         }
 
         $this->actingAs($admin, 'web')
             ->get('/dashboard')
             ->assertOk()
-            ->assertInertia(fn(Assert $page) => $page
-                ->has('regionChart', 5)
-                ->where('regionChart.4.id', null)
-                ->where('regionChart.4.name_en', 'Other')
-                ->where('regionChart.4.value', 3));
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->has('regionChart', 5)
+                    ->where('regionChart.4.id', null)
+                    ->where('regionChart.4.name_en', 'Other')
+                    ->where('regionChart.4.value', 3),
+            );
     }
 
     public function test_dashboard_ranks_service_requests_highest_to_lowest(): void
@@ -114,18 +138,20 @@ class DashboardTest extends TestCase
         $this->actingAs($admin, 'web')
             ->get('/dashboard')
             ->assertOk()
-            ->assertInertia(fn(Assert $page) => $page
-                ->has('requestTypeChart.items', 4)
-                ->where('requestTypeChart.items.0.type', 'installation')
-                ->where('requestTypeChart.items.0.value', 4)
-                ->where('requestTypeChart.items.0.percent', 57)
-                ->where('requestTypeChart.items.1.type', 'failure')
-                ->where('requestTypeChart.items.1.value', 2)
-                ->where('requestTypeChart.items.2.type', 'relocation')
-                ->where('requestTypeChart.items.2.value', 1)
-                ->where('requestTypeChart.items.3.type', 'change_plan')
-                ->where('requestTypeChart.items.3.value', 0)
-                ->where('requestTypeChart.change', 100));
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->has('requestTypeChart.items', 4)
+                    ->where('requestTypeChart.items.0.type', 'installation')
+                    ->where('requestTypeChart.items.0.value', 4)
+                    ->where('requestTypeChart.items.0.percent', 57)
+                    ->where('requestTypeChart.items.1.type', 'failure')
+                    ->where('requestTypeChart.items.1.value', 2)
+                    ->where('requestTypeChart.items.2.type', 'relocation')
+                    ->where('requestTypeChart.items.2.value', 1)
+                    ->where('requestTypeChart.items.3.type', 'change_plan')
+                    ->where('requestTypeChart.items.3.value', 0)
+                    ->where('requestTypeChart.change', 100),
+            );
     }
 
     public function test_authenticated_admins_receive_recent_notifications(): void
@@ -141,11 +167,13 @@ class DashboardTest extends TestCase
         $this->actingAs($admin, 'web')
             ->get('/dashboard')
             ->assertOk()
-            ->assertInertia(fn(Assert $page) => $page
-                ->where('unreadNotifications', 1)
-                ->has('recentNotifications', 1)
-                ->where('recentNotifications.0.title', 'Event Today')
-                ->where('recentNotifications.0.time', '9:15 AM'));
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->where('unreadNotifications', 1)
+                    ->has('recentNotifications', 1)
+                    ->where('recentNotifications.0.title', 'Event Today')
+                    ->where('recentNotifications.0.time', '9:15 AM'),
+            );
     }
 
     public function test_admins_can_bulk_delete_recent_service_requests(): void

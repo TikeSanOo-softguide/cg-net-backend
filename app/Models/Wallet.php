@@ -27,6 +27,11 @@ class Wallet extends Model
         ];
     }
 
+    public function incrementVersion(): void
+    {
+        $this->version = (int) $this->version + 1;
+    }
+
     /**
      * The owner of the wallet.
      */

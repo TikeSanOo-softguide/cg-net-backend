@@ -163,28 +163,34 @@ export function ServiceForm({ form, onSubmit, onCancel, onImageClear, mode = 'cr
                 </FormField>
             </div>
             <div className="md:ml-3">
-                <div className="mb-4 flex items-center justify-between border-b border-border/40">
-                    <div className="flex items-center gap-2">
-                        <h3 className={cn('text-sm font-medium leading-none', formLabelClass)}>{t('cms.image')}</h3>
-                    </div>
-                    <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-                        {t('cms.service.image_size')} : 1080 × 420 px
-                    </span>
-                </div>
-                <SquareImageUpload
-                    id="image"
-                    width={1080}
-                    aspectRatio="1080 / 420"
-                    value={image}
-                    existingUrl={imageUrl}
-                    className={cn('w-full', formControlStateClass(fieldState('image')))}
-                    onChange={(file) => {
-                        setImage(file);
-                        setField('image', file);
-                        markTouched('image');
-                        handleImageDelete(file);
-                    }}
-                />
+                <FormField
+                    label={
+                        <div className="flex w-full items-center justify-between border-b border-border/40 pb-7">
+                            <span>{t('cms.image')}</span>
+                            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                                {t('cms.service.image_size')} : 1080 × 420 px
+                            </span>
+                        </div>
+                    }
+                    htmlFor="image"
+                    error={fieldError('image')}
+                    className=""
+                >
+                    <SquareImageUpload
+                        id="image"
+                        width={1080}
+                        aspectRatio="1080 / 420"
+                        value={image}
+                        existingUrl={imageUrl}
+                        className={cn('w-full', formControlStateClass(fieldState('image')))}
+                        onChange={(file) => {
+                            setImage(file);
+                            setField('image', file);
+                            markTouched('image');
+                            handleImageDelete(file);
+                        }}
+                    />
+                </FormField>
             </div>
             <div>
                 <FormField
