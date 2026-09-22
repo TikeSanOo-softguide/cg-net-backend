@@ -15,7 +15,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     Fillable([
         'serial_no',
         'pin',
-        'pin_lookup',
         'amount',
         'expires_at',
         'redeemed_at',
@@ -26,7 +25,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
         'wallet_transaction_id',
     ]),
 ]
-#[Hidden(['pin', 'pin_lookup'])]
+#[Hidden(['pin'])]
 class TopUpCard extends Model
 {
     /** @use HasFactory<TopUpCardFactory> */
