@@ -513,6 +513,7 @@
         "create_gallery_description": "Add an image to the public gallery.",
         "edit_gallery_description": "Update this gallery image and label.",
         "promotions": {
+            "search_placeholder": "Search promotions title",
             "title_en": "Title (English)",
             "title_my": "Title (Myanmar)",
             "title_zh": "Title (Chinese)",
@@ -546,6 +547,7 @@
             }
         },
         "gallery": {
+            "search_placeholder": "Search gallery label",
             "label_en": "Label (English)",
             "label_my": "Label (Myanmar)",
             "label_zh": "Label (Chinese)",

@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, useEffect } from 'react';
 import type { InertiaFormProps } from '@inertiajs/react';
 import { FileTextIcon, CalendarClockIcon, CalendarIcon, CircleDotIcon, TypeIcon, Link2Icon } from 'lucide-react';
 
@@ -33,7 +33,6 @@ type PromotionFormProps = {
     form: InertiaFormProps<PromotionFormValues>;
     onSubmit: (event: FormEvent) => void;
     onCancel?: () => void;
-    onImageClear: () => void;
     mode?: 'create' | 'edit';
     imageUrl?: string | null;
 };
@@ -63,20 +62,41 @@ function toSlug(value: string): string {
         .replace(/^-+|-+$/g, '');
 }
 
-export function PromotionForm({
-    form,
-    onSubmit,
-    onCancel,
-    onImageClear,
-    mode = 'create',
-    imageUrl,
-}: PromotionFormProps) {
+export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', imageUrl }: PromotionFormProps) {
     const { t } = useTranslation();
 
     const [touched, setTouched] = useState<TouchedFields>(untouched);
     const [slugTouched, setSlugTouched] = useState(form.data.slug !== '');
     const [submitted, setSubmitted] = useState(false);
-    const [dashedImage, setDashedImage] = useState<File | null>(form.data.image);
+    const [image, setImage] = useState<File | null>(null);
+    const [existingImageUrl, setExistingImageUrl] = useState(imageUrl ?? null);
+    const [imageDimensions, setImageDimensions] = useState<{
+        width: number;
+        height: number;
+    } | null>(null);
+
+    useEffect(() => {
+        console.log(existingImageUrl, 'existing');
+        console.log(imageUrl, 'image');
+        if (!existingImageUrl) {
+            setImageDimensions(null);
+            return;
+        }
+
+        const image = new Image();
+
+        image.onload = () => {
+            setImageDimensions({
+                width: image.naturalWidth,
+                height: image.naturalHeight,
+            });
+        };
+
+        console.log(image, 'image');
+        console.log(imageDimensions, 'imageDimensions');
+
+        image.src = existingImageUrl;
+    }, [existingImageUrl]);
 
     const markTouched = (field: keyof PromotionFormValues) => {
         setTouched((current) => ({
@@ -108,9 +128,7 @@ export function PromotionForm({
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
-
         setSubmitted(true);
-
         setTouched({
             title_en: true,
             title_my: true,
@@ -135,10 +153,35 @@ export function PromotionForm({
         onSubmit(event);
     };
 
+    const handleImageChange = (file: File | null) => {
+        setImage(file);
+        setField('image', file);
+        markTouched('image');
+        handleImageDelete(file);
+
+        if (!file) {
+            setImageDimensions(null);
+            return;
+        }
+
+        const image = new Image();
+
+        image.onload = () => {
+            setImageDimensions({
+                width: image.naturalWidth,
+                height: image.naturalHeight,
+            });
+
+            URL.revokeObjectURL(image.src);
+        };
+
+        image.src = URL.createObjectURL(file);
+    };
+
     const handleImageDelete = (file: File | null) => {
         if (!file) {
-            setField('image_url', '');
-            onImageClear();
+            setExistingImageUrl(null);
+            setField('image_url', null);
         }
     };
 
@@ -177,7 +220,7 @@ export function PromotionForm({
                 >
                     <Textarea
                         id="description_en"
-                        className={cn('min-h-40', formControlStateClass(fieldState('description_en')))}
+                        className={cn('h-40', formControlStateClass(fieldState('description_en')))}
                         value={form.data.description_en}
                         aria-invalid={fieldState('description_en') === 'error'}
                         onBlur={() => markTouched('description_en')}
@@ -211,7 +254,7 @@ export function PromotionForm({
                 >
                     <Textarea
                         id="description_zh"
-                        className={cn('min-h-40', formControlStateClass(fieldState('description_zh')))}
+                        className={cn('h-40', formControlStateClass(fieldState('description_zh')))}
                         value={form.data.description_zh}
                         aria-invalid={fieldState('description_zh') === 'error'}
                         onBlur={() => markTouched('description_zh')}
@@ -237,19 +280,31 @@ export function PromotionForm({
                 </FormField>
             </div>
             <div className="ml-3">
-                <FormField label={t('cms.image')} htmlFor="image" error={fieldError('image')} className="mb-3">
+                <FormField
+                    label={
+                        <div className="flex w-full items-center justify-between border-b border-border/40 pb-3">
+                            <span>{t('cms.image')}</span>
+
+                            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                                {t('cms.news.image_size')}:{' '}
+                                {imageDimensions
+                                    ? `${imageDimensions.width} × ${imageDimensions.height} px`
+                                    : '925 × 390 px'}
+                            </span>
+                        </div>
+                    }
+                    htmlFor="image"
+                    error={fieldError('image')}
+                    className=""
+                >
                     <SquareImageUpload
                         id="image"
-                        width={620}
-                        height={258}
-                        value={dashedImage}
-                        existingUrl={imageUrl}
-                        onChange={(file) => {
-                            setDashedImage(file);
-                            setField('image', file);
-                            markTouched('image');
-                            handleImageDelete(file);
-                        }}
+                        width={925}
+                        aspectRatio="925 / 390"
+                        value={image}
+                        existingUrl={existingImageUrl}
+                        className={cn('w-full', formControlStateClass(fieldState('image')))}
+                        onChange={handleImageChange}
                     />
                 </FormField>
                 <FormField
@@ -258,7 +313,7 @@ export function PromotionForm({
                     error={fieldError('title_my')}
                     required
                     icon={TypeIcon}
-                    className="mb-3"
+                    className="mt-3"
                 >
                     <Input
                         id="title_my"
@@ -275,11 +330,11 @@ export function PromotionForm({
                     error={fieldError('description_my')}
                     required
                     icon={FileTextIcon}
-                    className="mb-3"
+                    className="mt-3"
                 >
                     <Textarea
                         id="description_my"
-                        className={cn('min-h-40', formControlStateClass(fieldState('description_my')))}
+                        className={cn('h-40', formControlStateClass(fieldState('description_my')))}
                         value={form.data.description_my}
                         aria-invalid={fieldState('description_my') === 'error'}
                         onBlur={() => markTouched('description_my')}
@@ -292,7 +347,7 @@ export function PromotionForm({
                         htmlFor="is_active"
                         error={fieldError('is_active')}
                         icon={CircleDotIcon}
-                        className="mb-3"
+                        className="mt-3"
                         required
                     >
                         <Select
@@ -321,7 +376,7 @@ export function PromotionForm({
                         htmlFor="start_date"
                         error={fieldError('start_date')}
                         icon={CalendarIcon}
-                        className="mb-3"
+                        className="mt-3"
                     >
                         <DatePicker
                             id="start_date"
@@ -339,7 +394,7 @@ export function PromotionForm({
                         htmlFor="end_date"
                         error={fieldError('end_date')}
                         icon={CalendarClockIcon}
-                        className="mb-3"
+                        className="mt-3"
                     >
                         <DatePicker
                             id="end_date"

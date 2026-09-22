@@ -109,18 +109,11 @@ function PromotionFormDialogBody({ item, onClose }: { item: PromotionItem | null
         form.post('/cms/promotions', options);
     };
 
-    const onImageClear = () => {
-        if (item) {
-            item.image_url = null;
-        }
-    };
-
     return (
         <PromotionForm
             form={form}
             onSubmit={submit}
             onCancel={onClose}
-            onImageClear={onImageClear}
             mode={isEdit ? 'edit' : 'create'}
             imageUrl={item?.image_url}
         />

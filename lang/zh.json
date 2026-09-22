@@ -510,6 +510,7 @@
         "create_gallery_description": "向公开图库添加图片。",
         "edit_gallery_description": "更新此图库图片和标签。",
         "promotions": {
+            "search_placeholder": "搜索促销标题",
             "title_en": "标题 (英文)",
             "title_my": "标题 (缅甸语)",
             "title_zh": "标题 (中文)",
@@ -544,6 +545,7 @@
             }
         },
         "gallery": {
+            "search_placeholder": "搜索图库标签",
             "label": "标签",
             "label_en": "标签 (英文)",
             "label_my": "标签 (缅甸语)",

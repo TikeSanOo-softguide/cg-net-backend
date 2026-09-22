@@ -19,12 +19,6 @@ type RegionIndexProps = {
     areaFilters: RegionFilters;
 };
 
-type PendingDelete = {
-    type: 'state' | 'region' | 'area';
-    id: number;
-    name: string;
-};
-
 type FormTarget =
     | {
           type: 'state';
