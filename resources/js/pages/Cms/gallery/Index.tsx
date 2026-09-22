@@ -37,6 +37,7 @@ export default function GalleryIndex({ items, filters }: Props) {
             <Head title={t('menu.cms_gallery')} />
             <CmsIndexPage
                 createLabelKey="cms.create_gallery"
+                searchPlaceholderKey="cms.gallery.search_placeholder"
                 indexHref="/cms/gallery"
                 destroyBase="/cms/gallery"
                 items={items}
@@ -96,7 +97,11 @@ export default function GalleryIndex({ items, filters }: Props) {
                         mobile: 'title',
                         className: 'font-medium',
                         cell: (row) => {
-                            return truncateText(getLabel(row), 50);
+                            return (
+                                <span className="block max-w-full truncate leading-[1.7]">
+                                    {truncateText(getLabel(row), 50)}
+                                </span>
+                            );
                         },
                     },
                     {

@@ -51,6 +51,7 @@ export default function PromotionsIndex({ items, filters }: Props) {
             <Head title={t('menu.cms_promotions')} />
             <CmsIndexPage
                 createLabelKey="cms.create_promotion"
+                searchPlaceholderKey="cms.promotions.search_placeholder"
                 indexHref="/cms/promotions"
                 destroyBase="/cms/promotions"
                 items={items}
@@ -91,7 +92,7 @@ export default function PromotionsIndex({ items, filters }: Props) {
                                     alt=""
                                     width={220}
                                     height={90}
-                                    className="h-[90px] w-[220px] rounded object-cover"
+                                    className="h-auto w-[220px] rounded object-cover"
                                 />
                             ) : (
                                 <NoImage width={220} height={90} />
@@ -104,14 +105,18 @@ export default function PromotionsIndex({ items, filters }: Props) {
                         mobile: 'title',
                         className: 'font-medium',
                         cell: (row) => {
-                            return truncateText(getLabel(row), 50);
+                            return (
+                                <span className="block max-w-full truncate leading-[1.7]">
+                                    {truncateText(getLabel(row), 50)}
+                                </span>
+                            );
                         },
                     },
                     {
                         id: 'start_date',
                         header: t('cms.start_date'),
                         mobile: 'meta',
-                        cell: (row) => formatDate(row.start_date),
+                        cell: (row) => formatDate(row.start_date) ?? '—',
                     },
                     {
                         id: 'end_date',

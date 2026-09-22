@@ -8,7 +8,7 @@ import { formLabelClass } from '@/lib/form-control';
 import { cn } from '@/lib/utils';
 
 type FormFieldProps = {
-    label: string;
+    label: ReactNode;
     htmlFor: string;
     error?: string;
     success?: string;
