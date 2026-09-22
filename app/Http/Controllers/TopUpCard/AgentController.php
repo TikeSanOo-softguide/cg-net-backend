@@ -21,6 +21,7 @@ class AgentController extends Controller
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search'));
+        $cardSearch = trim((string) $request->string('card_search'));
         $batch = $request->string('batch')->toString();
         $agent = $request->string('agent')->toString();
         $agents = Agent::query()
@@ -34,6 +35,7 @@ class AgentController extends Controller
 
         $cards = TopUpCard::query()
             ->with('agent:id,name')
+            ->when($cardSearch !== '', fn($query) => $query->where('serial_no', 'like', '%' . $cardSearch . '%'))
             ->when($batch !== '', fn($query) => $query->where('batch_id', (int) $batch))
             ->when($agent === 'unassigned', fn($query) => $query->whereNull('agent_id'))
             ->when($agent !== '' && $agent !== 'unassigned', fn($query) => $query->where('agent_id', (int) $agent))
@@ -48,6 +50,7 @@ class AgentController extends Controller
             'batches' => Batch::query()->select(['id', 'batch_no'])->latest('id')->get(),
             'filters' => [
                 'search' => $search,
+                'card_search' => $cardSearch,
                 'batch' => $batch,
                 'agent' => $agent,
             ],

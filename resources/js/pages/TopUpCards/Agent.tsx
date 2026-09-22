@@ -27,7 +27,7 @@ type Props = {
     agents: AgentRow[];
     cards: TopUpCardRow[];
     batches: { id: number; batch_no: string }[];
-    filters: { search: string; batch: string; agent: string };
+    filters: { search: string; card_search: string; batch: string; agent: string };
 };
 
 function AgentForm({ item, onClose }: { item: AgentRow | null; onClose: () => void }) {
@@ -80,17 +80,20 @@ export default function AgentPage({ agents, cards, batches, filters }: Props) {
     const [selectedAgent, setSelectedAgent] = useState('');
     const [batchFilter, setBatchFilter] = useState(filters.batch);
     const [agentFilter, setAgentFilter] = useState(filters.agent);
+    const [cardSearch, setCardSearch] = useState(filters.card_search);
 
     const refresh = (value: string) => {
         setSearch(value);
         router.get('/top-up-cards/agents', { search: value || undefined }, { preserveState: true, preserveScroll: true, replace: true });
     };
 
-    const refreshCards = (nextBatch: string, nextAgent: string) => {
+    const refreshCards = (nextBatch: string, nextAgent: string, nextSearch = cardSearch) => {
+        setCardSearch(nextSearch);
         setBatchFilter(nextBatch);
         setAgentFilter(nextAgent);
         router.get('/top-up-cards/agents', {
             search: search || undefined,
+            card_search: nextSearch || undefined,
             batch: nextBatch || undefined,
             agent: nextAgent || undefined,
         }, { preserveState: true, preserveScroll: true, replace: true });
@@ -125,8 +128,8 @@ export default function AgentPage({ agents, cards, batches, filters }: Props) {
                     <DataTable
                         data={cards}
                         getRowId={(row) => String(row.id)}
-                        search=""
-                        onSearchChange={() => undefined}
+                        search={cardSearch}
+                        onSearchChange={(value) => refreshCards(batchFilter, agentFilter, value)}
                         searchPlaceholder={t('top_up_cards.search_placeholder')}
                         emptyLabel={t('top_up_cards.empty_table')}
                         filters={
