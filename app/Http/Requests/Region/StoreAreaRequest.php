@@ -18,8 +18,8 @@ class StoreAreaRequest extends FormRequest
             'name_my' => ['required', 'string', 'max:50'],
             'name_zh' => ['required', 'string', 'max:50'],
             'region_id' => ['required', 'integer', 'exists:regions,id'],
-            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
-            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90', 'decimal:0,7'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180', 'decimal:0,7'],
         ];
     }
 }

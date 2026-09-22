@@ -453,14 +453,15 @@
         "select_area": "Select Area",
         "validation": {
             "name_en_required": "The English name is required.",
-            "name_en_string": "The English name must be a string.",
             "name_en_max": "The English name may not be greater than 255 characters.",
             "name_my_required": "The Myanmar name is required.",
-            "name_my_string": "The Myanmar name must be a string.",
             "name_my_max": "The Myanmar name may not be greater than 255 characters.",
             "name_zh_required": "The Chinese name is required.",
-            "name_zh_string": "The Chinese name must be a string.",
             "name_zh_max": "The Chinese name may not be greater than 255 characters.",
+            "latitude_between": "Latitude must be between -90 and 90.",
+            "latitude_decimal": "Latitude may have up to 7 decimal places.",
+            "longitude_between": "Longitude must be between -180 and 180.",
+            "longitude_decimal": "Longitude may have up to 7 decimal places.",
             "state_required": "Please select a state.",
             "region_required": "Please select a region."
         }
