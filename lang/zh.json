@@ -452,14 +452,15 @@
         "select_area": "选择区域",
         "validation": {
             "name_en_required": "英文名称为必填项。",
-            "name_en_string": "英文名称必须是字符串。",
             "name_en_max": "英文名称不得超过 255 个字符。",
             "name_my_required": "缅甸文名称为必填项。",
-            "name_my_string": "缅甸文名称必须是字符串。",
             "name_my_max": "缅甸文名称不得超过 255 个字符。",
             "name_zh_required": "中文名称为必填项。",
-            "name_zh_string": "中文名称必须是字符串。",
             "name_zh_max": "中文名称不得超过 255 个字符。",
+            "latitude_between": "纬度必须介于 -90 和 90 之间。",
+            "latitude_decimal": "纬度最多只能有 7 位小数。",
+            "longitude_between": "经度必须介于 -180 和 180 之间。",
+            "longitude_decimal": "经度最多只能有 7 位小数。",
             "state_required": "请选择省/邦。",
             "region_required": "请选择地区。"
         }
