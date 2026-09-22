@@ -27,6 +27,7 @@ use App\Http\Controllers\ServiceRequest\RelocationRequestController;
 use App\Http\Controllers\Staff\RoleController;
 use App\Http\Controllers\Staff\StaffController;
 use App\Http\Controllers\Support\ChatFlows\ChatbotFlowsController;
+use App\Http\Controllers\TopUpCard\AgentController;
 use App\Http\Controllers\TopUpCard\TopUpCardController;
 use App\Support\AdminHome;
 use App\Support\MenuPages;
@@ -150,6 +151,11 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
     Route::prefix('top-up-cards')->name('top-up-cards.')->group(function () {
         Route::get('/batch', [TopUpCardController::class, 'index'])->middleware('can:top-up-cards.view')->name('batch');
         Route::post('/batch', [TopUpCardController::class, 'store'])->middleware('can:top-up-cards.create')->name('store');
+        Route::get('/agents', [AgentController::class, 'index'])->middleware('can:top-up-cards.view')->name('agents');
+        Route::post('/agents', [AgentController::class, 'store'])->middleware('can:top-up-cards.create')->name('agents.store');
+        Route::put('/agents/{agent}', [AgentController::class, 'update'])->middleware('can:top-up-cards.update')->name('agents.update');
+        Route::delete('/agents/{agent}', [AgentController::class, 'destroy'])->middleware('can:top-up-cards.delete')->name('agents.destroy');
+        Route::patch('/assign-agent', [AgentController::class, 'assignAgent'])->middleware('can:top-up-cards.update')->name('assign-cards-agent');
         Route::get('/export', [TopUpCardController::class, 'export'])->middleware('can:top-up-cards.view')->name('export');
         Route::get('/card-history', [TopUpCardController::class, 'cardHistory'])->middleware('can:top-up-cards.view')->name('card-history');
         Route::get('/redeem-history', [TopUpCardController::class, 'history'])->middleware('can:top-up-cards.view')->name('redeem-history');

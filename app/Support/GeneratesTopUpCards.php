@@ -70,7 +70,8 @@ final class GeneratesTopUpCards
                     'pin_lookup' => $pinLookup,
                     'amount' => $amount,
                     'expires_at' => $expiresAt,
-                    'status' => TopUpCardStatus::Active,
+                    'status' => TopUpCardStatus::Pending,
+                    'agent_id' => null,
                     'batch_id' => $batchId,
                 ]);
 

@@ -13,6 +13,8 @@ export type TopUpCardRow = {
     redeemed_by_id?: number | null;
     redeemed_by: string | null;
     redeemed_by_phone?: string | null;
+    agent_id?: number | null;
+    agent?: string | null;
     batch_no: string | null;
     batch_status: string | null;
     transaction_id: string | number;

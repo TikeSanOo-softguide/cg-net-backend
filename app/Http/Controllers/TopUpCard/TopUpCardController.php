@@ -137,7 +137,7 @@ class TopUpCardController extends Controller
 
     public function void(Request $request, TopUpCard $topUpCard): RedirectResponse
     {
-        if ($topUpCard->status !== TopUpCardStatus::Active) {
+        if ($topUpCard->status !== TopUpCardStatus::Pending && $topUpCard->status !== TopUpCardStatus::Active) {
             return back()->with('error', 'top_up_cards.cannot_void');
         }
 

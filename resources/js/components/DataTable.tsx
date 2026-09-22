@@ -71,6 +71,7 @@ type DataTableProps<T> = {
     bulkDeleteTitle?: string;
     bulkDeleteDescription?: string;
     bulkActions?: ReactNode;
+    alwaysShowBulkActions?: boolean;
     createHref?: string;
     createLabel?: string;
     onCreate?: () => void;
@@ -110,6 +111,7 @@ export function DataTable<T>({
     bulkDeleteTitle,
     bulkDeleteDescription,
     bulkActions,
+    alwaysShowBulkActions = false,
     createHref,
     createLabel,
     onCreate,
@@ -195,6 +197,7 @@ export function DataTable<T>({
     const columnCount = columns.length + Number(canSelect) + Number(numbered) + Number(showActions);
     const hasSelection = selectedIds.length > 0;
     const showDelete = hasSelection && Boolean(bulkActions || onBulkDelete);
+    const showBulkActions = Boolean(bulkActions) && (hasSelection || alwaysShowBulkActions);
 
     const renderActions = (row: T) => {
         const to = href?.(row);
@@ -326,7 +329,8 @@ export function DataTable<T>({
         showExport ||
         Boolean(onExport) ||
         Boolean(createHref) ||
-        Boolean(onCreate);
+        Boolean(onCreate) ||
+        showBulkActions;
 
     return (
         <TooltipProvider>
@@ -367,11 +371,13 @@ export function DataTable<T>({
                                 ) : null}
                             </div>
                             <div className="flex shrink-0 items-center justify-end gap-2">
-                                {showDelete ? (
+                                {showDelete || showBulkActions ? (
                                     <>
-                                        <span className="inline-flex h-8 items-center rounded-[6px] bg-primary/12 px-2.5 text-[10px] font-semibold tabular-nums text-primary">
-                                            {t('common.selected_count').replace(':count', String(selectedIds.length))}
-                                        </span>
+                                        {showDelete ? (
+                                            <span className="inline-flex h-8 items-center rounded-[6px] bg-primary/12 px-2.5 text-[10px] font-semibold tabular-nums text-primary">
+                                                {t('common.selected_count').replace(':count', String(selectedIds.length))}
+                                            </span>
+                                        ) : null}
                                         {bulkActions ?? (
                                             <ToolbarIconButton
                                                 label={t('common.delete')}

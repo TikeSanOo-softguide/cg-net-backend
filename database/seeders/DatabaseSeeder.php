@@ -50,6 +50,7 @@ class DatabaseSeeder extends Seeder
         $areas = $this->seedAreas();
         $packages = $this->seedPackages();
         $users = $this->seedCustomers($packages);
+        $this->seedAgents();
         $this->seedServiceRequests($users, $areas, $packages);
         $this->seedFailureReports();
         $this->seedBilling($users);
@@ -110,6 +111,11 @@ class DatabaseSeeder extends Seeder
     private function seedFailureReports(): void
     {
         (new FailureReportSeeder())->run();
+    }
+
+    private function seedAgents(): void
+    {
+        (new AgentSeeder())->run();
     }
 
     private function seedAnnouncements(): void
