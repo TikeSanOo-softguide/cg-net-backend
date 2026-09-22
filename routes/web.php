@@ -28,6 +28,7 @@ use App\Http\Controllers\Staff\RoleController;
 use App\Http\Controllers\Staff\StaffController;
 use App\Http\Controllers\Support\ChatFlows\ChatbotFlowsController;
 use App\Http\Controllers\TopUpCard\AgentController;
+use App\Http\Controllers\Support\QuickReplies\QuickRepliesController;
 use App\Http\Controllers\TopUpCard\TopUpCardController;
 use App\Http\Controllers\Transaction\TransactionController;
 use App\Support\AdminHome;
@@ -44,112 +45,210 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         ->middleware('can:service-requests.delete')
         ->name('dashboard.requests.bulk-destroy');
 
-    Route::get('/customers', [CustomerController::class, 'index'])->middleware('can:customers.view')->name('customers.index');
-    Route::get('/customers/create', [CustomerController::class, 'create'])->middleware('can:customers.create')->name('customers.create');
-    Route::post('/customers', [CustomerController::class, 'store'])->middleware('can:customers.create')->name('customers.store');
-    Route::delete('/customers/bulk-destroy', [CustomerController::class, 'bulkDestroy'])->middleware('can:customers.delete')->name('customers.bulk-destroy');
-    Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])->middleware('can:customers.update')->name('customers.edit');
-    Route::put('/customers/{customer}', [CustomerController::class, 'update'])->middleware('can:customers.update')->name('customers.update');
-    Route::patch('/customers/{customer}/status', [CustomerController::class, 'updateStatus'])->middleware('can:customers.update')->name('customers.status');
-    Route::post('/customers/{customer}/accounts', [CustomerController::class, 'bindAccount'])->middleware('can:customers.update')->name('customers.accounts.bind');
-    Route::delete('/customers/{customer}/accounts/{account}', [CustomerController::class, 'unbindAccount'])->middleware('can:customers.update')->name('customers.accounts.unbind');
-    Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->middleware('can:customers.delete')->name('customers.destroy');
-    Route::get('/customers/{customer}', [CustomerController::class, 'show'])->middleware('can:customers.view')->name('customers.show');
+    Route::get('/customers', [CustomerController::class, 'index'])
+        ->middleware('can:customers.view')
+        ->name('customers.index');
+    Route::get('/customers/create', [CustomerController::class, 'create'])
+        ->middleware('can:customers.create')
+        ->name('customers.create');
+    Route::post('/customers', [CustomerController::class, 'store'])
+        ->middleware('can:customers.create')
+        ->name('customers.store');
+    Route::delete('/customers/bulk-destroy', [CustomerController::class, 'bulkDestroy'])
+        ->middleware('can:customers.delete')
+        ->name('customers.bulk-destroy');
+    Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])
+        ->middleware('can:customers.update')
+        ->name('customers.edit');
+    Route::put('/customers/{customer}', [CustomerController::class, 'update'])
+        ->middleware('can:customers.update')
+        ->name('customers.update');
+    Route::patch('/customers/{customer}/status', [CustomerController::class, 'updateStatus'])
+        ->middleware('can:customers.update')
+        ->name('customers.status');
+    Route::post('/customers/{customer}/accounts', [CustomerController::class, 'bindAccount'])
+        ->middleware('can:customers.update')
+        ->name('customers.accounts.bind');
+    Route::delete('/customers/{customer}/accounts/{account}', [CustomerController::class, 'unbindAccount'])
+        ->middleware('can:customers.update')
+        ->name('customers.accounts.unbind');
+    Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])
+        ->middleware('can:customers.delete')
+        ->name('customers.destroy');
+    Route::get('/customers/{customer}', [CustomerController::class, 'show'])
+        ->middleware('can:customers.view')
+        ->name('customers.show');
 
     Route::get('/billing/transactions', [TransactionController::class, 'index'])->middleware('can:billing.view')->name('billing.transactions');
 
-    Route::prefix('regions')->name('regions.')->group(function () {
-        Route::get('/', [RegionManagementController::class, 'index'])->middleware('can:regions.view')->name('index');
+    Route::prefix('regions')
+        ->name('regions.')
+        ->group(function () {
+            Route::get('/', [RegionManagementController::class, 'index'])
+                ->middleware('can:regions.view')
+                ->name('index');
 
-        // States
-        Route::post('/states', [RegionManagementController::class, 'storeState'])->middleware('can:regions.create')->name('states.store');
-        Route::put('/states/{state}', [RegionManagementController::class, 'updateState'])->middleware('can:regions.update')->name('states.update');
-        Route::delete('/states/bulk-destroy', [RegionManagementController::class, 'bulkDestroyStates'])->middleware('can:regions.delete')->name('states.bulk-destroy');
-        Route::delete('/states/{state}', [RegionManagementController::class, 'destroyState'])->middleware('can:regions.delete')->name('states.destroy');
+            // States
+            Route::post('/states', [RegionManagementController::class, 'storeState'])
+                ->middleware('can:regions.create')
+                ->name('states.store');
+            Route::put('/states/{state}', [RegionManagementController::class, 'updateState'])
+                ->middleware('can:regions.update')
+                ->name('states.update');
+            Route::delete('/states/bulk-destroy', [RegionManagementController::class, 'bulkDestroyStates'])
+                ->middleware('can:regions.delete')
+                ->name('states.bulk-destroy');
+            Route::delete('/states/{state}', [RegionManagementController::class, 'destroyState'])
+                ->middleware('can:regions.delete')
+                ->name('states.destroy');
 
-        // Regions
-        Route::post('/regions', [RegionManagementController::class, 'storeRegion'])->middleware('can:regions.create')->name('regions.store');
-        Route::put('/regions/{region}', [RegionManagementController::class, 'updateRegion'])->middleware('can:regions.update')->name('regions.update');
-        Route::delete('/regions/bulk-destroy', [RegionManagementController::class, 'bulkDestroyRegions'])->middleware('can:regions.delete')->name('regions.bulk-destroy');
-        Route::delete('/regions/{region}', [RegionManagementController::class, 'destroyRegion'])->middleware('can:regions.delete')->name('regions.destroy');
+            // Regions
+            Route::post('/regions', [RegionManagementController::class, 'storeRegion'])
+                ->middleware('can:regions.create')
+                ->name('regions.store');
+            Route::put('/regions/{region}', [RegionManagementController::class, 'updateRegion'])
+                ->middleware('can:regions.update')
+                ->name('regions.update');
+            Route::delete('/regions/bulk-destroy', [RegionManagementController::class, 'bulkDestroyRegions'])
+                ->middleware('can:regions.delete')
+                ->name('regions.bulk-destroy');
+            Route::delete('/regions/{region}', [RegionManagementController::class, 'destroyRegion'])
+                ->middleware('can:regions.delete')
+                ->name('regions.destroy');
 
-        // Areas
-        Route::post('/areas', [RegionManagementController::class, 'storeArea'])->middleware('can:regions.create')->name('areas.store');
-        Route::put('/areas/{area}', [RegionManagementController::class, 'updateArea'])->middleware('can:regions.update')->name('areas.update');
-        Route::delete('/areas/bulk-destroy', [RegionManagementController::class, 'bulkDestroyAreas'])->middleware('can:regions.delete')->name('areas.bulk-destroy');
-        Route::delete('/areas/{area}', [RegionManagementController::class, 'destroyArea'])->middleware('can:regions.delete')->name('areas.destroy');
-    });
-
-
-
-    Route::prefix('cms')->name('cms.')->group(function () {
-        foreach (
-            [
-                'promotions' => [PromotionController::class, 'promotion'],
-                'banners' => [BannerController::class, 'banner'],
-                'categories' => [CategoryController::class, 'category'],
-                'news' => [NewsController::class, 'news'],
-                'gallery' => [GalleryController::class, 'gallery'],
-                'contacts' => [ContactController::class, 'contact'],
-                'services' => [ServiceController::class, 'service'],
-            ] as $name => [$controller, $parameter]
-        ) {
-            Route::get($name, [$controller, 'index'])->middleware('can:cms.view')->name($name . '.index');
-            Route::get($name . '/create', [$controller, 'create'])->middleware('can:cms.create')->name($name . '.create');
-            Route::post($name, [$controller, 'store'])->middleware('can:cms.create')->name($name . '.store');
-            Route::delete($name . '/bulk-destroy', [$controller, 'bulkDestroy'])->middleware('can:cms.delete')->name($name . '.bulk-destroy');
-            Route::get($name . '/{' . $parameter . '}/edit', [$controller, 'edit'])->middleware('can:cms.update')->name($name . '.edit');
-            Route::put($name . '/{' . $parameter . '}', [$controller, 'update'])->middleware('can:cms.update')->name($name . '.update');
-            Route::delete($name . '/{' . $parameter . '}', [$controller, 'destroy'])->middleware('can:cms.delete')->name($name . '.destroy');
-        }
-    });
-
-    Route::prefix('notifications')->name('notifications.')->group(function () {
-        Route::prefix('announcement')->name('announcement.')->group(function () {
-            Route::get('/', [AnnouncementController::class, 'index'])->middleware('can:notifications.view')->name('index');
-            Route::get('/create', [AnnouncementController::class, 'create'])->middleware('can:notifications.create')->name('create');
-            Route::post('/', [AnnouncementController::class, 'store'])->middleware('can:notifications.create')->name('store');
-            Route::delete('/bulk-destroy', [AnnouncementController::class, 'bulkDestroy'])->middleware('can:notifications.delete')->name('bulk-destroy');
-            Route::get('/{announcement}/edit', [AnnouncementController::class, 'edit'])->middleware('can:notifications.update')->name('edit');
-            Route::put('/{announcement}', [AnnouncementController::class, 'update'])->middleware('can:notifications.update')->name('update');
-            Route::delete('/{announcement}', [AnnouncementController::class, 'destroy'])->middleware('can:notifications.delete')->name('destroy');
-            Route::get('/{announcement}', [AnnouncementController::class, 'show'])->middleware('can:notifications.view')->name('show');
+            // Areas
+            Route::post('/areas', [RegionManagementController::class, 'storeArea'])
+                ->middleware('can:regions.create')
+                ->name('areas.store');
+            Route::put('/areas/{area}', [RegionManagementController::class, 'updateArea'])
+                ->middleware('can:regions.update')
+                ->name('areas.update');
+            Route::delete('/areas/bulk-destroy', [RegionManagementController::class, 'bulkDestroyAreas'])
+                ->middleware('can:regions.delete')
+                ->name('areas.bulk-destroy');
+            Route::delete('/areas/{area}', [RegionManagementController::class, 'destroyArea'])
+                ->middleware('can:regions.delete')
+                ->name('areas.destroy');
         });
-    });
 
-    Route::prefix('support')->name('support.')->group(function () {
-        Route::prefix('chatbot-flows')->name('chatbot-flows.')->controller(ChatbotFlowsController::class)->group(function () {
-            Route::get('/', 'index')->name('index');
-            Route::post('/steps', 'storeStep')->name('steps.store');
-            Route::put('/steps/{step}', 'updateStep')->name('steps.update');
-            Route::delete('/steps/{step}', 'destroyStep')->name('steps.destroy');
-            Route::post('/steps/{step}/options', 'storeOption')->name('options.store');
-            Route::put('/steps/{step}/options/{option}', 'updateOption')->name('options.update');
-            Route::delete('/steps/{step}/options/{option}', 'destroyOption')->name('options.destroy');
-            Route::post('/steps/{step}/options/create-step', 'createStepFromOption')->name('options.create-step');
+    Route::prefix('cms')
+        ->name('cms.')
+        ->group(function () {
+            foreach (
+                [
+                    'promotions' => [PromotionController::class, 'promotion'],
+                    'banners' => [BannerController::class, 'banner'],
+                    'categories' => [CategoryController::class, 'category'],
+                    'news' => [NewsController::class, 'news'],
+                    'gallery' => [GalleryController::class, 'gallery'],
+                    'contacts' => [ContactController::class, 'contact'],
+                    'services' => [ServiceController::class, 'service'],
+                ]
+                as $name => [$controller, $parameter]
+            ) {
+                Route::get($name, [$controller, 'index'])
+                    ->middleware('can:cms.view')
+                    ->name($name . '.index');
+                Route::get($name . '/create', [$controller, 'create'])
+                    ->middleware('can:cms.create')
+                    ->name($name . '.create');
+                Route::post($name, [$controller, 'store'])
+                    ->middleware('can:cms.create')
+                    ->name($name . '.store');
+                Route::delete($name . '/bulk-destroy', [$controller, 'bulkDestroy'])
+                    ->middleware('can:cms.delete')
+                    ->name($name . '.bulk-destroy');
+                Route::get($name . '/{' . $parameter . '}/edit', [$controller, 'edit'])
+                    ->middleware('can:cms.update')
+                    ->name($name . '.edit');
+                Route::put($name . '/{' . $parameter . '}', [$controller, 'update'])
+                    ->middleware('can:cms.update')
+                    ->name($name . '.update');
+                Route::delete($name . '/{' . $parameter . '}', [$controller, 'destroy'])
+                    ->middleware('can:cms.delete')
+                    ->name($name . '.destroy');
+            }
         });
-    });
 
-    Route::prefix('staff')->name('staff.')->group(function () {
-        Route::get('/', [StaffController::class, 'index'])->middleware('can:staff.view')->name('index');
-        Route::get('/create', [StaffController::class, 'create'])->middleware('can:staff.create')->name('create');
-        Route::post('/', [StaffController::class, 'store'])->middleware('can:staff.create')->name('store');
-        Route::delete('/bulk-destroy', [StaffController::class, 'bulkDestroy'])->middleware('can:staff.delete')->name('bulk-destroy');
-        Route::get('/{admin}/edit', [StaffController::class, 'edit'])->middleware('can:staff.update')->name('edit');
-        Route::put('/{admin}', [StaffController::class, 'update'])->middleware('can:staff.update')->name('update');
-        Route::delete('/{admin}', [StaffController::class, 'destroy'])->middleware('can:staff.delete')->name('destroy');
-        Route::get('/{admin}', [StaffController::class, 'show'])->middleware('can:staff.view')->name('show');
-    });
+    Route::prefix('notifications')
+        ->name('notifications.')
+        ->group(function () {
+            Route::prefix('announcement')
+                ->name('announcement.')
+                ->group(function () {
+                    Route::get('/', [AnnouncementController::class, 'index'])
+                        ->middleware('can:notifications.view')
+                        ->name('index');
+                    Route::get('/create', [AnnouncementController::class, 'create'])
+                        ->middleware('can:notifications.create')
+                        ->name('create');
+                    Route::post('/', [AnnouncementController::class, 'store'])
+                        ->middleware('can:notifications.create')
+                        ->name('store');
+                    Route::delete('/bulk-destroy', [AnnouncementController::class, 'bulkDestroy'])
+                        ->middleware('can:notifications.delete')
+                        ->name('bulk-destroy');
+                    Route::get('/{announcement}/edit', [AnnouncementController::class, 'edit'])
+                        ->middleware('can:notifications.update')
+                        ->name('edit');
+                    Route::put('/{announcement}', [AnnouncementController::class, 'update'])
+                        ->middleware('can:notifications.update')
+                        ->name('update');
+                    Route::delete('/{announcement}', [AnnouncementController::class, 'destroy'])
+                        ->middleware('can:notifications.delete')
+                        ->name('destroy');
+                    Route::get('/{announcement}', [AnnouncementController::class, 'show'])
+                        ->middleware('can:notifications.view')
+                        ->name('show');
+                });
+        });
 
-    Route::prefix('roles')->name('roles.')->group(function () {
-        Route::get('/', [RoleController::class, 'index'])->middleware('can:roles.view')->name('index');
-        Route::get('/create', [RoleController::class, 'create'])->middleware('can:roles.create')->name('create');
-        Route::post('/', [RoleController::class, 'store'])->middleware('can:roles.create')->name('store');
-        Route::delete('/bulk-destroy', [RoleController::class, 'bulkDestroy'])->middleware('can:roles.delete')->name('bulk-destroy');
-        Route::get('/{role}/edit', [RoleController::class, 'edit'])->middleware('can:roles.update')->name('edit');
-        Route::put('/{role}', [RoleController::class, 'update'])->middleware('can:roles.update')->name('update');
-        Route::delete('/{role}', [RoleController::class, 'destroy'])->middleware('can:roles.delete')->name('destroy');
-    });
+    Route::prefix('support')
+        ->name('support.')
+        ->group(function () {
+            Route::prefix('chatbot-flows')
+                ->name('chatbot-flows.')
+                ->controller(ChatbotFlowsController::class)
+                ->group(function () {
+                    // Chatbot Flow page
+                    Route::get('/', 'index')->name('index');
+
+                    // Steps
+                    Route::post('/steps', 'storeStep')->name('steps.store');
+                    Route::put('/steps/{step}', 'updateStep')->name('steps.update');
+                    Route::delete('/steps/{step}', 'destroyStep')->name('steps.destroy');
+
+                    // Options
+                    Route::post('/steps/{step}/options', 'storeOption')->name('options.store');
+                    Route::put('/steps/{step}/options/{option}', 'updateOption')->name('options.update');
+                    Route::delete('/steps/{step}/options/{option}', 'destroyOption')->name('options.destroy');
+
+                    // Create a new step from an option
+                    Route::post(
+                        '/steps/{step}/options/create-step',
+                        'createStepFromOption'
+                    )->name('options.create-step');
+                });
+            Route::prefix('quick-replies')
+                ->name('quick-replies.')
+                ->group(function () {
+                    Route::get('/', [QuickRepliesController::class, 'index'])
+                        ->middleware('can:quick-replies.view')
+                        ->name('index');
+                    Route::post('/replies', [QuickRepliesController::class, 'store'])
+                        ->middleware('can:quick-replies.store')
+                        ->name('store');
+                    Route::put('/replies/{reply}', [QuickRepliesController::class, 'update'])
+                        ->middleware('can:quick-replies.update')
+                        ->name('update');
+                    Route::delete('/bulk-destroy', [QuickRepliesController::class, 'bulkDestroy'])
+                        ->middleware('can:quick-replies.delete')
+                        ->name('bulk-destroy');
+                    Route::delete('/replies/{reply}', [QuickRepliesController::class, 'destroy'])
+                        ->middleware('can:quick-replies.delete')
+                        ->name('destroy');
+                });
+        });
 
     Route::prefix('top-up-cards')->name('top-up-cards.')->group(function () {
         Route::get('/batch', [TopUpCardController::class, 'index'])->middleware('can:top-up-cards.view')->name('batch');
@@ -164,29 +263,144 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         Route::get('/redeem-history', [TopUpCardController::class, 'history'])->middleware('can:top-up-cards.view')->name('redeem-history');
         Route::patch('/{topUpCard}/void', [TopUpCardController::class, 'void'])->middleware('can:top-up-cards.update')->name('void');
     });
+    Route::prefix('staff')
+        ->name('staff.')
+        ->group(function () {
+            Route::get('/', [StaffController::class, 'index'])
+                ->middleware('can:staff.view')
+                ->name('index');
+            Route::get('/create', [StaffController::class, 'create'])
+                ->middleware('can:staff.create')
+                ->name('create');
+            Route::post('/', [StaffController::class, 'store'])
+                ->middleware('can:staff.create')
+                ->name('store');
+            Route::delete('/bulk-destroy', [StaffController::class, 'bulkDestroy'])
+                ->middleware('can:staff.delete')
+                ->name('bulk-destroy');
+            Route::get('/{admin}/edit', [StaffController::class, 'edit'])
+                ->middleware('can:staff.update')
+                ->name('edit');
+            Route::put('/{admin}', [StaffController::class, 'update'])
+                ->middleware('can:staff.update')
+                ->name('update');
+            Route::delete('/{admin}', [StaffController::class, 'destroy'])
+                ->middleware('can:staff.delete')
+                ->name('destroy');
+            Route::get('/{admin}', [StaffController::class, 'show'])
+                ->middleware('can:staff.view')
+                ->name('show');
+        });
 
-    Route::prefix('service-requests')->name('service-requests.')->group(function () {
-        Route::prefix('/installations')->name('installations.')->group(function () {
-            Route::get('/', [BroadbandApplicationRequestController::class, 'index'])->middleware('can:service-requests.view')->name('index');
-            Route::patch('/{installationApplication}/status', [BroadbandApplicationRequestController::class, 'updateStatus'])->middleware('can:service-requests.update')->name('status');
+    Route::prefix('roles')
+        ->name('roles.')
+        ->group(function () {
+            Route::get('/', [RoleController::class, 'index'])
+                ->middleware('can:roles.view')
+                ->name('index');
+            Route::get('/create', [RoleController::class, 'create'])
+                ->middleware('can:roles.create')
+                ->name('create');
+            Route::post('/', [RoleController::class, 'store'])
+                ->middleware('can:roles.create')
+                ->name('store');
+            Route::delete('/bulk-destroy', [RoleController::class, 'bulkDestroy'])
+                ->middleware('can:roles.delete')
+                ->name('bulk-destroy');
+            Route::get('/{role}/edit', [RoleController::class, 'edit'])
+                ->middleware('can:roles.update')
+                ->name('edit');
+            Route::put('/{role}', [RoleController::class, 'update'])
+                ->middleware('can:roles.update')
+                ->name('update');
+            Route::delete('/{role}', [RoleController::class, 'destroy'])
+                ->middleware('can:roles.delete')
+                ->name('destroy');
         });
-        Route::prefix('failures')->name('failures.')->group(function () {
-            Route::get('/', [FailureReportController::class, 'index'])->middleware('can:service-requests.view')->name('index');
-            Route::patch('/{failureReport}/status', [FailureReportController::class, 'updateStatus'])->middleware('can:service-requests.update')->name('status');
+
+    Route::prefix('top-up-cards')
+        ->name('top-up-cards.')
+        ->group(function () {
+            Route::get('/batch', [TopUpCardController::class, 'index'])
+                ->middleware('can:top-up-cards.view')
+                ->name('batch');
+            Route::post('/batch', [TopUpCardController::class, 'store'])
+                ->middleware('can:top-up-cards.create')
+                ->name('store');
+            Route::get('/export', [TopUpCardController::class, 'export'])
+                ->middleware('can:top-up-cards.view')
+                ->name('export');
+            Route::get('/card-history', [TopUpCardController::class, 'cardHistory'])
+                ->middleware('can:top-up-cards.view')
+                ->name('card-history');
+            Route::get('/redeem-history', [TopUpCardController::class, 'history'])
+                ->middleware('can:top-up-cards.view')
+                ->name('redeem-history');
+            Route::patch('/{topUpCard}/void', [TopUpCardController::class, 'void'])
+                ->middleware('can:top-up-cards.update')
+                ->name('void');
         });
-        Route::prefix('change-plan')->name('change-plan.')->group(function () {
-            Route::get('/', [ChangePlanRequestController::class, 'index'])->middleware('can:service-requests.view')->name('index');
-            Route::patch('/{changePlanRequest}/status', [ChangePlanRequestController::class, 'updateStatus'])->middleware('can:service-requests.update')->name('status');
+
+    Route::prefix('service-requests')
+        ->name('service-requests.')
+        ->group(function () {
+            Route::prefix('/installations')
+                ->name('installations.')
+                ->group(function () {
+                    Route::get('/', [BroadbandApplicationRequestController::class, 'index'])
+                        ->middleware('can:service-requests.view')
+                        ->name('index');
+                    Route::patch('/{installationApplication}/status', [
+                        BroadbandApplicationRequestController::class,
+                        'updateStatus',
+                    ])
+                        ->middleware('can:service-requests.update')
+                        ->name('status');
+                });
+            Route::prefix('failures')
+                ->name('failures.')
+                ->group(function () {
+                    Route::get('/', [FailureReportController::class, 'index'])
+                        ->middleware('can:service-requests.view')
+                        ->name('index');
+                    Route::patch('/{failureReport}/status', [FailureReportController::class, 'updateStatus'])
+                        ->middleware('can:service-requests.update')
+                        ->name('status');
+                });
+            Route::prefix('change-plan')
+                ->name('change-plan.')
+                ->group(function () {
+                    Route::get('/', [ChangePlanRequestController::class, 'index'])
+                        ->middleware('can:service-requests.view')
+                        ->name('index');
+                    Route::patch('/{changePlanRequest}/status', [ChangePlanRequestController::class, 'updateStatus'])
+                        ->middleware('can:service-requests.update')
+                        ->name('status');
+                });
+            Route::prefix('relocations')
+                ->name('relocations.')
+                ->group(function () {
+                    Route::get('/', [RelocationRequestController::class, 'index'])
+                        ->middleware('can:service-requests.view')
+                        ->name('index');
+                    Route::patch('/{relocationRequest}/status', [RelocationRequestController::class, 'updateStatus'])
+                        ->middleware('can:service-requests.update')
+                        ->name('status');
+                });
+            Route::prefix('change-password')
+                ->name('change-password.')
+                ->group(function () {
+                    Route::get('/', [ChangePasswordRequestController::class, 'index'])
+                        ->middleware('can:service-requests.view')
+                        ->name('index');
+                    Route::patch('/{changePasswordRequest}/status', [
+                        ChangePasswordRequestController::class,
+                        'updateStatus',
+                    ])
+                        ->middleware('can:service-requests.update')
+                        ->name('status');
+                });
         });
-        Route::prefix('relocations')->name('relocations.')->group(function () {
-            Route::get('/', [RelocationRequestController::class, 'index'])->middleware('can:service-requests.view')->name('index');
-            Route::patch('/{relocationRequest}/status', [RelocationRequestController::class, 'updateStatus'])->middleware('can:service-requests.update')->name('status');
-        });
-        Route::prefix('change-password')->name('change-password.')->group(function () {
-            Route::get('/', [ChangePasswordRequestController::class, 'index'])->middleware('can:service-requests.view')->name('index');
-            Route::patch('/{changePasswordRequest}/status', [ChangePasswordRequestController::class, 'updateStatus'])->middleware('can:service-requests.update')->name('status');
-        });
-    });
 
     foreach (MenuPages::all() as $page) {
         Route::get($page['path'], MenuPageController::class)
@@ -195,50 +409,110 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             ->name($page['name']);
     }
 
-    Route::prefix('packages')->name('packages.')->group(function () {
-        Route::get('/', [PackageController::class, 'index'])->middleware('can:packages.view')->name('index');
-        Route::get('/create', [PackageController::class, 'create'])->middleware('can:packages.create')->name('create');
-        Route::post('/', [PackageController::class, 'store'])->middleware('can:packages.create')->name('store');
-        Route::delete('/bulk-destroy', [PackageController::class, 'bulkDestroy'])->middleware('can:packages.delete')->name('bulk-destroy');
-        Route::get('/{package}/edit', [PackageController::class, 'edit'])->middleware('can:packages.update')->name('edit');
-        Route::put('/{package}', [PackageController::class, 'update'])->middleware('can:packages.update')->name('update');
-        Route::delete('/{package}', [PackageController::class, 'destroy'])->middleware('can:packages.delete')->name('destroy');
-        Route::get('/{package}', [PackageController::class, 'show'])->middleware('can:packages.view')->name('show');
-    });
+    Route::prefix('packages')
+        ->name('packages.')
+        ->group(function () {
+            Route::get('/', [PackageController::class, 'index'])
+                ->middleware('can:packages.view')
+                ->name('index');
+            Route::get('/create', [PackageController::class, 'create'])
+                ->middleware('can:packages.create')
+                ->name('create');
+            Route::post('/', [PackageController::class, 'store'])
+                ->middleware('can:packages.create')
+                ->name('store');
+            Route::delete('/bulk-destroy', [PackageController::class, 'bulkDestroy'])
+                ->middleware('can:packages.delete')
+                ->name('bulk-destroy');
+            Route::get('/{package}/edit', [PackageController::class, 'edit'])
+                ->middleware('can:packages.update')
+                ->name('edit');
+            Route::put('/{package}', [PackageController::class, 'update'])
+                ->middleware('can:packages.update')
+                ->name('update');
+            Route::delete('/{package}', [PackageController::class, 'destroy'])
+                ->middleware('can:packages.delete')
+                ->name('destroy');
+            Route::get('/{package}', [PackageController::class, 'show'])
+                ->middleware('can:packages.view')
+                ->name('show');
+        });
 
-    Route::prefix('networks')->name('networks.')->group(function () {
-        Route::post('/', [NetworkController::class, 'store'])->middleware('can:packages.create')->name('store');
-        Route::put('/{network}', [NetworkController::class, 'update'])->middleware('can:packages.update')->name('update');
-        Route::delete('/bulk-destroy', [NetworkController::class, 'bulkDestroy'])->middleware('can:packages.delete')->name('bulk-destroy');
-        Route::delete('/{network}', [NetworkController::class, 'destroy'])->middleware('can:packages.delete')->name('destroy');
-    });
+    Route::prefix('networks')
+        ->name('networks.')
+        ->group(function () {
+            Route::post('/', [NetworkController::class, 'store'])
+                ->middleware('can:packages.create')
+                ->name('store');
+            Route::put('/{network}', [NetworkController::class, 'update'])
+                ->middleware('can:packages.update')
+                ->name('update');
+            Route::delete('/bulk-destroy', [NetworkController::class, 'bulkDestroy'])
+                ->middleware('can:packages.delete')
+                ->name('bulk-destroy');
+            Route::delete('/{network}', [NetworkController::class, 'destroy'])
+                ->middleware('can:packages.delete')
+                ->name('destroy');
+        });
 
-    Route::prefix('speeds')->name('speeds.')->group(function () {
-        Route::post('/', [SpeedController::class, 'store'])->middleware('can:packages.create')->name('store');
-        Route::put('/{speed}', [SpeedController::class, 'update'])->middleware('can:packages.update')->name('update');
-        Route::delete('/bulk-destroy', [SpeedController::class, 'bulkDestroy'])->middleware('can:packages.delete')->name('bulk-destroy');
-        Route::delete('/{speed}', [SpeedController::class, 'destroy'])->middleware('can:packages.delete')->name('destroy');
-    });
+    Route::prefix('speeds')
+        ->name('speeds.')
+        ->group(function () {
+            Route::post('/', [SpeedController::class, 'store'])
+                ->middleware('can:packages.create')
+                ->name('store');
+            Route::put('/{speed}', [SpeedController::class, 'update'])
+                ->middleware('can:packages.update')
+                ->name('update');
+            Route::delete('/bulk-destroy', [SpeedController::class, 'bulkDestroy'])
+                ->middleware('can:packages.delete')
+                ->name('bulk-destroy');
+            Route::delete('/{speed}', [SpeedController::class, 'destroy'])
+                ->middleware('can:packages.delete')
+                ->name('destroy');
+        });
 
-    Route::prefix('terms')->name('terms.')->group(function () {
-        Route::post('/', [TermController::class, 'store'])->middleware('can:packages.create')->name('store');
-        Route::put('/{term}', [TermController::class, 'update'])->middleware('can:packages.update')->name('update');
-        Route::delete('/bulk-destroy', [TermController::class, 'bulkDestroy'])->middleware('can:packages.delete')->name('bulk-destroy');
-        Route::delete('/{term}', [TermController::class, 'destroy'])->middleware('can:packages.delete')->name('destroy');
-    });
+    Route::prefix('terms')
+        ->name('terms.')
+        ->group(function () {
+            Route::post('/', [TermController::class, 'store'])
+                ->middleware('can:packages.create')
+                ->name('store');
+            Route::put('/{term}', [TermController::class, 'update'])
+                ->middleware('can:packages.update')
+                ->name('update');
+            Route::delete('/bulk-destroy', [TermController::class, 'bulkDestroy'])
+                ->middleware('can:packages.delete')
+                ->name('bulk-destroy');
+            Route::delete('/{term}', [TermController::class, 'destroy'])
+                ->middleware('can:packages.delete')
+                ->name('destroy');
+        });
 
-    Route::prefix('addons')->name('addons.')->group(function () {
-        Route::post('/', [AddonController::class, 'store'])->middleware('can:packages.create')->name('store');
-        Route::put('/{addon}', [AddonController::class, 'update'])->middleware('can:packages.update')->name('update');
-        Route::delete('/bulk-destroy', [AddonController::class, 'bulkDestroy'])->middleware('can:packages.delete')->name('bulk-destroy');
-        Route::delete('/{addon}', [AddonController::class, 'destroy'])->middleware('can:packages.delete')->name('destroy');
-    });
-    Route::get('/activity-logs', [ActivityLogController::class, 'index'])->middleware('can:activity.view')->name('activity-logs.index');
-    Route::get('/activity-logs/export', [ActivityLogController::class, 'export'])->middleware('can:activity.view')->name('activity-logs.export');
+    Route::prefix('addons')
+        ->name('addons.')
+        ->group(function () {
+            Route::post('/', [AddonController::class, 'store'])
+                ->middleware('can:packages.create')
+                ->name('store');
+            Route::put('/{addon}', [AddonController::class, 'update'])
+                ->middleware('can:packages.update')
+                ->name('update');
+            Route::delete('/bulk-destroy', [AddonController::class, 'bulkDestroy'])
+                ->middleware('can:packages.delete')
+                ->name('bulk-destroy');
+            Route::delete('/{addon}', [AddonController::class, 'destroy'])
+                ->middleware('can:packages.delete')
+                ->name('destroy');
+        });
+    Route::get('/activity-logs', [ActivityLogController::class, 'index'])
+        ->middleware('can:activity.view')
+        ->name('activity-logs.index');
+    Route::get('/activity-logs/export', [ActivityLogController::class, 'export'])
+        ->middleware('can:activity.view')
+        ->name('activity-logs.export');
 });
 
 Route::fallback(function () {
-    return Inertia::render('Errors/NotFound')
-        ->toResponse(request())
-        ->setStatusCode(404);
+    return Inertia::render('Errors/NotFound')->toResponse(request())->setStatusCode(404);
 });
