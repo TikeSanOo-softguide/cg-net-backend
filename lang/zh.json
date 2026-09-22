@@ -557,9 +557,9 @@
             "deleted": "图库图片已删除",
             "validation": {
                 "image_required": "图片为必填项。",
-                "title_en_max": "英文标题不得超过 255 个字符。",
-                "title_zh_max": "中文标题不得超过 255 个字符。",
-                "title_my_max": "缅甸文标题不得超过 255 个字符。",
+                "label_en_max": "英文标题不得超过 255 个字符。",
+                "label_zh_max": "中文标题不得超过 255 个字符。",
+                "label_my_max": "缅甸文标题不得超过 255 个字符。",
                 "image_invalid_type": "图片必须是有效的图片文件。",
                 "image_max_size": "图片大小不得超过 5 MB。"
             }

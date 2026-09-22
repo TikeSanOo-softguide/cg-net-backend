@@ -71,7 +71,7 @@ class GalleryController extends Controller
 
         activity('cms')->causedBy($request->user())->performedOn($gallery)->event('updated')->log('gallery_updated');
 
-        return redirect()->route('cms.gallery.index')->with('success', 'cms.updated');
+        return redirect()->route('cms.gallery.index')->with('success', 'cms.gallery.updated');
     }
 
     public function destroy(Request $request, Gallery $gallery): RedirectResponse

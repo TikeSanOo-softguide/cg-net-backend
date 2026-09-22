@@ -7,6 +7,7 @@ import { SquareImageUpload } from '@/components/ui/square-image-upload';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formControlStateClass } from '@/lib/form-control';
 import { validateGallery, validateGalleryField } from '@/lib/gallery-validation';
 
 export type GalleryFormValues = {
@@ -24,12 +25,21 @@ type GalleryFormProps = {
     imageUrl?: string | null;
 };
 
+type TouchedFields = Record<keyof GalleryFormValues, boolean>;
+
+const untouched: TouchedFields = {
+    label_en: false,
+    label_my: false,
+    label_zh: false,
+    image: false,
+};
+
 export function GalleryForm({ form, onSubmit, onCancel, mode = 'create', imageUrl }: GalleryFormProps) {
     const { t } = useTranslation();
 
     const [dashedImage, setDashedImage] = useState<File | null>(null);
     const [existingImageUrl, setExistingImageUrl] = useState(imageUrl ?? null);
-    const [imageTouched, setImageTouched] = useState(false);
+    const [touched, setTouched] = useState<TouchedFields>(untouched);
     const [submitted, setSubmitted] = useState(false);
     const [imageDimensions, setImageDimensions] = useState<{
         width: number;
@@ -55,29 +65,10 @@ export function GalleryForm({ form, onSubmit, onCancel, mode = 'create', imageUr
 
     const hasExistingImage = Boolean(existingImageUrl);
 
-    const imageError = (): string | undefined => {
-        if (!imageTouched && !submitted) {
-            return undefined;
-        }
-
-        if (form.errors.image) {
-            return form.errors.image;
-        }
-
-        if (mode === 'edit' && hasExistingImage && !form.data.image) {
-            return undefined;
-        }
-
-        return validateGalleryField('image', form.data, t, mode, hasExistingImage);
-    };
-
     const handleImageChange = (file: File | null) => {
-        setImageTouched(true);
         setDashedImage(file);
         setExistingImageUrl(null);
-
         form.setData('image', file);
-
         form.clearErrors('image');
 
         if (mode === 'edit' && hasExistingImage && !file) {
@@ -117,11 +108,45 @@ export function GalleryForm({ form, onSubmit, onCancel, mode = 'create', imageUr
         image.src = URL.createObjectURL(file);
     };
 
+    const markTouched = (field: keyof GalleryFormValues) => {
+        setTouched((current) => ({
+            ...current,
+            [field]: true,
+        }));
+    };
+
+    const setField = <K extends keyof GalleryFormValues>(field: K, value: GalleryFormValues[K]) => {
+        form.setData(field, value as never);
+        form.clearErrors(field);
+    };
+
+    const fieldState = (field: keyof GalleryFormValues): 'idle' | 'error' | 'success' => {
+        if (!touched[field] && !submitted) {
+            return 'idle';
+        }
+
+        return form.errors[field] || validateGalleryField(field, form.data, t, mode, hasExistingImage)
+            ? 'error'
+            : 'success';
+    };
+
+    const fieldError = (field: keyof GalleryFormValues): string | undefined => {
+        if (!touched[field] && !submitted) {
+            return undefined;
+        }
+
+        return form.errors[field] || validateGalleryField(field, form.data, t, mode, hasExistingImage);
+    };
+
     const submit = (event: FormEvent) => {
         event.preventDefault();
-
         setSubmitted(true);
-        setImageTouched(true);
+        setTouched({
+            label_en: true,
+            label_my: true,
+            label_zh: true,
+            image: true,
+        });
 
         const errors = validateGallery(form.data, t, mode, hasExistingImage);
 
@@ -131,7 +156,6 @@ export function GalleryForm({ form, onSubmit, onCancel, mode = 'create', imageUr
         }
 
         form.clearErrors();
-
         onSubmit(event);
     };
 
@@ -139,43 +163,52 @@ export function GalleryForm({ form, onSubmit, onCancel, mode = 'create', imageUr
         <CmsFormShell onSubmit={submit} onCancel={onCancel} processing={form.processing} mode={mode}>
             <FormField
                 label={t('cms.gallery.label_en')}
-                htmlFor="label"
-                error={form.errors.label_en}
+                htmlFor="label_en"
+                error={fieldError('label_en')}
                 icon={TagIcon}
                 className="sm:col-span-2"
             >
                 <Input
-                    id="label"
+                    id="label_en"
                     value={form.data.label_en ?? ''}
-                    onChange={(event) => form.setData('label_en', event.target.value)}
+                    aria-invalid={fieldState('label_en') === 'error'}
+                    className={formControlStateClass(fieldState('label_en'))}
+                    onBlur={() => markTouched('label_en')}
+                    onChange={(event) => setField('label_en', event.target.value)}
                 />
             </FormField>
 
             <FormField
                 label={t('cms.gallery.label_my')}
                 htmlFor="label_my"
-                error={form.errors.label_my}
+                error={fieldError('label_my')}
                 icon={TagIcon}
                 className="sm:col-span-2"
             >
                 <Input
                     id="label_my"
                     value={form.data.label_my ?? ''}
-                    onChange={(event) => form.setData('label_my', event.target.value)}
+                    aria-invalid={fieldState('label_my') === 'error'}
+                    className={formControlStateClass(fieldState('label_my'))}
+                    onBlur={() => markTouched('label_my')}
+                    onChange={(event) => setField('label_my', event.target.value)}
                 />
             </FormField>
 
             <FormField
                 label={t('cms.gallery.label_zh')}
                 htmlFor="label_zh"
-                error={form.errors.label_zh}
+                error={fieldError('label_zh')}
                 icon={TagIcon}
                 className="sm:col-span-2"
             >
                 <Input
                     id="label_zh"
                     value={form.data.label_zh ?? ''}
-                    onChange={(event) => form.setData('label_zh', event.target.value)}
+                    aria-invalid={fieldState('label_zh') === 'error'}
+                    className={formControlStateClass(fieldState('label_zh'))}
+                    onBlur={() => markTouched('label_zh')}
+                    onChange={(event) => setField('label_zh', event.target.value)}
                 />
             </FormField>
 
@@ -191,20 +224,21 @@ export function GalleryForm({ form, onSubmit, onCancel, mode = 'create', imageUr
                             {t('cms.news.image_size')}:{' '}
                             {imageDimensions
                                 ? `${imageDimensions.width} × ${imageDimensions.height} px`
-                                : '925 × 390 px'}
+                                : '4032 × 3024  px'}
                         </span>
                     </div>
                 }
                 htmlFor="image"
-                error={imageError()}
+                error={fieldError('image')}
                 className="sm:col-span-2"
             >
                 <SquareImageUpload
                     id="dashboard-image-dashed"
-                    width={925}
-                    aspectRatio="925 / 390"
+                    width={4032}
+                    aspectRatio="4032 / 3024"
                     value={dashedImage}
                     existingUrl={existingImageUrl}
+                    className={formControlStateClass(fieldState('image'))}
                     onChange={handleImageChange}
                 />
             </FormField>

@@ -558,9 +558,9 @@
             "deleted": "Gallery image deleted",
             "validation": {
                 "image_required": "Image is required.",
-                "title_en_max": "The English title must not be greater than 255 characters.",
-                "title_zh_max": "The Chinese title must not be greater than 255 characters.",
-                "title_my_max": "The Myanmar title must not be greater than 255 characters.",
+                "label_en_max": "The English title must not be greater than 255 characters.",
+                "label_zh_max": "The Chinese title must not be greater than 255 characters.",
+                "label_my_max": "The Myanmar title must not be greater than 255 characters.",
                 "image_invalid_type": "The image must be a valid image file.",
                 "image_max_size": "The image must not be greater than 5 MB."
             }
