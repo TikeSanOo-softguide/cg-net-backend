@@ -76,24 +76,18 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
     } | null>(null);
 
     useEffect(() => {
-        console.log(existingImageUrl, 'existing');
-        console.log(imageUrl, 'image');
         if (!existingImageUrl) {
             setImageDimensions(null);
             return;
         }
 
         const image = new Image();
-
         image.onload = () => {
             setImageDimensions({
                 width: image.naturalWidth,
                 height: image.naturalHeight,
             });
         };
-
-        console.log(image, 'image');
-        console.log(imageDimensions, 'imageDimensions');
 
         image.src = existingImageUrl;
     }, [existingImageUrl]);

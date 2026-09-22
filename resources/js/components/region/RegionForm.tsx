@@ -66,6 +66,10 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
             return t(`regions.validation.${field}_required`);
         }
 
+        if (form.data[field].trim().length > 255) {
+            return t(`regions.validation.${field}_max`);
+        }
+
         return form.errors[field];
     };
 
@@ -216,7 +220,6 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
 
     const handleRegionChange = (value: string) => {
         form.setData('region_id', Number(value));
-
         form.clearErrors('region_id');
     };
 

@@ -65,7 +65,6 @@ export function validatePromotionField(
         }
 
         case 'start_date': {
-            // nullable
             if (value === null || value === undefined || value === '') {
                 break;
             }
@@ -78,7 +77,6 @@ export function validatePromotionField(
         }
 
         case 'end_date': {
-            // nullable
             if (value === null || value === undefined || value === '') {
                 break;
             }
@@ -108,7 +106,6 @@ export function validatePromotionField(
         }
 
         case 'image': {
-            // Not required (nullable) — skip if empty
             if (value === null || value === undefined || value === '') break;
 
             if (!(value instanceof File)) break; // already-set string URL (existing image), nothing to validate
