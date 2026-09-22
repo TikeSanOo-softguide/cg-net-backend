@@ -165,11 +165,11 @@ const getValidationError = (
     }
 
     if (error.includes('integer')) {
-        return validationKey('integer');
+        return validationKey('required');
     }
 
     if (error.includes('numeric') || error.includes('number')) {
-        return validationKey('numeric');
+        return validationKey('required');
     }
 
     if (
@@ -201,22 +201,44 @@ const getValidationError = (
     return error;
 };
 
-const validateThreeDigitNumber = (
+const validateDigitNumber = (
     value: string,
-    field: 'months' | 'mbps',
+    field: 'months' | 'mbps' | 'price',
     t: (key: string) => string,
 ): string | undefined => {
+    if (!value.trim()) {
+        return t(`packages.validation.${field}_required`);
+    }
+
     if (!/^\d+$/.test(value)) {
         return t(`packages.validation.${field}_integer`);
     }
 
-    const number = Number(value);
-
-    if (number < 1) {
+    if (Number(value) < 0) {
         return t(`packages.validation.${field}_min`);
     }
 
-    if (value.length > 3) {
+    if ((field === 'months' || field === 'mbps') && value.length > 3) {
+        return t(`packages.validation.${field}_max`);
+    }
+
+    if (field === 'price' && value.length > 10) {
+        return t(`packages.validation.${field}_max`);
+    }
+
+    return undefined;
+};
+
+const validateName = (
+    value: string,
+    field: 'name_en' | 'name_my' | 'name_zh',
+    t: (key: string) => string,
+): string | undefined => {
+    if (!value.trim()) {
+        return t(`packages.validation.${field}_required`);
+    }
+
+    if (value.length > 255) {
         return t(`packages.validation.${field}_max`);
     }
 
@@ -264,8 +286,12 @@ function ReferenceFormDialogBody({
     const config = kindConfig[kind];
     const form = useForm<ReferenceFormValues>(getFormValues(kind, item));
     const [touched, setTouched] = useState({
+        name_en: false,
+        name_zh: false,
+        name_my: false,
         months: false,
         mbps: false,
+        price: false,
     });
     useEffect(() => {
         if (!item) {
@@ -309,12 +335,24 @@ function ReferenceFormDialogBody({
                         <FormField
                             label={t('common.name_en')}
                             htmlFor="network-name-en"
-                            error={getValidationError(form.errors.name_en, 'network_name_en', t)}
+                            error={
+                                getValidationError(form.errors.name_en, 'name_en', t) ??
+                                (touched.name_en
+                                    ? validateName(String(form.data.name_en ?? ''), 'name_en', t)
+                                    : undefined)
+                            }
                         >
                             <Input
                                 id="network-name-en"
                                 value={String(form.data.name_en ?? '')}
-                                onChange={(event) => form.setData('name_en', event.target.value)}
+                                onChange={(event) => {
+                                    setTouched((prev) => ({
+                                        ...prev,
+                                        name_en: true,
+                                    }));
+                                    form.setData('name_en', event.target.value);
+                                    form.clearErrors('name_en');
+                                }}
                                 placeholder={t('packages.name_en_placeholder')}
                             />
                         </FormField>
@@ -322,12 +360,24 @@ function ReferenceFormDialogBody({
                         <FormField
                             label={t('common.name_zh')}
                             htmlFor="network-name-zh"
-                            error={getValidationError(form.errors.name_zh, 'network_name_zh', t)}
+                            error={
+                                getValidationError(form.errors.name_zh, 'name_zh', t) ??
+                                (touched.name_zh
+                                    ? validateName(String(form.data.name_zh ?? ''), 'name_zh', t)
+                                    : undefined)
+                            }
                         >
                             <Input
                                 id="network-name-zh"
                                 value={String(form.data.name_zh ?? '')}
-                                onChange={(event) => form.setData('name_zh', event.target.value)}
+                                onChange={(event) => {
+                                    setTouched((prev) => ({
+                                        ...prev,
+                                        name_zh: true,
+                                    }));
+                                    form.setData('name_zh', event.target.value);
+                                    form.clearErrors('name_zh');
+                                }}
                                 placeholder={t('packages.name_zh_placeholder')}
                             />
                         </FormField>
@@ -335,12 +385,24 @@ function ReferenceFormDialogBody({
                         <FormField
                             label={t('common.name_my')}
                             htmlFor="network-name-my"
-                            error={getValidationError(form.errors.name_my, 'network_name_my', t)}
+                            error={
+                                getValidationError(form.errors.name_my, 'name_my', t) ??
+                                (touched.name_my
+                                    ? validateName(String(form.data.name_my ?? ''), 'name_my', t)
+                                    : undefined)
+                            }
                         >
                             <Input
                                 id="network-name-my"
                                 value={String(form.data.name_my ?? '')}
-                                onChange={(event) => form.setData('name_my', event.target.value)}
+                                onChange={(event) => {
+                                    setTouched((prev) => ({
+                                        ...prev,
+                                        name_my: true,
+                                    }));
+                                    form.setData('name_my', event.target.value);
+                                    form.clearErrors('name_my');
+                                }}
                                 placeholder={t('packages.name_my_placeholder')}
                             />
                         </FormField>
@@ -353,27 +415,28 @@ function ReferenceFormDialogBody({
                         htmlFor="speed-mbps"
                         error={
                             getValidationError(form.errors.mbps, 'mbps', t) ??
-                            (touched.mbps
-                                ? validateThreeDigitNumber(String(form.data.mbps ?? ''), 'mbps', t)
-                                : undefined)
+                            (touched.mbps ? validateDigitNumber(String(form.data.mbps ?? ''), 'mbps', t) : undefined)
                         }
                     >
                         <Input
                             id="speed-mbps"
                             type="number"
-                            min="1"
-                            max="999"
                             value={String(form.data.mbps ?? '')}
+                            onKeyDown={(event) => {
+                                if (event.key === '-') {
+                                    event.preventDefault();
+                                }
+                            }}
                             onChange={(event) => {
                                 const value = event.target.value;
-
-                                setTouched((prev) => ({
-                                    ...prev,
-                                    mbps: true,
-                                }));
-
-                                form.setData('mbps', value);
-                                form.clearErrors('mbps');
+                                if (value === '' || Number(value) >= 0) {
+                                    setTouched((prev) => ({
+                                        ...prev,
+                                        mbps: true,
+                                    }));
+                                    form.setData('mbps', value);
+                                    form.clearErrors('mbps');
+                                }
                             }}
                             placeholder="Mbps"
                         />
@@ -387,26 +450,29 @@ function ReferenceFormDialogBody({
                         error={
                             getValidationError(form.errors.months, 'months', t) ??
                             (touched.months
-                                ? validateThreeDigitNumber(String(form.data.months ?? ''), 'months', t)
+                                ? validateDigitNumber(String(form.data.months ?? ''), 'months', t)
                                 : undefined)
                         }
                     >
                         <Input
                             id="term-months"
                             type="number"
-                            min="1"
-                            max="999"
                             value={String(form.data.months ?? '')}
+                            onKeyDown={(event) => {
+                                if (event.key === '-') {
+                                    event.preventDefault();
+                                }
+                            }}
                             onChange={(event) => {
                                 const value = event.target.value;
-
-                                setTouched((prev) => ({
-                                    ...prev,
-                                    months: true,
-                                }));
-
-                                form.setData('months', value);
-                                form.clearErrors('months');
+                                if (value === '' || Number(value) >= 0) {
+                                    setTouched((prev) => ({
+                                        ...prev,
+                                        months: true,
+                                    }));
+                                    form.setData('months', value);
+                                    form.clearErrors('months');
+                                }
                             }}
                             placeholder={t('packages.months_placeholder')}
                         />
@@ -419,12 +485,24 @@ function ReferenceFormDialogBody({
                             <FormField
                                 label={t('common.name_en')}
                                 htmlFor="addon-name-en"
-                                error={getValidationError(form.errors.name_en, 'name_en', t)}
+                                error={
+                                    getValidationError(form.errors.name_en, 'name_en', t) ??
+                                    (touched.name_en
+                                        ? validateName(String(form.data.name_en ?? ''), 'name_en', t)
+                                        : undefined)
+                                }
                             >
                                 <Input
                                     id="addon-name-en"
                                     value={String(form.data.name_en ?? '')}
-                                    onChange={(event) => form.setData('name_en', event.target.value)}
+                                    onChange={(event) => {
+                                        setTouched((prev) => ({
+                                            ...prev,
+                                            name_en: true,
+                                        }));
+                                        form.setData('name_en', event.target.value);
+                                        form.clearErrors('name_en');
+                                    }}
                                     placeholder={t('packages.name_en_placeholder')}
                                 />
                             </FormField>
@@ -432,12 +510,24 @@ function ReferenceFormDialogBody({
                             <FormField
                                 label={t('common.name_zh')}
                                 htmlFor="addon-name-zh"
-                                error={getValidationError(form.errors.name_zh, 'name_zh', t)}
+                                error={
+                                    getValidationError(form.errors.name_zh, 'name_zh', t) ??
+                                    (touched.name_zh
+                                        ? validateName(String(form.data.name_zh ?? ''), 'name_zh', t)
+                                        : undefined)
+                                }
                             >
                                 <Input
                                     id="addon-name-zh"
                                     value={String(form.data.name_zh ?? '')}
-                                    onChange={(event) => form.setData('name_zh', event.target.value)}
+                                    onChange={(event) => {
+                                        setTouched((prev) => ({
+                                            ...prev,
+                                            name_zh: true,
+                                        }));
+                                        form.setData('name_zh', event.target.value);
+                                        form.clearErrors('name_zh');
+                                    }}
                                     placeholder={t('packages.name_zh_placeholder')}
                                 />
                             </FormField>
@@ -446,12 +536,24 @@ function ReferenceFormDialogBody({
                             <FormField
                                 label={t('common.name_my')}
                                 htmlFor="addon-name-my"
-                                error={getValidationError(form.errors.name_my, 'name_my', t)}
+                                error={
+                                    getValidationError(form.errors.name_my, 'name_my', t) ??
+                                    (touched.name_my
+                                        ? validateName(String(form.data.name_my ?? ''), 'name_my', t)
+                                        : undefined)
+                                }
                             >
                                 <Input
                                     id="addon-name-my"
                                     value={String(form.data.name_my ?? '')}
-                                    onChange={(event) => form.setData('name_my', event.target.value)}
+                                    onChange={(event) => {
+                                        setTouched((prev) => ({
+                                            ...prev,
+                                            name_my: true,
+                                        }));
+                                        form.setData('name_my', event.target.value);
+                                        form.clearErrors('name_my');
+                                    }}
                                     placeholder={t('packages.name_my_placeholder')}
                                 />
                             </FormField>
@@ -459,15 +561,34 @@ function ReferenceFormDialogBody({
                             <FormField
                                 label={t('packages.price')}
                                 htmlFor="addon-price"
-                                error={getValidationError(form.errors.price, 'price', t)}
+                                error={
+                                    getValidationError(form.errors.price, 'price', t) ??
+                                    (touched.price
+                                        ? validateDigitNumber(String(form.data.price ?? ''), 'price', t)
+                                        : undefined)
+                                }
                             >
                                 <Input
                                     id="addon-price"
                                     type="number"
-                                    min="0"
-                                    step="0.01"
                                     value={String(form.data.price ?? '')}
-                                    onChange={(event) => form.setData('price', event.target.value)}
+                                    onKeyDown={(event) => {
+                                        if (event.key === '-') {
+                                            event.preventDefault();
+                                        }
+                                    }}
+                                    onChange={(event) => {
+                                        const value = event.target.value;
+
+                                        if (value === '' || Number(value) >= 0) {
+                                            setTouched((prev) => ({
+                                                ...prev,
+                                                price: true,
+                                            }));
+                                            form.setData('price', Number(value));
+                                            form.clearErrors('price');
+                                        }
+                                    }}
                                     placeholder={t('packages.price_placeholder')}
                                 />
                             </FormField>

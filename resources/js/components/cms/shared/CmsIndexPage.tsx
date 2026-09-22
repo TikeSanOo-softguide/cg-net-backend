@@ -18,6 +18,7 @@ export type CmsFilters = {
     search: string;
     status: string;
     sort: string;
+    types?: string[];
     direction: 'asc' | 'desc';
 };
 
@@ -33,6 +34,8 @@ type CmsIndexPageProps<T extends { id: number }> = {
     onCreate?: () => void;
     onEdit?: (row: T) => void;
     formDialog?: ReactNode;
+    extraFilters?: ReactNode;
+    showSearch?: boolean;
 };
 
 export function CmsIndexPage<T extends { id: number }>({
@@ -47,6 +50,8 @@ export function CmsIndexPage<T extends { id: number }>({
     onCreate,
     onEdit,
     formDialog,
+    extraFilters,
+    showSearch = true,
 }: CmsIndexPageProps<T>) {
     const { t } = useTranslation();
     const can = useCan();
@@ -66,8 +71,9 @@ export function CmsIndexPage<T extends { id: number }>({
         router.get(
             indexHref,
             {
-                search: (next.search ?? filters.search) || undefined,
+                search: showSearch ? (next.search ?? filters.search) || undefined : undefined,
                 status: (next.status ?? filters.status) || undefined,
+                types: next.types ?? filters.types ?? undefined,
                 sort: next.sort ?? filters.sort,
                 direction: next.direction ?? filters.direction,
             },
@@ -133,14 +139,20 @@ export function CmsIndexPage<T extends { id: number }>({
             <DataTable
                 data={items.data}
                 getRowId={(row) => String(row.id)}
-                search={search}
-                onSearchChange={onSearchChange}
-                searchPlaceholder={t(searchPlaceholderKey)}
+                showSearch={showSearch}
+                search={showSearch ? search : undefined}
+                onSearchChange={showSearch ? onSearchChange : undefined}
+                searchPlaceholder={showSearch ? t(searchPlaceholderKey) : undefined}
                 sort={filters.sort}
                 direction={filters.direction}
                 onSort={onSort}
                 pagination={items}
-                filters={filterControls}
+                filters={
+                    <>
+                        {filterControls}
+                        {extraFilters}
+                    </>
+                }
                 onCreate={can('cms.create') ? onCreate : undefined}
                 createLabel={t(createLabelKey)}
                 onBulkDelete={

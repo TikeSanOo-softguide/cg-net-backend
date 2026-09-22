@@ -698,7 +698,8 @@
                 "image_en_required": "Please select English image.",
                 "image_zh_required": "Please select Chinese image.",
                 "image_my_required": "Please select Myanmar image.",
-                "type_required": "Please select a banner type."
+                "type_required": "Please select a banner type.",
+                "sort_order_max": "Sort order must be 2 digits or less."
             }
         },
         "contact": {
@@ -1075,7 +1076,8 @@
             "mbps_unique": "This speed already exists.",
             "months_unique": "This term already exists.",
             "price_numeric": "The price must be a number.",
-            "price_min": "The price must be at least 0."
+            "price_min": "The price must be at least 0.",
+            "price_max": "Price may not be greater than 10-digit."
         }
     },
     "relocation_requests": {

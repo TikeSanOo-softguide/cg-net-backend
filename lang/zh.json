@@ -697,7 +697,8 @@
                 "image_en_required": "请选择英文图片。",
                 "image_zh_required": "请选择中文图片。",
                 "image_my_required": "请选择缅甸文图片。",
-                "type_required": "请选择横幅类型。"
+                "type_required": "请选择横幅类型。",
+                "sort_order_max": "排序顺序不能超过2位数字。"
             }
         },
         "contact": {
@@ -1069,7 +1070,8 @@
             "mbps_unique": "该网速已存在。",
             "months_unique": "该套餐期限已存在。",
             "price_numeric": "价格必须是数字。",
-            "price_min": "价格不能小于 0。"
+            "price_min": "价格不能小于 0。",
+            "price_max": "价格不得超过 10 位数。"
         }
     },
     "relocation_requests": {

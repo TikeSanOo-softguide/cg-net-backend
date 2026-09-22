@@ -88,22 +88,6 @@ export type AddonOption = {
 
 type SpeedOption = Pick<PackageOption, 'id' | 'mbps'>;
 type TermOption = Pick<PackageOption, 'id' | 'months'>;
-type QuickTableRow = NetworkOption | SpeedOption | TermOption | AddonOption;
-
-type QuickTable = {
-    key: 'network' | 'speed' | 'term' | 'addon';
-    title: string;
-    icon: LucideIcon;
-    data: QuickTableRow[];
-    pagination: Paginated<QuickTableRow>;
-    getRowId: (row: QuickTableRow) => string;
-    searchValue: (row: QuickTableRow) => string;
-    cell: (row: QuickTableRow) => ReactNode;
-    onCreate: () => void;
-    onEdit: (row: QuickTableRow) => void;
-    onDelete: (row: QuickTableRow) => void;
-    createLabel: string;
-};
 
 function visitIndex(filters: Filters) {
     router.get(

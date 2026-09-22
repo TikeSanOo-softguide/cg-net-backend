@@ -279,11 +279,25 @@ export function PackageForm({
                             <Input
                                 id="price"
                                 type="number"
-                                min="0"
-                                step="0"
                                 value={form.data.price}
                                 className={cn('w-full', formControlStateClass(fieldState('price')))}
-                                onChange={(event) => form.setData('price', event.target.value)}
+                                onKeyDown={(event) => {
+                                    if (event.key === '-') {
+                                        event.preventDefault();
+                                    }
+                                }}
+                                onChange={(event) => {
+                                    const value = event.target.value;
+
+                                    if (value === '' || Number(value) >= 0) {
+                                        setTouched((prev) => ({
+                                            ...prev,
+                                            price: true,
+                                        }));
+                                        form.setData('price', value);
+                                        form.clearErrors('price');
+                                    }
+                                }}
                                 required
                                 aria-invalid={Boolean(form.errors.price)}
                             />
@@ -298,11 +312,25 @@ export function PackageForm({
                             <Input
                                 id="installation_fee"
                                 type="number"
-                                min="0"
-                                step="0"
                                 value={form.data.installation_fee}
                                 className={cn('w-full', formControlStateClass(fieldState('installation_fee')))}
-                                onChange={(event) => form.setData('installation_fee', event.target.value)}
+                                onKeyDown={(event) => {
+                                    if (event.key === '-') {
+                                        event.preventDefault();
+                                    }
+                                }}
+                                onChange={(event) => {
+                                    const value = event.target.value;
+
+                                    if (value === '' || Number(value) >= 0) {
+                                        setTouched((prev) => ({
+                                            ...prev,
+                                            installation_fee: true,
+                                        }));
+                                        form.setData('installation_fee', value);
+                                        form.clearErrors('installation_fee');
+                                    }
+                                }}
                                 required
                                 aria-invalid={Boolean(form.errors.installation_fee)}
                             />
@@ -320,12 +348,23 @@ export function PackageForm({
                                 min="0"
                                 value={form.data.sort_order}
                                 className={cn('w-full', formControlStateClass(fieldState('sort_order')))}
-                                onChange={(event) =>
-                                    form.setData(
-                                        'sort_order',
-                                        event.target.value === '' ? '' : Number(event.target.value),
-                                    )
-                                }
+                                onKeyDown={(event) => {
+                                    if (event.key === '-') {
+                                        event.preventDefault();
+                                    }
+                                }}
+                                onChange={(event) => {
+                                    const value = event.target.value;
+
+                                    if (value === '' || Number(value) >= 0) {
+                                        setTouched((prev) => ({
+                                            ...prev,
+                                            sort_order: true,
+                                        }));
+                                        form.setData('sort_order', Number(value));
+                                        form.clearErrors('sort_order');
+                                    }
+                                }}
                                 required
                                 aria-invalid={Boolean(form.errors.sort_order)}
                             />
