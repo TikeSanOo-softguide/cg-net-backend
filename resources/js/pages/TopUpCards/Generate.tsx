@@ -122,14 +122,14 @@ export default function TopUpCardsGenerate({ cards, generated = [], presets, amo
             <PageContent>
                 <PageHeader />
                 <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 print:block">
-                    <Card className="gap-3 py-4 print:hidden">
+                    <Card className="flex h-[390px] flex-col gap-3 py-4 print:hidden">
                         <CardHeader>
                             <CardTitle className="text-sm">{t('top_up_cards.generate_title')}</CardTitle>
                             <CardDescription className="text-[12px] leading-4">
                                 {t('top_up_cards.generate_description')}
                             </CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="min-h-0 flex-1 overflow-y-auto">
                             <form onSubmit={submit} className="flex flex-col gap-3">
                                 <TopUpCardGenerateForm
                                     presets={presets}
@@ -179,14 +179,14 @@ export default function TopUpCardsGenerate({ cards, generated = [], presets, amo
                             </form>
                         </CardContent>
                     </Card>
-                    <Card className="gap-3 py-4 print:border-0 print:shadow-none">
+                    <Card className="flex h-[390px] flex-col gap-3 py-4 print:border-0 print:shadow-none">
                         <CardHeader className="print:px-0">
                             <CardTitle className="text-sm">{t('top_up_cards.batch_title')}</CardTitle>
                             <CardDescription className="text-[12px] leading-4">
                                 {t('top_up_cards.batch_description')}
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="relative print:px-0">
+                        <CardContent className="relative min-h-0 flex-1 overflow-hidden print:px-0">
                             {form.processing ? (
                                 <SpinnerOverlay
                                     className="relative inset-auto min-h-[160px]"
