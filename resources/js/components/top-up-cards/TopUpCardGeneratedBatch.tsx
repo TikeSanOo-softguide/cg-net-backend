@@ -28,7 +28,7 @@ export function TopUpCardGeneratedBatch({ cards, onExport }: GeneratedBatchProps
 
     if (cards.length === 0) {
         return (
-            <div className="flex min-h-[160px] flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border px-4 py-6 text-center">
+            <div className="flex h-full min-h-[160px] flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border px-4 py-6 text-center">
                 <p className="text-[13px] font-medium text-foreground">{t('top_up_cards.empty_batch_title')}</p>
                 <p className="max-w-[260px] text-[11px] leading-4 text-muted-foreground">
                     {t('top_up_cards.empty_batch_description')}
@@ -117,7 +117,7 @@ export function TopUpCardGeneratedBatch({ cards, onExport }: GeneratedBatchProps
     );
 
     return (
-        <div className="flex flex-col gap-2.5">
+        <div className="flex h-full min-h-0 flex-col gap-2.5">
             <div className="flex flex-wrap gap-1.5 print:hidden">
                 <Button type="button" size="sm" variant="outline" className="h-7 text-[11px]" onClick={onExport}>
                     <DownloadIcon className="size-3.5" strokeWidth={1.9} />
@@ -128,7 +128,7 @@ export function TopUpCardGeneratedBatch({ cards, onExport }: GeneratedBatchProps
                     {t('top_up_cards.print_all')}
                 </Button>
             </div>
-            <div className="print:hidden">{printContent}</div>
+            <div className="min-h-0 flex-1 overflow-y-auto print:hidden">{printContent}</div>
 
             {typeof document !== 'undefined' &&
                 createPortal(<div className="hidden print:block">{printContent}</div>, document.body)}
