@@ -22,8 +22,14 @@ class AgentController extends Controller
     {
         $search = trim((string) $request->string('search'));
         $cardSearch = trim((string) $request->string('card_search'));
-        $batch = $request->string('batch')->toString();
+        $latestBatch = Batch::query()->latest('id')->first(['id', 'batch_no']);
+        $batch = $request->has('batch')
+            ? $request->string('batch')->toString()
+            : (string) ($latestBatch?->id ?? '');
         $agent = $request->string('agent')->toString();
+        $status = $request->has('status')
+            ? $request->string('status')->toString()
+            : TopUpCardStatus::Pending->value;
         $agents = Agent::query()
             ->withCount('topUpCards')
             ->when($search !== '', function ($query) use ($search): void {
@@ -41,6 +47,7 @@ class AgentController extends Controller
             ->when($batch !== '', fn($query) => $query->where('batch_id', (int) $batch))
             ->when($agent === 'unassigned', fn($query) => $query->whereNull('agent_id'))
             ->when($agent !== '' && $agent !== 'unassigned', fn($query) => $query->where('agent_id', (int) $agent))
+            ->when(in_array($status, array_column(TopUpCardStatus::cases(), 'value'), true), fn($query) => $query->where('top_up_card.status', $status))
             ->orderBy('batches.batch_no')
             ->orderBy('top_up_card.serial_no')
             ->get()
@@ -56,6 +63,7 @@ class AgentController extends Controller
                 'card_search' => $cardSearch,
                 'batch' => $batch,
                 'agent' => $agent,
+                'status' => $status,
             ],
         ]);
     }

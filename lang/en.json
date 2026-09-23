@@ -976,6 +976,7 @@
             "edit": "Edit agent",
             "description": "Manage the agents who receive top-up cards.",
             "all_batches": "All batches",
+            "all_status": "All Status",
             "search_batches": "Search batches",
             "all_agents": "All agents",
             "search_agents": "Search agents",
