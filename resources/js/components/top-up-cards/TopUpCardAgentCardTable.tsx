@@ -25,6 +25,7 @@ type TopUpCardAgentCardTableProps = {
     onStatusChange: (value: string) => void;
     onSelectionChange: (ids: string[]) => void;
     onAssign: () => void;
+    onImport: () => void;
 };
 
 export function TopUpCardAgentCardTable({
@@ -42,6 +43,7 @@ export function TopUpCardAgentCardTable({
     onStatusChange,
     onSelectionChange,
     onAssign,
+    onImport,
 }: TopUpCardAgentCardTableProps) {
     const { t } = useTranslation();
     const can = useCan();
@@ -80,7 +82,6 @@ export function TopUpCardAgentCardTable({
                             <SelectTrigger className="w-full"><SelectValue placeholder={t('common.status')} /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">{t('top_up_cards.agent.all_status')}</SelectItem>
-                                <SelectItem value="pending">{t('status.pending')}</SelectItem>
                                 <SelectItem value="active">{t('status.active')}</SelectItem>
                                 <SelectItem value="used">{t('status.used')}</SelectItem>
                                 <SelectItem value="expired">{t('status.expired')}</SelectItem>
@@ -93,12 +94,17 @@ export function TopUpCardAgentCardTable({
             selectable
             selectedIds={selectedIds}
             onSelectionChange={onSelectionChange}
-            isRowSelectable={(row) => row.status === 'pending'}
+            isRowSelectable={(row) => row.status === 'active'}
             alwaysShowBulkActions
             bulkActions={can('top-up-cards.update') ? (
-                <Button type="button" size="sm" disabled={selectedIds.length === 0} onClick={onAssign}>
-                    {t('top_up_cards.agent.assign')}
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={onImport}>
+                        {t('top_up_cards.agent.import_csv')}
+                    </Button>
+                    <Button type="button" size="sm" disabled={selectedIds.length === 0} onClick={onAssign}>
+                        {t('top_up_cards.agent.assign')}
+                    </Button>
+                </div>
             ) : null}
             columns={[
                 { id: 'serial_no', header: t('top_up_cards.serial_no'), mobile: 'title', className: 'font-mono text-[12px]', cell: (row) => row.serial_no },

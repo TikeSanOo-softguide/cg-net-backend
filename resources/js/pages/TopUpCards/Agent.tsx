@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { Head, router } from '@inertiajs/react';
 import { PlusIcon, UserRoundIcon } from 'lucide-react';
 
@@ -46,6 +46,7 @@ export default function AgentPage({ agents, cards, batches, filters }: Props) {
 
     const [cardSearch, setCardSearch] = useState(filters.card_search);
     const debounce = useRef<number>(0);
+    const importInput = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         setSearch(filters.search);
@@ -82,6 +83,24 @@ export default function AgentPage({ agents, cards, batches, filters }: Props) {
         visitAgents({ search, card_search: nextSearch, batch: nextBatch, agent: nextAgent, status: nextStatus });
     };
 
+    const importCards = (event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+
+        if (!file) {
+            return;
+        }
+
+        router.post('/top-up-cards/agents/import', { file }, {
+            forceFormData: true,
+            preserveScroll: true,
+            onFinish: () => {
+                if (importInput.current) {
+                    importInput.current.value = '';
+                }
+            },
+        });
+    };
+
     return (
         <>
             <Head title={t('top_up_cards.agent.title')} />
@@ -96,6 +115,7 @@ export default function AgentPage({ agents, cards, batches, filters }: Props) {
                     onDelete={setDeleting}
                 />
 
+                <input ref={importInput} type="file" accept=".csv,text/csv" className="hidden" onChange={importCards} />
                 <div className="mt-6">
                     <TopUpCardAgentCardTable
                         cards={cards}
@@ -112,6 +132,7 @@ export default function AgentPage({ agents, cards, batches, filters }: Props) {
                         onStatusChange={(value) => refreshCards(batchFilter, agentFilter, value === 'all' ? '' : value)}
                         onSelectionChange={setSelectedCardIds}
                         onAssign={() => setAssigning(true)}
+                        onImport={() => importInput.current?.click()}
                     />
                 </div>
             </PageContent>

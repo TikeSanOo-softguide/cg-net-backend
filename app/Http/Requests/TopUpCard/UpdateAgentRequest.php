@@ -3,6 +3,7 @@
 namespace App\Http\Requests\TopUpCard;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateAgentRequest extends FormRequest
 {
@@ -14,8 +15,20 @@ class UpdateAgentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:50'],
+            'name' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('agents', 'name')->whereNull('deleted_at')->ignore($this->route('agent')),
+            ],
             'address' => ['required', 'string', 'max:255'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'name.unique' => __('top_up_cards.validation.agent_name_unique'),
         ];
     }
 }

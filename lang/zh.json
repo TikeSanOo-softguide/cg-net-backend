@@ -977,6 +977,7 @@
             "not_assigned": "未分配",
             "assign": "分配代理商",
             "assign_cards": "分配充值卡",
+            "import_csv": "导入 CSV",
             "selected": "已选择 :count 张卡",
             "select": "选择代理商",
             "no_agent": "无代理商",
@@ -985,6 +986,7 @@
         },
         "validation": {
             "agent_name_required": "代理商名称为必填项。",
+            "agent_name_unique": "该代理商名称已被使用。",
             "agent_name_max": "代理商名称不能超过50个字符。",
             "agent_address_required": "代理商地址为必填项。",
             "agent_address_max": "代理商地址不能超过255个字符。",
