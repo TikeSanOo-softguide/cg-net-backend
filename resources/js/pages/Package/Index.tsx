@@ -247,7 +247,7 @@ export default function PackageIndex({
                                 item: null,
                             })
                         }
-                        createLabel={t('networks.create')}
+                        createLabel={t('packages.networks.create')}
                         onBulkDelete={
                             canDelete ? (ids) => visitBulkDelete('/networks/bulk-destroy', ids.map(Number)) : undefined
                         }
@@ -431,7 +431,7 @@ export default function PackageIndex({
                                 item: null,
                             })
                         }
-                        createLabel={t('term.create')}
+                        createLabel={t('packages.terms.create')}
                         onBulkDelete={
                             canDelete ? (ids) => visitBulkDelete('/terms/bulk-destroy', ids.map(Number)) : undefined
                         }

@@ -910,9 +910,9 @@
         "total": "充值卡总数",
         "detail": "充值卡详情",
         "description": "查看充值卡的面值、状态、有效期和兑换详情。",
-        "transaction_type": "交易类型",
-        "transaction_status": "交易状态",
-        "transaction_amount": "交易金额",
+        "transaction_no": "交易编号",
+        "from_date": "开始日期",
+        "to_date": "结束日期",
         "generate_title": "生成充值卡",
         "generate_description": "选择面额、设置有效期并生成充值卡。",
         "batch_title": "已生成批次",
@@ -1115,12 +1115,15 @@
             "name_en_required": "请输入英文名称。",
             "name_en_string": "英文名称必须是字符串。",
             "name_en_max": "英文名称不能超过 255 个字符。",
+            "name_en_unique": "该英文名称已存在。",
             "name_my_required": "请输入缅甸语名称。",
             "name_my_string": "缅甸语名称必须是字符串。",
             "name_my_max": "缅甸语名称不能超过 255 个字符。",
+            "name_my_unique": "该缅甸文名称已存在。",
             "name_zh_required": "请输入中文名称。",
             "name_zh_string": "中文名称必须是字符串。",
             "name_zh_max": "中文名称不能超过 255 个字符。",
+            "name_zh_unique": "该中文名称已存在。",
             "network_name_en_required": "请输入英文名称。",
             "network_name_en_string": "英文名称必须是字符串。",
             "network_name_en_max": "英文名称不能超过 50 个字符。",
@@ -1156,7 +1159,6 @@
         "new_location": "新位置",
         "detail": "详情",
         "search": "按应用用户姓名、账号搜索",
-        "copy_phone": "复制电话号码",
         "copy_current_location": "复制当前位置",
         "copy_new_location": "复制新位置"
     },
@@ -1193,6 +1195,8 @@
         "requested_packages": "申请的套餐",
         "requested_date": "申请日期",
         "customer_information": "客户信息",
-        "broadband_account": "宽带账户"
+        "broadband_account": "宽带账户",
+        "copy_phone": "复制电话号码",
+        "copy_address": "复制地址"
     }
 }

@@ -25,7 +25,18 @@ class StorePackageRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'network_id' => ['required', 'integer', 'exists:networks,id'],
+            'network_id' => [
+                'required',
+                'integer',
+                'exists:networks,id',
+                Rule::unique('packages', 'network_id')
+                    ->where(
+                        fn($query) => $query
+                            ->where('speed_id', $this->input('speed_id'))
+                            ->where('term_id', $this->input('term_id')),
+                    )
+                    ->withoutTrashed(),
+            ],
             'speed_id' => ['required', 'integer', 'exists:speeds,id'],
             'term_id' => ['required', 'integer', 'exists:terms,id'],
             'price' => ['required', 'numeric', 'min:0'],

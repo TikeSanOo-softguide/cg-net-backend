@@ -9,6 +9,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { formatDate } from '@/lib/utils';
 import { MultiSelect, MultiSelectOption } from '@/components/MultiSelect';
 import { FormControl } from '@/components/ui/form-control';
+import { AppWindow, ImageIcon, LucideIcon, Monitor, Smartphone } from 'lucide-react';
 
 type Props = {
     items: Paginated<BannerItem>;
@@ -35,9 +36,17 @@ export default function BannersIndex({ items, filters, bannerTypes }: Props) {
         return new Date(endDate) < new Date();
     };
 
+    const bannerTypeIcons: Record<string, LucideIcon> = {
+        web_background: Monitor,
+        web_popup: ImageIcon,
+        app_entry: Smartphone,
+        app_popup: AppWindow,
+    };
+
     const bannerTypeOptions: MultiSelectOption[] = bannerTypes.map((type) => ({
         value: type.value,
         label: t(`cms.banner.types.${type.value}`),
+        icon: bannerTypeIcons[type.value],
     }));
 
     return (
@@ -74,7 +83,7 @@ export default function BannersIndex({ items, filters, bannerTypes }: Props) {
                             }}
                             placeholder={t('cms.banner.type')}
                             heading={t('cms.banner.type')}
-                            className="relative flex min-h-10 w-[700px] min-w-[700px] max-w-[900px] h-auto items-center text-left border-none flex-wrap gap-1.5 p-2"
+                            className="relative flex"
                         />
                     </FormControl>
                 }

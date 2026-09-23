@@ -111,7 +111,9 @@ export function PackageForm({
         recommended: false,
     });
     const [submitted, setSubmitted] = useState(false);
-
+    const MAX_PRICE_DIGITS = 10;
+    const MAX_INSTALLATION_FEE_DIGITS = 10;
+    const MAX_SORT_ORDER_DIGITS = 3;
     const markTouched = (field: keyof PackageFormValues) => {
         setTouched((current) => ({ ...current, [field]: true }));
     };
@@ -140,9 +142,23 @@ export function PackageForm({
             return form.errors.image_url;
         }
 
+        if (field === 'price' && form.data.price.replace('.', '').length > MAX_PRICE_DIGITS) {
+            return t('packages.price_max');
+        }
+
+        if (
+            field === 'installation_fee' &&
+            form.data.installation_fee.replace('.', '').length > MAX_INSTALLATION_FEE_DIGITS
+        ) {
+            return t('packages.installation_fee_max');
+        }
+
+        if (field === 'sort_order' && String(form.data.sort_order).length > MAX_SORT_ORDER_DIGITS) {
+            return t('packages.sort_order_max');
+        }
+
         return form.errors[field] || validatePackageField(field, form.data, t);
     };
-
     const submit = (event: FormEvent) => {
         event.preventDefault();
         setSubmitted(true);
@@ -282,7 +298,7 @@ export function PackageForm({
                                 value={form.data.price}
                                 className={cn('w-full', formControlStateClass(fieldState('price')))}
                                 onKeyDown={(event) => {
-                                    if (event.key === '-') {
+                                    if (['e', 'E', '+', '-'].includes(event.key)) {
                                         event.preventDefault();
                                     }
                                 }}
@@ -294,8 +310,11 @@ export function PackageForm({
                                             ...prev,
                                             price: true,
                                         }));
-                                        form.setData('price', value);
-                                        form.clearErrors('price');
+
+                                        if (value.replace('.', '').length <= MAX_PRICE_DIGITS) {
+                                            form.setData('price', value);
+                                            form.clearErrors('price');
+                                        }
                                     }
                                 }}
                                 required
@@ -315,7 +334,7 @@ export function PackageForm({
                                 value={form.data.installation_fee}
                                 className={cn('w-full', formControlStateClass(fieldState('installation_fee')))}
                                 onKeyDown={(event) => {
-                                    if (event.key === '-') {
+                                    if (['e', 'E', '+', '-'].includes(event.key)) {
                                         event.preventDefault();
                                     }
                                 }}
@@ -327,8 +346,11 @@ export function PackageForm({
                                             ...prev,
                                             installation_fee: true,
                                         }));
-                                        form.setData('installation_fee', value);
-                                        form.clearErrors('installation_fee');
+
+                                        if (value.replace('.', '').length <= MAX_INSTALLATION_FEE_DIGITS) {
+                                            form.setData('installation_fee', value);
+                                            form.clearErrors('installation_fee');
+                                        }
                                     }
                                 }}
                                 required
@@ -349,7 +371,7 @@ export function PackageForm({
                                 value={form.data.sort_order}
                                 className={cn('w-full', formControlStateClass(fieldState('sort_order')))}
                                 onKeyDown={(event) => {
-                                    if (event.key === '-') {
+                                    if (['e', 'E', '+', '-'].includes(event.key)) {
                                         event.preventDefault();
                                     }
                                 }}
@@ -361,8 +383,11 @@ export function PackageForm({
                                             ...prev,
                                             sort_order: true,
                                         }));
-                                        form.setData('sort_order', Number(value));
-                                        form.clearErrors('sort_order');
+
+                                        if (value.length <= MAX_SORT_ORDER_DIGITS) {
+                                            form.setData('sort_order', value === '' ? '' : Number(value));
+                                            form.clearErrors('sort_order');
+                                        }
                                     }
                                 }}
                                 required

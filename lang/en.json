@@ -914,9 +914,9 @@
         "total": "Top-up-card Total",
         "detail": "Top-up-card Detail",
         "description": "Manage top-up cards, including their status, value, expiry date, and redemption details.",
-        "transaction_type": "Transaction Type",
-        "transaction_status": "Transaction Status",
-        "transaction_amount": "Transaction Amount",
+        "transaction_no": "Transaction Number",
+        "from_date": "From Date",
+        "to_date": "To Date",
         "generate_title": "Generate Cards",
         "generate_description": "Choose denominations, set expiry, and create top-up cards.",
         "batch_title": "Generated Batch",
@@ -1121,12 +1121,15 @@
             "name_en_required": "The English name is required.",
             "name_en_string": "The English name must be a string.",
             "name_en_max": "The English name may not be greater than 255 characters.",
+            "name_en_unique": "This English name already exists.",
             "name_my_required": "The Myanmar name is required.",
             "name_my_string": "The Myanmar name must be a string.",
             "name_my_max": "The Myanmar name may not be greater than 255 characters.",
+            "name_my_unique": "This Myanmar name already exists.",
             "name_zh_required": "The Chinese name is required.",
             "name_zh_string": "The Chinese name must be a string.",
             "name_zh_max": "The Chinese name may not be greater than 255 characters.",
+            "name_zh_unique": "This Chinese name already exists.",
             "network_name_en_required": "The English name is required.",
             "network_name_en_string": "The English name must be a string.",
             "network_name_en_max": "The English name may not be greater than 50 characters.",
@@ -1162,7 +1165,6 @@
         "new_location": "New Location",
         "detail": "Detail",
         "search": "Search by app user name,account_no",
-        "copy_phone": "Copy Phone Number",
         "copy_current_location": "Copy Current Location",
         "copy_new_location": "Copy New Location"
     },
@@ -1199,6 +1201,8 @@
         "requested_packages": "Requested Packages",
         "requested_date": "Requested Date",
         "customer_information": "Customer Information",
-        "broadband_account": "Broadband Account"
+        "broadband_account": "Broadband Account",
+        "copy_phone": "Copy Phone Number",
+        "copy_address": "Copy Address"
     }
 }

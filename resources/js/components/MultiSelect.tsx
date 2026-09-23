@@ -67,7 +67,7 @@ export function MultiSelect({
                         aria-invalid={invalid}
                         className={cn(
                             formControlClass,
-                            'relative flex min-h-10 h-auto items-center py-1.5 text-left',
+                            'relative flex min-w-60  min-h-6 h-auto items-center py-1.5 text-left',
                             icon && 'pl-10',
                         )}
                     >

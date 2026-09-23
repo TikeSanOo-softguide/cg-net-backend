@@ -18,6 +18,8 @@ import { CardHistoryFilters, formatTopUpAmount, type TopUpCardRow } from '@/lib/
 import { formatDate } from '@/lib/utils';
 import { DatePicker } from '../ui/date-picker';
 import { SearchableSelect } from '../SearchableSelect';
+import { CopyValueButton } from '../CopyValueButton';
+import { FormField } from '../ui/form-field';
 
 type TopUpCardListTableProps = {
     cards: Paginated<TopUpCardRow>;
@@ -54,7 +56,7 @@ export function TopUpCardListTable({
         () => [
             {
                 value: '',
-                label: 'All',
+                label: t('common.all'),
             },
             ...batches.map((batch) => ({
                 value: String(batch.id),
@@ -98,7 +100,13 @@ export function TopUpCardListTable({
                     }}
                     filters={
                         <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
-                            <FormControl icon={CircleDotIcon} compact className="w-full shrink-0 sm:w-40">
+                            <FormField
+                                label={t('common.status')}
+                                htmlFor="status"
+                                icon={CircleDotIcon}
+                                className="w-full shrink-0 sm:w-40 mr-3"
+                                labelClassName="text-[13px]"
+                            >
                                 <Select
                                     value={filters.status || 'all'}
                                     onValueChange={(value) =>
@@ -110,14 +118,20 @@ export function TopUpCardListTable({
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">{t('common.all')}</SelectItem>
+                                        <SelectItem value="pending">{t('status.pending')}</SelectItem>
                                         <SelectItem value="active">{t('status.active')}</SelectItem>
                                         <SelectItem value="used">{t('status.used')}</SelectItem>
                                         <SelectItem value="blocked">{t('status.blocked')}</SelectItem>
                                         <SelectItem value="expired">{t('status.expired')}</SelectItem>
                                     </SelectContent>
                                 </Select>
-                            </FormControl>
-                            <FormControl compact className="w-full shrink-0 sm:w-40">
+                            </FormField>
+                            <FormField
+                                label={t('top_up_cards.amount')}
+                                htmlFor="amount"
+                                className="w-full shrink-0 sm:w-40"
+                                labelClassName="text-[13px]"
+                            >
                                 <Select
                                     value={filters.amount || 'all'}
                                     onValueChange={(value) =>
@@ -136,30 +150,47 @@ export function TopUpCardListTable({
                                         ))}
                                     </SelectContent>
                                 </Select>
-                            </FormControl>
-                            <FormControl compact className="w-full shrink-0 sm:w-50">
+                            </FormField>
+                            <FormField
+                                label={t('top_up_cards.batch_no')}
+                                htmlFor="batch"
+                                className="w-full shrink-0 sm:w-50"
+                                labelClassName="text-[13px]"
+                            >
                                 <SearchableSelect
                                     value={String(filters.batch ?? '')}
                                     onValueChange={handleSelect}
                                     options={batchOptions}
-                                    placeholder="All"
+                                    placeholder={t('common.all')}
                                     searchPlaceholder={t('top_up_cards.batch_no') as string}
                                     className="w-full"
                                 />
-                            </FormControl>
-                            <FormControl icon={CalendarIcon} compact className="w-full shrink-0 sm:w-40">
+                            </FormField>
+                            <FormField
+                                label={t('top_up_cards.from_date')}
+                                htmlFor="from"
+                                icon={CalendarIcon}
+                                className="w-full shrink-0 sm:w-40"
+                                labelClassName="text-[13px]"
+                            >
                                 <DatePicker
                                     value={filters.from}
                                     onChange={(value) => onFilter({ ...filters, from: value })}
                                 />
-                            </FormControl>
-                            <FormControl icon={CalendarIcon} compact className="w-full shrink-0 sm:w-40">
+                            </FormField>
+                            <FormField
+                                label={t('top_up_cards.to_date')}
+                                htmlFor="to"
+                                icon={CalendarIcon}
+                                className="w-full shrink-0 sm:w-40"
+                                labelClassName="text-[13px]"
+                            >
                                 <DatePicker
                                     value={filters.to}
                                     min={filters.from || undefined}
                                     onChange={(value) => onFilter({ ...filters, to: value })}
                                 />
-                            </FormControl>
+                            </FormField>
                         </div>
                     }
                     columns={[
@@ -311,47 +342,22 @@ export function TopUpCardListTable({
                                         {formatDate(viewing.redeemed_at) ?? '—'}
                                     </dd>
                                 </div>
+                                {viewing.transaction_id ? (
+                                    <div className="space-y-1">
+                                        <dt className="text-muted-foreground">{t('top_up_cards.transaction_no')}</dt>
+                                        <dd className="font-medium text-foreground">
+                                            {viewing.transaction_no ?? '—'}
+                                            {viewing.transaction_no && (
+                                                <CopyValueButton
+                                                    value={viewing.transaction_no}
+                                                    label={t('top_up_cards.transaction_no')}
+                                                />
+                                            )}
+                                        </dd>
+                                    </div>
+                                ) : null}
                             </dl>
                         </div>
-
-                        {viewing.transaction_id ? (
-                            <>
-                                <hr className="border-border/60" />
-
-                                <div className="space-y-4">
-                                    <dl className="grid grid-cols-1 gap-x-6 gap-y-4 text-[13px] sm:grid-cols-3">
-                                        <div className="space-y-1">
-                                            <dt className="text-muted-foreground">
-                                                {t('top_up_cards.transaction_type')}
-                                            </dt>
-                                            <dd className="font-medium text-foreground">
-                                                {viewing.transaction_type ?? '—'}
-                                            </dd>
-                                        </div>
-
-                                        <div className="space-y-1">
-                                            <dt className="text-muted-foreground">
-                                                {t('top_up_cards.transaction_status')}
-                                            </dt>
-                                            <dd className="font-medium text-foreground">
-                                                {viewing.transaction_status ?? '—'}
-                                            </dd>
-                                        </div>
-
-                                        <div className="space-y-1">
-                                            <dt className="text-muted-foreground">
-                                                {t('top_up_cards.transaction_amount')}
-                                            </dt>
-                                            <dd className="font-medium text-foreground">
-                                                {viewing.transaction_amount !== null
-                                                    ? formatTopUpAmount(viewing.transaction_amount)
-                                                    : '—'}
-                                            </dd>
-                                        </div>
-                                    </dl>
-                                </div>
-                            </>
-                        ) : null}
                     </div>
                 ) : null}
             </FormDialog>

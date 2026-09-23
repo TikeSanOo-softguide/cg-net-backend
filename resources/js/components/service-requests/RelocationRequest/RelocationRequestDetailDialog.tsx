@@ -123,10 +123,7 @@ export function RelocationRequestDetailDialog({
                                     {request.phone}
                                 </span>
                                 {request.status !== 'cancelled' && (
-                                    <CopyValueButton
-                                        value={request.phone}
-                                        label={t('relocation_requests.copy_phone')}
-                                    />
+                                    <CopyValueButton value={request.phone} label={t('requests.copy_phone')} />
                                 )}
                             </p>
                         </div>
@@ -146,10 +143,7 @@ export function RelocationRequestDetailDialog({
                                     ({request.user?.phone})
                                 </span>
                                 {request.status !== 'cancelled' && (
-                                    <CopyValueButton
-                                        value={request.user.phone}
-                                        label={t('relocation_requests.copy_phone')}
-                                    />
+                                    <CopyValueButton value={request.user.phone} label={t('requests.copy_phone')} />
                                 )}
                             </p>
                         </div>

@@ -85,12 +85,12 @@ const emptyValues = (kind: ReferenceFormKind): ReferenceFormValues => {
 
         case 'speed':
             return {
-                mbps: '',
+                mbps: 0,
             };
 
         case 'term':
             return {
-                months: '',
+                months: 0,
             };
 
         case 'addon':
@@ -98,7 +98,7 @@ const emptyValues = (kind: ReferenceFormKind): ReferenceFormValues => {
                 name_en: '',
                 name_zh: '',
                 name_my: '',
-                price: '',
+                price: 0,
                 image_url: null,
             };
     }
@@ -423,7 +423,7 @@ function ReferenceFormDialogBody({
                             type="number"
                             value={String(form.data.mbps ?? '')}
                             onKeyDown={(event) => {
-                                if (event.key === '-') {
+                                if (['e', 'E', '+', '-'].includes(event.key)) {
                                     event.preventDefault();
                                 }
                             }}
@@ -459,7 +459,7 @@ function ReferenceFormDialogBody({
                             type="number"
                             value={String(form.data.months ?? '')}
                             onKeyDown={(event) => {
-                                if (event.key === '-') {
+                                if (['e', 'E', '+', '-'].includes(event.key)) {
                                     event.preventDefault();
                                 }
                             }}
@@ -573,7 +573,7 @@ function ReferenceFormDialogBody({
                                     type="number"
                                     value={String(form.data.price ?? '')}
                                     onKeyDown={(event) => {
-                                        if (event.key === '-') {
+                                        if (['e', 'E', '+', '-'].includes(event.key)) {
                                             event.preventDefault();
                                         }
                                     }}

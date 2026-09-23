@@ -371,7 +371,7 @@ export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrl
                                     value={form.data.sort_order}
                                     className={cn('w-full', formControlStateClass(fieldState('sort_order')))}
                                     onKeyDown={(event) => {
-                                        if (event.key === '-') {
+                                        if (['e', 'E', '+', '-'].includes(event.key)) {
                                             event.preventDefault();
                                         }
                                     }}
