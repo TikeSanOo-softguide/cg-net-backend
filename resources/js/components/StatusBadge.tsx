@@ -15,6 +15,9 @@ function dotClass(status: string): string {
         case 'draft':
         case 'pending':
             return 'bg-amber-400';
+        case 'processing':
+        case 'in_progress':
+            return 'bg-blue-500';
         case 'rejected':
         case 'expired':
         case 'terminated':

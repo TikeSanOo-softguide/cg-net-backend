@@ -9,9 +9,9 @@ return new class extends Migration {
     {
         Schema::create('networks', function (Blueprint $table) {
             $table->id();
-            $table->string('name_en', 50)->unique();
-            $table->string('name_zh', 50)->unique();
-            $table->string('name_my', 50)->unique();
+            $table->string('name_en', 50);
+            $table->string('name_zh', 50);
+            $table->string('name_my', 50);
             $table->timestamps();
             $table->softDeletes();
 

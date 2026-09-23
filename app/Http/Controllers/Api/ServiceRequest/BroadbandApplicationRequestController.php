@@ -8,6 +8,7 @@ use App\Http\Requests\ServiceRequest\CreateBroadbandApplicationRequest;
 use App\Http\Requests\ServiceRequest\UpdateBroadbandApplicationRequest;
 use App\Http\Resources\BroadbandApplication\BroadbandApplicationResource;
 use App\Models\InstallationApplication;
+use App\Services\TelegramService;
 use App\Support\StoresPublicImage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -17,16 +18,12 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class BroadbandApplicationRequestController extends Controller
 {
+    public function __construct(private TelegramService $telegram) {}
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $applications = InstallationApplication::query()
-            ->with([
-                'package.network',
-                'package.speed',
-                'package.term',
-                'area.region.state',
-                'photos',
-            ])
+            ->with(['package.network', 'package.speed', 'package.term', 'area.region.state', 'photos'])
             ->where('user_id', $request->user()->id)
             ->latest()
             ->get();
@@ -34,15 +31,17 @@ class BroadbandApplicationRequestController extends Controller
         return BroadbandApplicationResource::collection($applications);
     }
 
-    public function show(Request $request, InstallationApplication $installationApplication): BroadbandApplicationResource
-    {
+    public function show(
+        Request $request,
+        InstallationApplication $installationApplication,
+    ): BroadbandApplicationResource {
         $this->ensureOwner($request, $installationApplication);
         return new BroadbandApplicationResource($installationApplication);
     }
 
     public function store(CreateBroadbandApplicationRequest $request): BroadbandApplicationResource
     {
-        return DB::transaction(function () use ($request) {
+        $application = DB::transaction(function () use ($request) {
             $validated = $request->validated();
 
             $application = InstallationApplication::query()->create([
@@ -57,14 +56,37 @@ class BroadbandApplicationRequestController extends Controller
                 ]);
             }
 
-            return new BroadbandApplicationResource($application->load([
-                'package.network',
-                'package.speed',
-                'package.term',
-                'area.region.state',
-                'photos',
-            ]));
+            return $application;
         });
+
+        $application->load([
+            'user:id,name,phone',
+            'admin:id,username',
+            'area:id,name_en,name_zh,name_my,region_id',
+            'area.region:id,name_en,name_zh,name_my,state_id',
+            'area.region.state:id,name_en,name_zh,name_my',
+            'package:id,network_id,speed_id,term_id',
+            'package.network:id,name_en,name_zh,name_my',
+            'package.speed:id,mbps',
+            'package.term:id,months',
+        ]);
+
+        $message =
+            "📡 Broadband Installation\n\n" .
+            "🗓️ Date: {$application->updated_at->format('d M Y, h:i A')}\n" .
+            "👤 Customer: {$application->user->name}\n" .
+            "📞 Phone: {$application->user->phone}\n" .
+            "📍 Area: {$application->area->name_en}\n" .
+            "🌐 Region: {$application->area->region->name_en}\n" .
+            "📦 Package: {$application->package->network->name_en}\n" .
+            "⚡ Speed: {$application->package->speed->mbps} Mbps\n" .
+            "📅 Term: {$application->package->term->months} months\n" .
+            "📋 Status: {$application->status->value}";
+
+        $this->telegram->sendMessage($message);
+        $application->load(['package.network', 'package.speed', 'package.term', 'area.region.state', 'photos']);
+
+        return new BroadbandApplicationResource($application);
     }
 
     public function update(
@@ -97,13 +119,11 @@ class BroadbandApplicationRequestController extends Controller
                 }
             }
 
-            return new BroadbandApplicationResource($installationApplication->refresh()->load([
-                'package.network',
-                'package.speed',
-                'package.term',
-                'area.region.state',
-                'photos',
-            ]));
+            return new BroadbandApplicationResource(
+                $installationApplication
+                    ->refresh()
+                    ->load(['package.network', 'package.speed', 'package.term', 'area.region.state', 'photos']),
+            );
         });
     }
 
@@ -121,8 +141,10 @@ class BroadbandApplicationRequestController extends Controller
         return response()->noContent();
     }
 
-    public function cancel(Request $request, InstallationApplication $installationApplication): BroadbandApplicationResource
-    {
+    public function cancel(
+        Request $request,
+        InstallationApplication $installationApplication,
+    ): BroadbandApplicationResource {
         $this->ensureOwner($request, $installationApplication);
         $installationApplication->update([
             'status' => RequestStatus::Cancelled,

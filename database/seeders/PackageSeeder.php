@@ -13,6 +13,8 @@ class PackageSeeder extends Seeder
 {
     public function run(): void
     {
+        echo "Package seeder started\n";
+
         // ------------------------------------------------------------
         // Networks (缅甸网 / 晨光网 / CG-家庭网)
         // ------------------------------------------------------------
@@ -67,7 +69,7 @@ class PackageSeeder extends Seeder
                 'name_zh' => '无线接收器',
                 'name_my' => 'ကြိုးမဲ့ လက်ခံကိရိယာ',
                 'price' => 350.0,
-                'is_active' => true
+                'is_active' => true,
             ],
         );
 

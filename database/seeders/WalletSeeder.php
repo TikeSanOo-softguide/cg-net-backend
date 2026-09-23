@@ -2,6 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Enums\BillPaymentStatus;
+use App\Enums\CustomerPackageStatus;
+use App\Enums\PackageOrderStatus;
 use App\Enums\WalletActorType;
 use App\Enums\WalletEntryType;
 use App\Enums\WalletStatus;
@@ -21,9 +24,12 @@ class WalletSeeder extends Seeder
 {
     public function run(): void
     {
-        $users = User::query()->with('wallet')->get();
+        echo "Wallet seeder started\n";
 
-        foreach ($users as $user) {
+        $users = User::query()->with('wallet')->get();
+        $totalUsers = $users->count();
+
+        foreach ($users as $index => $user) {
             $wallet =
                 $user->wallet ??
                 Wallet::factory()->create([
@@ -33,11 +39,14 @@ class WalletSeeder extends Seeder
                     'version' => 1,
                 ]);
 
-            $this->seedWalletTransactions($wallet, $user);
+            // 12 transactions for standard users, 100 for the last user
+            $transactionCount = $index === $totalUsers - 1 ? 100 : 12;
+
+            $this->seedWalletTransactions($wallet, $user, $transactionCount);
         }
     }
 
-    private function seedWalletTransactions(Wallet $wallet, User $user): void
+    private function seedWalletTransactions(Wallet $wallet, User $user, int $count): void
     {
         $types = [
             WalletTransactionType::Topup,
@@ -48,13 +57,19 @@ class WalletSeeder extends Seeder
             WalletTransactionType::Adjustment,
         ];
 
-        foreach (range(1, 3) as $index) {
+        // Cap related records to a maximum of 10 per user for balance and neatness
+        $indices = range(1, $count);
+        $transferIndices = collect($indices)->random(min(10, $count))->toArray();
+        $billIndices = collect($indices)->random(min(10, $count))->toArray();
+        $packageIndices = collect($indices)->random(min(10, $count))->toArray();
+
+        for ($index = 1; $index <= $count; $index++) {
             $type = $types[array_rand($types)];
-            $amount = fake()->numberBetween(1000, 30000);
+            $amount = fake()->numberBetween(100, 5000);
 
             $transaction = WalletTransaction::factory()->create([
                 'wallet_id' => $wallet->id,
-                'transaction_no' => 'TXN-' . strtoupper(fake()->bothify('???-####')),
+                'transaction_no' => now()->format('YmdHis') . str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT),
                 'type' => $type,
                 'status' => fake()->randomElement([
                     WalletTransactionStatus::Pending,
@@ -73,10 +88,9 @@ class WalletSeeder extends Seeder
             ]);
 
             $before = $wallet->balance;
-            $after =
-                $type === WalletTransactionType::Refund || $type === WalletTransactionType::Adjustment
-                    ? $before + $amount
-                    : max(0, $before + $amount);
+            $entryType = fake()->randomElement([WalletEntryType::Credit, WalletEntryType::Debit]);
+
+            $after = $entryType === WalletEntryType::Credit ? $before + $amount : max(0, $before - $amount);
 
             $wallet->incrementVersion();
             $wallet->balance = $after;
@@ -88,10 +102,11 @@ class WalletSeeder extends Seeder
                 'amount' => $amount,
                 'balance_before' => $before,
                 'balance_after' => $after,
-                'type' => fake()->randomElement([WalletEntryType::Credit, WalletEntryType::Debit]),
+                'type' => $entryType,
             ]);
 
-            if ($index % 2 === 0) {
+            // Wallet Transfers (capped to ~10)
+            if (in_array($index, $transferIndices)) {
                 $otherWallet = Wallet::query()->where('id', '!=', $wallet->id)->inRandomOrder()->first();
 
                 if ($otherWallet) {
@@ -105,7 +120,8 @@ class WalletSeeder extends Seeder
                 }
             }
 
-            if ($index % 3 === 0) {
+            // Bill Payments (capped to ~10)
+            if (in_array($index, $billIndices)) {
                 $account = BroadbandAccount::query()->inRandomOrder()->first();
 
                 if ($account) {
@@ -113,9 +129,9 @@ class WalletSeeder extends Seeder
                         'wallet_transaction_id' => $transaction->id,
                         'broadband_account_id' => $account->id,
                         'status' => fake()->randomElement([
-                            \App\Enums\BillPaymentStatus::Processing,
-                            \App\Enums\BillPaymentStatus::Completed,
-                            \App\Enums\BillPaymentStatus::Failed,
+                            BillPaymentStatus::Processing,
+                            BillPaymentStatus::Completed,
+                            BillPaymentStatus::Failed,
                         ]),
                         'external_bill_ref' => 'BILL-' . fake()->numerify('####'),
                         'external_payment_ref' => 'PAY-' . fake()->numerify('####'),
@@ -123,26 +139,29 @@ class WalletSeeder extends Seeder
                 }
             }
 
-            if ($index % 2 !== 0) {
+            // Package Orders & Customer Packages (capped to ~10, 1:1 match for completed orders)
+            if (in_array($index, $packageIndices)) {
                 $package = \App\Models\Package::query()->inRandomOrder()->first();
 
                 if ($package) {
+                    $orderStatus = fake()->randomElement([
+                        PackageOrderStatus::Processing,
+                        PackageOrderStatus::Completed,
+                        PackageOrderStatus::Failed,
+                    ]);
+
                     $packageOrder = PackageOrder::query()->create([
                         'user_id' => $user->id,
                         'package_id' => $package->id,
                         'wallet_transaction_id' => $transaction->id,
-                        'status' => fake()->randomElement([
-                            \App\Enums\PackageOrderStatus::Processing,
-                            \App\Enums\PackageOrderStatus::Completed,
-                            \App\Enums\PackageOrderStatus::Failed,
-                        ]),
+                        'status' => $orderStatus,
                         'snapshot' => [
                             'package_id' => $package->id,
                             'price' => $package->price,
                         ],
                     ]);
 
-                    if ($packageOrder->status === \App\Enums\PackageOrderStatus::Completed) {
+                    if ($packageOrder->status === PackageOrderStatus::Completed) {
                         \App\Models\CustomerPackage::query()->create([
                             'user_id' => $user->id,
                             'package_id' => $package->id,
@@ -153,7 +172,7 @@ class WalletSeeder extends Seeder
                             'start_date' => now()->subDays(7),
                             'expiry_date' => now()->addDays(30),
                             'auto_renew' => false,
-                            'status' => \App\Enums\CustomerPackageStatus::Active,
+                            'status' => CustomerPackageStatus::Active,
                         ]);
                     }
                 }

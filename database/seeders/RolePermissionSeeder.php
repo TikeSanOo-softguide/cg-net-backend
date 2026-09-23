@@ -12,6 +12,8 @@ class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
+        echo "Role permission seeder started\n";
+
         self::sync();
     }
 
@@ -34,29 +36,28 @@ class RolePermissionSeeder extends Seeder
         $super->syncPermissions($all);
 
         $staff = Role::query()->firstOrCreate(['name' => AppPermissions::StaffOfficer, 'guard_name' => $guard]);
-        $staff->syncPermissions($all->filter(function (Permission $permission): bool {
-            return in_array(explode('.', $permission->name)[0], [
-                'dashboard',
-                'customers',
-                'cpe',
-                'packages',
-                'billing',
-                'top-up-cards',
-                'regions',
-                'cms',
-            ], true);
-        }));
+        $staff->syncPermissions(
+            $all->filter(function (Permission $permission): bool {
+                return in_array(
+                    explode('.', $permission->name)[0],
+                    ['dashboard', 'customers', 'cpe', 'packages', 'billing', 'top-up-cards', 'regions', 'cms'],
+                    true,
+                );
+            }),
+        );
 
         $support = Role::query()->firstOrCreate(['name' => AppPermissions::SupportAgent, 'guard_name' => $guard]);
-        $support->syncPermissions($all->filter(function (Permission $permission): bool {
-            $module = explode('.', $permission->name)[0];
+        $support->syncPermissions(
+            $all->filter(function (Permission $permission): bool {
+                $module = explode('.', $permission->name)[0];
 
-            if (in_array($module, ['dashboard', 'support', 'service-requests', 'notifications'], true)) {
-                return true;
-            }
+                if (in_array($module, ['dashboard', 'support', 'service-requests', 'notifications'], true)) {
+                    return true;
+                }
 
-            return $permission->name === 'customers.view';
-        }));
+                return $permission->name === 'customers.view';
+            }),
+        );
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }

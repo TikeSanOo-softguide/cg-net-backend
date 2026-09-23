@@ -14,6 +14,8 @@ class FailureReportSeeder extends Seeder
      */
     public function run(): void
     {
+        echo "Failure report seeder started\n";
+
         $adminId = DB::table('admins')->value('id');
 
         if ($adminId === null) {
@@ -26,10 +28,7 @@ class FailureReportSeeder extends Seeder
             return;
         }
 
-        $accounts = DB::table('broadband_accounts')
-            ->select('id', 'user_id')
-            ->get()
-            ->keyBy('user_id');
+        $accounts = DB::table('broadband_accounts')->select('id', 'user_id')->get()->keyBy('user_id');
 
         $seedRows = [
             [
@@ -71,21 +70,24 @@ class FailureReportSeeder extends Seeder
                 continue;
             }
 
-            $report = DB::table('failure_reports')->where('user_id', $row['user_id'])
+            $report = DB::table('failure_reports')
+                ->where('user_id', $row['user_id'])
                 ->where('contact_phone', $row['contact_phone'])
                 ->first();
 
             if ($report) {
-                DB::table('failure_reports')->where('id', $report->id)->update([
-                    'broadband_account_id' => $accountId,
-                    'failure_type' => $row['failure_type'],
-                    'description' => $row['description'],
-                    'contact_name' => $row['contact_name'],
-                    'contact_phone' => $row['contact_phone'],
-                    'status' => $row['status'],
-                    'admin_id' => $row['admin_id'],
-                    'updated_at' => now(),
-                ]);
+                DB::table('failure_reports')
+                    ->where('id', $report->id)
+                    ->update([
+                        'broadband_account_id' => $accountId,
+                        'failure_type' => $row['failure_type'],
+                        'description' => $row['description'],
+                        'contact_name' => $row['contact_name'],
+                        'contact_phone' => $row['contact_phone'],
+                        'status' => $row['status'],
+                        'admin_id' => $row['admin_id'],
+                        'updated_at' => now(),
+                    ]);
 
                 $reportId = $report->id;
             } else {
@@ -103,29 +105,30 @@ class FailureReportSeeder extends Seeder
                 ]);
             }
 
-            $existingPhotoCount = DB::table('failure_photos')
-                ->where('failure_report_id', $reportId)
-                ->count();
+            $existingPhotoCount = DB::table('failure_photos')->where('failure_report_id', $reportId)->count();
 
             if ($existingPhotoCount === 0) {
                 DB::table('failure_photos')->insert([
                     [
                         'failure_report_id' => $reportId,
-                        'image_url' => 'https://images.unsplash.com/photo-1691435828932-911a7801adfb?q=80&w=1632&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+                        'image_url' =>
+                            'https://images.unsplash.com/photo-1691435828932-911a7801adfb?q=80&w=1632&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
                         'label' => 'front_view',
                         'created_at' => now(),
                         'updated_at' => now(),
                     ],
                     [
                         'failure_report_id' => $reportId,
-                        'image_url' => 'https://images.unsplash.com/photo-1516044734145-07ca8eef8731?q=80&w=1173&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+                        'image_url' =>
+                            'https://images.unsplash.com/photo-1516044734145-07ca8eef8731?q=80&w=1173&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
                         'label' => 'equipment_box',
                         'created_at' => now(),
                         'updated_at' => now(),
                     ],
                     [
                         'failure_report_id' => $reportId,
-                        'image_url' => 'https://images.unsplash.com/photo-1606904825846-647eb07f5be2?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+                        'image_url' =>
+                            'https://images.unsplash.com/photo-1606904825846-647eb07f5be2?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
                         'label' => 'cable_line',
                         'created_at' => now(),
                         'updated_at' => now(),

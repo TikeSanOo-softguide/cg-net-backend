@@ -178,6 +178,7 @@ export default function ActivityLogIndex({ logs, filters, filterOptions }: Activ
                                 htmlFor="activity-log-admin"
                                 icon={UserIcon}
                                 className="w-full shrink-0 sm:w-60 mr-3"
+                                labelClassName="text-[13px]"
                             >
                                 <Input
                                     id="activity-log-admin"
@@ -194,6 +195,7 @@ export default function ActivityLogIndex({ logs, filters, filterOptions }: Activ
                                 error={dateRangeError}
                                 icon={CalendarIcon}
                                 className="w-full shrink-0 sm:w-40 mr-3"
+                                labelClassName="text-[13px]"
                             >
                                 <DatePicker
                                     id="activity-log-from"
@@ -210,6 +212,7 @@ export default function ActivityLogIndex({ logs, filters, filterOptions }: Activ
                                 error={dateRangeError}
                                 icon={CalendarIcon}
                                 className="w-full shrink-0 sm:w-40 mr-3"
+                                labelClassName="text-[13px]"
                             >
                                 <DatePicker
                                     id="activity-log-to"
@@ -248,6 +251,7 @@ export default function ActivityLogIndex({ logs, filters, filterOptions }: Activ
                                                 label={t('activity_logs.event')}
                                                 htmlFor="activity-log-event"
                                                 className="w-full"
+                                                labelClassName="text-[13px]"
                                             >
                                                 <Select
                                                     value={event || 'all'}
@@ -273,6 +277,7 @@ export default function ActivityLogIndex({ logs, filters, filterOptions }: Activ
                                                 label={t('activity_logs.log')}
                                                 htmlFor="activity-log-name"
                                                 className="w-full"
+                                                labelClassName="text-[13px]"
                                             >
                                                 <Select
                                                     value={log || 'all'}

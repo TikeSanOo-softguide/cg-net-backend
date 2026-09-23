@@ -267,12 +267,6 @@ export const navigation: NavGroup[] = [
                 icon: MessageSquare,
             },
             {
-                labelKey: 'menu.agent_assignment',
-                descriptionKey: 'menu.agent_assignment_description',
-                href: '/support/agents',
-                icon: UserCog,
-            },
-            {
                 labelKey: 'menu.quick_reply_templates',
                 descriptionKey: 'menu.quick_reply_templates_description',
                 href: '/support/quick-replies',

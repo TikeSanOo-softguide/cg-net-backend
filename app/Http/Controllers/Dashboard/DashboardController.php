@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers\Dashboard;
 
+use App\Enums\BillPaymentStatus;
 use App\Enums\BroadbandAccountStatus;
 use App\Enums\ChangePlanStatus;
 use App\Enums\CustomerPackageStatus;
-use App\Enums\PaymentStatus;
 use App\Enums\ReviewStatus;
 use App\Http\Controllers\Controller;
+use App\Models\BillPayment;
 use App\Models\BroadbandAccount;
 use App\Models\ChangePlanRequest;
 use App\Models\CustomerPackage;
 use App\Models\FailureReport;
 use App\Models\InstallationApplication;
-use App\Models\Payment;
 use App\Models\RelocationRequest;
 use App\Models\User;
 use Carbon\Carbon;
@@ -70,7 +70,11 @@ class DashboardController extends Controller
             }
 
             $item->delete();
-            activity('service-requests')->causedBy($request->user())->performedOn($item)->event('deleted')->log($type.'_deleted');
+            activity('service-requests')
+                ->causedBy($request->user())
+                ->performedOn($item)
+                ->event('deleted')
+                ->log($type . '_deleted');
             $deleted++;
         }
 
@@ -78,7 +82,8 @@ class DashboardController extends Controller
             return back()->withErrors(['delete' => 'common.bulk_delete_failed']);
         }
 
-        $redirect = redirect()->route('dashboard')
+        $redirect = redirect()
+            ->route('dashboard')
             ->with('success', 'common.bulk_deleted')
             ->with('deleted_count', $deleted);
 
@@ -94,23 +99,29 @@ class DashboardController extends Controller
      */
     private function stats(): array
     {
-        $pending = InstallationApplication::query()->where('status', ReviewStatus::UnderReview)->count()
-            + FailureReport::query()->where('status', ReviewStatus::UnderReview)->count()
-            + RelocationRequest::query()->where('status', ReviewStatus::UnderReview)->count()
-            + ChangePlanRequest::query()->where('status', ChangePlanStatus::UnderReview)->count();
+        $pending =
+            InstallationApplication::query()->where('status', ReviewStatus::UnderReview)->count() +
+            FailureReport::query()->where('status', ReviewStatus::UnderReview)->count() +
+            RelocationRequest::query()->where('status', ReviewStatus::UnderReview)->count() +
+            ChangePlanRequest::query()->where('status', ChangePlanStatus::UnderReview)->count();
 
         return [
             'total_customers' => User::query()->count(),
             'active_broadband_accounts' => BroadbandAccount::query()
                 ->where('status', BroadbandAccountStatus::Active)
                 ->count(),
-            'active_packages' => CustomerPackage::query()
-                ->where('status', CustomerPackageStatus::Active)
-                ->count(),
-            'todays_revenue' => number_format((float) Payment::query()
-                ->where('status', PaymentStatus::Paid)
-                ->whereDate('paid_at', today())
-                ->sum('amount'), 2, '.', ''),
+            'active_packages' => CustomerPackage::query()->where('status', CustomerPackageStatus::Active)->count(),
+            'todays_revenue' => number_format(
+                (float) BillPayment::query()
+                    ->where('status', BillPaymentStatus::Completed)
+                    ->whereDate('confirmed_at', today())
+                    ->with('walletTransaction:id,amount')
+                    ->get()
+                    ->sum(fn(BillPayment $payment) => (float) ($payment->walletTransaction?->amount ?? 0)),
+                2,
+                '.',
+                '',
+            ),
             'pending_requests' => $pending,
         ];
     }
@@ -123,18 +134,23 @@ class DashboardController extends Controller
         $start = now()->subDays(29)->startOfDay();
         $end = now()->endOfDay();
 
-        $revenue = Payment::query()
-            ->where('status', PaymentStatus::Paid)
-            ->whereBetween('paid_at', [$start, $end])
-            ->get(['paid_at', 'amount'])
-            ->groupBy(fn (Payment $payment) => $payment->paid_at?->toDateString())
-            ->map(fn (Collection $rows) => (float) $rows->sum('amount'));
+        $revenue = BillPayment::query()
+            ->where('status', BillPaymentStatus::Completed)
+            ->whereBetween('confirmed_at', [$start, $end])
+            ->with('walletTransaction:id,amount')
+            ->get(['confirmed_at', 'wallet_transaction_id'])
+            ->groupBy(fn(BillPayment $payment) => $payment->confirmed_at?->toDateString())
+            ->map(
+                fn(Collection $rows) => (float) $rows->sum(
+                    fn(BillPayment $payment) => (float) ($payment->walletTransaction?->amount ?? 0),
+                ),
+            );
 
         $signups = User::query()
             ->whereBetween('created_at', [$start, $end])
             ->get(['created_at'])
-            ->groupBy(fn (User $user) => $user->created_at->toDateString())
-            ->map(fn (Collection $rows) => $rows->count());
+            ->groupBy(fn(User $user) => $user->created_at->toDateString())
+            ->map(fn(Collection $rows) => $rows->count());
 
         return collect(CarbonPeriod::create($start, $end))
             ->map(function (Carbon $day) use ($revenue, $signups) {
@@ -171,7 +187,7 @@ class DashboardController extends Controller
             ->orderByDesc('total')
             ->get();
 
-        $toSlice = static fn ($row): array => [
+        $toSlice = static fn($row): array => [
             'id' => (int) $row->id,
             'name_en' => (string) $row->name_en,
             'name_zh' => (string) $row->name_zh,
@@ -205,10 +221,12 @@ class DashboardController extends Controller
     private function requestTypeChart(): array
     {
         $items = collect(self::REQUEST_MODELS)
-            ->map(fn (string $class, string $type) => [
-                'type' => $type,
-                'value' => $class::query()->count(),
-            ])
+            ->map(
+                fn(string $class, string $type) => [
+                    'type' => $type,
+                    'value' => $class::query()->count(),
+                ],
+            )
             ->sortByDesc('value')
             ->values();
 
@@ -217,11 +235,13 @@ class DashboardController extends Controller
         return [
             'change' => $this->requestVolumeChange(),
             'items' => $items
-                ->map(fn (array $row) => [
-                    'type' => $row['type'],
-                    'value' => $row['value'],
-                    'percent' => $total > 0 ? (int) round($row['value'] / $total * 100) : 0,
-                ])
+                ->map(
+                    fn(array $row) => [
+                        'type' => $row['type'],
+                        'value' => $row['value'],
+                        'percent' => $total > 0 ? (int) round(($row['value'] / $total) * 100) : 0,
+                    ],
+                )
                 ->all(),
         ];
     }
@@ -240,8 +260,12 @@ class DashboardController extends Controller
 
     private function requestCountBetween(Carbon $start, Carbon $end): int
     {
-        return (int) collect(self::REQUEST_MODELS)
-            ->sum(fn (string $class) => $class::query()->whereBetween('created_at', [$start, $end])->count());
+        return (int) collect(self::REQUEST_MODELS)->sum(
+            fn(string $class) => $class
+                ::query()
+                ->whereBetween('created_at', [$start, $end])
+                ->count(),
+        );
     }
 
     /**
@@ -249,57 +273,45 @@ class DashboardController extends Controller
      */
     private function recentRequests(): array
     {
-        $installs = InstallationApplication::query()
-            ->with('user:id,name')
-            ->latest()
-            ->take(10)
-            ->get()
-            ->map(fn (InstallationApplication $row) => [
-                'id' => 'installation-'.$row->id,
+        $installs = InstallationApplication::query()->with('user:id,name')->latest()->take(10)->get()->map(
+            fn(InstallationApplication $row) => [
+                'id' => 'installation-' . $row->id,
                 'type' => 'installation',
                 'customer' => $row->user?->name ?? '—',
                 'status' => $row->status->value,
                 'created_at' => $row->created_at?->toIso8601String(),
-            ]);
+            ],
+        );
 
-        $failures = FailureReport::query()
-            ->with('user:id,name')
-            ->latest()
-            ->take(10)
-            ->get()
-            ->map(fn (FailureReport $row) => [
-                'id' => 'failure-'.$row->id,
+        $failures = FailureReport::query()->with('user:id,name')->latest()->take(10)->get()->map(
+            fn(FailureReport $row) => [
+                'id' => 'failure-' . $row->id,
                 'type' => 'failure',
                 'customer' => $row->user?->name ?? '—',
                 'status' => $row->status->value,
                 'created_at' => $row->created_at?->toIso8601String(),
-            ]);
+            ],
+        );
 
-        $relocations = RelocationRequest::query()
-            ->with('user:id,name')
-            ->latest()
-            ->take(10)
-            ->get()
-            ->map(fn (RelocationRequest $row) => [
-                'id' => 'relocation-'.$row->id,
+        $relocations = RelocationRequest::query()->with('user:id,name')->latest()->take(10)->get()->map(
+            fn(RelocationRequest $row) => [
+                'id' => 'relocation-' . $row->id,
                 'type' => 'relocation',
                 'customer' => $row->user?->name ?? '—',
                 'status' => $row->status->value,
                 'created_at' => $row->created_at?->toIso8601String(),
-            ]);
+            ],
+        );
 
-        $changes = ChangePlanRequest::query()
-            ->with('user:id,name')
-            ->latest()
-            ->take(10)
-            ->get()
-            ->map(fn (ChangePlanRequest $row) => [
-                'id' => 'change_plan-'.$row->id,
+        $changes = ChangePlanRequest::query()->with('user:id,name')->latest()->take(10)->get()->map(
+            fn(ChangePlanRequest $row) => [
+                'id' => 'change_plan-' . $row->id,
                 'type' => 'change_plan',
                 'customer' => $row->user?->name ?? '—',
                 'status' => $row->status->value,
                 'created_at' => $row->created_at?->toIso8601String(),
-            ]);
+            ],
+        );
 
         return $installs
             ->concat($failures)

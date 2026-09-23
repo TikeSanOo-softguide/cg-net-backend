@@ -15,7 +15,6 @@ return new class extends Migration {
             $table->id();
             $table->string('serial_no', 32)->unique();
             $table->string('pin', 64);
-            $table->char('pin_lookup', 64)->unique();
             $table->decimal('amount', 10, 2);
             $table->string('status', 16)->default('active')->index();
             $table->date('expires_at')->index();

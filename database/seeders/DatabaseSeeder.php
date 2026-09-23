@@ -2,17 +2,21 @@
 
 namespace Database\Seeders;
 
+use App\Enums\BillPaymentStatus;
 use App\Enums\ChangePlanStatus;
 use App\Enums\CustomerPackageStatus;
 use App\Enums\InvoiceStatus;
-use App\Enums\PaymentStatus;
 use App\Enums\RequestStatus;
 use App\Enums\UserStatus;
+use App\Enums\WalletActorType;
+use App\Enums\WalletStatus;
+use App\Enums\WalletTransactionStatus;
 use App\Enums\WalletTransactionType;
 use App\Models\Admin;
 use App\Models\Announcement;
 use App\Models\Area;
 use App\Models\Banner;
+use App\Models\BillPayment;
 use App\Models\BroadbandAccount;
 use App\Models\Category;
 use App\Models\ChangePasswordRequest;
@@ -25,9 +29,9 @@ use App\Models\InstallationApplication;
 use App\Models\Invoice;
 use App\Models\NotificationCustom;
 use App\Models\Package;
-use App\Models\Payment;
 use App\Models\RelocationRequest;
 use App\Models\Setting;
+use App\Models\TopUpCard;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
@@ -36,6 +40,7 @@ use Database\Factories\Support\MyanmarFake;
 use Database\Seeders\AreaSeeder;
 use Database\Seeders\PackageSeeder;
 use Database\Seeders\ServiceSeeder;
+use Database\Seeders\WalletSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
@@ -46,12 +51,16 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
+        echo "Database seeder started\n";
+
         $admins = $this->seedAdmins();
         $areas = $this->seedAreas();
         $packages = $this->seedPackages();
         $users = $this->seedCustomers($packages);
         $this->seedAgents();
+        $this->seedTopUpCards();
         $this->seedServiceRequests($users, $areas, $packages);
+        $this->seedWalletSystem();
         $this->seedFailureReports();
         $this->seedBilling($users);
         $this->seedNotifications();
@@ -106,6 +115,16 @@ class DatabaseSeeder extends Seeder
         (new AreaSeeder())->run();
 
         return Area::all();
+    }
+
+    private function seedTopUpCards(): void
+    {
+        (new TopUpCardSeeder())->run();
+    }
+
+    private function seedWalletSystem(): void
+    {
+        (new WalletSeeder())->run();
     }
 
     private function seedFailureReports(): void
@@ -342,18 +361,36 @@ class DatabaseSeeder extends Seeder
                 $paidAt = now()->subDays($index * 2);
                 $amount = fake()->randomElement([15000, 25000, 35000, 45000]);
 
-                $invoice = Invoice::factory()->create([
-                    'broadband_account_id' => $account->id,
+                $wallet = $user->wallet()->firstOrCreate(
+                    ['user_id' => $user->id],
+                    [
+                        'balance' => 0,
+                        'status' => WalletStatus::Active,
+                        'version' => 1,
+                    ],
+                );
+
+                $transaction = WalletTransaction::query()->create([
+                    'wallet_id' => $wallet->id,
+                    'transaction_no' => 'BILL-' . strtoupper(fake()->bothify('???-####')),
+                    'type' => WalletTransactionType::FtthBill,
+                    'status' => WalletTransactionStatus::Completed,
                     'amount' => $amount,
-                    'status' => InvoiceStatus::Paid,
-                    'due_date' => $paidAt->copy()->addDays(7),
+                    'idempotency_key' => fake()->unique()->uuid(),
+                    'actor_type' => WalletActorType::System->value,
+                    'actor_id' => $user->id,
+                    'ip_address' => fake()->ipv4(),
+                    'user_agent' => fake()->userAgent(),
                 ]);
 
-                Payment::factory()->create([
-                    'invoice_id' => $invoice->id,
-                    'amount' => $amount,
-                    'status' => PaymentStatus::Paid,
-                    'paid_at' => $paidAt,
+                BillPayment::query()->create([
+                    'wallet_transaction_id' => $transaction->id,
+                    'broadband_account_id' => $account->id,
+                    'status' => BillPaymentStatus::Completed,
+                    'external_bill_ref' => 'BILL-' . fake()->numerify('####'),
+                    'external_payment_ref' => 'PAY-' . fake()->numerify('####'),
+                    'external_response' => ['gateway' => 'kbzpay'],
+                    'confirmed_at' => $paidAt,
                 ]);
             });
     }

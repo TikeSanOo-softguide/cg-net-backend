@@ -180,7 +180,9 @@
         "paid": "Paid",
         "suspended": "Suspended",
         "terminated": "Terminated",
+        "reversed": "Reversed",
         "pending": "Pending",
+        "processing": "Processing",
         "completed": "Completed",
         "failed": "Failed",
         "inactive": "Inactive",
@@ -226,6 +228,7 @@
         "search": "Search",
         "no_results": "No matching results",
         "status": "Status",
+        "transactions": "Transactions",
         "actions": "Actions",
         "cancel": "Cancel",
         "view": "View",
@@ -238,6 +241,7 @@
         "export": "Export",
         "delete": "Delete",
         "showing": "Showing :from–:to of :total",
+        "view_all_transactions": "View all transactions",
         "all": "All",
         "no": "No",
         "select_row": "Select row",
@@ -289,7 +293,58 @@
         "transfer_in": "Transfer in",
         "transfer_out": "Transfer out",
         "redeem": "Redeem",
-        "topup": "Top up"
+        "topup": "Top up",
+        "ftth_bill": "FTTH Bill",
+        "wifi_package": "Wi-Fi Package",
+        "refund": "Refund",
+        "adjustment": "Adjustment"
+    },
+    "transactions": {
+        "description": "Review wallet transactions across customers.",
+        "search": "Search",
+        "search_placeholder": "Search transaction or customer",
+        "empty": "No wallet transactions found.",
+        "invalid_date_range": "End date must be equal to or after the start date.",
+        "actor_type": "Actor type",
+        "direction": "Credit / Debit",
+        "credit": "Credit",
+        "debit": "Debit",
+        "number": "Transaction no.",
+        "customer": "Customer",
+        "type": "Transaction type",
+        "amount": "Amount",
+        "detail": "Transaction detail",
+        "detail_description": "Complete read-only details for this wallet transaction.",
+        "types": {
+            "topup": "Top up",
+            "transfer": "Transfer",
+            "ftth_bill": "FTTH Bill Payment",
+            "wifi_package": "Wi-Fi Package Payment",
+            "refund": "Refund",
+            "adjustment": "Adjustment"
+        },
+        "actors": {
+            "user": "User",
+            "admin": "Admin",
+            "system": "System"
+        },
+        "detail_fields": {
+            "reversal_of": "Reversal of",
+            "customer_phone": "Customer phone",
+            "wallet_id": "Wallet ID",
+            "idempotency_key": "Idempotency key",
+            "actor_id": "Actor ID",
+            "ip_address": "IP address",
+            "device": "Device",
+            "balance_before": "Balance before",
+            "balance_after": "Balance after",
+            "transfer_from_wallet": "Transfer from wallet",
+            "transfer_to_wallet": "Transfer to wallet",
+            "transfer_note": "Transfer note",
+            "bill_payment_id": "Bill payment ID",
+            "package_order_id": "Package order ID",
+            "top_up_card_id": "Top-up card ID"
+        }
     },
     "customers": {
         "index_description": "Search, filter, and manage app users.",
@@ -319,9 +374,10 @@
         "no_packages": "No packages in this tab",
         "package": "Package",
         "validity": "Validity",
-        "recent_transactions": "Recent wallet transactions",
+        "transactions": "Wallet transactions",
         "search_transactions": "Search transactions",
         "no_transactions": "No wallet transactions",
+        "transaction_no": "Transaction no.",
         "transaction_type": "Type",
         "amount": "Amount",
         "suspend": "Suspend",
@@ -359,6 +415,7 @@
         "package_history_hint": "Past and current subscriptions.",
         "top_up_history": "Top-up history",
         "top_up_history_hint": "Redeemed top-up cards.",
+        "redeemed_at": "Redeemed at",
         "no_top_ups": "No top-up history",
         "serial_no": "Serial no.",
         "validation": {
@@ -455,11 +512,11 @@
         "select_area": "Select Area",
         "validation": {
             "name_en_required": "The English name is required.",
-            "name_en_max": "The English name may not be greater than 255 characters.",
+            "name_en_max": "The English name may not be greater than 50 characters.",
             "name_my_required": "The Myanmar name is required.",
-            "name_my_max": "The Myanmar name may not be greater than 255 characters.",
+            "name_my_max": "The Myanmar name may not be greater than 50 characters.",
             "name_zh_required": "The Chinese name is required.",
-            "name_zh_max": "The Chinese name may not be greater than 255 characters.",
+            "name_zh_max": "The Chinese name may not be greater than 50 characters.",
             "latitude_between": "Latitude must be between -90 and 90.",
             "latitude_decimal": "Latitude may have up to 7 decimal places.",
             "longitude_between": "Longitude must be between -180 and 180.",
@@ -528,11 +585,11 @@
             "deleted": "Promotion deleted",
             "validation": {
                 "title_en_required": "Please enter an English title.",
-                "title_en_max": "The English title must not be greater than 255 characters.",
+                "title_en_max": "The English title must not be greater than 120 characters.",
                 "title_zh_required": "Please enter a Chinese title.",
-                "title_zh_max": "The Chinese title must not be greater than 255 characters.",
+                "title_zh_max": "The Chinese title must not be greater than 120 characters.",
                 "title_my_required": "Please enter a Myanmar title.",
-                "title_my_max": "The Myanmar title must not be greater than 255 characters.",
+                "title_my_max": "The Myanmar title must not be greater than 120 characters.",
                 "description_en_required": "Please enter an English description.",
                 "description_en_max": "The English description must not be greater than 5000 characters.",
                 "description_zh_required": "Please enter a Chinese description.",
@@ -540,7 +597,7 @@
                 "description_my_required": "Please enter a Myanmar description.",
                 "description_my_max": "The Myanmar description must not be greater than 5000 characters.",
                 "slug_required": "Please enter a slug.",
-                "slug_max": "The slug must not be greater than 255 characters.",
+                "slug_max": "The slug must not be greater than 120 characters.",
                 "is_active_required": "Please select a status.",
                 "start_date": "Please enter a valid start date.",
                 "end_date": "Please enter a valid end date.",
@@ -559,9 +616,9 @@
             "deleted": "Gallery image deleted",
             "validation": {
                 "image_required": "Image is required.",
-                "label_en_max": "The English title must not be greater than 255 characters.",
-                "label_zh_max": "The Chinese title must not be greater than 255 characters.",
-                "label_my_max": "The Myanmar title must not be greater than 255 characters.",
+                "label_en_max": "The English title must not be greater than 120 characters.",
+                "label_zh_max": "The Chinese title must not be greater than 120 characters.",
+                "label_my_max": "The Myanmar title must not be greater than 120 characters.",
                 "image_invalid_type": "The image must be a valid image file.",
                 "image_max_size": "The image must not be greater than 5 MB."
             }
@@ -698,7 +755,8 @@
                 "image_en_required": "Please select English image.",
                 "image_zh_required": "Please select Chinese image.",
                 "image_my_required": "Please select Myanmar image.",
-                "type_required": "Please select a banner type."
+                "type_required": "Please select a banner type.",
+                "sort_order_max": "Sort order must be 2 digits or less."
             }
         },
         "contact": {
@@ -1075,7 +1133,8 @@
             "mbps_unique": "This speed already exists.",
             "months_unique": "This term already exists.",
             "price_numeric": "The price must be a number.",
-            "price_min": "The price must be at least 0."
+            "price_min": "The price must be at least 0.",
+            "price_max": "Price may not be greater than 10-digit."
         }
     },
     "relocation_requests": {

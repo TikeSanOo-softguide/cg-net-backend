@@ -10,7 +10,7 @@ export type ParsedPhone = {
 };
 
 const COUNTRIES = [
-    { country: 'mm' as const, dial: '959', label: 'Myanmar', flagSrc: '/images/flags/mm.svg' },
+    { country: 'mm' as const, dial: '95', label: 'Myanmar', flagSrc: '/images/flags/mm.svg' },
     { country: 'th' as const, dial: '66', label: 'Thailand', flagSrc: '/images/flags/th.svg' },
     { country: 'cn' as const, dial: '86', label: 'China', flagSrc: '/images/flags/cn.svg' },
 ] as const;
@@ -52,7 +52,7 @@ export function composePhone(country: PhoneCountry, local: string): string {
     const option = COUNTRIES.find((item) => item.country === country);
     const localDigits = digitsOnly(local);
 
-    if (! option || localDigits === '') {
+    if (!option || localDigits === '') {
         return localDigits;
     }
 
@@ -80,4 +80,3 @@ export function isValidAppUserPhone(value: string | null | undefined): boolean {
 
     return parsed.local.length >= length.min && parsed.local.length <= length.max;
 }
-

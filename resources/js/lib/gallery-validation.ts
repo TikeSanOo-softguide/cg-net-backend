@@ -2,7 +2,7 @@ import type { GalleryFormValues } from '@/components/cms/gallery/GalleryForm';
 
 type Translate = (key: string) => string;
 
-export const GALLERY_LABEL_MAX_LENGTH = 255;
+export const GALLERY_LABEL_MAX_LENGTH = 120;
 export const GALLERY_IMAGE_MAX_SIZE_KB = 5120;
 
 export const GALLERY_IMAGE_ACCEPTED_TYPES = [

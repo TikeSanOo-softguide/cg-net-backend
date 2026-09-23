@@ -26,9 +26,9 @@ return new class extends Migration {
 
         Schema::create('promotions', function (Blueprint $table) {
             $table->id();
-            $table->string('title_en');
-            $table->string('title_zh');
-            $table->string('title_my');
+            $table->string('title_en', 120);
+            $table->string('title_zh', 120);
+            $table->string('title_my', 120);
             $table->text('description_en');
             $table->text('description_zh');
             $table->text('description_my');
@@ -36,7 +36,7 @@ return new class extends Migration {
             $table->date('end_date')->nullable()->index();
             $table->boolean('is_active')->default(true)->index();
             $table->string('image_url', 500)->nullable();
-            $table->string('slug');
+            $table->string('slug', 120);
             $table->timestamps();
             $table->softDeletes();
             $table->foreignId('created_by')->nullable()->constrained('admins')->nullOnDelete();
@@ -97,9 +97,9 @@ return new class extends Migration {
         Schema::create('gallery', function (Blueprint $table) {
             $table->id();
             $table->string('image_url', 500);
-            $table->string('label_en')->nullable();
-            $table->string('label_zh')->nullable();
-            $table->string('label_my')->nullable();
+            $table->string('label_en', 120)->nullable();
+            $table->string('label_zh', 120)->nullable();
+            $table->string('label_my', 120)->nullable();
             $table->timestamps();
             $table->softDeletes();
             $table->foreignId('created_by')->nullable()->constrained('admins')->nullOnDelete();

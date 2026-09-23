@@ -14,15 +14,12 @@ use Inertia\Response;
 class ChatbotFlowsController extends Controller
 {
     /**
-     * Display the single chatbot flow.
+     * Display the chatbot flow.
      */
     public function index(Request $request): Response
     {
         $steps = ChatFlowStep::query()
             ->with([
-                'translations',
-                'options.translations',
-                'options.replies',
                 'options.nextStep',
             ])
             ->orderBy('sort_order')
@@ -52,34 +49,33 @@ class ChatbotFlowsController extends Controller
                 'boolean',
             ],
 
-            'translations.en.message' => [
+            'message_en' => [
                 'required',
                 'string',
                 'max:1000',
             ],
 
-            'translations.my.message' => [
+            'message_my' => [
                 'required',
                 'string',
                 'max:1000',
             ],
 
-            'translations.zh.message' => [
+            'message_zh' => [
                 'required',
                 'string',
                 'max:1000',
             ],
         ]);
 
-        $step = DB::transaction(function () use ($validated) {
-
+        DB::transaction(function () use ($validated) {
             $hasStartStep = ChatFlowStep::query()
                 ->where('is_start', true)
                 ->where('is_active', true)
                 ->exists();
 
             /*
-             * First step automatically becomes START.
+             * The first step automatically becomes START.
              */
             $isStart = !$hasStartStep || ($validated['is_start'] ?? false);
 
@@ -88,42 +84,25 @@ class ChatbotFlowsController extends Controller
              */
             if ($isStart) {
                 ChatFlowStep::query()
+                    ->where('is_start', true)
                     ->update([
                         'is_start' => false,
                     ]);
             }
 
             $sortOrder = (
-                ChatFlowStep::query()
-                ->max('sort_order') ?? 0
+                ChatFlowStep::query()->max('sort_order') ?? 0
             ) + 1;
 
-            $step = ChatFlowStep::create([
+            ChatFlowStep::create([
                 'name' => $validated['name'],
+                'message_en' => $validated['message_en'],
+                'message_my' => $validated['message_my'],
+                'message_zh' => $validated['message_zh'],
                 'is_start' => $isStart,
                 'sort_order' => $sortOrder,
                 'is_active' => true,
             ]);
-
-            /*
-             * Create translations.
-             */
-            $step->translations()->createMany([
-                [
-                    'language' => 'en',
-                    'message' => $validated['translations']['en']['message'],
-                ],
-                [
-                    'language' => 'my',
-                    'message' => $validated['translations']['my']['message'],
-                ],
-                [
-                    'language' => 'zh',
-                    'message' => $validated['translations']['zh']['message'],
-                ],
-            ]);
-
-            return $step;
         });
 
         return back()->with(
@@ -150,19 +129,19 @@ class ChatbotFlowsController extends Controller
                 'boolean',
             ],
 
-            'translations.en.message' => [
+            'message_en' => [
                 'required',
                 'string',
                 'max:1000',
             ],
 
-            'translations.my.message' => [
+            'message_my' => [
                 'required',
                 'string',
                 'max:1000',
             ],
 
-            'translations.zh.message' => [
+            'message_zh' => [
                 'required',
                 'string',
                 'max:1000',
@@ -173,7 +152,6 @@ class ChatbotFlowsController extends Controller
             $step,
             $validated
         ) {
-
             $isStart = $validated['is_start'] ?? false;
 
             /*
@@ -190,20 +168,11 @@ class ChatbotFlowsController extends Controller
 
             $step->update([
                 'name' => $validated['name'],
+                'message_en' => $validated['message_en'],
+                'message_my' => $validated['message_my'],
+                'message_zh' => $validated['message_zh'],
                 'is_start' => $isStart,
             ]);
-
-            foreach (['en', 'my', 'zh'] as $language) {
-                $step->translations()->updateOrCreate(
-                    [
-                        'language' => $language,
-                    ],
-                    [
-                        'message' =>
-                        $validated['translations'][$language]['message'],
-                    ]
-                );
-            }
         });
 
         return back()->with(
@@ -219,9 +188,7 @@ class ChatbotFlowsController extends Controller
         ChatFlowStep $step
     ) {
         /*
-         * Do not allow deleting START step.
-         *
-         * This avoids having a chatbot with no entry point.
+         * START step cannot be deleted.
          */
         if ($step->is_start) {
             return back()->withErrors([
@@ -231,7 +198,8 @@ class ChatbotFlowsController extends Controller
         }
 
         /*
-         * Check whether another option points to this step.
+         * Do not delete a step that is used
+         * as the destination of another option.
          */
         $isUsed = ChatFlowOption::query()
             ->where('next_step_id', $step->id)
@@ -270,12 +238,15 @@ class ChatbotFlowsController extends Controller
             $step,
             $validated
         ) {
-
             $sortOrder = (
                 $step->options()->max('sort_order') ?? 0
             ) + 1;
 
-            $option = $step->options()->create([
+            $step->options()->create([
+                'option_en' => $validated['option_en'],
+                'option_my' => $validated['option_my'],
+                'option_zh' => $validated['option_zh'],
+
                 'action' => $validated['action'],
 
                 'next_step_id' =>
@@ -284,42 +255,19 @@ class ChatbotFlowsController extends Controller
                 'url' =>
                 $validated['url'] ?? null,
 
+                'reply_text_en' =>
+                $validated['reply_text_en'] ?? null,
+
+                'reply_text_my' =>
+                $validated['reply_text_my'] ?? null,
+
+                'reply_text_zh' =>
+                $validated['reply_text_zh'] ?? null,
+
                 'sort_order' => $sortOrder,
 
                 'is_active' => true,
             ]);
-
-            /*
-             * Option labels.
-             */
-            foreach (['en', 'my', 'zh'] as $language) {
-                $option->translations()->create([
-                    'language' => $language,
-
-                    'label' =>
-                    $validated['translations'][$language]['label'],
-                ]);
-            }
-
-            /*
-             * Reply text.
-             */
-            if ($validated['action'] === 'reply_text') {
-
-                foreach (['en', 'my', 'zh'] as $language) {
-
-                    $reply =
-                        $validated['replies'][$language]['reply_text']
-                        ?? null;
-
-                    if (!empty($reply)) {
-                        $option->replies()->create([
-                            'language' => $language,
-                            'reply_text' => $reply,
-                        ]);
-                    }
-                }
-            }
         });
 
         return back()->with(
@@ -328,13 +276,16 @@ class ChatbotFlowsController extends Controller
         );
     }
 
+    /**
+     * Update a chatbot option.
+     */
     public function updateOption(
         Request $request,
         ChatFlowStep $step,
         ChatFlowOption $option
     ) {
         /*
-         * Make sure option belongs to this step.
+         * Make sure the option belongs to this step.
          */
         abort_unless(
             $option->step_id === $step->id,
@@ -353,67 +304,54 @@ class ChatbotFlowsController extends Controller
             $option,
             $validated
         ) {
+            /*
+             * Clear fields that are not used by the
+             * selected action.
+             *
+             * This prevents old URL/reply/step data
+             * from remaining after changing action.
+             */
+            $nextStepId = null;
+            $url = null;
+
+            $replyTextEn = null;
+            $replyTextMy = null;
+            $replyTextZh = null;
+
+            if ($validated['action'] === 'go_to_step') {
+                $nextStepId = $validated['next_step_id'];
+            }
+
+            if ($validated['action'] === 'go_to_url') {
+                $url = $validated['url'];
+            }
+
+            if ($validated['action'] === 'reply_text') {
+                $replyTextEn =
+                    $validated['reply_text_en'] ?? null;
+
+                $replyTextMy =
+                    $validated['reply_text_my'] ?? null;
+
+                $replyTextZh =
+                    $validated['reply_text_zh'] ?? null;
+            }
 
             $option->update([
-                'action' =>
-                $validated['action'],
+                'option_en' => $validated['option_en'],
+                'option_my' => $validated['option_my'],
+                'option_zh' => $validated['option_zh'],
 
-                'next_step_id' =>
-                $validated['next_step_id'] ?? null,
+                'action' => $validated['action'],
 
-                'url' =>
-                $validated['url'] ?? null,
+                'next_step_id' => $nextStepId,
+
+                'url' => $url,
+
+                'reply_text_en' => $replyTextEn,
+                'reply_text_my' => $replyTextMy,
+                'reply_text_zh' => $replyTextZh,
             ]);
-
-            /*
-             * Update labels.
-             */
-            foreach (['en', 'my', 'zh'] as $language) {
-
-                $option->translations()->updateOrCreate(
-                    [
-                        'language' => $language,
-                    ],
-                    [
-                        'label' =>
-                        $validated['translations'][$language]['label'],
-                    ]
-                );
-            }
-
-            /*
-             * Remove old replies.
-             *
-             * This is important when changing:
-             *
-             * Reply Text
-             *      ↓
-             * Go to Step
-             *
-             * Old reply text should not remain.
-             */
-            $option->replies()->delete();
-
-            /*
-             * Create new replies if needed.
-             */
-            if ($validated['action'] === 'reply_text') {
-
-                foreach (['en', 'my', 'zh'] as $language) {
-
-                    $reply =
-                        $validated['replies'][$language]['reply_text']
-                        ?? null;
-
-                    if (!empty($reply)) {
-
-                        $option->replies()->create([
-                            'language' => $language,
-                            'reply_text' => $reply,
-                        ]);
-                    }
-                }
-            }
         });
 
         return back()->with(
@@ -443,24 +381,30 @@ class ChatbotFlowsController extends Controller
     }
 
     /**
-     * The new step and option are created
-     * in one transaction.
+     * Create a new step and connect it to
+     * the current step with a new option.
      */
     public function createStepFromOption(
         Request $request,
         ChatFlowStep $step
     ) {
         $validated = $request->validate([
-            'translations.en.label' => [
+            'option_en' => [
                 'required',
                 'string',
-                'max:255',
+                'max:50',
             ],
 
-            'translations.my.label' => [
+            'option_my' => [
                 'required',
                 'string',
-                'max:255',
+                'max:50',
+            ],
+
+            'option_zh' => [
+                'required',
+                'string',
+                'max:50',
             ],
 
             'new_step.name' => [
@@ -469,19 +413,19 @@ class ChatbotFlowsController extends Controller
                 'max:255',
             ],
 
-            'new_step.translations.en.message' => [
+            'new_step.message_en' => [
                 'required',
                 'string',
                 'max:1000',
             ],
 
-            'new_step.translations.my.message' => [
+            'new_step.message_my' => [
                 'required',
                 'string',
                 'max:1000',
             ],
 
-            'new_step.translations.zh.message' => [
+            'new_step.message_zh' => [
                 'required',
                 'string',
                 'max:1000',
@@ -492,45 +436,31 @@ class ChatbotFlowsController extends Controller
             $step,
             $validated
         ) {
-
             /*
              * Create new step.
              */
             $sortOrder = (
-                ChatFlowStep::query()
-                ->max('sort_order') ?? 0
+                ChatFlowStep::query()->max('sort_order') ?? 0
             ) + 1;
 
             $newStep = ChatFlowStep::create([
                 'name' =>
                 $validated['new_step']['name'],
 
+                'message_en' =>
+                $validated['new_step']['message_en'],
+
+                'message_my' =>
+                $validated['new_step']['message_my'],
+
+                'message_zh' =>
+                $validated['new_step']['message_zh'],
+
                 'is_start' => false,
 
                 'sort_order' => $sortOrder,
 
                 'is_active' => true,
-            ]);
-
-            /*
-             * Step translations.
-             */
-            $newStep->translations()->createMany([
-                [
-                    'language' => 'en',
-                    'message' =>
-                    $validated['new_step']['translations']['en']['message'],
-                ],
-                [
-                    'language' => 'my',
-                    'message' =>
-                    $validated['new_step']['translations']['my']['message'],
-                ],
-                [
-                    'language' => 'zh',
-                    'message' =>
-                    $validated['new_step']['translations']['zh']['message'],
-                ],
             ]);
 
             /*
@@ -541,37 +471,31 @@ class ChatbotFlowsController extends Controller
                 $step->options()->max('sort_order') ?? 0
             ) + 1;
 
-            $option = $step->options()->create([
+            $step->options()->create([
+                'option_en' =>
+                $validated['option_en'],
+
+                'option_my' =>
+                $validated['option_my'],
+
+                'option_zh' =>
+                $validated['option_zh'],
+
                 'action' => 'go_to_step',
 
                 'next_step_id' =>
                 $newStep->id,
 
+                'url' => null,
+
+                'reply_text_en' => null,
+                'reply_text_my' => null,
+                'reply_text_zh' => null,
+
                 'sort_order' =>
                 $optionSortOrder,
 
                 'is_active' => true,
-            ]);
-
-            /*
-             * Option labels.
-             */
-            $option->translations()->createMany([
-                [
-                    'language' => 'en',
-                    'label' =>
-                    $validated['translations']['en']['label'],
-                ],
-                [
-                    'language' => 'my',
-                    'label' =>
-                    $validated['translations']['my']['label'],
-                ],
-                [
-                    'language' => 'zh',
-                    'label' =>
-                    $validated['translations']['zh']['label'],
-                ],
             ]);
         });
 
@@ -581,10 +505,12 @@ class ChatbotFlowsController extends Controller
         );
     }
 
+    /**
+     * Validate common option fields.
+     */
     private function validateOption(
         Request $request
     ): array {
-
         return $request->validate([
             'action' => [
                 'required',
@@ -598,64 +524,49 @@ class ChatbotFlowsController extends Controller
                 ]),
             ],
 
-            /*
-             * English label.
-             */
-            'translations.en.label' => [
+            'option_en' => [
                 'required',
                 'string',
-                'max:255',
+                'max:50',
             ],
 
-            /*
-             * Burmese label.
-             */
-            'translations.my.label' => [
+            'option_my' => [
                 'required',
                 'string',
-                'max:255',
+                'max:50',
             ],
 
-            'translations.zh.label' => [
+            'option_zh' => [
                 'required',
                 'string',
-                'max:255',
+                'max:50',
             ],
 
-            /*
-             * Step destination.
-             */
             'next_step_id' => [
                 'nullable',
                 'integer',
                 'exists:chat_flow_steps,id',
             ],
 
-            /*
-             * URL destination.
-             */
             'url' => [
                 'nullable',
                 'url:http,https',
                 'max:2048',
             ],
 
-            /*
-             * Reply text.
-             */
-            'replies.en.reply_text' => [
+            'reply_text_en' => [
                 'nullable',
                 'string',
                 'max:2000',
             ],
 
-            'replies.my.reply_text' => [
+            'reply_text_my' => [
                 'nullable',
                 'string',
                 'max:2000',
             ],
 
-            'replies.zh.reply_text' => [
+            'reply_text_zh' => [
                 'nullable',
                 'string',
                 'max:2000',
@@ -664,7 +575,7 @@ class ChatbotFlowsController extends Controller
     }
 
     /**
-     * Validate fields according to selected action.
+     * Validate fields according to the selected action.
      */
     private function validateOptionAction(
         array $validated,
@@ -673,6 +584,9 @@ class ChatbotFlowsController extends Controller
     ): void {
         $action = $validated['action'];
 
+        /*
+         * Go to Step
+         */
         if ($action === 'go_to_step') {
             if (empty($validated['next_step_id'])) {
                 abort(
@@ -681,13 +595,8 @@ class ChatbotFlowsController extends Controller
                 );
             }
 
-            /*
-             * Make sure target step exists.
-             */
             $targetStep = ChatFlowStep::query()
-                ->whereKey(
-                    $validated['next_step_id']
-                )
+                ->whereKey($validated['next_step_id'])
                 ->where('is_active', true)
                 ->first();
 
@@ -696,18 +605,24 @@ class ChatbotFlowsController extends Controller
                 422
             );
 
+            /*
+             * Prevent direct self-loop.
+             */
             if (
-                $option &&
-                $targetStep->id === $option->step_id
+                $targetStep->id === $step->id
             ) {
                 abort(
                     422,
                     'An option cannot link to its own step.'
                 );
             }
+
             return;
         }
 
+        /*
+         * Go to URL
+         */
         if ($action === 'go_to_url') {
             if (empty($validated['url'])) {
                 abort(
@@ -715,22 +630,22 @@ class ChatbotFlowsController extends Controller
                     'Please enter a URL.'
                 );
             }
+
             return;
         }
 
+        /*
+         * Reply Text
+         */
         if ($action === 'reply_text') {
-
             $hasEnglishReply =
-                !empty($validated['replies']['en']['reply_text']
-                    ?? null);
+                !empty($validated['reply_text_en'] ?? null);
 
             $hasMyanmarReply =
-                !empty($validated['replies']['my']['reply_text']
-                    ?? null);
+                !empty($validated['reply_text_my'] ?? null);
 
             $hasChineseReply =
-                !empty($validated['replies']['zh']['reply_text']
-                    ?? null);
+                !empty($validated['reply_text_zh'] ?? null);
 
             if (
                 !$hasEnglishReply &&
@@ -743,29 +658,26 @@ class ChatbotFlowsController extends Controller
                 );
             }
 
-            if (!empty($validated['next_step_id'])) {
-
-                $exists = ChatFlowStep::query()
-                    ->whereKey(
-                        $validated['next_step_id']
-                    )
-                    ->where('is_active', true)
-                    ->exists();
-
-                abort_unless(
-                    $exists,
-                    422
-                );
-            }
-
             return;
         }
 
+        /*
+         * Transfer to Agent
+         */
         if ($action === 'transfer_agent') {
             return;
         }
 
+        /*
+         * Main Menu
+         */
+        if ($action === 'main_menu') {
+            return;
+        }
 
+        /*
+         * Close Chat
+         */
         if ($action === 'close_chat') {
             return;
         }

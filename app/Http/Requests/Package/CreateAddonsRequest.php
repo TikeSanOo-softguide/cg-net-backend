@@ -27,7 +27,7 @@ class CreateAddonsRequest extends FormRequest
             'name_en' => ['required', 'string', 'max:255'],
             'name_zh' => ['required', 'string', 'max:255'],
             'name_my' => ['required', 'string', 'max:255'],
-            'price' => ['required', 'numeric', 'min:0'],
+            'price' => ['required', 'numeric', 'min:0', 'max:9999999999'],
             'image_url' => CmsRules::image(false),
         ];
     }

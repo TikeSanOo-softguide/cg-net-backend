@@ -61,12 +61,9 @@ class SpeedController extends Controller
         $deletedCount = Speed::query()->whereIn('id', $deletableIds)->delete();
 
         if ($deletedCount === 0) {
-            return back()->withErrors(['delete' => __('common.bulk_delete_failed')]);
+            return back()->with('error', __('common.bulk_delete_failed'));
         }
 
-        $deleted = Speed::query()->whereIn('id', $ids)->delete();
-        return $deleted === 0
-            ? back()->withErrors(['delete' => 'common.bulk_delete_failed'])
-            : redirect()->route('packages.index')->with('success', 'packages.speeds.bulk_deleted');
+        return redirect()->route('packages.index')->with('success', 'packages.speeds.bulk_deleted');
     }
 }

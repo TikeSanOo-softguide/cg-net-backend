@@ -9,6 +9,9 @@ class ChatFlowStep extends Model
 {
     protected $fillable = [
         'name',
+        'message_en',
+        'message_my',
+        'message_zh',
         'is_start',
         'sort_order',
         'is_active',
@@ -19,14 +22,6 @@ class ChatFlowStep extends Model
         'is_active' => 'boolean',
         'sort_order' => 'integer',
     ];
-
-    public function translations(): HasMany
-    {
-        return $this->hasMany(
-            ChatFlowStepTranslation::class,
-            'step_id'
-        );
-    }
 
     public function options(): HasMany
     {

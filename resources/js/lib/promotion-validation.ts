@@ -2,7 +2,7 @@ import type { PromotionFormValues } from '@/components/cms/promotion/PromotionFo
 
 type Translate = (key: string) => string;
 
-export const PROMOTION_TITLE_MAX_LENGTH = 255;
+export const PROMOTION_TITLE_MAX_LENGTH = 120;
 export const PROMOTION_DESCRIPTION_MAX_LENGTH = 5000;
 export const PROMOTION_IMAGE_MAX_SIZE_KB = 5120; // 5MB
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\UserStatus;
+use App\Models\PackageOrder;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -37,6 +38,11 @@ class User extends Authenticatable
     public function customerPackages(): HasMany
     {
         return $this->hasMany(CustomerPackage::class);
+    }
+
+    public function packageOrders(): HasMany
+    {
+        return $this->hasMany(PackageOrder::class);
     }
 
     public function wallet(): HasOne

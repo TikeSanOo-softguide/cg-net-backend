@@ -62,7 +62,6 @@ export function ContactForm({ form, onSubmit, onCancel, mode = 'create' }: Conta
                     id="contact_point"
                     name="contact_point"
                     value={form.data.contact_point}
-                    maxLength={255}
                     onChange={(event) => handleChange(event.target.value)}
                 />
             </FormField>

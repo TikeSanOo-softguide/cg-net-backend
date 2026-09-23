@@ -13,14 +13,7 @@ type DetailSectionProps = {
 };
 
 /** Bordered detail block with compact icon header — wraps tables on App User show. */
-export function DetailSection({
-    icon: Icon,
-    title,
-    description,
-    actions,
-    children,
-    className,
-}: DetailSectionProps) {
+export function DetailSection({ icon: Icon, title, description, actions, children, className }: DetailSectionProps) {
     return (
         <section
             className={cn(
@@ -36,9 +29,9 @@ export function DetailSection({
                     <Icon className="size-3.5" strokeWidth={1.85} />
                 </span>
                 <div className="min-w-0 flex-1">
-                    <h2 className="truncate text-[13px] font-semibold leading-tight text-foreground">{title}</h2>
+                    <h2 className="truncate text-[13px] font-semibold leading-5 text-foreground">{title}</h2>
                     {description ? (
-                        <p className="truncate text-[11px] leading-4 text-muted-foreground">{description}</p>
+                        <p className="truncate text-[11px] leading-5 text-muted-foreground">{description}</p>
                     ) : null}
                 </div>
                 {actions ? <div className="flex shrink-0 items-center gap-1.5">{actions}</div> : null}

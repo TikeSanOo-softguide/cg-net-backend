@@ -60,14 +60,12 @@ final class GeneratesTopUpCards
             $attempts++;
 
             $pin = self::pin();
-            $pinLookup = self::pinLookup($pin);
 
             try {
                 $serialNo = self::allocateUniqueSerial($amount, $dailyCounter);
                 $card = TopUpCard::query()->create([
                     'serial_no' => $serialNo,
                     'pin' => Hash::make($pin),
-                    'pin_lookup' => $pinLookup,
                     'amount' => $amount,
                     'expires_at' => $expiresAt,
                     'status' => TopUpCardStatus::Pending,
@@ -132,11 +130,6 @@ final class GeneratesTopUpCards
     public static function pin(): string
     {
         return (string) random_int(1000000000000000, 9999999999999999);
-    }
-
-    private static function pinLookup(string $pin): string
-    {
-        return hash('sha256', $pin);
     }
 
     private static function ensureUniquePin(): string

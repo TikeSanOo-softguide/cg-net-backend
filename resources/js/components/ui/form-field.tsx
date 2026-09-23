@@ -16,6 +16,7 @@ type FormFieldProps = {
     rightSlot?: ReactNode;
     required?: boolean;
     className?: string;
+    labelClassName?: string;
     children: ReactNode;
 };
 
@@ -28,6 +29,7 @@ export function FormField({
     rightSlot,
     required = false,
     className,
+    labelClassName,
     children,
 }: FormFieldProps) {
     const state = error ? 'error' : success ? 'success' : 'idle';
@@ -42,6 +44,7 @@ export function FormField({
                 htmlFor={htmlFor}
                 className={cn(
                     formLabelClass,
+                    labelClassName,
                     state === 'error' && 'text-danger',
                     state === 'success' && 'text-success',
                 )}

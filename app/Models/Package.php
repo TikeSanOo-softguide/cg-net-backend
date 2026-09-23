@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\PackageOrder;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -68,6 +69,11 @@ class Package extends Model
     public function customerPackages(): HasMany
     {
         return $this->hasMany(CustomerPackage::class);
+    }
+
+    public function packageOrders(): HasMany
+    {
+        return $this->hasMany(PackageOrder::class);
     }
 
     public function installationApplications(): HasMany
