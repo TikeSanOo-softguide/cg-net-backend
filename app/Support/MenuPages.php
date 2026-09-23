@@ -85,12 +85,6 @@ final class MenuPages
                 'permission' => 'reports.view',
             ],
             [
-                'path' => '/settings/app-version',
-                'titleKey' => 'menu.app_version',
-                'name' => 'settings.app-version',
-                'permission' => 'settings.view',
-            ],
-            [
                 'path' => '/settings/languages',
                 'titleKey' => 'menu.language_management',
                 'name' => 'settings.languages',

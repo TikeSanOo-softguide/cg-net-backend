@@ -24,6 +24,7 @@ use App\Http\Controllers\ServiceRequest\ChangePasswordRequestController;
 use App\Http\Controllers\ServiceRequest\ChangePlanRequestController;
 use App\Http\Controllers\ServiceRequest\FailureReportController;
 use App\Http\Controllers\ServiceRequest\RelocationRequestController;
+use App\Http\Controllers\Settings\AppVersionController;
 use App\Http\Controllers\Staff\RoleController;
 use App\Http\Controllers\Staff\StaffController;
 use App\Http\Controllers\Support\ChatFlows\ChatbotFlowsController;
@@ -219,6 +220,8 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                     Route::post('/steps/{step}/options', 'storeOption')->name('options.store');
                     Route::put('/steps/{step}/options/{option}', 'updateOption')->name('options.update');
                     Route::delete('/steps/{step}/options/{option}', 'destroyOption')->name('options.destroy');
+
+                    // Create a new step from an option
                     Route::post('/steps/{step}/options/create-step', 'createStepFromOption')->name(
                         'options.create-step',
                     );
@@ -522,6 +525,26 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::delete('/{addon}', [AddonController::class, 'destroy'])
                 ->middleware('can:packages.delete')
                 ->name('destroy');
+        });
+
+    Route::prefix('settings')
+        ->name('settings.')
+        ->group(function () {
+            Route::get('/app-version', [AppVersionController::class, 'index'])
+                ->middleware('can:settings.view')
+                ->name('app-version.index');
+            Route::post('/app-version', [AppVersionController::class, 'store'])
+                ->middleware('can:settings.create')
+                ->name('app-version.store');
+            Route::put('/app-version/{appVersion}', [AppVersionController::class, 'update'])
+                ->middleware('can:settings.update')
+                ->name('app-version.update');
+            Route::delete('/app-version/bulk-destroy', [AppVersionController::class, 'bulkDestroy'])
+                ->middleware('can:settings.delete')
+                ->name('app-version.bulk-destroy');
+            Route::delete('/app-version/{appVersion}', [AppVersionController::class, 'destroy'])
+                ->middleware('can:settings.delete')
+                ->name('app-version.destroy');
         });
     Route::get('/activity-logs', [ActivityLogController::class, 'index'])
         ->middleware('can:activity.view')
