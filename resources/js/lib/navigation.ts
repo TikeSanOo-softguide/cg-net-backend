@@ -344,11 +344,30 @@ export const navigation: NavGroup[] = [
         ],
     },
     {
-        id: 'activity',
-        labelKey: 'menu.activity_logs',
-        descriptionKey: 'menu.activity_logs_description',
-        href: '/activity-logs',
-        icon: Activity,
+        id: 'logs',
+        labelKey: 'menu.logs',
+        descriptionKey: 'menu.logs_description',
+        icon: ScrollText,
+        children: [
+            {
+                labelKey: 'menu.security_logs',
+                descriptionKey: 'menu.security_logs_description',
+                href: '/logs/security',
+                icon: ShieldCheck,
+            },
+            {
+                labelKey: 'menu.admin_activity_logs',
+                descriptionKey: 'menu.admin_activity_logs_description',
+                href: '/activity-logs',
+                icon: Activity,
+            },
+            {
+                labelKey: 'menu.user_logs',
+                descriptionKey: 'menu.user_logs_description',
+                href: '/logs/users',
+                icon: UserRound,
+            },
+        ],
     },
     {
         id: 'reports',
@@ -484,7 +503,7 @@ export function viewPermissionForHref(href: string): string | undefined {
         return 'staff.view';
     }
 
-    if (href.startsWith('/activity-logs')) {
+    if (href.startsWith('/activity-logs') || href.startsWith('/logs')) {
         return 'activity.view';
     }
 

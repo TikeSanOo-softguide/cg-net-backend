@@ -75,6 +75,10 @@
         "staff_accounts": "员工账户",
         "roles": "角色",
         "permissions_matrix": "权限矩阵",
+        "logs": "日志",
+        "security_logs": "安全日志",
+        "admin_activity_logs": "管理员活动日志",
+        "user_logs": "用户日志",
         "activity_logs": "操作日志",
         "reports": "报表与分析",
         "settings": "设置",
@@ -92,6 +96,10 @@
         "invoices_description": "搜索、筛选并管理客户发票。",
         "payment_gateway_logs_description": "查看支付网关请求、响应和错误。",
         "transactions_description": "搜索、筛选并查看账单交易。",
+        "logs_description": "查看安全、管理员和用户活动日志。",
+        "security_logs_description": "查看安全事件和访问活动。",
+        "admin_activity_logs_description": "查看管理员操作和系统审计日志。",
+        "user_logs_description": "查看用户活动和账户事件。",
         "top_up_card_batch_description": "生成并管理充值卡批次。",
         "top_up_card_agents_description": "管理代理商并分配充值卡。",
         "redeem_history_description": "查看充值卡兑换历史和使用情况。",
@@ -343,7 +351,8 @@
             "transfer_note": "转账备注",
             "bill_payment_id": "账单支付 ID",
             "package_order_id": "套餐订单 ID",
-            "top_up_card_id": "充值卡 ID"
+            "top_up_card_id": "充值卡 ID",
+            "top_up_card_serial_no": "充值卡序列号"
         }
     },
     "customers": {

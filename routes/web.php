@@ -80,9 +80,16 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         ->middleware('can:customers.view')
         ->name('customers.show');
 
-    Route::get('/billing/transactions', [TransactionController::class, 'index'])
-        ->middleware('can:billing.view')
-        ->name('billing.transactions');
+    Route::prefix('billing')
+        ->name('billing.')
+        ->group(function () {
+            Route::get('/transactions', [TransactionController::class, 'index'])
+                ->middleware('can:billing.view')
+                ->name('transactions');
+            Route::get('/transactions/export', [TransactionController::class, 'export'])
+                ->middleware('can:billing.view')
+                ->name('transactions.export');
+        });
 
     Route::prefix('regions')
         ->name('regions.')

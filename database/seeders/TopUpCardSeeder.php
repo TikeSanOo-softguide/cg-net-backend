@@ -17,6 +17,8 @@ class TopUpCardSeeder extends Seeder
             return;
         }
 
+        echo "Top-up card seeder started\n";
+
         TopUpCard::factory()->count(15)->redeemed($lastUser)->create();
 
         TopUpCard::factory()

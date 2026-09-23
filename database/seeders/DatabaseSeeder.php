@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Enums\BillPaymentStatus;
 use App\Enums\ChangePlanStatus;
 use App\Enums\CustomerPackageStatus;
-use App\Enums\InvoiceStatus;
 use App\Enums\RequestStatus;
 use App\Enums\UserStatus;
 use App\Enums\WalletActorType;
@@ -26,12 +25,10 @@ use App\Models\CpeDevice;
 use App\Models\CustomerPackage;
 use App\Models\Gallery;
 use App\Models\InstallationApplication;
-use App\Models\Invoice;
 use App\Models\NotificationCustom;
 use App\Models\Package;
 use App\Models\RelocationRequest;
 use App\Models\Setting;
-use App\Models\TopUpCard;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
@@ -58,9 +55,7 @@ class DatabaseSeeder extends Seeder
         $packages = $this->seedPackages();
         $users = $this->seedCustomers($packages);
         $this->seedAgents();
-        $this->seedTopUpCards();
         $this->seedServiceRequests($users, $areas, $packages);
-        $this->seedWalletSystem();
         $this->seedFailureReports();
         $this->seedBilling($users);
         $this->seedNotifications();
@@ -68,6 +63,8 @@ class DatabaseSeeder extends Seeder
         $this->seedCms();
         $this->seedPermissions($admins);
         $this->seedAnnouncements();
+        $this->seedTopUpCards();
+        $this->seedWalletSystem();
 
         Setting::factory()->create([
             'key' => 'support_hotline',
