@@ -162,10 +162,10 @@ class TopUpCardManagementTest extends TestCase
         $active = TopUpCard::factory()->create(['status' => TopUpCardStatus::Active]);
 
         $this->actingAs($actor, 'web')
-            ->get('/top-up-cards/agents')
+            ->get('/top-up-cards/agent-assign')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('TopUpCards/Agent')
+                ->component('TopUpCards/AgentAssign')
                 ->has('cards', 1)
                 ->where('cards.0.id', $active->id)
                 ->where('filters.status', ''));
@@ -196,7 +196,7 @@ class TopUpCardManagementTest extends TestCase
             ->post('/top-up-cards/agents/import', [
                 'file' => UploadedFile::fake()->createWithContent('cards.csv', $csv),
             ])
-            ->assertRedirect('/top-up-cards/agents?batch='.$batch->id);
+            ->assertRedirect('/top-up-cards/agent-assign');
 
         $this->assertSame(TopUpCardStatus::Active, $card->fresh()->status);
     }

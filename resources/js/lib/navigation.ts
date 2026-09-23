@@ -173,16 +173,29 @@ export const navigation: NavGroup[] = [
                 icon: CreditCard,
             },
             {
+                labelKey: 'menu.redeem_history',
+                descriptionKey: 'menu.redeem_history_description',
+                href: '/top-up-cards/redeem-history',
+                icon: History,
+            },
+        ],
+    },
+    {
+        id: 'top-up-card-assign',
+        labelKey: 'menu.top_up_card_assign',
+        icon: UserRound,
+        children: [
+            {
                 labelKey: 'menu.top_up_card_agents',
                 descriptionKey: 'menu.top_up_card_agents_description',
                 href: '/top-up-cards/agents',
                 icon: UserRound,
             },
             {
-                labelKey: 'menu.redeem_history',
-                descriptionKey: 'menu.redeem_history_description',
-                href: '/top-up-cards/redeem-history',
-                icon: History,
+                labelKey: 'menu.top_up_card_agent_assign',
+                descriptionKey: 'menu.top_up_card_agent_assign_description',
+                href: '/top-up-cards/agent-assign',
+                icon: UserRound,
             },
         ],
     },

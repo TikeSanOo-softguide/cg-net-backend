@@ -1,6 +1,7 @@
 import { MapPinIcon, PencilIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 
 import { DataTable } from '@/components/DataTable';
+import type { Paginated } from '@/components/Pagination';
 import { TableActionButton } from '@/components/TableActionButton';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -9,6 +10,7 @@ type AgentRow = { id: number; name: string; address: string; top_up_cards_count:
 
 type TopUpCardAgentTableProps = {
     agents: AgentRow[];
+    pagination?: Paginated<AgentRow>;
     search: string;
     onSearchChange: (value: string) => void;
     onCreate: () => void;
@@ -18,6 +20,7 @@ type TopUpCardAgentTableProps = {
 
 export function TopUpCardAgentTable({
     agents,
+    pagination,
     search,
     onSearchChange,
     onCreate,
@@ -30,6 +33,7 @@ export function TopUpCardAgentTable({
     return (
         <DataTable
             data={agents}
+            pagination={pagination}
             getRowId={(row) => String(row.id)}
             search={search}
             onSearchChange={onSearchChange}

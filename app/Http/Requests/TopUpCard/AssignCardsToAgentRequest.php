@@ -14,8 +14,8 @@ class AssignCardsToAgentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'card_ids' => ['required', 'array', 'min:1'],
-            'card_ids.*' => ['required', 'integer', 'distinct', 'exists:top_up_card,id'],
+            'batch_id' => ['required', 'integer', 'exists:batches,id'],
+            'amount' => ['required', 'numeric', 'min:0'],
             'agent_id' => ['nullable', 'integer', 'exists:agents,id'],
         ];
     }
