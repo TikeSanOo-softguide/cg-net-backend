@@ -319,6 +319,7 @@ export function RegionForm({ type, item, states, regions, areas = [], initialVal
                 error={fieldError('latitude')}
                 icon={MapPinIcon}
                 className="sm:col-span-1"
+                required
             >
                 <Input
                     id="latitude"
@@ -342,6 +343,7 @@ export function RegionForm({ type, item, states, regions, areas = [], initialVal
                 error={fieldError('longitude')}
                 icon={MapPinIcon}
                 className="sm:col-span-1"
+                required
             >
                 <Input
                     id="longitude"

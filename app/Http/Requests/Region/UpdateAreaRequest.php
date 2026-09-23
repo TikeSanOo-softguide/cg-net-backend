@@ -45,8 +45,8 @@ class UpdateAreaRequest extends FormRequest
                     ->withoutTrashed(),
             ],
             'region_id' => ['required', 'exists:regions,id'],
-            'latitude' => ['nullable', 'numeric', 'between:-90,90', 'decimal:0,7'],
-            'longitude' => ['nullable', 'numeric', 'between:-180,180', 'decimal:0,7'],
+            'latitude' => ['required', 'numeric', 'between:-90,90', 'decimal:0,7'],
+            'longitude' => ['required', 'numeric', 'between:-180,180', 'decimal:0,7'],
         ];
     }
 }

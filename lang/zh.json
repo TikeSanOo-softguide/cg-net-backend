@@ -517,6 +517,8 @@
             "name_en_unique": "此英文名称已存在。",
             "name_my_unique": "此缅甸语名称已存在。",
             "name_zh_unique": "此中文名称已存在。",
+            "latitude_required": "纬度为必填项。",
+            "longitude_required": "经度为必填项。",
             "latitude_between": "纬度必须介于 -90 和 90 之间。",
             "latitude_decimal": "纬度最多只能有 7 位小数。",
             "longitude_between": "经度必须介于 -180 和 180 之间。",

@@ -42,8 +42,8 @@ class StoreRegionRequest extends FormRequest
                 Rule::unique('regions', 'name_zh')->where('state_id', $this->state_id)->withoutTrashed(),
             ],
             'state_id' => ['required', 'integer', 'exists:states,id'],
-            'latitude' => ['nullable', 'numeric', 'between:-90,90', 'decimal:0,7'],
-            'longitude' => ['nullable', 'numeric', 'between:-180,180', 'decimal:0,7'],
+            'latitude' => ['required', 'numeric', 'between:-90,90', 'decimal:0,7'],
+            'longitude' => ['required', 'numeric', 'between:-180,180', 'decimal:0,7'],
         ];
     }
 }

@@ -17,9 +17,9 @@ class StoreGalleryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'label_en' => ['nullable', 'string', 'max:255'],
-            'label_my' => ['nullable', 'string', 'max:255'],
-            'label_zh' => ['nullable', 'string', 'max:255'],
+            'label_en' => ['nullable', 'string', 'max:120'],
+            'label_my' => ['nullable', 'string', 'max:120'],
+            'label_zh' => ['nullable', 'string', 'max:120'],
             'image' => CmsRules::image(true),
         ];
     }

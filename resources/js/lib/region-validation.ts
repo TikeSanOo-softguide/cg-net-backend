@@ -111,35 +111,22 @@ export const validateRegionField = (
             }
 
             break;
-
         case 'latitude':
-            if (
-                data.latitude !== null &&
-                data.latitude !== '' &&
-                (Number(data.latitude) < -90 || Number(data.latitude) > 90)
-            ) {
-                return t('regions.validation.latitude_between');
+        case 'longitude': {
+            const coordinate = field === 'latitude' ? data.latitude : data.longitude;
+            if (coordinate === null || coordinate === undefined || String(coordinate).trim() === '') {
+                return t(`regions.validation.${field}_required`);
             }
-
-            if (hasMoreThan7Decimals(data.latitude)) {
-                return t('regions.validation.latitude_decimal');
+            const min = field === 'latitude' ? -90 : -180;
+            const max = field === 'latitude' ? 90 : 180;
+            if (Number(coordinate) < min || Number(coordinate) > max) {
+                return t(`regions.validation.${field}_between`);
             }
-
-            break;
-
-        case 'longitude':
-            if (
-                data.longitude !== null &&
-                data.longitude !== '' &&
-                (Number(data.longitude) < -180 || Number(data.longitude) > 180)
-            ) {
-                return t('regions.validation.longitude_between');
-            }
-
-            if (hasMoreThan7Decimals(data.longitude)) {
-                return t('regions.validation.longitude_decimal');
+            if (hasMoreThan7Decimals(coordinate)) {
+                return t(`regions.validation.${field}_decimal`);
             }
             break;
+        }
     }
 
     return undefined;

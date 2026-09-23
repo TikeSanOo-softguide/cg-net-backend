@@ -520,6 +520,8 @@
             "name_en_unique": "This English name already exists.",
             "name_my_unique": "This Myanmar name already exists.",
             "name_zh_unique": "This Chinese name already exists.",
+            "latitude_required": "Latitude is required.",
+            "longitude_required": "Longitude is required.",
             "latitude_between": "Latitude must be between -90 and 90.",
             "latitude_decimal": "Latitude may have up to 7 decimal places.",
             "longitude_between": "Longitude must be between -180 and 180.",
