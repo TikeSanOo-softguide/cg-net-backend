@@ -972,6 +972,7 @@
             "edit": "编辑代理商",
             "description": "管理接收充值卡的代理商。",
             "all_batches": "全部批次",
+            "all_status": "全部状态",
             "all_agents": "全部代理商",
             "not_assigned": "未分配",
             "assign": "分配代理商",
