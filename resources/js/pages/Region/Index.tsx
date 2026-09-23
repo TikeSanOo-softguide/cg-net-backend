@@ -197,6 +197,7 @@ export default function RegionIndex({
                     item={formTarget.item}
                     states={states.data}
                     regions={regions.data}
+                    areas={areas.data}
                 />
             )}
         </>

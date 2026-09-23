@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 import { useTranslation } from '@/hooks/useTranslation';
 import { formControlStateClass } from '@/lib/form-control';
-import { validateRegion, validateRegionField } from '@/lib/region-validation';
+import { validateRegion, validateRegionField, type ExistingRegion } from '@/lib/region-validation';
 
 import { type StateRow, type RegionRow, type AreaRow, type RegionType } from '@/components/region/RegionFormDialog';
 
@@ -28,11 +28,12 @@ type RegionFormProps = {
     item: StateRow | RegionRow | AreaRow | null;
     states: StateRow[];
     regions: RegionRow[];
+    areas?: AreaRow[];
     initialValues: RegionFormValues;
     onClose: () => void;
 };
 
-export function RegionForm({ type, item, states, regions, initialValues, onClose }: RegionFormProps) {
+export function RegionForm({ type, item, states, regions, areas = [], initialValues, onClose }: RegionFormProps) {
     const { t, locale } = useTranslation();
 
     const [submitted, setSubmitted] = useState(false);
@@ -47,6 +48,22 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
     });
 
     const form = useForm<RegionFormValues>(initialValues);
+
+    const existingRecords = useMemo<ExistingRegion[]>(() => {
+        switch (type) {
+            case 'state':
+                return states;
+
+            case 'region':
+                return regions;
+
+            case 'area':
+                return areas;
+
+            default:
+                return [];
+        }
+    }, [type, states, regions, areas]);
 
     const filteredRegions = useMemo(() => {
         if (!form.data.state_id) {
@@ -81,12 +98,16 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
         form.clearErrors(field);
     };
 
+    const getValidationError = (field: keyof RegionFormValues) => {
+        return validateRegionField(field, form.data, t, type, existingRecords, item?.id);
+    };
+
     const fieldState = (field: keyof RegionFormValues): 'idle' | 'error' | 'success' => {
         if (!touched[field] && !submitted) {
             return 'idle';
         }
 
-        return form.errors[field] || validateRegionField(field, form.data, t, type) ? 'error' : 'success';
+        return form.errors[field] || getValidationError(field) ? 'error' : 'success';
     };
 
     const fieldError = (field: keyof RegionFormValues): string | undefined => {
@@ -94,59 +115,18 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
             return undefined;
         }
 
-        return form.errors[field] || validateRegionField(field, form.data, t, type);
+        return form.errors[field] || getValidationError(field);
     };
-
-    const getRequiredError = (field: 'name_en' | 'name_my' | 'name_zh') => {
-        if (!submitted) {
-            return form.errors[field];
-        }
-
-        if (!form.data[field].trim()) {
-            return t(`regions.validation.${field}_required`);
-        }
-
-        if (form.data[field].trim().length > 255) {
-            return t(`regions.validation.${field}_max`);
-        }
-
-        return form.errors[field];
-    };
-
-    const stateError =
-        submitted && type !== 'state' && !form.data.state_id
-            ? t('regions.validation.state_required')
-            : form.errors.state_id;
-
-    const regionError =
-        submitted && type === 'area' && !form.data.region_id
-            ? t('regions.validation.region_required')
-            : form.errors.region_id;
 
     const validate = () => {
-        let valid = true;
+        const errors = validateRegion(form.data, t, type, existingRecords, item?.id);
 
-        if (!form.data.name_en.trim()) {
-            valid = false;
+        if (Object.keys(errors).length > 0) {
+            form.setError(errors);
+            return false;
         }
 
-        if (!form.data.name_my.trim()) {
-            valid = false;
-        }
-
-        if (!form.data.name_zh.trim()) {
-            valid = false;
-        }
-
-        if (type !== 'state' && !form.data.state_id) {
-            valid = false;
-        }
-
-        if (type === 'area' && !form.data.region_id) {
-            valid = false;
-        }
-
-        return valid;
+        return true;
     };
 
     const submit = (event: FormEvent) => {
@@ -162,10 +142,7 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
             region_id: true,
         });
 
-        const errors = validateRegion(form.data, t, type);
-
-        if (Object.keys(errors).length > 0) {
-            form.setError(errors);
+        if (!validate()) {
             return;
         }
 
@@ -291,7 +268,7 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
                     aria-invalid={fieldState('name_en') === 'error'}
                     className={formControlStateClass(fieldState('name_en'))}
                     onBlur={() => markTouched('name_en')}
-                    onChange={(event) => setField('name_en', event.target.value)}
+                    onChange={(event) => handleNameChange('name_en', event.target.value)}
                     disabled={form.processing}
                 />
             </FormField>
@@ -311,7 +288,7 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
                     aria-invalid={fieldState('name_my') === 'error'}
                     className={formControlStateClass(fieldState('name_my'))}
                     onBlur={() => markTouched('name_my')}
-                    onChange={(event) => setField('name_my', event.target.value)}
+                    onChange={(event) => handleNameChange('name_my', event.target.value)}
                     disabled={form.processing}
                 />
             </FormField>
@@ -331,7 +308,7 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
                     aria-invalid={fieldState('name_zh') === 'error'}
                     className={formControlStateClass(fieldState('name_zh'))}
                     onBlur={() => markTouched('name_zh')}
-                    onChange={(event) => setField('name_zh', event.target.value)}
+                    onChange={(event) => handleNameChange('name_zh', event.target.value)}
                     disabled={form.processing}
                 />
             </FormField>

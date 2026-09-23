@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Region;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateStateRequest extends FormRequest
 {
@@ -13,10 +14,11 @@ class UpdateStateRequest extends FormRequest
 
     public function rules(): array
     {
+        $state = $this->route('state');
         return [
-            'name_en' => ['required', 'string', 'max:50'],
-            'name_my' => ['required', 'string', 'max:50'],
-            'name_zh' => ['required', 'string', 'max:50'],
+            'name_en' => ['required', 'string', 'max:50', Rule::unique('states', 'name_en')->ignore($state->id)->withoutTrashed()],
+            'name_my' => ['required', 'string', 'max:50', Rule::unique('states', 'name_my')->ignore($state->id)->withoutTrashed()],
+            'name_zh' => ['required', 'string', 'max:50', Rule::unique('states', 'name_zh')->ignore($state->id)->withoutTrashed()],
             'latitude' => ['nullable', 'numeric', 'between:-90,90', 'decimal:0,7'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180', 'decimal:0,7'],
         ];

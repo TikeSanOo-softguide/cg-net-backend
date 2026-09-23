@@ -200,7 +200,7 @@ class RegionManagementController extends Controller
             ->delete();
 
         if ($deletedCount === 0) {
-            return back()->withErrors(['delete' => 'common.bulk_delete_failed']);
+            return back()->with('error', __('common.bulk_delete_failed'));
         }
 
         return redirect()
@@ -263,7 +263,7 @@ class RegionManagementController extends Controller
             ->delete();
 
         if ($deletedCount === 0) {
-            return back()->withErrors(['delete' => 'common.bulk_delete_failed']);
+            return back()->with('error', __('common.bulk_delete_failed'));
         }
 
         return redirect()
@@ -315,7 +315,7 @@ class RegionManagementController extends Controller
         $deleted = Area::whereIn('id', $ids)->delete();
 
         if ($deleted === 0) {
-            return back()->withErrors(['delete' => 'common.bulk_delete_failed']);
+            return back()->with('error', __('common.bulk_delete_failed'));
         }
 
         return redirect()->route('regions.index')->with('success', 'common.bulk_deleted')->with('deleted_count', $deleted);

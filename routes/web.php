@@ -79,7 +79,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         ->middleware('can:customers.view')
         ->name('customers.show');
 
-    Route::get('/billing/transactions', [TransactionController::class, 'index'])->middleware('can:billing.view')->name('billing.transactions');
+    Route::get('/billing/transactions', [TransactionController::class, 'index'])
+        ->middleware('can:billing.view')
+        ->name('billing.transactions');
 
     Route::prefix('regions')
         ->name('regions.')
@@ -210,24 +212,16 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 ->name('chatbot-flows.')
                 ->controller(ChatbotFlowsController::class)
                 ->group(function () {
-                    // Chatbot Flow page
                     Route::get('/', 'index')->name('index');
-
-                    // Steps
                     Route::post('/steps', 'storeStep')->name('steps.store');
                     Route::put('/steps/{step}', 'updateStep')->name('steps.update');
                     Route::delete('/steps/{step}', 'destroyStep')->name('steps.destroy');
-
-                    // Options
                     Route::post('/steps/{step}/options', 'storeOption')->name('options.store');
                     Route::put('/steps/{step}/options/{option}', 'updateOption')->name('options.update');
                     Route::delete('/steps/{step}/options/{option}', 'destroyOption')->name('options.destroy');
-
-                    // Create a new step from an option
-                    Route::post(
-                        '/steps/{step}/options/create-step',
-                        'createStepFromOption'
-                    )->name('options.create-step');
+                    Route::post('/steps/{step}/options/create-step', 'createStepFromOption')->name(
+                        'options.create-step',
+                    );
                 });
             Route::prefix('quick-replies')
                 ->name('quick-replies.')
@@ -250,19 +244,43 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 });
         });
 
-    Route::prefix('top-up-cards')->name('top-up-cards.')->group(function () {
-        Route::get('/batch', [TopUpCardController::class, 'index'])->middleware('can:top-up-cards.view')->name('batch');
-        Route::post('/batch', [TopUpCardController::class, 'store'])->middleware('can:top-up-cards.create')->name('store');
-        Route::get('/agents', [AgentController::class, 'index'])->middleware('can:top-up-cards.view')->name('agents');
-        Route::post('/agents', [AgentController::class, 'store'])->middleware('can:top-up-cards.create')->name('agents.store');
-        Route::put('/agents/{agent}', [AgentController::class, 'update'])->middleware('can:top-up-cards.update')->name('agents.update');
-        Route::delete('/agents/{agent}', [AgentController::class, 'destroy'])->middleware('can:top-up-cards.delete')->name('agents.destroy');
-        Route::patch('/assign-agent', [AgentController::class, 'assignAgent'])->middleware('can:top-up-cards.update')->name('assign-cards-agent');
-        Route::get('/export', [TopUpCardController::class, 'export'])->middleware('can:top-up-cards.view')->name('export');
-        Route::get('/card-history', [TopUpCardController::class, 'cardHistory'])->middleware('can:top-up-cards.view')->name('card-history');
-        Route::get('/redeem-history', [TopUpCardController::class, 'history'])->middleware('can:top-up-cards.view')->name('redeem-history');
-        Route::patch('/{topUpCard}/void', [TopUpCardController::class, 'void'])->middleware('can:top-up-cards.update')->name('void');
-    });
+    Route::prefix('top-up-cards')
+        ->name('top-up-cards.')
+        ->group(function () {
+            Route::get('/batch', [TopUpCardController::class, 'index'])
+                ->middleware('can:top-up-cards.view')
+                ->name('batch');
+            Route::post('/batch', [TopUpCardController::class, 'store'])
+                ->middleware('can:top-up-cards.create')
+                ->name('store');
+            Route::get('/agents', [AgentController::class, 'index'])
+                ->middleware('can:top-up-cards.view')
+                ->name('agents');
+            Route::post('/agents', [AgentController::class, 'store'])
+                ->middleware('can:top-up-cards.create')
+                ->name('agents.store');
+            Route::put('/agents/{agent}', [AgentController::class, 'update'])
+                ->middleware('can:top-up-cards.update')
+                ->name('agents.update');
+            Route::delete('/agents/{agent}', [AgentController::class, 'destroy'])
+                ->middleware('can:top-up-cards.delete')
+                ->name('agents.destroy');
+            Route::patch('/assign-agent', [AgentController::class, 'assignAgent'])
+                ->middleware('can:top-up-cards.update')
+                ->name('assign-cards-agent');
+            Route::get('/export', [TopUpCardController::class, 'export'])
+                ->middleware('can:top-up-cards.view')
+                ->name('export');
+            Route::get('/card-history', [TopUpCardController::class, 'cardHistory'])
+                ->middleware('can:top-up-cards.view')
+                ->name('card-history');
+            Route::get('/redeem-history', [TopUpCardController::class, 'history'])
+                ->middleware('can:top-up-cards.view')
+                ->name('redeem-history');
+            Route::patch('/{topUpCard}/void', [TopUpCardController::class, 'void'])
+                ->middleware('can:top-up-cards.update')
+                ->name('void');
+        });
     Route::prefix('staff')
         ->name('staff.')
         ->group(function () {
