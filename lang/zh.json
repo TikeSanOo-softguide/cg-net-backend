@@ -1001,6 +1001,7 @@
         "agent": {
             "title": "代理商",
             "name": "代理商",
+            "cd": "Code",
             "address": "地址",
             "assigned_cards": "已分配卡片",
             "search": "搜索代理商",
@@ -1027,6 +1028,9 @@
             "agent_name_required": "代理商名称为必填项。",
             "agent_name_unique": "该代理商名称已被使用。",
             "agent_name_max": "代理商名称不能超过50个字符。",
+            "agent_cd_required": "CD 为必填项。",
+            "agent_cd_invalid": "CD 必须是 0 到 99 之间的整数。",
+            "agent_cd_unique": "此 CD 已被使用。",
             "agent_address_required": "代理商地址为必填项。",
             "agent_address_max": "代理商地址不能超过255个字符。",
             "amounts_required": "请至少选择一个面额。",

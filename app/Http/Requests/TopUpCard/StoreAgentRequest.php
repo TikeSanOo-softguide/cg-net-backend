@@ -16,6 +16,7 @@ class StoreAgentRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:50', Rule::unique('agents', 'name')->whereNull('deleted_at')],
+            'cd' => ['required', 'integer', 'digits:2', Rule::unique('agents', 'cd')->whereNull('deleted_at')],
             'address' => ['required', 'string', 'max:255'],
         ];
     }
