@@ -1,16 +1,6 @@
 import { FormEvent } from 'react';
 import type { InertiaFormProps } from '@inertiajs/react';
-import {
-    CircleDotIcon,
-    DollarSignIcon,
-    ImageIcon,
-    NetworkIcon,
-    PackageIcon,
-    PercentIcon,
-    RouterIcon,
-    StarIcon,
-    ZapIcon,
-} from 'lucide-react';
+import { DollarSignIcon, NetworkIcon, PackageIcon, PercentIcon, RouterIcon, StarIcon, ZapIcon } from 'lucide-react';
 
 import { FormActionBar } from '@/components/FormActionBar';
 import { FormField } from '@/components/ui/form-field';
@@ -22,7 +12,6 @@ import { useState } from 'react';
 import {
     PACKAGE_IMAGE_WIDTH,
     PACKAGE_IMAGE_HEIGHT,
-    validatePackageImageFile,
     validatePackageField,
     validatePackage,
 } from '@/lib/package-validation';
@@ -142,13 +131,13 @@ export function PackageForm({
             return form.errors.image_url;
         }
 
-        if (field === 'price' && form.data.price.replace('.', '').length > MAX_PRICE_DIGITS) {
+        if (field === 'price' && String(form.data.price).replace('.', '').length > MAX_PRICE_DIGITS) {
             return t('packages.price_max');
         }
 
         if (
             field === 'installation_fee' &&
-            form.data.installation_fee.replace('.', '').length > MAX_INSTALLATION_FEE_DIGITS
+            String(form.data.installation_fee).replace('.', '').length > MAX_INSTALLATION_FEE_DIGITS
         ) {
             return t('packages.installation_fee_max');
         }
