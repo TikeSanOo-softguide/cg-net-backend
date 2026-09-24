@@ -11,11 +11,13 @@ use App\Http\Requests\TopUpCard\UpdateAgentRequest;
 use App\Models\Agent;
 use App\Models\Batch;
 use App\Models\TopUpCard;
+use App\Http\Controllers\InOutManagement\CSV\TopUpCard as TopUpCardCsv;
+use App\Support\CsvImportException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
+use RuntimeException;
 
 class AgentController extends Controller
 {
@@ -124,69 +126,19 @@ class AgentController extends Controller
             'file' => ['required', 'file', 'mimes:csv,txt', 'max:10240'],
         ]);
 
-        $stream = fopen($request->file('file')->getRealPath(), 'r');
-
-        if ($stream === false) {
-            return back()->with('error', 'The CSV file could not be read.');
+        try {
+            $importedBatchId = TopUpCardCsv::import($request->file('file'));
+        } catch (CsvImportException $exception) {
+            return back()->with('import_error', [
+                'key' => $exception->translationKey,
+                'replace' => $exception->replace,
+            ]);
+        } catch (RuntimeException $exception) {
+            return back()->with('import_error', [
+                'key' => 'csv.import_errors.read_failed',
+                'replace' => [],
+            ]);
         }
-
-        $headers = fgetcsv($stream);
-        $requiredHeaders = ['serial_no', 'pin', 'amount', 'expires_at', 'status'];
-
-        if ($headers === false || array_map('strtolower', $headers) !== $requiredHeaders) {
-            fclose($stream);
-
-            return back()->with('error', 'The CSV headers are invalid.');
-        }
-
-        $serials = [];
-        $line = 1;
-
-        while (($row = fgetcsv($stream)) !== false) {
-            $line++;
-
-            if (count($row) !== count($requiredHeaders) || trim((string) $row[0]) === '' || trim((string) $row[4]) !== TopUpCardStatus::Pending->value) {
-                fclose($stream);
-
-                return back()->with('error', "The CSV contains an invalid row at line {$line}.");
-            }
-
-            $serial = trim((string) $row[0]);
-
-            if (isset($serials[$serial])) {
-                fclose($stream);
-
-                return back()->with('error', "The CSV contains a duplicate serial number at line {$line}.");
-            }
-
-            $serials[$serial] = true;
-        }
-
-        fclose($stream);
-
-        if ($serials === []) {
-            return back()->with('error', 'The CSV file contains no cards.');
-        }
-
-        $importedBatchId = DB::transaction(function () use ($serials): int {
-            $cards = TopUpCard::query()
-                ->whereIn('serial_no', array_keys($serials))
-                ->where('status', TopUpCardStatus::Pending)
-                ->lockForUpdate()
-                ->get();
-
-            if ($cards->count() !== count($serials)) {
-                abort(422, 'The CSV contains cards that are missing or are no longer pending.');
-            }
-
-            $batchIds = $cards->pluck('batch_id')->filter()->unique()->values();
-
-            TopUpCard::query()
-                ->whereIn('id', $cards->modelKeys())
-                ->update(['status' => TopUpCardStatus::Active]);
-
-            return (int) $batchIds->first();
-        });
 
         $request->session()->put('top_up_card_agent_batch', $importedBatchId);
         $route = $request->string('return')->toString() === 'assign'

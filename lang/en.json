@@ -21,6 +21,14 @@
         "not_found_description": "This page does not exist or may have been moved. Check the address or go back.",
         "back_home": "Back to dashboard"
     },
+    "csv": {
+        "import_errors": {
+            "invalid_headers": "The CSV headers are invalid.",
+            "invalid_row": "The CSV contains an invalid row at line :line.",
+            "required_field": "The CSV field ':field' is required at line :line.",
+            "read_failed": "The CSV file could not be read."
+        }
+    },
     "menu": {
         "dashboard": "Dashboard",
         "customer_management": "App User",
@@ -903,6 +911,17 @@
         "total": "Top-up-card Total",
         "detail": "Top-up-card Detail",
         "description": "Manage top-up cards, including their status, value, expiry date, and redemption details.",
+        "import_errors": {
+            "title": "CSV import failed",
+            "invalid_headers": "The CSV headers are invalid.",
+            "invalid_row": "The CSV contains an invalid row at line :line.",
+            "required_field": "The CSV field ':field' is required at line :line.",
+            "duplicate_serial": "The CSV contains a duplicate serial number at line :line.",
+            "no_cards": "The CSV file contains no cards.",
+            "serial_not_found": "The CSV serial number ':serial' at line :line was not found.",
+            "serial_not_pending": "The CSV serial number ':serial' at line :line is no longer pending.",
+            "read_failed": "The CSV file could not be read."
+        },
         "transaction_type": "Transaction Type",
         "transaction_status": "Transaction Status",
         "transaction_amount": "Transaction Amount",

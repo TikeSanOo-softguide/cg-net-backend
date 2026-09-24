@@ -91,17 +91,21 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * @return array{success: mixed, error: mixed, count: mixed, token: string|null}
+        * @return array{success: mixed, error: mixed, import_error: mixed, import_error_token: string|null, count: mixed, token: string|null}
      */
     private function flashPayload(Request $request): array
     {
         $success = $request->session()->pull('success');
         $error = $request->session()->pull('error');
+        $importError = $request->session()->pull('import_error');
         $count = $request->session()->pull('deleted_count');
+        $importErrorToken = $importError !== null ? (string) str()->uuid() : null;
 
         return [
             'success' => $success,
             'error' => $error,
+            'import_error' => $importError,
+            'import_error_token' => $importErrorToken,
             'count' => $count,
             'token' => ($success !== null || $error !== null) ? (string) str()->uuid() : null,
         ];

@@ -21,6 +21,14 @@
         "not_found_description": "该页面不存在或已被移动。请检查地址或返回。",
         "back_home": "返回仪表盘"
     },
+    "csv": {
+        "import_errors": {
+            "invalid_headers": "CSV 标题无效。",
+            "invalid_row": "CSV 第 :line 行的数据无效。",
+            "required_field": "CSV 字段“:field”在第 :line 行不能为空。",
+            "read_failed": "无法读取 CSV 文件。"
+        }
+    },
     "menu": {
         "dashboard": "仪表盘",
         "customer_management": "应用用户",
@@ -899,6 +907,17 @@
         "total": "充值卡总数",
         "detail": "充值卡详情",
         "description": "查看充值卡的面值、状态、有效期和兑换详情。",
+        "import_errors": {
+            "title": "CSV 导入失败",
+            "invalid_headers": "CSV 标题无效。",
+            "invalid_row": "CSV 第 :line 行的数据无效。",
+            "required_field": "CSV 字段“:field”在第 :line 行不能为空。",
+            "duplicate_serial": "CSV 第 :line 行包含重复的序列号。",
+            "no_cards": "CSV 文件中没有卡片。",
+            "serial_not_found": "未找到 CSV 第 :line 行的序列号“:serial”。",
+            "serial_not_pending": "CSV 第 :line 行的序列号“:serial”已不再处于待处理状态。",
+            "read_failed": "无法读取 CSV 文件。"
+        },
         "transaction_type": "交易类型",
         "transaction_status": "交易状态",
         "transaction_amount": "交易金额",

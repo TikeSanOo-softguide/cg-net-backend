@@ -21,6 +21,14 @@
         "not_found_description": "ဤစာမျက်နှာ မရှိပါ။ လိပ်စာကို စစ်ဆေးပါ သို့မဟုတ် ပြန်သွားပါ။",
         "back_home": "ဒက်ရှ်ဘုတ်သို့ ပြန်သွားရန်"
     },
+    "csv": {
+        "import_errors": {
+            "invalid_headers": "CSV ခေါင်းစဉ်များ မမှန်ကန်ပါ။",
+            "invalid_row": "CSV တွင် လိုင်း :line ၌ မမှန်ကန်သော အချက်အလက်ရှိသည်။",
+            "required_field": "CSV အကွက် ':field' သည် လိုအပ်သည်။ လိုင်း :line",
+            "read_failed": "CSV ဖိုင်ကို ဖတ်၍ မရပါ။"
+        }
+    },
     "menu": {
         "dashboard": "ဒက်ရှ်ဘုတ်",
         "customer_management": "အက်ပ် အသုံးပြုသူ",
@@ -901,6 +909,17 @@
         "total": "ငွေဖြည့်ကတ် စုစုပေါင်း",
         "detail": "ငွေဖြည့်ကတ် အသေးစိတ်",
         "description": "ငွေဖြည့်ကတ်များ၏ တန်ဖိုး၊ အခြေအနေ၊ သက်တမ်းကုန်ဆုံးရက်နှင့် အသုံးပြုထားမှုအသေးစိတ်များကို ကြည့်ရှုခြင်း။",
+        "import_errors": {
+            "title": "CSV တင်သွင်းမှု မအောင်မြင်ပါ",
+            "invalid_headers": "CSV ခေါင်းစဉ်များ မမှန်ကန်ပါ။",
+            "invalid_row": "CSV တွင် လိုင်း :line ၌ မမှန်ကန်သော အချက်အလက်ရှိသည်။",
+            "required_field": "CSV အကွက် ':field' သည် လိုအပ်သည်။ လိုင်း :line",
+            "duplicate_serial": "CSV တွင် လိုင်း :line ၌ ထပ်နေသော စီးရီးနံပါတ် ရှိသည်။",
+            "no_cards": "CSV ဖိုင်တွင် ကတ်များ မရှိပါ။",
+            "serial_not_found": "လိုင်း :line ၌ CSV စီးရီးနံပါတ် ':serial' ကို မတွေ့ပါ။",
+            "serial_not_pending": "လိုင်း :line ၌ CSV စီးရီးနံပါတ် ':serial' သည် ဆိုင်းငံ့အခြေအနေ မဟုတ်တော့ပါ။",
+            "read_failed": "CSV ဖိုင်ကို ဖတ်၍ မရပါ။"
+        },
         "transaction_type": "ငွေလွှဲမှုအမျိုးအစား",
         "transaction_status": "ငွေလွှဲမှုအခြေအနေ",
         "transaction_amount": "ငွေလွှဲပမာဏ",

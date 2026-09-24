@@ -1,7 +1,17 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
-import { Head, router } from '@inertiajs/react';
-import { UserRoundIcon } from 'lucide-react';
+import { Head, router, usePage } from '@inertiajs/react';
+import { CircleAlertIcon, UserRoundIcon, XIcon } from 'lucide-react';
 
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { FormDialog } from '@/components/FormDialog';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
@@ -22,6 +32,18 @@ type Props = {
     filters: { search: string; card_search: string; batch: string; agent: string; status: string; amount: string };
 };
 
+type PageProps = {
+    flash?: {
+        import_error?: { key: string; replace?: Record<string, string | number> } | null;
+        import_error_token?: string | null;
+    };
+};
+
+type ImportError = {
+    key: string;
+    replace?: Record<string, string | number>;
+};
+
 function visitAssign(filters: Props['filters']) {
     router.get('/top-up-cards/agent-assign', {
         search: filters.search || undefined,
@@ -35,7 +57,9 @@ function visitAssign(filters: Props['filters']) {
 
 export default function AgentAssignPage({ agents, cards, batches, points, filters }: Props) {
     const { t } = useTranslation();
+    const { flash } = usePage<PageProps>().props;
     const [assigning, setAssigning] = useState(false);
+    const [importError, setImportError] = useState<ImportError | null>(null);
     const [batchFilter, setBatchFilter] = useState(filters.batch);
     const [agentFilter, setAgentFilter] = useState(filters.agent);
     const [statusFilter, setStatusFilter] = useState(filters.status);
@@ -43,6 +67,9 @@ export default function AgentAssignPage({ agents, cards, batches, points, filter
     const [cardSearch, setCardSearch] = useState(filters.card_search);
     const debounce = useRef<number>(0);
     const importInput = useRef<HTMLInputElement>(null);
+    const importErrorMessage = importError
+        ? t(importError.key).replace(/:([a-z_]+)/g, (_, key: string) => String(importError.replace?.[key] ?? `:${key}`))
+        : null;
 
     useEffect(() => {
         setCardSearch(filters.card_search);
@@ -51,6 +78,12 @@ export default function AgentAssignPage({ agents, cards, batches, points, filter
         setStatusFilter(filters.status);
         setPointFilter(filters.amount);
     }, [filters.card_search, filters.batch, filters.agent, filters.status, filters.amount]);
+
+    useEffect(() => {
+        if (flash?.import_error) {
+            setImportError(flash.import_error);
+        }
+    }, [flash?.import_error_token]);
 
     useEffect(() => () => window.clearTimeout(debounce.current), []);
 
@@ -110,6 +143,27 @@ export default function AgentAssignPage({ agents, cards, batches, points, filter
             <FormDialog open={assigning} onOpenChange={setAssigning} title={t('top_up_cards.agent.assign_cards')} description={t('top_up_cards.agent.description')} icon={UserRoundIcon}>
                 {assigning ? <TopUpCardAgentAssignmentForm agents={agents} batches={batches} batchId={batchFilter} onClose={() => setAssigning(false)} onSuccess={() => setAssigning(false)} /> : null}
             </FormDialog>
+            <Dialog open={importError !== null} onOpenChange={(open) => { if (!open) setImportError(null); }}>
+                <DialogContent className="w-[min(100%-2rem,520px)]">
+                    <DialogHeader className="text-left">
+                        <DialogTitle className="flex items-center gap-2 text-danger">
+                            <CircleAlertIcon className="size-5" />
+                            {t('top_up_cards.import_errors.title')}
+                        </DialogTitle>
+                        <DialogDescription className="whitespace-pre-wrap text-left text-foreground">
+                            {importErrorMessage}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button type="button" variant="destructive">
+                                <XIcon className="size-4" />
+                                Close
+                            </Button>
+                        </DialogClose>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }
