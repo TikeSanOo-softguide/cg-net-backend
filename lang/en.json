@@ -546,10 +546,10 @@
         "search_region": "Search Region and State name",
         "create_state": "Create State",
         "create_state_description": "Add a state with name",
-        "create_region_description": "Add a region with name and state name.",
-        "create_area_description": "Add an area with name, region name, and state name.",
         "create_region": "Create Region",
+        "create_region_description": "Add a region with name and state name.",
         "create_area": "Create Area",
+        "create_area_description": "Add an area with name, region name, and state name.",
         "edit_state": "Edit State",
         "edit_state_description": "Edit a state with name.",
         "edit_region": "Edit Region",
@@ -638,7 +638,7 @@
         "create_gallery_description": "Add an image to the public gallery.",
         "edit_gallery_description": "Update this gallery image and label.",
         "promotions": {
-            "search_placeholder": "Search promotions title",
+            "search_placeholder": "Search promotion title",
             "title_en": "Title (English)",
             "title_my": "Title (Myanmar)",
             "title_zh": "Title (Chinese)",
@@ -681,9 +681,9 @@
             "deleted": "Gallery image deleted",
             "validation": {
                 "image_required": "Image is required.",
-                "label_en_max": "The English title must not be greater than 120 characters.",
-                "label_zh_max": "The Chinese title must not be greater than 120 characters.",
-                "label_my_max": "The Myanmar title must not be greater than 120 characters.",
+                "label_en_max": "The English label must not be greater than 120 characters.",
+                "label_zh_max": "The Chinese label must not be greater than 120 characters.",
+                "label_my_max": "The Myanmar label must not be greater than 120 characters.",
                 "image_invalid_type": "The image must be a valid image file.",
                 "image_max_size": "The image must not be greater than 5 MB."
             }

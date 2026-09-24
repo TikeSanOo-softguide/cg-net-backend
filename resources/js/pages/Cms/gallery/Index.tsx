@@ -97,9 +97,11 @@ export default function GalleryIndex({ items, filters }: Props) {
                         mobile: 'title',
                         className: 'font-medium',
                         cell: (row) => {
+                            const label = getLabel(row);
+
                             return (
                                 <span className="block max-w-full truncate leading-[1.7]">
-                                    {truncateText(getLabel(row), 50)}
+                                    {label?.trim() ? truncateText(label, 50) : '—'}
                                 </span>
                             );
                         },
