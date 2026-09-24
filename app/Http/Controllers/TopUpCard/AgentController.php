@@ -32,9 +32,13 @@ class AgentController extends Controller
             })
             ->orderBy('name');
         $agents = $agentQuery->paginate(15)->withQueryString();
+        $agentCds = Agent::query()->pluck('cd')->map(fn($cd): int => (int) $cd)->values();
+        $agentNames = Agent::query()->pluck('name')->values();
 
         return Inertia::render('TopUpCards/Agent', [
             'agents' => $agents,
+            'agentCds' => $agentCds,
+            'agentNames' => $agentNames,
             'filters' => ['search' => $search],
         ]);
     }

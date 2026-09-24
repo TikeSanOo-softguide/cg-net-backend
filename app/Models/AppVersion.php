@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
         'download_url',
         'release_notes_en',
         'release_notes_zh',
-        'release_notes_mm',
+        'release_notes_my',
         'force_update',
         'status',
     ]),

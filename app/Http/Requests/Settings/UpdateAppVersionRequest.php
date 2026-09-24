@@ -29,7 +29,7 @@ class UpdateAppVersionRequest extends FormRequest
 
             'release_notes_en' => ['required', 'string'],
             'release_notes_zh' => ['required', 'string'],
-            'release_notes_mm' => ['required', 'string'],
+            'release_notes_my' => ['required', 'string'],
 
             'force_update' => ['required', 'boolean'],
             'status' => ['required', 'in:active,inactive'],

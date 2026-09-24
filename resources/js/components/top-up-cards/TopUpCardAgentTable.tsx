@@ -6,7 +6,7 @@ import { TableActionButton } from '@/components/TableActionButton';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 
-type AgentRow = { id: number; name: string; address: string; top_up_cards_count: number };
+type AgentRow = { id: number; name: string; cd: number; address: string; top_up_cards_count: number };
 
 type TopUpCardAgentTableProps = {
     agents: AgentRow[];
@@ -43,6 +43,7 @@ export function TopUpCardAgentTable({
             createLabel={t('top_up_cards.agent.add')}
             columns={[
                 { id: 'name', header: t('top_up_cards.agent.name'), mobile: 'title', className: 'font-medium', cell: (row) => row.name },
+                { id: 'cd', header: t('top_up_cards.agent.cd'), cell: (row) => row.cd ?? '-' },
                 { id: 'address', header: t('top_up_cards.agent.address'), mobile: 'meta', cell: (row) => <span className="inline-flex items-center gap-1.5"><MapPinIcon className="size-3.5 text-muted-foreground" />{row.address}</span> },
                 { id: 'cards', header: t('top_up_cards.agent.assigned_cards'), cell: (row) => row.top_up_cards_count },
             ]}
