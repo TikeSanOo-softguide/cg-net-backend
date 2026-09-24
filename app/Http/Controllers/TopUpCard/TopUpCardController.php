@@ -8,6 +8,7 @@ use App\Http\Requests\TopUpCard\GenerateTopUpCardsRequest;
 use App\Models\Batch;
 use App\Models\TopUpCard;
 use App\Support\GeneratesTopUpCards;
+use App\Http\Controllers\InOutManagement\CSV\TopUpCard as TopUpCardCsv;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -99,39 +100,9 @@ class TopUpCardController extends Controller
 
         abort_if($batch === [], 404);
 
-        $filename = 'top-up-cards-' . now()->format('Ymd-His') . '.csv';
-
-        return response()->streamDownload(
-            function () use ($batch): void {
-                $stream = fopen('php://output', 'w');
-
-                if ($stream === false) {
-                    return;
-                }
-
-                fputcsv($stream, ['serial_no', 'pin', 'amount', 'expires_at', 'status']);
-
-                foreach ($batch as $card) {
-                    $amount = $card['amount'] ?? 0;
-                    $numericAmount = is_numeric($amount) ? (string) ((float) $amount) : '0';
-                    $numericAmount = preg_replace('/\.0+$/', '', $numericAmount);
-                    $numericAmount = preg_replace('/(\.\d*?)0+$/', '$1', $numericAmount) ?? $numericAmount;
-
-                    fputcsv($stream, [
-                        $card['serial_no'] ?? '',
-                        $card['pin'] ?? '',
-                        $numericAmount,
-                        $card['expires_at'] ?? '',
-                        $card['status'] ?? '',
-                    ]);
-                }
-
-                fclose($stream);
-            },
-            $filename,
-            [
-                'Content-Type' => 'text/csv; charset=UTF-8',
-            ],
+        return TopUpCardCsv::export(
+            $batch,
+            'top-up-cards-' . now()->format('Ymd-His') . '.csv',
         );
     }
 

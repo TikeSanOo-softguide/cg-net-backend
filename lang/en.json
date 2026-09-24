@@ -21,6 +21,14 @@
         "not_found_description": "This page does not exist or may have been moved. Check the address or go back.",
         "back_home": "Back to dashboard"
     },
+    "csv": {
+        "import_errors": {
+            "invalid_headers": "The CSV headers are invalid.",
+            "invalid_row": "The CSV contains an invalid row at line :line.",
+            "required_field": "The CSV field ':field' is required at line :line.",
+            "read_failed": "The CSV file could not be read."
+        }
+    },
     "menu": {
         "dashboard": "Dashboard",
         "customer_management": "App User",
@@ -38,6 +46,8 @@
         "payment_gateway_logs": "Payment Gateway Logs",
         "transactions": "Transactions",
         "top_up_card_management": "Top-Up Cards",
+        "top_up_card_assign": "Top-Up Card Assign",
+        "top_up_card_agent_assign": "Agent Assign",
         "top_up_card_batch": "Batch Generation",
         "top_up_card_agents": "Agents",
         "redeem_history": "Redeem History",
@@ -103,6 +113,7 @@
         "user_logs_description": "Review user activity and account events.",
         "top_up_card_batch_description": "Generate and manage top-up card batches.",
         "top_up_card_agents_description": "Manage agents and assign top-up cards.",
+        "top_up_card_agent_assign_description": "Assign imported top-up cards to agents.",
         "redeem_history_description": "Review top-up card redemption history and usage.",
         "installation_applications_description": "Review and process broadband installation applications.",
         "failure_reports_description": "Track and resolve customer failure reports.",
@@ -914,6 +925,17 @@
         "total": "Top-up-card Total",
         "detail": "Top-up-card Detail",
         "description": "Manage top-up cards, including their status, value, expiry date, and redemption details.",
+        "import_errors": {
+            "title": "CSV import failed",
+            "invalid_headers": "The CSV headers are invalid.",
+            "invalid_row": "The CSV contains an invalid row at line :line.",
+            "required_field": "The CSV field ':field' is required at line :line.",
+            "duplicate_serial": "The CSV contains a duplicate serial number at line :line.",
+            "no_cards": "The CSV file contains no cards.",
+            "serial_not_found": "The CSV serial number ':serial' at line :line was not found.",
+            "serial_not_pending": "The CSV serial number ':serial' at line :line is no longer pending.",
+            "read_failed": "The CSV file could not be read."
+        },
         "transaction_no": "Transaction Number",
         "from_date": "From Date",
         "to_date": "To Date",
@@ -941,6 +963,7 @@
         "search_placeholder": "Search serial number",
         "serial_no": "Serial no",
         "amount": "Amount",
+        "point": "Point",
         "pin": "PIN",
         "qr_code": "QR code",
         "reveal_pin": "Reveal PIN",
@@ -991,13 +1014,16 @@
             "description": "Manage the agents who receive top-up cards.",
             "all_batches": "All batches",
             "all_status": "All Status",
+            "all_points": "All Points",
             "search_batches": "Search batches",
             "all_agents": "All agents",
             "search_agents": "Search agents",
             "not_assigned": "Not assigned",
             "assign": "Assign agent",
             "assign_cards": "Assign top-up cards",
+            "import_csv": "Import CSV",
             "selected": ":count cards selected",
+            "available": "available",
             "select": "Select agent",
             "no_agent": "No agent",
             "delete_title": "Delete agent",
@@ -1005,6 +1031,7 @@
         },
         "validation": {
             "agent_name_required": "Agent name is required.",
+            "agent_name_unique": "This agent name is already in use.",
             "agent_name_max": "Agent name must not exceed 50 characters.",
             "agent_address_required": "Agent address is required.",
             "agent_address_max": "Agent address must not exceed 255 characters.",

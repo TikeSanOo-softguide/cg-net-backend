@@ -6,42 +6,49 @@ import { Button } from '@/components/ui/button';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatTopUpAmount, type TopUpCardRow } from '@/lib/top-up-cards';
+import type { Paginated } from '@/components/Pagination';
 import { formatDate } from '@/lib/utils';
 
 type AgentRow = { id: number; name: string; address: string; top_up_cards_count: number };
 
 type TopUpCardAgentCardTableProps = {
     cards: TopUpCardRow[];
+    pagination?: Paginated<TopUpCardRow>;
     agents: AgentRow[];
     batches: { id: number; batch_no: string }[];
+    points: number[];
     search: string;
     batchFilter: string;
     agentFilter: string;
     statusFilter: string;
-    selectedIds: string[];
+    pointFilter: string;
     onSearchChange: (value: string) => void;
     onBatchChange: (value: string) => void;
     onAgentChange: (value: string) => void;
     onStatusChange: (value: string) => void;
-    onSelectionChange: (ids: string[]) => void;
+    onPointChange: (value: string) => void;
     onAssign: () => void;
+    onImport: () => void;
 };
 
 export function TopUpCardAgentCardTable({
     cards,
+    pagination,
     agents,
     batches,
+    points,
     search,
     batchFilter,
     agentFilter,
     statusFilter,
-    selectedIds,
+    pointFilter,
     onSearchChange,
     onBatchChange,
     onAgentChange,
     onStatusChange,
-    onSelectionChange,
+    onPointChange,
     onAssign,
+    onImport,
 }: TopUpCardAgentCardTableProps) {
     const { t } = useTranslation();
     const can = useCan();
@@ -49,6 +56,7 @@ export function TopUpCardAgentCardTable({
     return (
         <DataTable
             data={cards}
+            pagination={pagination}
             getRowId={(row) => String(row.id)}
             search={search}
             onSearchChange={onSearchChange}
@@ -80,7 +88,6 @@ export function TopUpCardAgentCardTable({
                             <SelectTrigger className="w-full"><SelectValue placeholder={t('common.status')} /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">{t('top_up_cards.agent.all_status')}</SelectItem>
-                                <SelectItem value="pending">{t('status.pending')}</SelectItem>
                                 <SelectItem value="active">{t('status.active')}</SelectItem>
                                 <SelectItem value="used">{t('status.used')}</SelectItem>
                                 <SelectItem value="expired">{t('status.expired')}</SelectItem>
@@ -88,21 +95,31 @@ export function TopUpCardAgentCardTable({
                             </SelectContent>
                         </Select>
                     </FormControl>
+                    <FormControl compact className="w-full shrink-0 sm:w-35">
+                        <Select value={pointFilter || 'all'} onValueChange={onPointChange}>
+                            <SelectTrigger className="w-full"><SelectValue placeholder={t('top_up_cards.point')} /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">{t('top_up_cards.agent.all_points')}</SelectItem>
+                                {points.map((point) => <SelectItem key={point} value={String(point)}>{point}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </FormControl>
                 </div>
             }
-            selectable
-            selectedIds={selectedIds}
-            onSelectionChange={onSelectionChange}
-            isRowSelectable={(row) => row.status === 'pending'}
             alwaysShowBulkActions
             bulkActions={can('top-up-cards.update') ? (
-                <Button type="button" size="sm" disabled={selectedIds.length === 0} onClick={onAssign}>
-                    {t('top_up_cards.agent.assign')}
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={onImport}>
+                        {t('top_up_cards.agent.import_csv')}
+                    </Button>
+                    <Button type="button" size="sm" onClick={onAssign}>
+                        {t('top_up_cards.agent.assign')}
+                    </Button>
+                </div>
             ) : null}
             columns={[
                 { id: 'serial_no', header: t('top_up_cards.serial_no'), mobile: 'title', className: 'font-mono text-[12px]', cell: (row) => row.serial_no },
-                { id: 'amount', header: t('top_up_cards.amount'), mobile: 'meta', cell: (row) => formatTopUpAmount(row.amount) },
+                { id: 'amount', header: t('top_up_cards.point'), mobile: 'meta', cell: (row) => formatTopUpAmount(row.amount) },
                 { id: 'status', header: t('common.status'), mobile: 'badge', cell: (row) => <StatusBadge status={row.status} /> },
                 { id: 'expires_at', header: t('top_up_cards.expires_at'), cell: (row) => formatDate(row.expires_at) ?? '—' },
                 { id: 'batch_no', header: t('top_up_cards.batch_no'), cell: (row) => row.batch_no ?? '—' },

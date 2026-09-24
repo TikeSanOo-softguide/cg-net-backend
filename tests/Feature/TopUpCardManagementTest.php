@@ -4,11 +4,13 @@ namespace Tests\Feature;
 
 use App\Enums\TopUpCardStatus;
 use App\Models\Admin;
+use App\Models\Batch;
 use App\Models\TopUpCard;
 use App\Models\User;
 use App\Support\AppPermissions;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\PermissionRegistrar;
@@ -150,6 +152,53 @@ class TopUpCardManagementTest extends TestCase
             ->get('/top-up-cards/export')
             ->assertOk()
             ->assertHeader('content-type', 'text/csv; charset=UTF-8');
+    }
+
+    public function test_agent_card_table_excludes_pending_cards(): void
+    {
+        $actor = Admin::factory()->create();
+        $actor->assignRole(AppPermissions::SuperAdmin);
+        $pending = TopUpCard::factory()->create(['status' => TopUpCardStatus::Pending]);
+        $active = TopUpCard::factory()->create(['status' => TopUpCardStatus::Active]);
+
+        $this->actingAs($actor, 'web')
+            ->get('/top-up-cards/agent-assign')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('TopUpCards/AgentAssign')
+                ->has('cards', 1)
+                ->where('cards.0.id', $active->id)
+                ->where('filters.status', ''));
+
+        $this->assertNotSame($pending->id, $active->id);
+    }
+
+    public function test_pending_generated_cards_can_be_imported_as_active(): void
+    {
+        $actor = Admin::factory()->create();
+        $actor->assignRole(AppPermissions::SuperAdmin);
+        $batch = Batch::query()->create([
+            'batch_no' => 'IMPORT-BATCH-0001',
+            'amount' => 1000,
+            'quantity' => 1,
+            'status' => 'active',
+            'expires_at' => now()->addDays(30)->toDateString(),
+        ]);
+        $card = TopUpCard::factory()->create([
+            'serial_no' => 'TOPUP-IMPORT-0001',
+            'status' => TopUpCardStatus::Pending,
+            'batch_id' => $batch->id,
+        ]);
+
+        $csv = "serial_no,pin,amount,expires_at,status\nTOPUP-IMPORT-0001,1234,1000,{$card->expires_at->toDateString()},pending\n";
+
+        $this->actingAs($actor, 'web')
+            ->post('/top-up-cards/agents/import', [
+                'file' => UploadedFile::fake()->createWithContent('cards.csv', $csv),
+            ])
+            ->assertRedirect('/top-up-cards/agent-assign');
+
+        $this->assertSame(TopUpCardStatus::Active, $card->fresh()->status);
     }
 
     public function test_admins_can_view_redeem_history(): void

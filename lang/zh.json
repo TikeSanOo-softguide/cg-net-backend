@@ -21,6 +21,14 @@
         "not_found_description": "该页面不存在或已被移动。请检查地址或返回。",
         "back_home": "返回仪表盘"
     },
+    "csv": {
+        "import_errors": {
+            "invalid_headers": "CSV 标题无效。",
+            "invalid_row": "CSV 第 :line 行的数据无效。",
+            "required_field": "CSV 字段“:field”在第 :line 行不能为空。",
+            "read_failed": "无法读取 CSV 文件。"
+        }
+    },
     "menu": {
         "dashboard": "仪表盘",
         "customer_management": "应用用户",
@@ -38,6 +46,8 @@
         "payment_gateway_logs": "支付网关日志",
         "transactions": "交易记录",
         "top_up_card_management": "充值卡管理",
+        "top_up_card_assign": "充值卡分配",
+        "top_up_card_agent_assign": "代理分配",
         "top_up_card_batch": "批量生成",
         "top_up_card_agents": "代理商",
         "redeem_history": "兑换记录",
@@ -102,6 +112,7 @@
         "user_logs_description": "查看用户活动和账户事件。",
         "top_up_card_batch_description": "生成并管理充值卡批次。",
         "top_up_card_agents_description": "管理代理商并分配充值卡。",
+        "top_up_card_agent_assign_description": "将导入的充值卡分配给代理商。",
         "redeem_history_description": "查看充值卡兑换历史和使用情况。",
         "installation_applications_description": "审核和处理宽带安装申请。",
         "failure_reports_description": "跟踪并处理客户故障报告。",
@@ -910,6 +921,17 @@
         "total": "充值卡总数",
         "detail": "充值卡详情",
         "description": "查看充值卡的面值、状态、有效期和兑换详情。",
+        "import_errors": {
+            "title": "CSV 导入失败",
+            "invalid_headers": "CSV 标题无效。",
+            "invalid_row": "CSV 第 :line 行的数据无效。",
+            "required_field": "CSV 字段“:field”在第 :line 行不能为空。",
+            "duplicate_serial": "CSV 第 :line 行包含重复的序列号。",
+            "no_cards": "CSV 文件中没有卡片。",
+            "serial_not_found": "未找到 CSV 第 :line 行的序列号“:serial”。",
+            "serial_not_pending": "CSV 第 :line 行的序列号“:serial”已不再处于待处理状态。",
+            "read_failed": "无法读取 CSV 文件。"
+        },
         "transaction_no": "交易编号",
         "from_date": "开始日期",
         "to_date": "结束日期",
@@ -937,6 +959,7 @@
         "search_placeholder": "搜索序列号",
         "serial_no": "序列号",
         "amount": "金额",
+        "point": "面值",
         "pin": "PIN",
         "qr_code": "二维码",
         "reveal_pin": "显示 PIN",
@@ -987,11 +1010,14 @@
             "description": "管理接收充值卡的代理商。",
             "all_batches": "全部批次",
             "all_status": "全部状态",
+            "all_points": "全部面值",
             "all_agents": "全部代理商",
             "not_assigned": "未分配",
             "assign": "分配代理商",
             "assign_cards": "分配充值卡",
+            "import_csv": "导入 CSV",
             "selected": "已选择 :count 张卡",
+            "available": "可用",
             "select": "选择代理商",
             "no_agent": "无代理商",
             "delete_title": "删除代理商",
@@ -999,6 +1025,7 @@
         },
         "validation": {
             "agent_name_required": "代理商名称为必填项。",
+            "agent_name_unique": "该代理商名称已被使用。",
             "agent_name_max": "代理商名称不能超过50个字符。",
             "agent_address_required": "代理商地址为必填项。",
             "agent_address_max": "代理商地址不能超过255个字符。",

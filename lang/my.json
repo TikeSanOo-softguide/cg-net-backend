@@ -21,6 +21,14 @@
         "not_found_description": "ဤစာမျက်နှာ မရှိပါ။ လိပ်စာကို စစ်ဆေးပါ သို့မဟုတ် ပြန်သွားပါ။",
         "back_home": "ဒက်ရှ်ဘုတ်သို့ ပြန်သွားရန်"
     },
+    "csv": {
+        "import_errors": {
+            "invalid_headers": "CSV ခေါင်းစဉ်များ မမှန်ကန်ပါ။",
+            "invalid_row": "CSV တွင် လိုင်း :line ၌ မမှန်ကန်သော အချက်အလက်ရှိသည်။",
+            "required_field": "CSV အကွက် ':field' သည် လိုအပ်သည်။ လိုင်း :line",
+            "read_failed": "CSV ဖိုင်ကို ဖတ်၍ မရပါ။"
+        }
+    },
     "menu": {
         "dashboard": "ဒက်ရှ်ဘုတ်",
         "customer_management": "အက်ပ် အသုံးပြုသူ",
@@ -38,6 +46,8 @@
         "payment_gateway_logs": "ငွေပေးချေမှု ဂိတ် မှတ်တမ်းများ",
         "transactions": "ငွေလွှဲ / ငွေပေးချေမှု မှတ်တမ်းများ",
         "top_up_card_management": "Top-Up ကတ် စီမံခန့်ခွဲမှု",
+        "top_up_card_assign": "Top-Up ကတ် တာဝန်ပေးခြင်း",
+        "top_up_card_agent_assign": "အေးဂျင့် တာဝန်ပေးခြင်း",
         "top_up_card_batch": "အစုလိုက် ထုတ်လုပ်ခြင်း",
         "top_up_card_agents": "အေးဂျင့်များ",
         "redeem_history": "ရွေးယူမှု မှတ်တမ်း",
@@ -102,6 +112,7 @@
         "user_logs_description": "အသုံးပြုသူ လုပ်ဆောင်ချက်များနှင့် အကောင့် ဖြစ်ရပ်များကို စစ်ဆေးပါ။",
         "top_up_card_batch_description": "Top-Up ကတ်များကို အစုလိုက် ထုတ်လုပ်ပြီး စီမံပါ။",
         "top_up_card_agents_description": "အေးဂျင့်များနှင့် Top-Up ကတ်များကို စီမံခန့်ခွဲပါ။",
+        "top_up_card_agent_assign_description": "တင်သွင်းထားသော Top-Up ကတ်များကို အေးဂျင့်များထံ တာဝန်ပေးပါ။",
         "redeem_history_description": "Top-Up ကတ် ရွေးယူမှု မှတ်တမ်းနှင့် အသုံးပြုမှုကို ပြန်လည်သုံးသပ်ပါ။",
         "installation_applications_description": "ဘရော့်ဒ်ဘန်း တပ်ဆင်ရန် လျှောက်လွှာများကို စစ်ဆေးပါ။",
         "failure_reports_description": "ဖောက်သည်ချို့ယွင်းမှု အစီရင်ခံစာများကို ခြေရာခံပြီး ဖြေရှင်းပါ။",
@@ -912,6 +923,17 @@
         "total": "ငွေဖြည့်ကတ် စုစုပေါင်း",
         "detail": "ငွေဖြည့်ကတ် အသေးစိတ်",
         "description": "ငွေဖြည့်ကတ်များ၏ တန်ဖိုး၊ အခြေအနေ၊ သက်တမ်းကုန်ဆုံးရက်နှင့် အသုံးပြုထားမှုအသေးစိတ်များကို ကြည့်ရှုခြင်း။",
+        "import_errors": {
+            "title": "CSV တင်သွင်းမှု မအောင်မြင်ပါ",
+            "invalid_headers": "CSV ခေါင်းစဉ်များ မမှန်ကန်ပါ။",
+            "invalid_row": "CSV တွင် လိုင်း :line ၌ မမှန်ကန်သော အချက်အလက်ရှိသည်။",
+            "required_field": "CSV အကွက် ':field' သည် လိုအပ်သည်။ လိုင်း :line",
+            "duplicate_serial": "CSV တွင် လိုင်း :line ၌ ထပ်နေသော စီးရီးနံပါတ် ရှိသည်။",
+            "no_cards": "CSV ဖိုင်တွင် ကတ်များ မရှိပါ။",
+            "serial_not_found": "လိုင်း :line ၌ CSV စီးရီးနံပါတ် ':serial' ကို မတွေ့ပါ။",
+            "serial_not_pending": "လိုင်း :line ၌ CSV စီးရီးနံပါတ် ':serial' သည် ဆိုင်းငံ့အခြေအနေ မဟုတ်တော့ပါ။",
+            "read_failed": "CSV ဖိုင်ကို ဖတ်၍ မရပါ။"
+        },
         "transaction_no": "ငွေလွှဲနံပါတ်",
         "from_date": "စတင်ရက်",
         "to_date": "ပြီးဆုံးရက်",
@@ -939,6 +961,7 @@
         "search_placeholder": "စီးရီးနံပါတ် ရှာရန်",
         "serial_no": "စီးရီးနံပါတ်",
         "amount": "တန်ဖိုး",
+        "point": "Point",
         "pin": "PIN",
         "qr_code": "QR ကုဒ်",
         "reveal_pin": "PIN ပြရန်",
@@ -989,13 +1012,16 @@
             "description": "Top-Up ကတ်များ လက်ခံမည့် အေးဂျင့်များကို စီမံပါ။",
             "all_batches": "အစုအားလုံး",
             "all_status": "အခြေအနေအားလုံး",
+            "all_points": "တန်ဖိုးအားလုံး",
             "search_batches": "အစုများ ရှာရန်",
             "all_agents": "အေးဂျင့်အားလုံး",
             "search_agents": "အေးဂျင့်များ ရှာရန်",
             "not_assigned": "တာဝန်မပေးရသေးပါ",
             "assign": "အေးဂျင့် တာဝန်ပေးရန်",
             "assign_cards": "Top-Up ကတ်များကို တာဝန်ပေးရန်",
+            "import_csv": "CSV တင်သွင်းရန်",
             "selected": "ကတ် :count ခု ရွေးထားသည်",
+            "available": "ရရှိနိုင်",
             "select": "အေးဂျင့် ရွေးရန်",
             "no_agent": "အေးဂျင့် မရှိပါ",
             "delete_title": "အေးဂျင့် ဖျက်ရန်",
@@ -1003,6 +1029,7 @@
         },
         "validation": {
             "agent_name_required": "အေးဂျင့်အမည် လိုအပ်သည်။",
+            "agent_name_unique": "ဤအေးဂျင့်အမည်ကို အသုံးပြုပြီးသား ဖြစ်သည်။",
             "agent_name_max": "အေးဂျင့်အမည်သည် စာလုံး ၅၀ ထက် မပိုရပါ။",
             "agent_address_required": "အေးဂျင့်လိပ်စာ လိုအပ်သည်။",
             "agent_address_max": "အေးဂျင့်လိပ်စာသည် စာလုံး ၂၅၅ ထက် မပိုရပါ။",

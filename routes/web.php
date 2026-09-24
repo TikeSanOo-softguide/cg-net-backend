@@ -291,7 +291,8 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::get('/agents', [AgentController::class, 'index'])
                 ->middleware('can:top-up-cards.view')
                 ->name('agents');
-            Route::post('/agents', [AgentController::class, 'store'])
+            Route::get('/agent-assign', [AgentController::class, 'agentAssign'])->middleware('can:top-up-cards.view')->name('agent-assign');
+        Route::post('/agents', [AgentController::class, 'store'])
                 ->middleware('can:top-up-cards.create')
                 ->name('agents.store');
             Route::put('/agents/{agent}', [AgentController::class, 'update'])
@@ -300,7 +301,8 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::delete('/agents/{agent}', [AgentController::class, 'destroy'])
                 ->middleware('can:top-up-cards.delete')
                 ->name('agents.destroy');
-            Route::patch('/assign-agent', [AgentController::class, 'assignAgent'])
+            Route::post('/agents/import', [AgentController::class, 'import'])->middleware('can:top-up-cards.update')->name('agents.import');
+        Route::patch('/assign-agent', [AgentController::class, 'assignAgent'])
                 ->middleware('can:top-up-cards.update')
                 ->name('assign-cards-agent');
             Route::get('/export', [TopUpCardController::class, 'export'])

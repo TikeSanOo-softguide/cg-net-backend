@@ -122,7 +122,7 @@ export default function TopUpCardsGenerate({ cards, generated = [], presets, amo
             <PageContent>
                 <PageHeader />
                 <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 print:block">
-                    <Card className="flex h-[390px] flex-col gap-3 py-4 print:hidden">
+                    <Card className="flex h-[420px] flex-col gap-3 py-4 print:hidden">
                         <CardHeader>
                             <CardTitle className="text-sm">{t('top_up_cards.generate_title')}</CardTitle>
                             <CardDescription className="text-[12px] leading-4">
@@ -179,7 +179,7 @@ export default function TopUpCardsGenerate({ cards, generated = [], presets, amo
                             </form>
                         </CardContent>
                     </Card>
-                    <Card className="flex h-[390px] flex-col gap-3 py-4 print:border-0 print:shadow-none">
+                    <Card className="flex h-[420px] flex-col gap-3 py-4 print:border-0 print:shadow-none">
                         <CardHeader className="print:px-0">
                             <CardTitle className="text-sm">{t('top_up_cards.batch_title')}</CardTitle>
                             <CardDescription className="text-[12px] leading-4">
