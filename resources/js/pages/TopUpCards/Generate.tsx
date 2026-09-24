@@ -18,6 +18,7 @@ type GenerateProps = {
     cards: Paginated<TopUpCardRow>;
     generated: TopUpCardRow[];
     presets: number[];
+    agents: { id: number; name: string }[];
     amounts: string[];
     filters: TopUpCardFilters;
 };
@@ -44,11 +45,12 @@ function visitIndex(filters: TopUpCardFilters, onStart?: () => void, onFinish?: 
     );
 }
 
-export default function TopUpCardsGenerate({ cards, generated = [], presets, amounts, filters }: GenerateProps) {
+export default function TopUpCardsGenerate({ cards, generated = [], presets, agents = [], amounts, filters }: GenerateProps) {
     const { t } = useTranslation();
     const can = useCan();
     const [search, setSearch] = useState(filters.search);
     const [selected, setSelected] = useState<Record<string, number>>({});
+    const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
     const [customOpen, setCustomOpen] = useState(false);
     const [customValue, setCustomValue] = useState('');
     const [tableLoading, setTableLoading] = useState(false);
@@ -122,7 +124,7 @@ export default function TopUpCardsGenerate({ cards, generated = [], presets, amo
             <PageContent>
                 <PageHeader />
                 <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 print:block">
-                    <Card className="flex h-[420px] flex-col gap-3 py-4 print:hidden">
+                    <Card className="flex h-[520px] flex-col gap-3 py-4 print:hidden">
                         <CardHeader>
                             <CardTitle className="text-sm">{t('top_up_cards.generate_title')}</CardTitle>
                             <CardDescription className="text-[12px] leading-4">
@@ -132,6 +134,8 @@ export default function TopUpCardsGenerate({ cards, generated = [], presets, amo
                         <CardContent className="min-h-0 flex-1 overflow-y-auto">
                             <form onSubmit={submit} className="flex flex-col gap-3">
                                 <TopUpCardGenerateForm
+                                    agents={agents}
+                                    selectedAgentIds={selectedAgentIds}
                                     presets={presets}
                                     selected={selected}
                                     customOpen={customOpen}
@@ -165,6 +169,7 @@ export default function TopUpCardsGenerate({ cards, generated = [], presets, amo
                                         setSelected((current) => applyCustom(current, value, customOpen));
                                     }}
                                     onExpiresAt={(value) => form.setData('expires_at', value)}
+                                    onAgentIds={setSelectedAgentIds}
                                 />
                                 <Button
                                     type="submit"
@@ -179,7 +184,7 @@ export default function TopUpCardsGenerate({ cards, generated = [], presets, amo
                             </form>
                         </CardContent>
                     </Card>
-                    <Card className="flex h-[420px] flex-col gap-3 py-4 print:border-0 print:shadow-none">
+                    <Card className="flex h-[520px] flex-col gap-3 py-4 print:border-0 print:shadow-none">
                         <CardHeader className="print:px-0">
                             <CardTitle className="text-sm">{t('top_up_cards.batch_title')}</CardTitle>
                             <CardDescription className="text-[12px] leading-4">

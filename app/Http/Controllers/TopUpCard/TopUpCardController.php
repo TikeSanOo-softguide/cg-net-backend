@@ -6,6 +6,7 @@ use App\Enums\TopUpCardStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TopUpCard\GenerateTopUpCardsRequest;
 use App\Models\Batch;
+use App\Models\Agent;
 use App\Models\TopUpCard;
 use App\Support\GeneratesTopUpCards;
 use App\Http\Controllers\InOutManagement\CSV\TopUpCard as TopUpCardCsv;
@@ -60,11 +61,17 @@ class TopUpCardController extends Controller
             ->paginate(15)
             ->withQueryString()
             ->through(fn(TopUpCard $card) => $this->payload($card));
+            
+        $agents = Agent::query()
+            ->select(['id', 'name'])
+            ->orderBy('name')
+            ->get();
 
         return Inertia::render('TopUpCards/Generate', [
             'cards' => $cards,
             'generated' => $request->session()->get('top_up_card_export_batch', []),
             'presets' => self::Presets,
+            'agents' => $agents,
             'amounts' => $this->amountOptions(),
             'filters' => [
                 'search' => $search,

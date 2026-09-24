@@ -8,9 +8,11 @@ import {
     PlusIcon,
     TicketsIcon,
     TriangleAlertIcon,
+    UserRoundIcon,
 } from 'lucide-react';
 
 import { FormControl } from '@/components/ui/form-control';
+import { MultiSelect } from '@/components/MultiSelect';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -41,6 +43,8 @@ function denominationCardClass(checked: boolean, dashed = false): string {
 }
 
 type GenerateFormProps = {
+    agents: { id: number; name: string }[];
+    selectedAgentIds: string[];
     presets: number[];
     selected: Record<string, number>;
     customOpen: boolean;
@@ -53,6 +57,7 @@ type GenerateFormProps = {
     onCustomOpen: (open: boolean) => void;
     onCustomValue: (value: string) => void;
     onExpiresAt: (value: string) => void;
+    onAgentIds: (values: string[]) => void;
 };
 
 function QuantityStepper({
@@ -139,6 +144,8 @@ function SectionLabel({ icon: Icon, children }: { icon: typeof BanknoteIcon; chi
 }
 
 export function TopUpCardGenerateForm({
+    agents,
+    selectedAgentIds,
     presets,
     selected,
     customOpen,
@@ -151,6 +158,7 @@ export function TopUpCardGenerateForm({
     onCustomOpen,
     onCustomValue,
     onExpiresAt,
+    onAgentIds,
 }: GenerateFormProps) {
     const { t } = useTranslation();
     const [menuOpen, setMenuOpen] = useState(false);
@@ -169,6 +177,26 @@ export function TopUpCardGenerateForm({
 
     return (
         <div className="flex flex-col gap-3">
+            <div>
+                <SectionLabel icon={UserRoundIcon}>{t('top_up_cards.agent.title')}</SectionLabel>
+                <p className="mt-0.5 ps-5 text-[11px] text-muted-foreground">{t('top_up_cards.agent.description')}</p>
+                <div className="mt-2">
+                    <MultiSelect
+                        id="top-up-card-agents"
+                        values={selectedAgentIds}
+                        options={agents.map((agent) => ({
+                            value: String(agent.id),
+                            label: agent.name,
+                            icon: UserRoundIcon,
+                        }))}
+                        onChange={onAgentIds}
+                        placeholder={t('top_up_cards.agent.all_agents')}
+                        heading={t('top_up_cards.agent.title')}
+                        icon={UserRoundIcon}
+                        disabled={processing}
+                    />
+                </div>
+            </div>
             <div>
                 <SectionLabel icon={BanknoteIcon}>{t('top_up_cards.denominations')}</SectionLabel>
                 <p className="mt-0.5 ps-5 text-[11px] text-muted-foreground">{t('top_up_cards.denominations_hint')}</p>
