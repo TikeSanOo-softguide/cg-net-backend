@@ -21,6 +21,12 @@ class UpdateAgentRequest extends FormRequest
                 'max:50',
                 Rule::unique('agents', 'name')->whereNull('deleted_at')->ignore($this->route('agent')),
             ],
+            'cd' => [
+                'required',
+                'integer',
+                'digits:2',
+                Rule::unique('agents', 'cd')->whereNull('deleted_at')->ignore($this->route('agent')),
+            ],
             'address' => ['required', 'string', 'max:255'],
         ];
     }

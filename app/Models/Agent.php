@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['name', 'address'])]
+#[Fillable(['name', 'cd', 'address'])]
 
 class Agent extends Model
 {
@@ -17,6 +17,13 @@ class Agent extends Model
     use HasFactory, SoftDeletes;
 
     protected $table = 'agents';
+
+    protected function casts(): array
+    {
+        return [
+            'cd' => 'integer',
+        ];
+    }
 
     public function topUpCards(): HasMany
     {

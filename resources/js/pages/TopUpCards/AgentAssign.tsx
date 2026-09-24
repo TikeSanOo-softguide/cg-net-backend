@@ -21,7 +21,7 @@ import type { TopUpCardRow } from '@/lib/top-up-cards';
 import type { Paginated } from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
 
-type AgentRow = { id: number; name: string; address: string; top_up_cards_count: number };
+type AgentRow = { id: number; name: string; cd: number; address: string; top_up_cards_count: number };
 type BatchRow = { id: number; batch_no: string; expires_at: string | null; available_cards_count: number; available_points: number[] };
 
 type Props = {

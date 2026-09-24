@@ -1005,6 +1005,7 @@
         "agent": {
             "title": "Agents",
             "name": "Agent",
+            "cd": "Code",
             "address": "Address",
             "assigned_cards": "Assigned cards",
             "search": "Search agents",
@@ -1033,6 +1034,9 @@
             "agent_name_required": "Agent name is required.",
             "agent_name_unique": "This agent name is already in use.",
             "agent_name_max": "Agent name must not exceed 50 characters.",
+            "agent_cd_required": "CD is required.",
+            "agent_cd_invalid": "CD must be an integer from 0 to 99.",
+            "agent_cd_unique": "This CD is already taken.",
             "agent_address_required": "Agent address is required.",
             "agent_address_max": "Agent address must not exceed 255 characters.",
             "amounts_required": "Select at least one denomination.",
