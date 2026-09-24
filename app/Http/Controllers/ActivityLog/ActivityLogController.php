@@ -27,6 +27,7 @@ class ActivityLogController extends Controller
             'logs' => $logs,
             'filters' => $filters,
             'filterOptions' => [
+                'admins' => Admin::query()->orderBy('username')->pluck('username')->all(),
                 'event' => $this->distinctValues('event'),
                 'log' => $this->distinctValues('log_name'),
             ],

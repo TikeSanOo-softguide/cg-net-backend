@@ -8,7 +8,7 @@ import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/hooks/useTranslation';
 import { SquareImageUpload } from '@/components/ui/square-image-upload';
-
+import { PACKAGE_IMAGE_WIDTH, PACKAGE_IMAGE_HEIGHT } from '@/lib/package-validation';
 export type ReferenceFormKind = 'network' | 'speed' | 'term' | 'addon';
 
 export type ReferenceFormRow = {
@@ -85,12 +85,12 @@ const emptyValues = (kind: ReferenceFormKind): ReferenceFormValues => {
 
         case 'speed':
             return {
-                mbps: '',
+                mbps: 0,
             };
 
         case 'term':
             return {
-                months: '',
+                months: 0,
             };
 
         case 'addon':
@@ -98,7 +98,7 @@ const emptyValues = (kind: ReferenceFormKind): ReferenceFormValues => {
                 name_en: '',
                 name_zh: '',
                 name_my: '',
-                price: '',
+                price: 0,
                 image_url: null,
             };
     }
@@ -180,6 +180,10 @@ const getValidationError = (
         return validationKey('max');
     }
 
+    if (error.includes('50')) {
+        return t(`packages.validation.network_${field}_max`);
+    }
+
     if (error.includes('100')) {
         return validationKey('max');
     }
@@ -195,6 +199,18 @@ const getValidationError = (
 
         if (error.includes('image') || error.includes('file')) {
             return validationKey('invalid_type');
+        }
+    }
+
+    if (field === 'price') {
+        if (error.includes('9999999999') || error.includes('kilobytes')) {
+            return validationKey('max');
+        }
+    }
+
+    if (field === 'month' || field === 'mbps') {
+        if (error.includes('999') || error.includes('kilobytes')) {
+            return validationKey('max');
         }
     }
 
@@ -423,7 +439,7 @@ function ReferenceFormDialogBody({
                             type="number"
                             value={String(form.data.mbps ?? '')}
                             onKeyDown={(event) => {
-                                if (event.key === '-') {
+                                if (['e', 'E', '+', '-'].includes(event.key)) {
                                     event.preventDefault();
                                 }
                             }}
@@ -459,7 +475,7 @@ function ReferenceFormDialogBody({
                             type="number"
                             value={String(form.data.months ?? '')}
                             onKeyDown={(event) => {
-                                if (event.key === '-') {
+                                if (['e', 'E', '+', '-'].includes(event.key)) {
                                     event.preventDefault();
                                 }
                             }}
@@ -482,140 +498,147 @@ function ReferenceFormDialogBody({
                 {kind === 'addon' ? (
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <FormField
-                                label={t('common.name_en')}
-                                htmlFor="addon-name-en"
-                                error={
-                                    getValidationError(form.errors.name_en, 'name_en', t) ??
-                                    (touched.name_en
-                                        ? validateName(String(form.data.name_en ?? ''), 'name_en', t)
-                                        : undefined)
-                                }
-                            >
-                                <Input
-                                    id="addon-name-en"
-                                    value={String(form.data.name_en ?? '')}
-                                    onChange={(event) => {
-                                        setTouched((prev) => ({
-                                            ...prev,
-                                            name_en: true,
-                                        }));
-                                        form.setData('name_en', event.target.value);
-                                        form.clearErrors('name_en');
-                                    }}
-                                    placeholder={t('packages.name_en_placeholder')}
-                                />
-                            </FormField>
-
-                            <FormField
-                                label={t('common.name_zh')}
-                                htmlFor="addon-name-zh"
-                                error={
-                                    getValidationError(form.errors.name_zh, 'name_zh', t) ??
-                                    (touched.name_zh
-                                        ? validateName(String(form.data.name_zh ?? ''), 'name_zh', t)
-                                        : undefined)
-                                }
-                            >
-                                <Input
-                                    id="addon-name-zh"
-                                    value={String(form.data.name_zh ?? '')}
-                                    onChange={(event) => {
-                                        setTouched((prev) => ({
-                                            ...prev,
-                                            name_zh: true,
-                                        }));
-                                        form.setData('name_zh', event.target.value);
-                                        form.clearErrors('name_zh');
-                                    }}
-                                    placeholder={t('packages.name_zh_placeholder')}
-                                />
-                            </FormField>
-                        </div>
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <FormField
-                                label={t('common.name_my')}
-                                htmlFor="addon-name-my"
-                                error={
-                                    getValidationError(form.errors.name_my, 'name_my', t) ??
-                                    (touched.name_my
-                                        ? validateName(String(form.data.name_my ?? ''), 'name_my', t)
-                                        : undefined)
-                                }
-                            >
-                                <Input
-                                    id="addon-name-my"
-                                    value={String(form.data.name_my ?? '')}
-                                    onChange={(event) => {
-                                        setTouched((prev) => ({
-                                            ...prev,
-                                            name_my: true,
-                                        }));
-                                        form.setData('name_my', event.target.value);
-                                        form.clearErrors('name_my');
-                                    }}
-                                    placeholder={t('packages.name_my_placeholder')}
-                                />
-                            </FormField>
-
-                            <FormField
-                                label={t('packages.price')}
-                                htmlFor="addon-price"
-                                error={
-                                    getValidationError(form.errors.price, 'price', t) ??
-                                    (touched.price
-                                        ? validateDigitNumber(String(form.data.price ?? ''), 'price', t)
-                                        : undefined)
-                                }
-                            >
-                                <Input
-                                    id="addon-price"
-                                    type="number"
-                                    value={String(form.data.price ?? '')}
-                                    onKeyDown={(event) => {
-                                        if (event.key === '-') {
-                                            event.preventDefault();
-                                        }
-                                    }}
-                                    onChange={(event) => {
-                                        const value = event.target.value;
-
-                                        if (value === '' || Number(value) >= 0) {
+                            <div>
+                                <FormField
+                                    label={t('common.name_en')}
+                                    htmlFor="addon-name-en"
+                                    className="py-2"
+                                    error={
+                                        getValidationError(form.errors.name_en, 'name_en', t) ??
+                                        (touched.name_en
+                                            ? validateName(String(form.data.name_en ?? ''), 'name_en', t)
+                                            : undefined)
+                                    }
+                                >
+                                    <Input
+                                        id="addon-name-en"
+                                        value={String(form.data.name_en ?? '')}
+                                        onChange={(event) => {
                                             setTouched((prev) => ({
                                                 ...prev,
-                                                price: true,
+                                                name_en: true,
                                             }));
-                                            form.setData('price', Number(value));
-                                            form.clearErrors('price');
-                                        }
-                                    }}
-                                    placeholder={t('packages.price_placeholder')}
-                                />
-                            </FormField>
-                        </div>
-                        <FormField
-                            label={t('cms.image')}
-                            htmlFor="addon-image"
-                            error={getValidationError(form.errors.image_url, 'image_url', t)}
-                        >
-                            <SquareImageUpload
-                                id="addon-image"
-                                width={520}
-                                height={150}
-                                value={image}
-                                existingUrl={item?.image_url ?? null}
-                                onChange={(file) => {
-                                    setImage(file);
+                                            form.setData('name_en', event.target.value);
+                                            form.clearErrors('name_en');
+                                        }}
+                                        placeholder={t('packages.name_en_placeholder')}
+                                    />
+                                </FormField>
 
-                                    if (file) {
-                                        form.setData('image_url', file);
-                                    } else {
-                                        form.setData('image_url', null);
+                                <FormField
+                                    label={t('common.name_zh')}
+                                    htmlFor="addon-name-zh"
+                                    className="py-2"
+                                    error={
+                                        getValidationError(form.errors.name_zh, 'name_zh', t) ??
+                                        (touched.name_zh
+                                            ? validateName(String(form.data.name_zh ?? ''), 'name_zh', t)
+                                            : undefined)
                                     }
-                                    form.clearErrors('image_url');
-                                }}
-                            />
-                        </FormField>
+                                >
+                                    <Input
+                                        id="addon-name-zh"
+                                        value={String(form.data.name_zh ?? '')}
+                                        onChange={(event) => {
+                                            setTouched((prev) => ({
+                                                ...prev,
+                                                name_zh: true,
+                                            }));
+                                            form.setData('name_zh', event.target.value);
+                                            form.clearErrors('name_zh');
+                                        }}
+                                        placeholder={t('packages.name_zh_placeholder')}
+                                    />
+                                </FormField>
+                                <FormField
+                                    label={t('common.name_my')}
+                                    htmlFor="addon-name-my"
+                                    className="py-2"
+                                    error={
+                                        getValidationError(form.errors.name_my, 'name_my', t) ??
+                                        (touched.name_my
+                                            ? validateName(String(form.data.name_my ?? ''), 'name_my', t)
+                                            : undefined)
+                                    }
+                                >
+                                    <Input
+                                        id="addon-name-my"
+                                        value={String(form.data.name_my ?? '')}
+                                        className="py-2"
+                                        onChange={(event) => {
+                                            setTouched((prev) => ({
+                                                ...prev,
+                                                name_my: true,
+                                            }));
+                                            form.setData('name_my', event.target.value);
+                                            form.clearErrors('name_my');
+                                        }}
+                                        placeholder={t('packages.name_my_placeholder')}
+                                    />
+                                </FormField>
+
+                                <FormField
+                                    label={t('packages.price')}
+                                    htmlFor="addon-price"
+                                    className="py-2"
+                                    error={
+                                        getValidationError(form.errors.price, 'price', t) ??
+                                        (touched.price
+                                            ? validateDigitNumber(String(form.data.price ?? ''), 'price', t)
+                                            : undefined)
+                                    }
+                                >
+                                    <Input
+                                        id="addon-price"
+                                        type="number"
+                                        value={String(form.data.price ?? '')}
+                                        onKeyDown={(event) => {
+                                            if (['e', 'E', '+', '-'].includes(event.key)) {
+                                                event.preventDefault();
+                                            }
+                                        }}
+                                        onChange={(event) => {
+                                            const value = event.target.value;
+
+                                            if (value === '' || Number(value) >= 0) {
+                                                setTouched((prev) => ({
+                                                    ...prev,
+                                                    price: true,
+                                                }));
+                                                form.setData('price', Number(value));
+                                                form.clearErrors('price');
+                                            }
+                                        }}
+                                        placeholder={t('packages.price_placeholder')}
+                                    />
+                                </FormField>
+                            </div>
+                            <div>
+                                <FormField
+                                    label={t('cms.image')}
+                                    htmlFor="addon-image"
+                                    error={getValidationError(form.errors.image_url, 'image_url', t)}
+                                >
+                                    <SquareImageUpload
+                                        id="addon-image"
+                                        width={PACKAGE_IMAGE_WIDTH}
+                                        height={PACKAGE_IMAGE_HEIGHT}
+                                        value={image}
+                                        existingUrl={item?.image_url ?? null}
+                                        onChange={(file) => {
+                                            setImage(file);
+
+                                            if (file) {
+                                                form.setData('image_url', file);
+                                            } else {
+                                                form.setData('image_url', null);
+                                            }
+                                            form.clearErrors('image_url');
+                                        }}
+                                    />
+                                </FormField>
+                            </div>
+                        </div>
                     </div>
                 ) : null}
             </div>

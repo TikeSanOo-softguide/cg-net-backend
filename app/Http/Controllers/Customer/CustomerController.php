@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Customer;
 
-use App\Enums\WalletTransactionType;
-use App\Enums\WalletTransactionStatus;
 use App\Enums\UserStatus;
+use App\Enums\WalletTransactionStatus;
+use App\Enums\WalletTransactionType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\BindBroadbandAccountRequest;
 use App\Http\Requests\Customer\CustomerData;
@@ -13,7 +13,7 @@ use App\Http\Requests\Customer\UpdateCustomerRequest;
 use App\Http\Requests\Customer\UpdateCustomerStatusRequest;
 use App\Models\BroadbandAccount;
 use App\Models\User;
-use App\Models\WalletTransaction;
+use App\Services\TransactionService;
 use App\Support\PackageLabel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -88,6 +88,8 @@ class CustomerController extends Controller
                 ];
             });
 
+        session()->put('customer.return_to', $request->fullUrl());
+
         return Inertia::render('Customer/Index', [
             'customers' => $customers,
             'filters' => [
@@ -129,7 +131,7 @@ class CustomerController extends Controller
         return redirect()->route('customers.show', $customer)->with('success', 'customers.created');
     }
 
-    public function show(Request $request, User $customer): Response
+    public function show(Request $request, User $customer, TransactionService $transactions): Response
     {
         $locale = app()->getLocale();
 
@@ -199,65 +201,16 @@ class CustomerController extends Controller
             })
             ->collapse();
 
-        $transactionPage = null;
-        $transactionStatus = $request->string('status')->toString();
-        $transactionDirection = $request->string('direction')->toString();
-        $transactionFrom = $request->date('from')?->toDateString();
-        $transactionTo = $request->date('to')?->toDateString();
+        $transactionFilters = [...$transactions->filters($request), 'customer_id' => $customer->id];
+        $transactionStatus = $transactionFilters['status'];
+        $transactionDirection = $transactionFilters['direction'];
+        $transactionFrom = $transactionFilters['from'];
+        $transactionTo = $transactionFilters['to'];
 
-        if ($request->string('transactions')->toString() === 'all') {
-            $transactionPage = $customer->wallet
-                ?->transactions()
-                ->with([
-                    'wallet.user:id,name,phone',
-                    'walletEntry',
-                    'walletTransfer',
-                    'billPayment',
-                    'packageOrder',
-                    'topUpCard',
-                    'reversalOf:id,transaction_no',
-                ])
-                ->when(
-                    in_array($transactionStatus, array_column(WalletTransactionStatus::cases(), 'value'), true),
-                    fn($query) => $query->where('status', $transactionStatus),
-                )
-                ->when($transactionFrom, fn($query) => $query->whereDate('created_at', '>=', $transactionFrom))
-                ->when($transactionTo, fn($query) => $query->whereDate('created_at', '<=', $transactionTo))
-                ->when(in_array($transactionDirection, ['credit', 'debit'], true), function ($query) use (
-                    $transactionDirection,
-                ): void {
-                    $query->where(function ($query) use ($transactionDirection): void {
-                        $query
-                            ->where(function ($query) use ($transactionDirection): void {
-                                $query
-                                    ->where('type', '!=', WalletTransactionType::Transfer->value)
-                                    ->whereHas(
-                                        'walletEntry',
-                                        fn($entry) => $entry->where('type', $transactionDirection),
-                                    );
-                            })
-                            ->orWhere(function ($query) use ($transactionDirection): void {
-                                $query
-                                    ->where('type', WalletTransactionType::Transfer->value)
-                                    ->whereHas('walletTransfer', function ($transfer) use (
-                                        $transactionDirection,
-                                    ): void {
-                                        $transfer->whereColumn(
-                                            'wallet_transactions.wallet_id',
-                                            'wallet_transfers.' .
-                                                ($transactionDirection === 'credit'
-                                                    ? 'to_wallet_id'
-                                                    : 'from_wallet_id'),
-                                        );
-                                    });
-                            });
-                    });
-                })
-                ->latest()
-                ->paginate(15, ['*'], 'transaction_page')
-                ->withQueryString()
-                ->through(fn(WalletTransaction $transaction) => $this->transactionPayload($transaction));
-        }
+        $transactionPage =
+            $request->string('transactions')->toString() === 'all'
+                ? $transactions->paginate($transactionFilters, 'transaction_page')
+                : null;
 
         $packageRows = $customer->customerPackages->sortByDesc('start_date')->values()->map(
             fn($row) => [
@@ -274,6 +227,8 @@ class CustomerController extends Controller
                 'status' => $row->status->value,
             ],
         );
+
+        $returnTo = session('customer.return_to', route('customers.index'));
 
         return Inertia::render('Customer/Show', [
             'customer' => $this->customerPayload($customer),
@@ -311,8 +266,9 @@ class CustomerController extends Controller
             'transactionPage' => $transactionPage,
             'transactionFilters' => [
                 'customer_id' => $customer->id,
-                'search' => '',
+                'search' => $transactionFilters['search'],
                 'actor_type' => '',
+                'type' => $transactionFilters['type'],
                 'status' => $transactionStatus,
                 'direction' => $transactionDirection,
                 'from' => $transactionFrom ?? '',
@@ -320,9 +276,11 @@ class CustomerController extends Controller
             ],
             'transactionFilterOptions' => [
                 'actor_types' => [],
+                'types' => array_column(WalletTransactionType::cases(), 'value'),
                 'statuses' => array_column(WalletTransactionStatus::cases(), 'value'),
             ],
             'topUpHistory' => $topUpHistory,
+            'return_to' => $returnTo,
         ]);
     }
 
@@ -488,62 +446,6 @@ class CustomerController extends Controller
             'phone' => $customer->phone,
             'status' => $customer->status->value,
             'created_at' => $customer->created_at?->toDateString(),
-        ];
-    }
-
-    private function transactionPayload(WalletTransaction $transaction): array
-    {
-        $direction =
-            $transaction->type === WalletTransactionType::Transfer
-                ? match (true) {
-                    $transaction->walletTransfer?->from_wallet_id === $transaction->wallet_id => 'debit',
-                    $transaction->walletTransfer?->to_wallet_id === $transaction->wallet_id => 'credit',
-                    default => null,
-                }
-                : $transaction->walletEntry?->type?->value;
-
-        return [
-            'id' => $transaction->id,
-            'transaction_no' => $transaction->transaction_no,
-            'type' => $transaction->type->value,
-            'status' => $transaction->status->value,
-            'direction' => $direction,
-            'amount' => number_format((float) $transaction->amount, 0, '.', ''),
-            'created_at' => $transaction->created_at?->toISOString(),
-            'wallet_id' => $transaction->wallet_id,
-            'customer' => $transaction->wallet?->user
-                ? [
-                    'id' => $transaction->wallet->user->id,
-                    'name' => $transaction->wallet->user->name,
-                    'phone' => $transaction->wallet->user->phone,
-                ]
-                : null,
-            'actor_type' => $transaction->actor_type?->value,
-            'actor_id' => $transaction->actor_id,
-            'ip_address' => $transaction->ip_address,
-            'user_agent' => $transaction->user_agent,
-            'idempotency_key' => $transaction->idempotency_key,
-            'reversal_of' => $transaction->reversalOf?->transaction_no,
-            'wallet_entry' => $transaction->walletEntry
-                ? [
-                    'type' => $transaction->walletEntry->type->value,
-                    'balance_before' => $transaction->walletEntry->balance_before,
-                    'balance_after' => $transaction->walletEntry->balance_after,
-                ]
-                : null,
-            'wallet_transfer' => $transaction->walletTransfer
-                ? [
-                    'from_wallet_id' => $transaction->walletTransfer->from_wallet_id,
-                    'to_wallet_id' => $transaction->walletTransfer->to_wallet_id,
-                    'amount' => $transaction->walletTransfer->amount,
-                    'note' => $transaction->walletTransfer->note,
-                ]
-                : null,
-            'related' => [
-                'bill_payment_id' => $transaction->billPayment?->id,
-                'package_order_id' => $transaction->packageOrder?->id,
-                'top_up_card_id' => $transaction->topUpCard?->id,
-            ],
         ];
     }
 }

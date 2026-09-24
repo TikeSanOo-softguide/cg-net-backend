@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\ServiceRequest\ChangePasswordRequestController;
 use App\Http\Controllers\Api\ServiceRequest\ChangePlanRequestController;
 use App\Http\Controllers\Api\ServiceRequest\FailureReportController;
 use App\Http\Controllers\Api\ServiceRequest\RelocationRequestController;
+use App\Http\Controllers\Api\Settings\AppVersionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -64,6 +65,7 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::get('/states/{stateId}/regions', [RegionController::class, 'regions']);
     Route::get('/regions/{regionId}/areas', [RegionController::class, 'areas']);
     Route::get('/announcements', [AnnouncementController::class, 'index']);
+    Route::get('/app-version', [AppVersionController::class, 'index']);
 });
 
 Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {

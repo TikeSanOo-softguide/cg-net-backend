@@ -30,22 +30,13 @@ class AddonController extends Controller
             'price' => $data['price'],
             'image_url' => $data['image_url'],
         ]);
-        activity('addon')
-            ->causedBy($request->user())
-            ->performedOn($addon)
-            ->event('created')
-            ->log('addon_created');
+        activity('addon')->causedBy($request->user())->performedOn($addon)->event('created')->log('addon_created');
 
-        return redirect()
-            ->route('packages.index')
-            ->with('success', 'packages.addons.created');
+        return redirect()->route('packages.index')->with('success', 'packages.addons.created');
     }
 
-    public function update(
-        UpdateAddonsRequest $request,
-        Addon $addon
-    ): RedirectResponse {
-
+    public function update(UpdateAddonsRequest $request, Addon $addon): RedirectResponse
+    {
         $data = $request->safe()->except('image_url');
 
         if ($request->hasFile('image_url')) {
@@ -65,25 +56,15 @@ class AddonController extends Controller
             'image_url' => $data['image_url'],
         ]);
 
-        activity('addon')
-            ->causedBy($request->user())
-            ->performedOn($addon)
-            ->event('updated')
-            ->log('addon_updated');
+        activity('addon')->causedBy($request->user())->performedOn($addon)->event('updated')->log('addon_updated');
 
-        return redirect()
-            ->route('packages.index')
-            ->with('success', 'packages.addons.updated');
+        return redirect()->route('packages.index')->with('success', 'packages.addons.updated');
     }
 
-    public function destroy(
-        Request $request,
-        Addon $addon
-    ): RedirectResponse {
+    public function destroy(Request $request, Addon $addon): RedirectResponse
+    {
         $addon->delete();
-        return redirect()
-            ->route('packages.index')
-            ->with('success', 'packages.addons.deleted');
+        return redirect()->route('packages.index')->with('success', 'packages.addons.deleted');
     }
 
     public function bulkDestroy(Request $request): RedirectResponse

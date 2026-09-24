@@ -21,6 +21,7 @@ return new class extends Migration {
             $table->integer('sort_order')->default(0);
             $table->timestamps();
             $table->softDeletes();
+            $table->unique(['network_id', 'speed_id', 'term_id', 'deleted_at']);
         });
     }
 

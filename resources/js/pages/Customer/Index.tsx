@@ -188,7 +188,7 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                             cell: (row) => (
                                 <span className="flex min-w-0 items-center gap-2">
                                     <StaffListAvatar username={row.name} />
-                                    <span className="truncate text-[13px] leading-[1.6]">{row.name}</span>
+                                    <span className="truncate text-[13px] leading-[1.7]">{row.name}</span>
                                 </span>
                             ),
                         },

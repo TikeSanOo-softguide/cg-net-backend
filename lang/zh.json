@@ -85,6 +85,10 @@
         "staff_accounts": "员工账户",
         "roles": "角色",
         "permissions_matrix": "权限矩阵",
+        "logs": "日志",
+        "security_logs": "安全日志",
+        "admin_activity_logs": "管理员活动日志",
+        "user_logs": "用户日志",
         "activity_logs": "操作日志",
         "reports": "报表与分析",
         "settings": "设置",
@@ -102,6 +106,10 @@
         "invoices_description": "搜索、筛选并管理客户发票。",
         "payment_gateway_logs_description": "查看支付网关请求、响应和错误。",
         "transactions_description": "搜索、筛选并查看账单交易。",
+        "logs_description": "查看安全、管理员和用户活动日志。",
+        "security_logs_description": "查看安全事件和访问活动。",
+        "admin_activity_logs_description": "查看管理员操作和系统审计日志。",
+        "user_logs_description": "查看用户活动和账户事件。",
         "top_up_card_batch_description": "生成并管理充值卡批次。",
         "top_up_card_agents_description": "管理代理商并分配充值卡。",
         "top_up_card_agent_assign_description": "将导入的充值卡分配给代理商。",
@@ -354,7 +362,8 @@
             "transfer_note": "转账备注",
             "bill_payment_id": "账单支付 ID",
             "package_order_id": "套餐订单 ID",
-            "top_up_card_id": "充值卡 ID"
+            "top_up_card_id": "充值卡 ID",
+            "top_up_card_serial_no": "充值卡序列号"
         }
     },
     "customers": {
@@ -525,6 +534,11 @@
             "name_my_max": "缅甸文名称不得超过 50 个字符。",
             "name_zh_required": "中文名称为必填项。",
             "name_zh_max": "中文名称不得超过 50 个字符。",
+            "name_en_unique": "此英文名称已存在。",
+            "name_my_unique": "此缅甸语名称已存在。",
+            "name_zh_unique": "此中文名称已存在。",
+            "latitude_required": "纬度为必填项。",
+            "longitude_required": "经度为必填项。",
             "latitude_between": "纬度必须介于 -90 和 90 之间。",
             "latitude_decimal": "纬度最多只能有 7 位小数。",
             "longitude_between": "经度必须介于 -180 和 180 之间。",
@@ -918,9 +932,9 @@
             "serial_not_pending": "CSV 第 :line 行的序列号“:serial”已不再处于待处理状态。",
             "read_failed": "无法读取 CSV 文件。"
         },
-        "transaction_type": "交易类型",
-        "transaction_status": "交易状态",
-        "transaction_amount": "交易金额",
+        "transaction_no": "交易编号",
+        "from_date": "开始日期",
+        "to_date": "结束日期",
         "generate_title": "生成充值卡",
         "generate_description": "选择面额、设置有效期并生成充值卡。",
         "batch_title": "已生成批次",
@@ -1128,12 +1142,15 @@
             "name_en_required": "请输入英文名称。",
             "name_en_string": "英文名称必须是字符串。",
             "name_en_max": "英文名称不能超过 255 个字符。",
+            "name_en_unique": "该英文名称已存在。",
             "name_my_required": "请输入缅甸语名称。",
             "name_my_string": "缅甸语名称必须是字符串。",
             "name_my_max": "缅甸语名称不能超过 255 个字符。",
+            "name_my_unique": "该缅甸文名称已存在。",
             "name_zh_required": "请输入中文名称。",
             "name_zh_string": "中文名称必须是字符串。",
             "name_zh_max": "中文名称不能超过 255 个字符。",
+            "name_zh_unique": "该中文名称已存在。",
             "network_name_en_required": "请输入英文名称。",
             "network_name_en_string": "英文名称必须是字符串。",
             "network_name_en_max": "英文名称不能超过 50 个字符。",
@@ -1169,7 +1186,6 @@
         "new_location": "新位置",
         "detail": "详情",
         "search": "按应用用户姓名、账号搜索",
-        "copy_phone": "复制电话号码",
         "copy_current_location": "复制当前位置",
         "copy_new_location": "复制新位置"
     },
@@ -1206,6 +1222,8 @@
         "requested_packages": "申请的套餐",
         "requested_date": "申请日期",
         "customer_information": "客户信息",
-        "broadband_account": "宽带账户"
+        "broadband_account": "宽带账户",
+        "copy_phone": "复制电话号码",
+        "copy_address": "复制地址"
     }
 }

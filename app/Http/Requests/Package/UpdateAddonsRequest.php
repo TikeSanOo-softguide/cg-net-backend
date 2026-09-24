@@ -5,6 +5,7 @@ namespace App\Http\Requests\Package;
 use App\Http\Requests\Cms\CmsRules;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateAddonsRequest extends FormRequest
 {
@@ -24,9 +25,26 @@ class UpdateAddonsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name_en' => ['required', 'string', 'max:255'],
-            'name_zh' => ['required', 'string', 'max:255'],
-            'name_my' => ['required', 'string', 'max:255'],
+            'name_en' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('addons', 'name_en')->withoutTrashed()->ignore($this->route('addon')->id),
+            ],
+
+            'name_zh' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('addons', 'name_zh')->withoutTrashed()->ignore($this->route('addon')->id),
+            ],
+
+            'name_my' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('addons', 'name_my')->withoutTrashed()->ignore($this->route('addon')->id),
+            ],
             'price' => ['required', 'numeric', 'min:0'],
             'image_url' => CmsRules::image(false),
         ];

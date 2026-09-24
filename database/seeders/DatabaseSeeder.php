@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Enums\BillPaymentStatus;
 use App\Enums\ChangePlanStatus;
 use App\Enums\CustomerPackageStatus;
-use App\Enums\InvoiceStatus;
 use App\Enums\RequestStatus;
 use App\Enums\UserStatus;
 use App\Enums\WalletActorType;
@@ -26,12 +25,10 @@ use App\Models\CpeDevice;
 use App\Models\CustomerPackage;
 use App\Models\Gallery;
 use App\Models\InstallationApplication;
-use App\Models\Invoice;
 use App\Models\NotificationCustom;
 use App\Models\Package;
 use App\Models\RelocationRequest;
 use App\Models\Setting;
-use App\Models\TopUpCard;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
@@ -58,9 +55,7 @@ class DatabaseSeeder extends Seeder
         $packages = $this->seedPackages();
         $users = $this->seedCustomers($packages);
         $this->seedAgents();
-        $this->seedTopUpCards();
         $this->seedServiceRequests($users, $areas, $packages);
-        $this->seedWalletSystem();
         $this->seedFailureReports();
         $this->seedBilling($users);
         $this->seedNotifications();
@@ -68,6 +63,9 @@ class DatabaseSeeder extends Seeder
         $this->seedCms();
         $this->seedPermissions($admins);
         $this->seedAnnouncements();
+        $this->seedTopUpCards();
+        $this->seedWalletSystem();
+        $this->seedChatConversations();
 
         Setting::factory()->create([
             'key' => 'support_hotline',
@@ -135,6 +133,11 @@ class DatabaseSeeder extends Seeder
     private function seedAgents(): void
     {
         (new AgentSeeder())->run();
+    }
+
+    private function seedChatConversations(): void
+    {
+        (new ChatConversationSeeder())->run();
     }
 
     private function seedAnnouncements(): void
@@ -281,30 +284,30 @@ class DatabaseSeeder extends Seeder
             $condition = $index % 3;
             $status =
                 $index < 10
-                    ? ChangePlanStatus::UnderReview
-                    : ($index < 17
-                        ? ChangePlanStatus::Approved
-                        : ChangePlanStatus::Cancelled);
+                ? ChangePlanStatus::UnderReview
+                : ($index < 17
+                    ? ChangePlanStatus::Approved
+                    : ChangePlanStatus::Cancelled);
 
             $newPackage = match ($condition) {
                 0 => $currentPackage?->speed
                     ? Package::query()
-                        ->whereKeyNot($currentPackageId)
-                        ->whereHas('speed', fn($query) => $query->where('mbps', '<', $currentPackage->speed->mbps))
-                        ->first()
+                    ->whereKeyNot($currentPackageId)
+                    ->whereHas('speed', fn($query) => $query->where('mbps', '<', $currentPackage->speed->mbps))
+                    ->first()
                     : null,
                 1 => $currentPackage?->speed
                     ? Package::query()
-                        ->whereKeyNot($currentPackageId)
-                        ->whereHas('speed', fn($query) => $query->where('mbps', '>', $currentPackage->speed->mbps))
-                        ->first()
+                    ->whereKeyNot($currentPackageId)
+                    ->whereHas('speed', fn($query) => $query->where('mbps', '>', $currentPackage->speed->mbps))
+                    ->first()
                     : null,
                 default => $currentPackage?->speed
                     ? Package::query()
-                        ->whereKeyNot($currentPackageId)
-                        ->where('network_id', '!=', $currentPackage->network_id)
-                        ->whereHas('speed', fn($query) => $query->where('mbps', $currentPackage->speed->mbps))
-                        ->first()
+                    ->whereKeyNot($currentPackageId)
+                    ->where('network_id', '!=', $currentPackage->network_id)
+                    ->whereHas('speed', fn($query) => $query->where('mbps', $currentPackage->speed->mbps))
+                    ->first()
                     : null,
             };
 

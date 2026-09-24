@@ -20,6 +20,9 @@ type ContactFormProps = {
 export function ContactForm({ form, onSubmit, onCancel, mode = 'create' }: ContactFormProps) {
     const { t } = useTranslation();
     const [submitted, setSubmitted] = useState(false);
+    const [touched, setTouched] = useState<Record<keyof ContactFormValues, boolean>>({
+        contact_point: false,
+    });
 
     const handleSubmit = (event: FormEvent) => {
         event.preventDefault();
@@ -42,11 +45,13 @@ export function ContactForm({ form, onSubmit, onCancel, mode = 'create' }: Conta
     };
 
     const contactPointError =
-        submitted && !form.data.contact_point.trim()
-            ? t('cms.contact.validation.contact_point_required')
-            : form.data.contact_point.length > 255
-              ? t('cms.contact.validation.contact_point_max')
-              : form.errors.contact_point;
+        submitted || touched.contact_point
+            ? !form.data.contact_point.trim()
+                ? t('cms.contact.validation.contact_point_required')
+                : form.data.contact_point.length > 255
+                  ? t('cms.contact.validation.contact_point_max')
+                  : form.errors.contact_point
+            : form.errors.contact_point;
 
     return (
         <CmsFormShell onSubmit={handleSubmit} onCancel={onCancel} processing={form.processing} mode={mode}>
@@ -62,7 +67,14 @@ export function ContactForm({ form, onSubmit, onCancel, mode = 'create' }: Conta
                     id="contact_point"
                     name="contact_point"
                     value={form.data.contact_point}
-                    onChange={(event) => handleChange(event.target.value)}
+                    onChange={(event) => {
+                        setTouched((prev) => ({
+                            ...prev,
+                            contact_point: true,
+                        }));
+
+                        handleChange(event.target.value);
+                    }}
                 />
             </FormField>
         </CmsFormShell>

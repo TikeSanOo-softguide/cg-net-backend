@@ -28,7 +28,9 @@ export function validateGalleryField(
         case 'label_en':
         case 'label_my':
         case 'label_zh': {
-            if (typeof value !== 'string') break;
+            if (typeof value !== 'string') {
+                break;
+            }
 
             const trimmed = value.trim();
 
@@ -70,6 +72,16 @@ export function validateGallery(
     hasExistingImage = false,
 ): Partial<Record<keyof GalleryFormValues, string>> {
     const errors: Partial<Record<keyof GalleryFormValues, string>> = {};
+
+    const labelFields: Array<keyof GalleryFormValues> = ['label_en', 'label_my', 'label_zh'];
+
+    labelFields.forEach((field) => {
+        const error = validateGalleryField(field, data, t, mode, hasExistingImage);
+
+        if (error) {
+            errors[field] = error;
+        }
+    });
 
     const imageError = validateGalleryField('image', data, t, mode, hasExistingImage);
 

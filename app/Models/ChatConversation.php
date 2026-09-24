@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 #[Fillable([
     'user_id',
     'agent_id',
+    'current_step_id',
     'status',
 ])]
 class ChatConversation extends Model
@@ -41,5 +42,19 @@ class ChatConversation extends Model
     public function messages(): HasMany
     {
         return $this->hasMany(ChatMessage::class, 'conversation_id');
+    }
+
+    public function currentStep(): BelongsTo
+    {
+        return $this->belongsTo(
+            ChatFlowStep::class,
+            'current_step_id'
+        );
+    }
+
+    public function latestMessage()
+    {
+        return $this->hasOne(ChatMessage::class, 'conversation_id')
+            ->latestOfMany();
     }
 }

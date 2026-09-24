@@ -7,7 +7,7 @@ import type { Paginated } from '@/components/Pagination';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { CardHistoryFilters, defaultExpiryDate, type TopUpCardRow } from '@/lib/top-up-cards';
-import { Ban, CalendarX, ClipboardCheck, CreditCard, TicketIcon } from 'lucide-react';
+import { Ban, CalendarX, ClipboardCheck, Clock3, CreditCard, TicketIcon } from 'lucide-react';
 import { StatCard } from '@/components/StatCard';
 import { TopUpCardListTable } from '@/components/top-up-cards/TopUpCardListTable';
 
@@ -16,7 +16,6 @@ type Props = {
     generated: TopUpCardRow[];
     presets: number[];
     amounts: string[];
-
     batches: {
         id: number;
         batch_no: string;
@@ -24,6 +23,7 @@ type Props = {
     filters: CardHistoryFilters;
     stats: {
         total: number;
+        pending: number;
         active: number;
         used: number;
         expired: number;
@@ -124,6 +124,12 @@ export default function CardHistory({ cards, batches, generated = [], presets, a
             icon: CreditCard,
         },
         {
+            key: 'cards.pending',
+            title: t('status.pending'),
+            value: stats.active.toLocaleString(),
+            icon: Clock3,
+        },
+        {
             key: 'cards.active',
             title: t('status.active'),
             value: stats.active.toLocaleString(),
@@ -161,10 +167,10 @@ export default function CardHistory({ cards, batches, generated = [], presets, a
 
     return (
         <>
-            <Head title={t('menu.top_up_card_batch')} />
+            <Head title={t('menu.card_history')} />
             <PageContent>
                 <PageHeader />
-                <StatCard items={cardList} className="xl:grid-cols-5" />
+                <StatCard items={cardList} className="xl:grid-cols-6" />
                 <div className="print:hidden">
                     <TopUpCardListTable
                         cards={cards}

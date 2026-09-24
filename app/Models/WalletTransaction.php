@@ -74,6 +74,6 @@ class WalletTransaction extends Model
 
     public function topUpCard(): HasOne
     {
-        return $this->hasOne(TopUpCard::class);
+        return $this->hasOne(TopUpCard::class, 'wallet_transaction_id')->withTrashed();
     }
 }

@@ -16,6 +16,7 @@ import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatTopUpAmount, type TopUpCardFilters, type TopUpCardRow } from '@/lib/top-up-cards';
 import { formatDate } from '@/lib/utils';
+import { CopyValueButton } from '../CopyValueButton';
 
 type TopUpCardTableProps = {
     cards: Paginated<TopUpCardRow>;
@@ -277,30 +278,16 @@ export function TopUpCardTable({
                                     <dl className="grid grid-cols-1 gap-x-6 gap-y-4 text-[13px] sm:grid-cols-3">
                                         <div className="space-y-1">
                                             <dt className="text-muted-foreground">
-                                                {t('top_up_cards.transaction_type')}
+                                                {t('top_up_cards.transaction_no')}
                                             </dt>
                                             <dd className="font-medium text-foreground">
-                                                {viewing.transaction_type ?? '—'}
-                                            </dd>
-                                        </div>
-
-                                        <div className="space-y-1">
-                                            <dt className="text-muted-foreground">
-                                                {t('top_up_cards.transaction_status')}
-                                            </dt>
-                                            <dd className="font-medium text-foreground">
-                                                {viewing.transaction_status ?? '—'}
-                                            </dd>
-                                        </div>
-
-                                        <div className="space-y-1">
-                                            <dt className="text-muted-foreground">
-                                                {t('top_up_cards.transaction_amount')}
-                                            </dt>
-                                            <dd className="font-medium text-foreground">
-                                                {viewing.transaction_amount !== null
-                                                    ? formatTopUpAmount(viewing.transaction_amount)
-                                                    : '—'}
+                                                {viewing.transaction_no ?? '—'}
+                                                {viewing.transaction_no && (
+                                                    <CopyValueButton
+                                                        value={viewing.transaction_no}
+                                                        label={t('top_up_cards.transaction_no')}
+                                                    />
+                                                )}
                                             </dd>
                                         </div>
                                     </dl>

@@ -377,7 +377,10 @@ export function DataTable<T>({
                                     <>
                                         {showDelete ? (
                                             <span className="inline-flex h-8 items-center rounded-[6px] bg-primary/12 px-2.5 text-[10px] font-semibold tabular-nums text-primary">
-                                                {t('common.selected_count').replace(':count', String(selectedIds.length))}
+                                                {t('common.selected_count').replace(
+                                                    ':count',
+                                                    String(selectedIds.length),
+                                                )}
                                             </span>
                                         ) : null}
                                         {bulkActions ?? (

@@ -21,8 +21,10 @@ return new class extends Migration
                 ->nullable()
                 ->constrained('chat_flow_steps')
                 ->nullOnDelete();
-            $table->string('language', 10)->nullable();
-            $table->enum('status', array_column(ChatConversationStatus::cases(), 'value'))->default(ChatConversationStatus::Open);
+            $table->enum(
+                'status',
+                array_column(ChatConversationStatus::cases(), 'value')
+            )->default(ChatConversationStatus::Open->value);
             $table->timestamps();
             $table->softDeletes();
         });

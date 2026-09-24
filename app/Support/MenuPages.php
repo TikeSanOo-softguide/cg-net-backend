@@ -13,6 +13,18 @@ final class MenuPages
     {
         return [
             [
+                'path' => '/logs/security',
+                'titleKey' => 'menu.security_logs',
+                'name' => 'logs.security',
+                'permission' => 'activity.view',
+            ],
+            [
+                'path' => '/logs/users',
+                'titleKey' => 'menu.user_logs',
+                'name' => 'logs.users',
+                'permission' => 'activity.view',
+            ],
+            [
                 'path' => '/cpe/inventory',
                 'titleKey' => 'menu.cpe_inventory',
                 'name' => 'cpe.inventory',
@@ -61,34 +73,10 @@ final class MenuPages
                 'permission' => 'notifications.view',
             ],
             [
-                'path' => '/support/conversations',
-                'titleKey' => 'menu.chat_conversations',
-                'name' => 'support.conversations',
-                'permission' => 'support.view',
-            ],
-            [
-                'path' => '/support/agents',
-                'titleKey' => 'menu.agent_assignment',
-                'name' => 'support.agents',
-                'permission' => 'support.view',
-            ],
-            [
-                'path' => '/support/quick-replies',
-                'titleKey' => 'menu.quick_reply_templates',
-                'name' => 'support.quick-replies',
-                'permission' => 'support.view',
-            ],
-            [
                 'path' => '/reports',
                 'titleKey' => 'menu.reports',
                 'name' => 'reports.index',
                 'permission' => 'reports.view',
-            ],
-            [
-                'path' => '/settings/app-version',
-                'titleKey' => 'menu.app_version',
-                'name' => 'settings.app-version',
-                'permission' => 'settings.view',
             ],
             [
                 'path' => '/settings/languages',

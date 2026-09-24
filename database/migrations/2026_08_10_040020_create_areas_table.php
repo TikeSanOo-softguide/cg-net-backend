@@ -13,8 +13,8 @@ return new class extends Migration {
             $table->string('name_zh', 50);
             $table->string('name_my', 50);
             $table->foreignId('region_id')->constrained('regions')->cascadeOnDelete();
-            $table->decimal('latitude', 10, 7)->nullable();
-            $table->decimal('longitude', 10, 7)->nullable();
+            $table->decimal('latitude', 10, 7);
+            $table->decimal('longitude', 10, 7);
             $table->timestamps();
             $table->softDeletes();
         });

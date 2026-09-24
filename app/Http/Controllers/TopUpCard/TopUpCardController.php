@@ -42,7 +42,7 @@ class TopUpCardController extends Controller
         $cards = TopUpCard::query()
             ->with('redeemedBy:id,name,phone')
             ->with('batch:id,batch_no,status')
-            ->with('walletTransaction:id,type,amount,status')
+            ->with('walletTransaction:id,transaction_no')
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where('serial_no', 'like', '%' . $search . '%');
             })
@@ -217,7 +217,7 @@ class TopUpCardController extends Controller
             ->get();
 
         $cards = TopUpCard::query()
-            ->with(['redeemedBy:id,name,phone', 'batch:id,batch_no,status', 'walletTransaction:id,type,amount,status'])
+            ->with(['redeemedBy:id,name,phone', 'batch:id,batch_no,status', 'walletTransaction:id,transaction_no'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where('serial_no', 'like', "%{$search}%");
             })
@@ -249,14 +249,11 @@ class TopUpCardController extends Controller
 
         return Inertia::render('TopUpCards/CardHistory', [
             'cards' => $cards,
-
             'generated' => $request->session()->get('top_up_card_export_batch', []),
-
             'presets' => self::Presets,
             'amounts' => $this->amountOptions(),
             'batches' => $batches,
             'stats' => $this->stats(),
-
             'filters' => [
                 'search' => $search,
                 'status' => $status,
@@ -294,10 +291,7 @@ class TopUpCardController extends Controller
             'batch_no' => $card->batch?->batch_no,
             'batch_status' => $card->batch?->status,
             'transaction_id' => $card->walletTransaction?->id,
-            'transaction_type' => $card->walletTransaction?->type,
-            'transaction_status' => $card->walletTransaction?->status,
-            'transaction_amount' =>
-                $card->walletTransaction?->amount !== null ? (int) $card->walletTransaction->amount : null,
+            'transaction_no' => $card->walletTransaction?->transaction_no,
         ];
     }
 
@@ -345,6 +339,7 @@ class TopUpCardController extends Controller
     {
         return [
             'total' => TopUpCard::query()->count(),
+            'pending' => TopUpCard::query()->where('status', TopUpCardStatus::Pending)->count(),
             'active' => TopUpCard::query()->where('status', TopUpCardStatus::Active)->count(),
             'used' => TopUpCard::query()->where('status', TopUpCardStatus::Used)->count(),
             'expired' => TopUpCard::query()->where('status', TopUpCardStatus::Expired)->count(),

@@ -24,8 +24,10 @@ use App\Http\Controllers\ServiceRequest\ChangePasswordRequestController;
 use App\Http\Controllers\ServiceRequest\ChangePlanRequestController;
 use App\Http\Controllers\ServiceRequest\FailureReportController;
 use App\Http\Controllers\ServiceRequest\RelocationRequestController;
+use App\Http\Controllers\Settings\AppVersionController;
 use App\Http\Controllers\Staff\RoleController;
 use App\Http\Controllers\Staff\StaffController;
+use App\Http\Controllers\Support\ChatConversations\ChatConversationsController;
 use App\Http\Controllers\Support\ChatFlows\ChatbotFlowsController;
 use App\Http\Controllers\TopUpCard\AgentController;
 use App\Http\Controllers\Support\QuickReplies\QuickRepliesController;
@@ -79,7 +81,16 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         ->middleware('can:customers.view')
         ->name('customers.show');
 
-    Route::get('/billing/transactions', [TransactionController::class, 'index'])->middleware('can:billing.view')->name('billing.transactions');
+    Route::prefix('billing')
+        ->name('billing.')
+        ->group(function () {
+            Route::get('/transactions', [TransactionController::class, 'index'])
+                ->middleware('can:billing.view')
+                ->name('transactions');
+            Route::get('/transactions/export', [TransactionController::class, 'export'])
+                ->middleware('can:billing.view')
+                ->name('transactions.export');
+        });
 
     Route::prefix('regions')
         ->name('regions.')
@@ -88,7 +99,6 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 ->middleware('can:regions.view')
                 ->name('index');
 
-            // States
             Route::post('/states', [RegionManagementController::class, 'storeState'])
                 ->middleware('can:regions.create')
                 ->name('states.store');
@@ -102,7 +112,6 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 ->middleware('can:regions.delete')
                 ->name('states.destroy');
 
-            // Regions
             Route::post('/regions', [RegionManagementController::class, 'storeRegion'])
                 ->middleware('can:regions.create')
                 ->name('regions.store');
@@ -116,7 +125,6 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 ->middleware('can:regions.delete')
                 ->name('regions.destroy');
 
-            // Areas
             Route::post('/areas', [RegionManagementController::class, 'storeArea'])
                 ->middleware('can:regions.create')
                 ->name('areas.store');
@@ -206,28 +214,33 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
     Route::prefix('support')
         ->name('support.')
         ->group(function () {
-            Route::prefix('chatbot-flows')
-                ->name('chatbot-flows.')
-                ->controller(ChatbotFlowsController::class)
+            Route::prefix('conversations')
+                ->name('conversations.')
                 ->group(function () {
-                    // Chatbot Flow page
-                    Route::get('/', 'index')->name('index');
+                    Route::get(
+                        '/',
+                        [ChatConversationsController::class, 'index']
+                    )->name('chat-conversations.index');
 
-                    // Steps
-                    Route::post('/steps', 'storeStep')->name('steps.store');
-                    Route::put('/steps/{step}', 'updateStep')->name('steps.update');
-                    Route::delete('/steps/{step}', 'destroyStep')->name('steps.destroy');
+                    Route::get(
+                        '/{conversation}',
+                        [ChatConversationsController::class, 'show']
+                    )->name('chat-conversations.show');
 
-                    // Options
-                    Route::post('/steps/{step}/options', 'storeOption')->name('options.store');
-                    Route::put('/steps/{step}/options/{option}', 'updateOption')->name('options.update');
-                    Route::delete('/steps/{step}/options/{option}', 'destroyOption')->name('options.destroy');
-
-                    // Create a new step from an option
                     Route::post(
-                        '/steps/{step}/options/create-step',
-                        'createStepFromOption'
-                    )->name('options.create-step');
+                        '/{conversation}/messages',
+                        [ChatConversationsController::class, 'sendMessage']
+                    )->name('chat-conversations.messages.store');
+
+                    Route::put(
+                        '/{conversation}/status',
+                        [ChatConversationsController::class, 'updateStatus']
+                    )->name('chat-conversations.status');
+
+                    Route::post(
+                        '/{conversation}/quick-replies/{quickReply}',
+                        [ChatConversationsController::class, 'useQuickReply']
+                    )->name('chat-conversations.quick-reply');
                 });
             Route::prefix('quick-replies')
                 ->name('quick-replies.')
@@ -248,23 +261,63 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                         ->middleware('can:quick-replies.delete')
                         ->name('destroy');
                 });
+
+            Route::prefix('chatbot-flows')
+                ->name('chatbot-flows.')
+                ->controller(ChatbotFlowsController::class)
+                ->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::post('/steps', 'storeStep')->name('steps.store');
+                    Route::put('/steps/{step}', 'updateStep')->name('steps.update');
+                    Route::delete('/steps/{step}', 'destroyStep')->name('steps.destroy');
+                    Route::post('/steps/{step}/options', 'storeOption')->name('options.store');
+                    Route::put('/steps/{step}/options/{option}', 'updateOption')->name('options.update');
+                    Route::delete('/steps/{step}/options/{option}', 'destroyOption')->name('options.destroy');
+                    Route::post('/steps/{step}/options/create-step', 'createStepFromOption')->name(
+                        'options.create-step',
+                    );
+                });
         });
 
-    Route::prefix('top-up-cards')->name('top-up-cards.')->group(function () {
-        Route::get('/batch', [TopUpCardController::class, 'index'])->middleware('can:top-up-cards.view')->name('batch');
-        Route::post('/batch', [TopUpCardController::class, 'store'])->middleware('can:top-up-cards.create')->name('store');
-        Route::get('/agents', [AgentController::class, 'index'])->middleware('can:top-up-cards.view')->name('agents');
-        Route::get('/agent-assign', [AgentController::class, 'agentAssign'])->middleware('can:top-up-cards.view')->name('agent-assign');
-        Route::post('/agents', [AgentController::class, 'store'])->middleware('can:top-up-cards.create')->name('agents.store');
-        Route::put('/agents/{agent}', [AgentController::class, 'update'])->middleware('can:top-up-cards.update')->name('agents.update');
-        Route::delete('/agents/{agent}', [AgentController::class, 'destroy'])->middleware('can:top-up-cards.delete')->name('agents.destroy');
-        Route::post('/agents/import', [AgentController::class, 'import'])->middleware('can:top-up-cards.update')->name('agents.import');
-        Route::patch('/assign-agent', [AgentController::class, 'assignAgent'])->middleware('can:top-up-cards.update')->name('assign-cards-agent');
-        Route::get('/export', [TopUpCardController::class, 'export'])->middleware('can:top-up-cards.view')->name('export');
-        Route::get('/card-history', [TopUpCardController::class, 'cardHistory'])->middleware('can:top-up-cards.view')->name('card-history');
-        Route::get('/redeem-history', [TopUpCardController::class, 'history'])->middleware('can:top-up-cards.view')->name('redeem-history');
-        Route::patch('/{topUpCard}/void', [TopUpCardController::class, 'void'])->middleware('can:top-up-cards.update')->name('void');
-    });
+    Route::prefix('top-up-cards')
+        ->name('top-up-cards.')
+        ->group(function () {
+            Route::get('/batch', [TopUpCardController::class, 'index'])
+                ->middleware('can:top-up-cards.view')
+                ->name('batch');
+            Route::post('/batch', [TopUpCardController::class, 'store'])
+                ->middleware('can:top-up-cards.create')
+                ->name('store');
+            Route::get('/agents', [AgentController::class, 'index'])
+                ->middleware('can:top-up-cards.view')
+                ->name('agents');
+            Route::get('/agent-assign', [AgentController::class, 'agentAssign'])->middleware('can:top-up-cards.view')->name('agent-assign');
+        Route::post('/agents', [AgentController::class, 'store'])
+                ->middleware('can:top-up-cards.create')
+                ->name('agents.store');
+            Route::put('/agents/{agent}', [AgentController::class, 'update'])
+                ->middleware('can:top-up-cards.update')
+                ->name('agents.update');
+            Route::delete('/agents/{agent}', [AgentController::class, 'destroy'])
+                ->middleware('can:top-up-cards.delete')
+                ->name('agents.destroy');
+            Route::post('/agents/import', [AgentController::class, 'import'])->middleware('can:top-up-cards.update')->name('agents.import');
+        Route::patch('/assign-agent', [AgentController::class, 'assignAgent'])
+                ->middleware('can:top-up-cards.update')
+                ->name('assign-cards-agent');
+            Route::get('/export', [TopUpCardController::class, 'export'])
+                ->middleware('can:top-up-cards.view')
+                ->name('export');
+            Route::get('/card-history', [TopUpCardController::class, 'cardHistory'])
+                ->middleware('can:top-up-cards.view')
+                ->name('card-history');
+            Route::get('/redeem-history', [TopUpCardController::class, 'history'])
+                ->middleware('can:top-up-cards.view')
+                ->name('redeem-history');
+            Route::patch('/{topUpCard}/void', [TopUpCardController::class, 'void'])
+                ->middleware('can:top-up-cards.update')
+                ->name('void');
+        });
     Route::prefix('staff')
         ->name('staff.')
         ->group(function () {
@@ -506,6 +559,26 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::delete('/{addon}', [AddonController::class, 'destroy'])
                 ->middleware('can:packages.delete')
                 ->name('destroy');
+        });
+
+    Route::prefix('settings')
+        ->name('settings.')
+        ->group(function () {
+            Route::get('/app-version', [AppVersionController::class, 'index'])
+                ->middleware('can:settings.view')
+                ->name('app-version.index');
+            Route::post('/app-version', [AppVersionController::class, 'store'])
+                ->middleware('can:settings.create')
+                ->name('app-version.store');
+            Route::put('/app-version/{appVersion}', [AppVersionController::class, 'update'])
+                ->middleware('can:settings.update')
+                ->name('app-version.update');
+            Route::delete('/app-version/bulk-destroy', [AppVersionController::class, 'bulkDestroy'])
+                ->middleware('can:settings.delete')
+                ->name('app-version.bulk-destroy');
+            Route::delete('/app-version/{appVersion}', [AppVersionController::class, 'destroy'])
+                ->middleware('can:settings.delete')
+                ->name('app-version.destroy');
         });
     Route::get('/activity-logs', [ActivityLogController::class, 'index'])
         ->middleware('can:activity.view')

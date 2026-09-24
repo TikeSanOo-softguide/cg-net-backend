@@ -107,6 +107,7 @@ type CustomersShowProps = {
     transactionFilters: TransactionFilters;
     transactionFilterOptions: {
         actor_types: string[];
+        types: string[];
         statuses: string[];
     };
 };
@@ -122,10 +123,19 @@ export default function CustomersShow({
     transactionFilterOptions,
 }: CustomersShowProps) {
     const { t, locale } = useTranslation();
-    const page = usePage();
-    const errors = page.props.errors as Record<string, string | undefined>;
+    const page = usePage<{ return_to?: string; errors?: Record<string, string | undefined> }>();
+    const errors = page.props.errors ?? {};
     const [packageTab, setPackageTab] = useState<'active' | 'expired'>('active');
     const showAllTransactions = transactionPage !== null;
+    const returnTo = page.props.return_to ?? '/customers';
+    const goBackToCustomerList = () => {
+        if (showAllTransactions) {
+            router.visit(`/customers/${customer.id}`);
+            return;
+        }
+
+        router.visit(returnTo);
+    };
 
     const localizePackageName = (value: LocalizedText | null | undefined): string => {
         if (!value) {
@@ -205,19 +215,7 @@ export default function CustomersShow({
             <PageContent className="gap-4 pb-24 sm:pb-8">
                 <div className="flex items-center justify-between gap-3">
                     <PageHeader title={customer.name} description={formatPhoneLocal(customer.phone)} />
-                    <Button
-                        type="button"
-                        size="sm"
-                        className="gap-1.5"
-                        onClick={() => {
-                            if (window.history.length > 1) {
-                                window.history.back();
-                                return;
-                            }
-
-                            router.visit('/customers');
-                        }}
-                    >
+                    <Button type="button" size="sm" className="gap-1.5" onClick={goBackToCustomerList}>
                         <ArrowLeftIcon className="size-3.5" strokeWidth={1.9} />
                         {t('common.back')}
                     </Button>
@@ -253,6 +251,7 @@ export default function CustomersShow({
                                 emptyLabel={t('customers.no_accounts')}
                                 numbered={false}
                                 showSearch={false}
+                                directActions
                                 className="shadow-none"
                                 actions={(row) => (
                                     <TableActionButton
