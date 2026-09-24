@@ -16,12 +16,11 @@ class AppVersionController extends Controller
     public function index(Request $request): Response
     {
         $versions = AppVersion::query()
-            ->when($search !== '', function ($query) use ($search): void {
-                $query->where(function ($query) use ($search): void {
-                    $query
-                        ->whereLike('version', "%{$search}%")
-                        ->orWhereLike('minimum_version', "%{$search}%")
-                        ->orWhereLike('platform', "%{$search}%");
+            ->when($request->filled('platform'), fn($query) => $query->where('platform', $request->input('platform')))
+            ->when($request->filled('version'), function ($query) use ($request): void {
+                $version = $request->input('version');
+                $query->where(function ($query) use ($version): void {
+                    $query->where('version', $version)->orWhere('minimum_version', $version);
                 });
             })
             ->latest()
