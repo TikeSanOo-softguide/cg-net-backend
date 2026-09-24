@@ -32,7 +32,7 @@ class PromotionController extends Controller
             ->when($request->filled('search'), function ($query) use ($request, $titleColumn) {
                 $search = trim($request->input('search'));
                 $query->where(function ($q) use ($search, $titleColumn) {
-                    $q->where($titleColumn, 'like', "%{$search}%");
+                    $q->whereLike($titleColumn, "%{$search}%");
                 });
             })
             ->latest()

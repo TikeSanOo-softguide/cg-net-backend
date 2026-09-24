@@ -21,9 +21,9 @@ class AppVersionController extends Controller
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
-                        ->where('version', 'like', "%{$search}%")
-                        ->orWhere('minimum_version', 'like', "%{$search}%")
-                        ->orWhere('platform', 'like', "%{$search}%");
+                        ->whereLike('version', "%{$search}%")
+                        ->orWhereLike('minimum_version', "%{$search}%")
+                        ->orWhereLike('platform', "%{$search}%");
                 });
             })
             ->when($request->filled('platform'), fn($query) => $query->where('platform', $request->input('platform')))

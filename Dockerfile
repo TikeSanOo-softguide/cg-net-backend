@@ -3,8 +3,11 @@ FROM php:8.3-fpm-bookworm
 ARG WWWUSER=1000
 ARG WWWGROUP=1000
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
+# Fail loudly if apt cannot reach Debian mirrors (common with broken Docker Desktop proxy).
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
         git \
         curl \
         unzip \
@@ -14,9 +17,12 @@ RUN apt-get update \
         libzip-dev \
         libicu-dev \
         libonig-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
+        libpq-dev \
+    ; \
+    docker-php-ext-configure gd --with-freetype --with-jpeg; \
+    docker-php-ext-install -j"$(nproc)" \
         pdo_mysql \
+        pdo_pgsql \
         bcmath \
         gd \
         zip \
@@ -25,11 +31,12 @@ RUN apt-get update \
         opcache \
         exif \
         mbstring \
-    && pecl install redis \
-    && docker-php-ext-enable redis \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+    ; \
+    pecl install redis; \
+    docker-php-ext-enable redis; \
+    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer; \
+    composer --version; \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /var/www/html
 

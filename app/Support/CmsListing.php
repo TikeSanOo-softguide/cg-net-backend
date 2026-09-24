@@ -35,7 +35,7 @@ final class CmsListing
                 $query->where(function (Builder $query) use ($search, $searchColumns): void {
                     foreach ($searchColumns as $index => $column) {
                         $method = $index === 0 ? 'where' : 'orWhere';
-                        $query->{$method}($column, 'like', '%'.$search.'%');
+                        $query->{$method === 'where' ? 'whereLike' : 'orWhereLike'}($column, '%'.$search.'%');
                     }
                 });
             })

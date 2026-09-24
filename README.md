@@ -1,93 +1,191 @@
-# Smart Link — CG-Net Admin
+# YNO Admin (CG-Net Backend)
 
-Staff admin for a broadband / ISP operator. Operators manage customers, CPE, packages, billing, top-up cards, service requests, support chat, and settings from one web console.
+Staff admin for a broadband / ISP operator. Operators manage customers, CPE, packages, billing, top-up cards, service requests, support chat, CMS, and settings from one web console.
 
-The UI brand is **Smart Link**. The Laravel app name is **CG-Net Admin**.
+| | |
+| --- | --- |
+| **UI brand** | Yaung Ni Oo / Smart Link |
+| **App name** | YNO Admin (`APP_NAME`) |
+| **Branch note** | Default DB is **PostgreSQL 16** (MySQL → PostgreSQL Phase A) |
 
-This repo is the admin backend and Inertia React shell. Domain models and seed data exist. **Dashboard and authentication are live.** Other sidebar screens are placeholder pages until their CRUD UIs are built.
+---
 
 ## Stack
 
 | Layer | Choice |
 | --- | --- |
-| Backend | PHP 8.3, Laravel 13, Fortify (admin session auth), Sanctum |
+| Backend | PHP 8.3, Laravel 13, Fortify (admin session), Sanctum |
 | Frontend | React 19, Inertia.js 3, TypeScript, Vite 8, Tailwind CSS 4 |
 | UI | Radix, Lucide, Recharts |
-| Data | MySQL 8.4, Redis 7 (cache + queues) |
-| Docker | PHP-FPM app, Nginx 1.27, MySQL, Redis |
-| Auth audience | `Admin` model (session guard `web`). `User` is the customer record. |
-| i18n | English, Myanmar (`my`), Chinese (`zh`) — `lang/` |
-| Also wired | Spatie Permission + Activity Log, Reverb, FCM, Excel, Sentry, Scramble |
+| Data | **PostgreSQL 16**, Redis 7 (cache + queues) |
+| Docker | PHP-FPM, Nginx 1.27, Postgres, Redis (MySQL optional profile) |
+| Auth | `Admin` model (guard `web`). `User` = customer |
+| i18n | `en` / `my` / `zh` — `lang/` |
+| Also | Spatie Permission + Activity Log, Reverb, FCM, Excel, Sentry, Scramble |
 
-## What works today
-
-**Live**
-
-- Staff login (logo-only login card), password reset, 2FA challenge pages
-- Dashboard: stats, 30-day charts, recent service requests
-- Collapsible sidebar, top bar, dark mode, theme panel, language switcher
-- Locale switch: `POST /locale/{en\|my\|zh}`
-
-**Data layer (models + migrations + seeders, no admin CRUD yet)**
-
-Customers, broadband accounts, CPE devices, packages, wallets, invoices/payments, top-up cards, installation / failure / relocation / change-plan requests, regions, notifications, chat, banners, settings, staff admins.
-
-**Placeholder menu pages** (title only, via `MenuPageController`)
-
-Customers, CPE, packages, billing, top-up cards, service requests, regions, notifications, support, banners, staff/roles, activity logs, reports, settings.
-
-Public API is a Sanctum stub (`GET /api/user`) only.
+---
 
 ## Requirements
 
-- Docker Desktop (recommended), **or** PHP 8.3, Composer, Node 20+, MySQL 8.4, Redis 7
-- Ports: `8080` (Docker web), `3306` (MySQL), `6379` (Redis). Local artisan uses `8000`.
+- **Docker Desktop** (recommended), **or**
+- PHP 8.3 (+ `pdo_pgsql`, `redis`, `mbstring`, `xml`, `curl`, `zip`, `gd`, `bcmath`), Composer, Node **22+**, PostgreSQL 16, Redis 7
 
-## Run with Docker
+| Port | Service |
+| --- | --- |
+| `8080` | Docker Nginx (app) |
+| `5432` | PostgreSQL |
+| `6379` | Redis |
+| `5173` | Vite HMR |
+| `8000` | Local `artisan serve` (no Docker) |
+
+---
+
+## Step-by-step — Docker (recommended)
+
+### 1. Clone and env
 
 ```bash
+git clone <repo-url> cg-net-backend
+cd cg-net-backend
 cp .env.example .env
+```
+
+`.env.example` already uses:
+
+```env
+DB_CONNECTION=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=cg_net
+DB_USERNAME=cgnet
+DB_PASSWORD=secret
+```
+
+Compose overrides `DB_HOST=pgsql` inside containers.
+
+### 2. Start containers
+
+```bash
 docker compose up -d --build
+```
+
+Services: `app`, `nginx`, `vite`, `pgsql`, `redis`.
+
+### 3. Install PHP deps + key
+
+```bash
 docker compose exec app composer install
 docker compose exec app php artisan key:generate
-docker compose exec app php artisan migrate --seed
-npm install
+```
+
+### 4. Migrate (and optional seed)
+
+```bash
+# Schema only (safe for prod-like)
+docker compose exec app php artisan migrate --force
+
+# Local demo data (do NOT use on production)
+docker compose exec app php artisan migrate --seed --force
+```
+
+### 5. Frontend
+
+```bash
+npm ci
 npm run build
 ```
 
-Open [http://localhost:8080](http://localhost:8080).
+Vite HMR is already running via the `vite` service when you use Compose.
 
-Compose overrides `DB_HOST=mysql`, `REDIS_HOST=redis`, and `APP_URL=http://localhost:8080`. The `vite` service watches `resources/` and hot-reloads the browser when you edit JS, CSS, or PHP views.
+### 6. Open the app
+
+[http://localhost:8080](http://localhost:8080)
+
+### 7. Stop
 
 ```bash
-docker compose stop    # stop
-docker compose down    # stop and remove containers (volumes kept)
+docker compose stop          # stop
+docker compose down          # remove containers (volumes kept)
+docker compose down -v       # also wipe DB/redis volumes
 ```
 
 | Service | Container | Host port |
 | --- | --- | --- |
 | Nginx | `cg-net-nginx` | `8080` (`NGINX_PORT`) |
 | PHP-FPM | `cg-net-app` | 9000 (internal) |
-| Vite (HMR) | `cg-net-vite` | `5173` (`VITE_PORT`) |
-| Reverb (WebSocket) | `cg-net-reverb` | `8081` (`FORWARD_REVERB_PORT`) |
-| MySQL 8.4 | `cg-net-mysql` | `3306` |
+| Vite | `cg-net-vite` | `5173` |
+| PostgreSQL 16 | `cg-net-pgsql` | `5432` (`FORWARD_DB_PORT`) |
 | Redis 7 | `cg-net-redis` | `6379` |
+| MySQL 8.4 (optional) | `cg-net-mysql` | profile `mysql` |
+| Reverb (optional) | `cg-net-reverb` | profile `reverb` |
 
 Database defaults: `cg_net` / `cgnet` / `secret`.
 
-## Run locally (no Docker)
+---
 
-Point `.env` at local MySQL/Redis (`DB_HOST=127.0.0.1`, `APP_URL=http://localhost:8000`), then:
+## Step-by-step — local (no Docker)
+
+### 1. Install Postgres + Redis + PHP extensions
 
 ```bash
-composer setup          # install, .env, key, migrate, npm install, build
-php artisan db:seed
-composer run dev        # artisan server + Vite
+# Ubuntu example
+sudo apt install -y php8.3-{pgsql,redis,mbstring,xml,curl,zip,gd,bcmath} \
+  postgresql redis-server
 ```
 
-Or split: `php artisan serve` and `npm run dev`.
+### 2. Create database
 
-## Seed logins
+```bash
+sudo -u postgres psql -c "CREATE USER cgnet WITH PASSWORD 'secret';"
+sudo -u postgres psql -c "CREATE DATABASE cg_net OWNER cgnet;"
+```
+
+### 3. App setup
+
+```bash
+cp .env.example .env
+# Set DB_* and APP_URL=http://localhost:8000
+composer install
+php artisan key:generate
+php artisan migrate --force
+npm ci && npm run build
+php artisan storage:link
+```
+
+### 4. Run
+
+```bash
+composer run dev
+# or: php artisan serve  +  npm run dev
+```
+
+Open [http://localhost:8000](http://localhost:8000).
+
+Shortcut: `composer setup` then `php artisan db:seed` (local only).
+
+---
+
+## Optional: MySQL (legacy)
+
+Phase A defaults to PostgreSQL. MySQL remains available during cutover:
+
+```bash
+docker compose --profile mysql up -d mysql
+```
+
+Then in `.env`:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1   # or mysql in Compose
+DB_PORT=3306
+```
+
+App search uses `whereLike` → `ilike` on Postgres / `like` on MySQL.
+
+---
+
+## Seed logins (local / staging only)
 
 Password for all seeded admins: `password`
 
@@ -97,35 +195,61 @@ Password for all seeded admins: `password`
 | Staff Officer | `Staff Officer` |
 | Support Agent | `Support Agent` |
 
-Seed also creates Myanmar region trees, packages, sample customers (broadband + CPE + wallet), service requests, paid invoices, notifications, banners, and `support_hotline`.
+**Do not** run `--seed` on production.
+
+---
+
+## Production (EC2 + DB) — short checklist
+
+1. Clone **`production`** (or deploy branch) to `/var/www/cg-net-backend`
+2. Copy `.env.production.example` → `.env`
+3. Set `APP_URL`, `DB_*` (Postgres host), Redis, `APP_DEBUG=false`
+4. `composer install --no-dev --optimize-autoloader`
+5. `php artisan key:generate` (once)
+6. `php artisan migrate --force`  ← **no seed**
+7. `npm ci && npm run build`
+8. `php artisan storage:link`
+9. `php artisan config:cache && route:cache && view:cache`
+10. Nginx → `public/`, Supervisor `queue:work redis`, cron `schedule:run`
+
+Domain example: `https://yno-admin.chocobot.site`
+
+---
+
+## MySQL → PostgreSQL (Phase A) notes
+
+Already in this codebase:
+
+- `pdo_pgsql` in Docker image
+- Compose service `pgsql` (Postgres 16)
+- Portable unique handling (`UniqueConstraintViolationException`)
+- Search macros `whereLike` / `orWhereLike`
+- PG-compatible top-up status default migrations
+- Renamed `wallet_entries` migration
+
+**Not in Phase A (later):** Octane, PgBouncer, pgloader data copy, wallet `lockForUpdate` service.
+
+Live MySQL data → Postgres: use **pgloader** (or dump/restore) in a planned cutover — see team migration guide.
+
+---
 
 ## Project layout
 
 ```
 app/
-  Http/Controllers/{Domain}/{Domain}Controller.php
-  Http/Requests/{Domain}/
-  Models/               ISP domain
-  Support/MenuPages.php Sidebar routes that are still placeholders
-database/               migrations, factories, seeders
-docker/                 nginx + php.ini
-lang/{en,my,zh}.json    Nested JSON translations
-resources/
-  js/pages/{Domain}/    Customer/Index, Auth/Login, Dashboard/Index
-  css/app.css
+  Http/Controllers/{Domain}/
+  Models/
+  Support/Like.php          # MySQL like / PG ilike
+database/                   # migrations, factories, seeders
+docker/                     # nginx + php.ini
+lang/{en,my,zh}.json
+resources/js/pages/{Domain}/
 routes/web.php
 ```
 
 Frontend alias: `@` → `resources/js`.
 
-## Conventions
-
-- **Auth:** Fortify against `admins`. Customers never log into this app.
-- **Folders:** Group HTTP and Inertia files by domain (`Customer/CustomerController`, `Customer/Index`). Page names are PascalCase (`Auth/ForgotPassword`).
-- **i18n:** Nested JSON keys in `lang/`. Keep locales in sync with `php artisan lang:check`.
-- **Theme:** `ThemeProvider` (`isp-admin-theme`). Default brand teal `#173236`.
-- **Sidebar:** Width 260px expanded / 88px collapsed; pin state in `isp-admin-sidebar-pinned`.
-- **New menu screens:** add `{Domain}/{Domain}Controller` plus `pages/{Domain}/Index`, then remove that path from `MenuPages`.
+---
 
 ## Useful commands
 
@@ -133,28 +257,36 @@ Frontend alias: `@` → `resources/js`.
 php artisan test
 php artisan lang:check
 php artisan route:list
-docker compose exec app php artisan migrate --seed
+docker compose exec app php artisan migrate --force
 
-# Turn Reverb on later
-# 1. Set VITE_REVERB_ENABLED=true in .env
+# Reverb later
+# 1. VITE_REVERB_ENABLED=true
 # 2. docker compose --profile reverb up -d reverb
 # 3. docker compose restart vite
+
+# Legacy MySQL container
+docker compose --profile mysql up -d mysql
 ```
+
+---
 
 ## Environment notes
 
-Copy values from `.env.example`. Important ones:
-
 | Variable | Purpose |
 | --- | --- |
-| `APP_NAME` / `APP_URL` | Title and base URL |
-| `AUTH_GUARD` / `AUTH_PASSWORD_BROKER` | `web` / `admins` |
-| `DB_*` | MySQL |
+| `APP_NAME` / `APP_URL` | Title + base URL (`YNO Admin`) |
+| `DB_CONNECTION` | `pgsql` (default) or `mysql` |
+| `DB_HOST` / `DB_PORT` | `pgsql`/`5432` in Docker; RDS/EC2 host in prod |
 | `CACHE_STORE` / `QUEUE_CONNECTION` / `REDIS_*` | Redis |
-| `VITE_REVERB_ENABLED` | Laravel Echo → Reverb. Off until you start the `reverb` profile. |
-| `FIREBASE_*` / `SENTRY_*` | Push + error tracking (optional) |
-| `NGINX_PORT` | Docker HTTP port (default 8080) |
+| `VITE_APP_NAME` | Browser tab title |
+| `VITE_REVERB_ENABLED` | Echo → Reverb (off by default) |
+| `FIREBASE_*` / `SENTRY_*` | Optional |
+| `NGINX_PORT` | Docker HTTP (default 8080) |
+
+Production template: `.env.production.example`.
+
+---
 
 ## License
 
-MIT (Laravel skeleton). Application code is for the Smart Link / CG-Net project.
+MIT (Laravel skeleton). Application code is for the Smart Link / YNO Admin project.

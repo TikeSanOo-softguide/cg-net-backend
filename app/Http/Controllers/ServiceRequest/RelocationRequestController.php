@@ -33,18 +33,12 @@ class RelocationRequestController extends Controller
                     $query
                         ->whereHas(
                             'user',
-                            fn($query) => $query->where(
-                                'name',
-                                'like',
-                                '%' . $search . '%'
+                            fn($query) => $query->whereLike('name', '%' . $search . '%'
                             )
                         )
                         ->orWhereHas(
                             'broadbandAccount',
-                            fn($query) => $query->where(
-                                'account_number',
-                                'like',
-                                '%' . $search . '%'
+                            fn($query) => $query->whereLike('account_number', '%' . $search . '%'
                             )
                         );
                 });

@@ -16,7 +16,7 @@ class QuickRepliesController extends Controller
         $search = $request->input('search');
         $quickReplies = QuickReply::query()
             ->when($search, function ($query, $search) {
-                $query->where('keyword', 'like', "%{$search}%");
+                $query->whereLike('keyword', "%{$search}%");
             })
             ->latest()
             ->paginate(10)

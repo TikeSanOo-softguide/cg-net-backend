@@ -94,7 +94,7 @@ class ActivityLogController extends Controller
                     ->where('causer_type', (new Admin())->getMorphClass())
                     ->whereHas(
                         'causer',
-                        fn($causer) => $causer->where('username', 'like', '%' . $filters['username'] . '%'),
+                        fn($causer) => $causer->whereLike('username', '%' . $filters['username'] . '%'),
                     );
             })
             ->when($filters['event'] !== '', fn($query) => $query->where('event', $filters['event']))

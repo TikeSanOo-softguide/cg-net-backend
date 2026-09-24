@@ -30,9 +30,9 @@ class AnnouncementController extends Controller
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
-                        ->where('content_en', 'like', '%' . $search . '%')
-                        ->orWhere('content_zh', 'like', '%' . $search . '%')
-                        ->orWhere('content_my', 'like', '%' . $search . '%');
+                        ->whereLike('content_en', '%' . $search . '%')
+                        ->orWhereLike('content_zh', '%' . $search . '%')
+                        ->orWhereLike('content_my', '%' . $search . '%');
                 });
             })
             ->when(
