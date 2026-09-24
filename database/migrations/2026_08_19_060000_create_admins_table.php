@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('admins', function (Blueprint $table) {
             $table->id();
-            $table->string('username')->unique();
+            $table->string('username');
             $table->string('password');
             $table->string('status', 16)->default('active')->index();
             $table->text('two_factor_secret')->nullable();
@@ -19,6 +19,8 @@ return new class extends Migration
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();
+
+            $table->unique(['username', 'deleted_at']);
         });
     }
 

@@ -34,12 +34,10 @@ class AgentController extends Controller
             ->orderBy('name');
         $agents = $agentQuery->paginate(15)->withQueryString();
         $agentCds = Agent::query()->pluck('cd')->map(fn($cd): int => (int) $cd)->values();
-        $agentNames = Agent::query()->pluck('name')->values();
 
         return Inertia::render('TopUpCards/Agent', [
             'agents' => $agents,
             'agentCds' => $agentCds,
-            'agentNames' => $agentNames,
             'filters' => ['search' => $search],
         ]);
     }
@@ -156,17 +154,9 @@ class AgentController extends Controller
             ->with('success', 'Top-up cards imported successfully.');
     }
 
-    public function store(StoreAgentRequest $request): RedirectResponse
+     public function store(StoreAgentRequest $request): RedirectResponse
     {
-        $agent = Agent::withTrashed()->where('name', $request->string('name')->toString())->first();
-
-        if ($agent?->trashed()) {
-            $agent->restore();
-            $agent->update($request->validated());
-        } else {
-            $agent = Agent::query()->create($request->validated());
-        }
-
+        $agent = Agent::query()->create($request->validated());
         activity('top-up-cards')->causedBy($request->user())->performedOn($agent)->event('created')->log('agent_created');
 
         return back()->with('success', 'Agent created successfully.');

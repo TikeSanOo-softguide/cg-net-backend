@@ -19,21 +19,6 @@ export function validateAgentCdUnique(
     return undefined;
 }
 
-export function validateAgentNameUnique(
-    name: string,
-    agentNames: string[],
-    currentName: string | undefined,
-    t: Translate,
-): string | undefined {
-    const normalizedName = name.trim();
-
-    if (normalizedName !== '' && agentNames.includes(normalizedName) && normalizedName !== currentName) {
-        return t('top_up_cards.validation.agent_name_unique');
-    }
-
-    return undefined;
-}
-
 export function validateAgentField(
     field: keyof AgentFormValues,
     data: AgentFormValues,

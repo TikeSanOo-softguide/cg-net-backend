@@ -10,7 +10,7 @@ import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formControlStateClass } from '@/lib/form-control';
-import { staffCreateSuccessMessage, validateStaffCreate, validateStaffCreateField } from '@/lib/staff-create-validation';
+import { staffCreateSuccessMessage, validateStaffCreate, validateStaffCreateField, validateStaffUsernameUnique } from '@/lib/staff-create-validation';
 import { staffRoleCard } from '@/lib/staff-roles';
 
 const autocompleteOff = {
@@ -36,6 +36,8 @@ const untouched: TouchedFields = {
 type StaffCreateFormProps = {
     form: InertiaFormProps<StaffFormValues>;
     roles: StaffRoleOption[];
+    existingUsernames: string[];
+    currentUsername?: string;
     onSubmit: (event: FormEvent) => void;
     onCancel?: () => void;
     mode?: 'create' | 'edit';
@@ -44,6 +46,8 @@ type StaffCreateFormProps = {
 export function StaffCreateForm({
     form,
     roles,
+    existingUsernames,
+    currentUsername,
     onSubmit,
     onCancel,
     mode = 'create',
@@ -56,8 +60,20 @@ export function StaffCreateForm({
         setTouched((current) => ({ ...current, [field]: true }));
     };
 
-    const setField = <K extends keyof StaffFormValues>(field: K, value: StaffFormValues[K]) => {
-        form.setData(field, value);
+    function setField(field: 'username' | 'password' | 'password_confirmation' | 'status', value: string): void;
+    function setField(field: 'role_ids', value: number[]): void;
+    function setField(field: keyof StaffFormValues, value: string | number[]) {
+        if (field === 'role_ids') {
+            form.setData('role_ids', value as number[]);
+        } else if (field === 'username') {
+            form.setData('username', value as string);
+        } else if (field === 'password') {
+            form.setData('password', value as string);
+        } else if (field === 'password_confirmation') {
+            form.setData('password_confirmation', value as string);
+        } else {
+            form.setData('status', value as string);
+        }
         form.clearErrors(field);
 
         if (field === 'password' && touched.password_confirmation) {
@@ -72,8 +88,11 @@ export function StaffCreateForm({
 
         const serverError = form.errors[field];
         const clientError = validateStaffCreateField(field, form.data, t);
+        const uniqueError = field === 'username'
+            ? validateStaffUsernameUnique(form.data.username, existingUsernames, currentUsername, t)
+            : undefined;
 
-        if (serverError || clientError) {
+        if (serverError || clientError || uniqueError) {
             return 'error';
         }
 
@@ -85,7 +104,9 @@ export function StaffCreateForm({
             return undefined;
         }
 
-        return form.errors[field] || validateStaffCreateField(field, form.data, t);
+        return form.errors[field]
+            || (field === 'username' ? validateStaffUsernameUnique(form.data.username, existingUsernames, currentUsername, t) : undefined)
+            || validateStaffCreateField(field, form.data, t);
     };
 
     const fieldSuccess = (field: keyof StaffFormValues): string | undefined => {
@@ -104,6 +125,11 @@ export function StaffCreateForm({
         });
 
         const errors = validateStaffCreate(form.data, t);
+        const usernameError = validateStaffUsernameUnique(form.data.username, existingUsernames, currentUsername, t);
+
+        if (usernameError) {
+            errors.username = usernameError;
+        }
 
         if (Object.keys(errors).length > 0) {
             form.setError(errors);
@@ -134,7 +160,10 @@ export function StaffCreateForm({
                     aria-invalid={fieldState('username') === 'error'}
                     className={formControlStateClass(fieldState('username'))}
                     onBlur={() => markTouched('username')}
-                    onChange={(event) => setField('username', event.target.value)}
+                    onChange={(event) => {
+                        setField('username', event.target.value);
+                        markTouched('username');
+                    }}
                     {...autocompleteOff}
                 />
             </FormField>

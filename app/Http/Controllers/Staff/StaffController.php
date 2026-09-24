@@ -66,15 +66,7 @@ class StaffController extends Controller
         $data = $request->safe()->except('role_ids', 'password_confirmation');
         $data['password'] = Hash::make($request->string('password')->toString());
 
-        $admin = Admin::withTrashed()->where('username', $request->string('username')->toString())->first();
-
-        if ($admin?->trashed()) {
-            $admin->restore();
-            $admin->update($data);
-        } else {
-            $admin = Admin::query()->create($data);
-        }
-
+        $admin = Admin::query()->create($data);
         $admin->syncRoles($this->allowedRoles($request->user(), $request->validated('role_ids', [])));
 
         activity('staff')->causedBy($request->user())->performedOn($admin)->event('created')->log('staff_created');

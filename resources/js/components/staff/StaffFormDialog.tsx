@@ -22,6 +22,7 @@ type StaffFormDialogProps = {
     onOpenChange: (open: boolean) => void;
     roles: StaffRoleOption[];
     staff: StaffFormMember | null;
+    existingUsernames?: string[];
 };
 
 const modalVisit = {
@@ -29,7 +30,7 @@ const modalVisit = {
     preserveScroll: true,
 };
 
-export function StaffFormDialog({ open, onOpenChange, roles, staff }: StaffFormDialogProps) {
+export function StaffFormDialog({ open, onOpenChange, roles, staff, existingUsernames = [] }: StaffFormDialogProps) {
     const { t } = useTranslation();
     const isEdit = staff !== null;
 
@@ -47,6 +48,7 @@ export function StaffFormDialog({ open, onOpenChange, roles, staff }: StaffFormD
                     key={staff ? `edit-${staff.id}` : 'create'}
                     roles={roles}
                     staff={staff}
+                    existingUsernames={existingUsernames}
                     onClose={() => onOpenChange(false)}
                 />
             ) : null}
@@ -57,10 +59,12 @@ export function StaffFormDialog({ open, onOpenChange, roles, staff }: StaffFormD
 function StaffFormDialogBody({
     roles,
     staff,
+    existingUsernames,
     onClose,
 }: {
     roles: StaffRoleOption[];
     staff: StaffFormMember | null;
+    existingUsernames: string[];
     onClose: () => void;
 }) {
     const isEdit = staff !== null;
@@ -119,6 +123,13 @@ function StaffFormDialogBody({
             mode="edit"
         />
     ) : (
-        <StaffCreateForm form={form} roles={roles} onSubmit={submit} onCancel={onClose} mode="create" />
+        <StaffCreateForm
+            form={form}
+            roles={roles}
+            existingUsernames={existingUsernames}
+            onSubmit={submit}
+            onCancel={onClose}
+            mode="create"
+        />
     );
 }

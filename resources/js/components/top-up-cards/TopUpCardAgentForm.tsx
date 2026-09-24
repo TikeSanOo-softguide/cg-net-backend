@@ -5,20 +5,19 @@ import { FormActionBar } from '@/components/FormActionBar';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/hooks/useTranslation';
-import { validateAgent, validateAgentCdUnique, validateAgentField, validateAgentNameUnique, type AgentFormValues } from '@/lib/agent-validation';
+import { validateAgent, validateAgentCdUnique, validateAgentField, type AgentFormValues } from '@/lib/agent-validation';
 
 type AgentRow = { id: number; name: string; cd: number; address: string; top_up_cards_count: number };
 type TopUpCardAgentFormProps = {
     item: AgentRow | null;
     agentCds: number[];
-    agentNames: string[];
     onClose: () => void;
 };
 
 type TouchedFields = Record<keyof AgentFormValues, boolean>;
 const untouched: TouchedFields = { name: false, cd: false, address: false };
 
-export function TopUpCardAgentForm({ item, agentCds, agentNames, onClose }: TopUpCardAgentFormProps) {
+export function TopUpCardAgentForm({ item, agentCds, onClose }: TopUpCardAgentFormProps) {
     const { t } = useTranslation();
     const form = useForm<AgentFormValues>({ name: item?.name ?? '', cd: item?.cd ?? '', address: item?.address ?? '' });
     const [touched, setTouched] = useState<TouchedFields>(untouched);
@@ -32,9 +31,6 @@ export function TopUpCardAgentForm({ item, agentCds, agentNames, onClose }: TopU
         if (!touched[field] && !submitted) {
             return undefined;
         }
-        if (field === 'name') {
-            return validateAgentNameUnique(form.data.name, agentNames, item?.name, t) ?? form.errors[field] ?? validateAgentField(field, form.data, t);
-        }
         if (field === 'cd') {
             return validateAgentCdUnique(form.data.cd, agentCds, item?.cd, t) ?? form.errors[field] ?? validateAgentField(field, form.data, t);
         }
@@ -47,10 +43,6 @@ export function TopUpCardAgentForm({ item, agentCds, agentNames, onClose }: TopU
         setSubmitted(true);
         setTouched({ name: true, cd: true, address: true });
         const errors = validateAgent(form.data, t);
-        const nameError = validateAgentNameUnique(form.data.name, agentNames, item?.name, t);
-        if (nameError) {
-            errors.name = nameError;
-        }
         const cdError = validateAgentCdUnique(form.data.cd, agentCds, item?.cd, t);
         if (cdError) {
             errors.cd = cdError;

@@ -4,6 +4,29 @@ type Translate = (key: string) => string;
 
 const usernamePattern = /^[A-Za-z][A-Za-z0-9]*(?:[ ._ -][A-Za-z0-9]+)*$/;
 
+export function validateStaffUsernameUnique(
+    username: string,
+    existingUsernames: string[],
+    currentUsername: string | undefined,
+    t: Translate,
+): string | undefined {
+    const normalizedUsername = username.trim().toLocaleLowerCase();
+    const normalizedCurrentUsername = currentUsername?.trim().toLocaleLowerCase();
+
+    if (
+        normalizedUsername !== '' &&
+        existingUsernames.some((existingUsername) => {
+            const normalizedExistingUsername = existingUsername.trim().toLocaleLowerCase();
+
+            return normalizedExistingUsername === normalizedUsername && normalizedExistingUsername !== normalizedCurrentUsername;
+        })
+    ) {
+        return t('staff.validation.username_taken');
+    }
+
+    return undefined;
+}
+
 export function validateStaffCreateField(
     field: keyof StaffFormValues,
     data: StaffFormValues,

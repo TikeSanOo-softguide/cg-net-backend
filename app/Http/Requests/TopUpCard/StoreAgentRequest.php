@@ -15,7 +15,7 @@ class StoreAgentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:50', Rule::unique('agents', 'name')->whereNull('deleted_at')],
+            'name' => ['required', 'string', 'max:50'],
             'cd' => ['required', 'integer', 'digits:2', Rule::unique('agents', 'cd')->whereNull('deleted_at')],
             'address' => ['required', 'string', 'max:255'],
         ];
@@ -24,7 +24,7 @@ class StoreAgentRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.unique' => __('top_up_cards.validation.agent_name_unique'),
+            'cd.unique' => __('top_up_cards.validation.agent_cd_unique'),
         ];
     }
 }

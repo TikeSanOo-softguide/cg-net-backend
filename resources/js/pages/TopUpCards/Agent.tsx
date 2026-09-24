@@ -16,11 +16,10 @@ type AgentRow = { id: number; name: string; cd: number; address: string; top_up_
 type Props = {
     agents: Paginated<AgentRow>;
     agentCds: number[];
-    agentNames: string[];
     filters: { search: string };
 };
 
-export default function AgentPage({ agents, agentCds, agentNames, filters }: Props) {
+export default function AgentPage({ agents, agentCds, filters }: Props) {
     const { t } = useTranslation();
     const [search, setSearch] = useState(filters.search);
     const [editing, setEditing] = useState<AgentRow | null>(null);
@@ -49,7 +48,7 @@ export default function AgentPage({ agents, agentCds, agentNames, filters }: Pro
             </PageContent>
 
             <FormDialog open={formOpen} onOpenChange={setFormOpen} title={editing ? t('top_up_cards.agent.edit') : t('top_up_cards.agent.add')} description={t('top_up_cards.agent.description')} icon={editing ? UserRoundIcon : PlusIcon}>
-                {formOpen ? <TopUpCardAgentForm item={editing} agentCds={agentCds} agentNames={agentNames} onClose={() => setFormOpen(false)} /> : null}
+                {formOpen ? <TopUpCardAgentForm item={editing} agentCds={agentCds} onClose={() => setFormOpen(false)} /> : null}
             </FormDialog>
             <ConfirmDialog open={deleting !== null} onOpenChange={(open) => { if (!open) setDeleting(null); }} title={t('top_up_cards.agent.delete_title')} description={t('top_up_cards.agent.delete_description')} destructive confirmLabel={t('common.delete')} onConfirm={() => { if (deleting) router.delete(`/top-up-cards/agents/${deleting.id}`, { preserveScroll: true, onFinish: () => setDeleting(null) }); }} />
         </>

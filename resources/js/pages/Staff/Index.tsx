@@ -216,6 +216,7 @@ export default function StaffIndex({ staff, roles = [], filters }: StaffIndexPro
                 }}
                 roles={roles}
                 staff={editingStaff}
+                existingUsernames={staff.data.map((member) => member.username)}
             />
             <ConfirmDialog
                 open={pendingIds.length === 1}
