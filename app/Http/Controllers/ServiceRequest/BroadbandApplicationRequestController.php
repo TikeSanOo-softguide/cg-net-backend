@@ -41,9 +41,9 @@ class BroadbandApplicationRequestController extends Controller
 
                 $query->where(function ($query) use ($search): void {
                     $query
-                        ->where('phone', 'like', $search)
-                        ->orWhereHas('user', fn($q) => $q->where('name', 'like', $search))
-                        ->orWhereHas('user', fn($q) => $q->where('phone', 'like', $search));
+                        ->whereLike('phone', $search)
+                        ->orWhereHas('user', fn($q) => $q->whereLike('name', $search))
+                        ->orWhereHas('user', fn($q) => $q->whereLike('phone', $search));
                 });
             })
             ->when(

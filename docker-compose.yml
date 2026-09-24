@@ -12,9 +12,9 @@ services:
             - "host.docker.internal:host-gateway"
         environment:
             APP_URL: http://localhost:${NGINX_PORT:-8080}
-            DB_CONNECTION: mysql
-            DB_HOST: mysql
-            DB_PORT: 3306
+            DB_CONNECTION: pgsql
+            DB_HOST: pgsql
+            DB_PORT: 5432
             DB_DATABASE: ${DB_DATABASE:-cg_net}
             DB_USERNAME: ${DB_USERNAME:-cgnet}
             DB_PASSWORD: ${DB_PASSWORD:-secret}
@@ -26,7 +26,7 @@ services:
             REVERB_PORT: 8081
             REVERB_SCHEME: http
         depends_on:
-            mysql:
+            pgsql:
                 condition: service_healthy
             redis:
                 condition: service_started
@@ -91,12 +91,31 @@ services:
             redis:
                 condition: service_started
 
+    pgsql:
+        image: postgres:16-alpine
+        container_name: cg-net-pgsql
+        restart: unless-stopped
+        ports:
+            - "${FORWARD_DB_PORT:-5432}:5432"
+        environment:
+            POSTGRES_DB: ${DB_DATABASE:-cg_net}
+            POSTGRES_USER: ${DB_USERNAME:-cgnet}
+            POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+        volumes:
+            - pgsql_data:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-cgnet} -d ${DB_DATABASE:-cg_net}"]
+            interval: 5s
+            timeout: 5s
+            retries: 20
+
     mysql:
+        profiles: ["mysql"]
         image: mysql:8.4
         container_name: cg-net-mysql
         restart: unless-stopped
         ports:
-            - "${FORWARD_DB_PORT:-3306}:3306"
+            - "${FORWARD_MYSQL_PORT:-3306}:3306"
         environment:
             MYSQL_DATABASE: ${DB_DATABASE:-cg_net}
             MYSQL_USER: ${DB_USERNAME:-cgnet}
@@ -121,5 +140,6 @@ services:
         command: ["redis-server", "--appendonly", "yes"]
 
 volumes:
+    pgsql_data:
     mysql_data:
     redis_data:

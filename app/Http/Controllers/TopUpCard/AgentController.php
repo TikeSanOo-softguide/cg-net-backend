@@ -27,9 +27,8 @@ class AgentController extends Controller
         $agentQuery = Agent::query()
             ->withCount('topUpCards')
             ->when($search !== '', function ($query) use ($search): void {
-                $query->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('cd', 'like', '%' . $search . '%')
-                    ->orWhere('address', 'like', '%' . $search . '%');
+                $query->whereLike('name', '%' . $search . '%')
+                    ->orWhereLike('address', '%' . $search . '%');
             })
             ->orderBy('name');
         $agents = $agentQuery->paginate(15)->withQueryString();
@@ -57,9 +56,8 @@ class AgentController extends Controller
         $agents = Agent::query()
             ->withCount('topUpCards')
             ->when($search !== '', function ($query) use ($search): void {
-                $query->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('cd', 'like', '%' . $search . '%')
-                    ->orWhere('address', 'like', '%' . $search . '%');
+                $query->whereLike('name', '%' . $search . '%')
+                    ->orWhereLike('address', '%' . $search . '%');
             })
             ->orderBy('name')
             ->get();
@@ -69,7 +67,7 @@ class AgentController extends Controller
             ->with('agent:id,name')
             ->leftJoin('batches', 'batches.id', '=', 'top_up_card.batch_id')
             ->where('top_up_card.status', '!=', TopUpCardStatus::Pending)
-            ->when($cardSearch !== '', fn($query) => $query->where('serial_no', 'like', '%' . $cardSearch . '%'))
+            ->when($cardSearch !== '', fn($query) => $query->whereLike('serial_no', '%' . $cardSearch . '%'))
             ->when($batch !== '', fn($query) => $query->where('batch_id', (int) $batch))
             ->when($agent === 'unassigned', fn($query) => $query->whereNull('agent_id'))
             ->when($agent !== '' && $agent !== 'unassigned', fn($query) => $query->where('agent_id', (int) $agent))

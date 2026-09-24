@@ -37,7 +37,9 @@ class CustomerController extends Controller
         }
 
         $customers = User::query()
-            ->when($sort === 'wallet', fn($query) => $query->leftJoin('wallets', 'wallets.user_id', '=', 'users.id'))
+            ->when($sort === 'wallet', fn($query) => $query
+                ->select('users.*')
+                ->leftJoin('wallets', 'wallets.user_id', '=', 'users.id'))
             ->with([
                 'wallet:id,user_id,balance',
                 'broadbandAccounts:id,user_id,current_package_id',
@@ -49,8 +51,8 @@ class CustomerController extends Controller
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
-                        ->where('users.name', 'like', '%' . $search . '%')
-                        ->orWhere('users.phone', 'like', '%' . $search . '%');
+                        ->whereLike('users.name', '%' . $search . '%')
+                        ->orWhereLike('users.phone', '%' . $search . '%');
                 });
             })
             ->when($status !== '' && in_array($status, array_column(UserStatus::cases(), 'value'), true), function (

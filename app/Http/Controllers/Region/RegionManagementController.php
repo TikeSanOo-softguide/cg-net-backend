@@ -29,9 +29,9 @@ class RegionManagementController extends Controller
             ->when($stateSearch !== '', function ($query) use ($stateSearch) {
                 $query->where(function ($query) use ($stateSearch) {
                     $query
-                        ->where('name_en', 'like', '%' . $stateSearch . '%')
-                        ->orWhere('name_zh', 'like', '%' . $stateSearch . '%')
-                        ->orWhere('name_my', 'like', '%' . $stateSearch . '%');
+                        ->whereLike('name_en', '%' . $stateSearch . '%')
+                        ->orWhereLike('name_zh', '%' . $stateSearch . '%')
+                        ->orWhereLike('name_my', '%' . $stateSearch . '%');
                 });
             })
             ->paginate(15, ['*'], 'state_page')
@@ -45,16 +45,16 @@ class RegionManagementController extends Controller
                 $query->where(function ($query) use ($regionSearch) {
                     $query
                         // Region name
-                        ->where('name_en', 'like', '%' . $regionSearch . '%')
-                        ->orWhere('name_zh', 'like', '%' . $regionSearch . '%')
-                        ->orWhere('name_my', 'like', '%' . $regionSearch . '%')
+                        ->whereLike('name_en', '%' . $regionSearch . '%')
+                        ->orWhereLike('name_zh', '%' . $regionSearch . '%')
+                        ->orWhereLike('name_my', '%' . $regionSearch . '%')
 
                         // State name
                         ->orWhereHas('state', function ($query) use ($regionSearch) {
                             $query
-                                ->where('name_en', 'like', '%' . $regionSearch . '%')
-                                ->orWhere('name_zh', 'like', '%' . $regionSearch . '%')
-                                ->orWhere('name_my', 'like', '%' . $regionSearch . '%');
+                                ->whereLike('name_en', '%' . $regionSearch . '%')
+                                ->orWhereLike('name_zh', '%' . $regionSearch . '%')
+                                ->orWhereLike('name_my', '%' . $regionSearch . '%');
                         });
                 });
             })
@@ -67,21 +67,21 @@ class RegionManagementController extends Controller
             ->when($areaSearch !== '', function ($query) use ($areaSearch) {
                 $query->where(function ($query) use ($areaSearch) {
                     $query
-                        ->where('name_en', 'like', '%' . $areaSearch . '%')
-                        ->orWhere('name_zh', 'like', '%' . $areaSearch . '%')
-                        ->orWhere('name_my', 'like', '%' . $areaSearch . '%')
+                        ->whereLike('name_en', '%' . $areaSearch . '%')
+                        ->orWhereLike('name_zh', '%' . $areaSearch . '%')
+                        ->orWhereLike('name_my', '%' . $areaSearch . '%')
 
                         ->orWhereHas('region', function ($query) use ($areaSearch) {
                             $query
-                                ->where('name_en', 'like', '%' . $areaSearch . '%')
-                                ->orWhere('name_zh', 'like', '%' . $areaSearch . '%')
-                                ->orWhere('name_my', 'like', '%' . $areaSearch . '%')
+                                ->whereLike('name_en', '%' . $areaSearch . '%')
+                                ->orWhereLike('name_zh', '%' . $areaSearch . '%')
+                                ->orWhereLike('name_my', '%' . $areaSearch . '%')
 
                                 ->orWhereHas('state', function ($query) use ($areaSearch) {
                                     $query
-                                        ->where('name_en', 'like', '%' . $areaSearch . '%')
-                                        ->orWhere('name_zh', 'like', '%' . $areaSearch . '%')
-                                        ->orWhere('name_my', 'like', '%' . $areaSearch . '%');
+                                        ->whereLike('name_en', '%' . $areaSearch . '%')
+                                        ->orWhereLike('name_zh', '%' . $areaSearch . '%')
+                                        ->orWhereLike('name_my', '%' . $areaSearch . '%');
                                 });
                         });
                 });

@@ -45,16 +45,16 @@ class FailureReportController extends Controller
             ])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
-                    $query->where('contact_name', 'like', '%' . $search . '%')
-                        ->orWhere('contact_phone', 'like', '%' . $search . '%')
-                        ->orWhere('description', 'like', '%' . $search . '%')
+                    $query->whereLike('contact_name', '%' . $search . '%')
+                        ->orWhereLike('contact_phone', '%' . $search . '%')
+                        ->orWhereLike('description', '%' . $search . '%')
                         ->orWhereHas('user', function ($query) use ($search): void {
-                            $query->where('name', 'like', '%' . $search . '%')
-                                ->orWhere('phone', 'like', '%' . $search . '%');
+                            $query->whereLike('name', '%' . $search . '%')
+                                ->orWhereLike('phone', '%' . $search . '%');
                         })
                         ->orWhereHas('broadbandAccount', function ($query) use ($search): void {
-                            $query->where('account_number', 'like', '%' . $search . '%')
-                                ->orWhere('customer_name', 'like', '%' . $search . '%');
+                            $query->whereLike('account_number', '%' . $search . '%')
+                                ->orWhereLike('customer_name', '%' . $search . '%');
                         });
                 });
             })

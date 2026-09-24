@@ -30,10 +30,10 @@ class NewsController extends Controller
             $search = trim($request->input('search'));
 
             $query->where(function ($q) use ($search, $titleColumn, $descriptionColumn, $categoryColumn) {
-                $q->where($titleColumn, 'like', "%{$search}%")
-                    ->orWhere($descriptionColumn, 'like', "%{$search}%")
+                $q->whereLike($titleColumn, "%{$search}%")
+                    ->orWhereLike($descriptionColumn, "%{$search}%")
                     ->orWhereHas('category', function ($categoryQuery) use ($search, $categoryColumn) {
-                        $categoryQuery->where($categoryColumn, 'like', "%{$search}%");
+                        $categoryQuery->whereLike($categoryColumn, "%{$search}%");
                     });
             });
         }

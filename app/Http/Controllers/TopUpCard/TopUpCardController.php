@@ -44,7 +44,7 @@ class TopUpCardController extends Controller
             ->with('batch:id,batch_no,status')
             ->with('walletTransaction:id,transaction_no')
             ->when($search !== '', function ($query) use ($search): void {
-                $query->where('serial_no', 'like', '%' . $search . '%');
+                $query->whereLike('serial_no', '%' . $search . '%');
             })
             ->when(
                 $status !== '' && in_array($status, array_column(TopUpCardStatus::cases(), 'value'), true),
@@ -143,11 +143,11 @@ class TopUpCardController extends Controller
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
-                        ->where('serial_no', 'like', '%' . $search . '%')
+                        ->whereLike('serial_no', '%' . $search . '%')
                         ->orWhereHas('redeemedBy', function ($query) use ($search): void {
                             $query
-                                ->where('name', 'like', '%' . $search . '%')
-                                ->orWhere('phone', 'like', '%' . $search . '%');
+                                ->whereLike('name', '%' . $search . '%')
+                                ->orWhereLike('phone', '%' . $search . '%');
                         });
                 });
             })
@@ -219,7 +219,7 @@ class TopUpCardController extends Controller
         $cards = TopUpCard::query()
             ->with(['redeemedBy:id,name,phone', 'batch:id,batch_no,status', 'walletTransaction:id,transaction_no'])
             ->when($search !== '', function ($query) use ($search): void {
-                $query->where('serial_no', 'like', "%{$search}%");
+                $query->whereLike('serial_no', "%{$search}%");
             })
             ->when(in_array($status, $validStatuses, true), function ($query) use ($status): void {
                 $query->where('status', $status);

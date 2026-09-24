@@ -56,23 +56,17 @@ class PackageController extends Controller
                     $query->whereHas('network', function ($query) use ($search): void {
                         $query->where(function ($query) use ($search): void {
                             $query
-                                ->where('name_en', 'like', '%' . $search . '%')
-                                ->orWhere('name_zh', 'like', '%' . $search . '%')
-                                ->orWhere('name_my', 'like', '%' . $search . '%');
+                                ->whereLike('name_en', '%' . $search . '%')
+                                ->orWhereLike('name_zh', '%' . $search . '%')
+                                ->orWhereLike('name_my', '%' . $search . '%');
                         });
                     })
                         ->orWhereHas('speed', function ($query) use ($search): void {
-                            $query->where(
-                                'mbps',
-                                'like',
-                                '%' . $search . '%'
+                            $query->whereLike('mbps', '%' . $search . '%'
                             );
                         })
                         ->orWhereHas('term', function ($query) use ($search): void {
-                            $query->where(
-                                'months',
-                                'like',
-                                '%' . $search . '%'
+                            $query->whereLike('months', '%' . $search . '%'
                             );
                         });
                 });
@@ -349,9 +343,9 @@ class PackageController extends Controller
             ->when($search, function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
-                        ->where('name_en', 'like', '%' . $search . '%')
-                        ->orWhere('name_zh', 'like', '%' . $search . '%')
-                        ->orWhere('name_my', 'like', '%' . $search . '%');
+                        ->whereLike('name_en', '%' . $search . '%')
+                        ->orWhereLike('name_zh', '%' . $search . '%')
+                        ->orWhereLike('name_my', '%' . $search . '%');
                 });
             })
             ->orderBy('name_en')
@@ -370,10 +364,7 @@ class PackageController extends Controller
     {
         return Speed::query()
             ->when($search, function ($query) use ($search): void {
-                $query->where(
-                    'mbps',
-                    'like',
-                    '%' . $search . '%'
+                $query->whereLike('mbps', '%' . $search . '%'
                 );
             })
             ->orderBy('mbps')
@@ -392,10 +383,7 @@ class PackageController extends Controller
     {
         return Term::query()
             ->when($search, function ($query) use ($search): void {
-                $query->where(
-                    'months',
-                    'like',
-                    '%' . $search . '%'
+                $query->whereLike('months', '%' . $search . '%'
                 );
             })
             ->orderBy('months')
@@ -416,9 +404,9 @@ class PackageController extends Controller
             ->when($search, function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
-                        ->where('name_en', 'like', '%' . $search . '%')
-                        ->orWhere('name_zh', 'like', '%' . $search . '%')
-                        ->orWhere('name_my', 'like', '%' . $search . '%');
+                        ->whereLike('name_en', '%' . $search . '%')
+                        ->orWhereLike('name_zh', '%' . $search . '%')
+                        ->orWhereLike('name_my', '%' . $search . '%');
                 });
             })
             ->orderBy('name_en')
