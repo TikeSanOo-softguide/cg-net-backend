@@ -27,6 +27,7 @@ use App\Http\Controllers\ServiceRequest\RelocationRequestController;
 use App\Http\Controllers\Settings\AppVersionController;
 use App\Http\Controllers\Staff\RoleController;
 use App\Http\Controllers\Staff\StaffController;
+use App\Http\Controllers\Support\ChatConversations\ChatConversationsController;
 use App\Http\Controllers\Support\ChatFlows\ChatbotFlowsController;
 use App\Http\Controllers\TopUpCard\AgentController;
 use App\Http\Controllers\Support\QuickReplies\QuickRepliesController;
@@ -98,7 +99,6 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 ->middleware('can:regions.view')
                 ->name('index');
 
-            // States
             Route::post('/states', [RegionManagementController::class, 'storeState'])
                 ->middleware('can:regions.create')
                 ->name('states.store');
@@ -112,7 +112,6 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 ->middleware('can:regions.delete')
                 ->name('states.destroy');
 
-            // Regions
             Route::post('/regions', [RegionManagementController::class, 'storeRegion'])
                 ->middleware('can:regions.create')
                 ->name('regions.store');
@@ -126,7 +125,6 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 ->middleware('can:regions.delete')
                 ->name('regions.destroy');
 
-            // Areas
             Route::post('/areas', [RegionManagementController::class, 'storeArea'])
                 ->middleware('can:regions.create')
                 ->name('areas.store');
@@ -216,22 +214,33 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
     Route::prefix('support')
         ->name('support.')
         ->group(function () {
-            Route::prefix('chatbot-flows')
-                ->name('chatbot-flows.')
-                ->controller(ChatbotFlowsController::class)
+            Route::prefix('conversations')
+                ->name('conversations.')
                 ->group(function () {
-                    Route::get('/', 'index')->name('index');
-                    Route::post('/steps', 'storeStep')->name('steps.store');
-                    Route::put('/steps/{step}', 'updateStep')->name('steps.update');
-                    Route::delete('/steps/{step}', 'destroyStep')->name('steps.destroy');
-                    Route::post('/steps/{step}/options', 'storeOption')->name('options.store');
-                    Route::put('/steps/{step}/options/{option}', 'updateOption')->name('options.update');
-                    Route::delete('/steps/{step}/options/{option}', 'destroyOption')->name('options.destroy');
+                    Route::get(
+                        '/',
+                        [ChatConversationsController::class, 'index']
+                    )->name('chat-conversations.index');
 
-                    // Create a new step from an option
-                    Route::post('/steps/{step}/options/create-step', 'createStepFromOption')->name(
-                        'options.create-step',
-                    );
+                    Route::get(
+                        '/{conversation}',
+                        [ChatConversationsController::class, 'show']
+                    )->name('chat-conversations.show');
+
+                    Route::post(
+                        '/{conversation}/messages',
+                        [ChatConversationsController::class, 'sendMessage']
+                    )->name('chat-conversations.messages.store');
+
+                    Route::put(
+                        '/{conversation}/status',
+                        [ChatConversationsController::class, 'updateStatus']
+                    )->name('chat-conversations.status');
+
+                    Route::post(
+                        '/{conversation}/quick-replies/{quickReply}',
+                        [ChatConversationsController::class, 'useQuickReply']
+                    )->name('chat-conversations.quick-reply');
                 });
             Route::prefix('quick-replies')
                 ->name('quick-replies.')
@@ -251,6 +260,22 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                     Route::delete('/replies/{reply}', [QuickRepliesController::class, 'destroy'])
                         ->middleware('can:quick-replies.delete')
                         ->name('destroy');
+                });
+
+            Route::prefix('chatbot-flows')
+                ->name('chatbot-flows.')
+                ->controller(ChatbotFlowsController::class)
+                ->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::post('/steps', 'storeStep')->name('steps.store');
+                    Route::put('/steps/{step}', 'updateStep')->name('steps.update');
+                    Route::delete('/steps/{step}', 'destroyStep')->name('steps.destroy');
+                    Route::post('/steps/{step}/options', 'storeOption')->name('options.store');
+                    Route::put('/steps/{step}/options/{option}', 'updateOption')->name('options.update');
+                    Route::delete('/steps/{step}/options/{option}', 'destroyOption')->name('options.destroy');
+                    Route::post('/steps/{step}/options/create-step', 'createStepFromOption')->name(
+                        'options.create-step',
+                    );
                 });
         });
 

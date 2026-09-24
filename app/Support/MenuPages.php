@@ -73,24 +73,6 @@ final class MenuPages
                 'permission' => 'notifications.view',
             ],
             [
-                'path' => '/support/conversations',
-                'titleKey' => 'menu.chat_conversations',
-                'name' => 'support.conversations',
-                'permission' => 'support.view',
-            ],
-            [
-                'path' => '/support/agents',
-                'titleKey' => 'menu.agent_assignment',
-                'name' => 'support.agents',
-                'permission' => 'support.view',
-            ],
-            [
-                'path' => '/support/quick-replies',
-                'titleKey' => 'menu.quick_reply_templates',
-                'name' => 'support.quick-replies',
-                'permission' => 'support.view',
-            ],
-            [
                 'path' => '/reports',
                 'titleKey' => 'menu.reports',
                 'name' => 'reports.index',

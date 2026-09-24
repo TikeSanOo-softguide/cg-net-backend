@@ -65,6 +65,7 @@ class DatabaseSeeder extends Seeder
         $this->seedAnnouncements();
         $this->seedTopUpCards();
         $this->seedWalletSystem();
+        $this->seedChatConversations();
 
         Setting::factory()->create([
             'key' => 'support_hotline',
@@ -132,6 +133,11 @@ class DatabaseSeeder extends Seeder
     private function seedAgents(): void
     {
         (new AgentSeeder())->run();
+    }
+
+    private function seedChatConversations(): void
+    {
+        (new ChatConversationSeeder())->run();
     }
 
     private function seedAnnouncements(): void
@@ -278,30 +284,30 @@ class DatabaseSeeder extends Seeder
             $condition = $index % 3;
             $status =
                 $index < 10
-                    ? ChangePlanStatus::UnderReview
-                    : ($index < 17
-                        ? ChangePlanStatus::Approved
-                        : ChangePlanStatus::Cancelled);
+                ? ChangePlanStatus::UnderReview
+                : ($index < 17
+                    ? ChangePlanStatus::Approved
+                    : ChangePlanStatus::Cancelled);
 
             $newPackage = match ($condition) {
                 0 => $currentPackage?->speed
                     ? Package::query()
-                        ->whereKeyNot($currentPackageId)
-                        ->whereHas('speed', fn($query) => $query->where('mbps', '<', $currentPackage->speed->mbps))
-                        ->first()
+                    ->whereKeyNot($currentPackageId)
+                    ->whereHas('speed', fn($query) => $query->where('mbps', '<', $currentPackage->speed->mbps))
+                    ->first()
                     : null,
                 1 => $currentPackage?->speed
                     ? Package::query()
-                        ->whereKeyNot($currentPackageId)
-                        ->whereHas('speed', fn($query) => $query->where('mbps', '>', $currentPackage->speed->mbps))
-                        ->first()
+                    ->whereKeyNot($currentPackageId)
+                    ->whereHas('speed', fn($query) => $query->where('mbps', '>', $currentPackage->speed->mbps))
+                    ->first()
                     : null,
                 default => $currentPackage?->speed
                     ? Package::query()
-                        ->whereKeyNot($currentPackageId)
-                        ->where('network_id', '!=', $currentPackage->network_id)
-                        ->whereHas('speed', fn($query) => $query->where('mbps', $currentPackage->speed->mbps))
-                        ->first()
+                    ->whereKeyNot($currentPackageId)
+                    ->where('network_id', '!=', $currentPackage->network_id)
+                    ->whereHas('speed', fn($query) => $query->where('mbps', $currentPackage->speed->mbps))
+                    ->first()
                     : null,
             };
 

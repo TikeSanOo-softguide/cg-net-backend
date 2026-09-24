@@ -26,10 +26,6 @@ return new class extends Migration
                 ->nullOnDelete();
             $table->boolean('is_read')->default(false);
             $table->timestamps();
-
-            $table->index(['conversation_id', 'created_at'], 'idx_messages_conversation_created');
-            $table->index('sender_type', 'idx_messages_sender_type');
-            $table->index('message_type', 'idx_messages_message_type');
         });
     }
 
