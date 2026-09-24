@@ -176,7 +176,7 @@ export const navigation: NavGroup[] = [
                 labelKey: 'menu.top_up_card_agent_assign',
                 descriptionKey: 'menu.top_up_card_agent_assign_description',
                 href: '/top-up-cards/agent-assign',
-                icon: UserRound,
+                icon: UserCog,
             },
             {
                 labelKey: 'menu.card_history',
