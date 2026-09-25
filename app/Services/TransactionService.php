@@ -53,15 +53,15 @@ class TransactionService
             ->when($filters['search'] !== '', function ($query) use ($filters): void {
                 $query->where(function ($query) use ($filters): void {
                     $query
-                        ->where('transaction_no', 'like', '%' . $filters['search'] . '%')
-                        ->orWhere('idempotency_key', 'like', '%' . $filters['search'] . '%')
-                        ->orWhere('type', 'like', '%' . $filters['search'] . '%')
-                        ->orWhere('ip_address', 'like', '%' . $filters['search'] . '%')
-                        ->orWhere('user_agent', 'like', '%' . $filters['search'] . '%')
+                        ->whereLike('transaction_no', '%' . $filters['search'] . '%')
+                        ->orWhereLike('idempotency_key', '%' . $filters['search'] . '%')
+                        ->orWhereLike('type', '%' . $filters['search'] . '%')
+                        ->orWhereLike('ip_address', '%' . $filters['search'] . '%')
+                        ->orWhereLike('user_agent', '%' . $filters['search'] . '%')
                         ->orWhereHas('wallet.user', function ($user) use ($filters): void {
                             $user
-                                ->where('name', 'like', '%' . $filters['search'] . '%')
-                                ->orWhere('phone', 'like', '%' . $filters['search'] . '%');
+                                ->whereLike('name', '%' . $filters['search'] . '%')
+                                ->orWhereLike('phone', '%' . $filters['search'] . '%');
                         });
                 });
             })

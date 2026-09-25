@@ -12,6 +12,8 @@ class ChatConversationSeeder extends Seeder
 {
     public function run(): void
     {
+        echo "Chat Converstion seeder started\n";
+
         $admin = DB::table('admins')->first();
 
         if (! $admin) {

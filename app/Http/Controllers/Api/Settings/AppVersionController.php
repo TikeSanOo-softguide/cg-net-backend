@@ -16,9 +16,21 @@ class AppVersionController extends Controller
 
         $versions = AppVersion::query()
             ->where('status', 'active')
-            ->when($platform, fn($query) => $query->whereIn('platform', [$platform, 'all']))
-            ->latest()
-            ->get();
+            ->where('platform', '!=', 'all')
+            ->when($platform, fn($query) => $query->where('platform', $platform))
+            ->get()
+            ->groupBy('platform')
+            ->map(function ($group) {
+                return $group
+                    ->sort(function ($a, $b) {
+                        $verA = ltrim($a->version, 'vV');
+                        $verB = ltrim($b->version, 'vV');
+
+                        return version_compare($verB, $verA);
+                    })
+                    ->first();
+            })
+            ->values();
 
         return AppVersionResource::collection($versions);
     }

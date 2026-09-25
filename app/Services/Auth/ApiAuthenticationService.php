@@ -6,7 +6,7 @@ use App\Enums\UserStatus;
 use App\Enums\WalletStatus;
 use App\Models\User;
 use App\Services\Auth\OtpService;
-use Illuminate\Database\QueryException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
@@ -50,12 +50,8 @@ final class ApiAuthenticationService
 
                     return $this->createNewUser($phone, $data);
                 });
-            } catch (QueryException $exception) {
-                if ((string) $exception->getCode() === '23000') {
-                    abort(422, 'The registration details are already in use.');
-                }
-
-                throw $exception;
+            } catch (UniqueConstraintViolationException) {
+                abort(422, 'The registration details are already in use.');
             }
         });
     }

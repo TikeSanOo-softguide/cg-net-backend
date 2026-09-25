@@ -15,19 +15,14 @@ class AppVersionController extends Controller
 {
     public function index(Request $request): Response
     {
-        $search = trim((string) $request->input('search', ''));
-
         $versions = AppVersion::query()
-            ->when($search !== '', function ($query) use ($search): void {
-                $query->where(function ($query) use ($search): void {
-                    $query
-                        ->where('version', 'like', "%{$search}%")
-                        ->orWhere('minimum_version', 'like', "%{$search}%")
-                        ->orWhere('platform', 'like', "%{$search}%");
+            ->when($request->filled('platform'), fn($query) => $query->where('platform', $request->input('platform')))
+            ->when($request->filled('version'), function ($query) use ($request): void {
+                $version = $request->input('version');
+                $query->where(function ($query) use ($version): void {
+                    $query->where('version', $version)->orWhere('minimum_version', $version);
                 });
             })
-            ->when($request->filled('platform'), fn($query) => $query->where('platform', $request->input('platform')))
-            ->when($request->filled('status'), fn($query) => $query->where('status', $request->input('status')))
             ->latest()
             ->paginate((int) $request->input('per_page', 10))
             ->withQueryString();
@@ -35,9 +30,8 @@ class AppVersionController extends Controller
         return Inertia::render('Settings/AppVersion/Index', [
             'items' => $versions,
             'filters' => [
-                'search' => $search,
                 'platform' => $request->input('platform', ''),
-                'status' => $request->input('status', ''),
+                'version' => $request->input('version', ''),
             ],
         ]);
     }

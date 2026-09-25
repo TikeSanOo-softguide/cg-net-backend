@@ -33,7 +33,7 @@ class StaffController extends Controller
             ->with('roles:id,name')
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
-                    $query->where('username', 'like', '%'.$search.'%');
+                    $query->whereLike('username', '%'.$search.'%');
                 });
             })
             ->when($status !== '' && in_array($status, array_column(AdminStatus::cases(), 'value'), true), function ($query) use ($status): void {

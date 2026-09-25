@@ -32,13 +32,13 @@ class ChangePasswordRequestController extends Controller
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
-                        ->where('contact_name', 'like', '%' . $search . '%')
-                        ->orWhere('contact_phone', 'like', '%' . $search . '%')
-                        ->orWhere('new_wifi_name', 'like', '%' . $search . '%')
-                        ->orWhereHas('user', fn($query) => $query->where('name', 'like', '%' . $search . '%'))
+                        ->whereLike('contact_name', '%' . $search . '%')
+                        ->orWhereLike('contact_phone', '%' . $search . '%')
+                        ->orWhereLike('new_wifi_name', '%' . $search . '%')
+                        ->orWhereHas('user', fn($query) => $query->whereLike('name', '%' . $search . '%'))
                         ->orWhereHas(
                             'broadbandAccount',
-                            fn($query) => $query->where('account_number', 'like', '%' . $search . '%'),
+                            fn($query) => $query->whereLike('account_number', '%' . $search . '%'),
                         );
                 });
             })

@@ -22,7 +22,7 @@ export default function Index({ conversations, selectedConversation, quickReplie
             <Head title={'Chat Conversations'} />
             <PageContent className="h-full min-h-0 gap-3 overflow-hidden">
                 <PageHeader />
-                <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1fr)] overflow-hidden rounded-lg border border-border bg-background shadow-sm lg:grid-cols-[250px_minmax(0,1fr)_270px] lg:grid-rows-none">
+                <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1fr)] overflow-hidden rounded-lg border border-border bg-background shadow-sm lg:grid-cols-[250px_minmax(0,1fr)_500px] lg:grid-rows-none">
                     <ConversationList
                         conversations={conversations}
                         filters={filters}

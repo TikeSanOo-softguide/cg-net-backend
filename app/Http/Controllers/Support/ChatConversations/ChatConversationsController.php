@@ -41,8 +41,8 @@ class ChatConversationsController extends Controller
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query
-                        ->whereHas('user', fn($userQuery) => $userQuery->where('name', 'like', "%{$search}%"))
-                        ->orWhereHas('messages', fn($messageQuery) => $messageQuery->where('message', 'like', "%{$search}%"));
+                        ->whereHas('user', fn($userQuery) => $userQuery->whereLike('name', "%{$search}%"))
+                        ->orWhereHas('messages', fn($messageQuery) => $messageQuery->whereLike('message', "%{$search}%"));
                 });
             })
             ->when($status, function ($query) use ($status) {
