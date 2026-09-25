@@ -26,10 +26,9 @@ type GenerateProps = {
     cards: Paginated<TopUpCardRow>;
     generated: TopUpCardRow[];
     generation?: GenerationState;
-    presets: number[];
     max_cards?: number;
     agents: { id: number; name: string }[];
-    amounts: string[];
+    amounts: number[];
     filters: TopUpCardFilters;
 };
 
@@ -62,7 +61,6 @@ export default function TopUpCardsGenerate({
     cards,
     generated = [],
     generation,
-    presets,
     max_cards = 100000,
     agents = [],
     amounts,
@@ -73,8 +71,6 @@ export default function TopUpCardsGenerate({
     const [search, setSearch] = useState(filters.search);
     const [selected, setSelected] = useState<Record<string, number>>({});
     const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
-    const [customOpen, setCustomOpen] = useState(false);
-    const [customValue, setCustomValue] = useState('');
     const [tableLoading, setTableLoading] = useState(false);
     const debounce = useRef<number>(0);
     const pollInFlight = useRef(false);
@@ -126,22 +122,6 @@ export default function TopUpCardsGenerate({
         [generated],
     );
 
-    const applyCustom = (next: Record<string, number>, value: string, open: boolean) => {
-        const copy = { ...next };
-
-        Object.keys(copy).forEach((key) => {
-            if (!presets.includes(Number(key))) {
-                delete copy[key];
-            }
-        });
-
-        if (open && Number(value) >= 50) {
-            copy[String(Number(value))] = copy[String(Number(value))] ?? 1;
-        }
-
-        return copy;
-    };
-
     const submit = (event: FormEvent) => {
         event.preventDefault();
 
@@ -159,8 +139,6 @@ export default function TopUpCardsGenerate({
             onSuccess: () => {
                 setSelected({});
                 setSelectedAgentIds([]);
-                setCustomOpen(false);
-                setCustomValue('');
             },
         });
     };
@@ -215,11 +193,9 @@ export default function TopUpCardsGenerate({
                                 <TopUpCardGenerateForm
                                     agents={agents}
                                     selectedAgentIds={selectedAgentIds}
-                                    presets={presets}
+                                    amounts={amounts}
                                     maxCards={max_cards}
                                     selected={selected}
-                                    customOpen={customOpen}
-                                    customValue={customValue}
                                     expiresAt={form.data.expires_at}
                                     processing={isGenerating}
                                     error={form.errors.amounts ?? form.errors.expires_at}
@@ -239,14 +215,6 @@ export default function TopUpCardsGenerate({
                                     }}
                                     onQuantity={(amount, quantity) => {
                                         setSelected((current) => ({ ...current, [String(amount)]: quantity }));
-                                    }}
-                                    onCustomOpen={(open) => {
-                                        setCustomOpen(open);
-                                        setSelected((current) => applyCustom(current, customValue, open));
-                                    }}
-                                    onCustomValue={(value) => {
-                                        setCustomValue(value);
-                                        setSelected((current) => applyCustom(current, value, customOpen));
                                     }}
                                     onExpiresAt={(value) => form.setData('expires_at', value)}
                                     onAgentIds={setSelectedAgentIds}

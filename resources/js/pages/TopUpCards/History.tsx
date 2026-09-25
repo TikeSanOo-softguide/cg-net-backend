@@ -13,7 +13,7 @@ import type { RedeemHistoryFilters, RedeemHistoryStats, TopUpCardRow } from '@/l
 type HistoryProps = {
     cards: Paginated<TopUpCardRow>;
     recent: TopUpCardRow[];
-    amounts: string[];
+    amounts: number[];
     stats: RedeemHistoryStats;
     filters: RedeemHistoryFilters;
 };

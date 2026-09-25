@@ -20,7 +20,7 @@ import { CopyValueButton } from '../CopyValueButton';
 
 type TopUpCardTableProps = {
     cards: Paginated<TopUpCardRow>;
-    amounts: string[];
+    amounts: number[];
     filters: TopUpCardFilters;
     search: string;
     generatedPins: Record<number, string>;
@@ -109,7 +109,7 @@ export const TopUpCardTable = memo(function TopUpCardTable({
                                     <SelectContent>
                                         <SelectItem value="all">{t('common.all')}</SelectItem>
                                         {amounts.map((amount) => (
-                                            <SelectItem key={amount} value={amount}>
+                                            <SelectItem key={amount} value={String(amount)}>
                                                 {formatTopUpAmount(amount)}
                                             </SelectItem>
                                         ))}

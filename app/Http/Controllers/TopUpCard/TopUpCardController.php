@@ -9,7 +9,6 @@ use App\Http\Requests\TopUpCard\GenerateTopUpCardsRequest;
 use App\Models\Admin;
 use App\Models\Agent;
 use App\Models\Batch;
-use App\Models\Agent;
 use App\Models\TopUpCard;
 use App\Models\TopUpCardBatchCode;
 use App\Support\GeneratesTopUpCards;
@@ -84,16 +83,17 @@ class TopUpCardController extends Controller
             ->withQueryString()
             ->through(fn(TopUpCard $card) => $this->payload($card));
 
+        $agents = Agent::query()
+            ->select(['id', 'name'])
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('TopUpCards/Generate', [
             'cards' => $cards,
             'generated' => $request->session()->get('top_up_card_export_batch', []),
-            'presets' => TopUpCardBatchCode::query()
-                ->orderBy('amount')
-                ->pluck('amount')
-                ->map(fn($amount): int => (int) $amount)
-                ->values(),
-            'agents' => $agents,
+            'presets' => $this->presetAmounts(),
             'amounts' => $this->amountOptions(),
+            'agents' => $agents,
             'filters' => [
                 'search' => $search,
                 'status' => $status,
@@ -103,7 +103,7 @@ class TopUpCardController extends Controller
                 'sort' => $sort,
                 'direction' => $direction,
             ],
-        ];
+        ]);
 
         if ($partialOnly === null || $this->wantsInertiaProp($partialOnly, 'agents')) {
             $props['agents'] = $this->agentOptions();
@@ -124,7 +124,7 @@ class TopUpCardController extends Controller
         }
 
         if ($partialOnly === null || $this->wantsInertiaProp($partialOnly, 'presets')) {
-            $props['presets'] = self::Presets;
+            $props['presets'] = $this->presetAmounts();
         }
 
         if ($partialOnly === null || $this->wantsInertiaProp($partialOnly, 'max_cards')) {
@@ -812,7 +812,8 @@ class TopUpCardController extends Controller
 
         return Inertia::render('TopUpCards/CardHistory', [
             'cards' => $cards,
-            'presets' => self::Presets,
+            'generated' => $request->session()->get('top_up_card_export_batch', []),
+            'presets' => $this->presetAmounts(),
             'amounts' => $this->amountOptions(),
             'batches' => $batches,
             'stats' => $this->stats(),
@@ -876,28 +877,24 @@ class TopUpCardController extends Controller
         ];
     }
 
+    private function presetAmounts(): Collection
+    {
+        return TopUpCardBatchCode::query()
+            ->orderBy('amount')
+            ->pluck('amount')
+            ->map(fn($amount): int => (int) $amount)
+            ->unique()
+            ->values();
+    }
+
     /**
      * @return list<string>
      */
     private function amountOptions(): array
     {
-        /** @var list<string> */
-        return Cache::remember('top_up_cards.amount_options', now()->addMinutes(5), function (): array {
-            $stored = TopUpCard::query()
-                ->select('amount')
-                ->distinct()
-                ->orderBy('amount')
-                ->pluck('amount')
-                ->map(fn($amount): string => (string) $amount);
-
-            return Collection::make(self::Presets)
-                ->map(fn(int $amount): string => (string) $amount)
-                ->merge($stored)
-                ->map(fn(string|int $amount): string => (string) (int) $amount)
-                ->unique()
-                ->values()
-                ->all();
-        });
+        return $this->presetAmounts()
+            ->map(fn(int $amount): string => (string) $amount)
+            ->all();
     }
 
     private function stats(): array
