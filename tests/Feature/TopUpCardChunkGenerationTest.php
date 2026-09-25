@@ -80,7 +80,7 @@ class TopUpCardChunkGenerationTest extends TestCase
             TopUpCard::query()
                 ->orderBy('id')
                 ->pluck('serial_no')
-                ->map(fn(string $serial): int => (int) substr($serial, -6))
+                ->map(fn(string $serial): int => (int) substr($serial, 12))
                 ->all(),
         );
     }

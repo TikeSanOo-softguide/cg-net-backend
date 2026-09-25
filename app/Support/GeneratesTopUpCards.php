@@ -377,7 +377,7 @@ final class GeneratesTopUpCards
         $dailyCounter ??= random_int(1001, 9999);
 
         return sprintf(
-            '%s%s%02d%02d%06d',
+            '%s%s%02d%02d%d',
             $productionDate->format('ym'),
             self::batchCodeForAmount($amount),
             (int) $productionDate->format('d'),
