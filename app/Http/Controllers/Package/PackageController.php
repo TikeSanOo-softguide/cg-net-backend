@@ -14,6 +14,7 @@ use App\Support\StoresPublicImage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -30,10 +31,9 @@ class PackageController extends Controller
         $speedIds = array_filter(array_map('intval', (array) $request->input('speed_ids', [])));
         $termIds = array_filter(array_map('intval', (array) $request->input('term_ids', [])));
         $addonIds = array_filter(array_map('intval', (array) $request->input('addon_ids', [])));
-        $statusFilters = array_values(array_intersect(
-            ['active', 'inactive', 'recommended'],
-            (array) $request->input('status_filters', []),
-        ));
+        $statusFilters = array_values(
+            array_intersect(['active', 'inactive', 'recommended'], (array) $request->input('status_filters', [])),
+        );
 
         $status = $request->string('status')->toString();
         $recommended = $request->string('recommended')->toString();
@@ -41,50 +41,48 @@ class PackageController extends Controller
         $direction = $request->string('direction')->toString() === 'asc' ? 'asc' : 'desc';
         $sortable = ['price', 'installation_fee', 'sort_order', 'created_at'];
 
-        if (! in_array($sort, $sortable, true)) {
+        if (!in_array($sort, $sortable, true)) {
             $sort = 'created_at';
         }
 
         $packages = Package::query()
-            ->with([
-                'network:id,name_en,name_zh,name_my',
-                'speed:id,mbps',
-                'term:id,months',
-            ])
+            ->with(['network:id,name_en,name_zh,name_my', 'speed:id,mbps', 'term:id,months'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
-                    $query->whereHas('network', function ($query) use ($search): void {
-                        $query->where(function ($query) use ($search): void {
-                            $query
-                                ->whereLike('name_en', '%' . $search . '%')
-                                ->orWhereLike('name_zh', '%' . $search . '%')
-                                ->orWhereLike('name_my', '%' . $search . '%');
-                        });
-                    })
+                    $query
+                        ->whereHas('network', function ($query) use ($search): void {
+                            $query->where(function ($query) use ($search): void {
+                                $query
+                                    ->whereLike('name_en', '%' . $search . '%')
+                                    ->orWhereLike('name_zh', '%' . $search . '%')
+                                    ->orWhereLike('name_my', '%' . $search . '%');
+                            });
+                        })
                         ->orWhereHas('speed', function ($query) use ($search): void {
-                            $query->whereLike('mbps', '%' . $search . '%'
-                            );
+                            $query->whereLike('mbps', '%' . $search . '%');
                         })
                         ->orWhereHas('term', function ($query) use ($search): void {
-                            $query->whereLike('months', '%' . $search . '%'
-                            );
+                            $query->whereLike('months', '%' . $search . '%');
                         });
                 });
             })
             ->when($networkIds !== [], fn($query) => $query->whereIn('network_id', $networkIds))
             ->when($speedIds !== [], fn($query) => $query->whereIn('speed_id', $speedIds))
             ->when($termIds !== [], fn($query) => $query->whereIn('term_id', $termIds))
-            ->when($addonIds !== [], fn($query) => $query->whereHas('addons', fn($query) => $query->whereIn('addons.id', $addonIds)))
-            ->when(count(array_intersect($statusFilters, ['active', 'inactive'])) === 1, function ($query) use ($statusFilters): void {
+            ->when(
+                $addonIds !== [],
+                fn($query) => $query->whereHas('addons', fn($query) => $query->whereIn('addons.id', $addonIds)),
+            )
+            ->when(count(array_intersect($statusFilters, ['active', 'inactive'])) === 1, function ($query) use (
+                $statusFilters,
+            ): void {
                 $query->where('is_active', in_array('active', $statusFilters, true));
             })
             ->when(in_array('recommended', $statusFilters, true), fn($query) => $query->where('recommended', true))
             ->orderBy($sort, $direction)
             ->paginate(15)
             ->withQueryString()
-            ->through(
-                fn(Package $package) => $this->payload($package)
-            );
+            ->through(fn(Package $package) => $this->payload($package));
 
         return Inertia::render('Package/Index', [
             'packages' => $packages,
@@ -128,23 +126,34 @@ class PackageController extends Controller
 
     public function store(StorePackageRequest $request): RedirectResponse
     {
-        $package = Package::query()->create($this->attributes(
-            $request->validated(),
-            $request->file('image_url'),
-        ));
+        $exists = Package::query()
+            ->where('network_id', $request->network_id)
+            ->where('speed_id', $request->speed_id)
+            ->where('term_id', $request->term_id)
+            ->exists();
 
-        activity('package')->causedBy($request->user())->performedOn($package)->event('created')->log('package_created');
+        if ($exists) {
+            return back()
+                ->withErrors([
+                    'network_id' => 'packages.unique',
+                ])
+                ->withInput();
+        }
+
+        $package = Package::query()->create($this->attributes($request->validated(), $request->file('image_url')));
+
+        activity('package')
+            ->causedBy($request->user())
+            ->performedOn($package)
+            ->event('created')
+            ->log('package_created');
 
         return redirect()->route('packages.index', $request->query())->with('success', 'packages.created');
     }
 
     public function show(Package $package): Response
     {
-        $package->load([
-            'network:id,name',
-            'speed:id,mbps',
-            'term:id,months',
-        ]);
+        $package->load(['network:id,name', 'speed:id,mbps', 'term:id,months']);
 
         return Inertia::render('Package/Show', [
             'package' => $this->payload($package),
@@ -159,25 +168,27 @@ class PackageController extends Controller
         return redirect()->route('packages.show', $package);
     }
 
-    public function update(
-        UpdatePackageRequest $request,
-        Package $package
-    ): RedirectResponse {
-        $data = $this->attributes(
-            $request->validated(),
-            $request->file('image_url'),
-            $package->image_url,
-        );
+    public function update(UpdatePackageRequest $request, Package $package): RedirectResponse
+    {
+        $exists = Package::query()
+            ->where('network_id', $request->network_id)
+            ->where('speed_id', $request->speed_id)
+            ->where('term_id', $request->term_id)
+            ->where('id', '!=', $package->id)
+            ->exists();
+
+        if ($exists) {
+            return back()->withInput()->with('error', 'packages.unique');
+        }
+
+        $data = $this->attributes($request->validated(), $request->file('image_url'), $package->image_url);
 
         if ($request->hasFile('image_url')) {
             if ($package->image_url) {
                 StoresPublicImage::delete($package->image_url);
             }
 
-            $data['image_url'] = StoresPublicImage::store(
-                $request->file('image_url'),
-                'cms/packages'
-            );
+            $data['image_url'] = StoresPublicImage::store($request->file('image_url'), 'cms/packages');
         } elseif ($request->has('image_url') && $request->input('image_url') === null) {
             if ($package->image_url) {
                 StoresPublicImage::delete($package->image_url);
@@ -196,32 +207,70 @@ class PackageController extends Controller
             ->event('updated')
             ->log('package_updated');
 
-        return redirect()
-            ->route('packages.index', $request->query())
-            ->with('success', 'packages.updated');
+        return redirect()->route('packages.index', $request->query())->with('success', 'packages.updated');
+    }
+
+    private function packageIsUsed(int $packageId): bool
+    {
+        return DB::table('broadband_accounts')->where('current_package_id', $packageId)->exists() ||
+            DB::table('package_orders')->where('package_id', $packageId)->exists() ||
+            DB::table('customer_packages')->where('package_id', $packageId)->exists() ||
+            DB::table('installation_applications')->where('package_id', $packageId)->exists() ||
+            DB::table('change_plan_requests')
+                ->where(function ($query) use ($packageId) {
+                    $query->where('current_package_id', $packageId)->orWhere('new_package_id', $packageId);
+                })
+                ->exists();
     }
 
     public function destroy(Request $request, Package $package): RedirectResponse
     {
+        if ($this->packageIsUsed($package->id)) {
+            return back()->withErrors([
+                'delete' => __('packages.validation.cannot_delete_has_package'),
+            ]);
+        }
+
         $package->delete();
         return redirect()->route('packages.index')->with('success', 'packages.deleted');
     }
 
     public function bulkDestroy(Request $request): RedirectResponse
     {
-        $ids = $request->validate(['ids' => ['required', 'array', 'min:1'], 'ids.*' => ['integer', 'distinct', 'exists:packages,id']])['ids'];
+        $ids = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'distinct', 'exists:packages,id'],
+        ])['ids'];
+
+        $usedPackageIds = Package::query()
+            ->whereIn('id', $ids)
+            ->where(function ($query) {
+                $query
+                    ->whereHas('broadbandAccounts')
+                    ->orWhereHas('packageOrders')
+                    ->orWhereHas('customerPackages')
+                    ->orWhereHas('currentChangePlanRequests')
+                    ->orWhereHas('newChangePlanRequests');
+            })
+            ->pluck('id');
+
+        if ($usedPackageIds->isNotEmpty()) {
+            return back()->with('error', __('common.bulk_delete_failed'));
+        }
+
         $deleted = Package::query()->whereIn('id', $ids)->delete();
+
         if ($deleted === 0) {
             return back()->withErrors(['delete' => 'common.bulk_delete_failed']);
         }
-        return redirect()->route('packages.index')->with('success', 'common.bulk_deleted')->with('deleted_count', $deleted);
+        return redirect()
+            ->route('packages.index')
+            ->with('success', 'common.bulk_deleted')
+            ->with('deleted_count', $deleted);
     }
 
-    private function attributes(
-        array $validated,
-        ?UploadedFile $imageUrl = null,
-        ?string $previousPath = null,
-    ): array {
+    private function attributes(array $validated, ?UploadedFile $imageUrl = null, ?string $previousPath = null): array
+    {
         $data = [
             'network_id' => $validated['network_id'],
             'speed_id' => $validated['speed_id'],
@@ -235,11 +284,7 @@ class PackageController extends Controller
         ];
 
         if ($imageUrl) {
-            $data['image_url'] = StoresPublicImage::store(
-                $imageUrl,
-                'cms/packages',
-                $previousPath,
-            );
+            $data['image_url'] = StoresPublicImage::store($imageUrl, 'cms/packages', $previousPath);
         }
         return $data;
     }
@@ -259,15 +304,17 @@ class PackageController extends Controller
                 ]
                 : null,
             'speed_id' => $package->speed_id,
-            'speed' => $package->speed ? [
-                'id' => $package->speed->id,
-                'mbps' => $package->speed->mbps,
-            ] : null,
+            'speed' => $package->speed
+                ? [
+                    'id' => $package->speed->id,
+                    'mbps' => $package->speed->mbps,
+                ]
+                : null,
             'term_id' => $package->term_id,
             'term' => $package->term ? ['id' => $package->term->id, 'months' => $package->term->months] : null,
-            'price' => (int) $package->price,
+            'price' => $package->price,
             'image_url' => StoresPublicImage::url($package->image_url),
-            'installation_fee' => (int) $package->installation_fee,
+            'installation_fee' => $package->installation_fee,
             'includes_free_iptv' => $package->includes_free_iptv,
             'is_active' => $package->is_active,
             'sort_order' => $package->sort_order,
@@ -281,12 +328,14 @@ class PackageController extends Controller
         return Network::query()
             ->orderBy('name_en')
             ->get(['id', 'name_en', 'name_zh', 'name_my'])
-            ->map(fn(Network $network) => [
-                'id' => $network->id,
-                'name_en' => $network->name_en,
-                'name_zh' => $network->name_zh,
-                'name_my' => $network->name_my,
-            ])
+            ->map(
+                fn(Network $network) => [
+                    'id' => $network->id,
+                    'name_en' => $network->name_en,
+                    'name_zh' => $network->name_zh,
+                    'name_my' => $network->name_my,
+                ],
+            )
             ->values()
             ->all();
     }
@@ -315,24 +364,17 @@ class PackageController extends Controller
     {
         return Addon::query()
             ->orderBy('name_en')
-            ->get([
-                'id',
-                'name_en',
-                'name_zh',
-                'name_my',
-                'price',
-                'image_url',
-            ])
-            ->map(fn(Addon $addon) => [
-                'id' => $addon->id,
-                'name_en' => $addon->name_en,
-                'name_zh' => $addon->name_zh,
-                'name_my' => $addon->name_my,
-                'price' => (int) $addon->price,
-                'image_url' => StoresPublicImage::url(
-                    $addon->image_url
-                ),
-            ])
+            ->get(['id', 'name_en', 'name_zh', 'name_my', 'price', 'image_url'])
+            ->map(
+                fn(Addon $addon) => [
+                    'id' => $addon->id,
+                    'name_en' => $addon->name_en,
+                    'name_zh' => $addon->name_zh,
+                    'name_my' => $addon->name_my,
+                    'price' => $addon->price,
+                    'image_url' => StoresPublicImage::url($addon->image_url),
+                ],
+            )
             ->values()
             ->all();
     }
@@ -350,12 +392,14 @@ class PackageController extends Controller
             })
             ->orderBy('name_en')
             ->get(['id', 'name_en', 'name_zh', 'name_my'])
-            ->map(fn(Network $network) => [
-                'id' => $network->id,
-                'name_en' => $network->name_en,
-                'name_zh' => $network->name_zh,
-                'name_my' => $network->name_my,
-            ])
+            ->map(
+                fn(Network $network) => [
+                    'id' => $network->id,
+                    'name_en' => $network->name_en,
+                    'name_zh' => $network->name_zh,
+                    'name_my' => $network->name_my,
+                ],
+            )
             ->values()
             ->all();
     }
@@ -364,8 +408,7 @@ class PackageController extends Controller
     {
         return Speed::query()
             ->when($search, function ($query) use ($search): void {
-                $query->whereLike('mbps', '%' . $search . '%'
-                );
+                $query->whereLike('mbps', '%' . $search . '%');
             })
             ->orderBy('mbps')
             ->get(['id', 'mbps'])
@@ -373,7 +416,7 @@ class PackageController extends Controller
                 fn(Speed $speed) => [
                     'id' => $speed->id,
                     'mbps' => $speed->mbps,
-                ]
+                ],
             )
             ->values()
             ->all();
@@ -383,8 +426,7 @@ class PackageController extends Controller
     {
         return Term::query()
             ->when($search, function ($query) use ($search): void {
-                $query->whereLike('months', '%' . $search . '%'
-                );
+                $query->whereLike('months', '%' . $search . '%');
             })
             ->orderBy('months')
             ->get(['id', 'months'])
@@ -392,7 +434,7 @@ class PackageController extends Controller
                 fn(Term $term) => [
                     'id' => $term->id,
                     'months' => $term->months,
-                ]
+                ],
             )
             ->values()
             ->all();
@@ -410,22 +452,17 @@ class PackageController extends Controller
                 });
             })
             ->orderBy('name_en')
-            ->get([
-                'id',
-                'name_en',
-                'name_zh',
-                'name_my',
-                'price',
-                'image_url',
-            ])
-            ->map(fn(Addon $addon) => [
-                'id' => $addon->id,
-                'name_en' => $addon->name_en,
-                'name_zh' => $addon->name_zh,
-                'name_my' => $addon->name_my,
-                'price' => (int) $addon->price,
-                'image_url' => StoresPublicImage::url($addon->image_url),
-            ])
+            ->get(['id', 'name_en', 'name_zh', 'name_my', 'price', 'image_url'])
+            ->map(
+                fn(Addon $addon) => [
+                    'id' => $addon->id,
+                    'name_en' => $addon->name_en,
+                    'name_zh' => $addon->name_zh,
+                    'name_my' => $addon->name_my,
+                    'price' => $addon->price,
+                    'image_url' => StoresPublicImage::url($addon->image_url),
+                ],
+            )
             ->values()
             ->all();
     }

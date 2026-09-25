@@ -1212,10 +1212,10 @@
             "network_name_my_max": "The Myanmar name may not be greater than 50 characters.",
             "months_required": "Please enter the number of months.",
             "months_integer": "The number of months must be an integer.",
-            "months_max": "The number of months may not be greater than 3-digit.",
+            "months_max": "The number of months may not be greater than 9-digit.",
             "mbps_required": "Please enter the speed in Mbps.",
             "mbps_integer": "The speed must be an integer.",
-            "mbps_max": "The number of mbps may not be greater than 3-digit.",
+            "mbps_max": "The number of mbps may not be greater than 9-digit.",
             "network_name_en_unique": "This English name already exists.",
             "network_name_zh_unique": "This Chinese name already exists.",
             "network_name_my_unique": "This Myanmar name already exists.",
@@ -1223,7 +1223,12 @@
             "months_unique": "This term already exists.",
             "price_numeric": "The price must be a number.",
             "price_min": "The price must be at least 0.",
-            "price_max": "Price may not be greater than 10-digit."
+            "price_max": "Price may not be greater than 9-digit.",
+            "installation_fee_max": "Installation Fee may not be greater than 9-digit.",
+            "unique": "Same network, speed, and term package already exists.",
+            "max": "Value must be between 0 and 9.",
+            "sort_order_max": "Value must be between 0 and 9.",
+            "cannot_delete_in_use": "This package cannot be deleted because it is currently in use."
         }
     },
     "relocation_requests": {

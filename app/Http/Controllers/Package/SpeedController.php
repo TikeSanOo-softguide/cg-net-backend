@@ -13,7 +13,13 @@ class SpeedController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'mbps' => ['required', 'integer', 'min:1', 'max:999', Rule::unique('speeds', 'mbps')->withoutTrashed()],
+            'mbps' => [
+                'required',
+                'integer',
+                'min:1',
+                'max:999999999',
+                Rule::unique('speeds', 'mbps')->withoutTrashed(),
+            ],
         ]);
 
         Speed::query()->create($data);
@@ -28,7 +34,7 @@ class SpeedController extends Controller
                 'required',
                 'integer',
                 'min:1',
-                'max:999',
+                'max:999999999',
                 Rule::unique('speeds', 'mbps')->ignore($speed->id)->withoutTrashed(),
             ],
         ]);

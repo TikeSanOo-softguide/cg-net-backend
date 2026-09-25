@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Package;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Package\CreateAddonsRequest;
+use App\Http\Requests\Package\StoreAddonsRequest;
 use App\Http\Requests\Package\UpdateAddonsRequest;
 use App\Models\Addon;
 use App\Support\StoresPublicImage;
@@ -13,7 +13,7 @@ use Illuminate\Http\UploadedFile;
 
 class AddonController extends Controller
 {
-    public function store(CreateAddonsRequest $request): RedirectResponse
+    public function store(StoreAddonsRequest $request): RedirectResponse
     {
         $data = $request->safe()->except('image_url');
 
