@@ -88,11 +88,8 @@ class TopUpCardController extends Controller
             ->orderBy('name')
             ->get();
 
-        return Inertia::render('TopUpCards/Generate', [
+        $props = [
             'cards' => $cards,
-            'generated' => $request->session()->get('top_up_card_export_batch', []),
-            'amounts' => $this->amountOptions(),
-            'agents' => $agents,
             'filters' => [
                 'search' => $search,
                 'status' => $status,
@@ -102,7 +99,7 @@ class TopUpCardController extends Controller
                 'sort' => $sort,
                 'direction' => $direction,
             ],
-        ]);
+        ];
 
         if ($partialOnly === null || $this->wantsInertiaProp($partialOnly, 'agents')) {
             $props['agents'] = $this->agentOptions();
