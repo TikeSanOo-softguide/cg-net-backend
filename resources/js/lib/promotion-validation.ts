@@ -2,7 +2,7 @@ import type { PromotionFormValues } from '@/components/cms/promotion/PromotionFo
 
 type Translate = (key: string) => string;
 
-export const PROMOTION_TITLE_MAX_LENGTH = 255;
+export const PROMOTION_TITLE_MAX_LENGTH = 120;
 export const PROMOTION_DESCRIPTION_MAX_LENGTH = 5000;
 export const PROMOTION_IMAGE_MAX_SIZE_KB = 5120; // 5MB
 
@@ -65,7 +65,6 @@ export function validatePromotionField(
         }
 
         case 'start_date': {
-            // nullable
             if (value === null || value === undefined || value === '') {
                 break;
             }
@@ -78,7 +77,6 @@ export function validatePromotionField(
         }
 
         case 'end_date': {
-            // nullable
             if (value === null || value === undefined || value === '') {
                 break;
             }
@@ -108,7 +106,6 @@ export function validatePromotionField(
         }
 
         case 'image': {
-            // Not required (nullable) — skip if empty
             if (value === null || value === undefined || value === '') break;
 
             if (!(value instanceof File)) break; // already-set string URL (existing image), nothing to validate

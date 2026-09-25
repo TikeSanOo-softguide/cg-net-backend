@@ -14,9 +14,9 @@ class UpdateAnnouncementRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'content_en' => ['required', 'string'],
-            'content_zh' => ['required', 'string'],
-            'content_my' => ['required', 'string'],
+            'content_en' => ['required', 'string', 'max:5000'],
+            'content_zh' => ['required', 'string', 'max:5000'],
+            'content_my' => ['required', 'string', 'max:5000'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'is_active' => ['sometimes', 'boolean'],

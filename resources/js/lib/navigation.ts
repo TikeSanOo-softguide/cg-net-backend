@@ -46,6 +46,7 @@ import {
     UserRound,
     Users,
     Wallet,
+    Workflow,
     Wrench,
 } from 'lucide-react';
 
@@ -160,10 +161,28 @@ export const navigation: NavGroup[] = [
         icon: Ticket,
         children: [
             {
+                labelKey: 'menu.top_up_card_agents',
+                descriptionKey: 'menu.top_up_card_agents_description',
+                href: '/top-up-cards/agents',
+                icon: UserRound,
+            },
+            {
                 labelKey: 'menu.top_up_card_batch',
                 descriptionKey: 'menu.top_up_card_batch_description',
                 href: '/top-up-cards/batch',
                 icon: Ticket,
+            },
+            {
+                labelKey: 'menu.top_up_card_agent_assign',
+                descriptionKey: 'menu.top_up_card_agent_assign_description',
+                href: '/top-up-cards/agent-assign',
+                icon: UserCog,
+            },
+            {
+                labelKey: 'menu.card_history',
+                descriptionKey: 'menu.card_history_description',
+                href: '/top-up-cards/card-history',
+                icon: CreditCard,
             },
             {
                 labelKey: 'menu.redeem_history',
@@ -171,6 +190,7 @@ export const navigation: NavGroup[] = [
                 href: '/top-up-cards/redeem-history',
                 icon: History,
             },
+            
         ],
     },
     {
@@ -254,16 +274,16 @@ export const navigation: NavGroup[] = [
                 icon: MessageSquare,
             },
             {
-                labelKey: 'menu.agent_assignment',
-                descriptionKey: 'menu.agent_assignment_description',
-                href: '/support/agents',
-                icon: UserCog,
-            },
-            {
                 labelKey: 'menu.quick_reply_templates',
                 descriptionKey: 'menu.quick_reply_templates_description',
                 href: '/support/quick-replies',
                 icon: Reply,
+            },
+            {
+                labelKey: 'menu.chatbot_flows',
+                descriptionKey: 'menu.chatbot_flows_description',
+                href: '/support/chatbot-flows',
+                icon: Workflow,
             },
         ],
     },
@@ -331,11 +351,30 @@ export const navigation: NavGroup[] = [
         ],
     },
     {
-        id: 'activity',
-        labelKey: 'menu.activity_logs',
-        descriptionKey: 'menu.activity_logs_description',
-        href: '/activity-logs',
-        icon: Activity,
+        id: 'logs',
+        labelKey: 'menu.logs',
+        descriptionKey: 'menu.logs_description',
+        icon: ScrollText,
+        children: [
+            {
+                labelKey: 'menu.security_logs',
+                descriptionKey: 'menu.security_logs_description',
+                href: '/logs/security',
+                icon: ShieldCheck,
+            },
+            {
+                labelKey: 'menu.admin_activity_logs',
+                descriptionKey: 'menu.admin_activity_logs_description',
+                href: '/activity-logs',
+                icon: Activity,
+            },
+            {
+                labelKey: 'menu.user_logs',
+                descriptionKey: 'menu.user_logs_description',
+                href: '/logs/users',
+                icon: UserRound,
+            },
+        ],
     },
     {
         id: 'reports',
@@ -471,7 +510,7 @@ export function viewPermissionForHref(href: string): string | undefined {
         return 'staff.view';
     }
 
-    if (href.startsWith('/activity-logs')) {
+    if (href.startsWith('/activity-logs') || href.startsWith('/logs')) {
         return 'activity.view';
     }
 

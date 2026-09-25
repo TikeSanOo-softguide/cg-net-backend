@@ -13,6 +13,8 @@ class PackageSeeder extends Seeder
 {
     public function run(): void
     {
+        echo "Package seeder started\n";
+
         // ------------------------------------------------------------
         // Networks (缅甸网 / 晨光网 / CG-家庭网)
         // ------------------------------------------------------------
@@ -58,7 +60,7 @@ class PackageSeeder extends Seeder
         // ------------------------------------------------------------
         Addon::firstOrCreate(
             ['name_en' => 'IPTV Set-Top Box'], // 电视机顶盒
-            ['name_zh' => 'IPTV 机顶盒', 'name_my' => 'IPTV Set-Top Box', 'price' => 288.0, 'is_active' => true],
+            ['name_zh' => 'IPTV 机顶盒', 'name_my' => 'IPTV Set-Top Box', 'price' => 288, 'is_active' => true],
         );
 
         Addon::firstOrCreate(
@@ -66,8 +68,8 @@ class PackageSeeder extends Seeder
             [
                 'name_zh' => '无线接收器',
                 'name_my' => 'ကြိုးမဲ့ လက်ခံကိရိယာ',
-                'price' => 350.0,
-                'is_active' => true
+                'price' => 350,
+                'is_active' => true,
             ],
         );
 
@@ -162,11 +164,11 @@ class PackageSeeder extends Seeder
     private function installationFee(int $months, int $mbps): float
     {
         return match (true) {
-            $months === 1 && $mbps === 150 => 500.0,
-            $months === 1 => 300.0,
-            $months === 3 && $mbps === 150 => 400.0,
-            $months === 3 => 200.0,
-            default => 0.0,
+            $months === 1 && $mbps === 150 => 500,
+            $months === 1 => 300,
+            $months === 3 && $mbps === 150 => 400,
+            $months === 3 => 200,
+            default => 0,
         };
     }
 }

@@ -57,6 +57,7 @@ type RegionFormDialogProps = {
 
     states: StateRow[];
     regions: RegionRow[];
+    areas: AreaRow[];
 };
 
 function getTitleKey(type: RegionType, edit: boolean): string {
@@ -100,7 +101,7 @@ function getIcon(type: RegionType, edit: boolean) {
     }
 }
 
-export function RegionFormDialog({ open, onOpenChange, type, item, states, regions }: RegionFormDialogProps) {
+export function RegionFormDialog({ open, onOpenChange, type, item, states, regions, areas }: RegionFormDialogProps) {
     const { t } = useTranslation();
 
     const isEdit = item !== null;
@@ -148,6 +149,7 @@ export function RegionFormDialog({ open, onOpenChange, type, item, states, regio
                     item={item}
                     states={states}
                     regions={regions}
+                    areas={areas}
                     initialValues={initialValues}
                     onClose={() => onOpenChange(false)}
                 />
@@ -163,19 +165,29 @@ type RegionFormDialogBodyProps = {
 
     states: StateRow[];
     regions: RegionRow[];
+    areas: AreaRow[];
 
     initialValues: RegionFormValues;
 
     onClose: () => void;
 };
 
-function RegionFormDialogBody({ type, item, states, regions, initialValues, onClose }: RegionFormDialogBodyProps) {
+function RegionFormDialogBody({
+    type,
+    item,
+    states,
+    regions,
+    areas,
+    initialValues,
+    onClose,
+}: RegionFormDialogBodyProps) {
     return (
         <RegionForm
             type={type}
             item={item}
             states={states}
             regions={regions}
+            areas={areas}
             initialValues={initialValues}
             onClose={onClose}
         />

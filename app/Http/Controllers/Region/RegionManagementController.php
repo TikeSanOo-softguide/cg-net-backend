@@ -29,9 +29,9 @@ class RegionManagementController extends Controller
             ->when($stateSearch !== '', function ($query) use ($stateSearch) {
                 $query->where(function ($query) use ($stateSearch) {
                     $query
-                        ->where('name_en', 'like', '%' . $stateSearch . '%')
-                        ->orWhere('name_zh', 'like', '%' . $stateSearch . '%')
-                        ->orWhere('name_my', 'like', '%' . $stateSearch . '%');
+                        ->whereLike('name_en', '%' . $stateSearch . '%')
+                        ->orWhereLike('name_zh', '%' . $stateSearch . '%')
+                        ->orWhereLike('name_my', '%' . $stateSearch . '%');
                 });
             })
             ->paginate(15, ['*'], 'state_page')
@@ -45,16 +45,16 @@ class RegionManagementController extends Controller
                 $query->where(function ($query) use ($regionSearch) {
                     $query
                         // Region name
-                        ->where('name_en', 'like', '%' . $regionSearch . '%')
-                        ->orWhere('name_zh', 'like', '%' . $regionSearch . '%')
-                        ->orWhere('name_my', 'like', '%' . $regionSearch . '%')
+                        ->whereLike('name_en', '%' . $regionSearch . '%')
+                        ->orWhereLike('name_zh', '%' . $regionSearch . '%')
+                        ->orWhereLike('name_my', '%' . $regionSearch . '%')
 
                         // State name
                         ->orWhereHas('state', function ($query) use ($regionSearch) {
                             $query
-                                ->where('name_en', 'like', '%' . $regionSearch . '%')
-                                ->orWhere('name_zh', 'like', '%' . $regionSearch . '%')
-                                ->orWhere('name_my', 'like', '%' . $regionSearch . '%');
+                                ->whereLike('name_en', '%' . $regionSearch . '%')
+                                ->orWhereLike('name_zh', '%' . $regionSearch . '%')
+                                ->orWhereLike('name_my', '%' . $regionSearch . '%');
                         });
                 });
             })
@@ -67,21 +67,21 @@ class RegionManagementController extends Controller
             ->when($areaSearch !== '', function ($query) use ($areaSearch) {
                 $query->where(function ($query) use ($areaSearch) {
                     $query
-                        ->where('name_en', 'like', '%' . $areaSearch . '%')
-                        ->orWhere('name_zh', 'like', '%' . $areaSearch . '%')
-                        ->orWhere('name_my', 'like', '%' . $areaSearch . '%')
+                        ->whereLike('name_en', '%' . $areaSearch . '%')
+                        ->orWhereLike('name_zh', '%' . $areaSearch . '%')
+                        ->orWhereLike('name_my', '%' . $areaSearch . '%')
 
                         ->orWhereHas('region', function ($query) use ($areaSearch) {
                             $query
-                                ->where('name_en', 'like', '%' . $areaSearch . '%')
-                                ->orWhere('name_zh', 'like', '%' . $areaSearch . '%')
-                                ->orWhere('name_my', 'like', '%' . $areaSearch . '%')
+                                ->whereLike('name_en', '%' . $areaSearch . '%')
+                                ->orWhereLike('name_zh', '%' . $areaSearch . '%')
+                                ->orWhereLike('name_my', '%' . $areaSearch . '%')
 
                                 ->orWhereHas('state', function ($query) use ($areaSearch) {
                                     $query
-                                        ->where('name_en', 'like', '%' . $areaSearch . '%')
-                                        ->orWhere('name_zh', 'like', '%' . $areaSearch . '%')
-                                        ->orWhere('name_my', 'like', '%' . $areaSearch . '%');
+                                        ->whereLike('name_en', '%' . $areaSearch . '%')
+                                        ->orWhereLike('name_zh', '%' . $areaSearch . '%')
+                                        ->orWhereLike('name_my', '%' . $areaSearch . '%');
                                 });
                         });
                 });
@@ -101,7 +101,6 @@ class RegionManagementController extends Controller
                     'created_at' => $state->created_at?->toDateString(),
                 ],
             ),
-
             'stateFilters' => [
                 'search' => $stateSearch,
             ],
@@ -121,7 +120,6 @@ class RegionManagementController extends Controller
                     'created_at' => $region->created_at?->toDateString(),
                 ],
             ),
-
             'regionFilters' => [
                 'search' => $regionSearch,
             ],
@@ -129,33 +127,22 @@ class RegionManagementController extends Controller
             'areas' => $areas->through(
                 fn(Area $area) => [
                     'id' => $area->id,
-
                     'name_en' => $area->name_en,
                     'name_zh' => $area->name_zh,
                     'name_my' => $area->name_my,
-
                     'region_id' => $area->region_id,
                     'latitude' => $area->latitude,
                     'longitude' => $area->longitude,
-
                     'state_id' => $area->region?->state_id,
-
                     'region_name_en' => $area->region?->name_en,
-
                     'region_name_zh' => $area->region?->name_zh,
-
                     'region_name_my' => $area->region?->name_my,
-
                     'state_name_en' => $area->region?->state?->name_en,
-
                     'state_name_zh' => $area->region?->state?->name_zh,
-
                     'state_name_my' => $area->region?->state?->name_my,
-
                     'created_at' => $area->created_at?->toDateString(),
                 ],
             ),
-
             'areaFilters' => [
                 'search' => $areaSearch,
             ],
@@ -187,13 +174,8 @@ class RegionManagementController extends Controller
      */
     public function destroyState(State $state): RedirectResponse
     {
-        /*
-         * Prevent deleting a State if it still has Regions.
-         */
         if ($state->regions()->exists()) {
-            return back()->withErrors([
-                'delete' => 'This state cannot be deleted because it has regions.',
-            ]);
+            return back()->withErrors(['delete' => 'regions.state_delete_failed']);
         }
 
         $state->delete();
@@ -201,21 +183,30 @@ class RegionManagementController extends Controller
         return redirect()->route('regions.index')->with('success', 'regions.state_deleted');
     }
 
-    /**
-     * Bulk delete states.
-     */
     public function bulkDestroyStates(Request $request): RedirectResponse
     {
         $ids = $request->validate([
-            'ids' => ['required', 'array'],
-            'ids.*' => ['integer', 'exists:states,id'],
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'distinct', 'exists:states,id'],
         ])['ids'];
 
-        $deletableIds = State::query()->whereIn('id', $ids)->whereDoesntHave('regions')->pluck('id');
+        $deletableIds = State::query()
+            ->whereIn('id', $ids)
+            ->whereDoesntHave('regions')
+            ->pluck('id');
 
-        State::whereIn('id', $deletableIds)->delete();
+        $deletedCount = State::query()
+            ->whereIn('id', $deletableIds)
+            ->delete();
 
-        return redirect()->route('regions.index')->with('success', 'regions.state_deleted');
+        if ($deletedCount === 0) {
+            return back()->with('error', __('common.bulk_delete_failed'));
+        }
+
+        return redirect()
+            ->route('regions.index')
+            ->with('success', 'common.bulk_deleted')
+            ->with('deleted_count', $deletedCount);
     }
 
     /**
@@ -243,13 +234,8 @@ class RegionManagementController extends Controller
      */
     public function destroyRegion(Region $region): RedirectResponse
     {
-        /*
-         * Prevent deleting a Region if it still has Areas.
-         */
         if ($region->areas()->exists()) {
-            return back()->withErrors([
-                'delete' => 'This region cannot be deleted because it has areas.',
-            ]);
+            return back()->withErrors(['delete' => 'regions.region_delete_failed']);
         }
 
         $region->delete();
@@ -267,14 +253,23 @@ class RegionManagementController extends Controller
             'ids.*' => ['integer', 'exists:regions,id'],
         ])['ids'];
 
-        /*
-         * Don't delete regions that have areas.
-         */
-        $deletableIds = Region::query()->whereIn('id', $ids)->whereDoesntHave('areas')->pluck('id');
+        $deletableIds = Region::query()
+            ->whereIn('id', $ids)
+            ->whereDoesntHave('areas')
+            ->pluck('id');
 
-        Region::whereIn('id', $deletableIds)->delete();
+        $deletedCount = Region::query()
+            ->whereIn('id', $deletableIds)
+            ->delete();
 
-        return redirect()->route('regions.index')->with('success', 'regions.region_deleted');
+        if ($deletedCount === 0) {
+            return back()->with('error', __('common.bulk_delete_failed'));
+        }
+
+        return redirect()
+            ->route('regions.index')
+            ->with('success', 'common.bulk_deleted')
+            ->with('deleted_count', $deletedCount);
     }
 
     /**
@@ -313,12 +308,16 @@ class RegionManagementController extends Controller
     public function bulkDestroyAreas(Request $request): RedirectResponse
     {
         $ids = $request->validate([
-            'ids' => ['required', 'array'],
-            'ids.*' => ['integer', 'exists:areas,id'],
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'distinct', 'exists:areas,id'],
         ])['ids'];
 
-        Area::whereIn('id', $ids)->delete();
+        $deleted = Area::whereIn('id', $ids)->delete();
 
-        return redirect()->route('regions.index')->with('success', 'regions.area_deleted');
+        if ($deleted === 0) {
+            return back()->with('error', __('common.bulk_delete_failed'));
+        }
+
+        return redirect()->route('regions.index')->with('success', 'common.bulk_deleted')->with('deleted_count', $deleted);
     }
 }

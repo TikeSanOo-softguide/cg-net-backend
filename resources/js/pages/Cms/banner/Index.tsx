@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 
 import { BannerFormDialog, type BannerItem } from '@/components/cms/banner/BannerFormDialog';
 import { CmsIndexPage, type CmsFilters } from '@/components/cms/shared/CmsIndexPage';
@@ -7,13 +7,20 @@ import type { Paginated } from '@/components/Pagination';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatDate } from '@/lib/utils';
+import { MultiSelect, MultiSelectOption } from '@/components/MultiSelect';
+import { FormControl } from '@/components/ui/form-control';
+import { AppWindow, ImageIcon, LucideIcon, Monitor, Smartphone } from 'lucide-react';
 
 type Props = {
     items: Paginated<BannerItem>;
     filters: CmsFilters;
+    bannerTypes: {
+        value: string;
+        label: string;
+    }[];
 };
 
-export default function BannersIndex({ items, filters }: Props) {
+export default function BannersIndex({ items, filters, bannerTypes }: Props) {
     const { t, locale } = useTranslation();
     const [formOpen, setFormOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<BannerItem | null>(null);
@@ -22,11 +29,25 @@ export default function BannersIndex({ items, filters }: Props) {
         zh: t('cms.banner.image_zh'),
         my: t('cms.banner.image_my'),
     };
+
     const isExpired = (endDate: string | null) => {
         if (!endDate) return false;
 
         return new Date(endDate) < new Date();
     };
+
+    const bannerTypeIcons: Record<string, LucideIcon> = {
+        web_background: Monitor,
+        web_popup: ImageIcon,
+        app_entry: Smartphone,
+        app_popup: AppWindow,
+    };
+
+    const bannerTypeOptions: MultiSelectOption[] = bannerTypes.map((type) => ({
+        value: type.value,
+        label: t(`cms.banner.types.${type.value}`),
+        icon: bannerTypeIcons[type.value],
+    }));
 
     return (
         <>
@@ -38,6 +59,34 @@ export default function BannersIndex({ items, filters }: Props) {
                 items={items}
                 filters={filters}
                 statusFilter="active"
+                showSearch={false}
+                extraFilters={
+                    <FormControl compact className="w-[700px] min-w-[700px] max-w-[900px] shrink-0">
+                        <MultiSelect
+                            values={filters.types ?? []}
+                            options={bannerTypeOptions}
+                            onChange={(types) => {
+                                router.get(
+                                    '/cms/banners',
+                                    {
+                                        status: filters.status || undefined,
+                                        types: types.length ? types : undefined,
+                                        sort: filters.sort,
+                                        direction: filters.direction,
+                                    },
+                                    {
+                                        preserveState: true,
+                                        preserveScroll: true,
+                                        replace: true,
+                                    },
+                                );
+                            }}
+                            placeholder={t('cms.banner.type')}
+                            heading={t('cms.banner.type')}
+                            className="relative flex"
+                        />
+                    </FormControl>
+                }
                 onCreate={() => {
                     setEditingItem(null);
                     setFormOpen(true);

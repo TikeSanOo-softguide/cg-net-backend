@@ -18,12 +18,12 @@ final class CmsRules
     /**
      * @return list<mixed>
      */
-    public static function slug(string $table, ?int $ignoreId = null): array
+    public static function slug(string $table, ?int $ignoreId = null, int $maxLength = 255): array
     {
         return [
             'required',
             'string',
-            'max:255',
+            "max:{$maxLength}",
             Rule::unique($table, 'slug')->whereNull('deleted_at')->ignore($ignoreId),
         ];
     }

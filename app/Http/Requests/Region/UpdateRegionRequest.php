@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Region;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateRegionRequest extends FormRequest
 {
@@ -21,13 +22,38 @@ class UpdateRegionRequest extends FormRequest
      */
     public function rules(): array
     {
+        $region = $this->route('region');
         return [
-            'name_en' => ['required', 'string', 'max:255'],
-            'name_zh' => ['required', 'string', 'max:255'],
-            'name_my' => ['required', 'string', 'max:255'],
+            'name_en' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('regions', 'name_en')
+                    ->where('state_id', $this->state_id)
+                    ->ignore($region->id)
+                    ->withoutTrashed(),
+            ],
+            'name_my' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('regions', 'name_my')
+                    ->where('state_id', $this->state_id)
+                    ->ignore($region->id)
+                    ->withoutTrashed(),
+            ],
+            'name_zh' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('regions', 'name_zh')
+                    ->where('state_id', $this->state_id)
+                    ->ignore($region->id)
+                    ->withoutTrashed(),
+            ],
             'state_id' => ['required', 'integer', 'exists:states,id'],
-            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
-            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'latitude' => ['required', 'numeric', 'between:-90,90', 'decimal:0,7'],
+            'longitude' => ['required', 'numeric', 'between:-180,180', 'decimal:0,7'],
         ];
     }
 }

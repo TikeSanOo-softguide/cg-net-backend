@@ -26,9 +26,9 @@ return new class extends Migration {
 
         Schema::create('promotions', function (Blueprint $table) {
             $table->id();
-            $table->string('title_en');
-            $table->string('title_zh');
-            $table->string('title_my');
+            $table->string('title_en', 120);
+            $table->string('title_zh', 120);
+            $table->string('title_my', 120);
             $table->text('description_en');
             $table->text('description_zh');
             $table->text('description_my');
@@ -36,7 +36,7 @@ return new class extends Migration {
             $table->date('end_date')->nullable()->index();
             $table->boolean('is_active')->default(true)->index();
             $table->string('image_url', 500)->nullable();
-            $table->string('slug');
+            $table->string('slug', 120);
             $table->timestamps();
             $table->softDeletes();
             $table->foreignId('created_by')->nullable()->constrained('admins')->nullOnDelete();
@@ -46,10 +46,10 @@ return new class extends Migration {
 
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
-            $table->string('name_en');
-            $table->string('name_zh');
-            $table->string('name_my');
-            $table->string('slug');
+            $table->string('name_en', 50);
+            $table->string('name_zh', 50);
+            $table->string('name_my', 50);
+            $table->string('slug', 50);
             $table->timestamps();
             $table->softDeletes();
             $table->foreignId('created_by')->nullable()->constrained('admins')->nullOnDelete();
@@ -60,15 +60,15 @@ return new class extends Migration {
         Schema::create('news', function (Blueprint $table) {
             $table->id();
             $table->foreignId('category_id')->constrained('categories')->restrictOnDelete();
-            $table->string('title_en');
-            $table->string('title_zh');
-            $table->string('title_my');
+            $table->string('title_en', 120);
+            $table->string('title_zh', 120);
+            $table->string('title_my', 120);
             $table->text('description_en');
             $table->text('description_zh');
             $table->text('description_my');
             $table->string('image_url', 500)->nullable();
             $table->string('status', 20)->default('draft')->index();
-            $table->string('slug');
+            $table->string('slug', 120);
             $table->timestamps();
             $table->softDeletes();
             $table->foreignId('created_by')->nullable()->constrained('admins')->nullOnDelete();
@@ -78,15 +78,15 @@ return new class extends Migration {
 
         Schema::create('services', function (Blueprint $table) {
             $table->id();
-            $table->string('title_en');
-            $table->string('title_zh');
-            $table->string('title_my');
+            $table->string('title_en', 120);
+            $table->string('title_zh', 120);
+            $table->string('title_my', 120);
             $table->text('description_en');
             $table->text('description_zh');
             $table->text('description_my');
             $table->string('image_url', 500)->nullable();
             $table->string('status', 20)->default('draft')->index();
-            $table->string('slug');
+            $table->string('slug', 120);
             $table->timestamps();
             $table->softDeletes();
             $table->foreignId('created_by')->nullable()->constrained('admins')->nullOnDelete();
@@ -97,9 +97,9 @@ return new class extends Migration {
         Schema::create('gallery', function (Blueprint $table) {
             $table->id();
             $table->string('image_url', 500);
-            $table->string('label_en')->nullable();
-            $table->string('label_zh')->nullable();
-            $table->string('label_my')->nullable();
+            $table->string('label_en', 120)->nullable();
+            $table->string('label_zh', 120)->nullable();
+            $table->string('label_my', 120)->nullable();
             $table->timestamps();
             $table->softDeletes();
             $table->foreignId('created_by')->nullable()->constrained('admins')->nullOnDelete();

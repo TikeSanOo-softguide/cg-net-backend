@@ -3,6 +3,7 @@ import { Head } from '@inertiajs/react';
 
 import { CmsIndexPage, type CmsFilters } from '@/components/cms/shared/CmsIndexPage';
 import { PromotionFormDialog, type PromotionItem } from '@/components/cms/promotion/PromotionFormDialog';
+import { NoImage } from '@/components/ui/no-image';
 import type { Paginated } from '@/components/Pagination';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -50,6 +51,7 @@ export default function PromotionsIndex({ items, filters }: Props) {
             <Head title={t('menu.cms_promotions')} />
             <CmsIndexPage
                 createLabelKey="cms.create_promotion"
+                searchPlaceholderKey="cms.promotions.search_placeholder"
                 indexHref="/cms/promotions"
                 destroyBase="/cms/promotions"
                 items={items}
@@ -84,12 +86,16 @@ export default function PromotionsIndex({ items, filters }: Props) {
                         className: 'font-medium',
                         cell: (row) => {
                             const imageUrl = row.image_url;
-                            return (
-                                <span className="inline-flex items-center justify-content-center">
-                                    {imageUrl ? (
-                                        <img src={imageUrl} alt="" className="size-8 rounded object-cover" />
-                                    ) : null}
-                                </span>
+                            return imageUrl ? (
+                                <img
+                                    src={imageUrl}
+                                    alt=""
+                                    width={220}
+                                    height={90}
+                                    className="h-auto w-[220px] rounded object-cover"
+                                />
+                            ) : (
+                                <NoImage width={220} height={90} />
                             );
                         },
                     },
@@ -99,14 +105,18 @@ export default function PromotionsIndex({ items, filters }: Props) {
                         mobile: 'title',
                         className: 'font-medium',
                         cell: (row) => {
-                            return truncateText(getLabel(row), 50);
+                            return (
+                                <span className="block max-w-full truncate leading-[1.7]">
+                                    {truncateText(getLabel(row), 50)}
+                                </span>
+                            );
                         },
                     },
                     {
                         id: 'start_date',
                         header: t('cms.start_date'),
                         mobile: 'meta',
-                        cell: (row) => formatDate(row.start_date),
+                        cell: (row) => formatDate(row.start_date) ?? '—',
                     },
                     {
                         id: 'end_date',

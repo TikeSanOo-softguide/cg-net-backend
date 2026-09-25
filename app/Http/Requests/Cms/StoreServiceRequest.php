@@ -27,13 +27,13 @@ class StoreServiceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title_en' => ['required', 'string', 'max:255'],
-            'title_zh' => ['required', 'string', 'max:255'],
-            'title_my' => ['required', 'string', 'max:255'],
-            'description_en' => ['required', 'string'],
-            'description_zh' => ['required', 'string'],
-            'description_my' => ['required', 'string'],
-            'slug' => CmsRules::slug('services'),
+            'title_en' => ['required', 'string', 'max:120'],
+            'title_zh' => ['required', 'string', 'max:120'],
+            'title_my' => ['required', 'string', 'max:120'],
+            'description_en' => ['required', 'string', 'max:5000'],
+            'description_zh' => ['required', 'string', 'max:5000'],
+            'description_my' => ['required', 'string', 'max:5000'],
+            'slug' => CmsRules::slug('services', maxLength: 120),
             'status' => ['required', Rule::enum(ServiceStatus::class)],
             'image' => CmsRules::image(false),
         ];

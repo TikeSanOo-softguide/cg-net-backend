@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/hooks/useTranslation';
 import { validateNews, validateNewsField } from '@/lib/news-validation';
-import { formControlStateClass } from '@/lib/form-control';
+import { formControlStateClass, formLabelClass } from '@/lib/form-control';
 import { cn } from '@/lib/utils';
 
 export type NewsFormValues = {
@@ -183,11 +183,23 @@ export function NewsForm({
                 </FormField>
             </div>
             <div className="md:ml-3">
-                <FormField label={t('cms.image')} htmlFor="image" error={fieldError('image')} className="mb-2">
+                <FormField
+                    label={
+                        <div className="flex w-full items-center justify-between border-b border-border/40 pb-3">
+                            <span>{t('cms.image')}</span>
+                            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                                {t('cms.news.image_size')} : 925 × 390 px
+                            </span>
+                        </div>
+                    }
+                    htmlFor="image"
+                    error={fieldError('image')}
+                    className=""
+                >
                     <SquareImageUpload
                         id="image"
-                        width={620}
-                        height={260}
+                        width={925}
+                        aspectRatio="925 / 390"
                         value={image}
                         existingUrl={imageUrl}
                         className={cn('w-full', formControlStateClass(fieldState('image')))}

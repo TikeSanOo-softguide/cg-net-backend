@@ -14,7 +14,7 @@ class StoreCategoryRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if (! $this->filled('slug') && $this->filled('name_en')) {
+        if (!$this->filled('slug') && $this->filled('name_en')) {
             $this->merge(['slug' => Str::slug((string) $this->string('name_en')) ?: Str::random(8)]);
         }
     }
@@ -25,10 +25,10 @@ class StoreCategoryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name_en' => ['required', 'string', 'max:100'],
-            'name_zh' => ['required', 'string', 'max:100'],
-            'name_my' => ['required', 'string', 'max:100'],
-            'slug' => CmsRules::slug('categories'),
+            'name_en' => ['required', 'string', 'max:50'],
+            'name_zh' => ['required', 'string', 'max:50'],
+            'name_my' => ['required', 'string', 'max:50'],
+            'slug' => CmsRules::slug('categories', maxLength: 50),
         ];
     }
 }

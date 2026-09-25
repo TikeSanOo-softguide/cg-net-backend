@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { CheckIcon, ChevronDownIcon, PlusIcon, XIcon, type LucideIcon } from 'lucide-react';
 
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { FormControl } from '@/components/ui/form-control';
 import { formControlClass } from '@/lib/form-control';
 import { cn } from '@/lib/utils';
@@ -23,6 +28,7 @@ type MultiSelectProps = {
     icon?: LucideIcon;
     invalid?: boolean;
     disabled?: boolean;
+    className?: string;
 };
 
 export function MultiSelect({
@@ -35,6 +41,7 @@ export function MultiSelect({
     icon,
     invalid = false,
     disabled = false,
+    className,
 }: MultiSelectProps) {
     const [open, setOpen] = useState(false);
     const selected = options.filter((option) => values.includes(option.value));
@@ -51,7 +58,7 @@ export function MultiSelect({
 
     return (
         <DropdownMenu open={open} onOpenChange={setOpen}>
-            <FormControl icon={icon}>
+            <FormControl icon={icon} className={className}>
                 <DropdownMenuTrigger asChild>
                     <button
                         id={id}
@@ -60,7 +67,7 @@ export function MultiSelect({
                         aria-invalid={invalid}
                         className={cn(
                             formControlClass,
-                            'relative flex min-h-10 h-auto items-center py-1.5 text-left',
+                            'relative flex min-w-60  min-h-6 h-auto items-center py-1.5 text-left',
                             icon && 'pl-10',
                         )}
                     >

@@ -131,10 +131,7 @@ export function FailureReportDetailDialog({
                                     {request.customer_phone}
                                 </span>
                                 {request.status !== 'cancelled' && (
-                                    <CopyValueButton
-                                        value={request.customer_phone}
-                                        label={t('relocation_requests.copy_phone')}
-                                    />
+                                    <CopyValueButton value={request.customer_phone} label={t('requests.copy_phone')} />
                                 )}
                             </p>
                         </div>
@@ -154,10 +151,7 @@ export function FailureReportDetailDialog({
                                     ({request.contact_phone})
                                 </span>
                                 {request.status !== 'cancelled' && (
-                                    <CopyValueButton
-                                        value={request.contact_phone}
-                                        label={t('relocation_requests.copy_phone')}
-                                    />
+                                    <CopyValueButton value={request.contact_phone} label={t('requests.copy_phone')} />
                                 )}
                             </p>
                         </div>

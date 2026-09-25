@@ -19,27 +19,63 @@ final class AppPermissions
     {
         return [
             ['module' => 'dashboard', 'labelKey' => 'menu.dashboard', 'actions' => ['view']],
-            ['module' => 'customers', 'labelKey' => 'menu.customer_management', 'actions' => ['view', 'create', 'update', 'delete']],
-            ['module' => 'cpe', 'labelKey' => 'menu.cpe_management', 'actions' => ['view', 'create', 'update', 'delete']],
-            ['module' => 'packages', 'labelKey' => 'menu.package_management', 'actions' => ['view', 'create', 'update', 'delete']],
+            [
+                'module' => 'customers',
+                'labelKey' => 'menu.customer_management',
+                'actions' => ['view', 'create', 'update', 'delete'],
+            ],
+            [
+                'module' => 'cpe',
+                'labelKey' => 'menu.cpe_management',
+                'actions' => ['view', 'create', 'update', 'delete'],
+            ],
+            [
+                'module' => 'packages',
+                'labelKey' => 'menu.package_management',
+                'actions' => ['view', 'create', 'update', 'delete'],
+            ],
             ['module' => 'billing', 'labelKey' => 'menu.billing', 'actions' => ['view', 'create', 'update', 'delete']],
-            ['module' => 'top-up-cards', 'labelKey' => 'menu.top_up_card_management', 'actions' => ['view', 'create', 'update', 'delete']],
-            ['module' => 'service-requests', 'labelKey' => 'menu.service_requests', 'actions' => ['view', 'create', 'update', 'delete']],
-            ['module' => 'regions', 'labelKey' => 'menu.region_management', 'actions' => ['view', 'create', 'update', 'delete']],
-            ['module' => 'notifications', 'labelKey' => 'menu.notifications', 'actions' => ['view', 'create', 'update', 'delete']],
+            [
+                'module' => 'top-up-cards',
+                'labelKey' => 'menu.top_up_card_management',
+                'actions' => ['view', 'create', 'update', 'delete'],
+            ],
+            [
+                'module' => 'service-requests',
+                'labelKey' => 'menu.service_requests',
+                'actions' => ['view', 'create', 'update', 'delete'],
+            ],
+            [
+                'module' => 'regions',
+                'labelKey' => 'menu.region_management',
+                'actions' => ['view', 'create', 'update', 'delete'],
+            ],
+            [
+                'module' => 'notifications',
+                'labelKey' => 'menu.notifications',
+                'actions' => ['view', 'create', 'update', 'delete'],
+            ],
             ['module' => 'support', 'labelKey' => 'menu.support', 'actions' => ['view', 'create', 'update', 'delete']],
             ['module' => 'cms', 'labelKey' => 'menu.cms', 'actions' => ['view', 'create', 'update', 'delete']],
-            ['module' => 'staff', 'labelKey' => 'menu.staff_accounts', 'actions' => ['view', 'create', 'update', 'delete']],
+            [
+                'module' => 'staff',
+                'labelKey' => 'menu.staff_accounts',
+                'actions' => ['view', 'create', 'update', 'delete'],
+            ],
             ['module' => 'roles', 'labelKey' => 'menu.roles', 'actions' => ['view', 'create', 'update', 'delete']],
             ['module' => 'activity', 'labelKey' => 'menu.activity_logs', 'actions' => ['view']],
             ['module' => 'reports', 'labelKey' => 'menu.reports', 'actions' => ['view']],
-            ['module' => 'settings', 'labelKey' => 'menu.settings', 'actions' => ['view', 'update']],
+            [
+                'module' => 'settings',
+                'labelKey' => 'menu.settings',
+                'actions' => ['view', 'create', 'update', 'delete'],
+            ],
         ];
     }
 
     public static function name(string $module, string $action): string
     {
-        return $module.'.'.$action;
+        return $module . '.' . $action;
     }
 
     /**
@@ -67,11 +103,14 @@ final class AppPermissions
             return [
                 'module' => $group['module'],
                 'labelKey' => $group['labelKey'],
-                'permissions' => array_map(fn (string $action): array => [
-                    'name' => self::name($group['module'], $action),
-                    'action' => $action,
-                    'labelKey' => 'permissions.'.$action,
-                ], $group['actions']),
+                'permissions' => array_map(
+                    fn(string $action): array => [
+                        'name' => self::name($group['module'], $action),
+                        'action' => $action,
+                        'labelKey' => 'permissions.' . $action,
+                    ],
+                    $group['actions'],
+                ),
             ];
         }, self::groups());
     }

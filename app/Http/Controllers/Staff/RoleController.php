@@ -23,7 +23,7 @@ class RoleController extends Controller
             ->where('guard_name', 'web')
             ->with('permissions:id,name')
             ->withCount(['permissions', 'users'])
-            ->when($search !== '', fn ($query) => $query->where('name', 'like', '%'.$search.'%'))
+            ->when($search !== '', fn ($query) => $query->whereLike('name', '%'.$search.'%'))
             ->orderBy('name')
             ->get()
             ->map(fn (Role $role) => $this->payload($role, includePermissions: true));

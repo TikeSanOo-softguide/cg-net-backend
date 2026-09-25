@@ -18,17 +18,15 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php',
-        commands: __DIR__.'/../routes/console.php',
-        channels: __DIR__.'/../routes/channels.php',
+        web: __DIR__ . '/../routes/web.php',
+        api: __DIR__ . '/../routes/api.php',
+        commands: __DIR__ . '/../routes/console.php',
+        channels: __DIR__ . '/../routes/channels.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->web(append: [
-            SetLocale::class,
-            HandleInertiaRequests::class,
-        ]);
+        $middleware->web(append: [SetLocale::class, HandleInertiaRequests::class]);
+        $middleware->statefulApi();
 
         $middleware->alias([
             'role' => RoleMiddleware::class,
@@ -38,29 +36,27 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
-        );
+        $exceptions->shouldRenderJsonWhen(fn(Request $request) => $request->is('api/*') || $request->expectsJson());
 
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {
             if ($response->getStatusCode() === 429 && $request->header('X-Inertia')) {
                 $retryAfter = (int) $response->headers->get('Retry-After', 60);
+
+                if ($request->routeIs('top-up-cards.store')) {
+                    return back()->with('error', 'top_up_cards.generation_throttled');
+                }
 
                 return back()->withErrors([
                     Fortify::username() => __('auth.throttle', ['seconds' => $retryAfter]),
                 ]);
             }
 
-            $isForbidden = $response->getStatusCode() === 403
-                || $exception instanceof AuthorizationException
-                || ($exception instanceof HttpException && $exception->getStatusCode() === 403);
+            $isForbidden =
+                $response->getStatusCode() === 403 ||
+                $exception instanceof AuthorizationException ||
+                ($exception instanceof HttpException && $exception->getStatusCode() === 403);
 
-            if (
-                $isForbidden
-                && $request->user()
-                && ! $request->is('api/*')
-                && ! $request->expectsJson()
-            ) {
+            if ($isForbidden && $request->user() && !$request->is('api/*') && !$request->expectsJson()) {
                 $home = AdminHome::path($request->user());
 
                 if ($home !== '/login' && $request->path() !== ltrim($home, '/')) {
@@ -68,14 +64,13 @@ return Application::configure(basePath: dirname(__DIR__))
                 }
             }
 
-            if ($response->getStatusCode() === 404 && ! $request->is('api/*') && ! $request->expectsJson()) {
+            if ($response->getStatusCode() === 404 && !$request->is('api/*') && !$request->expectsJson()) {
                 Inertia::share(app(HandleInertiaRequests::class)->share($request));
 
-                return Inertia::render('Errors/NotFound')
-                    ->toResponse($request)
-                    ->setStatusCode(404);
+                return Inertia::render('Errors/NotFound')->toResponse($request)->setStatusCode(404);
             }
 
             return $response;
         });
-    })->create();
+    })
+    ->create();

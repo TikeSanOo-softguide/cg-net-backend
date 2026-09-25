@@ -53,8 +53,22 @@ export function validateBannerField(
     }
 
     if (field === 'sort_order') {
+        const value = data.sort_order;
+
+        if (value === null || value === undefined || Number.isNaN(value)) {
+            return t('validation.required');
+        }
+
         if (!Number.isFinite(value)) {
             return t('validation.integer');
+        }
+
+        if (value < 0) {
+            return t('cms.banner.validation.min');
+        }
+
+        if (value > 99) {
+            return t('cms.banner.validation.sort_order_max');
         }
 
         return undefined;

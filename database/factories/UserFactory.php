@@ -24,8 +24,10 @@ class UserFactory extends Factory
 
     public function suspended(): static
     {
-        return $this->state(fn () => [
-            'status' => UserStatus::Suspended,
-        ]);
+        return $this->state(
+            fn() => [
+                'status' => UserStatus::Suspended,
+            ],
+        );
     }
 }

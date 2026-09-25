@@ -30,7 +30,10 @@ export function CopyValueButton({ value, label }: CopyValueButtonProps) {
             aria-label={label}
             title={label}
             disabled={!value}
-            onClick={() => void copyValue()}
+            onClick={(event) => {
+                event.stopPropagation();
+                void copyValue();
+            }}
         >
             {copied ? <CheckIcon className="size-3.5 text-emerald-600" /> : <CopyIcon className="size-3.5" />}
         </Button>

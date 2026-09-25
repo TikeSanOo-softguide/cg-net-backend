@@ -161,14 +161,16 @@ export function BroadbandApplicationDetailDialog({
                                 <PhoneIcon className="size-3.5 shrink-0 text-muted-foreground" />
                                 <span className="text-xs text-muted-foreground">{request.user?.phone ?? '—'}</span>
                                 {request.user?.phone && (
-                                    <CopyValueButton value={request.user.phone} label="Phone number" />
+                                    <CopyValueButton value={request.user.phone} label={t('requests.copy_phone')} />
                                 )}
                             </div>
 
                             <div className="flex items-center gap-2">
                                 <SmartphoneIcon className="size-3.5 shrink-0 text-muted-foreground" />
                                 <span className="text-xs text-muted-foreground">{request.phone ?? '—'}</span>
-                                {request.phone && <CopyValueButton value={request.phone} label="Phone number" />}
+                                {request.phone && (
+                                    <CopyValueButton value={request.phone} label={t('requests.copy_phone')} />
+                                )}
                             </div>
                         </div>
                     </div>
@@ -310,7 +312,9 @@ export function BroadbandApplicationDetailDialog({
                     <div className="rounded-lg border border-border/40 bg-background/60 px-3.5 py-3">
                         <div className="flex items-center gap-2">
                             <span className="text-xs text-muted-foreground">{request.address ?? '—'}</span>
-                            {request.address && <CopyValueButton value={request.address} label="Address" />}
+                            {request.address && (
+                                <CopyValueButton value={request.address} label={t('requests.copy_address')} />
+                            )}
                         </div>
                     </div>
                 </div>

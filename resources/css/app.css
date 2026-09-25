@@ -194,11 +194,13 @@
 }
 
 @theme inline {
-    --font-sans: 'Inter', 'Noto Sans Myanmar', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
-        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans:
+        'Inter', 'Noto Sans Myanmar', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
     --font-heading: 'Lexend', 'Noto Sans Myanmar', var(--font-sans);
-    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
-        'Courier New', monospace;
+    --font-mono:
+        'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+        monospace;
 
     --radius-sm: 0.5rem;
     --radius-md: 0.625rem;
@@ -305,8 +307,9 @@
     html[lang='my'] h4,
     html[lang='my'] h5,
     html[lang='my'] h6 {
-        --font-sans: 'Noto Sans Myanmar', 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
-            'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+        --font-sans:
+            'Noto Sans Myanmar', 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+            'Segoe UI Symbol', 'Noto Color Emoji';
         --font-heading: 'Noto Sans Myanmar', 'Lexend', var(--font-sans);
         font-family: 'Noto Sans Myanmar', 'Inter', ui-sans-serif, system-ui, sans-serif;
         line-height: 1.75;
@@ -361,7 +364,6 @@
 }
 
 @keyframes status-pulse {
-
     0%,
     100% {
         opacity: 1;
@@ -497,7 +499,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-
     .status-pulse,
     .animate-\[theme-spin_3\.5s_linear_infinite\] {
         animation: none;
@@ -505,5 +506,77 @@
 
     .toast-progress {
         animation-duration: 1ms !important;
+    }
+}
+
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 8mm;
+    }
+
+    html,
+    body {
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        overflow: visible !important;
+    }
+
+    body * {
+        visibility: hidden !important;
+    }
+
+    #top-up-card-print-area,
+    #top-up-card-print-area * {
+        visibility: visible !important;
+    }
+
+    #top-up-card-print-area {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+        background: #ffffff !important;
+        transform: none !important;
+    }
+
+    #top-up-card-print-area > div,
+    #top-up-card-print-area .top-up-card-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 6mm !important;
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    #top-up-card-print-area article {
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+        box-shadow: none !important;
+    }
+
+    #top-up-card-print-area button,
+    .print\:hidden {
+        display: none !important;
     }
 }

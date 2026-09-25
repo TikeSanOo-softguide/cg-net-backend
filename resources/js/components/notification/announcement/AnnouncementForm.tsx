@@ -8,11 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { StaffStatusSwitch } from '@/components/staff/StaffStatusSwitch';
 import { useTranslation } from '@/hooks/useTranslation';
-import {
-    announcementSuccessMessage,
-    validateAnnouncement,
-    validateAnnouncementField,
-} from '@/lib/announcement-validation';
+import { validateAnnouncement, validateAnnouncementField } from '@/lib/announcement-validation';
 import { formControlStateClass } from '@/lib/form-control';
 import { cn } from '@/lib/utils';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
@@ -44,7 +40,6 @@ export function AnnouncementForm({ form, onSubmit, onCancel, mode = 'create' }: 
         is_active: false,
     });
     const [submitted, setSubmitted] = useState(false);
-    
 
     const markTouched = (field: keyof AnnouncementFormValues) => {
         setTouched((current) => ({ ...current, [field]: true }));

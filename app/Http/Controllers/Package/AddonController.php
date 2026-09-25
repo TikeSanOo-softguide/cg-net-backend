@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Package;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Package\CreateAddonsRequest;
+use App\Http\Requests\Package\StoreAddonsRequest;
 use App\Http\Requests\Package\UpdateAddonsRequest;
 use App\Models\Addon;
 use App\Support\StoresPublicImage;
@@ -13,7 +13,7 @@ use Illuminate\Http\UploadedFile;
 
 class AddonController extends Controller
 {
-    public function store(CreateAddonsRequest $request): RedirectResponse
+    public function store(StoreAddonsRequest $request): RedirectResponse
     {
         $data = $request->safe()->except('image_url');
 
@@ -30,22 +30,13 @@ class AddonController extends Controller
             'price' => $data['price'],
             'image_url' => $data['image_url'],
         ]);
-        activity('addon')
-            ->causedBy($request->user())
-            ->performedOn($addon)
-            ->event('created')
-            ->log('addon_created');
+        activity('addon')->causedBy($request->user())->performedOn($addon)->event('created')->log('addon_created');
 
-        return redirect()
-            ->route('packages.index')
-            ->with('success', 'packages.addons.created');
+        return redirect()->route('packages.index')->with('success', 'packages.addons.created');
     }
 
-    public function update(
-        UpdateAddonsRequest $request,
-        Addon $addon
-    ): RedirectResponse {
-
+    public function update(UpdateAddonsRequest $request, Addon $addon): RedirectResponse
+    {
         $data = $request->safe()->except('image_url');
 
         if ($request->hasFile('image_url')) {
@@ -65,25 +56,15 @@ class AddonController extends Controller
             'image_url' => $data['image_url'],
         ]);
 
-        activity('addon')
-            ->causedBy($request->user())
-            ->performedOn($addon)
-            ->event('updated')
-            ->log('addon_updated');
+        activity('addon')->causedBy($request->user())->performedOn($addon)->event('updated')->log('addon_updated');
 
-        return redirect()
-            ->route('packages.index')
-            ->with('success', 'packages.addons.updated');
+        return redirect()->route('packages.index')->with('success', 'packages.addons.updated');
     }
 
-    public function destroy(
-        Request $request,
-        Addon $addon
-    ): RedirectResponse {
+    public function destroy(Request $request, Addon $addon): RedirectResponse
+    {
         $addon->delete();
-        return redirect()
-            ->route('packages.index')
-            ->with('success', 'packages.addons.deleted');
+        return redirect()->route('packages.index')->with('success', 'packages.addons.deleted');
     }
 
     public function bulkDestroy(Request $request): RedirectResponse

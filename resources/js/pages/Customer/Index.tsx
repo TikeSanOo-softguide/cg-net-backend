@@ -1,13 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import {
-    CircleDotIcon,
-    PackageIcon,
-    SquarePenIcon,
-    Trash2Icon,
-    WalletIcon,
-    WifiIcon,
-} from 'lucide-react';
+import { CircleDotIcon, PackageIcon, SquarePenIcon, Trash2Icon, WalletIcon, WifiIcon } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
@@ -25,13 +18,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { visitBulkDelete } from '@/lib/bulk-delete';
+import { formatTopUpNumber, TOP_UP_CARD_CURRENCY } from '@/lib/top-up-cards';
+import { formatDate } from '@/lib/utils';
 
 type CustomerRow = CustomerFormMember & {
     wallet_balance: string;
     broadband_connected: boolean;
     broadband_count: number;
-    current_package: string | null;
+    current_package: LocalizedText | null;
     created_at: string | null;
+};
+
+type LocalizedText = {
+    en: string | null;
+    my: string | null;
+    zh: string | null;
 };
 
 type Filters = {
@@ -47,24 +48,24 @@ type CustomersIndexProps = {
 };
 
 function visitIndex(filters: Filters) {
-    router.get('/customers', {
-        search: filters.search || undefined,
-        status: filters.status || undefined,
-        sort: filters.sort,
-        direction: filters.direction,
-    }, {
-        preserveState: true,
-        preserveScroll: true,
-        replace: true,
-    });
-}
-
-function formatMmk(value: string): string {
-    return `${Number(value).toLocaleString()} MMK`;
+    router.get(
+        '/customers',
+        {
+            search: filters.search || undefined,
+            status: filters.status || undefined,
+            sort: filters.sort,
+            direction: filters.direction,
+        },
+        {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        },
+    );
 }
 
 export default function CustomersIndex({ customers, filters }: CustomersIndexProps) {
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
     const can = useCan();
     const [search, setSearch] = useState(filters.search);
     const [pendingIds, setPendingIds] = useState<number[]>([]);
@@ -72,6 +73,14 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
     const [editingCustomer, setEditingCustomer] = useState<CustomerFormMember | null>(null);
     const debounce = useRef<number>(0);
     const canDelete = can('customers.delete');
+
+    const localizePackageName = (value: LocalizedText | null | undefined): string => {
+        if (!value) {
+            return '—';
+        }
+
+        return value[locale] ?? value.en ?? value.my ?? value.zh ?? '—';
+    };
 
     useEffect(() => {
         setSearch(filters.search);
@@ -107,13 +116,19 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                     direction={filters.direction}
                     onSort={onSort}
                     href={(row) => `/customers/${row.id}`}
-                    onCreate={can('customers.create') ? () => {
-                        setEditingCustomer(null);
-                        setFormOpen(true);
-                    } : undefined}
+                    onCreate={
+                        can('customers.create')
+                            ? () => {
+                                  setEditingCustomer(null);
+                                  setFormOpen(true);
+                              }
+                            : undefined
+                    }
                     createLabel={t('customers.create')}
                     pagination={customers}
-                    onBulkDelete={canDelete ? (ids) => visitBulkDelete('/customers/bulk-destroy', ids.map(Number)) : undefined}
+                    onBulkDelete={
+                        canDelete ? (ids) => visitBulkDelete('/customers/bulk-destroy', ids.map(Number)) : undefined
+                    }
                     bulkDeleteTitle={t('customers.bulk_delete_title')}
                     actions={(row) => (
                         <>
@@ -148,7 +163,9 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                         <FormControl icon={CircleDotIcon} compact className="w-full shrink-0 sm:w-48">
                             <Select
                                 value={filters.status || 'all'}
-                                onValueChange={(value) => visitIndex({ ...filters, status: value === 'all' ? '' : value })}
+                                onValueChange={(value) =>
+                                    visitIndex({ ...filters, status: value === 'all' ? '' : value })
+                                }
                             >
                                 <SelectTrigger className="w-full">
                                     <SelectValue placeholder={t('customers.filter_status')} />
@@ -171,7 +188,7 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                             cell: (row) => (
                                 <span className="flex min-w-0 items-center gap-2">
                                     <StaffListAvatar username={row.name} />
-                                    <span className="truncate text-[13px]">{row.name}</span>
+                                    <span className="truncate text-[13px] leading-[1.7]">{row.name}</span>
                                 </span>
                             ),
                         },
@@ -179,7 +196,6 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                             id: 'phone',
                             header: t('customers.phone'),
                             mobile: 'subtitle',
-                            sortable: true,
                             cell: (row) => <PhoneDisplay phone={row.phone} />,
                         },
                         {
@@ -194,9 +210,13 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                             header: t('customers.wallet'),
                             className: 'tabular-nums',
                             mobile: 'meta',
+                            sortable: true,
                             cell: (row) => (
                                 <MetaCell icon={WalletIcon} muted={Number(row.wallet_balance) === 0}>
-                                    {formatMmk(row.wallet_balance)}
+                                    <span className="font-heading text-[14px] font-semibold tabular-nums text-primary">
+                                        {formatTopUpNumber(row.wallet_balance)}
+                                    </span>
+                                    <span className="ml-1">{TOP_UP_CARD_CURRENCY}</span>
                                 </MetaCell>
                             ),
                         },
@@ -206,7 +226,7 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                             cell: (row) => (
                                 <MetaCell
                                     icon={WifiIcon}
-                                    muted={! row.broadband_connected}
+                                    muted={!row.broadband_connected}
                                     className={row.broadband_connected ? 'text-success' : undefined}
                                 >
                                     {row.broadband_connected
@@ -219,18 +239,19 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                             id: 'current_package',
                             header: t('customers.current_package'),
                             cell: (row) => (
-                                <MetaCell icon={PackageIcon} muted={! row.current_package}>
-                                    {row.current_package ?? '—'}
+                                <MetaCell icon={PackageIcon} muted={!row.current_package}>
+                                    {localizePackageName(row.current_package)}
                                 </MetaCell>
                             ),
                         },
                         {
                             id: 'created_at',
                             header: t('customers.joined'),
-                            className: 'text-muted-foreground',
                             sortable: true,
                             cell: (row) => (
-                                <span className="font-mono text-[11px] text-muted-foreground">{row.created_at ?? '—'}</span>
+                                <span className=" text-[12px]">
+                                    {row.created_at ? formatDate(row.created_at) : '—'}
+                                </span>
                             ),
                         },
                     ]}
@@ -241,7 +262,7 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                 onOpenChange={(open) => {
                     setFormOpen(open);
 
-                    if (! open) {
+                    if (!open) {
                         setEditingCustomer(null);
                     }
                 }}
@@ -250,7 +271,7 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
             <ConfirmDialog
                 open={pendingIds.length === 1}
                 onOpenChange={(open) => {
-                    if (! open) {
+                    if (!open) {
                         setPendingIds([]);
                     }
                 }}

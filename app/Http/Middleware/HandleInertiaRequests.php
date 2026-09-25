@@ -6,6 +6,7 @@ use App\Models\Admin;
 use App\Models\NotificationCustom;
 use App\Support\AppPermissions;
 use App\Support\JsonTranslations;
+use App\Support\TopUpCardGenerationStatus;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -64,7 +65,24 @@ class HandleInertiaRequests extends Middleware
                 : 0,
             'recentNotifications' => $user ? $this->recentNotifications() : [],
             'flash' => $this->flashPayload($request),
+            'topUpCardGeneration' => fn () => $this->topUpCardGeneration($request),
         ];
+    }
+
+    /**
+     * @return array{token: string, status: string|null, total_cards: int}|null
+     */
+    private function topUpCardGeneration(Request $request): ?array
+    {
+        $user = $request->user();
+
+        if (!$user instanceof Admin || !$user->can('top-up-cards.view')) {
+            return null;
+        }
+
+        $token = $request->session()->get('top_up_card_generation_token');
+
+        return TopUpCardGenerationStatus::forToken(is_string($token) ? $token : null);
     }
 
     /**
@@ -91,17 +109,21 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * @return array{success: mixed, error: mixed, count: mixed, token: string|null}
+        * @return array{success: mixed, error: mixed, import_error: mixed, import_error_token: string|null, count: mixed, token: string|null}
      */
     private function flashPayload(Request $request): array
     {
         $success = $request->session()->pull('success');
         $error = $request->session()->pull('error');
+        $importError = $request->session()->pull('import_error');
         $count = $request->session()->pull('deleted_count');
+        $importErrorToken = $importError !== null ? (string) str()->uuid() : null;
 
         return [
             'success' => $success,
             'error' => $error,
+            'import_error' => $importError,
+            'import_error_token' => $importErrorToken,
             'count' => $count,
             'token' => ($success !== null || $error !== null) ? (string) str()->uuid() : null,
         ];

@@ -5,6 +5,7 @@ namespace App\Http\Requests\Package;
 use App\Http\Requests\Cms\CmsRules;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdatePackageRequest extends FormRequest
 {
@@ -27,12 +28,12 @@ class UpdatePackageRequest extends FormRequest
             'network_id' => ['required', 'integer', 'exists:networks,id'],
             'speed_id' => ['required', 'integer', 'exists:speeds,id'],
             'term_id' => ['required', 'integer', 'exists:terms,id'],
-            'price' => ['required', 'numeric', 'min:0'],
+            'price' => ['required', 'numeric', 'min:0', 'max:999999999'],
             'image_url' => CmsRules::image(false),
-            'installation_fee' => ['required', 'numeric', 'min:0'],
+            'installation_fee' => ['required', 'numeric', 'min:0', 'max:999999999'],
             'includes_free_iptv' => ['required', 'boolean'],
             'is_active' => ['required', 'boolean'],
-            'sort_order' => ['required', 'integer', 'min:0', 'max:9999'],
+            'sort_order' => ['required', 'integer', 'min:0', 'max:999999999'],
             'recommended' => ['required', 'boolean'],
         ];
     }

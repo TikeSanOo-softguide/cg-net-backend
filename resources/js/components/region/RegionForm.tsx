@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import { useTranslation } from '@/hooks/useTranslation';
-import { type StateRow, type RegionRow, type AreaRow, type RegionType } from '@/components/region/RegionFormDialog';
+import { formControlStateClass } from '@/lib/form-control';
+import { validateRegion, validateRegionField, type ExistingRegion } from '@/lib/region-validation';
 
-const STATE_TITLE_MAX_LENGTH = 255;
+import { type StateRow, type RegionRow, type AreaRow, type RegionType } from '@/components/region/RegionFormDialog';
 
 export type RegionFormValues = {
     name_en: string;
@@ -27,16 +28,42 @@ type RegionFormProps = {
     item: StateRow | RegionRow | AreaRow | null;
     states: StateRow[];
     regions: RegionRow[];
+    areas?: AreaRow[];
     initialValues: RegionFormValues;
     onClose: () => void;
 };
 
-export function RegionForm({ type, item, states, regions, initialValues, onClose }: RegionFormProps) {
+export function RegionForm({ type, item, states, regions, areas = [], initialValues, onClose }: RegionFormProps) {
     const { t, locale } = useTranslation();
 
     const [submitted, setSubmitted] = useState(false);
+    const [touched, setTouched] = useState<Record<keyof RegionFormValues, boolean>>({
+        name_en: false,
+        name_my: false,
+        name_zh: false,
+        latitude: false,
+        longitude: false,
+        state_id: false,
+        region_id: false,
+    });
 
     const form = useForm<RegionFormValues>(initialValues);
+
+    const existingRecords = useMemo<ExistingRegion[]>(() => {
+        switch (type) {
+            case 'state':
+                return states;
+
+            case 'region':
+                return regions;
+
+            case 'area':
+                return areas;
+
+            default:
+                return [];
+        }
+    }, [type, states, regions, areas]);
 
     const filteredRegions = useMemo(() => {
         if (!form.data.state_id) {
@@ -59,64 +86,67 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
         }
     };
 
-    const getRequiredError = (field: 'name_en' | 'name_my' | 'name_zh') => {
-        if (!submitted) {
-            return form.errors[field];
-        }
-
-        if (!form.data[field].trim()) {
-            return t(`regions.validation.${field}_required`);
-        }
-
-        return form.errors[field];
+    const markTouched = (field: keyof RegionFormValues) => {
+        setTouched((current) => ({
+            ...current,
+            [field]: true,
+        }));
     };
 
-    const stateError =
-        submitted && type !== 'state' && !form.data.state_id
-            ? t('regions.validation.state_required')
-            : form.errors.state_id;
+    const setField = <K extends keyof RegionFormValues>(field: K, value: RegionFormValues[K]) => {
+        form.setData(field, value as never);
+        form.clearErrors(field);
+    };
 
-    const regionError =
-        submitted && type === 'area' && !form.data.region_id
-            ? t('regions.validation.region_required')
-            : form.errors.region_id;
+    const getValidationError = (field: keyof RegionFormValues) => {
+        return validateRegionField(field, form.data, t, type, existingRecords, item?.id);
+    };
+
+    const fieldState = (field: keyof RegionFormValues): 'idle' | 'error' | 'success' => {
+        if (!touched[field] && !submitted) {
+            return 'idle';
+        }
+
+        return form.errors[field] || getValidationError(field) ? 'error' : 'success';
+    };
+
+    const fieldError = (field: keyof RegionFormValues): string | undefined => {
+        if (!touched[field] && !submitted) {
+            return undefined;
+        }
+
+        return form.errors[field] || getValidationError(field);
+    };
 
     const validate = () => {
-        let valid = true;
+        const errors = validateRegion(form.data, t, type, existingRecords, item?.id);
 
-        if (!form.data.name_en.trim()) {
-            valid = false;
+        if (Object.keys(errors).length > 0) {
+            form.setError(errors);
+            return false;
         }
 
-        if (!form.data.name_my.trim()) {
-            valid = false;
-        }
-
-        if (!form.data.name_zh.trim()) {
-            valid = false;
-        }
-
-        if (type !== 'state' && !form.data.state_id) {
-            valid = false;
-        }
-
-        if (type === 'area' && !form.data.region_id) {
-            valid = false;
-        }
-
-        return valid;
+        return true;
     };
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
-
         setSubmitted(true);
+        setTouched({
+            name_en: true,
+            name_my: true,
+            name_zh: true,
+            latitude: true,
+            longitude: true,
+            state_id: true,
+            region_id: true,
+        });
 
         if (!validate()) {
             return;
         }
 
-        form.clearErrors('name_en', 'name_my', 'name_zh', 'state_id', 'region_id');
+        form.clearErrors('name_en', 'name_my', 'name_zh', 'latitude', 'longitude', 'state_id', 'region_id');
 
         if (type === 'state') {
             if (item) {
@@ -203,23 +233,22 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
 
         form.clearErrors('state_id');
 
+        markTouched('state_id');
+
         if (type === 'area') {
             form.clearErrors('region_id');
+            markTouched('region_id');
         }
     };
 
     const handleCoordinateChange = (field: 'latitude' | 'longitude', value: string) => {
-        form.setData(field, value === '' ? null : value);
-
-        if (value !== '') {
-            form.clearErrors(field);
-        }
+        setField(field, value === '' ? null : value);
+        markTouched(field);
     };
 
     const handleRegionChange = (value: string) => {
-        form.setData('region_id', Number(value));
-
-        form.clearErrors('region_id');
+        setField('region_id', Number(value));
+        markTouched('region_id');
     };
 
     return (
@@ -227,7 +256,7 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
             <FormField
                 label={t('regions.name_en')}
                 htmlFor="name_en"
-                error={getRequiredError('name_en')}
+                error={fieldError('name_en')}
                 icon={TagIcon}
                 required
                 className="sm:col-span-2"
@@ -236,8 +265,10 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
                     id="name_en"
                     name="name_en"
                     value={form.data.name_en}
+                    aria-invalid={fieldState('name_en') === 'error'}
+                    className={formControlStateClass(fieldState('name_en'))}
+                    onBlur={() => markTouched('name_en')}
                     onChange={(event) => handleNameChange('name_en', event.target.value)}
-                    maxLength={STATE_TITLE_MAX_LENGTH}
                     disabled={form.processing}
                 />
             </FormField>
@@ -245,7 +276,7 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
             <FormField
                 label={t('regions.name_my')}
                 htmlFor="name_my"
-                error={getRequiredError('name_my')}
+                error={fieldError('name_my')}
                 icon={TagIcon}
                 required
                 className="sm:col-span-2"
@@ -254,8 +285,10 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
                     id="name_my"
                     name="name_my"
                     value={form.data.name_my}
+                    aria-invalid={fieldState('name_my') === 'error'}
+                    className={formControlStateClass(fieldState('name_my'))}
+                    onBlur={() => markTouched('name_my')}
                     onChange={(event) => handleNameChange('name_my', event.target.value)}
-                    maxLength={STATE_TITLE_MAX_LENGTH}
                     disabled={form.processing}
                 />
             </FormField>
@@ -263,7 +296,7 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
             <FormField
                 label={t('regions.name_zh')}
                 htmlFor="name_zh"
-                error={getRequiredError('name_zh')}
+                error={fieldError('name_zh')}
                 icon={TagIcon}
                 required
                 className="sm:col-span-2"
@@ -272,8 +305,10 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
                     id="name_zh"
                     name="name_zh"
                     value={form.data.name_zh}
+                    aria-invalid={fieldState('name_zh') === 'error'}
+                    className={formControlStateClass(fieldState('name_zh'))}
+                    onBlur={() => markTouched('name_zh')}
                     onChange={(event) => handleNameChange('name_zh', event.target.value)}
-                    maxLength={STATE_TITLE_MAX_LENGTH}
                     disabled={form.processing}
                 />
             </FormField>
@@ -281,9 +316,10 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
             <FormField
                 label={t('regions.latitude')}
                 htmlFor="latitude"
-                error={form.errors.latitude}
+                error={fieldError('latitude')}
                 icon={MapPinIcon}
                 className="sm:col-span-1"
+                required
             >
                 <Input
                     id="latitude"
@@ -293,6 +329,9 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
                     min="-90"
                     max="90"
                     value={form.data.latitude ?? ''}
+                    aria-invalid={fieldState('latitude') === 'error'}
+                    className={formControlStateClass(fieldState('latitude'))}
+                    onBlur={() => markTouched('latitude')}
                     onChange={(event) => handleCoordinateChange('latitude', event.target.value)}
                     disabled={form.processing}
                 />
@@ -301,9 +340,10 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
             <FormField
                 label={t('regions.longitude')}
                 htmlFor="longitude"
-                error={form.errors.longitude}
+                error={fieldError('longitude')}
                 icon={MapPinIcon}
                 className="sm:col-span-1"
+                required
             >
                 <Input
                     id="longitude"
@@ -313,6 +353,9 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
                     min="-180"
                     max="180"
                     value={form.data.longitude ?? ''}
+                    aria-invalid={fieldState('longitude') === 'error'}
+                    className={formControlStateClass(fieldState('longitude'))}
+                    onBlur={() => markTouched('longitude')}
                     onChange={(event) => handleCoordinateChange('longitude', event.target.value)}
                     disabled={form.processing}
                 />
@@ -322,7 +365,7 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
                 <FormField
                     label={t('regions.state_name')}
                     htmlFor="state_id"
-                    error={stateError}
+                    error={fieldError('state_id')}
                     icon={MapPinIcon}
                     required
                     className="sm:col-span-2"
@@ -332,7 +375,11 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
                         onValueChange={handleStateChange}
                         disabled={form.processing}
                     >
-                        <SelectTrigger id="state_id">
+                        <SelectTrigger
+                            id="state_id"
+                            aria-invalid={fieldState('state_id') === 'error'}
+                            className={formControlStateClass(fieldState('state_id'))}
+                        >
                             <SelectValue placeholder={t('regions.select_state')} />
                         </SelectTrigger>
 
@@ -351,7 +398,7 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
                 <FormField
                     label={t('regions.region_name')}
                     htmlFor="region_id"
-                    error={regionError}
+                    error={fieldError('region_id')}
                     icon={MapIcon}
                     required
                     className="sm:col-span-2"
@@ -361,7 +408,11 @@ export function RegionForm({ type, item, states, regions, initialValues, onClose
                         onValueChange={handleRegionChange}
                         disabled={form.processing || !form.data.state_id}
                     >
-                        <SelectTrigger id="region_id">
+                        <SelectTrigger
+                            id="region_id"
+                            aria-invalid={fieldState('region_id') === 'error'}
+                            className={formControlStateClass(fieldState('region_id'))}
+                        >
                             <SelectValue placeholder={t('regions.select_region')} />
                         </SelectTrigger>
 

@@ -39,7 +39,13 @@ type DashboardProps = {
     recentRequests: RecentRequest[];
 };
 
-export default function DashboardIndex({ stats, chart, regionChart, requestTypeChart, recentRequests }: DashboardProps) {
+export default function DashboardIndex({
+    stats,
+    chart,
+    regionChart,
+    requestTypeChart,
+    recentRequests,
+}: DashboardProps) {
     const { t } = useTranslation();
     const can = useCan();
     const isMobile = useMediaQuery('(max-width: 639px)');
@@ -101,19 +107,26 @@ export default function DashboardIndex({ stats, chart, regionChart, requestTypeC
                     titleIcon={ClipboardListIcon}
                     data={recentRequests}
                     getRowId={(row) => row.id}
-                    onBulkDelete={canDelete ? (ids) => visitBulkDelete('/dashboard/requests/bulk-destroy', ids) : undefined}
+                    directActions
+                    onBulkDelete={
+                        canDelete ? (ids) => visitBulkDelete('/dashboard/requests/bulk-destroy', ids) : undefined
+                    }
                     bulkDeleteTitle={t('dashboard.bulk_delete_title')}
-                    actions={canDelete ? (row) => (
-                        <TableActionButton
-                            label={t('common.delete')}
-                            icon={Trash2Icon}
-                            tone="danger"
-                            onClick={(event) => {
-                                event.stopPropagation();
-                                setPendingIds([row.id]);
-                            }}
-                        />
-                    ) : undefined}
+                    actions={
+                        canDelete
+                            ? (row) => (
+                                  <TableActionButton
+                                      label={t('common.delete')}
+                                      icon={Trash2Icon}
+                                      tone="danger"
+                                      onClick={(event) => {
+                                          event.stopPropagation();
+                                          setPendingIds([row.id]);
+                                      }}
+                                  />
+                              )
+                            : undefined
+                    }
                     columns={[
                         {
                             id: 'customer',
@@ -151,7 +164,7 @@ export default function DashboardIndex({ stats, chart, regionChart, requestTypeC
             <ConfirmDialog
                 open={pendingIds.length === 1}
                 onOpenChange={(open) => {
-                    if (! open) {
+                    if (!open) {
                         setPendingIds([]);
                     }
                 }}

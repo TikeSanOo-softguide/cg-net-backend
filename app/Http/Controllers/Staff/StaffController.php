@@ -33,7 +33,7 @@ class StaffController extends Controller
             ->with('roles:id,name')
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
-                    $query->where('username', 'like', '%'.$search.'%');
+                    $query->whereLike('username', '%'.$search.'%');
                 });
             })
             ->when($status !== '' && in_array($status, array_column(AdminStatus::cases(), 'value'), true), function ($query) use ($status): void {
@@ -66,7 +66,15 @@ class StaffController extends Controller
         $data = $request->safe()->except('role_ids', 'password_confirmation');
         $data['password'] = Hash::make($request->string('password')->toString());
 
-        $admin = Admin::query()->create($data);
+        $admin = Admin::withTrashed()->where('username', $request->string('username')->toString())->first();
+
+        if ($admin?->trashed()) {
+            $admin->restore();
+            $admin->update($data);
+        } else {
+            $admin = Admin::query()->create($data);
+        }
+
         $admin->syncRoles($this->allowedRoles($request->user(), $request->validated('role_ids', [])));
 
         activity('staff')->causedBy($request->user())->performedOn($admin)->event('created')->log('staff_created');

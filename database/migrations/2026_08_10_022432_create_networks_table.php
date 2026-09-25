@@ -14,6 +14,10 @@ return new class extends Migration {
             $table->string('name_my', 50);
             $table->timestamps();
             $table->softDeletes();
+
+            $table->unique(['name_en', 'deleted_at']);
+            $table->unique(['name_zh', 'deleted_at']);
+            $table->unique(['name_my', 'deleted_at']);
         });
     }
 

@@ -6,20 +6,36 @@ export type TopUpCardRow = {
     id: number;
     serial_no: string;
     pin?: string;
-    amount: string | number;
+    amount: number;
     status: string;
     expires_at: string | null;
     redeemed_at: string | null;
     redeemed_by_id?: number | null;
     redeemed_by: string | null;
     redeemed_by_phone?: string | null;
+    agent_id?: number | null;
+    agent?: string | null;
     batch_no: string | null;
+    batch_status: string | null;
+    transaction_id: string | number;
+    transaction_no: string | null;
 };
 
 export type TopUpCardFilters = {
     search: string;
     status: string;
     amount: string;
+    from: string;
+    to: string;
+    sort: string;
+    direction: 'asc' | 'desc';
+};
+
+export type CardHistoryFilters = {
+    search: string;
+    status: string;
+    amount: string;
+    batch: string;
     from: string;
     to: string;
     sort: string;

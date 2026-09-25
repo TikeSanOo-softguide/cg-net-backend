@@ -42,25 +42,64 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::redirectUserForTwoFactorAuthenticationUsing(RedirectIfTwoFactorAuthenticatable::class);
 
-        Fortify::requestPasswordResetLinkView(fn () => Inertia::render('Auth/ForgotPassword'));
-        Fortify::resetPasswordView(fn (Request $request) => Inertia::render('Auth/ResetPassword', [
-            'username' => $request->input('username', $request->query('email')),
-            'token' => $request->route('token'),
-        ]));
-        Fortify::twoFactorChallengeView(fn () => Inertia::render('Auth/TwoFactorChallenge'));
+        Fortify::requestPasswordResetLinkView(fn() => Inertia::render('Auth/ForgotPassword'));
+        Fortify::resetPasswordView(
+            fn(Request $request) => Inertia::render('Auth/ResetPassword', [
+                'username' => $request->input('username', $request->query('email')),
+                'token' => $request->route('token'),
+            ]),
+        );
+        Fortify::twoFactorChallengeView(fn() => Inertia::render('Auth/TwoFactorChallenge'));
 
         Fortify::authenticateUsing(function (Request $request) {
-            $admin = Admin::query()->where('username', $request->input(Fortify::username()))->first();
+            $username = $request->input(Fortify::username());
+            $admin = Admin::query()->where('username', $username)->first();
 
-            if (! $admin || ! Hash::check((string) $request->password, $admin->getAuthPassword())) {
+            if (!$admin || !Hash::check((string) $request->password, $admin->getAuthPassword())) {
+                $failedLoginActivity = activity('admin')
+                    ->event('login_failed')
+                    ->withProperties([
+                        'username' => $username,
+                        'ip' => $request->ip(),
+                        'user_agent' => $request->userAgent(),
+                    ]);
+
+                if ($admin) {
+                    $failedLoginActivity->causedBy($admin);
+                }
+
+                $failedLoginActivity->log('admin_login_failed');
+
                 return null;
             }
 
             if ($admin->status !== AdminStatus::Active) {
+                activity('admin')
+                    ->causedBy($admin)
+                    ->event('login_blocked')
+                    ->withProperties([
+                        'username' => $admin->username,
+                        'ip' => $request->ip(),
+                        'user_agent' => $request->userAgent(),
+                        'status' => $admin->status->value,
+                    ])
+                    ->log('admin_login_blocked');
+
                 throw ValidationException::withMessages([
                     Fortify::username() => __('auth.inactive'),
                 ]);
             }
+
+            activity('admin')
+                ->causedBy($admin)
+                ->performedOn($admin)
+                ->event('logged_in')
+                ->withProperties([
+                    'username' => $admin->username,
+                    'ip' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ])
+                ->log('admin_logged_in');
 
             return $admin;
         });
@@ -68,7 +107,7 @@ class FortifyServiceProvider extends ServiceProvider
         $this->registerLoginRoutes();
 
         RateLimiter::for('login', function (Request $request) {
-            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
+            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())) . '|' . $request->ip());
 
             return Limit::perMinute(5)->by($throttleKey);
         });
@@ -80,9 +119,7 @@ class FortifyServiceProvider extends ServiceProvider
         RateLimiter::for('passkeys', function (Request $request) {
             $credentialId = $request->input('credential.id');
 
-            return Limit::perMinute(10)->by(
-                ($credentialId ?: $request->session()->getId()).'|'.$request->ip()
-            );
+            return Limit::perMinute(10)->by(($credentialId ?: $request->session()->getId()) . '|' . $request->ip());
         });
     }
 
@@ -93,14 +130,16 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Route::middleware(config('fortify.middleware', ['web']))->group(function (): void {
             Route::get('/login', [LoginController::class, 'create'])
-                ->middleware(['guest:'.config('fortify.guard')])
+                ->middleware(['guest:' . config('fortify.guard')])
                 ->name('login');
 
             Route::post('/login', [LoginController::class, 'store'])
-                ->middleware(array_filter([
-                    'guest:'.config('fortify.guard'),
-                    config('fortify.limiters.login') ? 'throttle:'.config('fortify.limiters.login') : null,
-                ]))
+                ->middleware(
+                    array_filter([
+                        'guest:' . config('fortify.guard'),
+                        config('fortify.limiters.login') ? 'throttle:' . config('fortify.limiters.login') : null,
+                    ]),
+                )
                 ->name('login.store');
         });
     }

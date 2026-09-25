@@ -48,6 +48,7 @@ type DataTableProps<T> = {
     getRowId: (row: T) => string;
     searchPlaceholder?: string;
     emptyLabel?: string;
+    emptyStateClassName?: string;
     className?: string;
     search?: string;
     onSearchChange?: (value: string) => void;
@@ -71,6 +72,7 @@ type DataTableProps<T> = {
     bulkDeleteTitle?: string;
     bulkDeleteDescription?: string;
     bulkActions?: ReactNode;
+    alwaysShowBulkActions?: boolean;
     createHref?: string;
     createLabel?: string;
     onCreate?: () => void;
@@ -87,6 +89,7 @@ export function DataTable<T>({
     getRowId,
     searchPlaceholder,
     emptyLabel,
+    emptyStateClassName,
     className,
     search,
     onSearchChange,
@@ -110,6 +113,7 @@ export function DataTable<T>({
     bulkDeleteTitle,
     bulkDeleteDescription,
     bulkActions,
+    alwaysShowBulkActions = false,
     createHref,
     createLabel,
     onCreate,
@@ -195,6 +199,7 @@ export function DataTable<T>({
     const columnCount = columns.length + Number(canSelect) + Number(numbered) + Number(showActions);
     const hasSelection = selectedIds.length > 0;
     const showDelete = hasSelection && Boolean(bulkActions || onBulkDelete);
+    const showBulkActions = Boolean(bulkActions) && (hasSelection || alwaysShowBulkActions);
 
     const renderActions = (row: T) => {
         const to = href?.(row);
@@ -284,10 +289,10 @@ export function DataTable<T>({
         try {
             await onBulkDelete(selectedIds);
             setSelectedIds([]);
-            setConfirmOpen(false);
         } catch {
             // Keep selection and the dialog open so the user can retry.
         } finally {
+            setConfirmOpen(false);
             setProcessing(false);
         }
     };
@@ -326,7 +331,8 @@ export function DataTable<T>({
         showExport ||
         Boolean(onExport) ||
         Boolean(createHref) ||
-        Boolean(onCreate);
+        Boolean(onCreate) ||
+        showBulkActions;
 
     return (
         <TooltipProvider>
@@ -367,11 +373,16 @@ export function DataTable<T>({
                                 ) : null}
                             </div>
                             <div className="flex shrink-0 items-center justify-end gap-2">
-                                {showDelete ? (
+                                {showDelete || showBulkActions ? (
                                     <>
-                                        <span className="inline-flex h-8 items-center rounded-[6px] bg-primary/12 px-2.5 text-[10px] font-semibold tabular-nums text-primary">
-                                            {t('common.selected_count').replace(':count', String(selectedIds.length))}
-                                        </span>
+                                        {showDelete ? (
+                                            <span className="inline-flex h-8 items-center rounded-[6px] bg-primary/12 px-2.5 text-[10px] font-semibold tabular-nums text-primary">
+                                                {t('common.selected_count').replace(
+                                                    ':count',
+                                                    String(selectedIds.length),
+                                                )}
+                                            </span>
+                                        ) : null}
                                         {bulkActions ?? (
                                             <ToolbarIconButton
                                                 label={t('common.delete')}
@@ -484,7 +495,7 @@ export function DataTable<T>({
                                             <TableRow className="hover:bg-transparent">
                                                 <TableCell
                                                     colSpan={columnCount}
-                                                    className={cn(EDGE_CELL, 'h-20 text-center')}
+                                                    className={cn(EDGE_CELL, 'h-20 text-center', emptyStateClassName)}
                                                 >
                                                     <p className="text-sm font-medium text-foreground">{noResults}</p>
                                                 </TableCell>
@@ -548,7 +559,12 @@ export function DataTable<T>({
 
                             <ul className="flex flex-col gap-2 p-2.5 sm:hidden">
                                 {rows.length === 0 ? (
-                                    <li className="rounded-[6px] bg-muted/30 px-3 py-6 text-center text-sm text-muted-foreground">
+                                    <li
+                                        className={cn(
+                                            'rounded-[6px] bg-muted/30 px-3 py-6 text-center text-sm text-muted-foreground',
+                                            emptyStateClassName,
+                                        )}
+                                    >
                                         {noResults}
                                     </li>
                                 ) : (

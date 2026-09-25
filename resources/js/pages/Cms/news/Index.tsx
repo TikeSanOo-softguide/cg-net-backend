@@ -4,6 +4,7 @@ import { Head } from '@inertiajs/react';
 import { CmsIndexPage, type CmsFilters } from '@/components/cms/shared/CmsIndexPage';
 import { NewsFormDialog, type NewsItem } from '@/components/cms/news/NewsFormDialog';
 import type { NewsOption } from '@/components/cms/news/NewsForm';
+import { NoImage } from '@/components/ui/no-image';
 import type { Paginated } from '@/components/Pagination';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -37,6 +38,7 @@ export default function NewsIndex({ items, filters, categories }: Props) {
                 destroyBase="/cms/news"
                 items={items}
                 filters={filters}
+                searchPlaceholderKey="cms.news.search_placeholder"
                 statusFilter="news"
                 onCreate={() => {
                     setEditingItem(null);
@@ -82,18 +84,16 @@ export default function NewsIndex({ items, filters, categories }: Props) {
                         className: 'font-medium',
                         cell: (row) => {
                             const imageUrl = row.image_url;
-                            return (
-                                <span className="inline-flex items-center justify-content-center">
-                                    {imageUrl ? (
-                                        <img
-                                            src={imageUrl}
-                                            alt=""
-                                            width={220}
-                                            height={90}
-                                            className="size-8 h-[90px] w-[220px] rounded object-cover"
-                                        />
-                                    ) : null}
-                                </span>
+                            return imageUrl ? (
+                                <img
+                                    src={imageUrl}
+                                    alt=""
+                                    width={220}
+                                    style={{ aspectRatio: '925 / 390' }}
+                                    className="h-auto w-[220px] rounded object-cover"
+                                />
+                            ) : (
+                                <NoImage width={220} aspectRatio="925 / 390" />
                             );
                         },
                     },
@@ -112,7 +112,7 @@ export default function NewsIndex({ items, filters, categories }: Props) {
                                 displayTitle = truncateText(title, 65);
 
                             return (
-                                <span className="block max-w-full truncate" title={title}>
+                                <span className="block max-w-full truncate leading-[1.7]" title={title}>
                                     {displayTitle}
                                 </span>
                             );
@@ -132,7 +132,7 @@ export default function NewsIndex({ items, filters, categories }: Props) {
                                 displayCategory = truncateText(category, 20);
 
                             return (
-                                <span className="block max-w-full truncate" title={category}>
+                                <span className="block max-w-full truncate leading-[1.7]" title={category}>
                                     {displayCategory}
                                 </span>
                             );

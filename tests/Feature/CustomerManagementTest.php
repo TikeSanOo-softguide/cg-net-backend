@@ -33,29 +33,35 @@ class CustomerManagementTest extends TestCase
             'phone' => '09111111111',
             'status' => UserStatus::Active,
         ]);
-        User::factory()->suspended()->create([
-            'name' => 'Hidden User',
-            'phone' => '09222222222',
-        ]);
+        User::factory()
+            ->suspended()
+            ->create([
+                'name' => 'Hidden User',
+                'phone' => '09222222222',
+            ]);
 
         $this->actingAs($admin, 'web')
             ->get('/customers?search=Aung&sort=name&direction=asc')
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('Customer/Index')
-                ->where('filters.search', 'Aung')
-                ->where('filters.sort', 'name')
-                ->has('customers.data', 1)
-                ->where('customers.data.0.id', $match->id)
-                ->where('customers.data.0.name', 'Aung Aung'));
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->component('Customer/Index')
+                    ->where('filters.search', 'Aung')
+                    ->where('filters.sort', 'name')
+                    ->has('customers.data', 1)
+                    ->where('customers.data.0.id', $match->id)
+                    ->where('customers.data.0.name', 'Aung Aung'),
+            );
 
         $this->actingAs($admin, 'web')
             ->get('/customers?status=suspended')
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->where('filters.status', 'suspended')
-                ->has('customers.data', 1)
-                ->where('customers.data.0.status', 'suspended'));
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->where('filters.status', 'suspended')
+                    ->has('customers.data', 1)
+                    ->where('customers.data.0.status', 'suspended'),
+            );
     }
 
     public function test_admins_can_view_customer_detail(): void
@@ -70,20 +76,22 @@ class CustomerManagementTest extends TestCase
             'user_id' => $customer->id,
             'broadband_account_id' => $account->id,
         ]);
-        $wallet = Wallet::factory()->create(['user_id' => $customer->id, 'balance_mmk' => 15000]);
+        $wallet = Wallet::factory()->create(['user_id' => $customer->id, 'balance' => 15000]);
         WalletTransaction::factory()->create(['wallet_id' => $wallet->id, 'amount' => 5000]);
 
         $this->actingAs($admin, 'web')
-            ->get('/customers/'.$customer->id)
+            ->get('/customers/' . $customer->id)
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('Customer/Show')
-                ->where('customer.id', $customer->id)
-                ->where('customer.name', $customer->name)
-                ->has('broadbandAccounts', 1)
-                ->has('packages', 1)
-                ->where('wallet.balance_mmk', '15000.00')
-                ->has('wallet.transactions', 1));
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->component('Customer/Show')
+                    ->where('customer.id', $customer->id)
+                    ->where('customer.name', $customer->name)
+                    ->has('broadbandAccounts', 1)
+                    ->has('packages', 1)
+                    ->where('wallet.balance', '15000')
+                    ->has('wallet.transactions', 1),
+            );
     }
 
     public function test_admin_can_suspend_and_reactivate_a_customer(): void
@@ -92,7 +100,7 @@ class CustomerManagementTest extends TestCase
         $customer = User::factory()->create(['status' => UserStatus::Active]);
 
         $this->actingAs($admin, 'web')
-            ->patch('/customers/'.$customer->id.'/status', ['status' => 'suspended'])
+            ->patch('/customers/' . $customer->id . '/status', ['status' => 'suspended'])
             ->assertRedirect();
 
         $this->assertSame(UserStatus::Suspended, $customer->fresh()->status);
@@ -103,7 +111,7 @@ class CustomerManagementTest extends TestCase
         ]);
 
         $this->actingAs($admin, 'web')
-            ->patch('/customers/'.$customer->id.'/status', ['status' => 'active'])
+            ->patch('/customers/' . $customer->id . '/status', ['status' => 'active'])
             ->assertRedirect();
 
         $this->assertSame(UserStatus::Active, $customer->fresh()->status);
@@ -113,12 +121,14 @@ class CustomerManagementTest extends TestCase
     {
         $admin = Admin::factory()->create();
         $customer = User::factory()->create();
-        $account = BroadbandAccount::factory()->unbound()->create([
-            'account_number' => 'CG99999999',
-        ]);
+        $account = BroadbandAccount::factory()
+            ->unbound()
+            ->create([
+                'account_number' => 'CG99999999',
+            ]);
 
         $this->actingAs($admin, 'web')
-            ->post('/customers/'.$customer->id.'/accounts', ['account_number' => 'CG99999999'])
+            ->post('/customers/' . $customer->id . '/accounts', ['account_number' => 'CG99999999'])
             ->assertRedirect();
 
         $this->assertSame($customer->id, $account->fresh()->user_id);
@@ -128,7 +138,7 @@ class CustomerManagementTest extends TestCase
         ]);
 
         $this->actingAs($admin, 'web')
-            ->delete('/customers/'.$customer->id.'/accounts/'.$account->id)
+            ->delete('/customers/' . $customer->id . '/accounts/' . $account->id)
             ->assertRedirect();
 
         $this->assertNull($account->fresh()->user_id);
@@ -149,7 +159,7 @@ class CustomerManagementTest extends TestCase
         ]);
 
         $this->actingAs($admin, 'web')
-            ->post('/customers/'.$customer->id.'/accounts', ['account_number' => 'CG88888888'])
+            ->post('/customers/' . $customer->id . '/accounts', ['account_number' => 'CG88888888'])
             ->assertRedirect()
             ->assertSessionHasErrors('account_number');
 
@@ -160,23 +170,20 @@ class CustomerManagementTest extends TestCase
     {
         $admin = Admin::factory()->create();
 
-        $this->actingAs($admin, 'web')
-            ->get('/customers/create')
-            ->assertRedirect('/customers');
+        $this->actingAs($admin, 'web')->get('/customers/create')->assertRedirect('/customers');
 
-        $response = $this->actingAs($admin, 'web')
-            ->post('/customers', [
-                'name' => 'Hla Hla',
-                'phone' => '+95911112222',
-                'password' => 'password123',
-                'password_confirmation' => 'password123',
-                'status' => 'active',
-            ]);
+        $response = $this->actingAs($admin, 'web')->post('/customers', [
+            'name' => 'Hla Hla',
+            'phone' => '+95911112222',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'status' => 'active',
+        ]);
 
         $customer = User::query()->where('phone', '+95911112222')->first();
 
         $this->assertNotNull($customer);
-        $response->assertRedirect('/customers/'.$customer->id);
+        $response->assertRedirect('/customers/' . $customer->id);
         $this->assertDatabaseHas('users', [
             'name' => 'Hla Hla',
             'phone' => '+95911112222',
@@ -184,7 +191,7 @@ class CustomerManagementTest extends TestCase
         $this->assertTrue(Hash::check('password123', $customer->password));
         $this->assertDatabaseHas('wallets', [
             'user_id' => $customer->id,
-            'balance_mmk' => '0.00',
+            'balance' => 0,
         ]);
         $this->assertDatabaseHas('activity_log', [
             'description' => 'customer_created',
@@ -219,16 +226,16 @@ class CustomerManagementTest extends TestCase
         ]);
 
         $this->actingAs($admin, 'web')
-            ->get('/customers/'.$customer->id.'/edit')
-            ->assertRedirect('/customers/'.$customer->id);
+            ->get('/customers/' . $customer->id . '/edit')
+            ->assertRedirect('/customers/' . $customer->id);
 
         $this->actingAs($admin, 'web')
-            ->put('/customers/'.$customer->id, [
+            ->put('/customers/' . $customer->id, [
                 'name' => 'New Name',
                 'phone' => '+95955556666',
                 'status' => 'suspended',
             ])
-            ->assertRedirect('/customers/'.$customer->id);
+            ->assertRedirect('/customers/' . $customer->id);
 
         $this->assertDatabaseHas('users', [
             'id' => $customer->id,
@@ -249,7 +256,7 @@ class CustomerManagementTest extends TestCase
 
         $this->actingAs($admin, 'web')
             ->from('/customers')
-            ->delete('/customers/'.$customer->id)
+            ->delete('/customers/' . $customer->id)
             ->assertRedirect('/customers')
             ->assertSessionHas('success', 'customers.deleted');
 

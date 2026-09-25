@@ -3,6 +3,7 @@ import { Head } from '@inertiajs/react';
 
 import { CmsIndexPage, type CmsFilters } from '@/components/cms/shared/CmsIndexPage';
 import { ServiceFormDialog, type ServiceItem } from '@/components/cms/service/ServiceFormDialog';
+import { NoImage } from '@/components/ui/no-image';
 import type { Paginated } from '@/components/Pagination';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -32,6 +33,7 @@ export default function ServiceIndex({ items, filters }: Props) {
                 destroyBase="/cms/services"
                 items={items}
                 filters={filters}
+                searchPlaceholderKey="cms.service.search_placeholder"
                 statusFilter="news"
                 onCreate={() => {
                     setEditingItem(null);
@@ -74,18 +76,16 @@ export default function ServiceIndex({ items, filters }: Props) {
                         className: 'font-medium',
                         cell: (row) => {
                             const imageUrl = row.image_url;
-                            return (
-                                <span className="inline-flex items-center justify-center">
-                                    {imageUrl ? (
-                                        <img
-                                            src={imageUrl}
-                                            alt=""
-                                            width={220}
-                                            height={90}
-                                            className="size-8 h-[90px] w-[220px] rounded object-cover"
-                                        />
-                                    ) : null}
-                                </span>
+                            return imageUrl ? (
+                                <img
+                                    src={imageUrl}
+                                    alt=""
+                                    width={220}
+                                    style={{ aspectRatio: '1080 / 420' }}
+                                    className="h-auto w-[220px] rounded object-cover"
+                                />
+                            ) : (
+                                <NoImage width={220} aspectRatio="1080 / 420" />
                             );
                         },
                     },
@@ -104,7 +104,7 @@ export default function ServiceIndex({ items, filters }: Props) {
                                 displayTitle = truncateText(title, 65);
 
                             return (
-                                <span className="block max-w-full truncate" title={title}>
+                                <span className="block max-w-full truncate leading-[1.7]" title={title}>
                                     {displayTitle}
                                 </span>
                             );

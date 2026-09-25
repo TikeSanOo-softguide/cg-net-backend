@@ -23,7 +23,7 @@ class StoreBannerRequest extends FormRequest
             'image_url_zh' => CmsRules::image(true),
             'image_url_my' => CmsRules::image(true),
             'type' => ['required', 'string', Rule::enum(BannerType::class)],
-            'sort_order' => ['required', 'integer', 'min:0', 'max:9999'],
+            'sort_order' => ['required', 'integer', 'min:0', 'max:99'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'is_active' => ['required', 'boolean'],

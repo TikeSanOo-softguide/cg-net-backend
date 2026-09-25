@@ -4,6 +4,8 @@ type Translate = (key: string) => string;
 
 type AnnouncementField = keyof AnnouncementFormValues;
 
+export const ANNOUNCEMENT_CONTENT_MAX_LENGTH = 5000;
+
 export type AnnouncementValidationErrors = Partial<Record<AnnouncementField, string>>;
 
 export function validateAnnouncementField(
@@ -21,6 +23,9 @@ export function validateAnnouncementField(
             const trimmed = value.trim();
             if (trimmed === '') {
                 return t(`notification.announcement.validation.${field}_required`);
+            }
+            if (trimmed.length > ANNOUNCEMENT_CONTENT_MAX_LENGTH) {
+                return t(`notification.announcement.validation.${field}_max`);
             }
             break;
         }

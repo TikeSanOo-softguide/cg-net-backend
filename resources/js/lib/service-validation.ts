@@ -2,7 +2,9 @@ import type { ServiceFormValues } from '@/components/cms/service/ServiceForm';
 
 type Translate = (key: string) => string;
 
-export const SERVICE_TITLE_MAX_LENGTH = 255;
+export const SERVICE_TITLE_MAX_LENGTH = 120;
+export const SERVICE_SLUG_MAX_LENGTH = 120;
+export const SERVICE_DESCRIPTION_MAX_LENGTH = 5000;
 export const SERVICE_IMAGE_MAX_SIZE_KB = 5120;
 export const SERVICE_IMAGE_ACCEPTED_TYPES = [
     'image/jpeg',
@@ -26,8 +28,7 @@ export function validateServiceField(
     switch (field) {
         case 'title_en':
         case 'title_zh':
-        case 'title_my':
-        case 'slug': {
+        case 'title_my': {
             if (typeof value !== 'string') break;
             const trimmed = value.trim();
 
@@ -41,12 +42,31 @@ export function validateServiceField(
             break;
         }
 
+        case 'slug': {
+            if (typeof value !== 'string') break;
+            const trimmed = value.trim();
+
+            if (trimmed === '') {
+                return t('cms.service.validation.slug_required');
+            }
+
+            if (trimmed.length > SERVICE_SLUG_MAX_LENGTH) {
+                return t('cms.service.validation.slug_max');
+            }
+            break;
+        }
+
         case 'description_en':
         case 'description_zh':
         case 'description_my': {
             if (typeof value !== 'string') break;
-            if (value.trim() === '') {
+            const trimmed = value.trim();
+
+            if (trimmed === '') {
                 return t(`cms.service.validation.${field}_required`);
+            }
+            if (trimmed.length > SERVICE_DESCRIPTION_MAX_LENGTH) {
+                return t(`cms.service.validation.${field}_max`);
             }
             break;
         }

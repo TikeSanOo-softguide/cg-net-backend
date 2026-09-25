@@ -12,22 +12,84 @@ final class MenuPages
     public static function all(): array
     {
         return [
-            ['path' => '/cpe/inventory', 'titleKey' => 'menu.cpe_inventory', 'name' => 'cpe.inventory', 'permission' => 'cpe.view'],
-            ['path' => '/cpe/assignment', 'titleKey' => 'menu.cpe_assignment', 'name' => 'cpe.assignment', 'permission' => 'cpe.view'],
-            ['path' => '/cpe/status', 'titleKey' => 'menu.connection_status', 'name' => 'cpe.status', 'permission' => 'cpe.view'],
-            ['path' => '/packages', 'titleKey' => 'menu.packages', 'name' => 'packages.index', 'permission' => 'packages.view'],
-            ['path' => '/billing/invoices', 'titleKey' => 'menu.invoices', 'name' => 'billing.invoices', 'permission' => 'billing.view'],
-            ['path' => '/billing/gateway-logs', 'titleKey' => 'menu.payment_gateway_logs', 'name' => 'billing.gateway-logs', 'permission' => 'billing.view'],
-            ['path' => '/billing/transactions', 'titleKey' => 'menu.transactions', 'name' => 'billing.transactions', 'permission' => 'billing.view'],
-            ['path' => '/notifications/compose', 'titleKey' => 'menu.push_composer', 'name' => 'notifications.compose', 'permission' => 'notifications.view'],
-            ['path' => '/notifications/categories', 'titleKey' => 'menu.notification_categories', 'name' => 'notifications.categories', 'permission' => 'notifications.view'],
-            ['path' => '/support/conversations', 'titleKey' => 'menu.chat_conversations', 'name' => 'support.conversations', 'permission' => 'support.view'],
-            ['path' => '/support/agents', 'titleKey' => 'menu.agent_assignment', 'name' => 'support.agents', 'permission' => 'support.view'],
-            ['path' => '/support/quick-replies', 'titleKey' => 'menu.quick_reply_templates', 'name' => 'support.quick-replies', 'permission' => 'support.view'],
-            ['path' => '/reports', 'titleKey' => 'menu.reports', 'name' => 'reports.index', 'permission' => 'reports.view'],
-            ['path' => '/settings/app-version', 'titleKey' => 'menu.app_version', 'name' => 'settings.app-version', 'permission' => 'settings.view'],
-            ['path' => '/settings/languages', 'titleKey' => 'menu.language_management', 'name' => 'settings.languages', 'permission' => 'settings.view'],
-            ['path' => '/settings/general', 'titleKey' => 'menu.general_settings', 'name' => 'settings.general', 'permission' => 'settings.view'],
+            [
+                'path' => '/logs/security',
+                'titleKey' => 'menu.security_logs',
+                'name' => 'logs.security',
+                'permission' => 'activity.view',
+            ],
+            [
+                'path' => '/logs/users',
+                'titleKey' => 'menu.user_logs',
+                'name' => 'logs.users',
+                'permission' => 'activity.view',
+            ],
+            [
+                'path' => '/cpe/inventory',
+                'titleKey' => 'menu.cpe_inventory',
+                'name' => 'cpe.inventory',
+                'permission' => 'cpe.view',
+            ],
+            [
+                'path' => '/cpe/assignment',
+                'titleKey' => 'menu.cpe_assignment',
+                'name' => 'cpe.assignment',
+                'permission' => 'cpe.view',
+            ],
+            [
+                'path' => '/cpe/status',
+                'titleKey' => 'menu.connection_status',
+                'name' => 'cpe.status',
+                'permission' => 'cpe.view',
+            ],
+            [
+                'path' => '/packages',
+                'titleKey' => 'menu.packages',
+                'name' => 'packages.index',
+                'permission' => 'packages.view',
+            ],
+            [
+                'path' => '/billing/invoices',
+                'titleKey' => 'menu.invoices',
+                'name' => 'billing.invoices',
+                'permission' => 'billing.view',
+            ],
+            [
+                'path' => '/billing/gateway-logs',
+                'titleKey' => 'menu.payment_gateway_logs',
+                'name' => 'billing.gateway-logs',
+                'permission' => 'billing.view',
+            ],
+            [
+                'path' => '/notifications/compose',
+                'titleKey' => 'menu.push_composer',
+                'name' => 'notifications.compose',
+                'permission' => 'notifications.view',
+            ],
+            [
+                'path' => '/notifications/categories',
+                'titleKey' => 'menu.notification_categories',
+                'name' => 'notifications.categories',
+                'permission' => 'notifications.view',
+            ],
+            [
+                'path' => '/reports',
+                'titleKey' => 'menu.reports',
+                'name' => 'reports.index',
+                'permission' => 'reports.view',
+            ],
+            [
+                'path' => '/settings/languages',
+                'titleKey' => 'menu.language_management',
+                'name' => 'settings.languages',
+                'permission' => 'settings.view',
+            ],
+            [
+                'path' => '/settings/general',
+                'titleKey' => 'menu.general_settings',
+                'name' => 'settings.general',
+                'permission' => 'settings.view',
+            ],
         ];
     }
 }

@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+
 import { CountryFlag } from '@/components/customer/CountryFlag';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -26,21 +28,32 @@ export function PhoneField({
     inputClassName,
 }: PhoneFieldProps) {
     const parsed = parsePhone(value);
-    const country: PhoneCountry = parsed.country === 'unknown' ? 'mm' : parsed.country;
+    const [selectedCountry, setSelectedCountry] = useState<PhoneCountry>(
+        parsed.country === 'unknown' ? 'mm' : parsed.country,
+    );
+
+    useEffect(() => {
+        if (parsed.country === 'unknown') {
+            return;
+        }
+
+        setSelectedCountry(parsed.country);
+    }, [parsed.country]);
+
     const local = parsed.country === 'unknown' && value.trim() === '' ? '' : parsed.local;
-    const selected = PHONE_COUNTRY_OPTIONS.find((option) => option.country === country) ?? PHONE_COUNTRY_OPTIONS[0];
+    const selected =
+        PHONE_COUNTRY_OPTIONS.find((option) => option.country === selectedCountry) ?? PHONE_COUNTRY_OPTIONS[0];
+
+    const handleCountryChange = (next: string) => {
+        const nextCountry = next as PhoneCountry;
+        setSelectedCountry(nextCountry);
+        onChange(composePhone(nextCountry, local));
+    };
 
     return (
         <div className={cn('flex min-w-0 items-stretch gap-2', className)}>
-            <Select
-                value={country}
-                onValueChange={(next) => onChange(composePhone(next as PhoneCountry, local))}
-            >
-                <SelectTrigger
-                    id={`${id}-country`}
-                    className="h-10 w-[8.25rem] shrink-0"
-                    aria-invalid={invalid}
-                >
+            <Select value={selectedCountry} onValueChange={handleCountryChange}>
+                <SelectTrigger id={`${id}-country`} className="h-10 w-[7rem] shrink-0" aria-invalid={invalid}>
                     <SelectValue>
                         <span className="inline-flex items-center gap-2">
                             <CountryFlag country={selected.country} />
@@ -70,7 +83,7 @@ export function PhoneField({
                 aria-invalid={invalid}
                 placeholder="97000000"
                 onBlur={onBlur}
-                onChange={(event) => onChange(composePhone(country, event.target.value.replace(/\D+/g, '')))}
+                onChange={(event) => onChange(composePhone(selectedCountry, event.target.value.replace(/\D+/g, '')))}
             />
         </div>
     );

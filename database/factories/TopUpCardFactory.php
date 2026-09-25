@@ -6,8 +6,8 @@ use App\Enums\TopUpCardStatus;
 use App\Models\TopUpCard;
 use App\Models\User;
 use App\Support\GeneratesTopUpCards;
+use App\Support\TopUpCardPin;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Hash;
 
 /**
  * @extends Factory<TopUpCard>
@@ -16,14 +16,19 @@ class TopUpCardFactory extends Factory
 {
     public function definition(): array
     {
+        $amount = (string) fake()->randomElement([50, 100, 250, 500]);
+        $serialNo = GeneratesTopUpCards::serialNo($amount);
+        $pin = GeneratesTopUpCards::pin();
+
         return [
-            'serial_no' => GeneratesTopUpCards::serialNo((string) fake()->randomElement([50, 100, 250, 500])),
-            'pin' => Hash::make(GeneratesTopUpCards::pin()),
-            'amount' => fake()->randomElement([50, 100, 250, 500]),
+            'serial_no' => $serialNo,
+            'pin' => TopUpCardPin::hash($pin),
+            'amount' => (int) $amount,
             'expires_at' => now()->addYears(2),
             'redeemed_at' => null,
             'redeemed_by' => null,
             'status' => TopUpCardStatus::Active,
+            'batch_id' => \App\Models\Batch::factory(),
         ];
     }
 

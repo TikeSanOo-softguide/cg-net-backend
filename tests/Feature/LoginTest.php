@@ -26,6 +26,19 @@ class LoginTest extends TestCase
         $this->assertAuthenticatedAs($admin, 'web');
     }
 
+    public function test_admin_session_login_is_not_exposed_through_the_customer_api(): void
+    {
+        $admin = Admin::factory()->create([
+            'username' => 'admin',
+        ]);
+
+        $this->postJson('/api/auth/login', [
+            'phone' => '95912345678',
+            'username' => $admin->username,
+            'password' => 'password',
+        ])->assertUnprocessable();
+    }
+
     public function test_invalid_credentials_are_shown_on_the_login_form(): void
     {
         Admin::factory()->create([
@@ -45,9 +58,11 @@ class LoginTest extends TestCase
 
     public function test_inactive_admins_cannot_authenticate(): void
     {
-        Admin::factory()->inactive()->create([
-            'username' => 'admin',
-        ]);
+        Admin::factory()
+            ->inactive()
+            ->create([
+                'username' => 'admin',
+            ]);
 
         $this->from('/login')
             ->post('/login', [
@@ -80,37 +95,39 @@ class LoginTest extends TestCase
     {
         $this->get('/login')
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->where('locale', 'en')
-                ->where('translations.menu.dashboard', 'Dashboard')
-                ->where('translations.auth.sign_in', 'Sign in'));
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->where('locale', 'en')
+                    ->where('translations.menu.dashboard', 'Dashboard')
+                    ->where('translations.auth.sign_in', 'Sign in'),
+            );
     }
 
     public function test_locale_can_be_switched_via_session(): void
     {
-        $this->from('/login')
-            ->post('/locale/my')
-            ->assertRedirect('/login');
+        $this->from('/login')->post('/locale/my')->assertRedirect('/login');
 
         $this->get('/login')
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->where('locale', 'my')
-                ->where('translations.auth.sign_in', 'ဝင်ရောက်ရန်')
-                ->where('translations.menu.dashboard', 'ဒက်ရှ်ဘုတ်'));
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->where('locale', 'my')
+                    ->where('translations.auth.sign_in', 'ဝင်ရောက်ရန်')
+                    ->where('translations.menu.dashboard', 'ဒက်ရှ်ဘုတ်'),
+            );
     }
 
     public function test_chinese_locale_can_be_switched_via_session(): void
     {
-        $this->from('/login')
-            ->post('/locale/zh')
-            ->assertRedirect('/login');
+        $this->from('/login')->post('/locale/zh')->assertRedirect('/login');
 
         $this->get('/login')
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->where('locale', 'zh')
-                ->where('translations.auth.sign_in', '登录')
-                ->where('translations.menu.dashboard', '仪表盘'));
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->where('locale', 'zh')
+                    ->where('translations.auth.sign_in', '登录')
+                    ->where('translations.menu.dashboard', '仪表盘'),
+            );
     }
 }

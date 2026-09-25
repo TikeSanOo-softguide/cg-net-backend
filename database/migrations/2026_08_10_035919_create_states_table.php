@@ -9,11 +9,11 @@ return new class extends Migration {
     {
         Schema::create('states', function (Blueprint $table) {
             $table->id();
-            $table->string('name_en');
-            $table->string('name_zh');
-            $table->string('name_my');
-            $table->decimal('latitude', 10, 7)->nullable();
-            $table->decimal('longitude', 10, 7)->nullable();
+            $table->string('name_en', 50);
+            $table->string('name_zh', 50);
+            $table->string('name_my', 50);
+            $table->decimal('latitude', 10, 7);
+            $table->decimal('longitude', 10, 7);
             $table->timestamps();
             $table->softDeletes();
         });

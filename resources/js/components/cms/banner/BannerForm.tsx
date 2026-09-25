@@ -31,24 +31,28 @@ const bannerTypes = [
         labelKey: 'cms.banner.types.web_background',
         width: 1920,
         height: 150,
+        size: '1920 x 550',
     },
     {
         value: 'web_popup',
         labelKey: 'cms.banner.types.web_popup',
         width: 800,
         height: 150,
+        size: '800 x 350',
     },
     {
         value: 'app_entry',
         labelKey: 'cms.banner.types.app_entry',
         width: 270,
         height: 360,
+        size: '270 x 360',
     },
     {
         value: 'app_popup',
         labelKey: 'cms.banner.types.app_popup',
         width: 200,
         height: 250,
+        size: '200 x 250',
     },
 ];
 export type BannerFormValues = {
@@ -101,12 +105,6 @@ export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrl
         is_active: false,
     });
 
-    const existingImages: Partial<Record<ImageField, boolean>> = {
-        image_url_en: Boolean(imageUrls?.en),
-        image_url_zh: Boolean(imageUrls?.zh),
-        image_url_my: Boolean(imageUrls?.my),
-    };
-
     const selectedBannerType = bannerTypes.find((b) => b.value === form.data.type) ?? bannerTypes[0];
 
     const getPreviewSize = () => {
@@ -136,27 +134,47 @@ export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrl
         form.clearErrors(field);
     };
 
+    const [removedImages, setRemovedImages] = useState<Record<ImageField, boolean>>({
+        image_url_en: false,
+        image_url_zh: false,
+        image_url_my: false,
+    });
+
     const hasExistingImage = (field: keyof BannerFormValues): boolean => {
-        if (field === 'image_url_en') return existingImages.image_url_en ?? false;
-        if (field === 'image_url_zh') return existingImages.image_url_zh ?? false;
-        if (field === 'image_url_my') return existingImages.image_url_my ?? false;
+        if (field === 'image_url_en') {
+            return Boolean(imageUrls?.en && !removedImages.image_url_en);
+        }
+
+        if (field === 'image_url_zh') {
+            return Boolean(imageUrls?.zh && !removedImages.image_url_zh);
+        }
+
+        if (field === 'image_url_my') {
+            return Boolean(imageUrls?.my && !removedImages.image_url_my);
+        }
+
         return false;
     };
 
     const fieldError = (field: keyof BannerFormValues): string | undefined => {
         if (!touched[field] && !submitted) return undefined;
+
         return form.errors[field] || validateBannerField(field, form.data, t, mode, hasExistingImage(field));
     };
 
     const fieldState = (field: keyof BannerFormValues): 'idle' | 'error' | 'success' => {
         if (!touched[field] && !submitted) return 'idle';
+
         const error = form.errors[field] || validateBannerField(field, form.data, t, mode, hasExistingImage(field));
+
         return error ? 'error' : 'success';
     };
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
+
         setSubmitted(true);
+
         setTouched({
             image_url_en: true,
             image_url_zh: true,
@@ -168,11 +186,18 @@ export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrl
             is_active: true,
         });
 
-        const errors = validateBanner(form.data, t, mode, existingImages);
+        const currentExistingImages: Partial<Record<ImageField, boolean>> = {
+            image_url_en: hasExistingImage('image_url_en'),
+            image_url_zh: hasExistingImage('image_url_zh'),
+            image_url_my: hasExistingImage('image_url_my'),
+        };
+        const errors = validateBanner(form.data, t, mode, currentExistingImages);
+
         if (Object.keys(errors).length > 0) {
             form.setError(errors);
             return;
         }
+
         form.clearErrors();
         onSubmit(event);
     };
@@ -201,7 +226,8 @@ export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrl
         setFileState: (file: File | null) => void,
         existingUrl?: string | null,
     ) => {
-        const hasImage = Boolean(fileState || existingUrl);
+        const currentExistingUrl = removedImages[field] ? null : existingUrl;
+        const hasImage = Boolean(fileState || currentExistingUrl);
 
         return (
             <FormField label={t(labelKey)} htmlFor={`banner-${field}`} required error={fieldError(field)}>
@@ -216,19 +242,25 @@ export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrl
                         width={selectedBannerType.width}
                         height={selectedBannerType.height}
                         value={fileState}
-                        existingUrl={existingUrl}
+                        existingUrl={currentExistingUrl}
                         onChange={(file) => {
                             markTouched(field);
                             setFileState(file);
                             setField(field, file);
+
+                            setRemovedImages((current) => ({
+                                ...current,
+                                [field]: file === null,
+                            }));
                         }}
                     />
+
                     {hasImage && (
-                        <div className="flex justify-end pt-1 border-t border-border/40">
+                        <div className="flex justify-end border-t border-border/40 pt-1">
                             <button
                                 type="button"
-                                onClick={() => handleOpenPreview(fileState, existingUrl, labelKey)}
-                                className="inline-flex items-center gap-1.5 rounded-md bg-background/80 px-2.5 py-1 text-xs font-medium text-primary shadow-sm hover:bg-accent hover:underline focus:outline-none transition-colors"
+                                onClick={() => handleOpenPreview(fileState, currentExistingUrl, labelKey)}
+                                className="inline-flex items-center gap-1.5 rounded-md bg-background/80 px-2.5 py-1 text-xs font-medium text-primary shadow-sm transition-colors hover:bg-accent hover:underline focus:outline-none"
                             >
                                 <EyeIcon className="size-3.5" />
                                 {t('cms.banner.preview') || 'Preview'}
@@ -293,7 +325,7 @@ export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrl
 
                                         <div className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
                                             <span className="rounded bg-muted/80 px-1.5 py-0.5 font-medium">
-                                                {bannerType.width} × {bannerType.height} px
+                                                {bannerType.size} px
                                             </span>
                                         </div>
                                     </label>
@@ -336,12 +368,20 @@ export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrl
                                 <Input
                                     id="sort_order"
                                     type="number"
-                                    min={0}
                                     value={form.data.sort_order}
                                     className={cn('w-full', formControlStateClass(fieldState('sort_order')))}
+                                    onKeyDown={(event) => {
+                                        if (['e', 'E', '+', '-'].includes(event.key)) {
+                                            event.preventDefault();
+                                        }
+                                    }}
                                     onChange={(event) => {
-                                        markTouched('sort_order');
-                                        setField('sort_order', Number(event.target.value));
+                                        const value = event.target.value;
+
+                                        if (value === '' || Number(value) >= 0) {
+                                            markTouched('sort_order');
+                                            setField('sort_order', Number(value));
+                                        }
                                     }}
                                 />
                             </FormField>

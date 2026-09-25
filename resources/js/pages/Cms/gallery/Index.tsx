@@ -3,6 +3,7 @@ import { Head } from '@inertiajs/react';
 
 import { CmsIndexPage, type CmsFilters } from '@/components/cms/shared/CmsIndexPage';
 import { GalleryFormDialog, type GalleryItem } from '@/components/cms/gallery/GalleryFormDialog';
+import { NoImage } from '@/components/ui/no-image';
 import type { Paginated } from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatDateTime, truncateText } from '@/lib/utils';
@@ -36,6 +37,7 @@ export default function GalleryIndex({ items, filters }: Props) {
             <Head title={t('menu.cms_gallery')} />
             <CmsIndexPage
                 createLabelKey="cms.create_gallery"
+                searchPlaceholderKey="cms.gallery.search_placeholder"
                 indexHref="/cms/gallery"
                 destroyBase="/cms/gallery"
                 items={items}
@@ -76,12 +78,16 @@ export default function GalleryIndex({ items, filters }: Props) {
                         className: 'font-medium',
                         cell: (row) => {
                             const imageUrl = row.image_url;
-                            return (
-                                <span className="inline-flex items-center justify-content-center">
-                                    {imageUrl ? (
-                                        <img src={imageUrl} alt="" className="size-8 rounded object-cover" />
-                                    ) : null}
-                                </span>
+                            return imageUrl ? (
+                                <img
+                                    src={imageUrl}
+                                    alt=""
+                                    width={220}
+                                    height={90}
+                                    className="h-[90px] w-[220px] rounded object-cover"
+                                />
+                            ) : (
+                                <NoImage width={220} height={90} />
                             );
                         },
                     },
@@ -91,7 +97,13 @@ export default function GalleryIndex({ items, filters }: Props) {
                         mobile: 'title',
                         className: 'font-medium',
                         cell: (row) => {
-                            return truncateText(getLabel(row), 50);
+                            const label = getLabel(row);
+
+                            return (
+                                <span className="block max-w-full truncate leading-[1.7]">
+                                    {label?.trim() ? truncateText(label, 50) : '—'}
+                                </span>
+                            );
                         },
                     },
                     {

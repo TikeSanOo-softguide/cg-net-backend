@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Cms;
 
+use App\Enums\BannerType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Cms\StoreBannerRequest;
 use App\Http\Requests\Cms\UpdateBannerRequest;
@@ -19,9 +20,15 @@ class BannerController extends Controller
 {
     public function index(Request $request): Response
     {
+        $query = Banner::query();
+
+        if ($request->filled('types')) {
+            $query->whereIn('type', $request->input('types', []));
+        }
+
         $listing = CmsListing::paginate(
             $request,
-            Banner::query(),
+            $query,
             ['is_active', 'start_date'],
             ['sort_order', 'is_active', 'start_date', 'end_date', 'created_at'],
             defaultSort: 'sort_order',
@@ -30,7 +37,15 @@ class BannerController extends Controller
 
         return Inertia::render('Cms/banner/Index', [
             'items' => $listing['paginator']->through(fn(Banner $item) => $this->payload($item)),
-            'filters' => $listing['filters'],
+            'filters' => [...$listing['filters'], 'types' => $request->input('types', [])],
+            'bannerTypes' => collect(BannerType::cases())
+                ->map(
+                    fn(BannerType $type) => [
+                        'value' => $type->value,
+                        'label' => $type->value,
+                    ],
+                )
+                ->values(),
         ]);
     }
 
@@ -41,12 +56,14 @@ class BannerController extends Controller
 
     public function store(StoreBannerRequest $request): RedirectResponse
     {
-        $banner = Banner::query()->create($this->attributes(
-            $request->validated(),
-            $request->file('image_url_en'),
-            $request->file('image_url_zh'),
-            $request->file('image_url_my'),
-        ));
+        $banner = Banner::query()->create(
+            $this->attributes(
+                $request->validated(),
+                $request->file('image_url_en'),
+                $request->file('image_url_zh'),
+                $request->file('image_url_my'),
+            ),
+        );
 
         activity('cms')->causedBy($request->user())->performedOn($banner)->event('created')->log('banner_created');
 
@@ -61,15 +78,17 @@ class BannerController extends Controller
     public function update(UpdateBannerRequest $request, Banner $banner): RedirectResponse
     {
         $banner = Banner::findOrFail($banner->id);
-        $banner->update($this->attributes(
-            $request->validated(),
-            $request->file('image_url_en'),
-            $request->file('image_url_zh'),
-            $request->file('image_url_my'),
-            $banner->image_url_en,
-            $banner->image_url_zh,
-            $banner->image_url_my
-        ));
+        $banner->update(
+            $this->attributes(
+                $request->validated(),
+                $request->file('image_url_en'),
+                $request->file('image_url_zh'),
+                $request->file('image_url_my'),
+                $banner->image_url_en,
+                $banner->image_url_zh,
+                $banner->image_url_my,
+            ),
+        );
 
         activity('cms')->causedBy($request->user())->performedOn($banner)->event('updated')->log('banner_updated');
 
@@ -121,29 +140,16 @@ class BannerController extends Controller
         ];
 
         if ($imageEn) {
-            $data['image_url_en'] = StoresPublicImage::store(
-                $imageEn,
-                'cms/banners',
-                $previousPathEn
-            );
+            $data['image_url_en'] = StoresPublicImage::store($imageEn, 'cms/banners', $previousPathEn);
         }
 
         if ($imageZh) {
-            $data['image_url_zh'] = StoresPublicImage::store(
-                $imageZh,
-                'cms/banners',
-                $previousPathZh
-            );
+            $data['image_url_zh'] = StoresPublicImage::store($imageZh, 'cms/banners', $previousPathZh);
         }
 
         if ($imageMy) {
-            $data['image_url_my'] = StoresPublicImage::store(
-                $imageMy,
-                'cms/banners',
-                $previousPathMy
-            );
+            $data['image_url_my'] = StoresPublicImage::store($imageMy, 'cms/banners', $previousPathMy);
         }
-
 
         return $data;
     }

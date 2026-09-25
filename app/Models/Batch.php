@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\BatchStatus;
 use Database\Factories\BatchFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,10 +11,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'batch_no',
-    'amount',
+    'total_value',
     'quantity',
     'status',
     'expires_at',
+    'metadata',
 ])]
 class Batch extends Model
 {
@@ -25,9 +27,11 @@ class Batch extends Model
     protected function casts(): array
     {
         return [
-            'amount' => 'decimal:2',
+            'total_value' => 'integer',
             'quantity' => 'integer',
             'expires_at' => 'date',
+            'status' => BatchStatus::class,
+            'metadata' => 'array',
         ];
     }
 

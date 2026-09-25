@@ -1,16 +1,6 @@
 import { FormEvent } from 'react';
 import type { InertiaFormProps } from '@inertiajs/react';
-import {
-    CircleDotIcon,
-    DollarSignIcon,
-    ImageIcon,
-    NetworkIcon,
-    PackageIcon,
-    PercentIcon,
-    RouterIcon,
-    StarIcon,
-    ZapIcon,
-} from 'lucide-react';
+import { DollarSignIcon, NetworkIcon, PackageIcon, PercentIcon, RouterIcon, StarIcon, ZapIcon } from 'lucide-react';
 
 import { FormActionBar } from '@/components/FormActionBar';
 import { FormField } from '@/components/ui/form-field';
@@ -22,7 +12,6 @@ import { useState } from 'react';
 import {
     PACKAGE_IMAGE_WIDTH,
     PACKAGE_IMAGE_HEIGHT,
-    validatePackageImageFile,
     validatePackageField,
     validatePackage,
 } from '@/lib/package-validation';
@@ -44,9 +33,9 @@ export type PackageFormValues = {
     network_id: number | '';
     speed_id: number | '';
     term_id: number | '';
-    price: string;
+    price: number | '';
     image_url: File | null;
-    installation_fee: string;
+    installation_fee: number | '';
     includes_free_iptv: boolean;
     is_active: boolean;
     sort_order: number | '';
@@ -58,9 +47,9 @@ export function emptyPackageForm(): PackageFormValues {
         network_id: '',
         speed_id: '',
         term_id: '',
-        price: '0',
+        price: 0,
         image_url: null,
-        installation_fee: '0',
+        installation_fee: 0,
         includes_free_iptv: false,
         is_active: true,
         sort_order: 0,
@@ -111,6 +100,7 @@ export function PackageForm({
         recommended: false,
     });
     const [submitted, setSubmitted] = useState(false);
+    const hasUniqueError = form.errors.network_id === 'packages.unique';
 
     const markTouched = (field: keyof PackageFormValues) => {
         setTouched((current) => ({ ...current, [field]: true }));
@@ -119,6 +109,10 @@ export function PackageForm({
     const setField = <K extends keyof PackageFormValues>(field: K, value: PackageFormValues[K]) => {
         form.setData(field, value as never);
         form.clearErrors(field);
+
+        if (field === 'network_id' || field === 'speed_id' || field === 'term_id') {
+            form.clearErrors('network_id');
+        }
     };
 
     const fieldState = (field: keyof PackageFormValues): 'idle' | 'error' | 'success' => {
@@ -131,7 +125,7 @@ export function PackageForm({
         return form.errors[field] || validatePackageField(field, form.data, t) ? 'error' : 'success';
     };
 
-    const fieldError = (field: keyof PackageFormValues): string | undefined => {
+    const fieldError = (error: string | undefined, field: keyof PackageFormValues): string | undefined => {
         if (!touched[field] && !submitted) {
             return undefined;
         }
@@ -140,7 +134,44 @@ export function PackageForm({
             return form.errors.image_url;
         }
 
+        if (field === 'price' && (String(form.data.price).length > 9 || error?.includes('999999999'))) {
+            return t(`packages.validation.max`);
+        }
+
+        if (
+            field === 'installation_fee' &&
+            (String(form.data.installation_fee).length > 9 || error?.includes('999999999'))
+        ) {
+            return t('packages.validation.max');
+        }
+
+        if (field === 'sort_order' && (String(form.data.sort_order).length > 9 || error?.includes('999999999'))) {
+            return t('packages.validation.max');
+        }
+
         return form.errors[field] || validatePackageField(field, form.data, t);
+    };
+
+    const preventInvalidNumberKeys = (event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (['e', 'E', '+', '-', '.'].includes(event.key)) {
+            event.preventDefault();
+        }
+    };
+
+    const handleNumberChange = (field: 'price' | 'installation_fee' | 'sort_order', value: string) => {
+        if (!/^\d*$/.test(value)) {
+            return;
+        }
+
+        const normalizedValue = value.replace(/^0+(?=\d)/, '');
+
+        setTouched((prev) => ({
+            ...prev,
+            [field]: true,
+        }));
+
+        form.setData(field, normalizedValue === '' ? '' : Number(normalizedValue));
+        form.clearErrors(field);
     };
 
     const submit = (event: FormEvent) => {
@@ -173,11 +204,20 @@ export function PackageForm({
     return (
         <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
+                {form.errors.network_id === 'packages.unique' && (
+                    <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                        {t('packages.validation.unique')}
+                    </div>
+                )}
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <FormField
                         label={t('packages.network')}
                         htmlFor="network_id"
-                        error={fieldError('network_id')}
+                        error={
+                            form.errors.network_id === 'packages.unique'
+                                ? undefined
+                                : fieldError(form.errors.network_id, 'network_id')
+                        }
                         required
                         icon={NetworkIcon}
                     >
@@ -191,7 +231,7 @@ export function PackageForm({
                             <SelectTrigger
                                 id="network_id"
                                 className={cn('w-full', formControlStateClass(fieldState('network_id')))}
-                                aria-invalid={Boolean(form.errors.network_id)}
+                                aria-invalid={Boolean(form.errors.network_id) || hasUniqueError}
                             >
                                 <SelectValue />
                             </SelectTrigger>
@@ -208,7 +248,7 @@ export function PackageForm({
                     <FormField
                         label={t('packages.speed')}
                         htmlFor="speed_id"
-                        error={fieldError('speed_id')}
+                        error={fieldError(form.errors.speed_id, 'speed_id')}
                         required
                         icon={ZapIcon}
                     >
@@ -222,7 +262,7 @@ export function PackageForm({
                             <SelectTrigger
                                 id="speed_id"
                                 className={cn('w-full', formControlStateClass(fieldState('speed_id')))}
-                                aria-invalid={Boolean(form.errors.speed_id)}
+                                aria-invalid={Boolean(form.errors.speed_id) || hasUniqueError}
                             >
                                 <SelectValue />
                             </SelectTrigger>
@@ -240,7 +280,7 @@ export function PackageForm({
                         <FormField
                             label={t('packages.term')}
                             htmlFor="term_id"
-                            error={fieldError('term_id')}
+                            error={fieldError(form.errors.term_id, 'term_id')}
                             required
                             icon={RouterIcon}
                             className="sm:col-span-2"
@@ -255,7 +295,7 @@ export function PackageForm({
                                 <SelectTrigger
                                     id="term_id"
                                     className={cn('w-full', formControlStateClass(fieldState('term_id')))}
-                                    aria-invalid={Boolean(form.errors.term_id)}
+                                    aria-invalid={Boolean(form.errors.term_id) || hasUniqueError}
                                 >
                                     <SelectValue />
                                 </SelectTrigger>
@@ -272,68 +312,58 @@ export function PackageForm({
                         <FormField
                             label={t('packages.price')}
                             htmlFor="price"
-                            error={fieldError('price')}
+                            error={fieldError(form.errors.price, 'price')}
                             required
                             icon={DollarSignIcon}
                         >
                             <Input
                                 id="price"
                                 type="number"
-                                min="0"
-                                step="0"
-                                value={form.data.price}
+                                value={String(form.data.price ?? '')}
                                 className={cn('w-full', formControlStateClass(fieldState('price')))}
-                                onChange={(event) => form.setData('price', event.target.value)}
-                                required
+                                onKeyDown={preventInvalidNumberKeys}
+                                onChange={(event) => handleNumberChange('price', event.target.value)}
                                 aria-invalid={Boolean(form.errors.price)}
                             />
                         </FormField>
                         <FormField
                             label={t('packages.installation_fee')}
                             htmlFor="installation_fee"
-                            error={fieldError('installation_fee')}
+                            error={fieldError(form.errors.installation_fee, 'installation_fee')}
                             required
                             icon={DollarSignIcon}
                         >
                             <Input
                                 id="installation_fee"
                                 type="number"
-                                min="0"
-                                step="0"
-                                value={form.data.installation_fee}
+                                value={String(form.data.installation_fee ?? '')}
                                 className={cn('w-full', formControlStateClass(fieldState('installation_fee')))}
-                                onChange={(event) => form.setData('installation_fee', event.target.value)}
-                                required
+                                onKeyDown={preventInvalidNumberKeys}
+                                onChange={(event) => handleNumberChange('installation_fee', event.target.value)}
                                 aria-invalid={Boolean(form.errors.installation_fee)}
                             />
                         </FormField>
                         <FormField
                             label={t('cms.sort_order')}
                             htmlFor="sort_order"
-                            error={fieldError('sort_order')}
+                            error={fieldError(form.errors.sort_order, 'sort_order')}
                             required
                             icon={PercentIcon}
                         >
                             <Input
                                 id="sort_order"
                                 type="number"
-                                min="0"
-                                value={form.data.sort_order}
+                                value={String(form.data.sort_order ?? '')}
                                 className={cn('w-full', formControlStateClass(fieldState('sort_order')))}
-                                onChange={(event) =>
-                                    form.setData(
-                                        'sort_order',
-                                        event.target.value === '' ? '' : Number(event.target.value),
-                                    )
-                                }
-                                required
+                                onKeyDown={preventInvalidNumberKeys}
+                                onChange={(event) => handleNumberChange('sort_order', event.target.value)}
                                 aria-invalid={Boolean(form.errors.sort_order)}
                             />
                         </FormField>
                         <FormField
                             label={t('packages.free_iptv')}
                             htmlFor="includes_free_iptv"
-                            error={fieldError('includes_free_iptv')}
+                            error={fieldError(form.errors.includes_free_iptv, 'includes_free_iptv')}
                             icon={PackageIcon}
                         >
                             <Select
@@ -360,7 +390,7 @@ export function PackageForm({
                         <FormField
                             label={t('packages.recommended')}
                             htmlFor="recommended"
-                            error={fieldError('recommended')}
+                            error={fieldError(form.errors.recommended, 'recommended')}
                             icon={StarIcon}
                         >
                             <Select
@@ -387,7 +417,7 @@ export function PackageForm({
                         <FormField
                             label={t('common.status')}
                             htmlFor="staff-create-status"
-                            error={fieldError('is_active')}
+                            error={fieldError(form.errors.is_active, 'is_active')}
                         >
                             <StaffStatusSwitch
                                 id="staff-create-status"
@@ -403,7 +433,7 @@ export function PackageForm({
                         <FormField
                             label={t('cms.image')}
                             htmlFor="package-image"
-                            error={fieldError('image_url')}
+                            error={fieldError(form.errors.image_url, 'image_url')}
                             className="sm:col-span-2"
                         >
                             <div className="flex justify-center">

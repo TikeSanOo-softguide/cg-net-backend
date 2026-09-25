@@ -37,8 +37,8 @@ class ChangePlanRequestController extends Controller
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
-                        ->whereHas('user', fn($query) => $query->where('name', 'like', '%' . $search . '%'))
-                        ->orWhereHas('broadbandAccount', fn($query) => $query->where('account_number', 'like', '%' . $search . '%'));
+                        ->whereHas('user', fn($query) => $query->whereLike('name', '%' . $search . '%'))
+                        ->orWhereHas('broadbandAccount', fn($query) => $query->whereLike('account_number', '%' . $search . '%'));
                 });
             })
             ->when(

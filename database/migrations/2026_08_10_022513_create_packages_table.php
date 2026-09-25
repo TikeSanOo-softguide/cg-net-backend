@@ -12,15 +12,16 @@ return new class extends Migration {
             $table->foreignId('network_id')->constrained('networks')->cascadeOnUpdate()->restrictOnDelete();
             $table->foreignId('speed_id')->constrained('speeds')->cascadeOnUpdate()->restrictOnDelete();
             $table->foreignId('term_id')->constrained('terms')->cascadeOnUpdate()->restrictOnDelete();
-            $table->decimal('price', 10, 2);
+            $table->integer('price');
             $table->string('image_url', 500)->nullable();
-            $table->decimal('installation_fee', 10, 2)->default(0);
+            $table->integer('installation_fee');
             $table->boolean('includes_free_iptv')->default(false);
             $table->boolean('is_active')->default(true);
             $table->boolean('recommended')->default(false);
             $table->integer('sort_order')->default(0);
             $table->timestamps();
             $table->softDeletes();
+            $table->unique(['network_id', 'speed_id', 'term_id', 'deleted_at']);
         });
     }
 
