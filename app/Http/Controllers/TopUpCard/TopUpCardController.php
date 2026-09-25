@@ -91,7 +91,6 @@ class TopUpCardController extends Controller
         return Inertia::render('TopUpCards/Generate', [
             'cards' => $cards,
             'generated' => $request->session()->get('top_up_card_export_batch', []),
-            'presets' => $this->presetAmounts(),
             'amounts' => $this->amountOptions(),
             'agents' => $agents,
             'filters' => [
@@ -813,7 +812,6 @@ class TopUpCardController extends Controller
         return Inertia::render('TopUpCards/CardHistory', [
             'cards' => $cards,
             'generated' => $request->session()->get('top_up_card_export_batch', []),
-            'presets' => $this->presetAmounts(),
             'amounts' => $this->amountOptions(),
             'batches' => $batches,
             'stats' => $this->stats(),
