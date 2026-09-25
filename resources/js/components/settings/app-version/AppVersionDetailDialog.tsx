@@ -36,8 +36,8 @@ export function AppVersionDetailDialog({ open, onOpenChange, item, onEdit }: App
         <FormDialog
             open={open}
             onOpenChange={onOpenChange}
-            title={t('app_version.details') || 'App Version Details'}
-            description={`${t('app_version.label') || 'App version'} • ${item.version} (${platformLabels[item.platform] || item.platform})`}
+            title={t('settings.app_version.details') || 'App Version Details'}
+            description={`${t('settings.app_version.label') || 'App version'} • ${item.version} (${platformLabels[item.platform] || item.platform})`}
             icon={SmartphoneIcon}
             size="xl"
         >
@@ -52,7 +52,7 @@ export function AppVersionDetailDialog({ open, onOpenChange, item, onEdit }: App
 
                     <div className="space-y-1.5">
                         <label className="text-[12px] font-medium text-foreground">
-                            {t('app_version.force_update')}
+                            {t('settings.app_version.force_update')}
                         </label>
                         <div className="flex h-10 items-center justify-between rounded-md border border-border bg-muted/20 px-3">
                             <span
@@ -73,7 +73,7 @@ export function AppVersionDetailDialog({ open, onOpenChange, item, onEdit }: App
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-[12px] font-medium text-foreground">{t('app_version.version')}</label>
+                        <label className="text-[12px] font-medium text-foreground">{t('settings.app_version.version')}</label>
                         <div className="flex h-10 items-center rounded-md border border-border bg-muted/20 px-3 text-xs font-medium">
                             {item.version || '—'}
                         </div>
@@ -81,7 +81,7 @@ export function AppVersionDetailDialog({ open, onOpenChange, item, onEdit }: App
 
                     <div className="space-y-1.5">
                         <label className="text-[12px] font-medium text-foreground">
-                            {t('app_version.minimum_version')}
+                            {t('settings.app_version.minimum_version')}
                         </label>
                         <div className="flex h-10 items-center rounded-md border border-border bg-muted/20 px-3 text-xs font-medium">
                             {item.minimum_version || '—'}
@@ -115,7 +115,7 @@ export function AppVersionDetailDialog({ open, onOpenChange, item, onEdit }: App
 
                     <div className="space-y-1.5 sm:col-span-2">
                         <label className="text-[12px] font-medium text-foreground">
-                            {t('app_version.release_notes_en')}
+                            {t('settings.app_version.release_notes_en')}
                         </label>
                         <div className="min-h-[52px] rounded-md border border-border bg-muted/20 p-2.5 text-xs leading-relaxed text-foreground whitespace-pre-wrap">
                             {item.release_notes_en || <span className="text-muted-foreground">—</span>}
@@ -124,7 +124,7 @@ export function AppVersionDetailDialog({ open, onOpenChange, item, onEdit }: App
 
                     <div className="space-y-1.5 sm:col-span-2">
                         <label className="text-[12px] font-medium text-foreground">
-                            {t('app_version.release_notes_zh')}
+                            {t('settings.app_version.release_notes_zh')}
                         </label>
                         <div className="min-h-[52px] rounded-md border border-border bg-muted/20 p-2.5 text-xs leading-relaxed text-foreground whitespace-pre-wrap">
                             {item.release_notes_zh || <span className="text-muted-foreground">—</span>}
@@ -133,7 +133,7 @@ export function AppVersionDetailDialog({ open, onOpenChange, item, onEdit }: App
 
                     <div className="space-y-1.5 sm:col-span-2">
                         <label className="text-[12px] font-medium text-foreground">
-                            {t('app_version.release_notes_my')}
+                            {t('settings.app_version.release_notes_my')}
                         </label>
                         <div className="min-h-[52px] rounded-md border border-border bg-muted/20 p-2.5 text-xs leading-relaxed text-foreground whitespace-pre-wrap">
                             {item.release_notes_my || <span className="text-muted-foreground">—</span>}

@@ -23,7 +23,7 @@ class AppVersionResource extends JsonResource
             'release_notes' => [
                 'en' => $this->release_notes_en,
                 'zh' => $this->release_notes_zh,
-                'mm' => $this->release_notes_my,
+                'my' => $this->release_notes_my,
             ],
             'force_update' => $this->force_update,
             'status' => $this->status,

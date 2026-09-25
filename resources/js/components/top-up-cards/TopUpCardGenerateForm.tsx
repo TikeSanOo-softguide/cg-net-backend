@@ -156,7 +156,7 @@ export function TopUpCardGenerateForm({
 }: GenerateFormProps) {
     const { t } = useTranslation();
     const maxQuantity = Math.max(1, maxCards);
-    const agentMultiplier = Math.max(1, selectedAgentIds.length);
+    const agentMultiplier = Math.max(1, selectedAgentIds.length || agents.length);
     const entries = Object.entries(selected).filter(([, quantity]) => quantity > 0);
     const selectedCards = entries.reduce((sum, [, quantity]) => sum + quantity, 0);
     const totalCards = selectedCards * agentMultiplier;

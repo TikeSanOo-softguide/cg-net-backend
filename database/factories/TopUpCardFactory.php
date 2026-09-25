@@ -28,6 +28,7 @@ class TopUpCardFactory extends Factory
             'redeemed_at' => null,
             'redeemed_by' => null,
             'status' => TopUpCardStatus::Active,
+            'batch_id' => \App\Models\Batch::factory(),
         ];
     }
 

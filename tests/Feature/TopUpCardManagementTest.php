@@ -6,6 +6,7 @@ use App\Enums\TopUpCardStatus;
 use App\Http\Controllers\TopUpCard\TopUpCardController;
 use App\Jobs\GenerateTopUpCardsJob;
 use App\Models\Admin;
+use App\Models\Agent;
 use App\Models\Batch;
 use App\Models\TopUpCard;
 use App\Models\User;
@@ -28,6 +29,7 @@ class TopUpCardManagementTest extends TestCase
     {
         parent::setUp();
 
+        \Illuminate\Support\Facades\Cache::flush();
         RolePermissionSeeder::sync();
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
@@ -60,6 +62,12 @@ class TopUpCardManagementTest extends TestCase
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
 
+        Agent::query()->create([
+            'name' => 'Default Office',
+            'address' => 'Main Street',
+            'cd' => 88,
+        ]);
+
         Queue::fake();
 
         $this->actingAs($actor, 'web')
@@ -68,10 +76,13 @@ class TopUpCardManagementTest extends TestCase
             ->assertInertia(fn(Assert $page) => $page->component('TopUpCards/Generate'));
 
         $this->actingAs($actor, 'web')
+            ->from('/top-up-cards/batch')
             ->post('/top-up-cards/batch', [
                 'amounts' => [['value' => 3000, 'quantity' => 5], ['value' => 10000, 'quantity' => 2]],
                 'expires_at' => now()->addDays(90)->toDateString(),
             ])
+            ->assertSessionHasNoErrors()
+            ->assertSessionMissing('error')
             ->assertRedirect('/top-up-cards/batch');
 
         Queue::assertPushed(GenerateTopUpCardsJob::class, 2);
@@ -168,13 +179,22 @@ class TopUpCardManagementTest extends TestCase
 
         Queue::fake();
 
+        Agent::query()->create([
+            'name' => 'Default Office',
+            'address' => 'Main Street',
+            'cd' => 88,
+        ]);
+
         $this->actingAs($actor, 'web')->get('/top-up-cards/export')->assertNotFound();
 
         $this->actingAs($actor, 'web')
+            ->from('/top-up-cards/batch')
             ->post('/top-up-cards/batch', [
                 'amounts' => [['value' => 1000, 'quantity' => 1]],
                 'expires_at' => now()->addDays(30)->toDateString(),
             ])
+            ->assertSessionHasNoErrors()
+            ->assertSessionMissing('error')
             ->assertRedirect('/top-up-cards/batch');
 
         Queue::assertPushed(GenerateTopUpCardsJob::class, 1);
@@ -198,8 +218,8 @@ class TopUpCardManagementTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('TopUpCards/AgentAssign')
-                ->has('cards', 1)
-                ->where('cards.0.id', $active->id)
+                ->has('cards.data', 1)
+                ->where('cards.data.0.id', $active->id)
                 ->where('filters.status', ''));
 
         $this->assertNotSame($pending->id, $active->id);
@@ -232,6 +252,7 @@ class TopUpCardManagementTest extends TestCase
         $this->actingAs($actor, 'web')
             ->post('/top-up-cards/agents/import', [
                 'file' => UploadedFile::fake()->createWithContent('cards.csv', $csv),
+                'return' => 'assign',
             ])
             ->assertRedirect('/top-up-cards/agent-assign');
 

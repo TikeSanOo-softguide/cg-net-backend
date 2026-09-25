@@ -143,31 +143,9 @@ class ActivityLogController extends Controller
             'event' => $activity->event,
             'log_name' => $activity->log_name,
             'subject' => $this->subject($activity),
-            'changes' => $this->changes($activity),
+            'meta_data' => $activity->properties ?? [],
             'created_at' => $activity->created_at,
         ];
-    }
-
-    /** @return array<int, array{field: string, old: mixed, new: mixed}> */
-    private function changes(Activity $activity): array
-    {
-        $changes = $activity->changes();
-        $attributes = collect($changes->get('attributes', []));
-        $old = collect($changes->get('old', []));
-
-        return $attributes
-            ->keys()
-            ->merge($old->keys())
-            ->unique()
-            ->map(
-                fn(string $field): array => [
-                    'field' => $field,
-                    'old' => $old->get($field),
-                    'new' => $attributes->get($field),
-                ],
-            )
-            ->values()
-            ->all();
     }
 
     private function subject(Activity $activity): string

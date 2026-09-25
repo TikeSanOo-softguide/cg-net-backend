@@ -146,36 +146,49 @@
         "language_management_description": "Manage supported languages and translations.",
         "general_settings_description": "Configure general application settings."
     },
-    "app_version": {
-        "label": "App version",
-        "version": "Version",
-        "minimum_version": "Minimum version",
-        "force_update": "Force update",
-        "release_notes_en": "Release notes (English)",
-        "release_notes_zh": "Release notes (Chinese)",
-        "release_notes_my": "Release notes (Burmese)",
-        "platform": "Platform",
-        "download_url": "Download URL",
-        "create": "Create app version",
-        "edit": "Edit app version",
-        "create_description": "Add a new app version and release notes.",
-        "edit_description": "Update this app version and release notes.",
-        "created": "App version created",
-        "updated": "App version updated",
-        "deleted": "App version deleted",
-        "delete_title": "Delete this app version?",
-        "delete_description": "This app version will be permanently removed.",
-        "placeholder_release_notes_en": "Enter release notes in English...",
-        "placeholder_release_notes_zh": "Enter release notes in Chinese...",
-        "placeholder_release_notes_my": "Enter release notes in Burmese...",
-        "details": "App Version Details"
-    },
+ 
     "settings": {
         "app_version": {
+            "label": "App version",
+            "version": "Version",
+            "minimum_version": "Minimum version",
+            "force_update": "Force update",
+            "release_notes_en": "Release notes (English)",
+            "release_notes_zh": "Release notes (Chinese)",
+            "release_notes_my": "Release notes (Burmese)",
+            "platform": "Platform",
+            "download_url": "Download URL",
             "create": "Create app version",
             "edit": "Edit app version",
             "create_description": "Create a new app version and release notes.",
-            "edit_description": "Update this app version and release notes."
+            "edit_description": "Update this app version and release notes.",
+            "created": "App version created successfully.",
+            "updated": "App version updated successfully.",
+            "deleted": "App version deleted successfully.",
+            "upload": "App version uploaded successfully.",
+            "delete_title": "Delete this app version?",
+            "delete_description": "This app version will be permanently removed.",
+            "placeholder_release_notes_en": "Enter release notes in English...",
+            "placeholder_release_notes_zh": "Enter release notes in Chinese...",
+            "placeholder_release_notes_my": "Enter release notes in Burmese...",
+            "details": "App Version Details",
+            "alert": {
+                "create": "App version created successfully.",
+                "upload": "App version uploaded successfully.",
+                "delete": "App version deleted successfully."
+            },
+            "validation": {
+                "platform_required": "Please select a platform.",
+                "version_required": "Please enter a version.",
+                "minimum_version_required": "Please enter the minimum version.",
+                "download_url_required": "Please enter a download URL.",
+                "download_url_url": "The download URL must be a valid URL.",
+                "release_notes_en_required": "Please enter the English release notes.",
+                "release_notes_zh_required": "Please enter the Chinese release notes.",
+                "release_notes_my_required": "Please enter the Burmese release notes.",
+                "force_update_required": "Please select whether force update is enabled.",
+                "status_required": "Please select a status."
+            }
         }
     },
     "dashboard": {
@@ -1099,6 +1112,7 @@
             "amount_min": "Amount must be at least 100.",
             "quantity_min": "Quantity must be at least 1.",
             "quantity_total": "You can generate at most :max cards at once (quantity × agents).",
+            "agents_required": "Add at least one agent before generating cards.",
             "expires_required": "Expiry date is required.",
             "expires_future": "Expiry date must be today or later."
         }

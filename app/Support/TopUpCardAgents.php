@@ -7,6 +7,9 @@ use App\Models\Agent;
 final class TopUpCardAgents
 {
     /**
+     * Resolve agent CD strings for generation.
+     * An empty selection means every non-deleted agent.
+     *
      * @param  list<int>  $agentIds
      * @return list<string>
      */
@@ -14,19 +17,17 @@ final class TopUpCardAgents
     {
         $agentIds = array_values(array_unique(array_map('intval', $agentIds)));
 
-        if ($agentIds === []) {
-            return ['88'];
+        $query = Agent::query()->orderBy('id');
+
+        if ($agentIds !== []) {
+            $query->whereIn('id', $agentIds);
         }
 
-        $codes = Agent::query()
-            ->whereIn('id', $agentIds)
-            ->orderBy('id')
+        return $query
             ->pluck('cd')
             ->map(fn($cd): string => (string) $cd)
             ->unique()
             ->values()
             ->all();
-
-        return $codes === [] ? ['88'] : $codes;
     }
 }

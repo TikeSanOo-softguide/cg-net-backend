@@ -16,23 +16,40 @@ class AppVersionController extends Controller
     public function index(Request $request): Response
     {
         $versions = AppVersion::query()
-            ->when($request->filled('platform'), fn($query) => $query->where('platform', $request->input('platform')))
-            ->when($request->filled('version'), function ($query) use ($request): void {
-                $version = $request->input('version');
-                $query->where(function ($query) use ($version): void {
-                    $query->where('version', $version)->orWhere('minimum_version', $version);
-                });
+            ->when(
+                $request->filled('platform') && $request->input('platform') !== 'all',
+                fn($query) => $query->where('platform', $request->input('platform')),
+            )
+            ->when($request->filled('version') && $request->input('version') !== 'all', function ($query) use (
+                $request,
+            ): void {
+                $query->where('version', $request->input('version'));
             })
             ->latest()
             ->paginate((int) $request->input('per_page', 10))
             ->withQueryString();
 
+        $versionOptions = AppVersion::query()
+            ->when(
+                $request->filled('platform') && $request->input('platform') !== 'all',
+                fn($query) => $query->where('platform', $request->input('platform')),
+            )
+            ->select('version')
+            ->distinct()
+            ->orderBy('version')
+            ->pluck('version')
+            ->filter()
+            ->values();
+
         return Inertia::render('Settings/AppVersion/Index', [
             'items' => $versions,
+
             'filters' => [
                 'platform' => $request->input('platform', ''),
                 'version' => $request->input('version', ''),
             ],
+
+            'versionOptions' => $versionOptions,
         ]);
     }
 

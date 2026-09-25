@@ -57,6 +57,16 @@ class GenerateTopUpCardsRequest extends FormRequest
             $maxCards = (int) config('top_up_cards.max_cards');
             $agentIds = array_values(array_unique(array_map('intval', $this->input('agent_ids', []))));
             $agentCount = count(TopUpCardAgents::resolveCodes($agentIds));
+
+            if ($agentCount < 1) {
+                $validator->errors()->add(
+                    'agent_ids',
+                    __('top_up_cards.validation.agents_required'),
+                );
+
+                return;
+            }
+
             $total = collect($this->input('amounts', []))->sum(fn($tier): int => (int) ($tier['quantity'] ?? 0));
             $issued = $total * $agentCount;
 
