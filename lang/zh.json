@@ -1097,6 +1097,7 @@
             "amount_min": "金额至少为 100。",
             "quantity_min": "数量至少为 1。",
             "quantity_total": "一次最多生成 :max 张卡（数量 × 代理数）。",
+            "agents_required": "请先添加至少一个代理商再生成卡。",
             "expires_required": "有效期为必填项。",
             "expires_future": "有效期必须是今天或之后。"
         }

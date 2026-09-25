@@ -1101,6 +1101,7 @@
             "amount_min": "Amount must be at least 100.",
             "quantity_min": "Quantity must be at least 1.",
             "quantity_total": "You can generate at most :max cards at once (quantity × agents).",
+            "agents_required": "Add at least one agent before generating cards.",
             "expires_required": "Expiry date is required.",
             "expires_future": "Expiry date must be today or later."
         }

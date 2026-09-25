@@ -183,7 +183,7 @@ export default function TopUpCardsGenerate({
     );
 
     const selectedCards = Object.values(selected).reduce((sum, quantity) => sum + quantity, 0);
-    const agentMultiplier = Math.max(1, selectedAgentIds.length);
+    const agentMultiplier = Math.max(1, selectedAgentIds.length || agents.length);
     const totalCards = selectedCards * agentMultiplier;
     const canGenerate =
         can('top-up-cards.create') && selectedCards > 0 && totalCards <= max_cards && !isGenerating;
@@ -222,7 +222,7 @@ export default function TopUpCardsGenerate({
                                     customValue={customValue}
                                     expiresAt={form.data.expires_at}
                                     processing={isGenerating}
-                                    error={form.errors.amounts ?? form.errors.expires_at}
+                                    error={form.errors.amounts ?? form.errors.agent_ids ?? form.errors.expires_at}
                                     onToggle={(amount) => {
                                         setSelected((current) => {
                                             const key = String(amount);

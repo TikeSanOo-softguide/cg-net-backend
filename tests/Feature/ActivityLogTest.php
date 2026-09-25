@@ -53,4 +53,32 @@ class ActivityLogTest extends TestCase
                     ->where('logs.data.0.log_name', 'customer_created'),
             );
     }
+
+    public function test_activity_log_index_shows_properties_for_logs_without_old_and_new_diff(): void
+    {
+        $admin = Admin::factory()->create();
+        $user = User::factory()->create();
+
+        activity('customers')
+            ->causedBy($admin)
+            ->performedOn($user)
+            ->event('created')
+            ->withProperties([
+                'name' => 'Alice',
+                'status' => 'active',
+            ])
+            ->log('customer_created');
+
+        $this->actingAs($admin, 'web')
+            ->get('/activity-logs?event=created&log=customer_created')
+            ->assertOk()
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->has('logs.data', 1)
+                    ->where('logs.data.0.changes.0.field', 'name')
+                    ->where('logs.data.0.changes.0.new', 'Alice')
+                    ->where('logs.data.0.changes.1.field', 'status')
+                    ->where('logs.data.0.changes.1.new', 'active'),
+            );
+    }
 }
