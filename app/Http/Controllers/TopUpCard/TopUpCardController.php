@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\TopUpCard\GenerateTopUpCardsRequest;
 use App\Models\Batch;
 use App\Models\TopUpCard;
+use App\Models\TopUpCardBatchCode;
 use App\Support\GeneratesTopUpCards;
 use App\Http\Controllers\InOutManagement\CSV\TopUpCard as TopUpCardCsv;
 use Illuminate\Http\RedirectResponse;
@@ -18,11 +19,6 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TopUpCardController extends Controller
 {
-    /**
-     * @var list<int>
-     */
-    public const Presets = [50, 100, 250, 500];
-
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search'));
@@ -64,7 +60,11 @@ class TopUpCardController extends Controller
         return Inertia::render('TopUpCards/Generate', [
             'cards' => $cards,
             'generated' => $request->session()->get('top_up_card_export_batch', []),
-            'presets' => self::Presets,
+            'presets' => TopUpCardBatchCode::query()
+                ->orderBy('amount')
+                ->pluck('amount')
+                ->map(fn($amount): int => (int) $amount)
+                ->values(),
             'amounts' => $this->amountOptions(),
             'filters' => [
                 'search' => $search,
@@ -100,10 +100,7 @@ class TopUpCardController extends Controller
 
         abort_if($batch === [], 404);
 
-        return TopUpCardCsv::export(
-            $batch,
-            'top-up-cards-' . now()->format('Ymd-His') . '.csv',
-        );
+        return TopUpCardCsv::export($batch, 'top-up-cards-' . now()->format('Ymd-His') . '.csv');
     }
 
     public function void(Request $request, TopUpCard $topUpCard): RedirectResponse
@@ -145,9 +142,7 @@ class TopUpCardController extends Controller
                     $query
                         ->whereLike('serial_no', '%' . $search . '%')
                         ->orWhereHas('redeemedBy', function ($query) use ($search): void {
-                            $query
-                                ->whereLike('name', '%' . $search . '%')
-                                ->orWhereLike('phone', '%' . $search . '%');
+                            $query->whereLike('name', '%' . $search . '%')->orWhereLike('phone', '%' . $search . '%');
                         });
                 });
             })

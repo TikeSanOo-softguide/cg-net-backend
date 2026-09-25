@@ -55,6 +55,7 @@ class DatabaseSeeder extends Seeder
         $packages = $this->seedPackages();
         $users = $this->seedCustomers($packages);
         $this->seedAgents();
+        $this->seedTopUpCardBatchCodes();
         $this->seedServiceRequests($users, $areas, $packages);
         $this->seedFailureReports();
         $this->seedBilling($users);
@@ -119,6 +120,11 @@ class DatabaseSeeder extends Seeder
     private function seedTopUpCards(): void
     {
         (new TopUpCardSeeder())->run();
+    }
+
+    private function seedTopUpCardBatchCodes(): void
+    {
+        (new TopUpCardBatchCodeSeeder())->run();
     }
 
     private function seedWalletSystem(): void

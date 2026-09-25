@@ -21,7 +21,7 @@ class Agent extends Model
     protected function casts(): array
     {
         return [
-            'cd' => 'integer',
+            'cd' => 'string',
         ];
     }
 

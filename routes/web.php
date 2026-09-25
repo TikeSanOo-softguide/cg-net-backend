@@ -217,30 +217,24 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::prefix('conversations')
                 ->name('conversations.')
                 ->group(function () {
-                    Route::get(
-                        '/',
-                        [ChatConversationsController::class, 'index']
-                    )->name('chat-conversations.index');
+                    Route::get('/', [ChatConversationsController::class, 'index'])->name('chat-conversations.index');
 
-                    Route::get(
-                        '/{conversation}',
-                        [ChatConversationsController::class, 'show']
-                    )->name('chat-conversations.show');
+                    Route::get('/{conversation}', [ChatConversationsController::class, 'show'])->name(
+                        'chat-conversations.show',
+                    );
 
-                    Route::post(
-                        '/{conversation}/messages',
-                        [ChatConversationsController::class, 'sendMessage']
-                    )->name('chat-conversations.messages.store');
+                    Route::post('/{conversation}/messages', [ChatConversationsController::class, 'sendMessage'])->name(
+                        'chat-conversations.messages.store',
+                    );
 
-                    Route::put(
-                        '/{conversation}/status',
-                        [ChatConversationsController::class, 'updateStatus']
-                    )->name('chat-conversations.status');
+                    Route::put('/{conversation}/status', [ChatConversationsController::class, 'updateStatus'])->name(
+                        'chat-conversations.status',
+                    );
 
-                    Route::post(
-                        '/{conversation}/quick-replies/{quickReply}',
-                        [ChatConversationsController::class, 'useQuickReply']
-                    )->name('chat-conversations.quick-reply');
+                    Route::post('/{conversation}/quick-replies/{quickReply}', [
+                        ChatConversationsController::class,
+                        'useQuickReply',
+                    ])->name('chat-conversations.quick-reply');
                 });
             Route::prefix('quick-replies')
                 ->name('quick-replies.')
@@ -291,8 +285,10 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::get('/agents', [AgentController::class, 'index'])
                 ->middleware('can:top-up-cards.view')
                 ->name('agents');
-            Route::get('/agent-assign', [AgentController::class, 'agentAssign'])->middleware('can:top-up-cards.view')->name('agent-assign');
-        Route::post('/agents', [AgentController::class, 'store'])
+            Route::get('/agent-assign', [AgentController::class, 'agentAssign'])
+                ->middleware('can:top-up-cards.view')
+                ->name('agent-assign');
+            Route::post('/agents', [AgentController::class, 'store'])
                 ->middleware('can:top-up-cards.create')
                 ->name('agents.store');
             Route::put('/agents/{agent}', [AgentController::class, 'update'])
@@ -301,8 +297,19 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::delete('/agents/{agent}', [AgentController::class, 'destroy'])
                 ->middleware('can:top-up-cards.delete')
                 ->name('agents.destroy');
-            Route::post('/agents/import', [AgentController::class, 'import'])->middleware('can:top-up-cards.update')->name('agents.import');
-        Route::patch('/assign-agent', [AgentController::class, 'assignAgent'])
+            Route::post('/batch-codes', [AgentController::class, 'storeBatchCode'])
+                ->middleware('can:top-up-cards.create')
+                ->name('batch-codes.store');
+            Route::put('/batch-codes/{batchCode}', [AgentController::class, 'updateBatchCode'])
+                ->middleware('can:top-up-cards.update')
+                ->name('batch-codes.update');
+            Route::delete('/batch-codes/{batchCode}', [AgentController::class, 'destroyBatchCode'])
+                ->middleware('can:top-up-cards.delete')
+                ->name('batch-codes.destroy');
+            Route::post('/agents/import', [AgentController::class, 'import'])
+                ->middleware('can:top-up-cards.update')
+                ->name('agents.import');
+            Route::patch('/assign-agent', [AgentController::class, 'assignAgent'])
                 ->middleware('can:top-up-cards.update')
                 ->name('assign-cards-agent');
             Route::get('/export', [TopUpCardController::class, 'export'])
