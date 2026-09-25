@@ -19,7 +19,7 @@ export type ReferenceFormRow = {
     name_my?: string | null;
     mbps?: number | null;
     months?: number | null;
-    price?: number | string | null;
+    price?: number | null;
     image_url?: string | null;
 };
 
@@ -172,19 +172,11 @@ const getValidationError = (
         return validationKey('required');
     }
 
-    if (
-        error.includes('max:50') ||
-        ((field.startsWith('name_') || field.startsWith('network_name_')) &&
-            (error.includes('50') || error.includes('255')))
-    ) {
+    if (field.startsWith('name_') && error.includes('50')) {
         return validationKey('max');
     }
 
-    if (error.includes('50')) {
-        return t(`packages.validation.network_${field}_max`);
-    }
-
-    if (error.includes('100')) {
+    if (field.startsWith('name_') && error.includes('255')) {
         return validationKey('max');
     }
 
@@ -203,13 +195,13 @@ const getValidationError = (
     }
 
     if (field === 'price') {
-        if (error.includes('9999999999') || error.includes('kilobytes')) {
+        if (error.includes('999999999') || error.includes('kilobytes')) {
             return validationKey('max');
         }
     }
 
-    if (field === 'month' || field === 'mbps') {
-        if (error.includes('999') || error.includes('kilobytes')) {
+    if (field === 'months' || field === 'mbps') {
+        if (error.includes('999999999') || error.includes('kilobytes')) {
             return validationKey('max');
         }
     }
@@ -234,11 +226,7 @@ const validateDigitNumber = (
         return t(`packages.validation.${field}_min`);
     }
 
-    if ((field === 'months' || field === 'mbps') && value.length > 3) {
-        return t(`packages.validation.${field}_max`);
-    }
-
-    if (field === 'price' && value.length > 10) {
+    if ((field === 'months' || field === 'mbps' || field === 'price') && value.length > 9) {
         return t(`packages.validation.${field}_max`);
     }
 
@@ -248,14 +236,18 @@ const validateDigitNumber = (
 const validateName = (
     value: string,
     field: 'name_en' | 'name_my' | 'name_zh',
+    kind: ReferenceFormKind,
     t: (key: string) => string,
 ): string | undefined => {
     if (!value.trim()) {
         return t(`packages.validation.${field}_required`);
     }
 
-    if (value.length > 255) {
-        return t(`packages.validation.${field}_max`);
+    const maxLength = kind === 'network' ? 50 : 255;
+    const maxKey = kind === 'network' ? `packages.validation.network_${field}_max` : `packages.validation.${field}_max`;
+
+    if (value.length > maxLength) {
+        return t(maxKey);
     }
 
     return undefined;
@@ -309,6 +301,27 @@ function ReferenceFormDialogBody({
         mbps: false,
         price: false,
     });
+
+    const preventInvalidNumberKeys = (event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (['e', 'E', '+', '-', '.'].includes(event.key)) {
+            event.preventDefault();
+        }
+    };
+
+    const handleNumberChange = (field: 'price' | 'months' | 'mbps', value: string) => {
+        if (!/^\d*$/.test(value)) {
+            return;
+        }
+        const normalizedValue = value.replace(/^0+(?=\d)/, '');
+        setTouched((prev) => ({
+            ...prev,
+            [field]: true,
+        }));
+
+        form.setData(field, normalizedValue === '' ? '' : Number(normalizedValue));
+        form.clearErrors(field);
+    };
+
     useEffect(() => {
         if (!item) {
             form.clearErrors();
@@ -354,7 +367,7 @@ function ReferenceFormDialogBody({
                             error={
                                 getValidationError(form.errors.name_en, 'name_en', t) ??
                                 (touched.name_en
-                                    ? validateName(String(form.data.name_en ?? ''), 'name_en', t)
+                                    ? validateName(String(form.data.name_en ?? ''), 'name_en', kind, t)
                                     : undefined)
                             }
                         >
@@ -379,7 +392,7 @@ function ReferenceFormDialogBody({
                             error={
                                 getValidationError(form.errors.name_zh, 'name_zh', t) ??
                                 (touched.name_zh
-                                    ? validateName(String(form.data.name_zh ?? ''), 'name_zh', t)
+                                    ? validateName(String(form.data.name_zh ?? ''), 'name_zh', kind, t)
                                     : undefined)
                             }
                         >
@@ -404,7 +417,7 @@ function ReferenceFormDialogBody({
                             error={
                                 getValidationError(form.errors.name_my, 'name_my', t) ??
                                 (touched.name_my
-                                    ? validateName(String(form.data.name_my ?? ''), 'name_my', t)
+                                    ? validateName(String(form.data.name_my ?? ''), 'name_my', kind, t)
                                     : undefined)
                             }
                         >
@@ -438,22 +451,8 @@ function ReferenceFormDialogBody({
                             id="speed-mbps"
                             type="number"
                             value={String(form.data.mbps ?? '')}
-                            onKeyDown={(event) => {
-                                if (['e', 'E', '+', '-'].includes(event.key)) {
-                                    event.preventDefault();
-                                }
-                            }}
-                            onChange={(event) => {
-                                const value = event.target.value;
-                                if (value === '' || Number(value) >= 0) {
-                                    setTouched((prev) => ({
-                                        ...prev,
-                                        mbps: true,
-                                    }));
-                                    form.setData('mbps', value);
-                                    form.clearErrors('mbps');
-                                }
-                            }}
+                            onKeyDown={preventInvalidNumberKeys}
+                            onChange={(event) => handleNumberChange('mbps', event.target.value)}
                             placeholder="Mbps"
                         />
                     </FormField>
@@ -474,22 +473,8 @@ function ReferenceFormDialogBody({
                             id="term-months"
                             type="number"
                             value={String(form.data.months ?? '')}
-                            onKeyDown={(event) => {
-                                if (['e', 'E', '+', '-'].includes(event.key)) {
-                                    event.preventDefault();
-                                }
-                            }}
-                            onChange={(event) => {
-                                const value = event.target.value;
-                                if (value === '' || Number(value) >= 0) {
-                                    setTouched((prev) => ({
-                                        ...prev,
-                                        months: true,
-                                    }));
-                                    form.setData('months', value);
-                                    form.clearErrors('months');
-                                }
-                            }}
+                            onKeyDown={preventInvalidNumberKeys}
+                            onChange={(event) => handleNumberChange('months', event.target.value)}
                             placeholder={t('packages.months_placeholder')}
                         />
                     </FormField>
@@ -506,7 +491,7 @@ function ReferenceFormDialogBody({
                                     error={
                                         getValidationError(form.errors.name_en, 'name_en', t) ??
                                         (touched.name_en
-                                            ? validateName(String(form.data.name_en ?? ''), 'name_en', t)
+                                            ? validateName(String(form.data.name_en ?? ''), 'name_en', kind, t)
                                             : undefined)
                                     }
                                 >
@@ -532,7 +517,7 @@ function ReferenceFormDialogBody({
                                     error={
                                         getValidationError(form.errors.name_zh, 'name_zh', t) ??
                                         (touched.name_zh
-                                            ? validateName(String(form.data.name_zh ?? ''), 'name_zh', t)
+                                            ? validateName(String(form.data.name_zh ?? ''), 'name_zh', kind, t)
                                             : undefined)
                                     }
                                 >
@@ -557,7 +542,7 @@ function ReferenceFormDialogBody({
                                     error={
                                         getValidationError(form.errors.name_my, 'name_my', t) ??
                                         (touched.name_my
-                                            ? validateName(String(form.data.name_my ?? ''), 'name_my', t)
+                                            ? validateName(String(form.data.name_my ?? ''), 'name_my', kind, t)
                                             : undefined)
                                     }
                                 >
@@ -592,23 +577,8 @@ function ReferenceFormDialogBody({
                                         id="addon-price"
                                         type="number"
                                         value={String(form.data.price ?? '')}
-                                        onKeyDown={(event) => {
-                                            if (['e', 'E', '+', '-'].includes(event.key)) {
-                                                event.preventDefault();
-                                            }
-                                        }}
-                                        onChange={(event) => {
-                                            const value = event.target.value;
-
-                                            if (value === '' || Number(value) >= 0) {
-                                                setTouched((prev) => ({
-                                                    ...prev,
-                                                    price: true,
-                                                }));
-                                                form.setData('price', Number(value));
-                                                form.clearErrors('price');
-                                            }
-                                        }}
+                                        onKeyDown={preventInvalidNumberKeys}
+                                        onChange={(event) => handleNumberChange('price', event.target.value)}
                                         placeholder={t('packages.price_placeholder')}
                                     />
                                 </FormField>

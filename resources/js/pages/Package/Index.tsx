@@ -1,18 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Head, router } from '@inertiajs/react';
-import {
-    CalendarDaysIcon,
-    CheckCircle2Icon,
-    CircleXIcon,
-    GaugeIcon,
-    NetworkIcon,
-    PuzzleIcon,
-    SquarePenIcon,
-    StarIcon,
-    Trash2Icon,
-    type LucideIcon,
-} from 'lucide-react';
+import { CheckCircle2Icon, CircleXIcon, SquarePenIcon, StarIcon, Trash2Icon, type LucideIcon } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
@@ -20,7 +9,6 @@ import { MultiSelect } from '@/components/MultiSelect';
 import type { Paginated } from '@/components/Pagination';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
-import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -36,7 +24,6 @@ import {
 import type { PackageDetailMember } from '@/components/package/PackageDetailDialog';
 
 import type { PackageOption } from '@/components/package/PackageForm';
-import { Card } from '@/components/ui/card';
 import { truncateText } from '@/lib/utils';
 import { FormControl } from '@/components/ui/form-control';
 
@@ -214,7 +201,7 @@ export default function PackageIndex({
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                     <DataTable
                         data={networkTable}
-                        className={networkTable.length > 5 ? 'max-h-90 overflow-y-auto' : undefined}
+                        className={networkTable.length > 5 ? 'max-h-80 overflow-y-auto' : undefined}
                         getRowId={(row) => String(row.id)}
                         search={networkSearch}
                         onSearchChange={(value) => {
@@ -303,7 +290,7 @@ export default function PackageIndex({
                                             ? truncateText(row.name_en ?? '—', 20)
                                             : locale === 'zh'
                                               ? truncateText(row.name_zh ?? '—', 12)
-                                              : truncateText(row.name_my ?? '—', 15)}
+                                              : truncateText(row.name_my ?? '—', 11)}
                                     </span>
                                 ),
                             },
@@ -311,7 +298,7 @@ export default function PackageIndex({
                     />
                     <DataTable
                         data={speedTable}
-                        className={speedTable.length > 5 ? 'max-h-90 overflow-y-auto' : undefined}
+                        className={speedTable.length > 5 ? 'max-h-80 overflow-y-auto' : undefined}
                         getRowId={(row) => String(row.id)}
                         search={speedSearch}
                         onSearchChange={(value) => {
@@ -398,7 +385,7 @@ export default function PackageIndex({
 
                     <DataTable
                         data={termTable}
-                        className={termTable.length > 5 ? 'max-h-90 overflow-y-auto' : undefined}
+                        className={termTable.length > 5 ? 'max-h-80 overflow-y-auto' : undefined}
                         getRowId={(row) => String(row.id)}
                         search={termSearch}
                         onSearchChange={(value) => {
@@ -487,7 +474,7 @@ export default function PackageIndex({
 
                     <DataTable
                         data={addonTable}
-                        className={addonTable.length > 5 ? 'max-h-90 overflow-y-auto' : undefined}
+                        className={addonTable.length > 5 ? 'max-h-80 overflow-y-auto' : undefined}
                         getRowId={(row) => String(row.id)}
                         search={addonSearch}
                         onSearchChange={(value) => {
@@ -653,7 +640,7 @@ export default function PackageIndex({
                         </>
                     )}
                     filters={
-                        <FormControl compact className="w-full shrink-0 sm:w-90">
+                        <FormControl compact className="w-full shrink-0 sm:w-100">
                             <MultiSelect
                                 values={statusFilters}
                                 options={[

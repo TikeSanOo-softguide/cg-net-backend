@@ -13,7 +13,13 @@ class TermController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'months' => ['required', 'integer', 'min:1', 'max:999', Rule::unique('terms', 'months')->withoutTrashed()],
+            'months' => [
+                'required',
+                'integer',
+                'min:1',
+                'max:999999999',
+                Rule::unique('terms', 'months')->withoutTrashed(),
+            ],
         ]);
 
         Term::query()->create($data);
@@ -28,7 +34,7 @@ class TermController extends Controller
                 'required',
                 'integer',
                 'min:1',
-                'max:999',
+                'max:999999999',
                 Rule::unique('terms', 'months')->ignore($term->id)->withoutTrashed(),
             ],
         ]);

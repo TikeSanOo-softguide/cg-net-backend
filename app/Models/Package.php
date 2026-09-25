@@ -32,8 +32,8 @@ class Package extends Model
     protected function casts(): array
     {
         return [
-            'price' => 'decimal:2',
-            'installation_fee' => 'decimal:2',
+            'price' => 'integer',
+            'installation_fee' => 'integer',
             'includes_free_iptv' => 'boolean',
             'is_active' => 'boolean',
             'recommended' => 'boolean',
@@ -68,17 +68,12 @@ class Package extends Model
 
     public function customerPackages(): HasMany
     {
-        return $this->hasMany(CustomerPackage::class);
+        return $this->hasMany(CustomerPackage::class, 'package_id');
     }
 
     public function packageOrders(): HasMany
     {
-        return $this->hasMany(PackageOrder::class);
-    }
-
-    public function installationApplications(): HasMany
-    {
-        return $this->hasMany(InstallationApplication::class, 'plan_id');
+        return $this->hasMany(PackageOrder::class, 'package_id');
     }
 
     public function currentChangePlanRequests(): HasMany

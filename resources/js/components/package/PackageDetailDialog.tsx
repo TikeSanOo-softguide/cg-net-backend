@@ -116,7 +116,7 @@ export function PackageDetailDialog({ open, onOpenChange, package: packageItem, 
                             <FormField label={t('packages.recommended')} htmlFor="view-recommended" icon={StarIcon}>
                                 <Input
                                     id="view-recommended"
-                                    value={packageItem.recommended ? t('common.yes') : t('common.no')}
+                                    value={packageItem.recommended ? t('common.yes') : t('packages.no')}
                                     readOnly
                                 />
                             </FormField>
@@ -124,7 +124,7 @@ export function PackageDetailDialog({ open, onOpenChange, package: packageItem, 
                             <FormField label={t('package.free_iptv')} htmlFor="view-free-iptv" icon={PackageIcon}>
                                 <Input
                                     id="view-free-iptv"
-                                    value={packageItem.includes_free_iptv ? t('common.yes') : t('common.no')}
+                                    value={packageItem.includes_free_iptv ? t('common.yes') : t('packages.no')}
                                     readOnly
                                 />
                             </FormField>

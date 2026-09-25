@@ -1208,10 +1208,10 @@
             "network_name_my_max": "缅甸语名称不能超过 50 个字符。",
             "months_required": "请输入月数。",
             "months_integer": "月数必须是整数。",
-            "months_max": "月数不能超过 3 位数字。",
+            "months_max": "月数不能超过 9 位数字。",
             "mbps_required": "请输入 Mbps 网速。",
             "mbps_integer": "网速必须是整数。",
-            "mbps_max": "网速不能超过 3 位数字。",
+            "mbps_max": "网速不能超过 9 位数字。",
             "network_name_en_unique": "该英文名称已存在。",
             "network_name_zh_unique": "该中文名称已存在。",
             "network_name_my_unique": "该缅甸文名称已存在。",
@@ -1219,7 +1219,12 @@
             "months_unique": "该套餐期限已存在。",
             "price_numeric": "价格必须是数字。",
             "price_min": "价格不能小于 0。",
-            "price_max": "价格不得超过 10 位数。"
+            "price_max": "价格不得超过 10 位数。",
+            "installation_fee_max": "安装费不得超过 9 位数字。",
+            "unique": "相同网络、速度和期限的套餐已存在。",
+            "max": "数值必须在 0 到 9 之间。",
+            "sort_order_max": "数值必须在 0 到 9 之间。",
+            "cannot_delete_in_use": "此套餐正在使用中，无法删除。"
         }
     },
     "relocation_requests": {

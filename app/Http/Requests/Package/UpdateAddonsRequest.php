@@ -45,7 +45,7 @@ class UpdateAddonsRequest extends FormRequest
                 'max:255',
                 Rule::unique('addons', 'name_my')->withoutTrashed()->ignore($this->route('addon')->id),
             ],
-            'price' => ['required', 'numeric', 'min:0'],
+            'price' => ['required', 'numeric', 'min:0', 'max:999999999'],
             'image_url' => CmsRules::image(false),
         ];
     }
