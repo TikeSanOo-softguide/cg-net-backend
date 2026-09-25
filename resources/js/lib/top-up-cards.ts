@@ -4,7 +4,7 @@ export type TopUpCardRow = {
     id: number;
     serial_no: string;
     pin?: string;
-    amount: string | number;
+    amount: number;
     status: string;
     expires_at: string | null;
     redeemed_at: string | null;

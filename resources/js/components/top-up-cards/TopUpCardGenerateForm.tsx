@@ -27,7 +27,7 @@ import {
     TOP_UP_CARD_CURRENCY,
 } from '@/lib/top-up-cards';
 
-const MAX_QUANTITY = 8999;
+const DEFAULT_MAX_CARDS = 100000;
 
 function denominationCardClass(checked: boolean, dashed = false): string {
     return cn(
@@ -46,6 +46,7 @@ type GenerateFormProps = {
     agents: { id: number; name: string }[];
     selectedAgentIds: string[];
     presets: number[];
+    maxCards?: number;
     selected: Record<string, number>;
     customOpen: boolean;
     customValue: string;
@@ -62,12 +63,14 @@ type GenerateFormProps = {
 
 function QuantityStepper({
     quantity,
+    maxQuantity,
     processing,
     decreaseLabel,
     increaseLabel,
     onQuantity,
 }: {
     quantity: number;
+    maxQuantity: number;
     processing: boolean;
     decreaseLabel: string;
     increaseLabel: string;
@@ -90,18 +93,20 @@ function QuantityStepper({
             <input
                 type="number"
                 min={0}
-                max={MAX_QUANTITY}
+                max={maxQuantity}
                 value={quantity}
                 disabled={processing}
                 aria-label={increaseLabel}
                 className="h-full w-full min-w-0 border-x border-border bg-transparent px-1 text-center text-[11px] font-medium tabular-nums outline-none [appearance:textfield] disabled:opacity-60 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                onChange={(event) => onQuantity(Math.min(MAX_QUANTITY, Math.max(1, Number(event.target.value) || 1)))}
+                onChange={(event) =>
+                    onQuantity(Math.min(maxQuantity, Math.max(1, Number(event.target.value) || 1)))
+                }
             />
             <button
                 type="button"
-                disabled={processing || quantity >= MAX_QUANTITY}
+                disabled={processing || quantity >= maxQuantity}
                 className={stepClass}
-                onClick={() => onQuantity(Math.min(MAX_QUANTITY, quantity + 1))}
+                onClick={() => onQuantity(Math.min(maxQuantity, quantity + 1))}
                 aria-label={increaseLabel}
             >
                 <PlusIcon className="size-3" strokeWidth={2} />
@@ -147,6 +152,7 @@ export function TopUpCardGenerateForm({
     agents,
     selectedAgentIds,
     presets,
+    maxCards = DEFAULT_MAX_CARDS,
     selected,
     customOpen,
     customValue,
@@ -162,9 +168,14 @@ export function TopUpCardGenerateForm({
 }: GenerateFormProps) {
     const { t } = useTranslation();
     const [menuOpen, setMenuOpen] = useState(false);
+    const maxQuantity = Math.max(1, maxCards);
+    const agentMultiplier = Math.max(1, selectedAgentIds.length);
     const entries = Object.entries(selected).filter(([, quantity]) => quantity > 0);
-    const totalCards = entries.reduce((sum, [, quantity]) => sum + quantity, 0);
-    const totalValue = entries.reduce((sum, [value, quantity]) => sum + Number(value) * quantity, 0);
+    const selectedCards = entries.reduce((sum, [, quantity]) => sum + quantity, 0);
+    const totalCards = selectedCards * agentMultiplier;
+    const totalValue =
+        entries.reduce((sum, [value, quantity]) => sum + Number(value) * quantity, 0) * agentMultiplier;
+    const overLimit = totalCards > maxQuantity;
     const customAmount = Number(customValue);
     const customActive = customOpen && customAmount >= 50;
     const customQuantity = selected[String(customAmount)] ?? 1;
@@ -220,6 +231,7 @@ export function TopUpCardGenerateForm({
                                 {checked ? (
                                     <QuantityStepper
                                         quantity={quantity}
+                                        maxQuantity={maxQuantity}
                                         processing={processing}
                                         decreaseLabel={t('top_up_cards.decrease')}
                                         increaseLabel={t('top_up_cards.increase')}
@@ -275,6 +287,7 @@ export function TopUpCardGenerateForm({
                             {customActive ? (
                                 <QuantityStepper
                                     quantity={customQuantity}
+                                    maxQuantity={maxQuantity}
                                     processing={processing}
                                     decreaseLabel={t('top_up_cards.decrease')}
                                     increaseLabel={t('top_up_cards.increase')}
@@ -368,8 +381,15 @@ export function TopUpCardGenerateForm({
                         {entries.map(([value, quantity]) => (
                             <span key={value}>
                                 {formatTopUpNumber(value)} × {quantity}
+                                {agentMultiplier > 1 ? ` × ${agentMultiplier}` : ''}
                             </span>
                         ))}
+                    </p>
+                ) : null}
+                {overLimit ? (
+                    <p className="mt-1 flex items-center gap-1.5 text-[11px] text-danger">
+                        <TriangleAlertIcon className="size-3.5 shrink-0" strokeWidth={2} />
+                        {t('top_up_cards.validation.quantity_total').replace(':max', String(maxQuantity))}
                     </p>
                 ) : null}
             </div>

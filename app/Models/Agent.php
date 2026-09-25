@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['name', 'cd', 'address'])]
-
 class Agent extends Model
 {
     /** @use HasFactory<AgentFactory> */

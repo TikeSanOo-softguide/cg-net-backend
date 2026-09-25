@@ -280,8 +280,11 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 ->middleware('can:top-up-cards.view')
                 ->name('batch');
             Route::post('/batch', [TopUpCardController::class, 'store'])
-                ->middleware('can:top-up-cards.create')
+                ->middleware(['can:top-up-cards.create', 'throttle:top-up-card-generation'])
                 ->name('store');
+            Route::get('/generation-status', [TopUpCardController::class, 'generationStatus'])
+                ->middleware('can:top-up-cards.view')
+                ->name('generation-status');
             Route::get('/agents', [AgentController::class, 'index'])
                 ->middleware('can:top-up-cards.view')
                 ->name('agents');
@@ -378,29 +381,6 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::delete('/{role}', [RoleController::class, 'destroy'])
                 ->middleware('can:roles.delete')
                 ->name('destroy');
-        });
-
-    Route::prefix('top-up-cards')
-        ->name('top-up-cards.')
-        ->group(function () {
-            Route::get('/batch', [TopUpCardController::class, 'index'])
-                ->middleware('can:top-up-cards.view')
-                ->name('batch');
-            Route::post('/batch', [TopUpCardController::class, 'store'])
-                ->middleware('can:top-up-cards.create')
-                ->name('store');
-            Route::get('/export', [TopUpCardController::class, 'export'])
-                ->middleware('can:top-up-cards.view')
-                ->name('export');
-            Route::get('/card-history', [TopUpCardController::class, 'cardHistory'])
-                ->middleware('can:top-up-cards.view')
-                ->name('card-history');
-            Route::get('/redeem-history', [TopUpCardController::class, 'history'])
-                ->middleware('can:top-up-cards.view')
-                ->name('redeem-history');
-            Route::patch('/{topUpCard}/void', [TopUpCardController::class, 'void'])
-                ->middleware('can:top-up-cards.update')
-                ->name('void');
         });
 
     Route::prefix('service-requests')

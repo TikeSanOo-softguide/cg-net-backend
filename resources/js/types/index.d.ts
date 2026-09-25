@@ -35,6 +35,11 @@ export type PageProps<T extends Record<string, unknown> = Record<string, unknown
         count: number | null;
         token: string | null;
     };
+    topUpCardGeneration: {
+        token: string;
+        status: string | null;
+        total_cards: number;
+    } | null;
 };
 
 declare module '@inertiajs/core' {
@@ -56,6 +61,11 @@ declare module '@inertiajs/core' {
                 count: number | null;
                 token: string | null;
             };
+            topUpCardGeneration: {
+                token: string;
+                status: string | null;
+                total_cards: number;
+            } | null;
         };
     }
 }

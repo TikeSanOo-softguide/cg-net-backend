@@ -7,6 +7,7 @@ import {
     writeSidebarExpanded,
 } from '@/components/layout/SidebarNav';
 import { FlashToast } from '@/components/FlashToast';
+import { TopUpCardGenerationAlert } from '@/components/TopUpCardGenerationAlert';
 import { FloatingThemeSettingsButton } from '@/components/theme/FloatingThemeSettingsButton';
 import { SidebarToggle } from '@/components/layout/SidebarToggle';
 import { TopBar } from '@/components/layout/TopBar';
@@ -173,6 +174,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <FloatingThemeSettingsButton />
                 <Toaster />
                 <FlashToast />
+                <TopUpCardGenerationAlert />
                 <VisitSpinner />
             </div>
         </TooltipProvider>

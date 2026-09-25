@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
 
 import { PageContent } from '@/components/PageContent';
@@ -14,14 +14,26 @@ import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { defaultExpiryDate, type TopUpCardFilters, type TopUpCardRow } from '@/lib/top-up-cards';
 
+type GenerationState = {
+    status?: 'processing' | 'completed' | 'failed' | null;
+    message?: string | null;
+    total_cards?: number;
+    completed_chunks?: number;
+    total_chunks?: number;
+};
+
 type GenerateProps = {
     cards: Paginated<TopUpCardRow>;
     generated: TopUpCardRow[];
+    generation?: GenerationState;
     presets: number[];
+    max_cards?: number;
     agents: { id: number; name: string }[];
     amounts: string[];
     filters: TopUpCardFilters;
 };
+
+const GENERATION_POLL_MS = 1500;
 
 function visitIndex(filters: TopUpCardFilters, onStart?: () => void, onFinish?: () => void) {
     router.get(
@@ -36,6 +48,7 @@ function visitIndex(filters: TopUpCardFilters, onStart?: () => void, onFinish?: 
             direction: filters.direction,
         },
         {
+            only: ['cards', 'filters'],
             preserveState: true,
             preserveScroll: true,
             replace: true,
@@ -45,7 +58,16 @@ function visitIndex(filters: TopUpCardFilters, onStart?: () => void, onFinish?: 
     );
 }
 
-export default function TopUpCardsGenerate({ cards, generated = [], presets, agents = [], amounts, filters }: GenerateProps) {
+export default function TopUpCardsGenerate({
+    cards,
+    generated = [],
+    generation,
+    presets,
+    max_cards = 100000,
+    agents = [],
+    amounts,
+    filters,
+}: GenerateProps) {
     const { t } = useTranslation();
     const can = useCan();
     const [search, setSearch] = useState(filters.search);
@@ -55,16 +77,49 @@ export default function TopUpCardsGenerate({ cards, generated = [], presets, age
     const [customValue, setCustomValue] = useState('');
     const [tableLoading, setTableLoading] = useState(false);
     const debounce = useRef<number>(0);
+    const pollInFlight = useRef(false);
     const form = useForm({
         amounts: [] as { value: number; quantity: number }[],
         expires_at: defaultExpiryDate(),
     });
+
+    const generationStatus = generation?.status ?? null;
+    const isGenerating = form.processing || generationStatus === 'processing';
 
     useEffect(() => {
         setSearch(filters.search);
     }, [filters.search]);
 
     useEffect(() => () => window.clearTimeout(debounce.current), []);
+
+    useEffect(() => {
+        if (generationStatus !== 'processing') {
+            return;
+        }
+
+        const reloadGeneration = () => {
+            if (pollInFlight.current || document.hidden) {
+                return;
+            }
+
+            pollInFlight.current = true;
+            router.reload({
+                only: ['generated', 'generation', 'cards'],
+                preserveUrl: true,
+                onFinish: () => {
+                    pollInFlight.current = false;
+                },
+            });
+        };
+
+        reloadGeneration();
+        const intervalId = window.setInterval(reloadGeneration, GENERATION_POLL_MS);
+
+        return () => {
+            window.clearInterval(intervalId);
+            pollInFlight.current = false;
+        };
+    }, [generationStatus]);
 
     const generatedPins = useMemo(
         () => Object.fromEntries(generated.filter((card) => card.pin).map((card) => [card.id, card.pin as string])),
@@ -96,27 +151,51 @@ export default function TopUpCardsGenerate({ cards, generated = [], presets, age
 
         form.transform(() => ({
             amounts: amountsPayload,
+            agent_ids: selectedAgentIds.map((id) => Number(id)).filter((id) => Number.isFinite(id) && id > 0),
             expires_at: form.data.expires_at,
         }));
         form.post('/top-up-cards/batch', {
             preserveScroll: true,
             onSuccess: () => {
                 setSelected({});
+                setSelectedAgentIds([]);
                 setCustomOpen(false);
                 setCustomValue('');
             },
         });
     };
 
-    const filterTable = (next: TopUpCardFilters) => {
+    const filterTable = useCallback((next: TopUpCardFilters) => {
         visitIndex(
             next,
             () => setTableLoading(true),
             () => setTableLoading(false),
         );
-    };
+    }, []);
 
-    const canGenerate = can('top-up-cards.create') && Object.values(selected).some((quantity) => quantity > 0);
+    const handleSearchChange = useCallback(
+        (value: string) => {
+            setSearch(value);
+            window.clearTimeout(debounce.current);
+            debounce.current = window.setTimeout(() => filterTable({ ...filters, search: value }), 300);
+        },
+        [filterTable, filters],
+    );
+
+    const selectedCards = Object.values(selected).reduce((sum, quantity) => sum + quantity, 0);
+    const agentMultiplier = Math.max(1, selectedAgentIds.length);
+    const totalCards = selectedCards * agentMultiplier;
+    const canGenerate =
+        can('top-up-cards.create') && selectedCards > 0 && totalCards <= max_cards && !isGenerating;
+
+    const handleExport = useCallback(() => {
+        window.location.href = '/top-up-cards/export';
+    }, []);
+
+    const batchDescription =
+        generationStatus === 'processing'
+            ? t('top_up_cards.generating')
+            : t('top_up_cards.batch_description');
 
     return (
         <>
@@ -137,11 +216,12 @@ export default function TopUpCardsGenerate({ cards, generated = [], presets, age
                                     agents={agents}
                                     selectedAgentIds={selectedAgentIds}
                                     presets={presets}
+                                    maxCards={max_cards}
                                     selected={selected}
                                     customOpen={customOpen}
                                     customValue={customValue}
                                     expiresAt={form.data.expires_at}
-                                    processing={form.processing}
+                                    processing={isGenerating}
                                     error={form.errors.amounts ?? form.errors.expires_at}
                                     onToggle={(amount) => {
                                         setSelected((current) => {
@@ -178,32 +258,33 @@ export default function TopUpCardsGenerate({ cards, generated = [], presets, age
                                     disabled={!canGenerate || form.processing}
                                     className="h-8 w-full"
                                 >
-                                    {form.processing ? <Spinner size="xs" className="text-current" /> : null}
-                                    {form.processing ? t('top_up_cards.generating') : t('top_up_cards.generate')}
+                                    {isGenerating ? <Spinner size="xs" className="text-current" /> : null}
+                                    {isGenerating ? t('top_up_cards.generating') : t('top_up_cards.generate')}
                                 </Button>
                             </form>
                         </CardContent>
                     </Card>
-                    <Card className="flex h-[520px] flex-col gap-3 py-4 print:border-0 print:shadow-none">
+                    <Card className="flex h-[520px] flex-col gap-3 py-4 print:h-auto print:overflow-visible print:border-0 print:shadow-none">
                         <CardHeader className="print:px-0">
                             <CardTitle className="text-sm">{t('top_up_cards.batch_title')}</CardTitle>
-                            <CardDescription className="text-[12px] leading-4">
-                                {t('top_up_cards.batch_description')}
-                            </CardDescription>
+                            <CardDescription className="text-[12px] leading-4">{batchDescription}</CardDescription>
                         </CardHeader>
-                        <CardContent className="relative min-h-0 flex-1 overflow-hidden print:px-0">
-                            {form.processing ? (
+                        <CardContent className="relative min-h-0 flex-1 overflow-hidden print:overflow-visible print:px-0">
+                            {isGenerating && generated.length === 0 ? (
                                 <SpinnerOverlay
                                     className="relative inset-auto min-h-[160px]"
                                     label={t('top_up_cards.generating')}
                                 />
                             ) : (
-                                <TopUpCardGeneratedBatch
-                                    cards={generated}
-                                    onExport={() => {
-                                        window.location.href = '/top-up-cards/export';
-                                    }}
-                                />
+                                <>
+                                    {isGenerating ? (
+                                        <SpinnerOverlay
+                                            className="pointer-events-none"
+                                            label={t('top_up_cards.generating')}
+                                        />
+                                    ) : null}
+                                    <TopUpCardGeneratedBatch cards={generated} onExport={handleExport} />
+                                </>
                             )}
                         </CardContent>
                     </Card>
@@ -216,11 +297,7 @@ export default function TopUpCardsGenerate({ cards, generated = [], presets, age
                         search={search}
                         generatedPins={generatedPins}
                         loading={tableLoading}
-                        onSearchChange={(value) => {
-                            setSearch(value);
-                            window.clearTimeout(debounce.current);
-                            debounce.current = window.setTimeout(() => filterTable({ ...filters, search: value }), 300);
-                        }}
+                        onSearchChange={handleSearchChange}
                         onFilter={filterTable}
                     />
                 </div>

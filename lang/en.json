@@ -996,6 +996,10 @@
         "summary_value": ":value total",
         "generate": "Generate Cards",
         "generating": "Generating…",
+        "generation_started": "Card generation has started.",
+        "generation_failed": "Card generation failed. Please try again.",
+        "generation_in_progress": "A card generation is already in progress. Please wait for it to finish.",
+        "generation_throttled": "Too many generation requests. Please wait a minute and try again.",
         "generated": ":count top-up cards generated.",
         "empty_batch_title": "No cards generated yet",
         "empty_batch_description": "Generate a batch to see printable cards with serial numbers and PINs.",
@@ -1094,7 +1098,7 @@
             "amount_required": "Amount is required.",
             "amount_min": "Amount must be at least 100.",
             "quantity_min": "Quantity must be at least 1.",
-            "quantity_total": "You can generate at most 200 cards at once.",
+            "quantity_total": "You can generate at most :max cards at once (quantity × agents).",
             "expires_required": "Expiry date is required.",
             "expires_future": "Expiry date must be today or later."
         }

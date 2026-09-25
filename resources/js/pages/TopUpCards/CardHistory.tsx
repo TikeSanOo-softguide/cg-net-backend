@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
 
 import { PageContent } from '@/components/PageContent';
@@ -13,7 +13,6 @@ import { TopUpCardListTable } from '@/components/top-up-cards/TopUpCardListTable
 
 type Props = {
     cards: Paginated<TopUpCardRow>;
-    generated: TopUpCardRow[];
     presets: number[];
     amounts: string[];
     batches: {
@@ -54,7 +53,7 @@ function visitIndex(filters: CardHistoryFilters, onStart?: () => void, onFinish?
     );
 }
 
-export default function CardHistory({ cards, batches, generated = [], presets, amounts, stats, filters }: Props) {
+export default function CardHistory({ cards, batches, presets, amounts, stats, filters }: Props) {
     const { t } = useTranslation();
     const can = useCan();
     const [search, setSearch] = useState(filters.search);
@@ -73,11 +72,6 @@ export default function CardHistory({ cards, batches, generated = [], presets, a
     }, [filters.search]);
 
     useEffect(() => () => window.clearTimeout(debounce.current), []);
-
-    const generatedPins = useMemo(
-        () => Object.fromEntries(generated.filter((card) => card.pin).map((card) => [card.id, card.pin as string])),
-        [generated],
-    );
 
     const applyCustom = (next: Record<string, number>, value: string, open: boolean) => {
         const copy = { ...next };
@@ -178,7 +172,6 @@ export default function CardHistory({ cards, batches, generated = [], presets, a
                         batches={batches}
                         filters={filters}
                         search={search}
-                        generatedPins={generatedPins}
                         loading={tableLoading}
                         onSearchChange={(value) => {
                             setSearch(value);

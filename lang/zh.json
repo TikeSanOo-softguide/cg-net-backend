@@ -994,6 +994,10 @@
         "summary_value": "合计 :value",
         "generate": "生成充值卡",
         "generating": "正在生成…",
+        "generation_started": "充值卡生成已开始。",
+        "generation_failed": "充值卡生成失败，请重试。",
+        "generation_in_progress": "已有充值卡生成任务进行中，请等待完成后再试。",
+        "generation_throttled": "生成请求过于频繁，请稍后再试。",
         "generated": "已生成 :count 张充值卡。",
         "empty_batch_title": "尚未生成卡片",
         "empty_batch_description": "生成批次后，可在此查看序列号和 PIN。",
@@ -1079,7 +1083,7 @@
             "amount_required": "金额为必填项。",
             "amount_min": "金额至少为 100。",
             "quantity_min": "数量至少为 1。",
-            "quantity_total": "一次最多生成 200 张卡。",
+            "quantity_total": "一次最多生成 :max 张卡（数量 × 代理数）。",
             "expires_required": "有效期为必填项。",
             "expires_future": "有效期必须是今天或之后。"
         }

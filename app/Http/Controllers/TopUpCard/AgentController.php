@@ -19,6 +19,7 @@ use App\Http\Controllers\InOutManagement\CSV\TopUpCard as TopUpCardCsv;
 use App\Support\CsvImportException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 use RuntimeException;
@@ -35,7 +36,7 @@ class AgentController extends Controller
             })
             ->orderBy('name');
         $agents = $agentQuery->paginate(15)->withQueryString();
-        $agentCds = Agent::query()->pluck('cd')->map(fn($cd): int => (int) $cd)->values();
+        $agentCds = Agent::query()->pluck('cd')->map(fn($cd): string => (string) $cd)->values();
         $agentNames = Agent::query()->pluck('name')->values();
         $batchCodes = TopUpCardBatchCode::query()
             ->orderBy('amount')
@@ -185,6 +186,7 @@ class AgentController extends Controller
     public function update(UpdateAgentRequest $request, Agent $agent): RedirectResponse
     {
         $agent->update($request->validated());
+        Cache::forget('top_up_cards.agent_options');
 
         return back()->with('success', 'Agent updated successfully.');
     }
@@ -192,6 +194,7 @@ class AgentController extends Controller
     public function destroy(Agent $agent): RedirectResponse
     {
         $agent->delete();
+        Cache::forget('top_up_cards.agent_options');
 
         return back()->with('success', 'Agent deleted successfully.');
     }

@@ -11,8 +11,11 @@ use App\Support\JsonTranslations;
 use App\Support\Like;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Lang;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -48,6 +51,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         $this->registerLikeMacros();
+        $this->configureRateLimiting();
 
         Gate::before(function ($user, string $ability): ?bool {
             if ($user instanceof Admin && $user->hasRole(AppPermissions::SuperAdmin)) {
@@ -55,6 +59,17 @@ class AppServiceProvider extends ServiceProvider
             }
 
             return null;
+        });
+    }
+
+    private function configureRateLimiting(): void
+    {
+        RateLimiter::for('top-up-card-generation', function (Request $request) {
+            $maxAttempts = max(1, (int) config('top_up_cards.rate_limit_per_minute', 5));
+
+            return Limit::perMinute($maxAttempts)->by(
+                (string) ($request->user()?->getAuthIdentifier() ?: $request->ip()),
+            );
         });
     }
 
