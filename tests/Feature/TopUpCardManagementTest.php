@@ -3,16 +3,20 @@
 namespace Tests\Feature;
 
 use App\Enums\TopUpCardStatus;
+use App\Http\Controllers\TopUpCard\TopUpCardController;
+use App\Jobs\GenerateTopUpCardsJob;
 use App\Models\Admin;
 use App\Models\Batch;
 use App\Models\TopUpCard;
 use App\Models\User;
 use App\Support\AppPermissions;
 use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Bus\Batch as QueueBatch;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Queue;
 use Inertia\Testing\AssertableInertia as Assert;
+use Mockery;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -39,13 +43,9 @@ class TopUpCardManagementTest extends TestCase
         $this->autoGrantPermissions = false;
         $admin = Admin::factory()->create();
 
-        $this->actingAs($admin, 'web')
-            ->get('/top-up-cards/batch')
-            ->assertForbidden();
+        $this->actingAs($admin, 'web')->get('/top-up-cards/batch')->assertForbidden();
 
-        $this->actingAs($admin, 'web')
-            ->get('/top-up-cards/redeem-history')
-            ->assertForbidden();
+        $this->actingAs($admin, 'web')->get('/top-up-cards/redeem-history')->assertForbidden();
 
         $this->actingAs($admin, 'web')
             ->post('/top-up-cards/batch', [
@@ -60,20 +60,25 @@ class TopUpCardManagementTest extends TestCase
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
 
+        Queue::fake();
+
         $this->actingAs($actor, 'web')
             ->get('/top-up-cards/batch')
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->component('TopUpCards/Generate'));
+            ->assertInertia(fn(Assert $page) => $page->component('TopUpCards/Generate'));
 
         $this->actingAs($actor, 'web')
             ->post('/top-up-cards/batch', [
-                'amounts' => [
-                    ['value' => 3000, 'quantity' => 5],
-                    ['value' => 10000, 'quantity' => 2],
-                ],
+                'amounts' => [['value' => 3000, 'quantity' => 5], ['value' => 10000, 'quantity' => 2]],
                 'expires_at' => now()->addDays(90)->toDateString(),
             ])
             ->assertRedirect('/top-up-cards/batch');
+
+        Queue::assertPushed(GenerateTopUpCardsJob::class, 2);
+
+        foreach (Queue::pushedJobs()[GenerateTopUpCardsJob::class] as $payload) {
+            $payload['job']->handle();
+        }
 
         $cards = TopUpCard::query()->get();
 
@@ -81,11 +86,33 @@ class TopUpCardManagementTest extends TestCase
         $this->assertSame(5, TopUpCard::query()->where('amount', 3000)->count());
         $this->assertSame(2, TopUpCard::query()->where('amount', 10000)->count());
         $this->assertCount(7, $cards->pluck('serial_no')->unique());
-        $this->assertTrue($cards->every(fn (TopUpCard $card) => str_starts_with($card->serial_no, 'TOPUP-')));
-        $this->assertTrue($cards->every(fn (TopUpCard $card) => $card->status === TopUpCardStatus::Valid));
-        $this->assertTrue($cards->every(fn (TopUpCard $card) => Hash::isHashed($card->pin)));
+        $this->assertTrue($cards->every(fn(TopUpCard $card) => ctype_digit($card->serial_no)));
+        $this->assertTrue($cards->every(fn(TopUpCard $card) => $card->status === TopUpCardStatus::Pending));
+        $this->assertTrue($cards->every(function (TopUpCard $card): bool {
+            return strlen((string) $card->getAttributes()['pin']) === 64
+                && ctype_xdigit((string) $card->getAttributes()['pin']);
+        }));
+
+        // Activity is recorded by the batch finally() callback after jobs finish,
+        // not when the generate request is accepted.
+        $this->assertDatabaseMissing('activity_log', [
+            'description' => 'top_up_cards_generation_succeeded',
+        ]);
+
+        $token = session('top_up_card_generation_token');
+        $this->assertIsString($token);
+
+        $batch = Mockery::mock(QueueBatch::class);
+        $batch->id = 'test-batch-id';
+        $batch->totalJobs = 2;
+        $batch->failedJobs = 0;
+        $batch->shouldReceive('processedJobs')->andReturn(2);
+
+        TopUpCardController::logGenerationFinished($token, $batch, 'succeeded');
+
         $this->assertDatabaseHas('activity_log', [
-            'description' => 'top_up_cards_generated',
+            'description' => 'top_up_cards_generation_succeeded',
+            'event' => 'succeeded',
             'causer_id' => $actor->id,
         ]);
     }
@@ -97,21 +124,23 @@ class TopUpCardManagementTest extends TestCase
         $match = TopUpCard::factory()->create([
             'serial_no' => 'TOPUP-AAAA-BBBB-CCCC',
             'amount' => 5000,
-            'status' => TopUpCardStatus::Valid,
+            'status' => TopUpCardStatus::Pending,
         ]);
         TopUpCard::factory()->create([
             'serial_no' => 'TOPUP-DDDD-EEEE-FFFF',
             'amount' => 1000,
-            'status' => TopUpCardStatus::Invalid,
+            'status' => TopUpCardStatus::Blocked,
         ]);
 
         $this->actingAs($actor, 'web')
             ->get('/top-up-cards/batch?search=AAAA&status=valid&amount=5000')
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('TopUpCards/Generate')
-                ->has('cards.data', 1)
-                ->where('cards.data.0.id', $match->id));
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->component('TopUpCards/Generate')
+                    ->has('cards.data', 1)
+                    ->where('cards.data.0.id', $match->id),
+            );
     }
 
     public function test_admins_can_void_a_valid_card(): void
@@ -121,10 +150,10 @@ class TopUpCardManagementTest extends TestCase
         $card = TopUpCard::factory()->create();
 
         $this->actingAs($actor, 'web')
-            ->patch('/top-up-cards/'.$card->id.'/void')
+            ->patch('/top-up-cards/' . $card->id . '/void')
             ->assertRedirect();
 
-        $this->assertSame(TopUpCardStatus::Invalid, $card->fresh()->status);
+        $this->assertSame(TopUpCardStatus::Blocked, $card->fresh()->status);
         $this->assertDatabaseHas('activity_log', [
             'description' => 'top_up_card_voided',
             'subject_id' => $card->id,
@@ -137,9 +166,9 @@ class TopUpCardManagementTest extends TestCase
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
 
-        $this->actingAs($actor, 'web')
-            ->get('/top-up-cards/export')
-            ->assertNotFound();
+        Queue::fake();
+
+        $this->actingAs($actor, 'web')->get('/top-up-cards/export')->assertNotFound();
 
         $this->actingAs($actor, 'web')
             ->post('/top-up-cards/batch', [
@@ -147,6 +176,9 @@ class TopUpCardManagementTest extends TestCase
                 'expires_at' => now()->addDays(30)->toDateString(),
             ])
             ->assertRedirect('/top-up-cards/batch');
+
+        Queue::assertPushed(GenerateTopUpCardsJob::class, 1);
+        Queue::pushedJobs()[GenerateTopUpCardsJob::class][0]['job']->handle();
 
         $this->actingAs($actor, 'web')
             ->get('/top-up-cards/export')
@@ -179,10 +211,15 @@ class TopUpCardManagementTest extends TestCase
         $actor->assignRole(AppPermissions::SuperAdmin);
         $batch = Batch::query()->create([
             'batch_no' => 'IMPORT-BATCH-0001',
-            'amount' => 1000,
+            'total_value' => 1000,
             'quantity' => 1,
             'status' => 'active',
             'expires_at' => now()->addDays(30)->toDateString(),
+            'metadata' => [
+                'items' => [
+                    ['agent_cd' => '88', 'amount' => 1000, 'quantity' => 1],
+                ],
+            ],
         ]);
         $card = TopUpCard::factory()->create([
             'serial_no' => 'TOPUP-IMPORT-0001',
@@ -206,10 +243,12 @@ class TopUpCardManagementTest extends TestCase
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
         $customer = User::factory()->create(['name' => 'Aung Aung', 'phone' => '09111111111']);
-        $redeemed = TopUpCard::factory()->redeemed($customer)->create([
-            'serial_no' => 'TOPUP-REDE-EMED-0001',
-            'amount' => 3000,
-        ]);
+        $redeemed = TopUpCard::factory()
+            ->redeemed($customer)
+            ->create([
+                'serial_no' => 'TOPUP-REDE-EMED-0001',
+                'amount' => 3000,
+            ]);
         TopUpCard::factory()->create([
             'serial_no' => 'TOPUP-VALID-CARD-0001',
             'amount' => 5000,
@@ -218,18 +257,18 @@ class TopUpCardManagementTest extends TestCase
         $this->actingAs($actor, 'web')
             ->get('/top-up-cards/redeem-history')
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('TopUpCards/History')
-                ->has('cards.data', 1)
-                ->where('cards.data.0.id', $redeemed->id)
-                ->where('stats.total', 1)
-                ->where('recent.0.id', $redeemed->id));
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->component('TopUpCards/History')
+                    ->has('cards.data', 1)
+                    ->where('cards.data.0.id', $redeemed->id)
+                    ->where('stats.total', 1)
+                    ->where('recent.0.id', $redeemed->id),
+            );
 
         $this->actingAs($actor, 'web')
             ->get('/top-up-cards/redeem-history?search=Aung')
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('TopUpCards/History')
-                ->has('cards.data', 1));
+            ->assertInertia(fn(Assert $page) => $page->component('TopUpCards/History')->has('cards.data', 1));
     }
 }

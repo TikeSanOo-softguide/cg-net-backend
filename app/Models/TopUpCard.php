@@ -36,7 +36,7 @@ class TopUpCard extends Model
     protected function casts(): array
     {
         return [
-            'amount' => 'decimal:2',
+            'amount' => 'integer',
             'expires_at' => 'date',
             'redeemed_at' => 'datetime',
             'status' => TopUpCardStatus::class,

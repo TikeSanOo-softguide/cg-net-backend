@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { router } from '@inertiajs/react';
 import { BanIcon, CircleDotIcon, EyeIcon } from 'lucide-react';
 
@@ -29,7 +29,7 @@ type TopUpCardTableProps = {
     onFilter: (next: TopUpCardFilters) => void;
 };
 
-export function TopUpCardTable({
+export const TopUpCardTable = memo(function TopUpCardTable({
     cards,
     amounts,
     filters,
@@ -299,4 +299,4 @@ export function TopUpCardTable({
             </FormDialog>
         </>
     );
-}
+});

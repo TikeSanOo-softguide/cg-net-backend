@@ -6,6 +6,7 @@ use App\Models\Admin;
 use App\Models\NotificationCustom;
 use App\Support\AppPermissions;
 use App\Support\JsonTranslations;
+use App\Support\TopUpCardGenerationStatus;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -64,7 +65,24 @@ class HandleInertiaRequests extends Middleware
                 : 0,
             'recentNotifications' => $user ? $this->recentNotifications() : [],
             'flash' => $this->flashPayload($request),
+            'topUpCardGeneration' => fn () => $this->topUpCardGeneration($request),
         ];
+    }
+
+    /**
+     * @return array{token: string, status: string|null, total_cards: int}|null
+     */
+    private function topUpCardGeneration(Request $request): ?array
+    {
+        $user = $request->user();
+
+        if (!$user instanceof Admin || !$user->can('top-up-cards.view')) {
+            return null;
+        }
+
+        $token = $request->session()->get('top_up_card_generation_token');
+
+        return TopUpCardGenerationStatus::forToken(is_string($token) ? $token : null);
     }
 
     /**

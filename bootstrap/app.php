@@ -42,6 +42,10 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($response->getStatusCode() === 429 && $request->header('X-Inertia')) {
                 $retryAfter = (int) $response->headers->get('Retry-After', 60);
 
+                if ($request->routeIs('top-up-cards.store')) {
+                    return back()->with('error', 'top_up_cards.generation_throttled');
+                }
+
                 return back()->withErrors([
                     Fortify::username() => __('auth.throttle', ['seconds' => $retryAfter]),
                 ]);

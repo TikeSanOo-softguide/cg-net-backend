@@ -157,7 +157,7 @@ class CustomerController extends Controller
                 fn($card) => [
                     'id' => $card->id,
                     'serial_no' => $card->serial_no,
-                    'amount' => number_format((float) $card->amount, 0, '.', ''),
+                    'amount' => (int) $card->amount,
                     'status' => $card->status->value,
                     'redeemed_at' => $card->redeemed_at,
                 ],

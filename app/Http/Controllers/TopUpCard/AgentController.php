@@ -15,6 +15,7 @@ use App\Http\Controllers\InOutManagement\CSV\TopUpCard as TopUpCardCsv;
 use App\Support\CsvImportException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 use RuntimeException;
@@ -27,12 +28,11 @@ class AgentController extends Controller
         $agentQuery = Agent::query()
             ->withCount('topUpCards')
             ->when($search !== '', function ($query) use ($search): void {
-                $query->whereLike('name', '%' . $search . '%')
-                    ->orWhereLike('address', '%' . $search . '%');
+                $query->whereLike('name', '%' . $search . '%')->orWhereLike('address', '%' . $search . '%');
             })
             ->orderBy('name');
         $agents = $agentQuery->paginate(15)->withQueryString();
-        $agentCds = Agent::query()->pluck('cd')->map(fn($cd): int => (int) $cd)->values();
+        $agentCds = Agent::query()->pluck('cd')->map(fn($cd): string => (string) $cd)->values();
         $agentNames = Agent::query()->pluck('name')->values();
 
         return Inertia::render('TopUpCards/Agent', [
@@ -56,8 +56,7 @@ class AgentController extends Controller
         $agents = Agent::query()
             ->withCount('topUpCards')
             ->when($search !== '', function ($query) use ($search): void {
-                $query->whereLike('name', '%' . $search . '%')
-                    ->orWhereLike('address', '%' . $search . '%');
+                $query->whereLike('name', '%' . $search . '%')->orWhereLike('address', '%' . $search . '%');
             })
             ->orderBy('name')
             ->get();
@@ -72,33 +71,50 @@ class AgentController extends Controller
             ->when($agent === 'unassigned', fn($query) => $query->whereNull('agent_id'))
             ->when($agent !== '' && $agent !== 'unassigned', fn($query) => $query->where('agent_id', (int) $agent))
             ->when($amount !== '' && is_numeric($amount), fn($query) => $query->where('top_up_card.amount', $amount))
-            ->when(in_array($status, array_column(TopUpCardStatus::cases(), 'value'), true), fn($query) => $query->where('top_up_card.status', $status))
+            ->when(
+                in_array($status, array_column(TopUpCardStatus::cases(), 'value'), true),
+                fn($query) => $query->where('top_up_card.status', $status),
+            )
             ->orderBy('batches.batch_no')
             ->orderBy('top_up_card.serial_no');
-        $cards = $cardQuery->paginate(100)->withQueryString()->through(fn(TopUpCard $card) => $this->cardPayload($card));
+        $cards = $cardQuery
+            ->paginate(100)
+            ->withQueryString()
+            ->through(fn(TopUpCard $card) => $this->cardPayload($card));
 
         $batches = Batch::query()
             ->select(['id', 'batch_no', 'expires_at'])
             ->whereHas('topUpCards', fn($query) => $query->where('status', '!=', TopUpCardStatus::Pending))
-            ->withCount(['topUpCards as available_cards_count' => fn($query) => $query
-                ->where('status', TopUpCardStatus::Active)
-                ->whereNull('agent_id')
-                ->whereNull('redeemed_at')])
-            ->with(['topUpCards' => fn($query) => $query
-                ->select(['batch_id', 'amount'])
-                ->where('status', TopUpCardStatus::Active)
-                ->whereNull('agent_id')
-                ->whereNull('redeemed_at')
-                ->distinct()])
+            ->withCount([
+                'topUpCards as available_cards_count' => fn($query) => $query
+                    ->where('status', TopUpCardStatus::Active)
+                    ->whereNull('agent_id')
+                    ->whereNull('redeemed_at'),
+            ])
+            ->with([
+                'topUpCards' => fn($query) => $query
+                    ->select(['batch_id', 'amount'])
+                    ->where('status', TopUpCardStatus::Active)
+                    ->whereNull('agent_id')
+                    ->whereNull('redeemed_at')
+                    ->distinct(),
+            ])
             ->latest('id')
             ->get()
-            ->map(fn(Batch $batch) => [
-                'id' => $batch->id,
-                'batch_no' => $batch->batch_no,
-                'expires_at' => $batch->expires_at?->toDateString(),
-                'available_cards_count' => $batch->available_cards_count,
-                'available_points' => $batch->topUpCards->pluck('amount')->map(fn($amount) => (float) $amount)->unique()->sort()->values(),
-            ]);
+            ->map(
+                fn(Batch $batch) => [
+                    'id' => $batch->id,
+                    'batch_no' => $batch->batch_no,
+                    'expires_at' => $batch->expires_at?->toDateString(),
+                    'available_cards_count' => $batch->available_cards_count,
+                    'available_points' => $batch->topUpCards
+                        ->pluck('amount')
+                        ->map(fn($amount) => (float) $amount)
+                        ->unique()
+                        ->sort()
+                        ->values(),
+                ],
+            );
 
         $points = TopUpCard::query()
             ->where('status', '!=', TopUpCardStatus::Pending)
@@ -145,18 +161,17 @@ class AgentController extends Controller
         }
 
         $request->session()->put('top_up_card_agent_batch', $importedBatchId);
-        $route = $request->string('return')->toString() === 'assign'
-            ? 'top-up-cards.agent-assign'
-            : 'top-up-cards.agents';
+        $route =
+            $request->string('return')->toString() === 'assign' ? 'top-up-cards.agent-assign' : 'top-up-cards.agents';
 
-        return redirect()
-            ->route($route)
-            ->with('success', 'Top-up cards imported successfully.');
+        return redirect()->route($route)->with('success', 'Top-up cards imported successfully.');
     }
 
     public function store(StoreAgentRequest $request): RedirectResponse
     {
-        $agent = Agent::withTrashed()->where('name', $request->string('name')->toString())->first();
+        $agent = Agent::withTrashed()
+            ->where('name', $request->string('name')->toString())
+            ->first();
 
         if ($agent?->trashed()) {
             $agent->restore();
@@ -165,7 +180,13 @@ class AgentController extends Controller
             $agent = Agent::query()->create($request->validated());
         }
 
-        activity('top-up-cards')->causedBy($request->user())->performedOn($agent)->event('created')->log('agent_created');
+        Cache::forget('top_up_cards.agent_options');
+
+        activity('top-up-cards')
+            ->causedBy($request->user())
+            ->performedOn($agent)
+            ->event('created')
+            ->log('agent_created');
 
         return back()->with('success', 'Agent created successfully.');
     }
@@ -173,6 +194,7 @@ class AgentController extends Controller
     public function update(UpdateAgentRequest $request, Agent $agent): RedirectResponse
     {
         $agent->update($request->validated());
+        Cache::forget('top_up_cards.agent_options');
 
         return back()->with('success', 'Agent updated successfully.');
     }
@@ -180,6 +202,7 @@ class AgentController extends Controller
     public function destroy(Agent $agent): RedirectResponse
     {
         $agent->delete();
+        Cache::forget('top_up_cards.agent_options');
 
         return back()->with('success', 'Agent deleted successfully.');
     }
@@ -194,9 +217,7 @@ class AgentController extends Controller
 
         $attributes = [
             'agent_id' => $data['agent_id'],
-            'status' => $data['agent_id'] === null
-                ? TopUpCardStatus::Pending
-                : TopUpCardStatus::Active,
+            'status' => $data['agent_id'] === null ? TopUpCardStatus::Pending : TopUpCardStatus::Active,
         ];
 
         $topUpCard->update($attributes);
@@ -209,9 +230,7 @@ class AgentController extends Controller
         $data = $request->validated();
         $attributes = [
             'agent_id' => $data['agent_id'],
-            'status' => $data['agent_id'] === null
-                ? TopUpCardStatus::Pending
-                : TopUpCardStatus::Active,
+            'status' => $data['agent_id'] === null ? TopUpCardStatus::Pending : TopUpCardStatus::Active,
         ];
 
         TopUpCard::query()

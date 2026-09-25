@@ -30,7 +30,6 @@ type TopUpCardListTableProps = {
     }[];
     filters: CardHistoryFilters;
     search: string;
-    generatedPins: Record<number, string>;
     loading?: boolean;
     onSearchChange: (value: string) => void;
     onFilter: (next: CardHistoryFilters) => void;
@@ -42,7 +41,6 @@ export function TopUpCardListTable({
     batches,
     filters,
     search,
-    generatedPins,
     loading = false,
     onSearchChange,
     onFilter,

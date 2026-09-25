@@ -17,12 +17,25 @@ class BatchFactory extends Factory
      */
     public function definition(): array
     {
+        $amount = fake()->randomElement([50, 100, 250, 500]);
+        $quantity = fake()->numberBetween(1, 100);
+        $agentCd = (string) fake()->randomElement(['88', '11', '22']);
+
         return [
-            'batch_no' => fake()->unique()->numerify('######'),
-            'amount' => fake()->randomElement([50, 100, 250, 500]),
-            'quantity' => fake()->numberBetween(1, 100),
+            'batch_no' => now('Asia/Yangon')->format('YmdHisv'),
+            'total_value' => $amount * $quantity,
+            'quantity' => $quantity,
             'status' => 'active',
             'expires_at' => now()->addYears(2)->toDateString(),
+            'metadata' => [
+                'items' => [
+                    [
+                        'agent_cd' => $agentCd,
+                        'amount' => $amount,
+                        'quantity' => $quantity,
+                    ],
+                ],
+            ],
         ];
     }
 }

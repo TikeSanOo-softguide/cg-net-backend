@@ -14,8 +14,8 @@ return new class extends Migration {
         Schema::create('top_up_card', function (Blueprint $table) {
             $table->id();
             $table->string('serial_no', 32)->unique();
-            $table->string('pin', 64);
-            $table->decimal('amount', 10, 2);
+            $table->string('pin', 64)->unique();
+            $table->integer('amount');
             $table->string('status', 16)->default('active')->index();
             $table->date('expires_at')->index();
             $table->timestamp('redeemed_at')->nullable();
