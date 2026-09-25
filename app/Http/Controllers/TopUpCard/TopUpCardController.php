@@ -83,11 +83,6 @@ class TopUpCardController extends Controller
             ->withQueryString()
             ->through(fn(TopUpCard $card) => $this->payload($card));
 
-        $agents = Agent::query()
-            ->select(['id', 'name'])
-            ->orderBy('name')
-            ->get();
-
         $props = [
             'cards' => $cards,
             'filters' => [
