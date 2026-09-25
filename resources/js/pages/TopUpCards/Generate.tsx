@@ -80,6 +80,7 @@ export default function TopUpCardsGenerate({
     const pollInFlight = useRef(false);
     const form = useForm({
         amounts: [] as { value: number; quantity: number }[],
+        agent_ids: [] as number[],
         expires_at: defaultExpiryDate(),
     });
 
