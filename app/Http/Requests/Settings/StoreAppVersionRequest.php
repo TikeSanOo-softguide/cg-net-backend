@@ -23,7 +23,7 @@ class StoreAppVersionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'platform' => ['required', 'in:ios,android,all'],
+            'platform' => ['required', 'in:ios,android'],
             'version' => ['required', 'string', 'max:20'],
             'minimum_version' => ['required', 'string', 'max:20'],
             'download_url' => ['required', 'url', 'max:2048'],

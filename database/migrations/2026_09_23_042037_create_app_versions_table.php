@@ -16,9 +16,9 @@ return new class extends Migration {
             $table->string('version');
             $table->string('minimum_version');
             $table->text('download_url');
-            $table->text('release_notes_en')->nullable();
-            $table->text('release_notes_zh')->nullable();
-            $table->text('release_notes_my')->nullable();
+            $table->text('release_notes_en');
+            $table->text('release_notes_zh');
+            $table->text('release_notes_my');
             $table->boolean('force_update')->default(false);
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->foreignId('created_by')->nullable()->constrained('admins')->nullOnDelete();

@@ -144,36 +144,49 @@
         "language_management_description": "管理支持的语言和翻译。",
         "general_settings_description": "配置常规应用设置。"
     },
-    "app_version": {
-        "label": "应用版本",
-        "version": "版本",
-        "minimum_version": "最低版本",
-        "force_update": "强制更新",
-        "release_notes_en": "更新说明 (英文)",
-        "release_notes_zh": "更新说明 (中文)",
-        "release_notes_my": "更新说明 (缅文)",
-        "platform": "平台",
-        "download_url": "下载链接",
-        "create": "新建应用版本",
-        "edit": "编辑应用版本",
-        "create_description": "添加新的应用版本和更新说明。",
-        "edit_description": "更新此应用版本和更新说明。",
-        "created": "应用版本已创建",
-        "updated": "应用版本已更新",
-        "deleted": "应用版本已删除",
-        "delete_title": "删除此应用版本？",
-        "delete_description": "此应用版本将被永久删除。",
-        "placeholder_release_notes_en": "请输入英文更新说明...",
-        "placeholder_release_notes_zh": "请输入中文更新说明...",
-        "placeholder_release_notes_my": "请输入缅文更新说明...",
-        "details": "应用版本详情"
-    },
+    
     "settings": {
         "app_version": {
+            "label": "应用版本",
+            "version": "版本",
+            "minimum_version": "最低版本",
+            "force_update": "强制更新",
+            "release_notes_en": "更新说明 (英文)",
+            "release_notes_zh": "更新说明 (中文)",
+            "release_notes_my": "更新说明 (缅文)",
+            "platform": "平台",
+            "download_url": "下载链接",
             "create": "新建应用版本",
             "edit": "编辑应用版本",
             "create_description": "创建新的应用版本和更新说明。",
-            "edit_description": "更新此应用版本和更新说明。"
+            "edit_description": "更新此应用版本和更新说明。",
+            "created": "应用版本创建成功。",
+            "updated": "应用版本更新成功。",
+            "deleted": "应用版本删除成功。",
+            "upload": "应用版本上传成功。",
+            "delete_title": "删除此应用版本？",
+            "delete_description": "此应用版本将被永久删除。",
+            "placeholder_release_notes_en": "请输入英文更新说明...",
+            "placeholder_release_notes_zh": "请输入中文更新说明...",
+            "placeholder_release_notes_my": "请输入缅文更新说明...",
+            "details": "应用版本详情",
+            "alert": {
+                "create": "应用版本创建成功。",
+                "upload": "应用版本上传成功。",
+                "delete": "应用版本删除成功。"
+            },
+            "validation": {
+                "platform_required": "请选择平台。",
+                "version_required": "请输入版本。",
+                "minimum_version_required": "请输入最低版本。",
+                "download_url_required": "请输入下载链接。",
+                "download_url_url": "下载链接必须是有效的 URL。",
+                "release_notes_en_required": "请输入英文更新说明。",
+                "release_notes_zh_required": "请输入中文更新说明。",
+                "release_notes_my_required": "请输入缅文更新说明。",
+                "force_update_required": "请选择是否启用强制更新。",
+                "status_required": "请选择状态。"
+            }
         }
     },
     "dashboard": {

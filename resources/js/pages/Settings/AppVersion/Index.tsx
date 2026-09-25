@@ -18,7 +18,7 @@ import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { visitBulkDelete } from '@/lib/bulk-delete';
 
-type AppVersionRow = AppVersionFormData & {
+type AppVersionRow = AppVersionFormData & {s
     created_at: string | null;
     updated_at: string | null;
 };
@@ -33,6 +33,7 @@ type Filters = {
 type Props = {
     items: Paginated<AppVersionRow>;
     filters: Filters;
+     versionOptions: string[];
 };
 
 function visitIndex(filters: Filters) {
@@ -52,7 +53,7 @@ function visitIndex(filters: Filters) {
     );
 }
 
-export default function AppVersionIndex({ items, filters }: Props) {
+export default function AppVersionIndex({ items, filters ,versionOptions}: Props) {
     const { t } = useTranslation();
     const can = useCan();
     const canDelete = can('settings.delete');
@@ -72,8 +73,6 @@ export default function AppVersionIndex({ items, filters }: Props) {
     useEffect(() => {
         setVersion(filters.version || '');
     }, [filters.version]);
-
-    const versionOptions = Array.from(new Set(items.data.map((row) => row.version))).filter(Boolean);
 
     const toFormData = (row: AppVersionRow): AppVersionFormData => ({
         id: row.id,
@@ -97,7 +96,7 @@ export default function AppVersionIndex({ items, filters }: Props) {
         },
         {
             id: 'version',
-            header: t('app_version.version'),
+            header: t('settings.app_version.version'),
             cell: (row) => (
                 <div className="flex flex-col text-left">
                     <span className="font-medium">{row.version}</span>
@@ -126,7 +125,7 @@ export default function AppVersionIndex({ items, filters }: Props) {
         },
         {
             id: 'force_update',
-            header: t('app_version.force_update'),
+            header: t('settings.app_version.force_update'),
             cell: (row) => {
                 const isForced = Number(row.force_update) === 1;
 
@@ -164,13 +163,7 @@ export default function AppVersionIndex({ items, filters }: Props) {
                         getRowId={(row) => String(row.id)}
                         showSearch={false}
                         sort={filters.sort}
-                        direction={filters.direction}
-                        onSort={(column) => {
-                            const nextDirection =
-                                filters.sort === column && filters.direction === 'asc' ? 'desc' : 'asc';
-                            visitIndex({ ...filters, sort: column, direction: nextDirection });
-                        }}
-                        onView={(row) => {
+                       onView={(row) => {
                             setViewingItem(toFormData(row));
                             setDetailOpen(true);
                         }}
@@ -222,7 +215,7 @@ export default function AppVersionIndex({ items, filters }: Props) {
                                         }}
                                     >
                                         <SelectTrigger className="w-full">
-                                            <SelectValue placeholder={t('app_version.version')} />
+                                            <SelectValue placeholder={t('settings.app_version.version')} />
                                         </SelectTrigger>
                                         <SelectContent className="[&_[data-slot=select-item]]:text-xs">
                                             <SelectItem value="all">{t('common.all')}</SelectItem>
