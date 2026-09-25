@@ -1070,6 +1070,17 @@
             "delete_title": "Delete agent",
             "delete_description": "Assigned cards will remain, but this agent will be removed."
         },
+        "batch_code": {
+            "title": "Batch Codes",
+            "amount": "Point amount",
+            "code": "Batch code",
+            "add": "Add batch code",
+            "edit": "Edit batch code",
+            "description": "Manage the four-digit code used in generated card serial numbers.",
+            "empty": "No batch codes found",
+            "delete_title": "Delete this batch code?",
+            "delete_description": "This batch code can only be deleted when no cards use its point amount."
+        },
         "validation": {
             "agent_name_required": "Agent name is required.",
             "agent_name_unique": "This agent name is already in use.",
