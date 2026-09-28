@@ -6,7 +6,7 @@ import {
     PlusIcon,
     TicketsIcon,
     TriangleAlertIcon,
-    UserRoundIcon,
+    Building2Icon,
 } from 'lucide-react';
 
 import { FormControl } from '@/components/ui/form-control';
@@ -39,8 +39,8 @@ function denominationCardClass(checked: boolean, dashed = false): string {
 }
 
 type GenerateFormProps = {
-    agents: { id: number; name: string }[];
-    selectedAgentIds: string[];
+    offices: { id: number; name: string }[];
+    selectedOfficeIds: string[];
     amounts: number[];
     maxCards?: number;
     selected: Record<string, number>;
@@ -50,7 +50,7 @@ type GenerateFormProps = {
     onToggle: (amount: number) => void;
     onQuantity: (amount: number, quantity: number) => void;
     onExpiresAt: (value: string) => void;
-    onAgentIds: (values: string[]) => void;
+    onOfficeIds: (values: string[]) => void;
 };
 
 function QuantityStepper({
@@ -141,8 +141,8 @@ function SectionLabel({ icon: Icon, children }: { icon: typeof BanknoteIcon; chi
 }
 
 export function TopUpCardGenerateForm({
-    agents,
-    selectedAgentIds,
+    offices,
+    selectedOfficeIds,
     amounts,
     maxCards = DEFAULT_MAX_CARDS,
     selected,
@@ -152,36 +152,36 @@ export function TopUpCardGenerateForm({
     onToggle,
     onQuantity,
     onExpiresAt,
-    onAgentIds,
+    onOfficeIds,
 }: GenerateFormProps) {
     const { t } = useTranslation();
     const maxQuantity = Math.max(1, maxCards);
-    const agentMultiplier = Math.max(1, selectedAgentIds.length || agents.length);
+    const officeMultiplier = Math.max(1, selectedOfficeIds.length || offices.length);
     const entries = Object.entries(selected).filter(([, quantity]) => quantity > 0);
     const selectedCards = entries.reduce((sum, [, quantity]) => sum + quantity, 0);
-    const totalCards = selectedCards * agentMultiplier;
+    const totalCards = selectedCards * officeMultiplier;
     const totalValue =
-        entries.reduce((sum, [value, quantity]) => sum + Number(value) * quantity, 0) * agentMultiplier;
+        entries.reduce((sum, [value, quantity]) => sum + Number(value) * quantity, 0) * officeMultiplier;
     const overLimit = totalCards > maxQuantity;
 
     return (
         <div className="flex flex-col gap-3">
             <div>
-                <SectionLabel icon={UserRoundIcon}>{t('top_up_cards.agent.title')}</SectionLabel>
-                <p className="mt-0.5 ps-5 text-[11px] text-muted-foreground">{t('top_up_cards.agent.description')}</p>
+                <SectionLabel icon={Building2Icon}>{t('top_up_cards.office.title')}</SectionLabel>
+                <p className="mt-0.5 ps-5 text-[11px] text-muted-foreground">{t('top_up_cards.office.description')}</p>
                 <div className="mt-2">
                     <MultiSelect
-                        id="top-up-card-agents"
-                        values={selectedAgentIds}
-                        options={agents.map((agent) => ({
-                            value: String(agent.id),
-                            label: agent.name,
-                            icon: UserRoundIcon,
+                        id="top-up-card-offices"
+                        values={selectedOfficeIds}
+                        options={offices.map((office) => ({
+                            value: String(office.id),
+                            label: office.name,
+                            icon: Building2Icon,
                         }))}
-                        onChange={onAgentIds}
-                        placeholder={t('top_up_cards.agent.all_agents')}
-                        heading={t('top_up_cards.agent.title')}
-                        icon={UserRoundIcon}
+                        onChange={onOfficeIds}
+                        placeholder={t('top_up_cards.office.all_offices')}
+                        heading={t('top_up_cards.office.title')}
+                        icon={Building2Icon}
                         disabled={processing}
                     />
                 </div>
@@ -284,7 +284,7 @@ export function TopUpCardGenerateForm({
                         {entries.map(([value, quantity]) => (
                             <span key={value}>
                                 {formatTopUpNumber(value)} × {quantity}
-                                {agentMultiplier > 1 ? ` × ${agentMultiplier}` : ''}
+                                {officeMultiplier > 1 ? ` × ${officeMultiplier}` : ''}
                             </span>
                         ))}
                     </p>

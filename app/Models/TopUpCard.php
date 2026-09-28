@@ -20,7 +20,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
         'redeemed_at',
         'redeemed_by',
         'status',
-        'agent_id',
+        'office_id',
         'batch_id',
         'wallet_transaction_id',
     ]),
@@ -47,9 +47,9 @@ class TopUpCard extends Model
         return $this->belongsTo(Batch::class);
     }
 
-    public function agent(): BelongsTo
+    public function office(): BelongsTo
     {
-        return $this->belongsTo(Agent::class);
+        return $this->belongsTo(Office::class);
     }
 
     public function redeemedBy(): BelongsTo

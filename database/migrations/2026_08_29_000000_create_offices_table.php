@@ -9,11 +9,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (Schema::hasTable('agents')) {
+        if (Schema::hasTable('offices')) {
             return;
         }
 
-        Schema::create('agents', function (Blueprint $table): void {
+        Schema::create('offices', function (Blueprint $table): void {
             $table->id();
             $table->string('name', 50);
             $table->char('cd', 2);
@@ -23,14 +23,14 @@ return new class extends Migration
         });
 
         DB::statement(
-            'CREATE UNIQUE INDEX agents_cd_active_unique
-            ON agents (cd)
+            'CREATE UNIQUE INDEX offices_cd_active_unique
+            ON offices (cd)
             WHERE deleted_at IS NULL',
         );
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('agents');
+        Schema::dropIfExists('offices');
     }
 };

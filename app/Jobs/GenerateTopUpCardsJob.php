@@ -39,7 +39,7 @@ class GenerateTopUpCardsJob implements ShouldQueue
         public readonly int $actorId,
         public readonly string $token,
         public readonly string $productionDate,
-        public readonly string $agentCode,
+        public readonly string $officeCode,
         public readonly int $chunkIndex,
         public readonly int $totalChunks,
         public readonly int $cardBatchId,
@@ -82,7 +82,7 @@ class GenerateTopUpCardsJob implements ShouldQueue
             $cached['starting_counter'] = GeneratesTopUpCards::allocateSerialRange(
                 $quantity,
                 $productionDate,
-                $this->agentCode,
+                $this->officeCode,
                 $batchCode,
             );
             $cached['status'] = 'processing';
@@ -98,7 +98,7 @@ class GenerateTopUpCardsJob implements ShouldQueue
                 $this->expiresAt,
                 $startingCounter,
                 $productionDate,
-                $this->agentCode,
+                $this->officeCode,
                 $this->cardBatchId,
             );
 
@@ -143,7 +143,7 @@ class GenerateTopUpCardsJob implements ShouldQueue
                     $this->expiresAt,
                     $startingCounter,
                     $productionDate,
-                    $this->agentCode,
+                    $this->officeCode,
                     $batchId,
                 );
 

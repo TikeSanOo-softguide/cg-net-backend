@@ -2,30 +2,25 @@
 
 namespace App\Models;
 
-use Database\Factories\AgentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['name', 'cd', 'address'])]
-class Agent extends Model
+class Office extends Model
 {
-    /** @use HasFactory<AgentFactory> */
-    use HasFactory, SoftDeletes;
+    use SoftDeletes;
 
-    protected $table = 'agents';
+    protected $table = 'offices';
 
     protected function casts(): array
     {
-        return [
-            'cd' => 'string',
-        ];
+        return ['cd' => 'string'];
     }
 
     public function topUpCards(): HasMany
     {
-        return $this->hasMany(TopUpCard::class);
+        return $this->hasMany(TopUpCard::class, 'office_id');
     }
 }

@@ -5,7 +5,7 @@ namespace App\Http\Requests\TopUpCard;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class AssignAgentRequest extends FormRequest
+class AssignOfficeRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -15,7 +15,7 @@ class AssignAgentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'agent_id' => ['nullable', 'integer', Rule::exists('agents', 'id')->whereNull('deleted_at')],
+            'office_id' => ['nullable', 'integer', Rule::exists('offices', 'id')->whereNull('deleted_at')],
         ];
     }
 }

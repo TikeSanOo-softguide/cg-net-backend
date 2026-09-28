@@ -5,17 +5,20 @@ namespace Tests\Feature;
 use App\Enums\TopUpCardStatus;
 use App\Http\Controllers\TopUpCard\TopUpCardController;
 use App\Jobs\GenerateTopUpCardsJob;
+use App\Jobs\ImportGeneratedTopUpCardsJob;
 use App\Models\Admin;
-use App\Models\Agent;
+use App\Models\Office;
 use App\Models\Batch;
 use App\Models\TopUpCard;
 use App\Models\User;
 use App\Support\AppPermissions;
+use App\Support\CsvImportException;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Bus\Batch as QueueBatch;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
 use Spatie\Permission\PermissionRegistrar;
@@ -62,7 +65,7 @@ class TopUpCardManagementTest extends TestCase
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
 
-        Agent::query()->create([
+        Office::query()->create([
             'name' => 'Default Office',
             'address' => 'Main Street',
             'cd' => 88,
@@ -128,6 +131,62 @@ class TopUpCardManagementTest extends TestCase
         ]);
     }
 
+    public function test_admins_can_import_csv_cards_while_preserving_generation_flow(): void
+    {
+        $actor = Admin::factory()->create();
+        $actor->assignRole(AppPermissions::SuperAdmin);
+        Storage::fake('local');
+        Queue::fake();
+
+        $csv = implode("\n", [
+            'serial_no , pin , amount, expires_at',
+            'SER-1001,1234567890123456789012345678901234567890123456789012345678901234,1000,2030-12-31',
+            'SER-1002,2234567890123456789012345678901234567890123456789012345678901234,2500,2031-01-15',
+        ]);
+
+        $this->actingAs($actor, 'web')
+            ->post('/top-up-cards/offices/import', [
+                'file' => UploadedFile::fake()->createWithContent('cards.csv', $csv),
+                'return' => 'assign',
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect('/top-up-cards/office-assign');
+
+        Queue::assertPushed(ImportGeneratedTopUpCardsJob::class, 1);
+        Queue::pushedJobs()[ImportGeneratedTopUpCardsJob::class][0]['job']->handle();
+
+        $batchId = TopUpCard::query()->where('serial_no', 'SER-1001')->value('batch_id');
+        $this->assertNotNull($batchId);
+
+        $this->assertDatabaseHas('top_up_card', [
+            'serial_no' => 'SER-1001',
+            'amount' => 1000,
+            'status' => TopUpCardStatus::Active,
+            'redeemed_at' => null,
+            'redeemed_by' => null,
+            'office_id' => null,
+            'batch_id' => $batchId,
+            'wallet_transaction_id' => null,
+        ]);
+
+        $this->assertDatabaseHas('top_up_card', [
+            'serial_no' => 'SER-1002',
+            'amount' => 2500,
+            'status' => TopUpCardStatus::Active,
+            'redeemed_at' => null,
+            'redeemed_by' => null,
+            'office_id' => null,
+            'batch_id' => $batchId,
+            'wallet_transaction_id' => null,
+        ]);
+
+        $this->assertDatabaseHas('batches', [
+            'id' => $batchId,
+            'quantity' => 2,
+            'total_value' => 3500,
+        ]);
+    }
+
     public function test_index_filters_by_serial_status_and_amount(): void
     {
         $actor = Admin::factory()->create();
@@ -179,7 +238,7 @@ class TopUpCardManagementTest extends TestCase
 
         Queue::fake();
 
-        Agent::query()->create([
+        Office::query()->create([
             'name' => 'Default Office',
             'address' => 'Main Street',
             'cd' => 88,
@@ -206,7 +265,7 @@ class TopUpCardManagementTest extends TestCase
             ->assertHeader('content-type', 'text/csv; charset=UTF-8');
     }
 
-    public function test_agent_card_table_excludes_pending_cards(): void
+    public function test_office_card_table_excludes_pending_cards(): void
     {
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
@@ -214,10 +273,10 @@ class TopUpCardManagementTest extends TestCase
         $active = TopUpCard::factory()->create(['status' => TopUpCardStatus::Active]);
 
         $this->actingAs($actor, 'web')
-            ->get('/top-up-cards/agent-assign')
+            ->get('/top-up-cards/office-assign')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('TopUpCards/AgentAssign')
+                ->component('TopUpCards/OfficeAssign')
                 ->has('cards.data', 1)
                 ->where('cards.data.0.id', $active->id)
                 ->where('filters.status', ''));
@@ -225,10 +284,12 @@ class TopUpCardManagementTest extends TestCase
         $this->assertNotSame($pending->id, $active->id);
     }
 
-    public function test_pending_generated_cards_can_be_imported_as_active(): void
+    public function test_office_assign_csv_import_does_not_activate_existing_pending_cards(): void
     {
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
+        Storage::fake('local');
+        Queue::fake();
         $batch = Batch::query()->create([
             'batch_no' => 'IMPORT-BATCH-0001',
             'total_value' => 1000,
@@ -237,7 +298,7 @@ class TopUpCardManagementTest extends TestCase
             'expires_at' => now()->addDays(30)->toDateString(),
             'metadata' => [
                 'items' => [
-                    ['agent_cd' => '88', 'amount' => 1000, 'quantity' => 1],
+                    ['office_cd' => '88', 'amount' => 1000, 'quantity' => 1],
                 ],
             ],
         ]);
@@ -250,13 +311,24 @@ class TopUpCardManagementTest extends TestCase
         $csv = "serial_no,pin,amount,expires_at,status\nTOPUP-IMPORT-0001,1234,1000,{$card->expires_at->toDateString()},pending\n";
 
         $this->actingAs($actor, 'web')
-            ->post('/top-up-cards/agents/import', [
+            ->post('/top-up-cards/offices/import', [
                 'file' => UploadedFile::fake()->createWithContent('cards.csv', $csv),
                 'return' => 'assign',
             ])
-            ->assertRedirect('/top-up-cards/agent-assign');
+            ->assertRedirect('/top-up-cards/office-assign');
 
-        $this->assertSame(TopUpCardStatus::Active, $card->fresh()->status);
+        Queue::assertPushed(ImportGeneratedTopUpCardsJob::class, 1);
+        $job = Queue::pushedJobs()[ImportGeneratedTopUpCardsJob::class][0]['job'];
+
+        try {
+            $job->handle();
+            $this->fail('An import must reject a serial number that already exists.');
+        } catch (CsvImportException $exception) {
+            $this->assertSame('top_up_cards.import_errors.duplicate_serial', $exception->translationKey);
+            $job->failed($exception);
+        }
+
+        $this->assertSame(TopUpCardStatus::Pending, $card->fresh()->status);
     }
 
     public function test_admins_can_view_redeem_history(): void

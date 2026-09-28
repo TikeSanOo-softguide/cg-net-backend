@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->string('batch_no', 32);
             $table->unsignedInteger('total_value')->default(0);
-            $table->unsignedInteger('quantity');
+            $table->unsignedInteger('quantity')->default(0);
             $table->string('status', 16)->default('active')->index();
             $table->date('expires_at')->index();
             $table->json('metadata')->nullable();

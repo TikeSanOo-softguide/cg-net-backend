@@ -29,7 +29,7 @@ use App\Http\Controllers\Staff\RoleController;
 use App\Http\Controllers\Staff\StaffController;
 use App\Http\Controllers\Support\ChatConversations\ChatConversationsController;
 use App\Http\Controllers\Support\ChatFlows\ChatbotFlowsController;
-use App\Http\Controllers\TopUpCard\AgentController;
+use App\Http\Controllers\TopUpCard\OfficeController;
 use App\Http\Controllers\Support\QuickReplies\QuickRepliesController;
 use App\Http\Controllers\TopUpCard\TopUpCardController;
 use App\Http\Controllers\Transaction\TransactionController;
@@ -285,36 +285,27 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::get('/generation-status', [TopUpCardController::class, 'generationStatus'])
                 ->middleware('can:top-up-cards.view')
                 ->name('generation-status');
-            Route::get('/agents', [AgentController::class, 'index'])
+            Route::get('/offices', [OfficeController::class, 'index'])
                 ->middleware('can:top-up-cards.view')
-                ->name('agents');
-            Route::get('/agent-assign', [AgentController::class, 'agentAssign'])
+                ->name('offices');
+            Route::get('/office-assign', [OfficeController::class, 'officeAssign'])
                 ->middleware('can:top-up-cards.view')
-                ->name('agent-assign');
-            Route::post('/agents', [AgentController::class, 'store'])
+                ->name('office-assign');
+            Route::post('/offices', [OfficeController::class, 'store'])
                 ->middleware('can:top-up-cards.create')
-                ->name('agents.store');
-            Route::put('/agents/{agent}', [AgentController::class, 'update'])
+                ->name('offices.store');
+            Route::put('/offices/{office}', [OfficeController::class, 'update'])
                 ->middleware('can:top-up-cards.update')
-                ->name('agents.update');
-            Route::delete('/agents/{agent}', [AgentController::class, 'destroy'])
+                ->name('offices.update');
+            Route::delete('/offices/{office}', [OfficeController::class, 'destroy'])
                 ->middleware('can:top-up-cards.delete')
-                ->name('agents.destroy');
-            Route::post('/batch-codes', [AgentController::class, 'storeBatchCode'])
-                ->middleware('can:top-up-cards.create')
-                ->name('batch-codes.store');
-            Route::put('/batch-codes/{batchCode}', [AgentController::class, 'updateBatchCode'])
+                ->name('offices.destroy');
+            Route::post('/offices/import', [OfficeController::class, 'import'])
                 ->middleware('can:top-up-cards.update')
-                ->name('batch-codes.update');
-            Route::delete('/batch-codes/{batchCode}', [AgentController::class, 'destroyBatchCode'])
-                ->middleware('can:top-up-cards.delete')
-                ->name('batch-codes.destroy');
-            Route::post('/agents/import', [AgentController::class, 'import'])
+                ->name('offices.import');
+            Route::patch('/assign-office', [OfficeController::class, 'assignOffice'])
                 ->middleware('can:top-up-cards.update')
-                ->name('agents.import');
-            Route::patch('/assign-agent', [AgentController::class, 'assignAgent'])
-                ->middleware('can:top-up-cards.update')
-                ->name('assign-cards-agent');
+                ->name('assign-cards-office');
             Route::get('/export', [TopUpCardController::class, 'export'])
                 ->middleware('can:top-up-cards.view')
                 ->name('export');

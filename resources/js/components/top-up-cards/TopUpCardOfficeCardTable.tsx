@@ -9,47 +9,47 @@ import { formatTopUpAmount, type TopUpCardRow } from '@/lib/top-up-cards';
 import type { Paginated } from '@/components/Pagination';
 import { formatDate } from '@/lib/utils';
 
-type AgentRow = { id: number; name: string; address: string; top_up_cards_count: number };
+type OfficeRow = { id: number; name: string; address: string; top_up_cards_count: number };
 
-type TopUpCardAgentCardTableProps = {
+type TopUpCardOfficeCardTableProps = {
     cards: TopUpCardRow[];
     pagination?: Paginated<TopUpCardRow>;
-    agents: AgentRow[];
+    offices: OfficeRow[];
     batches: { id: number; batch_no: string }[];
     points: number[];
     search: string;
     batchFilter: string;
-    agentFilter: string;
+    officeFilter: string;
     statusFilter: string;
     pointFilter: string;
     onSearchChange: (value: string) => void;
     onBatchChange: (value: string) => void;
-    onAgentChange: (value: string) => void;
+    onOfficeChange: (value: string) => void;
     onStatusChange: (value: string) => void;
     onPointChange: (value: string) => void;
     onAssign: () => void;
     onImport: () => void;
 };
 
-export function TopUpCardAgentCardTable({
+export function TopUpCardOfficeCardTable({
     cards,
     pagination,
-    agents,
+    offices,
     batches,
     points,
     search,
     batchFilter,
-    agentFilter,
+    officeFilter,
     statusFilter,
     pointFilter,
     onSearchChange,
     onBatchChange,
-    onAgentChange,
+    onOfficeChange,
     onStatusChange,
     onPointChange,
     onAssign,
     onImport,
-}: TopUpCardAgentCardTableProps) {
+}: TopUpCardOfficeCardTableProps) {
     const { t } = useTranslation();
     const can = useCan();
 
@@ -68,18 +68,18 @@ export function TopUpCardAgentCardTable({
                         <Select value={batchFilter || 'all'} onValueChange={onBatchChange}>
                             <SelectTrigger className="w-full"><SelectValue placeholder={t('top_up_cards.batch_no')} /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">{t('top_up_cards.agent.all_batches')}</SelectItem>
+                                <SelectItem value="all">{t('top_up_cards.office.all_batches')}</SelectItem>
                                 {batches.map((batch) => <SelectItem key={batch.id} value={String(batch.id)}>{batch.batch_no}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </FormControl>
                     <FormControl compact className="w-full shrink-0 sm:w-48">
-                        <Select value={agentFilter || 'all'} onValueChange={onAgentChange}>
-                            <SelectTrigger className="w-full"><SelectValue placeholder={t('top_up_cards.agent.name')} /></SelectTrigger>
+                        <Select value={officeFilter || 'all'} onValueChange={onOfficeChange}>
+                            <SelectTrigger className="w-full"><SelectValue placeholder={t('top_up_cards.office.name')} /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">{t('top_up_cards.agent.all_agents')}</SelectItem>
-                                <SelectItem value="unassigned">{t('top_up_cards.agent.not_assigned')}</SelectItem>
-                                {agents.map((agent) => <SelectItem key={agent.id} value={String(agent.id)}>{agent.name}</SelectItem>)}
+                                <SelectItem value="all">{t('top_up_cards.office.all_offices')}</SelectItem>
+                                <SelectItem value="unassigned">{t('top_up_cards.office.not_assigned')}</SelectItem>
+                                {offices.map((office) => <SelectItem key={office.id} value={String(office.id)}>{office.name}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </FormControl>
@@ -87,7 +87,7 @@ export function TopUpCardAgentCardTable({
                         <Select value={statusFilter || 'all'} onValueChange={onStatusChange}>
                             <SelectTrigger className="w-full"><SelectValue placeholder={t('common.status')} /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">{t('top_up_cards.agent.all_status')}</SelectItem>
+                                <SelectItem value="all">{t('top_up_cards.office.all_status')}</SelectItem>
                                 <SelectItem value="active">{t('status.active')}</SelectItem>
                                 <SelectItem value="used">{t('status.used')}</SelectItem>
                                 <SelectItem value="expired">{t('status.expired')}</SelectItem>
@@ -99,7 +99,7 @@ export function TopUpCardAgentCardTable({
                         <Select value={pointFilter || 'all'} onValueChange={onPointChange}>
                             <SelectTrigger className="w-full"><SelectValue placeholder={t('top_up_cards.point')} /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">{t('top_up_cards.agent.all_points')}</SelectItem>
+                                <SelectItem value="all">{t('top_up_cards.office.all_points')}</SelectItem>
                                 {points.map((point) => <SelectItem key={point} value={String(point)}>{point}</SelectItem>)}
                             </SelectContent>
                         </Select>
@@ -110,10 +110,10 @@ export function TopUpCardAgentCardTable({
             bulkActions={can('top-up-cards.update') ? (
                 <div className="flex items-center gap-2">
                     <Button type="button" variant="outline" size="sm" onClick={onImport}>
-                        {t('top_up_cards.agent.import_csv')}
+                        {t('top_up_cards.office.import_csv')}
                     </Button>
                     <Button type="button" size="sm" onClick={onAssign}>
-                        {t('top_up_cards.agent.assign')}
+                        {t('top_up_cards.office.assign')}
                     </Button>
                 </div>
             ) : null}
@@ -123,7 +123,7 @@ export function TopUpCardAgentCardTable({
                 { id: 'status', header: t('common.status'), mobile: 'badge', cell: (row) => <StatusBadge status={row.status} /> },
                 { id: 'expires_at', header: t('top_up_cards.expires_at'), cell: (row) => formatDate(row.expires_at) ?? '—' },
                 { id: 'batch_no', header: t('top_up_cards.batch_no'), cell: (row) => row.batch_no ?? '—' },
-                { id: 'agent', header: t('top_up_cards.agent.name'), cell: (row) => row.agent ?? t('top_up_cards.agent.not_assigned') },
+                { id: 'office', header: t('top_up_cards.office.name'), cell: (row) => row.office ?? t('top_up_cards.office.not_assigned') },
             ]}
         />
     );
