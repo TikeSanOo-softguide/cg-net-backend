@@ -19,9 +19,7 @@ class FailureReportController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
-        $failureReports = FailureReport::query()->with('photos')
-            ->where('user_id', $request->user()->id)
-            ->get();
+        $failureReports = FailureReport::query()->with('photos')->where('user_id', $request->user()->id)->get();
         return FailureReportResource::collection($failureReports);
     }
 
@@ -38,7 +36,7 @@ class FailureReportController extends Controller
 
             $failureReport = FailureReport::query()->create([
                 'user_id' => $request->user()->id,
-                'broadband_account_id' => $validated['broadband_account_id'],
+                'broadband_account_number' => $validated['broadband_account_number'],
                 'failure_type' => $validated['failure_type'],
                 'description' => $validated['description'],
                 'contact_name' => $validated['contact_name'],
@@ -47,31 +45,25 @@ class FailureReportController extends Controller
             ]);
 
             foreach ($request->file('photos') as $photo) {
-                $imageUrl = StoresPublicImage::store(
-                    $photo,
-                    'service-request/failure-reports'
-                );
+                $imageUrl = StoresPublicImage::store($photo, 'service-request/failure-reports');
 
                 $failureReport->photos()->create([
                     'image_url' => $imageUrl,
                 ]);
             }
 
-            return new FailureReportResource(
-                $failureReport->load('photos')
-            );
+            return new FailureReportResource($failureReport->load('photos'));
         });
     }
 
-    public function update(
-        UpdateFailureReport $request,
-        FailureReport $failureReport
-    ): FailureReportResource {
+    public function update(UpdateFailureReport $request, FailureReport $failureReport): FailureReportResource
+    {
         $this->ensureOwner($request, $failureReport);
         return DB::transaction(function () use ($request, $failureReport) {
             $validated = $request->validated();
             $failureReport->update([
-                'broadband_account_id' => $validated['broadband_account_id'],
+                'broadband_account_number' =>
+                    $validated['broadband_account_number'] ?? $failureReport->broadband_account_number,
                 'failure_type' => $validated['failure_type'],
                 'description' => $validated['description'],
                 'contact_name' => $validated['contact_name'],
@@ -86,7 +78,7 @@ class FailureReportController extends Controller
                     $imageUrl = StoresPublicImage::store(
                         $photo,
                         'service-request/failure-reports',
-                        $existingPhoto?->image_url
+                        $existingPhoto?->image_url,
                     );
                     if ($existingPhoto) {
                         $existingPhoto->update([
@@ -99,9 +91,7 @@ class FailureReportController extends Controller
                     }
                 }
             }
-            return new FailureReportResource(
-                $failureReport->load('photos')
-            );
+            return new FailureReportResource($failureReport->load('photos'));
         });
     }
 

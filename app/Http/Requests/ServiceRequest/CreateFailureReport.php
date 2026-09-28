@@ -3,7 +3,6 @@
 namespace App\Http\Requests\ServiceRequest;
 
 use App\Enums\FailureType;
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -20,18 +19,16 @@ class CreateFailureReport extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
-            'broadband_account_id' => [
+            'broadband_account_number' => [
                 'required',
-                'integer',
-                Rule::exists('broadband_accounts', 'id')
-                    ->where(function ($query) {
-                        $query->where('user_id', $this->user()->id);
-                    }),
+                'string',
+                'max:32',
+                Rule::exists('users', 'broadband_account_number')->where('id', $this->user()->id),
             ],
             'failure_type' => ['required', Rule::enum(FailureType::class)],
             'description' => ['required', 'string', 'max:5000'],

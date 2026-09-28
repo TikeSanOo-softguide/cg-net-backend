@@ -7,7 +7,6 @@ use App\Enums\RequestStatus;
 use App\Models\Admin;
 use App\Models\Area;
 use App\Models\BillPayment;
-use App\Models\BroadbandAccount;
 use App\Models\FailureReport;
 use App\Models\InstallationApplication;
 use App\Models\NotificationCustom;
@@ -36,7 +35,8 @@ class DashboardTest extends TestCase
     public function test_authenticated_admins_see_dashboard_overview_props(): void
     {
         $admin = Admin::factory()->create();
-        User::factory()->count(3)->create();
+        User::factory()->count(2)->create();
+        User::factory()->create(['broadband_account_number' => 'CG12345678']);
         $walletTransaction = WalletTransaction::factory()->create([
             'type' => WalletTransactionType::FtthBill,
             'status' => WalletTransactionStatus::Completed,
@@ -47,7 +47,7 @@ class DashboardTest extends TestCase
 
         BillPayment::query()->create([
             'wallet_transaction_id' => $walletTransaction->id,
-            'broadband_account_id' => BroadbandAccount::factory()->create()->id,
+            'broadband_account_number' => 'CG12345678',
             'status' => BillPaymentStatus::Completed,
             'confirmed_at' => now(),
         ]);
@@ -63,6 +63,7 @@ class DashboardTest extends TestCase
                     ->component('Dashboard/Index')
                     ->has('stats.total_customers')
                     ->has('stats.active_broadband_accounts')
+                    ->where('stats.active_broadband_accounts', 1)
                     ->has('stats.active_packages')
                     ->where('stats.todays_revenue', '15000.00')
                     ->where('stats.pending_requests', fn($count) => $count >= 1)

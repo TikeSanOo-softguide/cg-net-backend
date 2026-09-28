@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Enums\UserStatus;
 use App\Models\Admin;
-use App\Models\BroadbandAccount;
 use App\Models\CustomerPackage;
 use App\Models\User;
 use App\Models\Wallet;
@@ -67,14 +66,9 @@ class CustomerManagementTest extends TestCase
     public function test_admins_can_view_customer_detail(): void
     {
         $admin = Admin::factory()->create();
-        $customer = User::factory()->create();
-        $account = BroadbandAccount::factory()->create([
-            'user_id' => $customer->id,
-            'customer_name' => $customer->name,
-        ]);
+        $customer = User::factory()->create(['broadband_account_number' => 'CG12345678']);
         CustomerPackage::factory()->create([
             'user_id' => $customer->id,
-            'broadband_account_id' => $account->id,
         ]);
         $wallet = Wallet::factory()->create(['user_id' => $customer->id, 'balance' => 15000]);
         WalletTransaction::factory()->create(['wallet_id' => $wallet->id, 'amount' => 5000]);
@@ -87,8 +81,8 @@ class CustomerManagementTest extends TestCase
                     ->component('Customer/Show')
                     ->where('customer.id', $customer->id)
                     ->where('customer.name', $customer->name)
-                    ->has('broadbandAccounts', 1)
-                    ->has('packages', 1)
+                    ->where('accountBinding.account_number', 'CG12345678')
+                    ->has('packageHistory', 1)
                     ->where('wallet.balance', '15000')
                     ->has('wallet.transactions', 1),
             );
@@ -117,31 +111,26 @@ class CustomerManagementTest extends TestCase
         $this->assertSame(UserStatus::Active, $customer->fresh()->status);
     }
 
-    public function test_admin_can_bind_and_unbind_a_broadband_account(): void
+    public function test_admin_can_bind_and_unbind_a_broadband_account_number(): void
     {
         $admin = Admin::factory()->create();
         $customer = User::factory()->create();
-        $account = BroadbandAccount::factory()
-            ->unbound()
-            ->create([
-                'account_number' => 'CG99999999',
-            ]);
 
         $this->actingAs($admin, 'web')
             ->post('/customers/' . $customer->id . '/accounts', ['account_number' => 'CG99999999'])
             ->assertRedirect();
 
-        $this->assertSame($customer->id, $account->fresh()->user_id);
+        $this->assertSame('CG99999999', $customer->fresh()->broadband_account_number);
         $this->assertDatabaseHas('activity_log', [
             'description' => 'broadband_account_bound',
             'subject_id' => $customer->id,
         ]);
 
         $this->actingAs($admin, 'web')
-            ->delete('/customers/' . $customer->id . '/accounts/' . $account->id)
+            ->delete('/customers/' . $customer->id . '/accounts')
             ->assertRedirect();
 
-        $this->assertNull($account->fresh()->user_id);
+        $this->assertNull($customer->fresh()->broadband_account_number);
         $this->assertDatabaseHas('activity_log', [
             'description' => 'broadband_account_unbound',
             'subject_id' => $customer->id,
@@ -152,18 +141,14 @@ class CustomerManagementTest extends TestCase
     {
         $admin = Admin::factory()->create();
         $customer = User::factory()->create();
-        $other = User::factory()->create();
-        $account = BroadbandAccount::factory()->create([
-            'user_id' => $other->id,
-            'account_number' => 'CG88888888',
-        ]);
+        $other = User::factory()->create(['broadband_account_number' => 'CG88888888']);
 
         $this->actingAs($admin, 'web')
             ->post('/customers/' . $customer->id . '/accounts', ['account_number' => 'CG88888888'])
             ->assertRedirect()
             ->assertSessionHasErrors('account_number');
 
-        $this->assertSame($other->id, $account->fresh()->user_id);
+        $this->assertSame('CG88888888', $other->fresh()->broadband_account_number);
     }
 
     public function test_admins_can_create_a_customer(): void

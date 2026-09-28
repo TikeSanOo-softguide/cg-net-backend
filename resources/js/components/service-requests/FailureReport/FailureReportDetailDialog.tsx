@@ -27,7 +27,7 @@ type FailureReport = {
     status: string;
     customer_name: string;
     customer_phone: string;
-    account_number: string;
+    broadband_account_number: string;
     account_customer: string;
     failure_type: string;
     contact_name: string;
@@ -142,7 +142,7 @@ export function FailureReportDetailDialog({
                             </p>
                             <p className="flex items-center gap-1.5 font-mono text-sm font-semibold text-foreground">
                                 <WifiIcon className="size-3.5 text-muted-foreground/70" />
-                                {request.account_number}
+                                {request.broadband_account_number}
                             </p>
                             <p className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <UserIcon className="size-3" />

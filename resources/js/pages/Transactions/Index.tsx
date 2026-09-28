@@ -59,7 +59,7 @@ export type TransactionRow = {
     } | null;
     related: {
         bill_payment_id: number | null;
-        bill_payment_account: { account_number: string; customer_name: string } | null;
+        bill_payment_account: { broadband_account_number: string; customer_name: string } | null;
         package_order_id: number | null;
         package_order_detail: { package: string | null; status: string } | null;
         top_up_card_serial_no: string | null;
@@ -563,7 +563,7 @@ export function TransactionsTable({
                                 copyable
                                 secondary={
                                     selected.related.bill_payment_account
-                                        ? `${selected.related.bill_payment_account.account_number} · ${selected.related.bill_payment_account.customer_name}`
+                                        ? `${selected.related.bill_payment_account.broadband_account_number} · ${selected.related.bill_payment_account.customer_name}`
                                         : null
                                 }
                             />

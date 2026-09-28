@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 #[
     Fillable([
         'user_id',
-        'broadband_account_id',
+        'broadband_account_number',
         'contact_name',
         'contact_phone',
         'new_wifi_name',
@@ -36,11 +36,6 @@ class ChangePasswordRequest extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function broadbandAccount(): BelongsTo
-    {
-        return $this->belongsTo(BroadbandAccount::class);
     }
 
     public function admin(): BelongsTo

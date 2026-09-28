@@ -212,8 +212,7 @@ class PackageController extends Controller
 
     private function packageIsUsed(int $packageId): bool
     {
-        return DB::table('broadband_accounts')->where('current_package_id', $packageId)->exists() ||
-            DB::table('package_orders')->where('package_id', $packageId)->exists() ||
+        return DB::table('package_orders')->where('package_id', $packageId)->exists() ||
             DB::table('customer_packages')->where('package_id', $packageId)->exists() ||
             DB::table('installation_applications')->where('package_id', $packageId)->exists() ||
             DB::table('change_plan_requests')
@@ -246,8 +245,7 @@ class PackageController extends Controller
             ->whereIn('id', $ids)
             ->where(function ($query) {
                 $query
-                    ->whereHas('broadbandAccounts')
-                    ->orWhereHas('packageOrders')
+                    ->whereHas('packageOrders')
                     ->orWhereHas('customerPackages')
                     ->orWhereHas('currentChangePlanRequests')
                     ->orWhereHas('newChangePlanRequests');

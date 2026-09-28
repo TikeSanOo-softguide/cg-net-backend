@@ -48,10 +48,8 @@ type LocalizedText = {
     zh: string | null;
 };
 
-type BroadbandAccountRow = {
-    id: number;
+type AccountBinding = {
     account_number: string;
-    customer_name: string;
     status: string;
     package_name: LocalizedText | null;
 };
@@ -95,7 +93,7 @@ type TransactionOverview = Record<
 
 type CustomersShowProps = {
     customer: Customer;
-    broadbandAccounts: BroadbandAccountRow[];
+    accountBinding: AccountBinding | null;
     packageHistory: PackageRow[];
     wallet: {
         balance: string;
@@ -114,7 +112,7 @@ type CustomersShowProps = {
 
 export default function CustomersShow({
     customer,
-    broadbandAccounts,
+    accountBinding,
     packageHistory,
     wallet,
     topUpHistory,
@@ -146,7 +144,7 @@ export default function CustomersShow({
     };
     const [statusOpen, setStatusOpen] = useState(false);
     const [formOpen, setFormOpen] = useState(false);
-    const [unbindAccount, setUnbindAccount] = useState<BroadbandAccountRow | null>(null);
+    const [unbindAccount, setUnbindAccount] = useState(false);
     const [statusProcessing, setStatusProcessing] = useState(false);
     const [unbindProcessing, setUnbindProcessing] = useState(false);
 
@@ -246,8 +244,8 @@ export default function CustomersShow({
                             actions={bindFilters}
                         >
                             <DataTable
-                                data={broadbandAccounts}
-                                getRowId={(row) => String(row.id)}
+                                data={accountBinding ? [accountBinding] : []}
+                                getRowId={(row) => row.account_number}
                                 emptyLabel={t('customers.no_accounts')}
                                 numbered={false}
                                 showSearch={false}
@@ -259,7 +257,7 @@ export default function CustomersShow({
                                         icon={UnlinkIcon}
                                         tone="danger"
                                         size="sm"
-                                        onClick={() => setUnbindAccount(row)}
+                                        onClick={() => setUnbindAccount(true)}
                                     />
                                 )}
                                 columns={[
@@ -507,10 +505,10 @@ export default function CustomersShow({
             />
 
             <ConfirmDialog
-                open={unbindAccount !== null}
+                open={unbindAccount}
                 onOpenChange={(open) => {
                     if (!open) {
-                        setUnbindAccount(null);
+                        setUnbindAccount(false);
                     }
                 }}
                 title={t('customers.remove_account_title')}
@@ -523,11 +521,11 @@ export default function CustomersShow({
                         return;
                     }
 
-                    router.delete(`/customers/${customer.id}/accounts/${unbindAccount.id}`, {
+                    router.delete(`/customers/${customer.id}/accounts`, {
                         preserveScroll: true,
                         onStart: () => setUnbindProcessing(true),
                         onFinish: () => setUnbindProcessing(false),
-                        onSuccess: () => setUnbindAccount(null),
+                        onSuccess: () => setUnbindAccount(false),
                     });
                 }}
             />

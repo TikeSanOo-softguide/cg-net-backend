@@ -70,7 +70,7 @@ type FailureReportRow = {
     id: number;
     customer_name: string;
     customer_phone: string;
-    account_number: string;
+    broadband_account_number: string;
     account_customer: string;
     failure_type: string;
     contact_name: string;
@@ -222,11 +222,11 @@ export default function FailureReportsIndex({ reports, filters, statuses, stats 
                                     </span>
 
                                     <p className="truncate font-mono mt-1 text-xs text-muted-foreground">
-                                        {request.account_number}
+                                        {request.broadband_account_number}
                                     </p>
                                 </div>
                             ),
-                            searchValue: (request) => `${request.customer_name} ${request.account_number}`,
+                            searchValue: (request) => `${request.customer_name} ${request.broadband_account_number}`,
                         },
                         {
                             id: 'failure_type',

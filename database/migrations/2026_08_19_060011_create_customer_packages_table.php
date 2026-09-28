@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('package_id')->constrained()->restrictOnDelete();
             $table->foreignId('package_order_id')->nullable()->constrained('package_orders')->nullOnDelete();
-            $table->foreignId('broadband_account_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('broadband_account_number', 32)->nullable()->index();
             $table->string('username')->nullable();
             $table->string('password')->nullable();
             $table->date('start_date');
@@ -24,7 +24,6 @@ return new class extends Migration {
             $table->softDeletes();
             $table->index(['user_id', 'status']);
             $table->index(['package_id', 'status']);
-            $table->index('broadband_account_id');
             $table->index('expired_at');
             $table->index('expiry_date');
         });

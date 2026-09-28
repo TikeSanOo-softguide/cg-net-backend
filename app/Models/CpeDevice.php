@@ -11,13 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable([
-    'broadband_account_id',
-    'cpe_identifier',
-    'ssid',
-    'wifi_password',
-    'connection_status',
-])]
+#[Fillable(['user_id', 'cpe_identifier', 'ssid', 'wifi_password', 'connection_status'])]
 #[Hidden(['wifi_password'])]
 class CpeDevice extends Model
 {
@@ -32,8 +26,8 @@ class CpeDevice extends Model
         ];
     }
 
-    public function broadbandAccount(): BelongsTo
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(BroadbandAccount::class);
+        return $this->belongsTo(User::class);
     }
 }

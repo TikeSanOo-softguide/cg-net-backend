@@ -26,13 +26,11 @@ class UpdateFailureReport extends FormRequest
     public function rules(): array
     {
         return [
-            'broadband_account_id' => [
+            'broadband_account_number' => [
                 'required',
-                'integer',
-                Rule::exists('broadband_accounts', 'id')
-                    ->where(function ($query) {
-                        $query->where('user_id', $this->user()->id);
-                    }),
+                'string',
+                'max:32',
+                Rule::exists('users', 'broadband_account_number')->where('id', $this->user()->id),
             ],
             'failure_type' => ['required', Rule::enum(FailureType::class)],
             'description' => ['required', 'string', 'max:5000'],
@@ -40,7 +38,7 @@ class UpdateFailureReport extends FormRequest
             'contact_phone' => ['required', 'string', 'max:16'],
             'photos' => ['nullable', 'array', 'size:3'],
             'photos.*' => ['required', 'image', 'max:5120'],
-            'status' => ['nullable',  Rule::enum(RequestStatus::class)],
+            'status' => ['nullable', Rule::enum(RequestStatus::class)],
         ];
     }
 }

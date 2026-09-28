@@ -16,7 +16,7 @@ class ChangePlanRequestResource extends JsonResource
         return [
             'id' => $this->id,
             'user_id' => $this->user_id,
-            'broadband_account_id' => $this->broadband_account_id,
+            'broadband_account_number' => $this->broadband_account_number,
             'current_package_id' => $this->current_package_id,
             'new_package_id' => $this->new_package_id,
             'current_package' => PackageResource::make($this->whenLoaded('currentPackage')),

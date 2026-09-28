@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Enums\BillPaymentStatus;
-use App\Enums\BroadbandAccountStatus;
 use App\Enums\ChangePlanStatus;
 use App\Enums\CustomerPackageStatus;
 use App\Enums\ReviewStatus;
+use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Models\BillPayment;
-use App\Models\BroadbandAccount;
 use App\Models\ChangePlanRequest;
 use App\Models\CustomerPackage;
 use App\Models\FailureReport;
@@ -18,7 +17,6 @@ use App\Models\RelocationRequest;
 use App\Models\User;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -107,8 +105,9 @@ class DashboardController extends Controller
 
         return [
             'total_customers' => User::query()->count(),
-            'active_broadband_accounts' => BroadbandAccount::query()
-                ->where('status', BroadbandAccountStatus::Active)
+            'active_broadband_accounts' => User::query()
+                ->where('status', UserStatus::Active)
+                ->whereNotNull('broadband_account_number')
                 ->count(),
             'active_packages' => CustomerPackage::query()->where('status', CustomerPackageStatus::Active)->count(),
             'todays_revenue' => number_format(

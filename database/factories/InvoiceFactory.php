@@ -3,8 +3,8 @@
 namespace Database\Factories;
 
 use App\Enums\InvoiceStatus;
-use App\Models\BroadbandAccount;
 use App\Models\Invoice;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,8 +17,8 @@ class InvoiceFactory extends Factory
         $amount = fake()->randomElement([15000, 25000, 35000, 45000]);
 
         return [
-            'broadband_account_id' => BroadbandAccount::factory(),
-            'invoice_no' => 'INV-'.now()->format('Ym').'-'.fake()->unique()->numerify('#####'),
+            'user_id' => User::factory(),
+            'invoice_no' => 'INV-' . now()->format('Ym') . '-' . fake()->unique()->numerify('#####'),
             'amount' => $amount,
             'due_date' => fake()->dateTimeBetween('now', '+20 days'),
             'status' => InvoiceStatus::Unpaid,

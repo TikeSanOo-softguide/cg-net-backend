@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Enums\CustomerPackageStatus;
 use App\Models\PackageOrder;
-use Database\Factories\CustomerPackageFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,7 +15,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
         'user_id',
         'package_id',
         'package_order_id',
-        'broadband_account_id',
         'username',
         'password',
         'start_date',
@@ -28,7 +26,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 ]
 class CustomerPackage extends Model
 {
-    /** @use HasFactory<CustomerPackageFactory> */
+    /** @use HasFactory<\Database\Factories\CustomerPackageFactory> */
     use HasFactory, SoftDeletes;
 
     protected function casts(): array
@@ -45,11 +43,6 @@ class CustomerPackage extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function broadbandAccount(): BelongsTo
-    {
-        return $this->belongsTo(BroadbandAccount::class);
     }
 
     public function package(): BelongsTo

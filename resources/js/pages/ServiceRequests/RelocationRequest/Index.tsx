@@ -37,15 +37,11 @@ type RelocationRequest = {
     phone: string;
     details: string | null;
     status: string;
+    broadband_account_number: string | null;
     user: {
         id: number;
         name: string;
         phone: string;
-    };
-    broadband_account: {
-        id: number;
-        account_number: string;
-        customer_name: string;
     };
     admin: {
         id: number;
@@ -194,12 +190,12 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                                     </span>
 
                                     <p className="truncate font-mono mt-1 text-xs text-muted-foreground">
-                                        {request.broadband_account.account_number}
+                                        {request.broadband_account_number ?? '—'}
                                     </p>
                                 </div>
                             ),
                             searchValue: (request) =>
-                                `${request.user.name} ${request.broadband_account.account_number} ${request.phone}`,
+                                `${request.user.name} ${request.broadband_account_number ?? ''} ${request.phone}`,
                         },
                         {
                             id: 'current_address',

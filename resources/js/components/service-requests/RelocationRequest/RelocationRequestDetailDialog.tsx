@@ -18,12 +18,10 @@ type RelocationRequest = {
     details?: string | null;
     current_address: string;
     new_address: string;
+    broadband_account_number: string | null;
     user: {
         name: string;
         phone: string;
-    };
-    broadband_account: {
-        account_number: string;
     };
 };
 
@@ -134,7 +132,7 @@ export function RelocationRequestDetailDialog({
                             </p>
                             <p className="flex items-center gap-1.5 font-mono text-sm font-semibold text-foreground">
                                 <WifiIcon className="size-3.5 text-muted-foreground/70" />
-                                {request.broadband_account.account_number}
+                                {request.broadband_account_number ?? '—'}
                             </p>
                             <p className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <UserIcon className="size-3" />

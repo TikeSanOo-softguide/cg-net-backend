@@ -28,7 +28,7 @@ class ChangePasswordRequestController extends Controller
         ];
 
         $requests = ChangePasswordRequest::query()
-            ->with(['user:id,name,phone', 'broadbandAccount:id,account_number'])
+            ->with(['user:id,name,phone'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
@@ -36,10 +36,7 @@ class ChangePasswordRequestController extends Controller
                         ->orWhereLike('contact_phone', '%' . $search . '%')
                         ->orWhereLike('new_wifi_name', '%' . $search . '%')
                         ->orWhereHas('user', fn($query) => $query->whereLike('name', '%' . $search . '%'))
-                        ->orWhereHas(
-                            'broadbandAccount',
-                            fn($query) => $query->whereLike('account_number', '%' . $search . '%'),
-                        );
+                        ->orWhereLike('broadband_account_number', '%' . $search . '%');
                 });
             })
             ->whereIn('status', $statuses)

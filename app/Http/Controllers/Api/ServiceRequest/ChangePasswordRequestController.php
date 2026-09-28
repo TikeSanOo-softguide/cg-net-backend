@@ -23,7 +23,11 @@ class ChangePasswordRequestController extends Controller
     public function store(CreateChangePasswordRequest $request): ChangePasswordRequestResource
     {
         $validated = $request->validated();
-        $password = ChangePasswordRequest::query()->create([...$validated, 'status' => 'under_review']);
+        $password = ChangePasswordRequest::query()->create([
+            ...$validated,
+            'user_id' => $request->user()->id,
+            'status' => 'under_review',
+        ]);
 
         return new ChangePasswordRequestResource($password);
     }

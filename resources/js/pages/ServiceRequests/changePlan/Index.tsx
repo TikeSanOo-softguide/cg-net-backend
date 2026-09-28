@@ -159,12 +159,11 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                                     <span className="truncate font-semibold">{request.user.name}</span>
 
                                     <p className="truncate font-mono text-xs text-muted-foreground">
-                                        {request.broadband_account.account_number}
+                                        {request.broadband_account_number ?? '—'}
                                     </p>
                                 </div>
                             ),
-                            searchValue: (request) =>
-                                `${request.user.name} ${request.broadband_account.account_number}`,
+                            searchValue: (request) => `${request.user.name} ${request.broadband_account_number ?? ''}`,
                         },
                         {
                             id: 'current_plans',

@@ -15,7 +15,7 @@ class RelocationRequestResource extends JsonResource
         return [
             'id' => $this->id,
             'user_id' => $this->user_id,
-            'broadband_account_id' => $this->broadband_account_id,
+            'broadband_account_number' => $this->broadband_account_number,
             'current_address' => $this->current_address,
             'new_address' => $this->new_address,
             'preferred_date' => $this->preferred_date?->toDateString(),

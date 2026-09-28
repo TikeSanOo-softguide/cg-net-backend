@@ -3,15 +3,15 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Enums\UserStatus;
+use App\Enums\CustomerPackageStatus;
 use App\Enums\WalletTransactionStatus;
 use App\Enums\WalletTransactionType;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Customer\BindBroadbandAccountRequest;
+use App\Http\Requests\Customer\BindAccountNumberRequest;
 use App\Http\Requests\Customer\CustomerData;
 use App\Http\Requests\Customer\StoreCustomerRequest;
 use App\Http\Requests\Customer\UpdateCustomerRequest;
 use App\Http\Requests\Customer\UpdateCustomerStatusRequest;
-use App\Models\BroadbandAccount;
 use App\Models\User;
 use App\Services\TransactionService;
 use App\Support\PackageLabel;
@@ -37,17 +37,20 @@ class CustomerController extends Controller
         }
 
         $customers = User::query()
-            ->when($sort === 'wallet', fn($query) => $query
-                ->select('users.*')
-                ->leftJoin('wallets', 'wallets.user_id', '=', 'users.id'))
+            ->when(
+                $sort === 'wallet',
+                fn($query) => $query->select('users.*')->leftJoin('wallets', 'wallets.user_id', '=', 'users.id'),
+            )
             ->with([
                 'wallet:id,user_id,balance',
-                'broadbandAccounts:id,user_id,current_package_id',
-                'broadbandAccounts.currentPackage.network:id,name_en,name_zh,name_my',
-                'broadbandAccounts.currentPackage.speed:id,mbps',
-                'broadbandAccounts.currentPackage.term:id,months',
+                'customerPackages' => fn($query) => $query
+                    ->where('status', CustomerPackageStatus::Active->value)
+                    ->with(
+                        'package.network:id,name_en,name_zh,name_my',
+                        'package.speed:id,mbps',
+                        'package.term:id,months',
+                    ),
             ])
-            ->withCount('broadbandAccounts')
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
@@ -68,10 +71,7 @@ class CustomerController extends Controller
             ->paginate(15)
             ->withQueryString()
             ->through(function (User $customer) {
-                $currentPackage = $customer->broadbandAccounts
-                    ->map(fn(BroadbandAccount $account) => $account->currentPackage)
-                    ->filter()
-                    ->first();
+                $currentPackage = $customer->customerPackages->first()?->package;
 
                 return [
                     'id' => $customer->id,
@@ -79,8 +79,7 @@ class CustomerController extends Controller
                     'phone' => $customer->phone,
                     'status' => $customer->status->value,
                     'wallet_balance' => number_format((float) ($customer->wallet?->balance ?? 0), 0, '.', ''),
-                    'broadband_connected' => $customer->broadband_accounts_count > 0,
-                    'broadband_count' => $customer->broadband_accounts_count,
+                    'broadband_connected' => $customer->broadband_account_number !== null,
                     'current_package' => [
                         'en' => PackageLabel::make($currentPackage, 'en'),
                         'my' => PackageLabel::make($currentPackage, 'my'),
@@ -138,13 +137,9 @@ class CustomerController extends Controller
         $locale = app()->getLocale();
 
         $customer->load([
-            'broadbandAccounts.currentPackage.network:id,name_en,name_zh,name_my',
-            'broadbandAccounts.currentPackage.speed:id,mbps',
-            'broadbandAccounts.currentPackage.term:id,months',
             'customerPackages.package.network:id,name_en,name_zh,name_my',
             'customerPackages.package.speed:id,mbps',
             'customerPackages.package.term:id,months',
-            'customerPackages.broadbandAccount:id,account_number',
             'wallet',
             'wallet.transactions' => fn($query) => $query->latest()->limit(10),
         ]);
@@ -222,7 +217,7 @@ class CustomerController extends Controller
                     'my' => PackageLabel::make($row->package, 'my'),
                     'zh' => PackageLabel::make($row->package, 'zh'),
                 ],
-                'account_number' => $row->broadbandAccount?->account_number,
+                'account_number' => $customer->broadband_account_number,
                 'start_date' => $row->start_date,
                 'expiry_date' => $row->expiry_date,
                 'auto_renew' => $row->auto_renew,
@@ -234,19 +229,30 @@ class CustomerController extends Controller
 
         return Inertia::render('Customer/Show', [
             'customer' => $this->customerPayload($customer),
-            'broadbandAccounts' => $customer->broadbandAccounts->map(
-                fn(BroadbandAccount $account) => [
-                    'id' => $account->id,
-                    'account_number' => $account->account_number,
-                    'customer_name' => $account->customer_name,
-                    'status' => $account->status->value,
-                    'package_name' => [
-                        'en' => PackageLabel::make($account->currentPackage, 'en'),
-                        'my' => PackageLabel::make($account->currentPackage, 'my'),
-                        'zh' => PackageLabel::make($account->currentPackage, 'zh'),
+            'accountBinding' =>
+                $customer->broadband_account_number === null
+                    ? null
+                    : [
+                        'account_number' => $customer->broadband_account_number,
+                        'status' => $customer->status->value,
+                        'package_name' => [
+                            'en' => PackageLabel::make(
+                                $customer->customerPackages->firstWhere('status', CustomerPackageStatus::Active)
+                                    ?->package,
+                                'en',
+                            ),
+                            'my' => PackageLabel::make(
+                                $customer->customerPackages->firstWhere('status', CustomerPackageStatus::Active)
+                                    ?->package,
+                                'my',
+                            ),
+                            'zh' => PackageLabel::make(
+                                $customer->customerPackages->firstWhere('status', CustomerPackageStatus::Active)
+                                    ?->package,
+                                'zh',
+                            ),
+                        ],
                     ],
-                ],
-            ),
             'packageHistory' => $packageRows->values(),
             'wallet' => [
                 'balance' => number_format((float) ($customer->wallet?->balance ?? 0), 0, '.', ''),
@@ -379,57 +385,42 @@ class CustomerController extends Controller
         );
     }
 
-    public function bindAccount(BindBroadbandAccountRequest $request, User $customer): RedirectResponse
+    public function bindAccount(BindAccountNumberRequest $request, User $customer): RedirectResponse
     {
         $accountNumber = trim($request->validated('account_number'));
-        $account = BroadbandAccount::query()->where('account_number', $accountNumber)->first();
-
-        if (!$account) {
-            return back()->withErrors(['account_number' => __('customers.account_not_found')]);
-        }
-
-        if ($account->user_id === $customer->id) {
+        if ($customer->broadband_account_number === $accountNumber) {
             return back()->withErrors(['account_number' => __('customers.account_already_bound')]);
         }
 
-        if ($account->user_id !== null) {
-            return back()->withErrors(['account_number' => __('customers.account_bound_elsewhere')]);
-        }
-
-        $account->update([
-            'user_id' => $customer->id,
-            'customer_name' => $customer->name,
-        ]);
+        $customer->update(['broadband_account_number' => $accountNumber]);
 
         activity('customers')
             ->causedBy($request->user())
             ->performedOn($customer)
             ->event('account_bound')
             ->withProperties([
-                'broadband_account_id' => $account->id,
-                'account_number' => $account->account_number,
+                'account_number' => $accountNumber,
             ])
             ->log('broadband_account_bound');
 
         return back()->with('success', 'customers.account_bound');
     }
 
-    public function unbindAccount(Request $request, User $customer, BroadbandAccount $account): RedirectResponse
+    public function unbindAccount(Request $request, User $customer): RedirectResponse
     {
-        if ($account->user_id !== $customer->id) {
+        $accountNumber = $customer->broadband_account_number;
+
+        if ($accountNumber === null) {
             abort(404);
         }
 
-        $accountNumber = $account->account_number;
-
-        $account->update(['user_id' => null]);
+        $customer->update(['broadband_account_number' => null]);
 
         activity('customers')
             ->causedBy($request->user())
             ->performedOn($customer)
             ->event('account_unbound')
             ->withProperties([
-                'broadband_account_id' => $account->id,
                 'account_number' => $accountNumber,
             ])
             ->log('broadband_account_unbound');

@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\UserStatus;
-use App\Models\PackageOrder;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -15,7 +14,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['phone', 'name', 'password', 'status'])]
+#[Fillable(['phone', 'name', 'password', 'status', 'broadband_account_number'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -28,11 +27,6 @@ class User extends Authenticatable
             'password' => 'hashed',
             'status' => UserStatus::class,
         ];
-    }
-
-    public function broadbandAccounts(): HasMany
-    {
-        return $this->hasMany(BroadbandAccount::class);
     }
 
     public function customerPackages(): HasMany
@@ -58,6 +52,11 @@ class User extends Authenticatable
     public function installationApplications(): HasMany
     {
         return $this->hasMany(InstallationApplication::class);
+    }
+
+    public function cpeDevices(): HasMany
+    {
+        return $this->hasMany(CpeDevice::class);
     }
 
     public function failureReports(): HasMany

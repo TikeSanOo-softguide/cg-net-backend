@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\ServiceRequest;
 
-use App\Enums\FailureType;
 use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\FailureReport;
@@ -27,17 +26,16 @@ class FailureReportController extends Controller
         $direction = $request->string('direction')->toString() === 'asc' ? 'asc' : 'desc';
         $sortable = ['contact_name', 'contact_phone', 'failure_type', 'status', 'created_at'];
 
-        if (! in_array($sort, $sortable, true)) {
+        if (!in_array($sort, $sortable, true)) {
             $sort = 'created_at';
         }
 
         $reports = FailureReport::query()
             ->with([
                 'user:id,name,phone',
-                'broadbandAccount:id,account_number,customer_name',
                 'photos:id,failure_report_id,image_url',
                 'admin:id,username',
-                'user.customerPackages:id,user_id,broadband_account_id,package_id,start_date,expiry_date',
+                'user.customerPackages:id,user_id,package_id,start_date,expiry_date',
                 'user.customerPackages.package:id,network_id,speed_id,term_id,price',
                 'user.customerPackages.package.network:id,name_en,name_zh,name_my',
                 'user.customerPackages.package.speed:id,mbps',
@@ -45,76 +43,84 @@ class FailureReportController extends Controller
             ])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
-                    $query->whereLike('contact_name', '%' . $search . '%')
+                    $query
+                        ->whereLike('contact_name', '%' . $search . '%')
                         ->orWhereLike('contact_phone', '%' . $search . '%')
                         ->orWhereLike('description', '%' . $search . '%')
+                        ->orWhereLike('broadband_account_number', '%' . $search . '%')
                         ->orWhereHas('user', function ($query) use ($search): void {
-                            $query->whereLike('name', '%' . $search . '%')
-                                ->orWhereLike('phone', '%' . $search . '%');
-                        })
-                        ->orWhereHas('broadbandAccount', function ($query) use ($search): void {
-                            $query->whereLike('account_number', '%' . $search . '%')
-                                ->orWhereLike('customer_name', '%' . $search . '%');
+                            $query->whereLike('name', '%' . $search . '%')->orWhereLike('phone', '%' . $search . '%');
                         });
                 });
             })
             ->when(
-                $status !== ''
-                    && in_array(
-                        $status,
-                        array_column(RequestStatus::cases(), 'value'),
-                        true
-                    ),
+                $status !== '' && in_array($status, array_column(RequestStatus::cases(), 'value'), true),
                 fn($query) => $query->where('status', $status),
             )
             ->orderBy($sort, $direction)
             ->paginate(15)
             ->withQueryString()
-            ->through(fn(FailureReport $report) => [
-                'id' => $report->id,
-                'customer_name' => $report->user?->name ?? '—',
-                'customer_phone' => $report->user?->phone ?? '—',
-                'account_number' => $report->broadbandAccount?->account_number ?? '—',
-                'account_customer' => $report->broadbandAccount?->customer_name ?? '—',
-                'failure_type' => $report->failure_type->value,
-                'contact_name' => $report->contact_name,
-                'contact_phone' => $report->contact_phone,
-                'description' => $report->description,
-                'status' => $report->status->value,
-                'created_at' => $report->created_at?->toDateString(),
-                'admin_name' =>  $report->admin?->username,
-                'photos' => $report->photos->map(fn($photo) => [
-                    'id' => $photo->id,
-                    'image_url' => $photo->image_url,
-                    'label' => $photo->label ?? null,
-                ])->all(),
-                'customer_packages' => $report->user?->customerPackages
-                    ->map(fn($customerPackage) => [
-                        'id' => $customerPackage->id,
-                        'package_id' => $customerPackage->package_id,
-                        'start_date' => $customerPackage->start_date,
-                        'expiry_date' => $customerPackage->expiry_date,
-                        'package' => $customerPackage->package ? [
-                            'id' => $customerPackage->package->id,
-                            'network' => $customerPackage->package->network ? [
-                                'id' => $customerPackage->package->network->id,
-                                'name_en' => $customerPackage->package->network->name_en,
-                                'name_zh' => $customerPackage->package->network->name_zh,
-                                'name_my' => $customerPackage->package->network->name_my,
-                            ] : null,
-                            'speed' => $customerPackage->package->speed ? [
-                                'id' => $customerPackage->package->speed->id,
-                                'mbps' => $customerPackage->package->speed->mbps,
-                            ] : null,
-                            'term' => $customerPackage->package->term ? [
-                                'id' => $customerPackage->package->term->id,
-                                'months' => $customerPackage->package->term->months,
-                            ] : null,
-                        ] : null,
-                    ])
-                    ->values()
-                    ->all(),
-            ]);
+            ->through(
+                fn(FailureReport $report) => [
+                    'id' => $report->id,
+                    'customer_name' => $report->user?->name ?? '—',
+                    'customer_phone' => $report->user?->phone ?? '—',
+                    'broadband_account_number' => $report->broadband_account_number ?? '—',
+                    'account_customer' => $report->user?->name ?? '—',
+                    'failure_type' => $report->failure_type->value,
+                    'contact_name' => $report->contact_name,
+                    'contact_phone' => $report->contact_phone,
+                    'description' => $report->description,
+                    'status' => $report->status->value,
+                    'created_at' => $report->created_at?->toDateString(),
+                    'admin_name' => $report->admin?->username,
+                    'photos' => $report->photos
+                        ->map(
+                            fn($photo) => [
+                                'id' => $photo->id,
+                                'image_url' => $photo->image_url,
+                                'label' => $photo->label ?? null,
+                            ],
+                        )
+                        ->all(),
+                    'customer_packages' => $report->user?->customerPackages
+                        ->map(
+                            fn($customerPackage) => [
+                                'id' => $customerPackage->id,
+                                'package_id' => $customerPackage->package_id,
+                                'start_date' => $customerPackage->start_date,
+                                'expiry_date' => $customerPackage->expiry_date,
+                                'package' => $customerPackage->package
+                                    ? [
+                                        'id' => $customerPackage->package->id,
+                                        'network' => $customerPackage->package->network
+                                            ? [
+                                                'id' => $customerPackage->package->network->id,
+                                                'name_en' => $customerPackage->package->network->name_en,
+                                                'name_zh' => $customerPackage->package->network->name_zh,
+                                                'name_my' => $customerPackage->package->network->name_my,
+                                            ]
+                                            : null,
+                                        'speed' => $customerPackage->package->speed
+                                            ? [
+                                                'id' => $customerPackage->package->speed->id,
+                                                'mbps' => $customerPackage->package->speed->mbps,
+                                            ]
+                                            : null,
+                                        'term' => $customerPackage->package->term
+                                            ? [
+                                                'id' => $customerPackage->package->term->id,
+                                                'months' => $customerPackage->package->term->months,
+                                            ]
+                                            : null,
+                                    ]
+                                    : null,
+                            ],
+                        )
+                        ->values()
+                        ->all(),
+                ],
+            );
 
         return Inertia::render('ServiceRequests/Failures/Index', [
             'reports' => $reports,

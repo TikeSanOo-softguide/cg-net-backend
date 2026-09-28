@@ -16,7 +16,6 @@ use App\Models\Announcement;
 use App\Models\Area;
 use App\Models\Banner;
 use App\Models\BillPayment;
-use App\Models\BroadbandAccount;
 use App\Models\Category;
 use App\Models\ChangePasswordRequest;
 use App\Models\ChangePlanRequest;
@@ -34,10 +33,6 @@ use App\Models\Wallet;
 use App\Models\WalletTransaction;
 use App\Support\AppPermissions;
 use Database\Factories\Support\MyanmarFake;
-use Database\Seeders\AreaSeeder;
-use Database\Seeders\PackageSeeder;
-use Database\Seeders\ServiceSeeder;
-use Database\Seeders\WalletSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
@@ -187,67 +182,53 @@ class DatabaseSeeder extends Seeder
             ->concat(User::factory()->count(17)->create())
             ->values();
 
-        return $users
-            ->each(function (User $user, int $index) use ($packages): void {
-                if ($index >= 3 && $index < 6) {
-                    $user->update(['status' => UserStatus::Suspended]);
-                }
-                $package = $packages->random();
-                $account = BroadbandAccount::factory()->create([
-                    'user_id' => $user->id,
-                    'customer_name' => $user->name,
-                    'current_package_id' => $package->id,
-                ]);
+        return $users->each(function (User $user, int $index) use ($packages): void {
+            if ($index >= 3 && $index < 6) {
+                $user->update(['status' => UserStatus::Suspended]);
+            }
+            $package = $packages->random();
+            $accountNumber = 'CG' . fake()->unique()->numerify('########');
+            $user->update(['broadband_account_number' => $accountNumber]);
 
-                CustomerPackage::factory()->create([
-                    'user_id' => $user->id,
-                    'broadband_account_id' => $account->id,
-                    'package_id' => $package->id,
-                    'start_date' => now()->subDays(10),
-                    'expiry_date' => now()->addDays($package->validity_days - 10),
-                    'status' => CustomerPackageStatus::Active,
-                ]);
+            CustomerPackage::factory()->create([
+                'user_id' => $user->id,
+                'package_id' => $package->id,
+                'start_date' => now()->subDays(10),
+                'expiry_date' => now()->addDays($package->validity_days - 10),
+                'status' => CustomerPackageStatus::Active,
+            ]);
 
-                if ($index % 4 === 0) {
-                    CustomerPackage::factory()
-                        ->expired()
-                        ->create([
-                            'user_id' => $user->id,
-                            'broadband_account_id' => $account->id,
-                            'package_id' => $packages->random()->id,
-                        ]);
-                }
-
-                $wallet = Wallet::factory()->create([
-                    'user_id' => $user->id,
-                    'balance' => fake()->randomElement([0, 5000, 15000, 42000]),
-                ]);
-
-                WalletTransaction::factory()
-                    ->count(3)
+            if ($index % 4 === 0) {
+                CustomerPackage::factory()
+                    ->expired()
                     ->create([
-                        'wallet_id' => $wallet->id,
-                        'type' => fake()->randomElement(WalletTransactionType::cases()),
+                        'user_id' => $user->id,
+                        'package_id' => $packages->random()->id,
                     ]);
+            }
 
-                CpeDevice::factory()->create([
-                    'broadband_account_id' => $account->id,
+            $wallet = Wallet::factory()->create([
+                'user_id' => $user->id,
+                'balance' => fake()->randomElement([0, 5000, 15000, 42000]),
+            ]);
+
+            WalletTransaction::factory()
+                ->count(3)
+                ->create([
+                    'wallet_id' => $wallet->id,
+                    'type' => fake()->randomElement(WalletTransactionType::cases()),
                 ]);
 
-                $user
-                    ->forceFill([
-                        'created_at' => now()->subDays(fake()->numberBetween(0, 29)),
-                    ])
-                    ->save();
-            })
-            ->tap(function () use ($packages): void {
-                BroadbandAccount::factory()
-                    ->unbound()
-                    ->count(3)
-                    ->create([
-                        'current_package_id' => $packages->random()->id,
-                    ]);
-            });
+            CpeDevice::factory()->create([
+                'user_id' => $user->id,
+            ]);
+
+            $user
+                ->forceFill([
+                    'created_at' => now()->subDays(fake()->numberBetween(0, 29)),
+                ])
+                ->save();
+        });
     }
 
     /**
@@ -274,23 +255,26 @@ class DatabaseSeeder extends Seeder
         $relocUser = $sample[6];
         RelocationRequest::factory()->create([
             'user_id' => $relocUser->id,
-            'broadband_account_id' => $relocUser->broadbandAccounts()->first()->id,
+            'broadband_account_number' => $relocUser->broadband_account_number,
             'status' => RequestStatus::UnderReview,
         ]);
         RelocationRequest::factory()->create([
             'user_id' => $sample[7]->id,
-            'broadband_account_id' => $sample[7]->broadbandAccounts()->first()->id,
+            'broadband_account_number' => $sample[7]->broadband_account_number,
             'status' => RequestStatus::Approved,
         ]);
 
         foreach ($users->take(20)->values() as $index => $user) {
-            $account = $user->broadbandAccounts()->first();
+            $customerPackage = $user
+                ->customerPackages()
+                ->where('status', CustomerPackageStatus::Active->value)
+                ->first();
 
-            if (!$account) {
+            if (!$customerPackage) {
                 continue;
             }
 
-            $currentPackageId = $account->current_package_id;
+            $currentPackageId = $customerPackage->package_id;
             $currentPackage = Package::query()->with('speed')->find($currentPackageId);
 
             $condition = $index % 3;
@@ -337,7 +321,7 @@ class DatabaseSeeder extends Seeder
             ChangePlanRequest::query()->firstOrCreate(
                 [
                     'user_id' => $user->id,
-                    'broadband_account_id' => $account->id,
+                    'broadband_account_number' => $user->broadband_account_number,
                     'current_package_id' => $currentPackageId,
                     'new_package_id' => $newPackage->id,
                     'preferred_date' => now()
@@ -345,6 +329,7 @@ class DatabaseSeeder extends Seeder
                         ->toDateString(),
                 ],
                 [
+                    'broadband_account_number' => $user->broadband_account_number,
                     'contact_name' => $user->name,
                     'contact_phone' => $contactPhone,
                     'note' => 'Seeded change plan request.',
@@ -367,9 +352,7 @@ class DatabaseSeeder extends Seeder
             ->take(12)
             ->values()
             ->each(function (User $user, int $index): void {
-                $account = $user->broadbandAccounts()->first();
-
-                if (!$account) {
+                if (!$user->broadband_account_number) {
                     return;
                 }
 
@@ -400,7 +383,7 @@ class DatabaseSeeder extends Seeder
 
                 BillPayment::query()->create([
                     'wallet_transaction_id' => $transaction->id,
-                    'broadband_account_id' => $account->id,
+                    'broadband_account_number' => $user->broadband_account_number,
                     'status' => BillPaymentStatus::Completed,
                     'external_bill_ref' => 'BILL-' . fake()->numerify('####'),
                     'external_payment_ref' => 'PAY-' . fake()->numerify('####'),

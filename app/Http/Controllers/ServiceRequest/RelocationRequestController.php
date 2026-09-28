@@ -23,33 +23,16 @@ class RelocationRequestController extends Controller
             : RequestStatus::UnderReview->value;
 
         $relocationRequests = RelocationRequest::query()
-            ->with([
-                'user:id,name,phone',
-                'broadbandAccount:id,account_number,customer_name',
-                'admin:id,username',
-            ])
+            ->with(['user:id,name,phone', 'admin:id,username'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
-                        ->whereHas(
-                            'user',
-                            fn($query) => $query->whereLike('name', '%' . $search . '%'
-                            )
-                        )
-                        ->orWhereHas(
-                            'broadbandAccount',
-                            fn($query) => $query->whereLike('account_number', '%' . $search . '%'
-                            )
-                        );
+                        ->whereHas('user', fn($user) => $user->whereLike('name', '%' . $search . '%'))
+                        ->orWhereLike('broadband_account_number', '%' . $search . '%');
                 });
             })
             ->when(
-                $status !== ''
-                    && in_array(
-                        $status,
-                        array_column(RequestStatus::cases(), 'value'),
-                        true
-                    ),
+                $status !== '' && in_array($status, array_column(RequestStatus::cases(), 'value'), true),
                 fn($query) => $query->where('status', $status),
             )
             ->orderBy('preferred_date')
@@ -86,7 +69,9 @@ class RelocationRequestController extends Controller
     {
         return [
             'total_requests' => RelocationRequest::query()->count(),
-            'under_reviews_requests' => RelocationRequest::query()->where('status', RequestStatus::UnderReview)->count(),
+            'under_reviews_requests' => RelocationRequest::query()
+                ->where('status', RequestStatus::UnderReview)
+                ->count(),
             'approved_requests' => RelocationRequest::query()->where('status', RequestStatus::Approved)->count(),
             'cancelled_requests' => RelocationRequest::query()->where('status', RequestStatus::Cancelled)->count(),
         ];

@@ -4,14 +4,13 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::create('change_plan_requests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('broadband_account_id')->constrained()->cascadeOnDelete();
+            $table->string('broadband_account_number', 32)->nullable()->index();
             $table->foreignId('current_package_id')->constrained('packages')->restrictOnDelete();
             $table->foreignId('new_package_id')->constrained('packages')->restrictOnDelete();
             $table->date('preferred_date');

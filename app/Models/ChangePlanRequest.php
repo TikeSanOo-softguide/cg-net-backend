@@ -10,18 +10,20 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable([
-    'user_id',
-    'broadband_account_id',
-    'current_package_id',
-    'new_package_id',
-    'preferred_date',
-    'contact_name',
-    'contact_phone',
-    'note',
-    'status',
-    'admin_id',
-])]
+#[
+    Fillable([
+        'user_id',
+        'broadband_account_number',
+        'current_package_id',
+        'new_package_id',
+        'preferred_date',
+        'contact_name',
+        'contact_phone',
+        'note',
+        'status',
+        'admin_id',
+    ]),
+]
 class ChangePlanRequest extends Model
 {
     /** @use HasFactory<ChangePlanRequestFactory> */
@@ -38,11 +40,6 @@ class ChangePlanRequest extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function broadbandAccount(): BelongsTo
-    {
-        return $this->belongsTo(BroadbandAccount::class);
     }
 
     public function currentPackage(): BelongsTo

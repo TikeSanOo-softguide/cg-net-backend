@@ -23,13 +23,14 @@ class ChangePlanRequestController extends Controller
         $changePlanRequests = ChangePlanRequest::query()
             ->with([
                 'user:id,name,phone',
-                'broadbandAccount:id,account_number',
                 'currentPackage' => function ($query) {
-                    $query->select('id', 'price', 'network_id', 'speed_id', 'term_id')
+                    $query
+                        ->select('id', 'price', 'network_id', 'speed_id', 'term_id')
                         ->with(['network:id,name_en,name_zh,name_my', 'speed:id,mbps', 'term:id,months']);
                 },
                 'newPackage' => function ($query) {
-                    $query->select('id', 'price', 'network_id', 'speed_id', 'term_id')
+                    $query
+                        ->select('id', 'price', 'network_id', 'speed_id', 'term_id')
                         ->with(['network:id,name_en,name_zh,name_my', 'speed:id,mbps', 'term:id,months']);
                 },
                 'admin:id,username',
@@ -37,8 +38,8 @@ class ChangePlanRequestController extends Controller
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
-                        ->whereHas('user', fn($query) => $query->whereLike('name', '%' . $search . '%'))
-                        ->orWhereHas('broadbandAccount', fn($query) => $query->whereLike('account_number', '%' . $search . '%'));
+                        ->whereHas('user', fn($user) => $user->whereLike('name', '%' . $search . '%'))
+                        ->orWhereLike('broadband_account_number', '%' . $search . '%');
                 });
             })
             ->when(
@@ -82,7 +83,9 @@ class ChangePlanRequestController extends Controller
     {
         return [
             'total_requests' => ChangePlanRequest::query()->count(),
-            'under_reviews_requests' => ChangePlanRequest::query()->where('status', ChangePlanStatus::UnderReview)->count(),
+            'under_reviews_requests' => ChangePlanRequest::query()
+                ->where('status', ChangePlanStatus::UnderReview)
+                ->count(),
             'approved_requests' => ChangePlanRequest::query()->where('status', ChangePlanStatus::Approved)->count(),
             'cancelled_requests' => ChangePlanRequest::query()->where('status', ChangePlanStatus::Cancelled)->count(),
         ];

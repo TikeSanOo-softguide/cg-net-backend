@@ -11,7 +11,6 @@ use App\Enums\WalletStatus;
 use App\Enums\WalletTransactionStatus;
 use App\Enums\WalletTransactionType;
 use App\Models\BillPayment;
-use App\Models\BroadbandAccount;
 use App\Models\CustomerPackage;
 use App\Models\Package;
 use App\Models\PackageOrder;
@@ -207,13 +206,12 @@ class WalletSeeder extends Seeder
      */
     private function handleFtthBill(Wallet $wallet, User $user, array &$linkedCounts): void
     {
-        $account =
-            BroadbandAccount::query()->where('user_id', $user->id)->inRandomOrder()->first() ??
-            BroadbandAccount::query()->inRandomOrder()->first();
+        $accountNumber = $user->broadband_account_number ?? $this->generateUniqueAccountNumber();
+        $user->forceFill(['broadband_account_number' => $accountNumber])->save();
 
         $package = Package::query()->whereIn('network_id', self::FTTH_NETWORK_IDS)->inRandomOrder()->first();
 
-        if (!$account || !$package) {
+        if (!$package) {
             $this->createTopup(
                 $wallet,
                 $user,
@@ -256,7 +254,7 @@ class WalletSeeder extends Seeder
                 WalletTransactionStatus::Processing,
                 $price,
             );
-            $this->createBillPayment($transaction, $account, BillPaymentStatus::Processing);
+            $this->createBillPayment($transaction, $accountNumber, BillPaymentStatus::Processing);
 
             return;
         }
@@ -271,7 +269,7 @@ class WalletSeeder extends Seeder
             $debitAmount,
         );
         $this->applyEntry($wallet, $transaction, WalletEntryType::Debit, $debitAmount);
-        $this->createBillPayment($transaction, $account, $billOutcome);
+        $this->createBillPayment($transaction, $accountNumber, $billOutcome);
 
         if ($billOutcome === BillPaymentStatus::Failed) {
             $this->refund($wallet, $user, $debitAmount, $transaction);
@@ -348,7 +346,6 @@ class WalletSeeder extends Seeder
                 'user_id' => $user->id,
                 'package_id' => $package->id,
                 'package_order_id' => $packageOrder->id,
-                'broadband_account_id' => BroadbandAccount::query()->where('user_id', $user->id)->value('id'),
                 'start_date' => now()->subDays(7),
                 'expiry_date' => now()->addDays(30),
                 'auto_renew' => false,
@@ -468,15 +465,16 @@ class WalletSeeder extends Seeder
 
     private function createBillPayment(
         WalletTransaction $transaction,
-        BroadbandAccount $account,
+        string $accountNumber,
         BillPaymentStatus $status,
     ): BillPayment {
         return BillPayment::query()->create([
             'wallet_transaction_id' => $transaction->id,
-            'broadband_account_id' => $account->id,
+            'broadband_account_number' => $accountNumber,
             'status' => $status,
             'external_bill_ref' => 'BILL-' . fake()->numerify('####'),
             'external_payment_ref' => 'PAY-' . fake()->numerify('####'),
+            'external_response' => ['broadband_account_number' => $accountNumber],
         ]);
     }
 
@@ -530,6 +528,15 @@ class WalletSeeder extends Seeder
             WalletTransactionStatus::Processing,
             WalletTransactionStatus::Failed,
         ]);
+    }
+
+    private function generateUniqueAccountNumber(): string
+    {
+        do {
+            $accountNumber = 'CG' . fake()->unique()->numerify('########');
+        } while (User::query()->where('broadband_account_number', $accountNumber)->exists());
+
+        return $accountNumber;
     }
 
     /**

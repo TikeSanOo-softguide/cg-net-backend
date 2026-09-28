@@ -32,8 +32,8 @@ type RequestItem = {
     new_wifi_name: string | null;
     new_password: string | null;
     status: string;
+    broadband_account_number: string | null;
     user: { id: number; name: string; phone: string } | null;
-    broadband_account: { id: number; account_number: string } | null;
     admin: { id: number; username: string } | null;
 };
 
@@ -154,13 +154,12 @@ export default function ChangePasswordIndex({ requests, filters, statuses, stats
                                         </div>
                                         <span className="min-w-0 truncate font-medium">{request.user?.name || ''}</span>
                                         <p className="truncate font-mono text-xs text-muted-foreground">
-                                            {request.broadband_account?.account_number}
+                                            {request.broadband_account_number ?? '—'}
                                         </p>
                                     </div>
                                 </span>
                             ),
-                            searchValue: (request) =>
-                                `${request.broadband_account?.account_number ?? ''} ${request.user?.name ?? ''}`,
+                            searchValue: (request) => `${request.broadband_account_number} ${request.user?.name ?? ''}`,
                         },
                         {
                             id: 'contact',
@@ -239,7 +238,7 @@ function ChangePasswordDetailDialog({
             open={open}
             onOpenChange={onOpenChange}
             title={t('change_password.request_title')}
-            description={request.broadband_account?.account_number ?? ''}
+            description={request.broadband_account_number ?? ''}
             icon={KeyRoundIcon}
             size="lg"
         >
@@ -274,7 +273,7 @@ function ChangePasswordDetailDialog({
                         </p>
                         <p className="flex items-center gap-1.5 font-mono text-sm font-semibold text-foreground">
                             <WifiIcon className="size-3.5 text-muted-foreground/70" />
-                            {request.broadband_account?.account_number}
+                            {request.broadband_account_number ?? '—'}
                         </p>
                         <p className="flex items-center gap-1 text-xs text-muted-foreground">
                             <UserIcon className="size-3" />
