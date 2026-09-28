@@ -20,7 +20,7 @@ return new class extends Migration {
             $table->date('expires_at')->index();
             $table->timestamp('redeemed_at')->nullable();
             $table->foreignId('redeemed_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('agent_id')->nullable()->constrained('agents')->cascadeOnUpdate()->nullOnDelete();
+            $table->foreignId('office_id')->nullable()->constrained('offices')->cascadeOnUpdate()->nullOnDelete();
             $table->foreignId('batch_id')->constrained('batches')->cascadeOnUpdate()->restrictOnDelete();
             $table
                 ->foreignId('wallet_transaction_id')

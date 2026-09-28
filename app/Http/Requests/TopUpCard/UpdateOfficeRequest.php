@@ -5,7 +5,7 @@ namespace App\Http\Requests\TopUpCard;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreAgentRequest extends FormRequest
+class UpdateOfficeRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -16,15 +16,18 @@ class StoreAgentRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:50'],
-            'cd' => ['required', 'integer', 'digits:2', Rule::unique('agents', 'cd')->whereNull('deleted_at')],
+            'cd' => [
+                'required',
+                'integer',
+                'digits:2',
+                Rule::unique('offices', 'cd')->whereNull('deleted_at')->ignore($this->route('office')),
+            ],
             'address' => ['required', 'string', 'max:255'],
         ];
     }
 
     public function messages(): array
     {
-        return [
-            'cd.unique' => __('top_up_cards.validation.agent_cd_unique'),
-        ];
+        return ['cd.unique' => __('top_up_cards.validation.office_cd_unique')];
     }
 }

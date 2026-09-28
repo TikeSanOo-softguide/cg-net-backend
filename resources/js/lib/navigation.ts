@@ -161,9 +161,9 @@ export const navigation: NavGroup[] = [
         icon: Ticket,
         children: [
             {
-                labelKey: 'menu.top_up_card_agents',
-                descriptionKey: 'menu.top_up_card_agents_description',
-                href: '/top-up-cards/agents',
+                labelKey: 'menu.top_up_card_offices',
+                descriptionKey: 'menu.top_up_card_offices_description',
+                href: '/top-up-cards/offices',
                 icon: UserRound,
             },
             {
@@ -173,9 +173,9 @@ export const navigation: NavGroup[] = [
                 icon: Ticket,
             },
             {
-                labelKey: 'menu.top_up_card_agent_assign',
-                descriptionKey: 'menu.top_up_card_agent_assign_description',
-                href: '/top-up-cards/agent-assign',
+                labelKey: 'menu.top_up_card_office_assign',
+                descriptionKey: 'menu.top_up_card_office_assign_description',
+                href: '/top-up-cards/office-assign',
                 icon: UserCog,
             },
             {

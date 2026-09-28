@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\TopUpCard;
 
-use App\Support\TopUpCardAgents;
+use App\Support\TopUpCardOffices;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -25,8 +25,8 @@ class GenerateTopUpCardsRequest extends FormRequest
             'amounts' => ['required', 'array', 'min:1', 'max:12'],
             'amounts.*.value' => ['required', 'integer', 'min:50', 'max:1000000'],
             'amounts.*.quantity' => ['required', 'integer', 'min:1', 'max:' . $maxCards],
-            'agent_ids' => ['nullable', 'array', 'max:50'],
-            'agent_ids.*' => ['integer', Rule::exists('agents', 'id')->whereNull('deleted_at')],
+            'office_ids' => ['nullable', 'array', 'max:50'],
+            'office_ids.*' => ['integer', Rule::exists('offices', 'id')->whereNull('deleted_at')],
             'expires_at' => ['required', 'date', 'after_or_equal:today'],
         ];
     }
@@ -55,20 +55,20 @@ class GenerateTopUpCardsRequest extends FormRequest
             }
 
             $maxCards = (int) config('top_up_cards.max_cards');
-            $agentIds = array_values(array_unique(array_map('intval', $this->input('agent_ids', []))));
-            $agentCount = count(TopUpCardAgents::resolveCodes($agentIds));
+            $officeIds = array_values(array_unique(array_map('intval', $this->input('office_ids', []))));
+            $officeCount = count(TopUpCardOffices::resolveCodes($officeIds));
 
-            if ($agentCount < 1) {
+            if ($officeCount < 1) {
                 $validator->errors()->add(
-                    'agent_ids',
-                    __('top_up_cards.validation.agents_required'),
+                    'office_ids',
+                    __('top_up_cards.validation.offices_required'),
                 );
 
                 return;
             }
 
             $total = collect($this->input('amounts', []))->sum(fn($tier): int => (int) ($tier['quantity'] ?? 0));
-            $issued = $total * $agentCount;
+            $issued = $total * $officeCount;
 
             if ($issued > $maxCards) {
                 $validator->errors()->add(

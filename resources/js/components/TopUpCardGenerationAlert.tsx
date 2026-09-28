@@ -8,6 +8,7 @@ type GenerationStatus = {
     token: string | null;
     status: 'processing' | 'completed' | 'failed' | null;
     total_cards: number;
+    source?: string | null;
 };
 
 const WATCH_KEY = 'top_up_card_generation_watch';
@@ -98,7 +99,7 @@ export function TopUpCardGenerationAlert() {
                 toast({
                     variant: 'success',
                     title: translate('toast.success'),
-                    description: translate('top_up_cards.generated').replace(
+                    description: translate(status.source === 'csv_import' ? 'top_up_cards.imported' : 'top_up_cards.generated').replace(
                         ':count',
                         String(status.total_cards ?? 0),
                     ),

@@ -7,12 +7,11 @@ use App\Jobs\GenerateTopUpCardsJob;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TopUpCard\GenerateTopUpCardsRequest;
 use App\Models\Admin;
-use App\Models\Agent;
+use App\Models\Office;
 use App\Models\Batch;
 use App\Models\TopUpCard;
-use App\Models\TopUpCardBatchCode;
 use App\Support\GeneratesTopUpCards;
-use App\Support\TopUpCardAgents;
+use App\Support\TopUpCardOffices;
 use App\Support\TopUpCardGenerationStatus;
 use App\Http\Controllers\InOutManagement\CSV\TopUpCard as TopUpCardCsv;
 use Illuminate\Http\RedirectResponse;
@@ -96,8 +95,8 @@ class TopUpCardController extends Controller
             ],
         ];
 
-        if ($partialOnly === null || $this->wantsInertiaProp($partialOnly, 'agents')) {
-            $props['agents'] = $this->agentOptions();
+        if ($partialOnly === null || $this->wantsInertiaProp($partialOnly, 'offices')) {
+            $props['offices'] = $this->officeOptions();
         }
 
         if ($partialOnly === null || $this->wantsInertiaProp($partialOnly, 'generated')) {
@@ -111,6 +110,7 @@ class TopUpCardController extends Controller
                 'total_cards' => (int) ($generation['total_cards'] ?? 0),
                 'completed_chunks' => (int) ($generation['completed_chunks'] ?? 0),
                 'total_chunks' => (int) ($generation['total_chunks'] ?? 0),
+                'source' => $generation['source'] ?? null,
             ];
         }
 
@@ -174,11 +174,11 @@ class TopUpCardController extends Controller
 
             $token = Str::random(64);
             $amounts = $request->validated('amounts');
-            $agentIds = array_values(array_unique(array_map('intval', $request->validated('agent_ids', []))));
-            $agentCodes = TopUpCardAgents::resolveCodes($agentIds);
+            $officeIds = array_values(array_unique(array_map('intval', $request->validated('office_ids', []))));
+            $officeCodes = TopUpCardOffices::resolveCodes($officeIds);
             $expiresAt = $request->date('expires_at')->toDateString();
             $chunkSize = max(1, (int) config('top_up_cards.chunk_size', 500));
-            $chunks = $this->buildGenerationPlan($agentCodes, $amounts, $chunkSize);
+            $chunks = $this->buildGenerationPlan($officeCodes, $amounts, $chunkSize);
 
             if ($previousToken !== null) {
                 $this->clearGenerationCache($previousToken);
@@ -192,13 +192,13 @@ class TopUpCardController extends Controller
             $amountBreakdown = [];
             $metadataItems = [];
 
-            foreach ($agentCodes as $agentCode) {
+            foreach ($officeCodes as $officeCode) {
                 foreach ($amounts as $tier) {
                     $amount = (int) $tier['value'];
                     $quantity = (int) $tier['quantity'];
 
                     $metadataItems[] = [
-                        'agent_cd' => (string) $agentCode,
+                        'office_cd' => (string) $officeCode,
                         'amount' => $amount,
                         'quantity' => $quantity,
                     ];
@@ -208,7 +208,7 @@ class TopUpCardController extends Controller
             foreach ($amounts as $tier) {
                 $amount = (int) $tier['value'];
                 $quantity = (int) $tier['quantity'];
-                $issuedCards = $quantity * count($agentCodes);
+                $issuedCards = $quantity * count($officeCodes);
                 $issuedValue = $amount * $issuedCards;
 
                 $totalCards += $issuedCards;
@@ -231,7 +231,7 @@ class TopUpCardController extends Controller
                     'total_chunks' => count($chunks),
                     'expires_at' => $expiresAt,
                     'amounts' => $amountBreakdown,
-                    'agent_codes' => $agentCodes,
+                    'office_codes' => $officeCodes,
                     'user_id' => $userId,
                 ],
                 now()->addDay(),
@@ -257,7 +257,7 @@ class TopUpCardController extends Controller
                     $userId,
                     $token,
                     $productionDate->toIso8601String(),
-                    $chunk['agent_code'],
+                    $chunk['office_code'],
                     $index,
                     count($chunks),
                     (int) $cardBatch->id,
@@ -328,7 +328,7 @@ class TopUpCardController extends Controller
                     'total_chunks' => count($chunks),
                     'expires_at' => $expiresAt,
                     'amounts' => $amountBreakdown,
-                    'agent_codes' => $agentCodes,
+                    'office_codes' => $officeCodes,
                     'batch_id' => $queueBatch->id,
                     'top_up_batch_id' => $cardBatch->id,
                     'top_up_batch_no' => $cardBatch->batch_no,
@@ -346,22 +346,22 @@ class TopUpCardController extends Controller
     }
 
     /**
-     * @param  list<string>  $agentCodes
+    * @param  list<string>  $officeCodes
      * @param  list<array{value: int|string, quantity: int}>  $amounts
-     * @return list<array{agent_code: string, amounts: list<array{value: int|string, quantity: int}>}>
+    * @return list<array{office_code: string, amounts: list<array{value: int|string, quantity: int}>}>
      */
-    private function buildGenerationPlan(array $agentCodes, array $amounts, int $chunkSize): array
+    private function buildGenerationPlan(array $officeCodes, array $amounts, int $chunkSize): array
     {
         $plan = [];
 
-        foreach ($agentCodes as $agentCode) {
+        foreach ($officeCodes as $officeCode) {
             foreach ($amounts as $tier) {
                 $remaining = (int) $tier['quantity'];
 
                 while ($remaining > 0) {
                     $quantity = min($remaining, $chunkSize);
                     $plan[] = [
-                        'agent_code' => (string) $agentCode,
+                        'office_code' => (string) $officeCode,
                         'amounts' => [
                             [
                                 'value' => $tier['value'],
@@ -508,35 +508,35 @@ class TopUpCardController extends Controller
     /**
      * @return list<array{id: int, name: string}>
      */
-    private function agentOptions(): array
+    private function officeOptions(): array
     {
         /** @var list<array{id: int, name: string}>|null $cached */
-        $cached = Cache::get('top_up_cards.agent_options');
+        $cached = Cache::get('top_up_cards.office_options');
 
         if (is_array($cached) && $cached !== []) {
             return $cached;
         }
 
-        $agents = Agent::query()
+        $offices = Office::query()
             ->select(['id', 'name'])
             ->orderBy('name')
             ->get()
             ->map(
-                fn(Agent $agent): array => [
-                    'id' => (int) $agent->id,
-                    'name' => (string) $agent->name,
+                fn(Office $office): array => [
+                    'id' => (int) $office->id,
+                    'name' => (string) $office->name,
                 ],
             )
             ->all();
 
-        // Do not cache an empty list — agents may be added right after the first visit.
-        if ($agents !== []) {
-            Cache::put('top_up_cards.agent_options', $agents, now()->addMinutes(5));
+        // Do not cache an empty list — offices may be added right after the first visit.
+        if ($offices !== []) {
+            Cache::put('top_up_cards.office_options', $offices, now()->addMinutes(5));
         } else {
-            Cache::forget('top_up_cards.agent_options');
+            Cache::forget('top_up_cards.office_options');
         }
 
-        return $agents;
+        return $offices;
     }
 
     private function generationToken(Request $request): ?string
@@ -869,12 +869,7 @@ class TopUpCardController extends Controller
 
     private function presetAmounts(): Collection
     {
-        return TopUpCardBatchCode::query()
-            ->orderBy('amount')
-            ->pluck('amount')
-            ->map(fn($amount): int => (int) $amount)
-            ->unique()
-            ->values();
+        return collect([50, 100, 250, 500]);
     }
 
     /**
@@ -882,8 +877,12 @@ class TopUpCardController extends Controller
      */
     private function amountOptions(): array
     {
-        return $this->presetAmounts()
-            ->map(fn(int $amount): string => (string) $amount)
+        return TopUpCard::query()
+            ->select('amount')
+            ->distinct()
+            ->orderBy('amount')
+            ->pluck('amount')
+            ->map(fn($amount): string => (string) $amount)
             ->all();
     }
 

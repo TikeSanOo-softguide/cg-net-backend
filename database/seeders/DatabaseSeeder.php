@@ -49,8 +49,7 @@ class DatabaseSeeder extends Seeder
         $areas = $this->seedAreas();
         $packages = $this->seedPackages();
         $users = $this->seedCustomers($packages);
-        $this->seedAgents();
-        $this->seedTopUpCardBatchCodes();
+        $this->seedOffices();
         $this->seedServiceRequests($users, $areas, $packages);
         $this->seedFailureReports();
         $this->seedBilling($users);
@@ -117,11 +116,6 @@ class DatabaseSeeder extends Seeder
         (new TopUpCardSeeder())->run();
     }
 
-    private function seedTopUpCardBatchCodes(): void
-    {
-        (new TopUpCardBatchCodeSeeder())->run();
-    }
-
     private function seedWalletSystem(): void
     {
         (new WalletSeeder())->run();
@@ -132,9 +126,9 @@ class DatabaseSeeder extends Seeder
         (new FailureReportSeeder())->run();
     }
 
-    private function seedAgents(): void
+    private function seedOffices(): void
     {
-        (new AgentSeeder())->run();
+        (new OfficeSeeder())->run();
     }
 
     private function seedChatConversations(): void

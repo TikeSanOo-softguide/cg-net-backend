@@ -19,7 +19,7 @@ class BatchFactory extends Factory
     {
         $amount = fake()->randomElement([50, 100, 250, 500]);
         $quantity = fake()->numberBetween(1, 100);
-        $agentCd = (string) fake()->randomElement(['88', '11', '22']);
+        $officeCd = (string) fake()->randomElement(['88', '11', '22']);
 
         return [
             'batch_no' => now('Asia/Yangon')->format('YmdHisv'),
@@ -30,7 +30,7 @@ class BatchFactory extends Factory
             'metadata' => [
                 'items' => [
                     [
-                        'agent_cd' => $agentCd,
+                        'office_cd' => $officeCd,
                         'amount' => $amount,
                         'quantity' => $quantity,
                     ],
