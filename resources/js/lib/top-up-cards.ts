@@ -1,5 +1,3 @@
-export const TOP_UP_CARD_PRESETS = [50, 100, 250, 500] as const;
-
 export const TOP_UP_CARD_CURRENCY = 'Points';
 
 export type TopUpCardRow = {

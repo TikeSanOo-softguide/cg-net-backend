@@ -23,7 +23,7 @@ import { FormField } from '../ui/form-field';
 
 type TopUpCardListTableProps = {
     cards: Paginated<TopUpCardRow>;
-    amounts: string[];
+    amounts: number[];
     batches: {
         id: number;
         batch_no: string;
@@ -142,7 +142,7 @@ export function TopUpCardListTable({
                                     <SelectContent>
                                         <SelectItem value="all">{t('common.all')}</SelectItem>
                                         {amounts.map((amount) => (
-                                            <SelectItem key={amount} value={amount}>
+                                            <SelectItem key={amount} value={String(amount)}>
                                                 {formatTopUpAmount(amount)}
                                             </SelectItem>
                                         ))}

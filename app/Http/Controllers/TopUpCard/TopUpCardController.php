@@ -10,6 +10,7 @@ use App\Models\Admin;
 use App\Models\Agent;
 use App\Models\Batch;
 use App\Models\TopUpCard;
+use App\Models\TopUpCardBatchCode;
 use App\Support\GeneratesTopUpCards;
 use App\Support\TopUpCardAgents;
 use App\Support\TopUpCardGenerationStatus;
@@ -28,11 +29,6 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TopUpCardController extends Controller
 {
-    /**
-     * @var list<int>
-     */
-    public const Presets = [50, 100, 250, 500];
-
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search'));
@@ -119,7 +115,7 @@ class TopUpCardController extends Controller
         }
 
         if ($partialOnly === null || $this->wantsInertiaProp($partialOnly, 'presets')) {
-            $props['presets'] = self::Presets;
+            $props['presets'] = $this->presetAmounts();
         }
 
         if ($partialOnly === null || $this->wantsInertiaProp($partialOnly, 'max_cards')) {
@@ -807,7 +803,7 @@ class TopUpCardController extends Controller
 
         return Inertia::render('TopUpCards/CardHistory', [
             'cards' => $cards,
-            'presets' => self::Presets,
+            'generated' => $request->session()->get('top_up_card_export_batch', []),
             'amounts' => $this->amountOptions(),
             'batches' => $batches,
             'stats' => $this->stats(),
@@ -871,28 +867,24 @@ class TopUpCardController extends Controller
         ];
     }
 
+    private function presetAmounts(): Collection
+    {
+        return TopUpCardBatchCode::query()
+            ->orderBy('amount')
+            ->pluck('amount')
+            ->map(fn($amount): int => (int) $amount)
+            ->unique()
+            ->values();
+    }
+
     /**
      * @return list<string>
      */
     private function amountOptions(): array
     {
-        /** @var list<string> */
-        return Cache::remember('top_up_cards.amount_options', now()->addMinutes(5), function (): array {
-            $stored = TopUpCard::query()
-                ->select('amount')
-                ->distinct()
-                ->orderBy('amount')
-                ->pluck('amount')
-                ->map(fn($amount): string => (string) $amount);
-
-            return Collection::make(self::Presets)
-                ->map(fn(int $amount): string => (string) $amount)
-                ->merge($stored)
-                ->map(fn(string|int $amount): string => (string) (int) $amount)
-                ->unique()
-                ->values()
-                ->all();
-        });
+        return $this->presetAmounts()
+            ->map(fn(int $amount): string => (string) $amount)
+            ->all();
     }
 
     private function stats(): array

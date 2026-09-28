@@ -5,7 +5,10 @@ namespace App\Support;
 use App\Enums\BatchStatus;
 use App\Enums\TopUpCardStatus;
 use App\Models\Batch;
+use App\Models\TopUpCard;
+use App\Models\TopUpCardBatchCode;
 use Carbon\CarbonInterface;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -426,11 +429,13 @@ final class GeneratesTopUpCards
     {
         $normalized = (int) round((float) $amount);
 
+        $configuredCode = TopUpCardBatchCode::query()->where('amount', $normalized)->value('batch_code');
+
+        if ($configuredCode !== null) {
+            return $configuredCode;
+        }
+
         return match ($normalized) {
-            50 => '1101',
-            100 => '1201',
-            250 => '1501',
-            500 => '1111',
             default => str_pad((string) abs($normalized % 10000), 4, '0', STR_PAD_LEFT),
         };
     }

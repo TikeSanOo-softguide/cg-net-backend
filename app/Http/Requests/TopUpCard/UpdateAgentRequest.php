@@ -19,7 +19,6 @@ class UpdateAgentRequest extends FormRequest
                 'required',
                 'string',
                 'max:50',
-                Rule::unique('agents', 'name')->whereNull('deleted_at')->ignore($this->route('agent')),
             ],
             'cd' => [
                 'required',
@@ -34,7 +33,7 @@ class UpdateAgentRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.unique' => __('top_up_cards.validation.agent_name_unique'),
+            'cd.unique' => __('top_up_cards.validation.agent_cd_unique'),
         ];
     }
 }

@@ -6,11 +6,15 @@ use App\Enums\TopUpCardStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TopUpCard\AssignAgentRequest;
 use App\Http\Requests\TopUpCard\AssignCardsToAgentRequest;
+use App\Http\Requests\TopUpCard\DeleteBatchCodeRequest;
 use App\Http\Requests\TopUpCard\StoreAgentRequest;
+use App\Http\Requests\TopUpCard\StoreBatchCodeRequest;
 use App\Http\Requests\TopUpCard\UpdateAgentRequest;
+use App\Http\Requests\TopUpCard\UpdateBatchCodeRequest;
 use App\Models\Agent;
 use App\Models\Batch;
 use App\Models\TopUpCard;
+use App\Models\TopUpCardBatchCode;
 use App\Http\Controllers\InOutManagement\CSV\TopUpCard as TopUpCardCsv;
 use App\Support\CsvImportException;
 use Illuminate\Http\RedirectResponse;
@@ -34,11 +38,15 @@ class AgentController extends Controller
         $agents = $agentQuery->paginate(15)->withQueryString();
         $agentCds = Agent::query()->pluck('cd')->map(fn($cd): string => (string) $cd)->values();
         $agentNames = Agent::query()->pluck('name')->values();
+        $batchCodes = TopUpCardBatchCode::query()
+            ->orderBy('amount')
+            ->get(['id', 'amount', 'batch_code']);
 
         return Inertia::render('TopUpCards/Agent', [
             'agents' => $agents,
             'agentCds' => $agentCds,
             'agentNames' => $agentNames,
+            'batchCodes' => $batchCodes,
             'filters' => ['search' => $search],
         ]);
     }
@@ -167,26 +175,10 @@ class AgentController extends Controller
         return redirect()->route($route)->with('success', 'Top-up cards imported successfully.');
     }
 
-    public function store(StoreAgentRequest $request): RedirectResponse
+     public function store(StoreAgentRequest $request): RedirectResponse
     {
-        $agent = Agent::withTrashed()
-            ->where('name', $request->string('name')->toString())
-            ->first();
-
-        if ($agent?->trashed()) {
-            $agent->restore();
-            $agent->update($request->validated());
-        } else {
-            $agent = Agent::query()->create($request->validated());
-        }
-
-        Cache::forget('top_up_cards.agent_options');
-
-        activity('top-up-cards')
-            ->causedBy($request->user())
-            ->performedOn($agent)
-            ->event('created')
-            ->log('agent_created');
+        $agent = Agent::query()->create($request->validated());
+        activity('top-up-cards')->causedBy($request->user())->performedOn($agent)->event('created')->log('agent_created');
 
         return back()->with('success', 'Agent created successfully.');
     }
@@ -205,6 +197,31 @@ class AgentController extends Controller
         Cache::forget('top_up_cards.agent_options');
 
         return back()->with('success', 'Agent deleted successfully.');
+    }
+
+    public function storeBatchCode(StoreBatchCodeRequest $request): RedirectResponse
+    {
+        TopUpCardBatchCode::query()->create($request->validated());
+
+        return back()->with('success', 'Batch code created successfully.');
+    }
+
+    public function updateBatchCode(UpdateBatchCodeRequest $request, TopUpCardBatchCode $batchCode): RedirectResponse
+    {
+        $batchCode->update($request->validated());
+
+        return back()->with('success', 'Batch code updated successfully.');
+    }
+
+    public function destroyBatchCode(DeleteBatchCodeRequest $request, TopUpCardBatchCode $batchCode): RedirectResponse
+    {
+        if (TopUpCard::query()->where('amount', $batchCode->amount)->exists()) {
+            return back()->with('error', 'This batch code cannot be deleted because cards use its amount.');
+        }
+
+        $batchCode->delete();
+
+        return back()->with('success', 'Batch code deleted successfully.');
     }
 
     public function assign(AssignAgentRequest $request, TopUpCard $topUpCard): RedirectResponse
