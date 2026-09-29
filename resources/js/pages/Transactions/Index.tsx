@@ -20,6 +20,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { toolbarInputClass } from '@/components/data-table/styles';
 import { formControlStateClass } from '@/lib/form-control';
 import { formatTopUpAmount, formatTopUpNumber, TOP_UP_CARD_CURRENCY } from '@/lib/top-up-cards';
+import { WALLET_TRANSFERS_ENABLED } from '@/lib/featureFlags';
 import { cn, formatDateTime } from '@/lib/utils';
 
 type Customer = {
@@ -497,7 +498,12 @@ export function TransactionsTable({
                                 label={t('transactions.detail_fields.reversal_of')}
                                 value={selected.reversal_of}
                                 copyable
+                            />{' '}
+                            <DetailItem
+                                label={t('transactions.actor_type')}
+                                value={selected.actor_type ? actorLabel(selected.actor_type, t) : null}
                             />
+                            <DetailItem label={t('transactions.detail_fields.actor_id')} value={selected.actor_id} />
                             <DetailItem label={t('transactions.customer')} value={selected.customer?.name} />
                             <DetailItem
                                 label={t('transactions.detail_fields.customer_phone')}
@@ -523,40 +529,39 @@ export function TransactionsTable({
                                 label={t('transactions.detail_fields.balance_after')}
                                 value={formatTopUpAmount(selected.wallet_entry?.balance_after ?? '')}
                             />
-                            <DetailItem
-                                label={t('transactions.actor_type')}
-                                value={selected.actor_type ? actorLabel(selected.actor_type, t) : null}
-                            />
-                            <DetailItem label={t('transactions.detail_fields.actor_id')} value={selected.actor_id} />
                             <DetailItem label={t('common.status')} value={t(`status.${selected.status}`)} />
                             <DetailItem
                                 label={t('transactions.detail_fields.idempotency_key')}
                                 value={selected.idempotency_key}
                             />{' '}
-                            <DetailItem
-                                label={t('transactions.detail_fields.transfer_from_wallet')}
-                                value={selected.wallet_transfer?.from_wallet_id}
-                                copyable
-                                secondary={
-                                    selected.wallet_transfer?.from_wallet_user
-                                        ? `${selected.wallet_transfer.from_wallet_user.name} · ${selected.wallet_transfer.from_wallet_user.phone}`
-                                        : null
-                                }
-                            />
-                            <DetailItem
-                                label={t('transactions.detail_fields.transfer_to_wallet')}
-                                value={selected.wallet_transfer?.to_wallet_id}
-                                copyable
-                                secondary={
-                                    selected.wallet_transfer?.to_wallet_user
-                                        ? `${selected.wallet_transfer.to_wallet_user.name} · ${selected.wallet_transfer.to_wallet_user.phone}`
-                                        : null
-                                }
-                            />
-                            <DetailItem
-                                label={t('transactions.detail_fields.transfer_note')}
-                                value={selected.wallet_transfer?.note}
-                            />
+                            {WALLET_TRANSFERS_ENABLED ? (
+                                <>
+                                    <DetailItem
+                                        label={t('transactions.detail_fields.transfer_from_wallet')}
+                                        value={selected.wallet_transfer?.from_wallet_id}
+                                        copyable
+                                        secondary={
+                                            selected.wallet_transfer?.from_wallet_user
+                                                ? `${selected.wallet_transfer.from_wallet_user.name} · ${selected.wallet_transfer.from_wallet_user.phone}`
+                                                : null
+                                        }
+                                    />
+                                    <DetailItem
+                                        label={t('transactions.detail_fields.transfer_to_wallet')}
+                                        value={selected.wallet_transfer?.to_wallet_id}
+                                        copyable
+                                        secondary={
+                                            selected.wallet_transfer?.to_wallet_user
+                                                ? `${selected.wallet_transfer.to_wallet_user.name} · ${selected.wallet_transfer.to_wallet_user.phone}`
+                                                : null
+                                        }
+                                    />
+                                    <DetailItem
+                                        label={t('transactions.detail_fields.transfer_note')}
+                                        value={selected.wallet_transfer?.note}
+                                    />
+                                </>
+                            ) : null}
                             <DetailItem
                                 label={t('transactions.detail_fields.bill_payment_id')}
                                 value={selected.related.bill_payment_id}

@@ -18,7 +18,7 @@ use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletEntry;
 use App\Models\WalletTransaction;
-use App\Models\WalletTransfer;
+// use App\Models\WalletTransfer;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 
@@ -72,7 +72,7 @@ class WalletSeeder extends Seeder
 
         $movableTypes = [
             WalletTransactionType::Topup,
-            WalletTransactionType::Transfer,
+            // WalletTransactionType::Transfer,
             WalletTransactionType::FtthBill,
             WalletTransactionType::WifiPackage,
             WalletTransactionType::Adjustment,
@@ -81,7 +81,7 @@ class WalletSeeder extends Seeder
         ];
 
         $linkedCounts = [
-            WalletTransactionType::Transfer->value => 0,
+            // WalletTransactionType::Transfer->value => 0,
             WalletTransactionType::FtthBill->value => 0,
             WalletTransactionType::WifiPackage->value => 0,
         ];
@@ -104,9 +104,7 @@ class WalletSeeder extends Seeder
                     fake()->randomElement(self::TOPUP_AMOUNTS),
                     $this->topupStatus(),
                 ),
-
-                WalletTransactionType::Transfer => $this->handleTransfer($wallet, $user, $amount, $linkedCounts),
-
+                // WalletTransactionType::Transfer => $this->handleTransfer($wallet, $user, $amount, $linkedCounts),
                 WalletTransactionType::FtthBill => $this->handleFtthBill($wallet, $user, $linkedCounts),
 
                 WalletTransactionType::WifiPackage => $this->handleWifiPackage($wallet, $user, $linkedCounts),
@@ -139,66 +137,66 @@ class WalletSeeder extends Seeder
     /**
      * -------- Transfer: a Debit on this wallet, mirrored as a Credit on the other wallet. --------
      */
-    private function handleTransfer(Wallet $wallet, User $user, int $amount, array &$linkedCounts): void
-    {
-        $otherWallet = Wallet::query()->where('id', '!=', $wallet->id)->inRandomOrder()->first();
+    // private function handleTransfer(Wallet $wallet, User $user, int $amount, array &$linkedCounts): void
+    // {
+    //     $otherWallet = Wallet::query()->where('id', '!=', $wallet->id)->inRandomOrder()->first();
 
-        // No counterpart wallet exists yet — fall back to a Topup instead of faking a transfer.
-        if (!$otherWallet) {
-            $this->createTopup(
-                $wallet,
-                $user,
-                fake()->randomElement(self::TOPUP_AMOUNTS),
-                WalletTransactionStatus::Completed,
-            );
+    //     // No counterpart wallet exists yet — fall back to a Topup instead of faking a transfer.
+    //     if (!$otherWallet) {
+    //         $this->createTopup(
+    //             $wallet,
+    //             $user,
+    //             fake()->randomElement(self::TOPUP_AMOUNTS),
+    //             WalletTransactionStatus::Completed,
+    //         );
 
-            return;
-        }
+    //         return;
+    //     }
 
-        $status = $this->randomStatus();
-        $transaction = $this->makeTransaction($wallet, $user, WalletTransactionType::Transfer, $status, $amount);
+    //     $status = $this->randomStatus();
+    //     $transaction = $this->makeTransaction($wallet, $user, WalletTransactionType::Transfer, $status, $amount);
 
-        $linkedCounts[WalletTransactionType::Transfer->value]++;
+    //     $linkedCounts[WalletTransactionType::Transfer->value]++;
 
-        WalletTransfer::query()->create([
-            'wallet_transaction_id' => $transaction->id,
-            'from_wallet_id' => $wallet->id,
-            'to_wallet_id' => $otherWallet->id,
-            'amount' => $amount,
-            'note' => 'Sample wallet transfer',
-        ]);
+    //     WalletTransfer::query()->create([
+    //         'wallet_transaction_id' => $transaction->id,
+    //         'from_wallet_id' => $wallet->id,
+    //         'to_wallet_id' => $otherWallet->id,
+    //         'amount' => $amount,
+    //         'note' => 'Sample wallet transfer',
+    //     ]);
 
-        if ($status !== WalletTransactionStatus::Completed) {
-            // Pending/Processing/Failed transfers never move money.
-            return;
-        }
+    //     if ($status !== WalletTransactionStatus::Completed) {
+    //         // Pending/Processing/Failed transfers never move money.
+    //         return;
+    //     }
 
-        // Can't send more than the wallet actually has.
-        $sendAmount = min($amount, $wallet->balance);
+    //     // Can't send more than the wallet actually has.
+    //     $sendAmount = min($amount, $wallet->balance);
 
-        if ($sendAmount <= 0) {
-            // Nothing to send — treat the attempt as failed instead of debiting a phantom amount.
-            $transaction->update(['status' => WalletTransactionStatus::Failed]);
+    //     if ($sendAmount <= 0) {
+    //         // Nothing to send — treat the attempt as failed instead of debiting a phantom amount.
+    //         $transaction->update(['status' => WalletTransactionStatus::Failed]);
 
-            return;
-        }
+    //         return;
+    //     }
 
-        $this->applyEntry($wallet, $transaction, WalletEntryType::Debit, $sendAmount);
+    //     $this->applyEntry($wallet, $transaction, WalletEntryType::Debit, $sendAmount);
 
-        // Mirror transaction on the receiving wallet so its ledger also balances.
-        // Attributed to the receiver (not the sender) since it's their wallet being credited,
-        // and actor_type is System because the receiver didn't initiate this themselves.
-        $receiver = $otherWallet->user ?? $user;
-        $incoming = $this->makeTransaction(
-            $otherWallet,
-            $receiver,
-            WalletTransactionType::Transfer,
-            WalletTransactionStatus::Completed,
-            $sendAmount,
-        );
-        $incoming->update(['actor_type' => WalletActorType::System]);
-        $this->applyEntry($otherWallet, $incoming, WalletEntryType::Credit, $sendAmount);
-    }
+    //     // Mirror transaction on the receiving wallet so its ledger also balances.
+    //     // Attributed to the receiver (not the sender) since it's their wallet being credited,
+    //     // and actor_type is System because the receiver didn't initiate this themselves.
+    //     $receiver = $otherWallet->user ?? $user;
+    //     $incoming = $this->makeTransaction(
+    //         $otherWallet,
+    //         $receiver,
+    //         WalletTransactionType::Transfer,
+    //         WalletTransactionStatus::Completed,
+    //         $sendAmount,
+    //     );
+    //     $incoming->update(['actor_type' => WalletActorType::System]);
+    //     $this->applyEntry($otherWallet, $incoming, WalletEntryType::Credit, $sendAmount);
+    // }
 
     /**
      * -------- FTTH Bill: a Debit tied 1:1 to a BillPayment. --------
@@ -506,7 +504,7 @@ class WalletSeeder extends Seeder
         $weight = fn(WalletTransactionType $type): int => match ($type) {
             WalletTransactionType::FtthBill => 4,
             WalletTransactionType::WifiPackage => 4,
-            WalletTransactionType::Transfer => 3,
+            // WalletTransactionType::Transfer => 3,
             WalletTransactionType::Topup => 2,
             WalletTransactionType::Adjustment => 1,
             default => 1,

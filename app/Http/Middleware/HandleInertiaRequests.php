@@ -6,7 +6,6 @@ use App\Models\Admin;
 use App\Models\NotificationCustom;
 use App\Support\AppPermissions;
 use App\Support\JsonTranslations;
-use App\Support\TopUpCardGenerationStatus;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -46,43 +45,23 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $user ? [
-                    'id' => $user->id,
-                    'username' => $user->username,
-                ] : null,
-                'permissions' => $user instanceof Admin
-                    ? $user->getAllPermissions()->pluck('name')->values()->all()
-                    : [],
-                'roles' => $user instanceof Admin
-                    ? $user->getRoleNames()->values()->all()
-                    : [],
+                'user' => $user
+                    ? [
+                        'id' => $user->id,
+                        'username' => $user->username,
+                    ]
+                    : null,
+                'permissions' =>
+                    $user instanceof Admin ? $user->getAllPermissions()->pluck('name')->values()->all() : [],
+                'roles' => $user instanceof Admin ? $user->getRoleNames()->values()->all() : [],
                 'is_super_admin' => $user instanceof Admin && $user->hasRole(AppPermissions::SuperAdmin),
             ],
             'locale' => $locale,
             'translations' => $this->translationsFor($locale),
-            'unreadNotifications' => $user
-                ? NotificationCustom::query()->where('is_read', false)->count()
-                : 0,
+            'unreadNotifications' => $user ? NotificationCustom::query()->where('is_read', false)->count() : 0,
             'recentNotifications' => $user ? $this->recentNotifications() : [],
             'flash' => $this->flashPayload($request),
-            'topUpCardGeneration' => fn () => $this->topUpCardGeneration($request),
         ];
-    }
-
-    /**
-     * @return array{token: string, status: string|null, total_cards: int}|null
-     */
-    private function topUpCardGeneration(Request $request): ?array
-    {
-        $user = $request->user();
-
-        if (!$user instanceof Admin || !$user->can('top-up-cards.view')) {
-            return null;
-        }
-
-        $token = $request->session()->get('top_up_card_generation_token');
-
-        return TopUpCardGenerationStatus::forToken(is_string($token) ? $token : null);
     }
 
     /**
@@ -96,20 +75,22 @@ class HandleInertiaRequests extends Middleware
             ->latest('id')
             ->limit(5)
             ->get()
-            ->map(fn (NotificationCustom $notification): array => [
-                'id' => $notification->id,
-                'title' => $notification->title,
-                'body' => $notification->body,
-                'category' => $notification->category->value,
-                'is_read' => $notification->is_read,
-                'time' => ($notification->sent_at ?? $notification->created_at)->format('g:i A'),
-            ])
+            ->map(
+                fn(NotificationCustom $notification): array => [
+                    'id' => $notification->id,
+                    'title' => $notification->title,
+                    'body' => $notification->body,
+                    'category' => $notification->category->value,
+                    'is_read' => $notification->is_read,
+                    'time' => ($notification->sent_at ?? $notification->created_at)->format('g:i A'),
+                ],
+            )
             ->values()
             ->all();
     }
 
     /**
-        * @return array{success: mixed, error: mixed, import_error: mixed, import_error_token: string|null, count: mixed, token: string|null}
+     * @return array{success: mixed, error: mixed, import_error: mixed, import_error_token: string|null, count: mixed, token: string|null}
      */
     private function flashPayload(Request $request): array
     {
@@ -125,7 +106,7 @@ class HandleInertiaRequests extends Middleware
             'import_error' => $importError,
             'import_error_token' => $importErrorToken,
             'count' => $count,
-            'token' => ($success !== null || $error !== null) ? (string) str()->uuid() : null,
+            'token' => $success !== null || $error !== null ? (string) str()->uuid() : null,
         ];
     }
 

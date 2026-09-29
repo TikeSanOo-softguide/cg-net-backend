@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Spinner, SpinnerOverlay } from '@/components/ui/spinner';
 import type { Paginated } from '@/components/Pagination';
 import { useCan } from '@/hooks/useCan';
+import { toast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { defaultExpiryDate, type TopUpCardFilters, type TopUpCardRow } from '@/lib/top-up-cards';
 
@@ -75,6 +76,7 @@ export default function TopUpCardsGenerate({
     const [tableLoading, setTableLoading] = useState(false);
     const debounce = useRef<number>(0);
     const pollInFlight = useRef(false);
+    const generationWasProcessing = useRef(false);
     const form = useForm({
         amounts: [] as { value: number; quantity: number }[],
         office_ids: [] as number[],
@@ -89,6 +91,38 @@ export default function TopUpCardsGenerate({
     }, [filters.search]);
 
     useEffect(() => () => window.clearTimeout(debounce.current), []);
+
+    useEffect(() => {
+        if (generationStatus === 'processing') {
+            generationWasProcessing.current = true;
+
+            return;
+        }
+
+        if (!generationWasProcessing.current || (generationStatus !== 'completed' && generationStatus !== 'failed')) {
+            return;
+        }
+
+        generationWasProcessing.current = false;
+
+        if (generationStatus === 'completed') {
+            toast({
+                variant: 'success',
+                title: t('toast.success'),
+                description: t(
+                    generation?.source === 'csv_import' ? 'top_up_cards.imported' : 'top_up_cards.generated',
+                ).replace(':count', String(generation?.total_cards ?? 0)),
+            });
+
+            return;
+        }
+
+        toast({
+            variant: 'error',
+            title: t('toast.error'),
+            description: t('top_up_cards.generation_failed'),
+        });
+    }, [generationStatus, generation?.source, generation?.total_cards, t]);
 
     useEffect(() => {
         if (generationStatus !== 'processing') {
@@ -165,8 +199,7 @@ export default function TopUpCardsGenerate({
     const selectedCards = Object.values(selected).reduce((sum, quantity) => sum + quantity, 0);
     const officeMultiplier = Math.max(1, selectedOfficeIds.length || offices.length);
     const totalCards = selectedCards * officeMultiplier;
-    const canGenerate =
-        can('top-up-cards.create') && selectedCards > 0 && totalCards <= max_cards && !isGenerating;
+    const canGenerate = can('top-up-cards.create') && selectedCards > 0 && totalCards <= max_cards && !isGenerating;
 
     const handleExport = useCallback(() => {
         window.location.href = '/top-up-cards/export';
@@ -243,7 +276,8 @@ export default function TopUpCardsGenerate({
                             <CardTitle className="text-sm">{t('top_up_cards.batch_title')}</CardTitle>
                             <CardDescription className="flex items-center gap-1.5 text-[12px] leading-4">
                                 {generationStatus === 'processing' ? <Spinner size="xs" /> : null}
-                                {batchDescription}{batchProgress}
+                                {batchDescription}
+                                {batchProgress}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="relative min-h-0 flex-1 overflow-hidden print:overflow-visible print:px-0">

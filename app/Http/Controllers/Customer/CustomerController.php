@@ -158,30 +158,32 @@ class CustomerController extends Controller
                 ],
             );
 
-        $walletId = $customer->wallet?->id;
-        $walletTransactions = $customer->wallet?->transactions()->with('walletTransfer')->get() ?? collect();
+        // $walletId = $customer->wallet?->id;
+        $walletTransactions = $customer->wallet?->transactions()->get() ?? collect(); // ->with('walletTransfer')
         $transactionOverview = collect([
             ['key' => 'topup', 'type' => WalletTransactionType::Topup, 'direction' => 'credit'],
-            ['key' => 'transfer_in', 'type' => WalletTransactionType::Transfer, 'direction' => 'credit'],
-            ['key' => 'transfer_out', 'type' => WalletTransactionType::Transfer, 'direction' => 'debit'],
+            // ['key' => 'transfer_in', 'type' => WalletTransactionType::Transfer, 'direction' => 'credit'],
+            // ['key' => 'transfer_out', 'type' => WalletTransactionType::Transfer, 'direction' => 'debit'],
             ['key' => 'ftth_bill', 'type' => WalletTransactionType::FtthBill, 'direction' => 'debit'],
             ['key' => 'wifi_package', 'type' => WalletTransactionType::WifiPackage, 'direction' => 'debit'],
             ['key' => 'refund', 'type' => WalletTransactionType::Refund, 'direction' => 'credit'],
             ['key' => 'adjustment', 'type' => WalletTransactionType::Adjustment, 'direction' => 'credit'],
         ])
-            ->map(function (array $type) use ($walletId, $walletTransactions) {
-                $filtered = $walletTransactions->filter(function ($transaction) use ($type, $walletId) {
+            ->map(function (array $type) use (/* $walletId, */ $walletTransactions) {
+                $filtered = $walletTransactions->filter(function ($transaction) use ($type /* , $walletId */) {
                     if ($transaction->type !== $type['type']) {
                         return false;
                     }
 
-                    if ($transaction->type !== WalletTransactionType::Transfer) {
-                        return true;
-                    }
+                    return true;
 
-                    return $transaction->walletTransfer?->from_wallet_id === $walletId
-                        ? $type['direction'] === 'debit'
-                        : $transaction->walletTransfer?->to_wallet_id === $walletId && $type['direction'] === 'credit';
+                    // if ($transaction->type !== WalletTransactionType::Transfer) {
+                    //     return true;
+                    // }
+
+                    // return $transaction->walletTransfer?->from_wallet_id === $walletId
+                    //     ? $type['direction'] === 'debit'
+                    //     : $transaction->walletTransfer?->to_wallet_id === $walletId && $type['direction'] === 'credit';
                 });
 
                 return [

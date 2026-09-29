@@ -24,6 +24,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatTopUpNumber, TOP_UP_CARD_CURRENCY } from '@/lib/top-up-cards';
+import { WALLET_TRANSFERS_ENABLED } from '@/lib/featureFlags';
 import { cn, formatDate } from '@/lib/utils';
 
 type FactProps = {
@@ -201,12 +202,16 @@ export function CustomerProfileCard({
                 <Fact icon={BanknoteArrowUpIcon} label={t('wallet.topup')} iconClassName="text-emerald-600 size-4.5">
                     <TransactionValue summary={transactionOverview.topup} color="credit" t={t} />
                 </Fact>
-                <Fact icon={ArrowDownLeftIcon} label={t('wallet.transfer_in')} iconClassName="text-emerald-600">
-                    <TransactionValue summary={transactionOverview.transfer_in} color="credit" t={t} />
-                </Fact>
-                <Fact icon={ArrowUpRightIcon} label={t('wallet.transfer_out')} iconClassName="text-red-600">
-                    <TransactionValue summary={transactionOverview.transfer_out} color="debit" t={t} />
-                </Fact>
+                {WALLET_TRANSFERS_ENABLED ? (
+                    <>
+                        <Fact icon={ArrowDownLeftIcon} label={t('wallet.transfer_in')} iconClassName="text-emerald-600">
+                            <TransactionValue summary={transactionOverview.transfer_in} color="credit" t={t} />
+                        </Fact>
+                        <Fact icon={ArrowUpRightIcon} label={t('wallet.transfer_out')} iconClassName="text-red-600">
+                            <TransactionValue summary={transactionOverview.transfer_out} color="debit" t={t} />
+                        </Fact>
+                    </>
+                ) : null}
                 <Fact icon={ReceiptTextIcon} label={t('wallet.ftth_bill')} iconClassName="text-red-600">
                     <TransactionValue summary={transactionOverview.ftth_bill} color="debit" t={t} />
                 </Fact>

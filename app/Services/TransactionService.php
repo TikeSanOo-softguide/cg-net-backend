@@ -34,9 +34,8 @@ class TransactionService
             ->with([
                 'wallet.user:id,name,phone',
                 'walletEntry',
-                'walletTransfer.fromWallet.user:id,name,phone',
-                'walletTransfer.toWallet.user:id,name,phone',
-                'billPayment.broadbandAccount:id,account_number,customer_name',
+                // 'walletTransfer.fromWallet.user:id,name,phone',
+                // 'walletTransfer.toWallet.user:id,name,phone',
                 'packageOrder.package.network:id,name_en,name_zh,name_my',
                 'packageOrder.package.speed:id,mbps',
                 'packageOrder.package.term:id,months',
@@ -84,20 +83,20 @@ class TransactionService
                     $query
                         ->where(function ($query) use ($filters): void {
                             $query
-                                ->where('type', '!=', WalletTransactionType::Transfer->value)
+                                // ->where('type', '!=', WalletTransactionType::Transfer->value)
                                 ->whereHas('walletEntry', fn($entry) => $entry->where('type', $filters['direction']));
-                        })
-                        ->orWhere(function ($query) use ($filters): void {
-                            $query
-                                ->where('type', WalletTransactionType::Transfer->value)
-                                ->whereHas('walletTransfer', function ($transfer) use ($filters): void {
-                                    $transfer->whereColumn(
-                                        'wallet_transactions.wallet_id',
-                                        'wallet_transfers.' .
-                                            ($filters['direction'] === 'credit' ? 'to_wallet_id' : 'from_wallet_id'),
-                                    );
-                                });
                         });
+                    // ->orWhere(function ($query) use ($filters): void {
+                    //     $query
+                    //         ->where('type', WalletTransactionType::Transfer->value)
+                    //         ->whereHas('walletTransfer', function ($transfer) use ($filters): void {
+                    //             $transfer->whereColumn(
+                    //                 'wallet_transactions.wallet_id',
+                    //                 'wallet_transfers.' .
+                    //                     ($filters['direction'] === 'credit' ? 'to_wallet_id' : 'from_wallet_id'),
+                    //             );
+                    //         });
+                    // });
                 });
             })
             ->latest();
@@ -114,13 +113,14 @@ class TransactionService
     public function payload(WalletTransaction $transaction): array
     {
         $direction =
-            $transaction->type === WalletTransactionType::Transfer
-                ? match (true) {
-                    $transaction->walletTransfer?->from_wallet_id === $transaction->wallet_id => 'debit',
-                    $transaction->walletTransfer?->to_wallet_id === $transaction->wallet_id => 'credit',
-                    default => null,
-                }
-                : $transaction->walletEntry?->type?->value;
+            // $transaction->type === WalletTransactionType::Transfer
+            //     ? match (true) {
+            //         $transaction->walletTransfer?->from_wallet_id === $transaction->wallet_id => 'debit',
+            //         $transaction->walletTransfer?->to_wallet_id === $transaction->wallet_id => 'credit',
+            //         default => null,
+            //     }
+            //     :
+            $transaction->walletEntry?->type?->value;
 
         return [
             'id' => $transaction->id,
@@ -151,22 +151,22 @@ class TransactionService
                     'balance_after' => $transaction->walletEntry->balance_after,
                 ]
                 : null,
-            'wallet_transfer' => $transaction->walletTransfer
-                ? [
-                    'from_wallet_id' => $transaction->walletTransfer->from_wallet_id,
-                    'from_wallet_user' => $this->walletUserPayload($transaction->walletTransfer->fromWallet),
-                    'to_wallet_id' => $transaction->walletTransfer->to_wallet_id,
-                    'to_wallet_user' => $this->walletUserPayload($transaction->walletTransfer->toWallet),
-                    'amount' => $transaction->walletTransfer->amount,
-                    'note' => $transaction->walletTransfer->note,
-                ]
-                : null,
+            // 'wallet_transfer' => $transaction->walletTransfer
+            //     ? [
+            //         'from_wallet_id' => $transaction->walletTransfer->from_wallet_id,
+            //         'from_wallet_user' => $this->walletUserPayload($transaction->walletTransfer->fromWallet),
+            //         'to_wallet_id' => $transaction->walletTransfer->to_wallet_id,
+            //         'to_wallet_user' => $this->walletUserPayload($transaction->walletTransfer->toWallet),
+            //         'amount' => $transaction->walletTransfer->amount,
+            //         'note' => $transaction->walletTransfer->note,
+            //     ]
+            //     : null,
             'related' => [
                 'bill_payment_id' => $transaction->billPayment?->id,
-                'bill_payment_account' => $transaction->billPayment?->broadbandAccount
+                'bill_payment_account' => $transaction->billPayment?->broadband_account_number
                     ? [
-                        'account_number' => $transaction->billPayment->broadbandAccount->account_number,
-                        'customer_name' => $transaction->billPayment->broadbandAccount->customer_name,
+                        'broadband_account_number' => $transaction->billPayment->broadband_account_number,
+                        'customer_name' => $transaction->wallet?->user?->name,
                     ]
                     : null,
                 'package_order_id' => $transaction->packageOrder?->id,
@@ -181,13 +181,13 @@ class TransactionService
         ];
     }
 
-    private function walletUserPayload(?object $wallet): ?array
-    {
-        return $wallet?->user
-            ? [
-                'name' => $wallet->user->name,
-                'phone' => $wallet->user->phone,
-            ]
-            : null;
-    }
+    // private function walletUserPayload(?object $wallet): ?array
+    // {
+    //     return $wallet?->user
+    //         ? [
+    //             'name' => $wallet->user->name,
+    //             'phone' => $wallet->user->phone,
+    //         ]
+    //         : null;
+    // }
 }
