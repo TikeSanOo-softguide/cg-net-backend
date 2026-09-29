@@ -11,6 +11,7 @@ use App\Models\Batch;
 use App\Models\TopUpCard;
 use App\Support\AppPermissions;
 use App\Support\GeneratesTopUpCards;
+use App\Support\TopUpCardOffices;
 use Illuminate\Bus\Batch as QueueBatch;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
@@ -38,7 +39,7 @@ class TopUpCardChunkGenerationTest extends TestCase
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
 
-        Office::query()->create([
+        $office = Office::query()->create([
             'name' => 'Default Office',
             'address' => 'Main Street',
             'cd' => 88,
@@ -75,6 +76,10 @@ class TopUpCardChunkGenerationTest extends TestCase
         }
 
         $this->assertDatabaseCount('top_up_card', 2500);
+        $this->assertSame(
+            [$office->id],
+            TopUpCard::query()->distinct()->pluck('office_id')->all(),
+        );
         $this->assertSame(
             range(1001, 3500),
             TopUpCard::query()
@@ -253,6 +258,11 @@ class TopUpCardChunkGenerationTest extends TestCase
 
         $this->assertTrue(str_contains($serials[0], '11'));
         $this->assertTrue(str_contains($serials[1], '24'));
+    }
+
+    public function test_office_code_is_parsed_with_a_five_digit_daily_counter(): void
+    {
+        $this->assertSame('31', TopUpCardOffices::officeCodeFromSerialNo('26091501283110000'));
     }
 
     public function test_disjoint_serial_ranges_are_allocated_from_sequence_counter(): void

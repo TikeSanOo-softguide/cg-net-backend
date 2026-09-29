@@ -146,6 +146,7 @@ final class GeneratesTopUpCards
     {
         $now = now();
         $rows = [];
+        $officeIdsBySerial = TopUpCardOffices::resolveIdsBySerialNumbers(array_column($cards, 'serial_no'));
 
         foreach ($cards as $card) {
             $pin = (string) ($card['pin'] ?? '');
@@ -161,7 +162,7 @@ final class GeneratesTopUpCards
                 'amount' => (string) ($card['amount'] ?? ''),
                 'expires_at' => $card['expires_at'] ?? null,
                 'status' => TopUpCardStatus::Pending->value,
-                'office_id' => null,
+                'office_id' => $officeIdsBySerial[$serialNo] ?? null,
                 'batch_id' => $batchId,
                 'created_at' => $now,
                 'updated_at' => $now,
@@ -221,6 +222,7 @@ final class GeneratesTopUpCards
         string $officeCode = '88',
     ): array {
         $rangeStart = $dailyCounter;
+        $officeId = TopUpCardOffices::resolveIdsByCodes([$officeCode])[$officeCode] ?? null;
 
         for ($attempt = 0; $attempt < 5; $attempt++) {
             $rows = [];
@@ -241,7 +243,7 @@ final class GeneratesTopUpCards
                     'amount' => $amount,
                     'expires_at' => $expiresAt,
                     'status' => TopUpCardStatus::Pending->value,
-                    'office_id' => null,
+                    'office_id' => $officeId,
                     'batch_id' => $batchId,
                     'created_at' => $now,
                     'updated_at' => $now,

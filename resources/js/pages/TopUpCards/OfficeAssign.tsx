@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
-import { CircleAlertIcon, UserRoundIcon, XIcon } from 'lucide-react';
+import { CircleAlertIcon, XIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -12,18 +12,15 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { FormDialog } from '@/components/FormDialog';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { Spinner } from '@/components/ui/spinner';
-import { TopUpCardOfficeAssignmentForm } from '@/components/top-up-cards/TopUpCardOfficeAssignmentForm';
 import { TopUpCardOfficeCardTable } from '@/components/top-up-cards/TopUpCardOfficeCardTable';
-import type { TopUpCardRow } from '@/lib/top-up-cards';
 import type { Paginated } from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
 
-type OfficeRow = { id: number; name: string; cd: number; address: string; top_up_cards_count: number };
-type BatchRow = { id: number; batch_no: string; expires_at: string | null; available_cards_count: number; available_points: number[] };
+type BatchRow = { id: number; batch_no: string };
+type BatchTableRow = { id: number; batch_no: string; total_value: number; quantity: number; status: string; expires_at: string | null; assigned_cards_count: number };
 type ImportProgress = {
     status: 'processing' | 'completed' | 'failed' | null;
     message: string | null;
@@ -34,12 +31,10 @@ type ImportProgress = {
 };
 
 type Props = {
-    offices: OfficeRow[];
-    cards: Paginated<TopUpCardRow>;
+    batchPage: Paginated<BatchTableRow>;
     batches: BatchRow[];
-    points: number[];
     importProgress: ImportProgress | null;
-    filters: { search: string; card_search: string; batch: string; office: string; status: string; amount: string };
+    filters: { batch: string; status: string };
 };
 
 type PageProps = {
@@ -56,26 +51,17 @@ type ImportError = {
 
 function visitOfficeAssign(filters: Props['filters']) {
     router.get('/top-up-cards/office-assign', {
-        search: filters.search || undefined,
-        card_search: filters.card_search || undefined,
         batch: filters.batch,
-        office: filters.office || undefined,
         status: filters.status,
-        amount: filters.amount,
     }, { preserveState: true, preserveScroll: true, replace: true });
 }
 
-export default function OfficeAssignPage({ offices, cards, batches, points, importProgress, filters }: Props) {
+export default function OfficeAssignPage({ batchPage, batches, importProgress, filters }: Props) {
     const { t } = useTranslation();
     const { flash } = usePage<PageProps>().props;
-    const [assigning, setAssigning] = useState(false);
     const [importError, setImportError] = useState<ImportError | null>(null);
     const [batchFilter, setBatchFilter] = useState(filters.batch);
-    const [officeFilter, setOfficeFilter] = useState(filters.office);
     const [statusFilter, setStatusFilter] = useState(filters.status);
-    const [pointFilter, setPointFilter] = useState(filters.amount);
-    const [cardSearch, setCardSearch] = useState(filters.card_search);
-    const debounce = useRef<number>(0);
     const importInput = useRef<HTMLInputElement>(null);
     const pollInFlight = useRef(false);
     const importErrorMessage = importError
@@ -83,20 +69,15 @@ export default function OfficeAssignPage({ offices, cards, batches, points, impo
         : null;
 
     useEffect(() => {
-        setCardSearch(filters.card_search);
         setBatchFilter(filters.batch);
-        setOfficeFilter(filters.office);
         setStatusFilter(filters.status);
-        setPointFilter(filters.amount);
-    }, [filters.card_search, filters.batch, filters.office, filters.status, filters.amount]);
+    }, [filters.batch, filters.status]);
 
     useEffect(() => {
         if (flash?.import_error) {
             setImportError(flash.import_error);
         }
     }, [flash?.import_error_token]);
-
-    useEffect(() => () => window.clearTimeout(debounce.current), []);
 
     useEffect(() => {
         if (importProgress?.status !== 'processing') {
@@ -110,7 +91,7 @@ export default function OfficeAssignPage({ offices, cards, batches, points, impo
 
             pollInFlight.current = true;
             router.reload({
-                only: ['cards', 'batches', 'points', 'importProgress'],
+                only: ['batchPage', 'batches', 'importProgress'],
                 preserveUrl: true,
                 onFinish: () => {
                     pollInFlight.current = false;
@@ -127,18 +108,10 @@ export default function OfficeAssignPage({ offices, cards, batches, points, impo
         };
     }, [importProgress?.status]);
 
-    const refreshCards = (nextBatch: string, nextOffice: string, nextStatus: string, nextPoint: string, nextSearch = cardSearch, debounceSearch = false) => {
-        setCardSearch(nextSearch);
+    const refreshCards = (nextBatch: string, nextStatus: string) => {
         setBatchFilter(nextBatch);
-        setOfficeFilter(nextOffice);
         setStatusFilter(nextStatus);
-        setPointFilter(nextPoint);
-        window.clearTimeout(debounce.current);
-        if (debounceSearch) {
-            debounce.current = window.setTimeout(() => visitOfficeAssign({ ...filters, card_search: nextSearch, batch: nextBatch, office: nextOffice, status: nextStatus, amount: nextPoint }), 300);
-            return;
-        }
-        visitOfficeAssign({ ...filters, card_search: nextSearch, batch: nextBatch, office: nextOffice, status: nextStatus, amount: nextPoint });
+        visitOfficeAssign({ batch: nextBatch, status: nextStatus });
     };
 
     const importCards = (event: ChangeEvent<HTMLInputElement>) => {
@@ -181,28 +154,16 @@ export default function OfficeAssignPage({ offices, cards, batches, points, impo
                     </div>
                 ) : null}
                 <TopUpCardOfficeCardTable
-                    cards={cards.data}
-                    pagination={cards}
-                    offices={offices}
+                    batchRows={batchPage.data}
+                    pagination={batchPage}
                     batches={batches}
-                    points={points}
-                    search={cardSearch}
                     batchFilter={batchFilter}
-                    officeFilter={officeFilter}
                     statusFilter={statusFilter}
-                    pointFilter={pointFilter}
-                    onSearchChange={(value) => refreshCards(batchFilter, officeFilter, statusFilter, pointFilter, value, true)}
-                    onBatchChange={(value) => refreshCards(value === 'all' ? '' : value, officeFilter, statusFilter, pointFilter)}
-                    onOfficeChange={(value) => refreshCards(batchFilter, value === 'all' ? '' : value, statusFilter, pointFilter)}
-                    onStatusChange={(value) => refreshCards(batchFilter, officeFilter, value === 'all' ? '' : value, pointFilter)}
-                    onPointChange={(value) => refreshCards(batchFilter, officeFilter, statusFilter, value === 'all' ? '' : value)}
-                    onAssign={() => setAssigning(true)}
+                    onBatchChange={(value) => refreshCards(value === 'all' ? '' : value, statusFilter)}
+                    onStatusChange={(value) => refreshCards(batchFilter, value === 'all' ? '' : value)}
                     onImport={() => importInput.current?.click()}
                 />
             </PageContent>
-            <FormDialog open={assigning} onOpenChange={setAssigning} title={t('top_up_cards.office.assign_cards')} description={t('top_up_cards.office.description')} icon={UserRoundIcon}>
-                {assigning ? <TopUpCardOfficeAssignmentForm offices={offices} batches={batches} batchId={batchFilter} onClose={() => setAssigning(false)} onSuccess={() => setAssigning(false)} /> : null}
-            </FormDialog>
             <Dialog open={importError !== null} onOpenChange={(open) => { if (!open) setImportError(null); }}>
                 <DialogContent className="w-[min(100%-2rem,520px)]">
                     <DialogHeader className="text-left">

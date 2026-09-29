@@ -1018,6 +1018,8 @@
         "add_custom": "添加自定义金额",
         "custom_amount": "自定义金额",
         "quantity": "数量",
+        "total_value": "总价值",
+        "available_cards": "可用卡片",
         "increase": "增加数量",
         "decrease": "减少数量",
         "expires_at": "有效期",

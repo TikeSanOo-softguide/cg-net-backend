@@ -5,13 +5,10 @@ namespace App\Http\Controllers\TopUpCard;
 use App\Enums\TopUpCardStatus;
 use App\Http\Controllers\Controller;
 use App\Jobs\ImportGeneratedTopUpCardsJob;
-use App\Http\Requests\TopUpCard\AssignOfficeRequest;
-use App\Http\Requests\TopUpCard\AssignCardsToOfficeRequest;
 use App\Http\Requests\TopUpCard\StoreOfficeRequest;
 use App\Http\Requests\TopUpCard\UpdateOfficeRequest;
 use App\Models\Office;
 use App\Models\Batch;
-use App\Models\TopUpCard;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -42,98 +39,58 @@ class OfficeController extends Controller
 
     public function officeAssign(Request $request): Response
     {
-        $search = trim((string) $request->string('search'));
-        $cardSearch = trim((string) $request->string('card_search'));
         $batch = $request->has('batch')
             ? $request->string('batch')->toString()
             : (string) $request->session()->get('top_up_card_office_batch', '');
-        $officeFilter = $request->string('office')->toString();
         $status = $request->string('status')->toString();
-        $amount = $request->string('amount')->toString();
-        $offices = Office::query()
-            ->withCount('topUpCards')
-            ->when($search !== '', function ($query) use ($search): void {
-                $query->whereLike('name', '%' . $search . '%')->orWhereLike('address', '%' . $search . '%');
-            })
-            ->orderBy('name')
-            ->get();
+        $cardFilters = function ($query) use ($status): void {
+            $query->where('status', '!=', TopUpCardStatus::Pending)
+                ->when(
+                    in_array($status, array_column(TopUpCardStatus::cases(), 'value'), true),
+                    fn($query) => $query->where('status', $status),
+                );
+        };
 
-        $cardQuery = TopUpCard::query()
-            ->select('top_up_card.*')
-            ->with('office:id,name')
-            ->leftJoin('batches', 'batches.id', '=', 'top_up_card.batch_id')
-            ->where('top_up_card.status', '!=', TopUpCardStatus::Pending)
-            ->when($cardSearch !== '', fn($query) => $query->whereLike('serial_no', '%' . $cardSearch . '%'))
-            ->when($batch !== '', fn($query) => $query->where('batch_id', (int) $batch))
-            ->when($officeFilter === 'unassigned', fn($query) => $query->whereNull('office_id'))
-            ->when($officeFilter !== '' && $officeFilter !== 'unassigned', fn($query) => $query->where('office_id', (int) $officeFilter))
-            ->when($amount !== '' && is_numeric($amount), fn($query) => $query->where('top_up_card.amount', $amount))
-            ->when(
-                in_array($status, array_column(TopUpCardStatus::cases(), 'value'), true),
-                fn($query) => $query->where('top_up_card.status', $status),
-            )
-            ->orderBy('batches.batch_no')
-            ->orderBy('top_up_card.serial_no');
-        $cards = $cardQuery
+        $batchPage = Batch::query()
+            ->whereHas('topUpCards', $cardFilters)
+            ->when($batch !== '' && is_numeric($batch), fn($query) => $query->whereKey((int) $batch))
+            ->withCount([
+                'topUpCards as assigned_cards_count' => fn($query) => $query
+                    ->where('status', '!=', TopUpCardStatus::Pending)
+                    ->whereNotNull('office_id'),
+            ])
+            ->latest('id')
             ->paginate(100)
             ->withQueryString()
-            ->through(fn(TopUpCard $card) => $this->cardPayload($card));
+            ->through(fn(Batch $batch) => [
+                'id' => $batch->id,
+                'batch_no' => $batch->batch_no,
+                'total_value' => $batch->total_value,
+                'quantity' => $batch->quantity,
+                'status' => $batch->status->value,
+                'expires_at' => $batch->expires_at?->toDateString(),
+                'assigned_cards_count' => $batch->assigned_cards_count,
+            ]);
 
         $batches = Batch::query()
             ->select(['id', 'batch_no', 'expires_at'])
             ->whereHas('topUpCards', fn($query) => $query->where('status', '!=', TopUpCardStatus::Pending))
-            ->withCount([
-                'topUpCards as available_cards_count' => fn($query) => $query
-                    ->where('status', TopUpCardStatus::Active)
-                    ->whereNull('office_id')
-                    ->whereNull('redeemed_at'),
-            ])
-            ->with([
-                'topUpCards' => fn($query) => $query
-                    ->select(['batch_id', 'amount'])
-                    ->where('status', TopUpCardStatus::Active)
-                    ->whereNull('office_id')
-                    ->whereNull('redeemed_at')
-                    ->distinct(),
-            ])
             ->latest('id')
             ->get()
             ->map(
                 fn(Batch $batch) => [
                     'id' => $batch->id,
                     'batch_no' => $batch->batch_no,
-                    'expires_at' => $batch->expires_at?->toDateString(),
-                    'available_cards_count' => $batch->available_cards_count,
-                    'available_points' => $batch->topUpCards
-                        ->pluck('amount')
-                        ->map(fn($amount) => (float) $amount)
-                        ->unique()
-                        ->sort()
-                        ->values(),
                 ],
             );
 
-        $points = TopUpCard::query()
-            ->where('status', '!=', TopUpCardStatus::Pending)
-            ->distinct()
-            ->orderBy('amount')
-            ->pluck('amount')
-            ->map(fn($point) => (float) $point)
-            ->values();
-
         return Inertia::render('TopUpCards/OfficeAssign', [
-            'offices' => $offices,
-            'cards' => $cards,
+            'batchPage' => $batchPage,
             'batches' => $batches,
-            'points' => $points,
             'importProgress' => $this->importProgress($request),
             'filters' => [
-                'search' => $search,
-                'card_search' => $cardSearch,
                 'batch' => $batch,
-                'office' => $officeFilter,
                 'status' => $status,
-                'amount' => $amount,
             ],
         ]);
     }
@@ -276,54 +233,4 @@ class OfficeController extends Controller
         return back()->with('success', 'Office deleted successfully.');
     }
 
-    public function assign(AssignOfficeRequest $request, TopUpCard $topUpCard): RedirectResponse
-    {
-        $data = $request->validated();
-
-        if ($topUpCard->redeemed_at !== null || $topUpCard->status === TopUpCardStatus::Used) {
-            return back()->with('error', 'A redeemed card cannot be reassigned.');
-        }
-
-        $attributes = [
-            'office_id' => $data['office_id'],
-            'status' => $data['office_id'] === null ? TopUpCardStatus::Pending : TopUpCardStatus::Active,
-        ];
-
-        $topUpCard->update($attributes);
-
-        return back()->with('success', 'Top-up card assigned successfully.');
-    }
-
-    public function assignOffice(AssignCardsToOfficeRequest $request): RedirectResponse
-    {
-        $data = $request->validated();
-        $attributes = [
-            'office_id' => $data['office_id'],
-            'status' => $data['office_id'] === null ? TopUpCardStatus::Pending : TopUpCardStatus::Active,
-        ];
-
-        TopUpCard::query()
-            ->where('batch_id', $data['batch_id'])
-            ->where('amount', $data['amount'])
-            ->whereNull('redeemed_at')
-            ->where('status', TopUpCardStatus::Active)
-            ->whereNull('office_id')
-            ->update($attributes);
-
-        return back()->with('success', 'Top-up cards assigned successfully.');
-    }
-
-    private function cardPayload(TopUpCard $card): array
-    {
-        return [
-            'id' => $card->id,
-            'serial_no' => $card->serial_no,
-            'amount' => $card->amount,
-            'status' => $card->status->value,
-            'expires_at' => $card->expires_at?->toDateString(),
-            'office_id' => $card->office_id,
-            'office' => $card->office?->name,
-            'batch_no' => $card->batch?->batch_no,
-        ];
-    }
 }

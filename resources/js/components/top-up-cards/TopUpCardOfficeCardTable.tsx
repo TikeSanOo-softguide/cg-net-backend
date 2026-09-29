@@ -5,49 +5,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatTopUpAmount, type TopUpCardRow } from '@/lib/top-up-cards';
 import type { Paginated } from '@/components/Pagination';
 import { formatDate } from '@/lib/utils';
 
-type OfficeRow = { id: number; name: string; address: string; top_up_cards_count: number };
+type BatchTableRow = { id: number; batch_no: string; total_value: number; quantity: number; status: string; expires_at: string | null; assigned_cards_count: number };
 
 type TopUpCardOfficeCardTableProps = {
-    cards: TopUpCardRow[];
-    pagination?: Paginated<TopUpCardRow>;
-    offices: OfficeRow[];
+    batchRows: BatchTableRow[];
+    pagination?: Paginated<BatchTableRow>;
     batches: { id: number; batch_no: string }[];
-    points: number[];
-    search: string;
     batchFilter: string;
-    officeFilter: string;
     statusFilter: string;
-    pointFilter: string;
-    onSearchChange: (value: string) => void;
     onBatchChange: (value: string) => void;
-    onOfficeChange: (value: string) => void;
     onStatusChange: (value: string) => void;
-    onPointChange: (value: string) => void;
-    onAssign: () => void;
     onImport: () => void;
 };
 
 export function TopUpCardOfficeCardTable({
-    cards,
+    batchRows,
     pagination,
-    offices,
     batches,
-    points,
-    search,
     batchFilter,
-    officeFilter,
     statusFilter,
-    pointFilter,
-    onSearchChange,
     onBatchChange,
-    onOfficeChange,
     onStatusChange,
-    onPointChange,
-    onAssign,
     onImport,
 }: TopUpCardOfficeCardTableProps) {
     const { t } = useTranslation();
@@ -55,12 +36,10 @@ export function TopUpCardOfficeCardTable({
 
     return (
         <DataTable
-            data={cards}
+            data={batchRows}
             pagination={pagination}
             getRowId={(row) => String(row.id)}
-            search={search}
-            onSearchChange={onSearchChange}
-            searchPlaceholder={t('top_up_cards.search_placeholder')}
+            showSearch={false}
             emptyLabel={t('top_up_cards.empty_table')}
             filters={
                 <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -70,16 +49,6 @@ export function TopUpCardOfficeCardTable({
                             <SelectContent>
                                 <SelectItem value="all">{t('top_up_cards.office.all_batches')}</SelectItem>
                                 {batches.map((batch) => <SelectItem key={batch.id} value={String(batch.id)}>{batch.batch_no}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </FormControl>
-                    <FormControl compact className="w-full shrink-0 sm:w-48">
-                        <Select value={officeFilter || 'all'} onValueChange={onOfficeChange}>
-                            <SelectTrigger className="w-full"><SelectValue placeholder={t('top_up_cards.office.name')} /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">{t('top_up_cards.office.all_offices')}</SelectItem>
-                                <SelectItem value="unassigned">{t('top_up_cards.office.not_assigned')}</SelectItem>
-                                {offices.map((office) => <SelectItem key={office.id} value={String(office.id)}>{office.name}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </FormControl>
@@ -95,15 +64,6 @@ export function TopUpCardOfficeCardTable({
                             </SelectContent>
                         </Select>
                     </FormControl>
-                    <FormControl compact className="w-full shrink-0 sm:w-35">
-                        <Select value={pointFilter || 'all'} onValueChange={onPointChange}>
-                            <SelectTrigger className="w-full"><SelectValue placeholder={t('top_up_cards.point')} /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">{t('top_up_cards.office.all_points')}</SelectItem>
-                                {points.map((point) => <SelectItem key={point} value={String(point)}>{point}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </FormControl>
                 </div>
             }
             alwaysShowBulkActions
@@ -112,18 +72,15 @@ export function TopUpCardOfficeCardTable({
                     <Button type="button" variant="outline" size="sm" onClick={onImport}>
                         {t('top_up_cards.office.import_csv')}
                     </Button>
-                    <Button type="button" size="sm" onClick={onAssign}>
-                        {t('top_up_cards.office.assign')}
-                    </Button>
                 </div>
             ) : null}
             columns={[
-                { id: 'serial_no', header: t('top_up_cards.serial_no'), mobile: 'title', className: 'font-mono text-[12px]', cell: (row) => row.serial_no },
-                { id: 'amount', header: t('top_up_cards.point'), mobile: 'meta', cell: (row) => formatTopUpAmount(row.amount) },
+                { id: 'batch_no', header: t('top_up_cards.batch_no'), mobile: 'title', className: 'font-mono text-[12px]', cell: (row) => row.batch_no },
+                { id: 'quantity', header: t('top_up_cards.quantity'), mobile: 'meta', cell: (row) => row.quantity.toLocaleString() },
+                { id: 'total_value', header: t('top_up_cards.total_value'), cell: (row) => row.total_value.toLocaleString() },
                 { id: 'status', header: t('common.status'), mobile: 'badge', cell: (row) => <StatusBadge status={row.status} /> },
                 { id: 'expires_at', header: t('top_up_cards.expires_at'), cell: (row) => formatDate(row.expires_at) ?? '—' },
-                { id: 'batch_no', header: t('top_up_cards.batch_no'), cell: (row) => row.batch_no ?? '—' },
-                { id: 'office', header: t('top_up_cards.office.name'), cell: (row) => row.office ?? t('top_up_cards.office.not_assigned') },
+                { id: 'assigned_cards_count', header: t('top_up_cards.office.assigned_cards'), cell: (row) => row.assigned_cards_count.toLocaleString() },
             ]}
         />
     );

@@ -137,11 +137,13 @@ class TopUpCardManagementTest extends TestCase
         $actor->assignRole(AppPermissions::SuperAdmin);
         Storage::fake('local');
         Queue::fake();
+        $office31 = Office::query()->create(['name' => 'Office 31', 'address' => 'Main Street', 'cd' => '31']);
+        $office11 = Office::query()->create(['name' => 'Office 11', 'address' => 'Second Street', 'cd' => '11']);
 
         $csv = implode("\n", [
             'serial_no , pin , amount, expires_at',
-            'SER-1001,1234567890123456789012345678901234567890123456789012345678901234,1000,2030-12-31',
-            'SER-1002,2234567890123456789012345678901234567890123456789012345678901234,2500,2031-01-15',
+            '2609111128316006,1234567890123456789012345678901234567890123456789012345678901234,1000,2030-12-31',
+            '2609110128112982,2234567890123456789012345678901234567890123456789012345678901234,2500,2031-01-15',
         ]);
 
         $this->actingAs($actor, 'web')
@@ -155,27 +157,27 @@ class TopUpCardManagementTest extends TestCase
         Queue::assertPushed(ImportGeneratedTopUpCardsJob::class, 1);
         Queue::pushedJobs()[ImportGeneratedTopUpCardsJob::class][0]['job']->handle();
 
-        $batchId = TopUpCard::query()->where('serial_no', 'SER-1001')->value('batch_id');
+        $batchId = TopUpCard::query()->where('serial_no', '2609111128316006')->value('batch_id');
         $this->assertNotNull($batchId);
 
         $this->assertDatabaseHas('top_up_card', [
-            'serial_no' => 'SER-1001',
+            'serial_no' => '2609111128316006',
             'amount' => 1000,
             'status' => TopUpCardStatus::Active,
             'redeemed_at' => null,
             'redeemed_by' => null,
-            'office_id' => null,
+            'office_id' => $office31->id,
             'batch_id' => $batchId,
             'wallet_transaction_id' => null,
         ]);
 
         $this->assertDatabaseHas('top_up_card', [
-            'serial_no' => 'SER-1002',
+            'serial_no' => '2609110128112982',
             'amount' => 2500,
             'status' => TopUpCardStatus::Active,
             'redeemed_at' => null,
             'redeemed_by' => null,
-            'office_id' => null,
+            'office_id' => $office11->id,
             'batch_id' => $batchId,
             'wallet_transaction_id' => null,
         ]);
@@ -185,6 +187,28 @@ class TopUpCardManagementTest extends TestCase
             'quantity' => 2,
             'total_value' => 3500,
         ]);
+
+        $batchMetadata = Batch::query()->findOrFail($batchId)->metadata;
+        $this->assertSame(2, $batchMetadata['total_cards']);
+        $this->assertSame('3500', $batchMetadata['total_value']);
+        $this->assertSame([
+            ['office_cd' => '31', 'top_up_card' => [['point' => 1000, 'quantity' => 1]]],
+            ['office_cd' => '11', 'top_up_card' => [['point' => 2500, 'quantity' => 1]]],
+        ], $batchMetadata['items']);
+        $this->assertArrayNotHasKey('source', $batchMetadata);
+        $this->assertArrayNotHasKey('generation_token', $batchMetadata);
+        $this->assertArrayNotHasKey('amounts', $batchMetadata);
+    }
+
+    public function test_deleting_a_batch_also_deletes_its_top_up_cards(): void
+    {
+        $batch = Batch::factory()->create();
+        $card = TopUpCard::factory()->create(['batch_id' => $batch->id]);
+
+        $batch->delete();
+
+        $this->assertDatabaseMissing('batches', ['id' => $batch->id]);
+        $this->assertDatabaseMissing('top_up_card', ['id' => $card->id]);
     }
 
     public function test_index_filters_by_serial_status_and_amount(): void
@@ -259,13 +283,18 @@ class TopUpCardManagementTest extends TestCase
         Queue::assertPushed(GenerateTopUpCardsJob::class, 1);
         Queue::pushedJobs()[GenerateTopUpCardsJob::class][0]['job']->handle();
 
-        $this->actingAs($actor, 'web')
+        $response = $this->actingAs($actor, 'web')
             ->get('/top-up-cards/export')
             ->assertOk()
             ->assertHeader('content-type', 'text/csv; charset=UTF-8');
+
+        $csvLines = array_values(array_filter(preg_split('/\r\n|\n|\r/', trim($response->streamedContent())) ?: []));
+        $this->assertSame(['serial_no', 'pin', 'amount', 'expires_at'], str_getcsv($csvLines[0]));
+        $this->assertCount(4, str_getcsv($csvLines[1]));
+        $this->assertStringNotContainsString('*', $csvLines[0]);
     }
 
-    public function test_office_card_table_excludes_pending_cards(): void
+    public function test_office_assignment_lists_batches_with_cards_and_excludes_pending_only_batches(): void
     {
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
@@ -277,8 +306,9 @@ class TopUpCardManagementTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('TopUpCards/OfficeAssign')
-                ->has('cards.data', 1)
-                ->where('cards.data.0.id', $active->id)
+                ->has('batchPage.data', 1)
+                ->where('batchPage.data.0.id', $active->batch_id)
+                ->where('batchPage.data.0.batch_no', $active->batch->batch_no)
                 ->where('filters.status', ''));
 
         $this->assertNotSame($pending->id, $active->id);

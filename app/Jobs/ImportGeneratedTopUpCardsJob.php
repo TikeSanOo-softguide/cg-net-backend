@@ -6,6 +6,7 @@ use App\Enums\TopUpCardStatus;
 use App\Models\Batch;
 use App\Support\CsvImportException;
 use App\Support\GeneratesTopUpCards;
+use App\Support\TopUpCardOffices;
 use App\Support\TopUpCardPin;
 use DateTimeImmutable;
 use Illuminate\Bus\Queueable;
@@ -58,6 +59,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
             $totalCards = 0;
             $totalValue = 0;
             $amountBreakdown = [];
+            $metadataItems = [];
             $seenSerials = [];
             $seenPins = [];
             $validationChunk = [];
@@ -84,6 +86,18 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                 $seenSerials[$card['serial_no']] = true;
                 $seenPins[$pinHash] = true;
                 $amountBreakdown[$card['amount']] = ($amountBreakdown[$card['amount']] ?? 0) + 1;
+                $officeCode = TopUpCardOffices::officeCodeFromSerialNo($card['serial_no']);
+
+                if ($officeCode !== null) {
+                    $itemKey = $officeCode . ':' . $card['amount'];
+                    $metadataItems[$itemKey] ??= [
+                        'office_cd' => $officeCode,
+                        'amount' => $card['amount'],
+                        'quantity' => 0,
+                    ];
+                    $metadataItems[$itemKey]['quantity']++;
+                }
+
                 $validationChunk[] = $card;
                 $totalCards++;
                 $totalValue += $card['amount'];
@@ -144,7 +158,6 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                     'batch_no' => GeneratesTopUpCards::nextBatchNo(),
                     'status' => \App\Enums\BatchStatus::Active,
                     'expires_at' => $firstExpiry ?? now()->toDateString(),
-                    'metadata' => ['source' => 'csv_import', 'generation_token' => $this->token],
                 ]);
             }
 
@@ -157,7 +170,6 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                 'completed_chunks' => 0,
                 'expires_at' => $firstExpiry,
                 'amounts' => $amounts,
-                'office_codes' => [],
                 'user_id' => $this->userId,
                 'source' => 'csv_import',
                 'batch_id' => $importBatch->id,
@@ -193,12 +205,9 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                 'status' => \App\Enums\BatchStatus::Active,
                 'expires_at' => $firstExpiry ?? now()->toDateString(),
                 'metadata' => [
-                    'source' => 'csv_import',
-                    'generation_token' => $this->token,
                     'total_cards' => $totalCards,
                     'total_value' => (string) $totalValue,
-                    'amounts' => $amounts,
-                    'office_codes' => [],
+                    'items' => array_values($metadataItems),
                     'user_id' => $this->userId,
                 ],
             ]);
@@ -212,7 +221,6 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                 'completed_chunks' => $totalChunks,
                 'expires_at' => $firstExpiry,
                 'amounts' => $amounts,
-                'office_codes' => [],
                 'user_id' => $this->userId,
                 'source' => 'csv_import',
                 'cards' => $preview,
@@ -478,6 +486,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
             }
 
             $now = now();
+            $officeIdsBySerial = TopUpCardOffices::resolveIdsBySerialNumbers(array_column($chunk, 'serial_no'));
             $insertRows = array_map(static fn(array $row): array => [
                 'serial_no' => $row['serial_no'],
                 'pin' => TopUpCardPin::hash($row['pin']),
@@ -486,7 +495,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                 'status' => TopUpCardStatus::Active->value,
                 'redeemed_at' => null,
                 'redeemed_by' => null,
-                'office_id' => null,
+                'office_id' => $officeIdsBySerial[$row['serial_no']] ?? null,
                 'batch_id' => $batchId,
                 'wallet_transaction_id' => null,
                 'created_at' => $now,
