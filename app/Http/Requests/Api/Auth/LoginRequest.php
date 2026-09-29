@@ -4,6 +4,7 @@ namespace App\Http\Requests\Api\Auth;
 
 use App\Support\PhoneNumber;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use InvalidArgumentException;
 
 class LoginRequest extends FormRequest
@@ -27,6 +28,8 @@ class LoginRequest extends FormRequest
         return [
             'phone' => ['required', 'string', 'regex:/^[1-9][0-9]{7,14}$/'],
             'password' => ['required', 'string'],
+            'device_token' => ['nullable', 'string', 'max:512'],
+            'platform' => ['nullable', 'string', Rule::in(['android', 'ios', 'web'])],
         ];
     }
 }

@@ -1,11 +1,13 @@
 <?php
 
-use App\Http\Controllers\Api\Banner\BannerController;
 use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\Api\Auth\RegistrationController;
+use App\Http\Controllers\Api\Banner\BannerController;
 use App\Http\Controllers\Api\BroadbandAccount\BroadbandAccountController;
 use App\Http\Controllers\Api\Category\CategoryController;
 use App\Http\Controllers\Api\Contact\ContactController;
+use App\Http\Controllers\Api\DeviceToken\DeviceTokenController;
+use App\Http\Controllers\Api\FtthBill\FtthBillController;
 use App\Http\Controllers\Api\Gallery\GalleryController;
 use App\Http\Controllers\Api\News\NewsController;
 use App\Http\Controllers\Api\Notification\AnnouncementController;
@@ -72,6 +74,11 @@ Route::middleware('throttle:60,1')->group(function () {
 Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('/auth/logout', [LoginController::class, 'logout']);
 
+    Route::post('/device-tokens', [DeviceTokenController::class, 'store']);
+    Route::delete('/device-tokens', [DeviceTokenController::class, 'destroy']);
+
+    Route::post('/ftth-bills/pay', [FtthBillController::class, 'pay']);
+
     Route::prefix('relocation-requests')->group(function () {
         Route::get('/', [RelocationRequestController::class, 'index']);
         Route::post('/create', [RelocationRequestController::class, 'store']);
@@ -114,3 +121,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::post('/connect', [BroadbandAccountController::class, 'connect']);
     });
 });
+
+if (app()->isLocal()) {
+    require __DIR__ . '/dev.php';
+}

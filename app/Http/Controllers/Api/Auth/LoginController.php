@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\LoginRequest;
 use App\Http\Resources\UserResource;
 use App\Services\Auth\ApiAuthenticationService;
+use App\Services\DeviceToken\DeviceTokenService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -18,6 +19,13 @@ class LoginController extends Controller
             $request->string('password')->toString(),
             $request->ip(),
         );
+
+        DeviceTokenService::register(
+            $result['user'],
+            $request->string('device_token')->toString() !== '' ? $request->string('device_token')->toString() : null,
+            $request->input('platform'),
+        );
+
         $this->logActivity($request, 'login_success', [
             'user_id' => $result['user']->id,
             'phone' => $result['user']->phone ?? null,
@@ -32,6 +40,7 @@ class LoginController extends Controller
     public function logout(Request $request): JsonResponse
     {
         $request->user()->tokens()->delete();
+        $request->user()->deviceTokens()->delete();
         $this->logActivity($request, 'logout', [
             'user_id' => $request->user()->id,
         ]);

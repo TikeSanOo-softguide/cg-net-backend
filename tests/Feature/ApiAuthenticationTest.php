@@ -219,6 +219,51 @@ class ApiAuthenticationTest extends TestCase
         $this->withToken($oldToken)->getJson('/api/user')->assertUnauthorized();
     }
 
+    public function test_login_registers_device_token_when_provided(): void
+    {
+        $user = User::factory()->create(['phone' => '95912345678', 'password' => 'password123']);
+
+        $this->postJson('/api/auth/login', [
+            'phone' => '+95912345678',
+            'password' => 'password123',
+            'device_token' => 'auto-login-device-token',
+            'platform' => 'android',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('device_tokens', [
+            'user_id' => $user->id,
+            'token' => 'auto-login-device-token',
+            'platform' => 'android',
+        ]);
+    }
+
+    public function test_registration_registers_device_token_when_provided(): void
+    {
+        $challenge = $this->requestOtp('+95912345678');
+        $verification = $this->postJson('/api/auth/register/verify-otp', [
+            'challenge_id' => $challenge['challenge_id'],
+            'code' => $challenge['debug_otp'],
+        ])->json('verification_token');
+
+        $response = $this->postJson('/api/auth/register/complete', [
+            'verification_token' => $verification,
+            'name' => 'Device User',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'device_token' => 'auto-register-device-token',
+            'platform' => 'ios',
+        ]);
+
+        $response->assertCreated();
+        $user = User::query()->where('phone', '95912345678')->firstOrFail();
+
+        $this->assertDatabaseHas('device_tokens', [
+            'user_id' => $user->id,
+            'token' => 'auto-register-device-token',
+            'platform' => 'ios',
+        ]);
+    }
+
     public function test_logout_revokes_current_sanctum_token(): void
     {
         $user = User::factory()->create(['phone' => '95912345678', 'password' => 'password123']);

@@ -36,13 +36,14 @@ use App\Http\Controllers\TopUpCard\TopUpCardController;
 use App\Http\Controllers\Transaction\TransactionController;
 use App\Support\AdminHome;
 use App\Support\MenuPages;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::post('/locale/{lang}', LocaleController::class)->name('locale.update');
 
 Route::middleware(['auth:web', 'admin.active'])->group(function () {
-    Route::get('/', fn() => redirect()->to(AdminHome::path(auth()->user())))->name('home');
+    Route::get('/', fn (Request $request) => redirect()->to(AdminHome::path($request->user())))->name('home');
     Route::get('/dashboard', DashboardController::class)->middleware('can:dashboard.view')->name('dashboard');
     Route::delete('/dashboard/requests/bulk-destroy', [DashboardController::class, 'bulkDestroy'])
         ->middleware('can:service-requests.delete')

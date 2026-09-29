@@ -83,4 +83,17 @@ class User extends Authenticatable
     {
         return $this->hasMany(ChatConversation::class);
     }
+
+    public function deviceTokens(): HasMany
+    {
+        return $this->hasMany(DeviceToken::class);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function routeNotificationForFcm(): array
+    {
+        return $this->deviceTokens()->pluck('token')->all();
+    }
 }

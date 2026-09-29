@@ -8,6 +8,7 @@ use App\Http\Requests\Api\Auth\RegisterRequestOtpRequest;
 use App\Http\Requests\Api\Auth\VerifyOtpRequest;
 use App\Http\Resources\UserResource;
 use App\Services\Auth\ApiAuthenticationService;
+use App\Services\DeviceToken\DeviceTokenService;
 use Illuminate\Http\JsonResponse;
 
 class RegistrationController extends Controller
@@ -42,6 +43,13 @@ class RegistrationController extends Controller
             $request->string('verification_token')->toString(),
             $request->validated(),
         );
+
+        DeviceTokenService::register(
+            $result['user'],
+            $request->string('device_token')->toString() !== '' ? $request->string('device_token')->toString() : null,
+            $request->input('platform'),
+        );
+
         $this->logActivity($request, 'register_complete', [
             'user_id' => $result['user']->id,
             'name' => $result['user']->name ?? null,

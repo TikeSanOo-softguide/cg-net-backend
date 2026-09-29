@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title>FCM push test</title>
+    <style>
+        :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+        body { max-width: 760px; margin: 2rem auto; padding: 0 1rem; line-height: 1.45; }
+        h1 { font-size: 1.4rem; }
+        section { border: 1px solid #8884; border-radius: 10px; padding: 1rem 1.2rem; margin-bottom: 1rem; }
+        h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+        label { display: block; font-size: .85rem; margin: .6rem 0 .2rem; opacity: .8; }
+        input, textarea { width: 100%; box-sizing: border-box; padding: .5rem; font: inherit; font-size: .9rem; border-radius: 6px; border: 1px solid #8886; }
+        textarea { min-height: 9rem; font-family: ui-monospace, monospace; }
+        button { margin-top: .8rem; padding: .5rem 1rem; font: inherit; border-radius: 6px; border: 1px solid #8886; cursor: pointer; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+        .status { margin-top: .6rem; font-size: .9rem; white-space: pre-wrap; word-break: break-all; }
+        .ok { color: #16a34a; } .err { color: #dc2626; }
+        #log { font-family: ui-monospace, monospace; font-size: .8rem; white-space: pre-wrap; word-break: break-all; max-height: 360px; overflow: auto; }
+        .hint { font-size: .8rem; opacity: .7; }
+    </style>
+</head>
+<body>
+<h1>FCM push test (local only)</h1>
+<p class="hint">Stands in for the mobile app: gets a browser FCM token, registers it with the API, and shows incoming pushes.</p>
+
+<section>
+    <h2>1. Firebase web config</h2>
+    <label for="config">Paste the <code>firebaseConfig</code> snippet from Project settings → General → Your apps (Web)</label>
+    <textarea id="config" placeholder="const firebaseConfig = { apiKey: &quot;...&quot;, projectId: &quot;...&quot;, messagingSenderId: &quot;...&quot;, appId: &quot;...&quot; };"></textarea>
+    <label for="vapid">VAPID key (Project settings → Cloud Messaging → Web Push certificates)</label>
+    <input id="vapid" placeholder="BExampleKey...">
+    <button id="save">Save</button>
+    <div id="configStatus" class="status"></div>
+</section>
+
+<section>
+    <h2>2. Get browser token</h2>
+    <button id="getToken">Allow notifications &amp; get token</button>
+    <div id="tokenStatus" class="status"></div>
+    <button id="copyToken" hidden>Copy token</button>
+</section>
+
+<section>
+    <h2>3. Register token with the API</h2>
+    <div class="row">
+        <div>
+            <label for="phone">Customer phone</label>
+            <input id="phone" placeholder="959xxxxxxxxx" value="959000000001">
+        </div>
+        <div>
+            <label for="password">Password</label>
+            <input id="password" type="password" value="password">
+        </div>
+    </div>
+    <button id="register">Log in &amp; register token</button>
+    <div id="registerStatus" class="status"></div>
+    <p class="hint">Uses <code>POST /api/auth/login</code> then <code>POST /api/device-tokens</code>. Logging in here signs this customer out of other sessions.</p>
+</section>
+
+<section>
+    <h2>4. Incoming pushes</h2>
+    <p class="hint">Foreground messages appear here and as a system notification. When this tab is in the background, the browser shows the notification itself.</p>
+    <div id="log">Waiting for messages…</div>
+</section>
+
+<script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
+    import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging.js';
+
+    const $ = (id) => document.getElementById(id);
+    const STORAGE_KEY = 'fcm-test-settings';
+    let fcmToken = null;
+    let messaging = null;
+
+    const setStatus = (el, text, ok = true) => {
+        el.textContent = text;
+        el.className = `status ${ok ? 'ok' : 'err'}`;
+    };
+
+    const log = (label, data) => {
+        const line = `[${new Date().toLocaleTimeString()}] ${label}\n${JSON.stringify(data, null, 2)}\n\n`;
+        $('log').textContent = $('log').textContent.startsWith('Waiting') ? line : line + $('log').textContent;
+    };
+
+    // Accepts both plain JSON and the JS snippet the Firebase console shows.
+    const parseConfig = (text) => {
+        const start = text.indexOf('{');
+        const end = text.lastIndexOf('}');
+        if (start === -1 || end === -1) throw new Error('No { … } object found.');
+        const config = new Function(`return (${text.slice(start, end + 1)});`)();
+        for (const key of ['apiKey', 'projectId', 'messagingSenderId', 'appId']) {
+            if (!config[key]) throw new Error(`Missing "${key}" in config.`);
+        }
+        return config;
+    };
+
+    const loadSettings = () => JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+
+    const saved = loadSettings();
+    if (saved) {
+        $('config').value = JSON.stringify(saved.config, null, 2);
+        $('vapid').value = saved.vapidKey;
+        setStatus($('configStatus'), `Loaded saved config for project "${saved.config.projectId}".`);
+    }
+
+    $('save').addEventListener('click', () => {
+        try {
+            const config = parseConfig($('config').value);
+            const vapidKey = $('vapid').value.trim();
+            if (!vapidKey) throw new Error('VAPID key is required.');
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({ config, vapidKey }));
+            setStatus($('configStatus'), `Saved config for project "${config.projectId}".`);
+        } catch (error) {
+            setStatus($('configStatus'), error.message, false);
+        }
+    });
+
+    $('getToken').addEventListener('click', async () => {
+        const settings = loadSettings();
+        if (!settings) return setStatus($('tokenStatus'), 'Save the Firebase config first.', false);
+
+        try {
+            if (!('serviceWorker' in navigator) || !('Notification' in window)) {
+                throw new Error('This browser does not support web push.');
+            }
+
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') throw new Error(`Notification permission is "${permission}".`);
+
+            const swUrl = `/dev/fcm/firebase-messaging-sw.js?config=${encodeURIComponent(JSON.stringify(settings.config))}`;
+            const registration = await navigator.serviceWorker.register(swUrl, { scope: '/dev/fcm/' });
+            await navigator.serviceWorker.ready;
+
+            messaging ??= getMessaging(initializeApp(settings.config));
+            fcmToken = await getToken(messaging, { vapidKey: settings.vapidKey, serviceWorkerRegistration: registration });
+            if (!fcmToken) throw new Error('Firebase returned no token.');
+
+            setStatus($('tokenStatus'), fcmToken);
+            $('copyToken').hidden = false;
+
+            onMessage(messaging, (payload) => {
+                log('Foreground message', payload);
+                const n = payload.notification || {};
+                registration.showNotification(n.title || 'Push received', { body: n.body || '', data: payload.data });
+            });
+        } catch (error) {
+            setStatus($('tokenStatus'), error.message, false);
+        }
+    });
+
+    $('copyToken').addEventListener('click', async () => {
+        await navigator.clipboard.writeText(fcmToken);
+        $('copyToken').textContent = 'Copied';
+        setTimeout(() => ($('copyToken').textContent = 'Copy token'), 1500);
+    });
+
+    $('register').addEventListener('click', async () => {
+        if (!fcmToken) return setStatus($('registerStatus'), 'Get a browser token first.', false);
+
+        const request = async (url, body, bearer) => {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+                },
+                body: JSON.stringify(body),
+            });
+            const json = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(`${url} → ${response.status}: ${json.message || JSON.stringify(json)}`);
+            return json;
+        };
+
+        try {
+            const login = await request('/api/auth/login', { phone: $('phone').value.trim(), password: $('password').value });
+            await request('/api/device-tokens', { token: fcmToken, platform: 'web' }, login.token);
+            setStatus($('registerStatus'), `Registered for user #${login.user?.id ?? '?'} (${login.user?.name ?? 'unknown'}).`);
+        } catch (error) {
+            setStatus($('registerStatus'), error.message, false);
+        }
+    });
+
+    navigator.serviceWorker?.addEventListener('message', (event) => {
+        if (event.data?.source === 'fcm-sw') log('Background message', event.data.payload);
+    });
+</script>
+</body>
+</html>

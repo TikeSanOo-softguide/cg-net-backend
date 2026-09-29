@@ -2,10 +2,9 @@
 
 namespace App\Enums;
 
-enum WalletTransactionStatus: string
+enum BillPaymentNotificationEvent: string
 {
-    case Pending = 'pending';
     case Processing = 'processing';
     case Completed = 'completed';
-    case Failed = 'failed';
+    case Refunded = 'refunded';
 }
