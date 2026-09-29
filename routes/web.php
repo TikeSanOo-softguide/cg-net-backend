@@ -304,9 +304,6 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::post('/offices/import', [OfficeController::class, 'import'])
                 ->middleware('can:top-up-cards.update')
                 ->name('offices.import');
-            Route::patch('/assign-office', [OfficeController::class, 'assignOffice'])
-                ->middleware('can:top-up-cards.update')
-                ->name('assign-cards-office');
             Route::get('/export', [TopUpCardController::class, 'export'])
                 ->middleware('can:top-up-cards.view')
                 ->name('export');

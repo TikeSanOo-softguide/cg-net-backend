@@ -1020,6 +1020,8 @@
         "add_custom": "Add custom amount",
         "custom_amount": "Custom amount",
         "quantity": "Quantity",
+        "total_value": "Total value",
+        "available_cards": "Available cards",
         "increase": "Increase quantity",
         "decrease": "Decrease quantity",
         "expires_at": "Expiry date",

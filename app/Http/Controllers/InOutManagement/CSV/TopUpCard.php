@@ -16,7 +16,12 @@ final class TopUpCard
     /**
      * @var list<string>
      */
-    private const Headers = ['serial_no*', 'pin*', 'amount*', 'expires_at*', 'status*'];
+    private const ExportHeaders = ['serial_no', 'pin', 'amount', 'expires_at'];
+
+    /**
+     * @var list<string>
+     */
+    private const ImportHeaders = ['serial_no*', 'pin*', 'amount*', 'expires_at*', 'status*'];
 
     /**
      * @param list<array<string, mixed>> $cards
@@ -24,13 +29,12 @@ final class TopUpCard
     public static function export(array $cards, string $filename = 'top-up-cards.csv'): StreamedResponse
     {
         return Csv::export(
-            self::Headers,
+            self::ExportHeaders,
             array_map(fn(array $card): array => [
                 $card['serial_no'] ?? '',
                 $card['pin'] ?? '',
                 self::formatAmount($card['amount'] ?? 0),
                 $card['expires_at'] ?? '',
-                $card['status'] ?? '',
             ], $cards),
             $filename,
         );
@@ -42,7 +46,7 @@ final class TopUpCard
      */
     public static function import(UploadedFile $file): int
     {
-        $rows = Csv::import($file, self::Headers);
+        $rows = Csv::import($file, self::ImportHeaders);
         $serials = [];
 
         foreach ($rows as $index => $row) {
