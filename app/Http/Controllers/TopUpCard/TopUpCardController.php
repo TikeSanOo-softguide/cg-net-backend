@@ -825,11 +825,7 @@ class TopUpCardController extends Controller
      */
     private function payload(TopUpCard $card): array
     {
-        $status = $card->status;
-
-        if ($status === TopUpCardStatus::Active && $card->expires_at?->copy()->endOfDay()->isPast()) {
-            $status = TopUpCardStatus::Expired;
-        }
+        $status = $card->effectiveStatus();
 
         return [
             'id' => $card->id,

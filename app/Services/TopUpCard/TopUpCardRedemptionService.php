@@ -18,6 +18,7 @@ use App\Support\TopUpCardPin;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
+use RuntimeException;
 
 class TopUpCardRedemptionService
 {
@@ -31,7 +32,41 @@ class TopUpCardRedemptionService
 
     private const FAILED_PIN_DECAY_SECONDS_PER_IP = 60 * 60;
 
+    private const FAILED_SERIAL_LIMIT_PER_USER = 10;
+
+    private const FAILED_SERIAL_LIMIT_PER_IP = 20;
+
+    private const FAILED_SERIAL_DECAY_SECONDS_PER_USER = 30 * 60;
+
+    private const FAILED_SERIAL_DECAY_SECONDS_PER_IP = 60 * 60;
+
     public function __construct(private readonly LedgerPoster $ledger) {}
+
+    /**
+     * @return array{http_status: int, body: array<string, mixed>, headers: array<string, string>}
+     */
+    public function checkSerialNo(User $user, string $serialNo, ?string $ipAddress = null): array
+    {
+        $ipAddress ??= 'unknown';
+        $userId = (string) $user->getKey();
+
+        $rateLimitResponse = $this->serialRateLimitResponse($userId, $ipAddress);
+        if ($rateLimitResponse !== null) {
+            return $rateLimitResponse;
+        }
+
+        $card = TopUpCard::query()->where('serial_no', $serialNo)->first();
+        $status = $card?->effectiveStatus();
+
+        if ($status !== TopUpCardStatus::Active) {
+            $this->registerSerialFailure($userId, $ipAddress);
+        }
+
+        return $this->response(
+            $status === TopUpCardStatus::Active ? 200 : 400,
+            ['message' => $this->serialCheckMessage($status)],
+        );
+    }
 
     /**
      * @return array{http_status: int, body: array<string, mixed>, headers: array<string, string>}
@@ -65,6 +100,10 @@ class TopUpCardRedemptionService
 
                 $actor = $users->get($actorId);
                 $account = $users->get($recipientId);
+
+                if (!$actor || $actor->status !== UserStatus::Active) {
+                    return $this->response(403, ['message' => 'Account is not available.']);
+                }
 
                 if (!$account || $account->status !== UserStatus::Active) {
                     return $this->response(403, ['message' => 'Account is not available.']);
@@ -115,6 +154,7 @@ class TopUpCardRedemptionService
                 $existing = LedgerTransaction::query()
                     ->with(['topUpCard', 'entries.ledgerAccount'])
                     ->where('idempotency_key', $idempotencyKey)
+                    ->lockForUpdate()
                     ->first();
 
                 if ($existing !== null) {
@@ -122,10 +162,9 @@ class TopUpCardRedemptionService
                 }
 
                 if (
-                    $card->status !== TopUpCardStatus::Active ||
+                    $card->effectiveStatus() !== TopUpCardStatus::Active ||
                     $card->redeemed_at !== null ||
-                    $card->wallet_transaction_id !== null ||
-                    $card->expires_at?->copy()->endOfDay()->isPast()
+                    $card->ledger_transaction_id !== null
                 ) {
                     $this->registerPinFailure((string) $actor->getKey(), $ipAddress);
 
@@ -140,7 +179,7 @@ class TopUpCardRedemptionService
                     $balanceBefore < 0 ||
                     $amount > self::MAX_WALLET_BALANCE - $balanceBefore
                 ) {
-                    return $this->response(409, ['message' => 'This action could not be completed.']);
+                    return $this->response(409, ['message' => 'Top-up could not be completed.']);
                 }
 
                 $now = now();
@@ -167,11 +206,22 @@ class TopUpCardRedemptionService
 
                 $balanceAfter = (int) $wallet->refresh()->balance;
 
-                $card->status = TopUpCardStatus::Used;
-                $card->redeemed_at = $now;
-                $card->redeemed_by = $actor->id;
-                $card->ledger_transaction_id = $transaction->id;
-                $card->save();
+                $marked = TopUpCard::query()
+                    ->whereKey($card->getKey())
+                    ->where('status', TopUpCardStatus::Active)
+                    ->whereNull('redeemed_at')
+                    ->whereNull('ledger_transaction_id')
+                    ->update([
+                        'status' => TopUpCardStatus::Used,
+                        'redeemed_at' => $now,
+                        'redeemed_by' => $actor->id,
+                        'ledger_transaction_id' => $transaction->id,
+                        'updated_at' => $now,
+                    ]);
+
+                if ($marked !== 1) {
+                    throw new RuntimeException('Top-up card could not be marked as redeemed.');
+                }
 
                 return $this->response(200, [
                     'result' => 'success',
@@ -183,6 +233,12 @@ class TopUpCardRedemptionService
             });
         } catch (UniqueConstraintViolationException) {
             return $this->response(409, ['message' => 'Idempotency key has already been used.']);
+        } catch (RuntimeException $exception) {
+            if ($exception->getMessage() !== 'Top-up card could not be marked as redeemed.') {
+                throw $exception;
+            }
+
+            return $this->response(409, ['message' => 'Top-up could not be completed.']);
         }
     }
 
@@ -223,6 +279,53 @@ class TopUpCardRedemptionService
         RateLimiter::hit($ipFailureKey, self::FAILED_PIN_DECAY_SECONDS_PER_IP);
     }
 
+    /**
+     * @return array{http_status: int, body: array<string, mixed>, headers: array<string, string>}|null
+     */
+    protected function serialRateLimitResponse(string $userId, string $ipAddress): ?array
+    {
+        $userFailureKey = 'top-up-card-serial-failure:user:' . hash('sha256', $userId);
+        $ipFailureKey = 'top-up-card-serial-failure:ip:' . hash('sha256', $ipAddress);
+        $userRateLimited = RateLimiter::tooManyAttempts($userFailureKey, self::FAILED_SERIAL_LIMIT_PER_USER);
+        $ipRateLimited = RateLimiter::tooManyAttempts($ipFailureKey, self::FAILED_SERIAL_LIMIT_PER_IP);
+
+        if (!$userRateLimited && !$ipRateLimited) {
+            return null;
+        }
+
+        $retryAfter = max(
+            $userRateLimited ? RateLimiter::availableIn($userFailureKey) : 0,
+            $ipRateLimited ? RateLimiter::availableIn($ipFailureKey) : 0,
+        );
+
+        $message = match (true) {
+            $userRateLimited && $ipRateLimited => 'Both rate limits reached: the authenticated user limit (10 failed serial checks per 30 minutes) and the IP limit (20 failed serial checks per 1 hour). Check Retry-After before trying again.',
+            $userRateLimited => 'Authenticated user rate limit reached: 10 failed serial checks. Check Retry-After; the limit lasts up to 30 minutes.',
+            default => 'IP rate limit reached: 20 failed serial checks from this IP address. Check Retry-After; the limit lasts up to 1 hour.',
+        };
+
+        return $this->response(429, ['message' => $message], ['Retry-After' => (string) $retryAfter]);
+    }
+
+    protected function registerSerialFailure(string $userId, string $ipAddress): void
+    {
+        $userFailureKey = 'top-up-card-serial-failure:user:' . hash('sha256', $userId);
+        $ipFailureKey = 'top-up-card-serial-failure:ip:' . hash('sha256', $ipAddress);
+
+        RateLimiter::hit($userFailureKey, self::FAILED_SERIAL_DECAY_SECONDS_PER_USER);
+        RateLimiter::hit($ipFailureKey, self::FAILED_SERIAL_DECAY_SECONDS_PER_IP);
+    }
+
+    protected function serialCheckMessage(?TopUpCardStatus $status): string
+    {
+        return match ($status) {
+            TopUpCardStatus::Active => 'This top-up card is valid.',
+            TopUpCardStatus::Used => 'This top-up card has already been used.',
+            TopUpCardStatus::Expired => 'This top-up card has expired.',
+            TopUpCardStatus::Blocked => 'This top-up card has been blocked.',
+            default => 'This top-up card is invalid.',
+        };
+    }
 
     /**
      * @return array{http_status: int, body: array<string, mixed>, headers: array<string, string>}

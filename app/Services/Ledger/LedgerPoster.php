@@ -162,7 +162,7 @@ class LedgerPoster
             return $existing;
         }
 
-        return DB::transaction(function () use (
+        $callback = function () use (
             $wallet,
             $amount,
             $type,
@@ -270,7 +270,13 @@ class LedgerPoster
             }
 
             return $transaction->refresh()->load(['entries.ledgerAccount']);
-        });
+        };
+
+        if (DB::transactionLevel() > 0) {
+            return $callback();
+        }
+
+        return DB::transaction($callback);
     }
 
     /**

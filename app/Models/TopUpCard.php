@@ -61,4 +61,15 @@ class TopUpCard extends Model
     {
         return $this->belongsTo(LedgerTransaction::class, 'ledger_transaction_id');
     }
+
+    public function effectiveStatus(): TopUpCardStatus
+    {
+        $status = $this->status;
+
+        if ($status === TopUpCardStatus::Active && $this->expires_at?->copy()->endOfDay()->isPast()) {
+            return TopUpCardStatus::Expired;
+        }
+
+        return $status;
+    }
 }
