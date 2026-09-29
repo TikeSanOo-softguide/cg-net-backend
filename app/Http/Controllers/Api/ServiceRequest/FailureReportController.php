@@ -52,6 +52,11 @@ class FailureReportController extends Controller
                 ]);
             }
 
+            $this->logActivity($request, 'create_failure_report', [
+                'failure_report_id' => $failureReport->id,
+                'failure_type' => $failureReport->failure_type,
+            ]);
+
             return new FailureReportResource($failureReport->load('photos'));
         });
     }
@@ -91,6 +96,10 @@ class FailureReportController extends Controller
                     }
                 }
             }
+
+            $this->logActivity($request, 'update_failure_report', [
+                'failure_report_id' => $failureReport->id,
+            ]);
             return new FailureReportResource($failureReport->load('photos'));
         });
     }
@@ -100,6 +109,10 @@ class FailureReportController extends Controller
         $this->ensureOwner($request, $failureReport);
         $failureReport->update([
             'status' => RequestStatus::Cancelled,
+        ]);
+
+        $this->logActivity($request, 'cancel_failure_report', [
+            'failure_report_id' => $failureReport->id,
         ]);
 
         return new FailureReportResource($failureReport->refresh());
@@ -115,6 +128,10 @@ class FailureReportController extends Controller
             }
             $failureReport->delete();
         });
+
+        $this->logActivity($request, 'delete_failure_report', [
+            'failure_report_id' => $failureReport->id,
+        ]);
         return response()->noContent();
     }
 

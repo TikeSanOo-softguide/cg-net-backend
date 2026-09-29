@@ -146,7 +146,7 @@
         "language_management_description": "Manage supported languages and translations.",
         "general_settings_description": "Configure general application settings."
     },
- 
+
     "settings": {
         "app_version": {
             "label": "App version",
@@ -276,6 +276,18 @@
         "additional_filters": "Additional filters",
         "occurred_at": "Occurred at",
         "invalid_date_range": "To date must be equal to or after the from date."
+    },
+    "user_logs": {
+        "details": "User Log Details",
+        "user": "User",
+        "email": "Email",
+        "ip_address": "IP Address",
+        "action": "Action",
+        "date": "Occurred at",
+        "user_agent": "User Agent",
+        "metadata": "Metadata",
+        "value": "Value",
+        "unknown": "Unknown"
     },
     "common": {
         "profile": "Profile",

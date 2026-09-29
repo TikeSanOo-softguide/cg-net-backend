@@ -26,11 +26,13 @@ class RegistrationController extends Controller
 
     public function verifyOtp(VerifyOtpRequest $request, ApiAuthenticationService $service): JsonResponse
     {
+        $verificationToken = $service->verifyRegistrationOtp(
+            $request->string('challenge_id')->toString(),
+            $request->string('code')->toString(),
+        );
+
         return response()->json([
-            'verification_token' => $service->verifyRegistrationOtp(
-                $request->string('challenge_id')->toString(),
-                $request->string('code')->toString(),
-            ),
+            'verification_token' => $verificationToken,
         ]);
     }
 
@@ -40,6 +42,11 @@ class RegistrationController extends Controller
             $request->string('verification_token')->toString(),
             $request->validated(),
         );
+        $this->logActivity($request, 'register_complete', [
+            'user_id' => $result['user']->id,
+            'name' => $result['user']->name ?? null,
+            'email' => $result['user']->email ?? null,
+        ]);
 
         return response()->json(
             [

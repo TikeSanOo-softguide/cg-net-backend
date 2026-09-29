@@ -11,6 +11,7 @@ use App\Http\Controllers\Cms\ServiceController;
 use App\Http\Controllers\Customer\CustomerController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Locale\LocaleController;
+use App\Http\Controllers\Log\UserLogController;
 use App\Http\Controllers\MenuPage\MenuPageController;
 use App\Http\Controllers\Notification\AnnouncementController;
 use App\Http\Controllers\Package\AddonController;
@@ -564,6 +565,12 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
     Route::get('/activity-logs/export', [ActivityLogController::class, 'export'])
         ->middleware('can:activity.view')
         ->name('activity-logs.export');
+    Route::get('/logs/users', [UserLogController::class, 'index'])
+        ->middleware('can:activity.view')
+        ->name('logs.users.index');
+    Route::get('/logs/users/export', [UserLogController::class, 'export'])
+        ->middleware('can:activity.view')
+        ->name('logs.users.export');
 });
 
 Route::fallback(function () {

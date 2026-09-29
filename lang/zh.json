@@ -144,7 +144,7 @@
         "language_management_description": "管理支持的语言和翻译。",
         "general_settings_description": "配置常规应用设置。"
     },
-    
+
     "settings": {
         "app_version": {
             "label": "应用版本",
@@ -276,6 +276,18 @@
         "additional_filters": "更多筛选",
         "occurred_at": "时间",
         "invalid_date_range": "结束日期必须等于或晚于开始日期。"
+    },
+    "user_logs": {
+        "details": "用户日志详情",
+        "user": "用户",
+        "email": "电子邮箱",
+        "ip_address": "IP 地址",
+        "action": "操作",
+        "date": "发生于",
+        "user_agent": "用户代理",
+        "metadata": "元数据",
+        "value": "值",
+        "unknown": "未知"
     },
     "common": {
         "profile": "个人资料",

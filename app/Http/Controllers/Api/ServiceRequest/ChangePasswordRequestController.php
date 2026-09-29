@@ -28,6 +28,10 @@ class ChangePasswordRequestController extends Controller
             'user_id' => $request->user()->id,
             'status' => 'under_review',
         ]);
+        $this->logActivity($request, 'create_change_password_request', [
+            'change_password_request_id' => $password->id,
+            'status' => $password->status,
+        ]);
 
         return new ChangePasswordRequestResource($password);
     }
@@ -45,6 +49,9 @@ class ChangePasswordRequestController extends Controller
     ): ChangePasswordRequestResource {
         $this->ensureOwner($request, $changePasswordRequest);
         $changePasswordRequest->update($request->validated());
+        $this->logActivity($request, 'update_change_password_request', [
+            'change_password_request_id' => $changePasswordRequest->id,
+        ]);
 
         return new ChangePasswordRequestResource($changePasswordRequest->refresh());
     }
@@ -53,6 +60,9 @@ class ChangePasswordRequestController extends Controller
     {
         $this->ensureOwner($request, $changePasswordRequest);
         $changePasswordRequest->delete();
+        $this->logActivity($request, 'delete_change_password_request', [
+            'change_password_request_id' => $changePasswordRequest->id,
+        ]);
 
         return response()->noContent();
     }

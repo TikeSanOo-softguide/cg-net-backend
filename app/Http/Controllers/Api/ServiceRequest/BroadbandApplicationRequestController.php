@@ -56,6 +56,11 @@ class BroadbandApplicationRequestController extends Controller
                 ]);
             }
 
+            $this->logActivity($request, 'create_broadband_application', [
+                'broadband_application_id' => $application->id,
+                'status' => $application->status->value,
+            ]);
+
             return $application;
         });
 
@@ -119,6 +124,10 @@ class BroadbandApplicationRequestController extends Controller
                 }
             }
 
+            $this->logActivity($request, 'update_broadband_application', [
+                'broadband_application_id' => $installationApplication->id,
+            ]);
+
             return new BroadbandApplicationResource(
                 $installationApplication
                     ->refresh()
@@ -138,6 +147,10 @@ class BroadbandApplicationRequestController extends Controller
             $installationApplication->delete();
         });
 
+        $this->logActivity($request, 'delete_broadband_application', [
+            'broadband_application_id' => $installationApplication->id,
+        ]);
+
         return response()->noContent();
     }
 
@@ -148,6 +161,10 @@ class BroadbandApplicationRequestController extends Controller
         $this->ensureOwner($request, $installationApplication);
         $installationApplication->update([
             'status' => RequestStatus::Cancelled,
+        ]);
+
+        $this->logActivity($request, 'cancel_broadband_application', [
+            'broadband_application_id' => $installationApplication->id,
         ]);
 
         return new BroadbandApplicationResource($installationApplication->refresh());
