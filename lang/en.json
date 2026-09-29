@@ -1264,8 +1264,8 @@
             "price_max": "Price may not be greater than 9-digit.",
             "installation_fee_max": "Installation Fee may not be greater than 9-digit.",
             "unique": "Same network, speed, and term package already exists.",
-            "max": "Value must be between 0 and 9.",
-            "sort_order_max": "Value must be between 0 and 9.",
+            "max": "Value may not be greater than 9-digit.",
+            "sort_order_max": "Value may not be greater than 9-digit.",
             "cannot_delete_in_use": "This package cannot be deleted because it is currently in use."
         }
     },
