@@ -282,9 +282,6 @@ class ChatConversationSeeder extends Seeder
         DB::table('chat_messages')->insert([
             'conversation_id' => $conversationId,
             'sender_type' => $senderType,
-            'message_type' => $senderType === 'system'
-                ? 'system'
-                : 'text',
             'message' => $message,
             'attachment_path' => null,
             'option_id' => null,

@@ -18,13 +18,13 @@ class UpdatePromotionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title_en' => ['required', 'string', 'max:255'],
-            'title_my' => ['required', 'string', 'max:255'],
-            'title_zh' => ['required', 'string', 'max:255'],
+            'title_en' => ['required', 'string', 'max:120'],
+            'title_my' => ['required', 'string', 'max:120'],
+            'title_zh' => ['required', 'string', 'max:120'],
             'description_en' => ['required', 'string', 'max:5000'],
             'description_my' => ['required', 'string', 'max:5000'],
             'description_zh' => ['required', 'string', 'max:5000'],
-            'slug' => CmsRules::slug('promotions', $this->promotion?->id),
+            'slug' => CmsRules::slug('promotions', $this->promotion?->id, 120),
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'is_active' => ['required', 'boolean'],

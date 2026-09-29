@@ -261,16 +261,23 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 ->name('chatbot-flows.')
                 ->controller(ChatbotFlowsController::class)
                 ->group(function () {
-                    Route::get('/', 'index')->name('index');
-                    Route::post('/steps', 'storeStep')->name('steps.store');
-                    Route::put('/steps/{step}', 'updateStep')->name('steps.update');
-                    Route::delete('/steps/{step}', 'destroyStep')->name('steps.destroy');
-                    Route::post('/steps/{step}/options', 'storeOption')->name('options.store');
-                    Route::put('/steps/{step}/options/{option}', 'updateOption')->name('options.update');
-                    Route::delete('/steps/{step}/options/{option}', 'destroyOption')->name('options.destroy');
-                    Route::post('/steps/{step}/options/create-step', 'createStepFromOption')->name(
-                        'options.create-step',
-                    );
+                    Route::get('/', 'index')->middleware('can:chatbot-flows.view')->name('index');
+                    Route::post('/steps', 'storeStep')->middleware('can:chatbot-flows.store')->name('steps.store');
+                    Route::put('/steps/{step}', 'updateStep')
+                        ->middleware('can:chatbot-flows.update')
+                        ->name('steps.update');
+                    Route::delete('/steps/{step}', 'destroyStep')
+                        ->middleware('can:chatbot-flows.delete')
+                        ->name('steps.destroy');
+                    Route::post('/steps/{step}/options', 'storeOption')
+                        ->middleware('can:chatbot-flows.store')
+                        ->name('options.store');
+                    Route::put('/steps/{step}/options/{option}', 'updateOption')
+                        ->middleware('can:chatbot-flows.update')
+                        ->name('options.update');
+                    Route::delete('/steps/{step}/options/{option}', 'destroyOption')
+                        ->middleware('can:chatbot-flows.delete')
+                        ->name('options.destroy');
                 });
         });
 

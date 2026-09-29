@@ -1,8 +1,11 @@
-import { useTranslation } from '@/hooks/useTranslation';
+import { FormEvent } from 'react';
+import { useForm } from '@inertiajs/react';
 import { MapIcon, MapPinIcon, SquareStackIcon, SquarePenIcon } from 'lucide-react';
 
 import { FormDialog } from '@/components/FormDialog';
 import { RegionForm, type RegionFormValues } from '@/components/region/RegionForm';
+import { cmsModalVisit } from '@/lib/cms-modal';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export type StateRow = {
     id: number;
@@ -160,15 +163,11 @@ export function RegionFormDialog({ open, onOpenChange, type, item, states, regio
 
 type RegionFormDialogBodyProps = {
     type: RegionType;
-
     item: StateRow | RegionRow | AreaRow | null;
-
     states: StateRow[];
     regions: RegionRow[];
     areas: AreaRow[];
-
     initialValues: RegionFormValues;
-
     onClose: () => void;
 };
 
@@ -181,15 +180,61 @@ function RegionFormDialogBody({
     initialValues,
     onClose,
 }: RegionFormDialogBodyProps) {
+    const form = useForm<RegionFormValues>(initialValues);
+
+    const isEdit = item !== null;
+    const submit = (event: FormEvent) => {
+        event.preventDefault();
+
+        const options = {
+            ...cmsModalVisit,
+            onSuccess: onClose,
+        };
+
+        if (type === 'state') {
+            if (isEdit && item) {
+                form.put(`/regions/states/${item.id}`, options);
+
+                return;
+            }
+
+            form.post('/regions/states', options);
+
+            return;
+        }
+
+        if (type === 'region') {
+            if (isEdit && item) {
+                form.put(`/regions/regions/${item.id}`, options);
+
+                return;
+            }
+
+            form.post('/regions/regions', options);
+
+            return;
+        }
+
+        if (isEdit && item) {
+            form.put(`/regions/areas/${item.id}`, options);
+
+            return;
+        }
+
+        form.post('/regions/areas', options);
+    };
+
     return (
         <RegionForm
+            form={form}
+            onSubmit={submit}
             type={type}
             item={item}
             states={states}
             regions={regions}
             areas={areas}
-            initialValues={initialValues}
             onClose={onClose}
+            mode={isEdit ? 'edit' : 'create'}
         />
     );
 }

@@ -4,7 +4,7 @@ type Translate = (key: string) => string;
 
 export const PROMOTION_TITLE_MAX_LENGTH = 120;
 export const PROMOTION_DESCRIPTION_MAX_LENGTH = 5000;
-export const PROMOTION_IMAGE_MAX_SIZE_KB = 5120; // 5MB
+export const PROMOTION_IMAGE_MAX_SIZE_KB = 5120;
 
 export const PROMOTION_IMAGE_ACCEPTED_TYPES = [
     'image/jpeg',

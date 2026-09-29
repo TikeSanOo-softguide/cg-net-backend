@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Enums\ChatSenderType;
-use App\Enums\ChatMessageType;
 use App\Models\ChatConversation;
 use App\Models\ChatMessage;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -18,7 +17,6 @@ class ChatMessageFactory extends Factory
         return [
             'conversation_id' => ChatConversation::factory(),
             'sender_type' => fake()->randomElement(ChatSenderType::cases()),
-            'message_type' => ChatMessageType::Text,
             'message' => fake()->sentence(),
             'attachment_path' => fake()->optional(0.1)->passthrough('chat/' . fake()->uuid() . '.jpg'),
             'option_id' => null,

@@ -118,7 +118,6 @@ class ChatConversationsController extends Controller
 
         $conversation->messages()->create([
             'sender_type' => 'agent',
-            'message_type' => 'text',
             'message' => $validated['message'],
             'is_read' => true,
         ]);

@@ -91,11 +91,11 @@ export default function PromotionsIndex({ items, filters }: Props) {
                                     src={imageUrl}
                                     alt=""
                                     width={220}
-                                    height={90}
+                                    style={{ aspectRatio: '925 / 390' }}
                                     className="h-auto w-[220px] rounded object-cover"
                                 />
                             ) : (
-                                <NoImage width={220} height={90} />
+                                <NoImage width={220} aspectRatio="925 / 390" />
                             );
                         },
                     },

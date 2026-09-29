@@ -7,7 +7,6 @@ export type Person = {
 export type ChatMessage = {
     id: number;
     sender_type: string;
-    message_type: string;
     message: string | null;
     created_at: string;
 };

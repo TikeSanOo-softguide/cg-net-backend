@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\ChatSenderType;
-use App\Enums\ChatMessageType;
 use Database\Factories\ChatMessageFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +12,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'conversation_id',
     'sender_type',
-    'message_type',
     'message',
     'attachment_path',
     'option_id',
@@ -28,7 +26,6 @@ class ChatMessage extends Model
     {
         return [
             'sender_type' => ChatSenderType::class,
-            'message_type' => ChatMessageType::class,
             'is_read' => 'boolean',
         ];
     }

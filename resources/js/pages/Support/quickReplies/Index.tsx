@@ -162,7 +162,6 @@ function ResponseCell({ label, value }: { label: string; value: string }) {
                 {label}
             </span>
             <span className="min-w-0 flex-1 truncate text-[13px] text-muted-foreground">{value}</span>
-            <CopyValueButton value={value} label={`Copy ${label} response`} />
         </div>
     );
 }
