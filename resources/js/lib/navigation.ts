@@ -20,6 +20,7 @@ import {
     Languages,
     LayoutDashboard,
     Link2,
+    MapPin,
     MapPinned,
     Megaphone,
     MessageSquare,
@@ -42,6 +43,7 @@ import {
     Sparkles,
     Tags,
     Ticket,
+    UserCheck,
     UserCog,
     UserRound,
     Users,
@@ -190,7 +192,6 @@ export const navigation: NavGroup[] = [
                 href: '/top-up-cards/redeem-history',
                 icon: History,
             },
-            
         ],
     },
     {
@@ -365,13 +366,13 @@ export const navigation: NavGroup[] = [
             {
                 labelKey: 'menu.admin_activity_logs',
                 descriptionKey: 'menu.admin_activity_logs_description',
-                href: '/activity-logs',
+                href: '/logs/activity-logs',
                 icon: Activity,
             },
             {
                 labelKey: 'menu.user_logs',
                 descriptionKey: 'menu.user_logs_description',
-                href: '/logs/users',
+                href: '/logs/user-logs',
                 icon: UserRound,
             },
         ],
@@ -592,3 +593,36 @@ export function resolvePageDescription(
 export function titleKeyForPath(current: string): string {
     return menuPageContextForPath(current)?.titleKey ?? 'menu.dashboard';
 }
+
+export const reports = [
+    {
+        labelKey: 'menu.customer_reports',
+        descriptionKey: 'menu.customer_reports_description',
+        href: '/reports/customers',
+        icon: Users,
+    },
+    {
+        labelKey: 'menu.billing_reports',
+        descriptionKey: 'menu.billing_reports_description',
+        href: '/reports/billing',
+        icon: Banknote,
+    },
+    {
+        labelKey: 'menu.top_up_reports',
+        descriptionKey: 'menu.top_up_reports_description',
+        href: '/reports/top-ups',
+        icon: CreditCard,
+    },
+    {
+        labelKey: 'menu.service_request_reports',
+        descriptionKey: 'menu.service_request_reports_description',
+        href: '/reports/service-requests',
+        icon: ClipboardList,
+    },
+    {
+        labelKey: 'menu.app_usage_reports',
+        descriptionKey: 'menu.app_usage_reports_description',
+        href: '/reports/app-usage',
+        icon: Smartphone,
+    },
+];
