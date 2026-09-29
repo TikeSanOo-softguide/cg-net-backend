@@ -156,37 +156,6 @@ export default function CustomersShow({
         [packageTab, packageHistory],
     );
 
-    const bindFilters = (
-        <form
-            className="hidden gap-1.5 sm:flex"
-            onSubmit={(event) => {
-                event.preventDefault();
-                bindForm.post(`/customers/${customer.id}/accounts`, {
-                    preserveScroll: true,
-                    onSuccess: () => bindForm.reset(),
-                });
-            }}
-        >
-            <FormControl icon={HashIcon} compact className="max-w-44">
-                <Input
-                    value={bindForm.data.account_number}
-                    onChange={(event) => bindForm.setData('account_number', event.target.value)}
-                    placeholder={t('customers.account_number')}
-                    className="h-8 text-[12px] placeholder:text-[12px]"
-                    aria-invalid={Boolean(errors.account_number)}
-                />
-            </FormControl>
-            <Button type="submit" size="sm" className="h-8 gap-1 px-2.5 text-[11px]" disabled={bindForm.processing}>
-                {bindForm.processing ? (
-                    <Spinner size="xs" className="text-current" />
-                ) : (
-                    <Link2Icon className="size-3.5" strokeWidth={1.85} />
-                )}
-                {t('customers.bind_account')}
-            </Button>
-        </form>
-    );
-
     const packageTabs = (
         <div className="flex h-7 items-center rounded-[4px] border border-input bg-muted/40 p-0.5">
             {(['active', 'expired'] as const).map((tab) => (
@@ -241,7 +210,6 @@ export default function CustomersShow({
                             icon={WifiIcon}
                             title={t('customers.broadband_accounts')}
                             description={t('customers.broadband_hint')}
-                            actions={bindFilters}
                         >
                             <DataTable
                                 data={accountBinding ? [accountBinding] : []}
@@ -274,11 +242,15 @@ export default function CustomersShow({
                                         header: t('customers.package'),
                                         mobile: 'subtitle',
                                         searchValue: (row) => localizePackageName(row.package_name),
-                                        cell: (row) => (
-                                            <span className={!row.package_name ? 'text-muted-foreground' : undefined}>
-                                                {localizePackageName(row.package_name)}
-                                            </span>
-                                        ),
+                                        cell: (row) => {
+                                            const packageName = localizePackageName(row.package_name);
+
+                                            return (
+                                                <span className={!packageName ? 'text-muted-foreground' : undefined}>
+                                                    {packageName || '-'}
+                                                </span>
+                                            );
+                                        },
                                     },
                                     {
                                         id: 'status',
@@ -289,6 +261,7 @@ export default function CustomersShow({
                                     },
                                 ]}
                             />
+
                             {errors.account_number ? (
                                 <p className="mt-2 px-1 text-[11px] text-danger">{errors.account_number}</p>
                             ) : null}

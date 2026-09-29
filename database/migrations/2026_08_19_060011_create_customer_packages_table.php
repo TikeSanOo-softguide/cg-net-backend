@@ -12,7 +12,6 @@ return new class extends Migration {
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('package_id')->constrained()->restrictOnDelete();
             $table->foreignId('package_order_id')->nullable()->constrained('package_orders')->nullOnDelete();
-            $table->string('broadband_account_number', 32)->nullable()->index();
             $table->string('username')->nullable();
             $table->string('password')->nullable();
             $table->date('start_date');

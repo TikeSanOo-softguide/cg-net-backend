@@ -24,7 +24,6 @@ import { formatDate } from '@/lib/utils';
 type CustomerRow = CustomerFormMember & {
     wallet_balance: string;
     broadband_connected: boolean;
-    current_package: LocalizedText | null;
     created_at: string | null;
 };
 
@@ -229,15 +228,6 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                                     className={row.broadband_connected ? 'text-success' : undefined}
                                 >
                                     {row.broadband_connected ? t('customers.connected') : t('customers.not_connected')}
-                                </MetaCell>
-                            ),
-                        },
-                        {
-                            id: 'current_package',
-                            header: t('customers.current_package'),
-                            cell: (row) => (
-                                <MetaCell icon={PackageIcon} muted={!row.current_package}>
-                                    {localizePackageName(row.current_package)}
                                 </MetaCell>
                             ),
                         },

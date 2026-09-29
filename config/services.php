@@ -37,4 +37,8 @@ return [
         'bot_token' => env('TELEGRAM_BOT_TOKEN'),
         'chat_id' => env('TELEGRAM_CHAT_ID'),
     ],
+
+    'broadband' => [
+        'url' => env('BROADBAND_API_URL'),
+    ],
 ];

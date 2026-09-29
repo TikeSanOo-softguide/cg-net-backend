@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\Banner\BannerController;
 use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\Api\Auth\RegistrationController;
+use App\Http\Controllers\Api\BroadbandAccount\BroadbandAccountController;
 use App\Http\Controllers\Api\Category\CategoryController;
 use App\Http\Controllers\Api\Contact\ContactController;
 use App\Http\Controllers\Api\Gallery\GalleryController;
@@ -107,5 +108,9 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::put('/{installationApplication}', [BroadbandApplicationRequestController::class, 'update']);
         Route::patch('/{installationApplication}/cancel', [BroadbandApplicationRequestController::class, 'cancel']);
         Route::delete('/{installationApplication}', [BroadbandApplicationRequestController::class, 'destroy']);
+    });
+
+    Route::prefix('broadband-account')->group(function () {
+        Route::post('/connect', [BroadbandAccountController::class, 'connect']);
     });
 });

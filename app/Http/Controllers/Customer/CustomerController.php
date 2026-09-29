@@ -13,6 +13,7 @@ use App\Http\Requests\Customer\StoreCustomerRequest;
 use App\Http\Requests\Customer\UpdateCustomerRequest;
 use App\Http\Requests\Customer\UpdateCustomerStatusRequest;
 use App\Models\User;
+use App\Services\BroarbandAccount\BroadbandAccountService;
 use App\Services\TransactionService;
 use App\Support\PackageLabel;
 use Illuminate\Http\RedirectResponse;
@@ -80,11 +81,6 @@ class CustomerController extends Controller
                     'status' => $customer->status->value,
                     'wallet_balance' => number_format((float) ($customer->wallet?->balance ?? 0), 0, '.', ''),
                     'broadband_connected' => $customer->broadband_account_number !== null,
-                    'current_package' => [
-                        'en' => PackageLabel::make($currentPackage, 'en'),
-                        'my' => PackageLabel::make($currentPackage, 'my'),
-                        'zh' => PackageLabel::make($currentPackage, 'zh'),
-                    ],
                     'created_at' => $customer->created_at?->toDateString(),
                 ];
             });
@@ -132,8 +128,12 @@ class CustomerController extends Controller
         return redirect()->route('customers.show', $customer)->with('success', 'customers.created');
     }
 
-    public function show(Request $request, User $customer, TransactionService $transactions): Response
-    {
+    public function show(
+        Request $request,
+        User $customer,
+        TransactionService $transactions,
+        BroadbandAccountService $broadbandAccountService,
+    ): Response {
         $locale = app()->getLocale();
 
         $customer->load([
@@ -227,32 +227,39 @@ class CustomerController extends Controller
 
         $returnTo = session('customer.return_to', route('customers.index'));
 
+        $accountBinding = null;
+        $broadbandPackage = null;
+
+        if ($customer->broadband_account_number !== null) {
+            $accountBinding = $broadbandAccountService->findByAccountNumber($customer->broadband_account_number);
+
+            if ($accountBinding) {
+                $currentCustomerPackageId = (int) ($accountBinding['current_customer_package_id'] ?? 0);
+
+                $customerPackage = $customer
+                    ->customerPackages()
+                    ->with('package')
+                    ->whereKey($currentCustomerPackageId)
+                    ->first();
+
+                $broadbandPackage = $customerPackage?->package;
+            }
+        }
+
         return Inertia::render('Customer/Show', [
             'customer' => $this->customerPayload($customer),
-            'accountBinding' =>
-                $customer->broadband_account_number === null
-                    ? null
-                    : [
-                        'account_number' => $customer->broadband_account_number,
-                        'status' => $customer->status->value,
-                        'package_name' => [
-                            'en' => PackageLabel::make(
-                                $customer->customerPackages->firstWhere('status', CustomerPackageStatus::Active)
-                                    ?->package,
-                                'en',
-                            ),
-                            'my' => PackageLabel::make(
-                                $customer->customerPackages->firstWhere('status', CustomerPackageStatus::Active)
-                                    ?->package,
-                                'my',
-                            ),
-                            'zh' => PackageLabel::make(
-                                $customer->customerPackages->firstWhere('status', CustomerPackageStatus::Active)
-                                    ?->package,
-                                'zh',
-                            ),
-                        ],
+            'accountBinding' => $accountBinding
+                ? [
+                    'account_number' => $accountBinding['account_number'] ?? null,
+                    'customer_name' => $accountBinding['customer_name'] ?? null,
+                    'status' => $accountBinding['status'] ?? null,
+                    'package_name' => [
+                        'en' => PackageLabel::make($broadbandPackage, 'en'),
+                        'my' => PackageLabel::make($broadbandPackage, 'my'),
+                        'zh' => PackageLabel::make($broadbandPackage, 'zh'),
                     ],
+                ]
+                : null,
             'packageHistory' => $packageRows->values(),
             'wallet' => [
                 'balance' => number_format((float) ($customer->wallet?->balance ?? 0), 0, '.', ''),
