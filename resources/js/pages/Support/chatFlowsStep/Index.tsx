@@ -568,12 +568,6 @@ function OptionDetailDialog({
                 </div>
             </div>
 
-            {/* <FormActionBar onCancel={() => onOpenChange(false)}>
-                <Button type="button" size="sm" variant="primary" onClick={() => onEdit(option)}>
-                    <SquarePenIcon className="size-3.5" strokeWidth={1.85} />
-                    {t('common.edit')}
-                </Button>
-            </FormActionBar> */}
             <div className={formActionBarClass}>
                 <Button
                     type="button"
