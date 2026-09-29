@@ -19,12 +19,6 @@ final class MenuPages
                 'permission' => 'activity.view',
             ],
             [
-                'path' => '/logs/users',
-                'titleKey' => 'menu.user_logs',
-                'name' => 'logs.users',
-                'permission' => 'activity.view',
-            ],
-            [
                 'path' => '/cpe/inventory',
                 'titleKey' => 'menu.cpe_inventory',
                 'name' => 'cpe.inventory',
@@ -49,12 +43,6 @@ final class MenuPages
                 'permission' => 'packages.view',
             ],
             [
-                'path' => '/billing/invoices',
-                'titleKey' => 'menu.invoices',
-                'name' => 'billing.invoices',
-                'permission' => 'billing.view',
-            ],
-            [
                 'path' => '/billing/gateway-logs',
                 'titleKey' => 'menu.payment_gateway_logs',
                 'name' => 'billing.gateway-logs',
@@ -71,12 +59,6 @@ final class MenuPages
                 'titleKey' => 'menu.notification_categories',
                 'name' => 'notifications.categories',
                 'permission' => 'notifications.view',
-            ],
-            [
-                'path' => '/reports',
-                'titleKey' => 'menu.reports',
-                'name' => 'reports.index',
-                'permission' => 'reports.view',
             ],
             [
                 'path' => '/settings/languages',

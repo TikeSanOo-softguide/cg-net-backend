@@ -10,6 +10,7 @@ use App\Http\Controllers\Cms\PromotionController;
 use App\Http\Controllers\Cms\ServiceController;
 use App\Http\Controllers\Customer\CustomerController;
 use App\Http\Controllers\Dashboard\DashboardController;
+use App\Http\Controllers\Invoice\InvoiceController;
 use App\Http\Controllers\Locale\LocaleController;
 use App\Http\Controllers\Log\UserLogController;
 use App\Http\Controllers\MenuPage\MenuPageController;
@@ -20,6 +21,8 @@ use App\Http\Controllers\Package\PackageController;
 use App\Http\Controllers\Package\SpeedController;
 use App\Http\Controllers\Package\TermController;
 use App\Http\Controllers\Region\RegionManagementController;
+use App\Http\Controllers\Reports\BillingReportController;
+use App\Http\Controllers\Reports\ReportController;
 use App\Http\Controllers\ServiceRequest\BroadbandApplicationRequestController;
 use App\Http\Controllers\ServiceRequest\ChangePasswordRequestController;
 use App\Http\Controllers\ServiceRequest\ChangePlanRequestController;
@@ -43,7 +46,7 @@ use Inertia\Inertia;
 Route::post('/locale/{lang}', LocaleController::class)->name('locale.update');
 
 Route::middleware(['auth:web', 'admin.active'])->group(function () {
-    Route::get('/', fn (Request $request) => redirect()->to(AdminHome::path($request->user())))->name('home');
+    Route::get('/', fn(Request $request) => redirect()->to(AdminHome::path($request->user())))->name('home');
     Route::get('/dashboard', DashboardController::class)->middleware('can:dashboard.view')->name('dashboard');
     Route::delete('/dashboard/requests/bulk-destroy', [DashboardController::class, 'bulkDestroy'])
         ->middleware('can:service-requests.delete')
@@ -85,13 +88,13 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
 
     Route::prefix('billing')
         ->name('billing.')
+        ->middleware('can:billing.view')
         ->group(function () {
-            Route::get('/transactions', [TransactionController::class, 'index'])
-                ->middleware('can:billing.view')
-                ->name('transactions');
-            Route::get('/transactions/export', [TransactionController::class, 'export'])
-                ->middleware('can:billing.view')
-                ->name('transactions.export');
+            Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions');
+            Route::get('/transactions/export', [TransactionController::class, 'export'])->name('transactions.export');
+        })
+        ->group(function () {
+            Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices');
         });
 
     Route::prefix('regions')
@@ -543,6 +546,14 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::delete('/{addon}', [AddonController::class, 'destroy'])
                 ->middleware('can:packages.delete')
                 ->name('destroy');
+        });
+
+    Route::prefix('reports')
+        ->name('reports.')
+        ->middleware('can:reports.view')
+        ->group(function () {
+            Route::get('/', [ReportController::class, 'index'])->name('index');
+            Route::get('/billing', [BillingReportController::class, 'index'])->name('reports.billing');
         });
 
     Route::prefix('settings')
