@@ -41,7 +41,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {
             $statusCode = $response->getStatusCode();
 
-            if (in_array($statusCode, [401, 403], true)) {
+            $isStorageUrl = $request->is('storage/*') || str_contains($request->path(), 'storage/');
+
+            if (in_array($statusCode, [401, 403], true) && !$isStorageUrl) {
                 app(SecurityLogService::class)->record(
                     event: 'unauthorized_access',
                     actor: $request->user(),

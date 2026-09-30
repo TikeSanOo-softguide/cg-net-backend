@@ -56,7 +56,7 @@ type ActivityLogProps = {
 
 function visitIndex(filters: Filters) {
     router.get(
-        '/activity-logs',
+        '/logs/activity',
         {
             username: filters.username || undefined,
             event: filters.event || undefined,
