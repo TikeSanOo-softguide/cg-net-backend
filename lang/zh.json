@@ -1006,11 +1006,6 @@
         "to_date": "结束日期",
         "generate_title": "生成充值卡",
         "generate_description": "选择面额、设置有效期并生成充值卡。",
-        "csv_import_title": "从 CSV 导入充值卡",
-        "csv_import_description": "上传包含 serial_no、pin、amount、expire_at 列的 CSV，后台将处理导入。",
-        "csv_file": "CSV 文件（最大 30 MB）",
-        "import_csv": "导入 CSV",
-        "importing_csv": "正在导入 CSV…",
         "batch_title": "已生成批次",
         "batch_description": "最新生成的卡片可在此打印和导出。",
         "denominations": "面额",
@@ -1105,6 +1100,14 @@
             "delete_title": "删除网点",
             "delete_description": "已分配的卡片会保留，但此网点将被删除。"
         },
+        "import_csv": {
+            "label": "导入 CSV",
+            "import": "导入",
+            "csv_import_title": "从 CSV 导入卡片",
+            "description": "请上传包含 serial_no、pin、amount、expire_at 字段的 CSV 文件。导入任务将在后台执行。",
+            "csv_file": "CSV 文件（最大 30 MB）",
+            "importing_csv": "正在导入 CSV…"
+        },
         "validation": {
             "office_name_required": "网点名称为必填项。",
             "office_name_unique": "该网点名称已被使用。",
@@ -1121,7 +1124,9 @@
             "quantity_total": "一次最多生成 :max 张卡（数量 × 网点数）。",
             "offices_required": "请先添加至少一个网点再生成卡。",
             "expires_required": "有效期为必填项。",
-            "expires_future": "有效期必须是今天或之后。"
+            "expires_future": "有效期必须是今天或之后。",
+            "csv_file_type": "请上传有效的 CSV 文件。",
+            "import_csv_required": "请选择要导入的 CSV 文件。"
         }
     },
     "packages": {
