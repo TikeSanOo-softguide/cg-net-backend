@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import {
-    ArrowLeftIcon,
     BanIcon,
     HashIcon,
     HistoryIcon,
@@ -13,6 +12,7 @@ import {
     WalletIcon,
 } from 'lucide-react';
 
+import { BackButton } from '@/components/BackButton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { CustomerFormDialog } from '@/components/customer/CustomerFormDialog';
 import { CustomerProfileCard } from '@/components/customer/CustomerProfileCard';
@@ -31,6 +31,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { FormControl } from '@/components/ui/form-control';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useReturnTo } from '@/hooks/useReturnTo';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn, formatDate, formatDateTime } from '@/lib/utils';
 
@@ -87,7 +88,7 @@ type TransactionSummary = {
 };
 
 type TransactionOverview = Record<
-    'topup' | 'transfer_in' | 'transfer_out' | 'ftth_bill' | 'wifi_package' | 'refund' | 'adjustment',
+    'topup' | 'ftth_bill' | 'wifi_package' | 'refund' | 'adjustment',
     TransactionSummary
 >;
 
@@ -121,11 +122,11 @@ export default function CustomersShow({
     transactionFilterOptions,
 }: CustomersShowProps) {
     const { t, locale } = useTranslation();
-    const page = usePage<{ return_to?: string; errors?: Record<string, string | undefined> }>();
+    const page = usePage<{ errors?: Record<string, string | undefined> }>();
     const errors = page.props.errors ?? {};
     const [packageTab, setPackageTab] = useState<'active' | 'expired'>('active');
     const showAllTransactions = transactionPage !== null;
-    const returnTo = page.props.return_to ?? '/customers';
+    const returnTo = useReturnTo('/customers');
     const goBackToCustomerList = () => {
         if (showAllTransactions) {
             router.visit(`/customers/${customer.id}`);
@@ -182,10 +183,7 @@ export default function CustomersShow({
             <PageContent className="gap-4 pb-24 sm:pb-8">
                 <div className="flex items-center justify-between gap-3">
                     <PageHeader title={customer.name} description={formatPhoneLocal(customer.phone)} />
-                    <Button type="button" size="sm" className="gap-1.5" onClick={goBackToCustomerList}>
-                        <ArrowLeftIcon className="size-3.5" strokeWidth={1.9} />
-                        {t('common.back')}
-                    </Button>
+                    <BackButton onClick={goBackToCustomerList} fallback={returnTo} />
                 </div>
 
                 {!showAllTransactions ? (

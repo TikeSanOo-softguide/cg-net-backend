@@ -15,6 +15,7 @@ type SearchableSelectProps = {
     options: SearchableSelectOption[];
     placeholder?: string;
     searchPlaceholder?: string;
+    noResultsMessage?: string;
     className?: string;
     triggerClassName?: string;
     disabled?: boolean;
@@ -26,6 +27,7 @@ function SearchableSelect({
     options,
     placeholder = 'Select...',
     searchPlaceholder = 'Search...',
+    noResultsMessage = 'No results found.',
     className,
     triggerClassName,
     disabled = false,
@@ -235,7 +237,7 @@ function SearchableSelect({
                             )}
                             {filteredOptions.length === 0 ? (
                                 <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                                    No results found.
+                                    {noResultsMessage}
                                 </div>
                             ) : (
                                 filteredOptions.map((option) => {

@@ -7,7 +7,7 @@ use App\Models\Admin;
 use App\Models\CustomerPackage;
 use App\Models\User;
 use App\Models\Wallet;
-use App\Models\WalletTransaction;
+use App\Models\LedgerTransaction;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -71,7 +71,7 @@ class CustomerManagementTest extends TestCase
             'user_id' => $customer->id,
         ]);
         $wallet = Wallet::factory()->create(['user_id' => $customer->id, 'balance' => 15000]);
-        WalletTransaction::factory()->create(['wallet_id' => $wallet->id, 'amount' => 5000]);
+        LedgerTransaction::factory()->create(['wallet_id' => $wallet->id, 'amount' => 5000]);
 
         $this->actingAs($admin, 'web')
             ->get('/customers/' . $customer->id)

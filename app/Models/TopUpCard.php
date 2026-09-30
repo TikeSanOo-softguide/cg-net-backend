@@ -22,7 +22,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
         'status',
         'office_id',
         'batch_id',
-        'wallet_transaction_id',
+        'ledger_transaction_id',
     ]),
 ]
 #[Hidden(['pin'])]
@@ -57,8 +57,8 @@ class TopUpCard extends Model
         return $this->belongsTo(User::class, 'redeemed_by');
     }
 
-    public function walletTransaction(): BelongsTo
+    public function ledgerTransaction(): BelongsTo
     {
-        return $this->belongsTo(WalletTransaction::class, 'wallet_transaction_id');
+        return $this->belongsTo(LedgerTransaction::class, 'ledger_transaction_id');
     }
 }

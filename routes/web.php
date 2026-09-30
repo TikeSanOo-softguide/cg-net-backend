@@ -23,6 +23,8 @@ use App\Http\Controllers\Package\SpeedController;
 use App\Http\Controllers\Package\TermController;
 use App\Http\Controllers\Region\RegionManagementController;
 use App\Http\Controllers\Reports\BillingReportController;
+use App\Http\Controllers\Reports\EodReportController;
+use App\Http\Controllers\Reports\LedgerHealthReportController;
 use App\Http\Controllers\Reports\ReportController;
 use App\Http\Controllers\ServiceRequest\BroadbandApplicationRequestController;
 use App\Http\Controllers\ServiceRequest\ChangePasswordRequestController;
@@ -552,6 +554,14 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         ->group(function () {
             Route::get('/', [ReportController::class, 'index'])->name('index');
             Route::get('/billing', [BillingReportController::class, 'index'])->name('reports.billing');
+            Route::get('/eod', [EodReportController::class, 'index'])->name('eod');
+            Route::prefix('ledger-health')
+                ->name('ledger-health.')
+                ->controller(LedgerHealthReportController::class)
+                ->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::post('/check', 'check')->name('check');
+                });
         });
 
     Route::prefix('settings')

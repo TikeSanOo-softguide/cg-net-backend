@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Models\WalletTransaction;
+use App\Models\LedgerTransaction;
 use App\Services\FtthBill\FtthBillPaymentService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -22,19 +22,19 @@ class ReconcileStuckFtthBillPaymentsJob implements ShouldBeUnique, ShouldQueue
     public int $uniqueFor = 120;
 
     public function __construct(
-        public readonly int $walletTransactionId,
+        public readonly int $ledgerTransactionId,
     ) {
         $this->onQueue('billing-reconciliation');
     }
 
     public function uniqueId(): string
     {
-        return (string) $this->walletTransactionId;
+        return (string) $this->ledgerTransactionId;
     }
 
     public function handle(FtthBillPaymentService $payments): void
     {
-        $transaction = WalletTransaction::query()->find($this->walletTransactionId);
+        $transaction = LedgerTransaction::query()->find($this->ledgerTransactionId);
 
         if ($transaction === null) {
             return;
@@ -44,7 +44,7 @@ class ReconcileStuckFtthBillPaymentsJob implements ShouldBeUnique, ShouldQueue
             $payments->reconcile($transaction);
         } catch (Throwable $throwable) {
             Log::error('Failed to reconcile FTTH bill payment.', [
-                'wallet_transaction_id' => $transaction->id,
+                'ledger_transaction_id' => $transaction->id,
                 'transaction_no' => $transaction->transaction_no,
                 'exception' => $throwable->getMessage(),
             ]);

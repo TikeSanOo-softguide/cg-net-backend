@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Customer;
 
 use App\Enums\UserStatus;
 use App\Enums\CustomerPackageStatus;
-use App\Enums\WalletTransactionStatus;
-use App\Enums\WalletTransactionType;
+use App\Enums\LedgerTransactionStatus;
+use App\Enums\LedgerTransactionType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\BindAccountNumberRequest;
 use App\Http\Requests\Customer\CustomerData;
@@ -14,8 +14,10 @@ use App\Http\Requests\Customer\UpdateCustomerRequest;
 use App\Http\Requests\Customer\UpdateCustomerStatusRequest;
 use App\Models\User;
 use App\Services\BroarbandAccount\BroadbandAccountService;
+use App\Services\Ledger\LedgerPoster;
 use App\Services\TransactionService;
 use App\Support\PackageLabel;
+use App\Support\ReturnTo;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -85,7 +87,7 @@ class CustomerController extends Controller
                 ];
             });
 
-        session()->put('customer.return_to', $request->fullUrl());
+        ReturnTo::remember($request, 'customers.show');
 
         return Inertia::render('Customer/Index', [
             'customers' => $customers,
@@ -109,7 +111,8 @@ class CustomerController extends Controller
 
         $customer = DB::transaction(function () use ($payload) {
             $customer = User::query()->create($payload);
-            $customer->wallet()->create(['balance' => 0]);
+            $wallet = $customer->wallet()->create(['balance' => 0]);
+            app(LedgerPoster::class)->ensureCustomerLiabilityAccount($wallet);
 
             return $customer;
         });
@@ -158,39 +161,24 @@ class CustomerController extends Controller
                 ],
             );
 
-        // $walletId = $customer->wallet?->id;
-        $walletTransactions = $customer->wallet?->transactions()->get() ?? collect(); // ->with('walletTransfer')
+        $walletTransactions = $customer->wallet?->transactions()->get() ?? collect();
         $transactionOverview = collect([
-            ['key' => 'topup', 'type' => WalletTransactionType::Topup, 'direction' => 'credit'],
-            // ['key' => 'transfer_in', 'type' => WalletTransactionType::Transfer, 'direction' => 'credit'],
-            // ['key' => 'transfer_out', 'type' => WalletTransactionType::Transfer, 'direction' => 'debit'],
-            ['key' => 'ftth_bill', 'type' => WalletTransactionType::FtthBill, 'direction' => 'debit'],
-            ['key' => 'wifi_package', 'type' => WalletTransactionType::WifiPackage, 'direction' => 'debit'],
-            ['key' => 'refund', 'type' => WalletTransactionType::Refund, 'direction' => 'credit'],
-            ['key' => 'adjustment', 'type' => WalletTransactionType::Adjustment, 'direction' => 'credit'],
+            ['key' => 'topup', 'type' => LedgerTransactionType::Topup],
+            ['key' => 'ftth_bill', 'type' => LedgerTransactionType::FtthBill],
+            ['key' => 'wifi_package', 'type' => LedgerTransactionType::WifiPackage],
+            ['key' => 'refund', 'type' => LedgerTransactionType::Refund],
+            ['key' => 'adjustment', 'type' => LedgerTransactionType::Adjustment],
         ])
-            ->map(function (array $type) use (/* $walletId, */ $walletTransactions) {
-                $filtered = $walletTransactions->filter(function ($transaction) use ($type /* , $walletId */) {
-                    if ($transaction->type !== $type['type']) {
-                        return false;
-                    }
-
-                    return true;
-
-                    // if ($transaction->type !== WalletTransactionType::Transfer) {
-                    //     return true;
-                    // }
-
-                    // return $transaction->walletTransfer?->from_wallet_id === $walletId
-                    //     ? $type['direction'] === 'debit'
-                    //     : $transaction->walletTransfer?->to_wallet_id === $walletId && $type['direction'] === 'credit';
-                });
+            ->map(function (array $type) use ($walletTransactions) {
+                $filtered = $walletTransactions->filter(
+                    fn ($transaction) => $transaction->type === $type['type'],
+                );
 
                 return [
                     $type['key'] => [
                         'count' => $filtered->count(),
                         'amount' => number_format(
-                            (float) $filtered->sum(fn($transaction) => (float) $transaction->amount),
+                            (float) $filtered->sum(fn ($transaction) => (float) $transaction->amount),
                             0,
                             '.',
                             '',
@@ -227,7 +215,8 @@ class CustomerController extends Controller
             ],
         );
 
-        $returnTo = session('customer.return_to', route('customers.index'));
+        ReturnTo::captureReferer($request, 'customers.show');
+        $returnTo = ReturnTo::get('customers.show', route('customers.index', absolute: false));
 
         $accountBinding = null;
         $broadbandPackage = null;
@@ -293,8 +282,8 @@ class CustomerController extends Controller
             ],
             'transactionFilterOptions' => [
                 'actor_types' => [],
-                'types' => array_column(WalletTransactionType::cases(), 'value'),
-                'statuses' => array_column(WalletTransactionStatus::cases(), 'value'),
+                'types' => array_column(LedgerTransactionType::cases(), 'value'),
+                'statuses' => array_column(LedgerTransactionStatus::cases(), 'value'),
             ],
             'topUpHistory' => $topUpHistory,
             'return_to' => $returnTo,

@@ -4,28 +4,30 @@ namespace App\Services\FtthBill;
 
 use App\Enums\BillPaymentNotificationEvent;
 use App\Enums\BillPaymentStatus;
+use App\Enums\LedgerAccountCode;
+use App\Enums\LedgerTransactionStatus;
+use App\Enums\LedgerTransactionType;
 use App\Enums\WalletActorType;
-use App\Enums\WalletEntryType;
 use App\Enums\WalletStatus;
-use App\Enums\WalletTransactionStatus;
-use App\Enums\WalletTransactionType;
+use App\Jobs\ReconcileStuckFtthBillPaymentsJob;
 use App\Models\BillPayment;
+use App\Models\LedgerTransaction;
 use App\Models\User;
 use App\Models\Wallet;
-use App\Models\WalletEntry;
-use App\Models\WalletTransaction;
-use App\Jobs\ReconcileStuckFtthBillPaymentsJob;
 use App\Notifications\FtthBillPaymentStatusNotification;
 use App\Services\Billing\BillingServerClient;
+use App\Services\Ledger\LedgerPoster;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
 class FtthBillPaymentService
 {
-    public function __construct(protected BillingServerClient $billing) {}
+    public function __construct(
+        protected BillingServerClient $billing,
+        protected LedgerPoster $ledger,
+    ) {}
 
     /**
      * @return array{
@@ -42,7 +44,7 @@ class FtthBillPaymentService
     ): array {
         $wallet = $user->wallet;
 
-        if (!$wallet) {
+        if (! $wallet) {
             return $this->response(404, [
                 'success' => false,
                 'message' => 'Wallet not found.',
@@ -56,7 +58,7 @@ class FtthBillPaymentService
             ]);
         }
 
-        $existing = WalletTransaction::query()
+        $existing = LedgerTransaction::query()
             ->where('wallet_id', $wallet->id)
             ->where('idempotency_key', $idempotencyKey)
             ->first();
@@ -94,7 +96,7 @@ class FtthBillPaymentService
                 userAgent: $userAgent,
             );
         } catch (UniqueConstraintViolationException) {
-            $existing = WalletTransaction::query()
+            $existing = LedgerTransaction::query()
                 ->where('wallet_id', $wallet->id)
                 ->where('idempotency_key', $idempotencyKey)
                 ->firstOrFail();
@@ -121,15 +123,15 @@ class FtthBillPaymentService
     /**
      * Settle a stuck Processing FTTH debit after consulting the billing server.
      */
-    public function reconcile(WalletTransaction $transaction): void
+    public function reconcile(LedgerTransaction $transaction): void
     {
-        if ($transaction->type !== WalletTransactionType::FtthBill) {
+        if ($transaction->type !== LedgerTransactionType::FtthBill) {
             return;
         }
 
         $transaction->refresh()->loadMissing(['billPayment', 'wallet.user']);
 
-        if ($transaction->status !== WalletTransactionStatus::Processing) {
+        if ($transaction->status !== LedgerTransactionStatus::Processing) {
             return;
         }
 
@@ -164,7 +166,6 @@ class FtthBillPaymentService
             return;
         }
 
-        // Still unknown: refund after max age, otherwise retry later via the queue.
         if ($transaction->created_at?->lte(now()->subSeconds($maxAgeSeconds))) {
             $wallet = Wallet::query()->find($transaction->wallet_id);
             $user = $wallet?->user;
@@ -194,7 +195,7 @@ class FtthBillPaymentService
         string $accountNumber,
         ?string $ipAddress,
         ?string $userAgent,
-    ): WalletTransaction {
+    ): LedgerTransaction {
         return DB::transaction(function () use (
             $wallet,
             $user,
@@ -204,51 +205,21 @@ class FtthBillPaymentService
             $ipAddress,
             $userAgent,
         ) {
-            /** @var Wallet $locked */
-            $locked = Wallet::query()->whereKey($wallet->id)->lockForUpdate()->firstOrFail();
-
-            if ($locked->status !== WalletStatus::Active) {
-                throw ValidationException::withMessages([
-                    'wallet' => ['Wallet is not active.'],
-                ]);
-            }
-
-            if ($locked->balance < $amount) {
-                throw ValidationException::withMessages([
-                    'amount' => ['Insufficient wallet balance.'],
-                ]);
-            }
-
-            $beforeBalance = $locked->balance;
-            $locked->balance -= $amount;
-            $locked->incrementVersion();
-            $locked->save();
-            $afterBalance = $locked->balance;
-
-            $transaction = WalletTransaction::query()->create([
-                'wallet_id' => $locked->id,
-                'transaction_no' => 'FTTH-' . Str::ulid(),
-                'type' => WalletTransactionType::FtthBill,
-                'status' => WalletTransactionStatus::Processing,
-                'amount' => $amount,
-                'idempotency_key' => $idempotencyKey,
-                'actor_type' => WalletActorType::User,
-                'actor_id' => $user->id,
-                'ip_address' => $ipAddress,
-                'user_agent' => $userAgent,
-            ]);
-
-            WalletEntry::query()->create([
-                'wallet_transaction_id' => $transaction->id,
-                'wallet_id' => $locked->id,
-                'amount' => $amount,
-                'balance_before' => $beforeBalance,
-                'balance_after' => $afterBalance,
-                'type' => WalletEntryType::Debit,
-            ]);
+            $transaction = $this->ledger->debitWallet(
+                wallet: $wallet,
+                amount: $amount,
+                contraAccount: LedgerAccountCode::FtthClearing,
+                type: LedgerTransactionType::FtthBill,
+                status: LedgerTransactionStatus::Processing,
+                idempotencyKey: $idempotencyKey,
+                actorType: WalletActorType::User,
+                actorId: $user->id,
+                ipAddress: $ipAddress,
+                userAgent: $userAgent,
+            );
 
             BillPayment::query()->create([
-                'wallet_transaction_id' => $transaction->id,
+                'ledger_transaction_id' => $transaction->id,
                 'broadband_account_number' => $accountNumber,
                 'status' => BillPaymentStatus::Processing,
                 'external_response' => [
@@ -266,7 +237,7 @@ class FtthBillPaymentService
      * @return array{http_status: int, body: array<string, mixed>}
      */
     protected function completePayment(
-        WalletTransaction $transaction,
+        LedgerTransaction $transaction,
         string $accountNumber,
         array $billingResponse,
     ): array {
@@ -277,7 +248,7 @@ class FtthBillPaymentService
             'message' => 'FTTH bill paid successfully.',
             'data' => [
                 'amount' => $transaction->amount,
-                'billing_status' => WalletTransactionStatus::Completed->value,
+                'billing_status' => LedgerTransactionStatus::Completed->value,
                 'transaction_no' => $transaction->transaction_no,
             ],
         ]);
@@ -288,7 +259,7 @@ class FtthBillPaymentService
      * @return array{http_status: int, body: array<string, mixed>}
      */
     protected function failAndRefund(
-        WalletTransaction $transaction,
+        LedgerTransaction $transaction,
         Wallet $wallet,
         User $user,
         string $accountNumber,
@@ -301,7 +272,7 @@ class FtthBillPaymentService
             'message' => 'External billing payment failed. Wallet was refunded.',
             'data' => [
                 'amount' => $transaction->amount,
-                'billing_status' => WalletTransactionStatus::Failed->value,
+                'billing_status' => LedgerTransactionStatus::Failed->value,
                 'transaction_no' => $transaction->transaction_no,
                 'refund_transaction_no' => $refundTransaction->transaction_no,
             ],
@@ -313,12 +284,12 @@ class FtthBillPaymentService
      * @return array{http_status: int, body: array<string, mixed>}
      */
     protected function leaveProcessing(
-        WalletTransaction $transaction,
+        LedgerTransaction $transaction,
         string $accountNumber,
         array $billingResponse,
     ): array {
         BillPayment::query()->updateOrCreate(
-            ['wallet_transaction_id' => $transaction->id],
+            ['ledger_transaction_id' => $transaction->id],
             [
                 'broadband_account_number' => $accountNumber,
                 'status' => BillPaymentStatus::Processing,
@@ -343,7 +314,7 @@ class FtthBillPaymentService
             'message' => 'FTTH bill payment is processing. Confirmation is pending from the billing server.',
             'data' => [
                 'amount' => $transaction->amount,
-                'billing_status' => WalletTransactionStatus::Processing->value,
+                'billing_status' => LedgerTransactionStatus::Processing->value,
                 'transaction_no' => $transaction->transaction_no,
             ],
         ]);
@@ -353,22 +324,25 @@ class FtthBillPaymentService
      * @param  array<string, mixed>  $billingResponse
      */
     public function markPaymentSuccessful(
-        WalletTransaction $transaction,
+        LedgerTransaction $transaction,
         string $accountNumber,
         array $billingResponse,
     ): void {
         $completed = DB::transaction(function () use ($transaction, $accountNumber, $billingResponse) {
-            /** @var WalletTransaction $locked */
-            $locked = WalletTransaction::query()->whereKey($transaction->id)->lockForUpdate()->firstOrFail();
+            /** @var LedgerTransaction $locked */
+            $locked = LedgerTransaction::query()->whereKey($transaction->id)->lockForUpdate()->firstOrFail();
 
-            if ($locked->status !== WalletTransactionStatus::Processing) {
+            if ($locked->status !== LedgerTransactionStatus::Processing) {
                 return false;
             }
 
-            $locked->update(['status' => WalletTransactionStatus::Completed]);
+            $locked->update([
+                'status' => LedgerTransactionStatus::Completed,
+                'posted_at' => $locked->posted_at ?? now(),
+            ]);
 
             BillPayment::query()->updateOrCreate(
-                ['wallet_transaction_id' => $locked->id],
+                ['ledger_transaction_id' => $locked->id],
                 [
                     'broadband_account_number' => $accountNumber,
                     'status' => BillPaymentStatus::Completed,
@@ -394,21 +368,21 @@ class FtthBillPaymentService
      * @param  array<string, mixed>  $billingResponse
      */
     public function refundWalletBalance(
-        WalletTransaction $debitTransaction,
+        LedgerTransaction $debitTransaction,
         Wallet $wallet,
         User $user,
         string $accountNumber,
         array $billingResponse,
-    ): WalletTransaction {
+    ): LedgerTransaction {
         $refunded = false;
 
         $refundTransaction = DB::transaction(function () use ($debitTransaction, $wallet, $user, $accountNumber, $billingResponse, &$refunded) {
-            /** @var WalletTransaction $lockedDebit */
-            $lockedDebit = WalletTransaction::query()->whereKey($debitTransaction->id)->lockForUpdate()->firstOrFail();
+            /** @var LedgerTransaction $lockedDebit */
+            $lockedDebit = LedgerTransaction::query()->whereKey($debitTransaction->id)->lockForUpdate()->firstOrFail();
 
-            $existingRefund = WalletTransaction::query()
+            $existingRefund = LedgerTransaction::query()
                 ->where('reversal_of', $lockedDebit->id)
-                ->where('type', WalletTransactionType::Refund)
+                ->where('type', LedgerTransactionType::Refund)
                 ->lockForUpdate()
                 ->first();
 
@@ -416,54 +390,35 @@ class FtthBillPaymentService
                 return $existingRefund;
             }
 
-            if ($lockedDebit->status === WalletTransactionStatus::Completed) {
+            if ($lockedDebit->status === LedgerTransactionStatus::Completed) {
                 throw new RuntimeException('Cannot refund a completed FTTH bill payment.');
             }
 
-            if ($lockedDebit->status === WalletTransactionStatus::Failed) {
-                $existingRefund = WalletTransaction::query()
+            if ($lockedDebit->status === LedgerTransactionStatus::Failed) {
+                return LedgerTransaction::query()
                     ->where('reversal_of', $lockedDebit->id)
-                    ->where('type', WalletTransactionType::Refund)
+                    ->where('type', LedgerTransactionType::Refund)
                     ->firstOrFail();
-
-                return $existingRefund;
             }
 
-            /** @var Wallet $lockedWallet */
-            $lockedWallet = Wallet::query()->whereKey($wallet->id)->lockForUpdate()->firstOrFail();
-
             $amount = (int) $lockedDebit->amount;
-            $beforeBalance = $lockedWallet->balance;
-            $lockedWallet->balance += $amount;
-            $lockedWallet->incrementVersion();
-            $lockedWallet->save();
-            $afterBalance = $lockedWallet->balance;
 
-            $refundTransaction = WalletTransaction::query()->create([
-                'wallet_id' => $lockedWallet->id,
-                'transaction_no' => 'REFUND-' . Str::ulid(),
-                'type' => WalletTransactionType::Refund,
-                'status' => WalletTransactionStatus::Completed,
-                'amount' => $amount,
-                'idempotency_key' => 'refund:' . $lockedDebit->idempotency_key,
-                'reversal_of' => $lockedDebit->id,
-                'actor_type' => WalletActorType::System,
-                'actor_id' => $user->id,
-            ]);
+            $refundTransaction = $this->ledger->creditWallet(
+                wallet: $wallet,
+                amount: $amount,
+                contraAccount: LedgerAccountCode::FtthClearing,
+                type: LedgerTransactionType::Refund,
+                status: LedgerTransactionStatus::Completed,
+                idempotencyKey: 'refund:'.$lockedDebit->idempotency_key,
+                actorType: WalletActorType::System,
+                actorId: $user->id,
+                reversalOf: $lockedDebit->id,
+            );
 
-            WalletEntry::query()->create([
-                'wallet_transaction_id' => $refundTransaction->id,
-                'wallet_id' => $lockedWallet->id,
-                'amount' => $amount,
-                'balance_before' => $beforeBalance,
-                'balance_after' => $afterBalance,
-                'type' => WalletEntryType::Credit,
-            ]);
-
-            $lockedDebit->update(['status' => WalletTransactionStatus::Failed]);
+            $lockedDebit->update(['status' => LedgerTransactionStatus::Failed]);
 
             BillPayment::query()->updateOrCreate(
-                ['wallet_transaction_id' => $lockedDebit->id],
+                ['ledger_transaction_id' => $lockedDebit->id],
                 [
                     'broadband_account_number' => $accountNumber,
                     'status' => BillPaymentStatus::Failed,
@@ -493,7 +448,7 @@ class FtthBillPaymentService
     protected function notifyUser(
         ?User $user,
         BillPaymentNotificationEvent $event,
-        WalletTransaction $transaction,
+        LedgerTransaction $transaction,
         string $accountNumber,
         ?string $refundTransactionNo = null,
     ): void {
@@ -507,8 +462,6 @@ class FtthBillPaymentService
     }
 
     /**
-     * Map billing-server fields onto bill_payments.external_* columns after extend/reconcile.
-     *
      * @param  array<string, mixed>  $billingResponse
      * @return array{
      *     external_bill_ref: string|null,
@@ -558,26 +511,26 @@ class FtthBillPaymentService
     /**
      * @return array{http_status: int, body: array<string, mixed>}
      */
-    protected function existingResponse(WalletTransaction $existing): array
+    protected function existingResponse(LedgerTransaction $existing): array
     {
         $status = $existing->status;
 
-        if ($existing->type === WalletTransactionType::FtthBill && $status === WalletTransactionStatus::Completed) {
+        if ($existing->type === LedgerTransactionType::FtthBill && $status === LedgerTransactionStatus::Completed) {
             return $this->response(200, [
                 'success' => true,
                 'message' => 'FTTH bill payment already processed.',
                 'data' => [
                     'amount' => $existing->amount,
-                    'billing_status' => WalletTransactionStatus::Completed->value,
+                    'billing_status' => LedgerTransactionStatus::Completed->value,
                     'transaction_no' => $existing->transaction_no,
                 ],
             ]);
         }
 
-        if ($existing->type === WalletTransactionType::FtthBill && $status === WalletTransactionStatus::Failed) {
-            $refund = WalletTransaction::query()
+        if ($existing->type === LedgerTransactionType::FtthBill && $status === LedgerTransactionStatus::Failed) {
+            $refund = LedgerTransaction::query()
                 ->where('reversal_of', $existing->id)
-                ->where('type', WalletTransactionType::Refund)
+                ->where('type', LedgerTransactionType::Refund)
                 ->first();
 
             return $this->response(502, [
@@ -585,32 +538,32 @@ class FtthBillPaymentService
                 'message' => 'External billing payment failed. Wallet was refunded.',
                 'data' => [
                     'amount' => $existing->amount,
-                    'billing_status' => WalletTransactionStatus::Failed->value,
+                    'billing_status' => LedgerTransactionStatus::Failed->value,
                     'transaction_no' => $existing->transaction_no,
                     'refund_transaction_no' => $refund?->transaction_no,
                 ],
             ]);
         }
 
-        if ($existing->type === WalletTransactionType::FtthBill && $status === WalletTransactionStatus::Processing) {
+        if ($existing->type === LedgerTransactionType::FtthBill && $status === LedgerTransactionStatus::Processing) {
             return $this->response(202, [
                 'success' => true,
                 'message' => 'This payment request is already being processed.',
                 'data' => [
                     'amount' => $existing->amount,
-                    'billing_status' => WalletTransactionStatus::Processing->value,
+                    'billing_status' => LedgerTransactionStatus::Processing->value,
                     'transaction_no' => $existing->transaction_no,
                 ],
             ]);
         }
 
-        if ($existing->type === WalletTransactionType::Refund) {
+        if ($existing->type === LedgerTransactionType::Refund) {
             return $this->response(502, [
                 'success' => false,
                 'message' => 'External billing payment failed. Wallet was refunded.',
                 'data' => [
                     'amount' => $existing->amount,
-                    'billing_status' => WalletTransactionStatus::Failed->value,
+                    'billing_status' => LedgerTransactionStatus::Failed->value,
                     'transaction_no' => $existing->transaction_no,
                 ],
             ]);
