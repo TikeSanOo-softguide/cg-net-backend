@@ -36,7 +36,6 @@ class RedeemController extends Controller
 
     public function topUpAccount(TopUpAccountRequest $request): JsonResponse
     {
-        /** @var User $user */
         $validated = $request->validated();
 
         $result = $this->redemption->redeem(

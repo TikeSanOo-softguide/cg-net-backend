@@ -32,7 +32,7 @@ class TopUpCardRedemptionService
     private const FAILED_PIN_DECAY_SECONDS_PER_IP = 60 * 60;
 
     /**
-    * @return array{http_status: int, body: array<string, mixed>, headers: array<string, string>}
+     * @return array{http_status: int, body: array<string, mixed>, headers: array<string, string>}
      */
     public function redeem(
         User $user,
@@ -68,15 +68,11 @@ class TopUpCardRedemptionService
                     return $this->response(403, ['message' => 'Account is not available.']);
                 }
 
-                if (!$account || (string) $account->phone !== $phone) {
+                if ((string) $account->phone !== $phone) {
                     return $this->response(404, [
                         'success' => false,
                         'message' => 'Account not found.',
                     ]);
-                }
-
-                if ($account->status !== UserStatus::Active) {
-                    return $this->response(403, ['message' => 'Account is not available.']);
                 }
 
                 $wallet = $account->wallet()->lockForUpdate()->first();
@@ -96,25 +92,10 @@ class TopUpCardRedemptionService
                 }
 
                 $ipAddress ??= 'unknown';
-                $userFailureKey = 'top-up-card-pin-failure:user:' . hash('sha256', (string) $actor->getKey());
-                $ipFailureKey = 'top-up-card-pin-failure:ip:' . hash('sha256', $ipAddress);
-                $userRateLimited = RateLimiter::tooManyAttempts($userFailureKey, self::FAILED_PIN_LIMIT_PER_USER);
-                $ipRateLimited = RateLimiter::tooManyAttempts($ipFailureKey, self::FAILED_PIN_LIMIT_PER_IP);
+                $rateLimitResponse = $this->rateLimitResponse((string) $actor->getKey(), $ipAddress);
 
-                if ($userRateLimited || $ipRateLimited) {
-                    $retryAfter = max(
-                        $userRateLimited ? RateLimiter::availableIn($userFailureKey) : 0,
-                        $ipRateLimited ? RateLimiter::availableIn($ipFailureKey) : 0,
-                    );
-                    $message = match (true) {
-                        $userRateLimited && $ipRateLimited => 'Both rate limits reached: the authenticated user limit (10 failed top-up attempts per 30 minutes) and the IP limit (20 failed top-up attempts per 1 hour). Check Retry-After before trying again.',
-                        $userRateLimited => 'Authenticated user rate limit reached: 10 failed top-up attempts. Check Retry-After; the limit lasts up to 30 minutes.',
-                        default => 'IP rate limit reached: 20 failed top-up attempts from this IP address. Check Retry-After; the limit lasts up to 1 hour.',
-                    };
-
-                    return $this->response(429, [
-                        'message' => $message,
-                    ], ['Retry-After' => (string) $retryAfter]);
+                if ($rateLimitResponse !== null) {
+                    return $rateLimitResponse;
                 }
 
                 $card = TopUpCard::query()
@@ -124,8 +105,7 @@ class TopUpCardRedemptionService
                 $pinMatches = TopUpCardPin::check($pin, $card?->pin ?? str_repeat('0', 64));
 
                 if (!$card || !$pinMatches) {
-                    RateLimiter::hit($userFailureKey, self::FAILED_PIN_DECAY_SECONDS_PER_USER);
-                    RateLimiter::hit($ipFailureKey, self::FAILED_PIN_DECAY_SECONDS_PER_IP);
+                    $this->registerPinFailure((string) $actor->getKey(), $ipAddress);
 
                     return $this->response(400, ['message' => 'Invalid or unavailable top-up card.']);
                 }
@@ -137,21 +117,7 @@ class TopUpCardRedemptionService
                     ->first();
 
                 if ($existing !== null) {
-                    if (
-                        $existing->type !== WalletTransactionType::Topup ||
-                        $existing->status !== WalletTransactionStatus::Completed ||
-                        $existing->topUpCard?->getKey() !== $card->getKey() ||
-                        $existing->walletEntry === null
-                    ) {
-                        return $this->response(409, ['message' => 'Idempotency key has already been used.']);
-                    }
-
-                    return $this->response(200, [
-                        'message' => 'Top-up already processed.',
-                        'amount' => $existing->amount,
-                        'balance' => $existing->walletEntry->balance_after,
-                        'transaction_no' => $existing->transaction_no,
-                    ]);
+                    return $this->existingResponse($existing, $card);
                 }
 
                 if (
@@ -160,8 +126,7 @@ class TopUpCardRedemptionService
                     $card->wallet_transaction_id !== null ||
                     $card->expires_at?->copy()->endOfDay()->isPast()
                 ) {
-                    RateLimiter::hit($userFailureKey, self::FAILED_PIN_DECAY_SECONDS_PER_USER);
-                    RateLimiter::hit($ipFailureKey, self::FAILED_PIN_DECAY_SECONDS_PER_IP);
+                    $this->registerPinFailure((string) $actor->getKey(), $ipAddress);
 
                     return $this->response(400, ['message' => 'Invalid or unavailable top-up card.']);
                 }
@@ -174,7 +139,7 @@ class TopUpCardRedemptionService
                     $balanceBefore < 0 ||
                     $amount > self::MAX_WALLET_BALANCE - $balanceBefore
                 ) {
-                    return $this->response(409, ['message' => 'Top-up could not be completed.']);
+                    return $this->response(409, ['message' => 'This action could not be completed.']);
                 }
 
                 $balanceAfter = $balanceBefore + $amount;
@@ -213,6 +178,7 @@ class TopUpCardRedemptionService
                 $card->save();
 
                 return $this->response(200, [
+                    'result' => 'success',
                     'message' => 'Top-up successful.',
                     'amount' => $amount,
                     'balance' => $balanceAfter,
@@ -225,9 +191,69 @@ class TopUpCardRedemptionService
     }
 
     /**
+     * @return array{http_status: int, body: array<string, mixed>, headers: array<string, string>}|null
+     */
+    protected function rateLimitResponse(string $userId, string $ipAddress): ?array
+    {
+        $userFailureKey = 'top-up-card-pin-failure:user:' . hash('sha256', $userId);
+        $ipFailureKey = 'top-up-card-pin-failure:ip:' . hash('sha256', $ipAddress);
+        $userRateLimited = RateLimiter::tooManyAttempts($userFailureKey, self::FAILED_PIN_LIMIT_PER_USER);
+        $ipRateLimited = RateLimiter::tooManyAttempts($ipFailureKey, self::FAILED_PIN_LIMIT_PER_IP);
+
+        if (!$userRateLimited && !$ipRateLimited) {
+            return null;
+        }
+
+        $retryAfter = max(
+            $userRateLimited ? RateLimiter::availableIn($userFailureKey) : 0,
+            $ipRateLimited ? RateLimiter::availableIn($ipFailureKey) : 0,
+        );
+
+        $message = match (true) {
+            $userRateLimited && $ipRateLimited => 'Both rate limits reached: the authenticated user limit (10 failed top-up attempts per 30 minutes) and the IP limit (20 failed top-up attempts per 1 hour). Check Retry-After before trying again.',
+            $userRateLimited => 'Authenticated user rate limit reached: 10 failed top-up attempts. Check Retry-After; the limit lasts up to 30 minutes.',
+            default => 'IP rate limit reached: 20 failed top-up attempts from this IP address. Check Retry-After; the limit lasts up to 1 hour.',
+        };
+
+        return $this->response(429, ['message' => $message], ['Retry-After' => (string) $retryAfter]);
+    }
+
+    protected function registerPinFailure(string $userId, string $ipAddress): void
+    {
+        $userFailureKey = 'top-up-card-pin-failure:user:' . hash('sha256', $userId);
+        $ipFailureKey = 'top-up-card-pin-failure:ip:' . hash('sha256', $ipAddress);
+
+        RateLimiter::hit($userFailureKey, self::FAILED_PIN_DECAY_SECONDS_PER_USER);
+        RateLimiter::hit($ipFailureKey, self::FAILED_PIN_DECAY_SECONDS_PER_IP);
+    }
+
+
+    /**
+     * @return array{http_status: int, body: array<string, mixed>, headers: array<string, string>}
+     */
+    protected function existingResponse(WalletTransaction $existing, TopUpCard $card): array
+    {
+        if (
+            $existing->type !== WalletTransactionType::Topup ||
+            $existing->status !== WalletTransactionStatus::Completed ||
+            $existing->topUpCard?->getKey() !== $card->getKey() ||
+            $existing->walletEntry === null
+        ) {
+            return $this->response(409, ['message' => 'Idempotency key has already been used.']);
+        }
+
+        return $this->response(200, [
+            'message' => 'Top-up already processed.',
+            'amount' => $existing->amount,
+            'balance' => $existing->walletEntry->balance_after,
+            'transaction_no' => $existing->transaction_no,
+        ]);
+    }
+
+    /**
      * @param array<string, mixed> $body
      * @param array<string, string> $headers
-    * @return array{http_status: int, body: array<string, mixed>, headers: array<string, string>}
+     * @return array{http_status: int, body: array<string, mixed>, headers: array<string, string>}
      */
     private function response(int $httpStatus, array $body, array $headers = []): array
     {
