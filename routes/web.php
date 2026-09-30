@@ -12,6 +12,7 @@ use App\Http\Controllers\Customer\CustomerController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Invoice\InvoiceController;
 use App\Http\Controllers\Locale\LocaleController;
+use App\Http\Controllers\Log\SecurityLogController;
 use App\Http\Controllers\Log\UserLogController;
 use App\Http\Controllers\MenuPage\MenuPageController;
 use App\Http\Controllers\Notification\AnnouncementController;
@@ -92,9 +93,6 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         ->group(function () {
             Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions');
             Route::get('/transactions/export', [TransactionController::class, 'export'])->name('transactions.export');
-        })
-        ->group(function () {
-            Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices');
         });
 
     Route::prefix('regions')
@@ -575,18 +573,25 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 ->middleware('can:settings.delete')
                 ->name('app-version.destroy');
         });
-    Route::get('/activity-logs', [ActivityLogController::class, 'index'])
-        ->middleware('can:activity.view')
-        ->name('activity-logs.index');
-    Route::get('/activity-logs/export', [ActivityLogController::class, 'export'])
-        ->middleware('can:activity.view')
-        ->name('activity-logs.export');
-    Route::get('/logs/users', [UserLogController::class, 'index'])
-        ->middleware('can:activity.view')
-        ->name('logs.users.index');
-    Route::get('/logs/users/export', [UserLogController::class, 'export'])
-        ->middleware('can:activity.view')
-        ->name('logs.users.export');
+    Route::prefix('logs')
+        ->name('logs.')
+        ->group(function () {
+            Route::get('/activity', [ActivityLogController::class, 'index'])
+                ->middleware('can:activity.view')
+                ->name('activity.index');
+            Route::get('/activity/export', [ActivityLogController::class, 'export'])
+                ->middleware('can:activity.view')
+                ->name('activity.export');
+            Route::get('/security', [SecurityLogController::class, 'index'])
+                ->middleware('can:activity.view')
+                ->name('security');
+            Route::get('/users', [UserLogController::class, 'index'])
+                ->middleware('can:activity.view')
+                ->name('users.index');
+            Route::get('/users/export', [UserLogController::class, 'export'])
+                ->middleware('can:activity.view')
+                ->name('users.export');
+        });
 });
 
 Route::fallback(function () {

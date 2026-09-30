@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import { CircleAlertIcon, XIcon } from 'lucide-react';
 
@@ -15,12 +15,25 @@ import {
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { Spinner } from '@/components/ui/spinner';
-import { TopUpCardOfficeCardTable } from '@/components/top-up-cards/TopUpCardOfficeCardTable';
 import type { Paginated } from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
+import { TopUpCardImportTable } from '@/components/top-up-cards/TopUpCardImportTable';
 
-type BatchRow = { id: number; batch_no: string };
-type BatchTableRow = { id: number; batch_no: string; total_value: number; quantity: number; status: string; expires_at: string | null; assigned_cards_count: number };
+type BatchRow = {
+    id: number;
+    batch_no: string;
+};
+
+type BatchTableRow = {
+    id: number;
+    batch_no: string;
+    total_value: number;
+    quantity: number;
+    status: string;
+    expires_at: string | null;
+    assigned_cards_count: number;
+};
+
 type ImportProgress = {
     status: 'processing' | 'completed' | 'failed' | null;
     message: string | null;
@@ -34,12 +47,18 @@ type Props = {
     batchPage: Paginated<BatchTableRow>;
     batches: BatchRow[];
     importProgress: ImportProgress | null;
-    filters: { batch: string; status: string };
+    filters: {
+        batch: string;
+        status: string;
+    };
 };
 
 type PageProps = {
     flash?: {
-        import_error?: { key: string; replace?: Record<string, string | number> } | null;
+        import_error?: {
+            key: string;
+            replace?: Record<string, string | number>;
+        } | null;
         import_error_token?: string | null;
     };
 };
@@ -50,10 +69,18 @@ type ImportError = {
 };
 
 function visitOfficeAssign(filters: Props['filters']) {
-    router.get('/top-up-cards/office-assign', {
-        batch: filters.batch,
-        status: filters.status,
-    }, { preserveState: true, preserveScroll: true, replace: true });
+    router.get(
+        '/top-up-cards/office-assign',
+        {
+            batch: filters.batch,
+            status: filters.status,
+        },
+        {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        },
+    );
 }
 
 export default function OfficeAssignPage({ batchPage, batches, importProgress, filters }: Props) {
@@ -62,7 +89,6 @@ export default function OfficeAssignPage({ batchPage, batches, importProgress, f
     const [importError, setImportError] = useState<ImportError | null>(null);
     const [batchFilter, setBatchFilter] = useState(filters.batch);
     const [statusFilter, setStatusFilter] = useState(filters.status);
-    const importInput = useRef<HTMLInputElement>(null);
     const pollInFlight = useRef(false);
     const importErrorMessage = importError
         ? t(importError.key).replace(/:([a-z_]+)/g, (_, key: string) => String(importError.replace?.[key] ?? `:${key}`))
@@ -111,21 +137,27 @@ export default function OfficeAssignPage({ batchPage, batches, importProgress, f
     const refreshCards = (nextBatch: string, nextStatus: string) => {
         setBatchFilter(nextBatch);
         setStatusFilter(nextStatus);
-        visitOfficeAssign({ batch: nextBatch, status: nextStatus });
+        visitOfficeAssign({
+            batch: nextBatch,
+            status: nextStatus,
+        });
     };
 
-    const importCards = (event: ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        router.post('/top-up-cards/offices/import', { file, return: 'office-assign' }, {
-            forceFormData: true,
-            preserveScroll: true,
-            onStart: () => setImportError(null),
-            onFinish: () => {
-                if (importInput.current) importInput.current.value = '';
+    const importCards = (file: File) => {
+        router.post(
+            '/top-up-cards/offices/import',
+            {
+                file,
+                return: 'office-assign',
             },
-        });
+            {
+                forceFormData: true,
+                preserveScroll: true,
+                onStart: () => {
+                    setImportError(null);
+                },
+            },
+        );
     };
 
     return (
@@ -133,18 +165,18 @@ export default function OfficeAssignPage({ batchPage, batches, importProgress, f
             <Head title={t('top_up_cards.office.assign_cards')} />
             <PageContent>
                 <PageHeader />
-                <input ref={importInput} type="file" accept=".csv,text/csv" className="hidden" onChange={importCards} />
                 {importProgress?.status === 'processing' ? (
                     <div
                         role="status"
                         className="mb-3 ml-auto flex w-fit max-w-full flex-wrap items-center justify-end gap-x-2 gap-y-1 border-b border-border px-1 py-2 text-right text-[14px] text-foreground"
                     >
                         <Spinner size="xs" />
-                        <span className="font-semibold">{t('top_up_cards.importing_csv')}</span>
+                        <span className="font-semibold">{t('top_up_cards.import_csv.importing_csv')}</span>
                         {importProgress.total_cards > 0 ? (
                             <>
                                 <span className="font-mono font-semibold tabular-nums text-foreground">
-                                    {importProgress.completed_cards.toLocaleString()}/{importProgress.total_cards.toLocaleString()} cards
+                                    {importProgress.completed_cards.toLocaleString()}/
+                                    {importProgress.total_cards.toLocaleString()} cards
                                 </span>
                                 <span className="text-[12px] font-medium text-foreground/80">
                                     {importProgress.completed_chunks}/{importProgress.total_chunks} chunks
@@ -153,18 +185,26 @@ export default function OfficeAssignPage({ batchPage, batches, importProgress, f
                         ) : null}
                     </div>
                 ) : null}
-                <TopUpCardOfficeCardTable
+                <TopUpCardImportTable
                     batchRows={batchPage.data}
                     pagination={batchPage}
                     batches={batches}
                     batchFilter={batchFilter}
                     statusFilter={statusFilter}
+                    importProcessing={importProgress?.status === 'processing'}
                     onBatchChange={(value) => refreshCards(value === 'all' ? '' : value, statusFilter)}
                     onStatusChange={(value) => refreshCards(batchFilter, value === 'all' ? '' : value)}
-                    onImport={() => importInput.current?.click()}
+                    onImport={importCards}
                 />
             </PageContent>
-            <Dialog open={importError !== null} onOpenChange={(open) => { if (!open) setImportError(null); }}>
+            <Dialog
+                open={importError !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setImportError(null);
+                    }
+                }}
+            >
                 <DialogContent className="w-[min(100%-2rem,520px)]">
                     <DialogHeader className="text-left">
                         <DialogTitle className="flex items-center gap-2 text-danger">
@@ -179,7 +219,7 @@ export default function OfficeAssignPage({ batchPage, batches, importProgress, f
                         <DialogClose asChild>
                             <Button type="button" variant="destructive">
                                 <XIcon className="size-4" />
-                                Close
+                                {t('common.close')}
                             </Button>
                         </DialogClose>
                     </DialogFooter>

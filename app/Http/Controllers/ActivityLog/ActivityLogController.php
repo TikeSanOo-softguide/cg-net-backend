@@ -23,7 +23,7 @@ class ActivityLogController extends Controller
             ->withQueryString()
             ->through(fn(Activity $activity) => $this->payload($activity));
 
-        return Inertia::render('ActivityLog/Index', [
+        return Inertia::render('Log/ActivityLog/Index', [
             'logs' => $logs,
             'filters' => $filters,
             'filterOptions' => [
