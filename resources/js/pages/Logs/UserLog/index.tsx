@@ -10,6 +10,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { TableActionButton } from '@/components/TableActionButton';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formControlStateClass } from '@/lib/form-control';
 import { formatDateTime, truncateText } from '@/lib/utils';
@@ -18,10 +19,11 @@ import { formatDateTime, truncateText } from '@/lib/utils';
 type UserLogRow = {
     id: number;
     user_id: number;
+    event: string;
     user?: {
         id: number;
         name: string;
-        email: string;
+        phone: string;
     };
     ip_address: string | null;
     user_agent: string | null;
@@ -30,6 +32,7 @@ type UserLogRow = {
 };
 
 type Filters = {
+    event: string;
     from: string;
     to: string;
     sort: string;
@@ -39,12 +42,16 @@ type Filters = {
 type UserLogProps = {
     logs: Paginated<UserLogRow>;
     filters: Filters;
+    filterOptions: {
+        event: string[];
+    };
 };
 
 function visitIndex(filters: Filters) {
     router.get(
         '/logs/users',
         {
+            event: filters.event || undefined,
             from: filters.from || undefined,
             to: filters.to || undefined,
             sort: filters.sort,
@@ -54,15 +61,17 @@ function visitIndex(filters: Filters) {
     );
 }
 
-export default function UserLogIndex({ logs, filters }: UserLogProps) {
+export default function UserLogIndex({ logs, filters, filterOptions }: UserLogProps) {
     const { t } = useTranslation();
     const [from, setFrom] = useState(filters.from);
     const [to, setTo] = useState(filters.to);
+    const [event, setEvent] = useState(filters.event);
     const [dateRangeError, setDateRangeError] = useState<string>();
     const [selectedLog, setSelectedLog] = useState<UserLogRow | null>(null);
 
     useEffect(() => setFrom(filters.from), [filters.from]);
     useEffect(() => setTo(filters.to), [filters.to]);
+    useEffect(() => setEvent(filters.event), [filters.event]);
 
     const exportLogs = () => {
         const query = new URLSearchParams();
@@ -72,6 +81,12 @@ export default function UserLogIndex({ logs, filters }: UserLogProps) {
         });
 
         window.location.href = `/logs/users/export?${query.toString()}`;
+    };
+
+    const onEventSelect = (value: string) => {
+        const nextEvent = value === 'all' ? '' : value;
+        setEvent(nextEvent);
+        visitIndex({ ...filters, event: nextEvent });
     };
 
     const onDateChange = (field: 'from' | 'to', value: string) => {
@@ -113,6 +128,26 @@ export default function UserLogIndex({ logs, filters }: UserLogProps) {
                     }
                     filters={
                         <>
+                            <FormField
+                                label={t('security_logs.event')}
+                                htmlFor="user-log-event"
+                                className="w-full shrink-0 sm:w-40 mr-3"
+                                labelClassName="text-[13px]"
+                            >
+                                <Select value={event || 'all'} onValueChange={onEventSelect}>
+                                    <SelectTrigger id="user-log-event" className="h-8 w-full text-sm">
+                                        <SelectValue placeholder={t('common.all')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">{t('common.all')}</SelectItem>
+                                        {filterOptions.event.map((option) => (
+                                            <SelectItem key={option} value={option}>
+                                                {option}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </FormField>
                             <FormField
                                 label={t('common.start_date')}
                                 htmlFor="log-from"
@@ -173,12 +208,10 @@ export default function UserLogIndex({ logs, filters }: UserLogProps) {
                         },
 
                         {
-                            id: 'action',
-                            header: t('user_logs.action') || 'Action',
-                            cell: (row) => {
-                                const metadata = row.metadata as Record<string, unknown> | null;
-                                return String(metadata?.action || '-');
-                            },
+                            id: 'event',
+                            header: t('security_logs.event') || 'Event',
+                            sortable: true,
+                            cell: (row) => row.event || '-',
                         },
                         {
                             id: 'created_at',
@@ -225,7 +258,8 @@ function UserLogDetailDialog({
             <div className="space-y-3 overflow-y-auto p-4 sm:p-5">
                 <div className="grid gap-3 sm:grid-cols-2">
                     <LogInfo label={t('user_logs.user')} value={log.user?.name || t('user_logs.unknown')} />
-                    <LogInfo label={t('user_logs.email')} value={log.user?.email || '-'} />
+                    <LogInfo label={t('customers.phone')} value={log.user?.phone || '-'} />
+                    <LogInfo label={t('security_logs.event')} value={log.event || '-'} />
                     <LogInfo label={t('user_logs.ip_address')} value={log.ip_address || '-'} />
                     <LogInfo
                         label={t('user_logs.date')}

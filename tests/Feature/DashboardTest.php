@@ -13,10 +13,10 @@ use App\Models\NotificationCustom;
 use App\Models\Region;
 use App\Models\RelocationRequest;
 use App\Models\User;
-use App\Models\WalletTransaction;
+use App\Models\LedgerTransaction;
 use App\Enums\WalletActorType;
-use App\Enums\WalletTransactionStatus;
-use App\Enums\WalletTransactionType;
+use App\Enums\LedgerTransactionStatus;
+use App\Enums\LedgerTransactionType;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -37,16 +37,16 @@ class DashboardTest extends TestCase
         $admin = Admin::factory()->create();
         User::factory()->count(2)->create();
         User::factory()->create(['broadband_account_number' => 'CG12345678']);
-        $walletTransaction = WalletTransaction::factory()->create([
-            'type' => WalletTransactionType::FtthBill,
-            'status' => WalletTransactionStatus::Completed,
+        $walletTransaction = LedgerTransaction::factory()->create([
+            'type' => LedgerTransactionType::FtthBill,
+            'status' => LedgerTransactionStatus::Completed,
             'amount' => 15000,
             'actor_type' => WalletActorType::System,
             'actor_id' => User::query()->value('id'),
         ]);
 
         BillPayment::query()->create([
-            'wallet_transaction_id' => $walletTransaction->id,
+            'ledger_transaction_id' => $walletTransaction->id,
             'broadband_account_number' => 'CG12345678',
             'status' => BillPaymentStatus::Completed,
             'confirmed_at' => now(),

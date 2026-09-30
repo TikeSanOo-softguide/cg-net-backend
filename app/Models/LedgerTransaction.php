@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use App\Enums\WalletActorType;
-use App\Enums\WalletTransactionStatus;
-use App\Enums\WalletTransactionType;
-use Database\Factories\WalletTransactionFactory;
+use App\Enums\LedgerTransactionStatus;
+use App\Enums\LedgerTransactionType;
+use Database\Factories\LedgerTransactionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[
@@ -25,20 +26,24 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
         'actor_id',
         'ip_address',
         'user_agent',
+        'posted_at',
     ]),
 ]
-class WalletTransaction extends Model
+class LedgerTransaction extends Model
 {
-    /** @use HasFactory<WalletTransactionFactory> */
+    /** @use HasFactory<LedgerTransactionFactory> */
     use HasFactory;
+
+    protected $table = 'ledger_transactions';
 
     protected function casts(): array
     {
         return [
-            'type' => WalletTransactionType::class,
+            'type' => LedgerTransactionType::class,
             'amount' => 'integer',
-            'status' => WalletTransactionStatus::class,
+            'status' => LedgerTransactionStatus::class,
             'actor_type' => WalletActorType::class,
+            'posted_at' => 'datetime',
         ];
     }
 
@@ -52,14 +57,14 @@ class WalletTransaction extends Model
         return $this->belongsTo(self::class, 'reversal_of');
     }
 
-    public function walletEntry(): HasOne
+    public function reversals(): HasMany
     {
-        return $this->hasOne(WalletEntry::class);
+        return $this->hasMany(self::class, 'reversal_of');
     }
 
-    public function walletTransfer(): HasOne
+    public function entries(): HasMany
     {
-        return $this->hasOne(WalletTransfer::class);
+        return $this->hasMany(LedgerEntry::class);
     }
 
     public function billPayment(): HasOne
@@ -74,6 +79,15 @@ class WalletTransaction extends Model
 
     public function topUpCard(): HasOne
     {
-        return $this->hasOne(TopUpCard::class, 'wallet_transaction_id')->withTrashed();
+        return $this->hasOne(TopUpCard::class, 'ledger_transaction_id')->withTrashed();
+    }
+
+    /** Liability line for the primary wallet, if present. */
+    public function walletLiabilityEntry(): ?LedgerEntry
+    {
+        return $this->entries->first(
+            fn (LedgerEntry $entry) => $entry->wallet_id === $this->wallet_id
+                && $entry->ledgerAccount?->isCustomerLiability(),
+        );
     }
 }

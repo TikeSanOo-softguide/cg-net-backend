@@ -3,10 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Models\SecurityLog;
 use App\Services\Auth\Otp\MockOtpProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\RateLimiter;
 use Tests\TestCase;
 
 class ApiAuthenticationTest extends TestCase
@@ -43,6 +45,14 @@ class ApiAuthenticationTest extends TestCase
 
         $response->assertCreated()->assertJsonStructure(['token', 'user' => ['id', 'phone', 'name']]);
         $this->assertDatabaseHas('users', ['phone' => '95912345678', 'name' => 'New User']);
+
+        $user = \App\Models\User::query()->where('phone', '95912345678')->firstOrFail();
+        $this->assertDatabaseHas('wallets', ['user_id' => $user->id, 'balance' => 0]);
+        $this->assertDatabaseHas('ledger_accounts', [
+            'wallet_id' => $user->wallet->id,
+            'type' => 'liability',
+            'code' => 'CUST-'.$user->wallet->id,
+        ]);
     }
 
     public function test_invalid_otp_does_not_verify(): void
@@ -99,6 +109,29 @@ class ApiAuthenticationTest extends TestCase
     {
         $this->requestOtp('+95912345678');
         $this->postJson('/api/auth/register/request-otp', ['phone' => '+95912345678'])->assertTooManyRequests();
+    }
+
+    public function test_security_log_is_created_when_phone_requests_otp_more_than_three_times(): void
+    {
+        $user = User::factory()->create(['phone' => '95912345678']);
+
+        foreach (range(1, 4) as $attempt) {
+            $response = $this->postJson('/api/auth/register/request-otp', ['phone' => '+95912345678']);
+
+            if ($attempt < 4) {
+                $response->assertAccepted();
+                RateLimiter::clear('otp:resend:' . hash('sha256', $user->phone));
+            } else {
+                $response->assertTooManyRequests();
+            }
+        }
+
+        $this->assertDatabaseHas('security_logs', [
+            'actor_type' => User::class,
+            'actor_id' => $user->id,
+            'event' => 'otp_request_limit_exceeded',
+        ]);
+        $this->assertDatabaseCount('security_logs', 1);
     }
 
     public function test_verification_token_cannot_be_replayed(): void
@@ -188,10 +221,15 @@ class ApiAuthenticationTest extends TestCase
             ])->assertUnprocessable();
         }
 
+        $this->assertDatabaseCount('security_logs', 1);
+        $this->assertSame(5, SecurityLog::query()->firstOrFail()->metadata['failed_attempts']);
+
         $this->postJson('/api/auth/login', [
             'phone' => '+95912345678',
             'password' => 'wrong-password',
         ])->assertTooManyRequests();
+
+        $this->assertDatabaseCount('security_logs', 1);
     }
 
     public function test_mock_provider_does_not_expose_code_in_production(): void

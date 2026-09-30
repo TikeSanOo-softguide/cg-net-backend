@@ -34,13 +34,15 @@ class StaffManagementTest extends TestCase
         $this->autoGrantPermissions = false;
         $admin = Admin::factory()->create();
 
-        $this->actingAs($admin, 'web')
-            ->get('/staff')
-            ->assertForbidden();
+        $this->actingAs($admin, 'web')->get('/staff')->assertForbidden();
 
-        $this->actingAs($admin, 'web')
-            ->get('/roles')
-            ->assertForbidden();
+        $this->assertDatabaseHas('security_logs', [
+            'actor_type' => Admin::class,
+            'actor_id' => $admin->id,
+            'event' => 'unauthorized_access',
+        ]);
+
+        $this->actingAs($admin, 'web')->get('/roles')->assertForbidden();
     }
 
     public function test_admins_can_list_staff_and_assign_multiple_roles(): void
@@ -54,7 +56,7 @@ class StaffManagementTest extends TestCase
         $this->actingAs($actor, 'web')
             ->get('/staff')
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->component('Staff/Index'));
+            ->assertInertia(fn(Assert $page) => $page->component('Staff/Index'));
 
         $this->actingAs($actor, 'web')
             ->post('/staff', [
@@ -71,12 +73,14 @@ class StaffManagementTest extends TestCase
         $this->assertTrue($created->hasRole(AppPermissions::SupportAgent));
 
         $this->actingAs($actor, 'web')
-            ->get('/staff/'.$created->id)
+            ->get('/staff/' . $created->id)
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('Staff/Show')
-                ->where('staffMember.username', 'ops')
-                ->has('staffMember.roles', 2));
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->component('Staff/Show')
+                    ->where('staffMember.username', 'ops')
+                    ->has('staffMember.roles', 2),
+            );
     }
 
     public function test_staff_create_validates_required_fields(): void
@@ -124,7 +128,7 @@ class StaffManagementTest extends TestCase
         $this->actingAs($actor, 'web')
             ->get('/roles')
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->component('Roles/Index')->has('roles'));
+            ->assertInertia(fn(Assert $page) => $page->component('Roles/Index')->has('roles'));
 
         $this->actingAs($actor, 'web')
             ->post('/roles', [
@@ -138,7 +142,7 @@ class StaffManagementTest extends TestCase
         $this->assertFalse($role->hasPermissionTo('customers.view', 'web'));
 
         $this->actingAs($actor, 'web')
-            ->put('/roles/'.$role->id, [
+            ->put('/roles/' . $role->id, [
                 'name' => 'Billing Desk',
                 'permissions' => ['dashboard.view', 'billing.view'],
             ])
@@ -147,7 +151,7 @@ class StaffManagementTest extends TestCase
         $this->assertFalse($role->fresh()->hasPermissionTo('billing.update', 'web'));
 
         $this->actingAs($actor, 'web')
-            ->delete('/roles/'.$role->id)
+            ->delete('/roles/' . $role->id)
             ->assertRedirect('/roles');
 
         $this->assertDatabaseMissing('roles', ['id' => $role->id]);
@@ -194,7 +198,7 @@ class StaffManagementTest extends TestCase
 
         $this->actingAs($actor, 'web')
             ->from('/roles')
-            ->delete('/roles/'.$super->id)
+            ->delete('/roles/' . $super->id)
             ->assertRedirect('/roles')
             ->assertSessionHasErrors('delete');
     }
@@ -205,13 +209,9 @@ class StaffManagementTest extends TestCase
         $admin = Admin::factory()->create();
         $admin->givePermissionTo(['dashboard.view', 'staff.view']);
 
-        $this->actingAs($admin, 'web')
-            ->get('/cms/promotions')
-            ->assertForbidden();
+        $this->actingAs($admin, 'web')->get('/cms/promotions')->assertForbidden();
 
-        $this->actingAs($admin, 'web')
-            ->get('/staff')
-            ->assertOk();
+        $this->actingAs($admin, 'web')->get('/staff')->assertOk();
     }
 
     public function test_admins_can_bulk_delete_staff_skipping_self(): void

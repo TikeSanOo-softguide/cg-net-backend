@@ -12,7 +12,7 @@ class UserLog extends Model
     protected $table = 'user_log';
     const UPDATED_AT = null;
 
-    protected $fillable = ['user_id', 'ip_address', 'user_agent', 'metadata'];
+    protected $fillable = ['user_id', 'event', 'ip_address', 'user_agent', 'metadata'];
 
     protected $casts = [
         'metadata' => 'array',

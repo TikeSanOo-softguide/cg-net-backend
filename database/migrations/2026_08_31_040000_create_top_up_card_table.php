@@ -7,10 +7,6 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        if (Schema::hasTable('top_up_card')) {
-            return;
-        }
-
         Schema::create('top_up_card', function (Blueprint $table) {
             $table->id();
             $table->string('serial_no', 32)->unique();
@@ -23,9 +19,9 @@ return new class extends Migration {
             $table->foreignId('office_id')->nullable()->constrained('offices')->cascadeOnUpdate()->nullOnDelete();
             $table->foreignId('batch_id')->constrained('batches')->cascadeOnUpdate()->restrictOnDelete();
             $table
-                ->foreignId('wallet_transaction_id')
+                ->foreignId('ledger_transaction_id')
                 ->nullable()
-                ->constrained('wallet_transactions')
+                ->constrained('ledger_transactions')
                 ->cascadeOnUpdate()
                 ->nullOnDelete();
             $table->timestamps();

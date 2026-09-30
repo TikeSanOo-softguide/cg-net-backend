@@ -4,15 +4,14 @@ namespace Tests\Feature;
 
 use App\Enums\BillPaymentNotificationEvent;
 use App\Enums\BillPaymentStatus;
-use App\Enums\WalletEntryType;
 use App\Enums\WalletStatus;
-use App\Enums\WalletTransactionStatus;
-use App\Enums\WalletTransactionType;
+use App\Enums\LedgerTransactionStatus;
+use App\Enums\LedgerTransactionType;
 use App\Jobs\ReconcileStuckFtthBillPaymentsJob;
 use App\Models\BillPayment;
 use App\Models\User;
 use App\Models\Wallet;
-use App\Models\WalletTransaction;
+use App\Models\LedgerTransaction;
 use App\Notifications\FtthBillPaymentStatusNotification;
 use App\Services\FtthBill\FtthBillPaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -55,10 +54,10 @@ class FtthBillPaymentTest extends TestCase
 
         $wallet->refresh();
         $this->assertSame(500, $wallet->balance);
-        $this->assertDatabaseHas('wallet_transactions', [
+        $this->assertDatabaseHas('ledger_transactions', [
             'wallet_id' => $wallet->id,
-            'type' => WalletTransactionType::FtthBill->value,
-            'status' => WalletTransactionStatus::Completed->value,
+            'type' => LedgerTransactionType::FtthBill->value,
+            'status' => LedgerTransactionStatus::Completed->value,
             'amount' => 1000,
         ]);
         $this->assertDatabaseHas('bill_payments', [
@@ -79,10 +78,10 @@ class FtthBillPaymentTest extends TestCase
         $this->assertSame('success', $billPayment->external_response['outcome'] ?? null);
         $this->assertSame('BILL-1001', $billPayment->external_response['billing_ref'] ?? null);
         $this->assertNotNull($billPayment->confirmed_at);
-        $this->assertDatabaseHas('wallet_entries', [
+        $this->assertDatabaseHas('ledger_entries', [
             'wallet_id' => $wallet->id,
-            'type' => WalletEntryType::Debit->value,
-            'amount' => 1000,
+            'debit' => 1000,
+            'credit' => 0,
         ]);
 
         Http::assertSent(function ($request) {
@@ -128,20 +127,20 @@ class FtthBillPaymentTest extends TestCase
 
         $wallet->refresh();
         $this->assertSame(1500, $wallet->balance);
-        $this->assertDatabaseHas('wallet_transactions', [
+        $this->assertDatabaseHas('ledger_transactions', [
             'wallet_id' => $wallet->id,
-            'type' => WalletTransactionType::Refund->value,
+            'type' => LedgerTransactionType::Refund->value,
             'amount' => 1000,
         ]);
-        $this->assertDatabaseHas('wallet_transactions', [
+        $this->assertDatabaseHas('ledger_transactions', [
             'wallet_id' => $wallet->id,
-            'type' => WalletTransactionType::FtthBill->value,
-            'status' => WalletTransactionStatus::Failed->value,
+            'type' => LedgerTransactionType::FtthBill->value,
+            'status' => LedgerTransactionStatus::Failed->value,
         ]);
 
-        $refund = WalletTransaction::query()
+        $refund = LedgerTransaction::query()
             ->where('wallet_id', $wallet->id)
-            ->where('type', WalletTransactionType::Refund)
+            ->where('type', LedgerTransactionType::Refund)
             ->firstOrFail();
 
         Notification::assertSentToTimes($user, FtthBillPaymentStatusNotification::class, 1);
@@ -180,24 +179,24 @@ class FtthBillPaymentTest extends TestCase
 
         $wallet->refresh();
         $this->assertSame(500, $wallet->balance);
-        $this->assertDatabaseHas('wallet_transactions', [
+        $this->assertDatabaseHas('ledger_transactions', [
             'wallet_id' => $wallet->id,
-            'type' => WalletTransactionType::FtthBill->value,
-            'status' => WalletTransactionStatus::Processing->value,
+            'type' => LedgerTransactionType::FtthBill->value,
+            'status' => LedgerTransactionStatus::Processing->value,
         ]);
-        $this->assertDatabaseMissing('wallet_transactions', [
+        $this->assertDatabaseMissing('ledger_transactions', [
             'wallet_id' => $wallet->id,
-            'type' => WalletTransactionType::Refund->value,
+            'type' => LedgerTransactionType::Refund->value,
         ]);
 
-        $transaction = WalletTransaction::query()
+        $transaction = LedgerTransaction::query()
             ->where('wallet_id', $wallet->id)
-            ->where('type', WalletTransactionType::FtthBill)
+            ->where('type', LedgerTransactionType::FtthBill)
             ->firstOrFail();
 
         Queue::assertPushed(
             ReconcileStuckFtthBillPaymentsJob::class,
-            fn (ReconcileStuckFtthBillPaymentsJob $job) => $job->walletTransactionId === $transaction->id,
+            fn (ReconcileStuckFtthBillPaymentsJob $job) => $job->ledgerTransactionId === $transaction->id,
         );
 
         Notification::assertSentTo(
@@ -265,9 +264,9 @@ class FtthBillPaymentTest extends TestCase
         $this->assertSame(500, $wallet->balance);
         $this->assertSame(
             1,
-            WalletTransaction::query()
+            LedgerTransaction::query()
                 ->where('wallet_id', $wallet->id)
-                ->where('type', WalletTransactionType::FtthBill)
+                ->where('type', LedgerTransactionType::FtthBill)
                 ->count(),
         );
 
@@ -325,10 +324,10 @@ class FtthBillPaymentTest extends TestCase
 
         [$user, $wallet] = $this->makePayer(balance: 500);
 
-        $transaction = WalletTransaction::factory()->create([
+        $transaction = LedgerTransaction::factory()->create([
             'wallet_id' => $wallet->id,
-            'type' => WalletTransactionType::FtthBill,
-            'status' => WalletTransactionStatus::Processing,
+            'type' => LedgerTransactionType::FtthBill,
+            'status' => LedgerTransactionStatus::Processing,
             'amount' => 1000,
             'idempotency_key' => 'ftth-stuck-1',
             'transaction_no' => 'FTTH-STUCK-1',
@@ -337,7 +336,7 @@ class FtthBillPaymentTest extends TestCase
         ]);
 
         BillPayment::query()->create([
-            'wallet_transaction_id' => $transaction->id,
+            'ledger_transaction_id' => $transaction->id,
             'broadband_account_number' => $user->broadband_account_number,
             'status' => BillPaymentStatus::Processing,
             'external_response' => [
@@ -348,15 +347,15 @@ class FtthBillPaymentTest extends TestCase
         (new ReconcileStuckFtthBillPaymentsJob($transaction->id))->handle(app(FtthBillPaymentService::class));
 
         $transaction->refresh();
-        $this->assertSame(WalletTransactionStatus::Completed, $transaction->status);
+        $this->assertSame(LedgerTransactionStatus::Completed, $transaction->status);
         $this->assertDatabaseHas('bill_payments', [
-            'wallet_transaction_id' => $transaction->id,
+            'ledger_transaction_id' => $transaction->id,
             'status' => BillPaymentStatus::Completed->value,
             'external_bill_ref' => 'BILL-RECON-1',
             'external_payment_ref' => 'PAY-RECON-1',
         ]);
 
-        $billPayment = BillPayment::query()->where('wallet_transaction_id', $transaction->id)->firstOrFail();
+        $billPayment = BillPayment::query()->where('ledger_transaction_id', $transaction->id)->firstOrFail();
         $this->assertIsArray($billPayment->external_response);
         $this->assertSame('success', $billPayment->external_response['outcome'] ?? null);
         $this->assertNotNull($billPayment->confirmed_at);
@@ -382,10 +381,10 @@ class FtthBillPaymentTest extends TestCase
 
         [$user, $wallet] = $this->makePayer(balance: 500);
 
-        $transaction = WalletTransaction::factory()->create([
+        $transaction = LedgerTransaction::factory()->create([
             'wallet_id' => $wallet->id,
-            'type' => WalletTransactionType::FtthBill,
-            'status' => WalletTransactionStatus::Processing,
+            'type' => LedgerTransactionType::FtthBill,
+            'status' => LedgerTransactionStatus::Processing,
             'amount' => 1000,
             'idempotency_key' => 'ftth-stuck-refund-1',
             'transaction_no' => 'FTTH-STUCK-REFUND-1',
@@ -394,7 +393,7 @@ class FtthBillPaymentTest extends TestCase
         ]);
 
         BillPayment::query()->create([
-            'wallet_transaction_id' => $transaction->id,
+            'ledger_transaction_id' => $transaction->id,
             'broadband_account_number' => $user->broadband_account_number,
             'status' => BillPaymentStatus::Processing,
             'external_response' => [
@@ -407,10 +406,10 @@ class FtthBillPaymentTest extends TestCase
         $wallet->refresh();
         $transaction->refresh();
         $this->assertSame(1500, $wallet->balance);
-        $this->assertSame(WalletTransactionStatus::Failed, $transaction->status);
-        $this->assertDatabaseHas('wallet_transactions', [
+        $this->assertSame(LedgerTransactionStatus::Failed, $transaction->status);
+        $this->assertDatabaseHas('ledger_transactions', [
             'wallet_id' => $wallet->id,
-            'type' => WalletTransactionType::Refund->value,
+            'type' => LedgerTransactionType::Refund->value,
             'reversal_of' => $transaction->id,
         ]);
 

@@ -497,7 +497,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                 'redeemed_by' => null,
                 'office_id' => $officeIdsBySerial[$row['serial_no']] ?? null,
                 'batch_id' => $batchId,
-                'wallet_transaction_id' => null,
+                'ledger_transaction_id' => null,
                 'created_at' => $now,
                 'updated_at' => $now,
             ], $chunk);

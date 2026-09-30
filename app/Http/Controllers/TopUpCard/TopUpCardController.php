@@ -58,10 +58,10 @@ class TopUpCardController extends Controller
                 'redeemed_at',
                 'redeemed_by',
                 'batch_id',
-                'wallet_transaction_id',
+                'ledger_transaction_id',
                 'created_at',
             ])
-            ->with(['redeemedBy:id,name,phone', 'batch:id,batch_no,status', 'walletTransaction:id,transaction_no'])
+            ->with(['redeemedBy:id,name,phone', 'batch:id,batch_no,status', 'ledgerTransaction:id,transaction_no'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->whereLike('serial_no', '%' . $search . '%');
             })
@@ -771,7 +771,7 @@ class TopUpCardController extends Controller
             ->get();
 
         $cards = TopUpCard::query()
-            ->with(['redeemedBy:id,name,phone', 'batch:id,batch_no,status', 'walletTransaction:id,transaction_no'])
+            ->with(['redeemedBy:id,name,phone', 'batch:id,batch_no,status', 'ledgerTransaction:id,transaction_no'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->whereLike('serial_no', "%{$search}%");
             })
@@ -843,8 +843,8 @@ class TopUpCardController extends Controller
             'redeemed_by_phone' => $card->redeemedBy?->phone,
             'batch_no' => $card->batch?->batch_no,
             'batch_status' => $card->batch?->status,
-            'transaction_id' => $card->walletTransaction?->id,
-            'transaction_no' => $card->walletTransaction?->transaction_no,
+            'transaction_id' => $card->ledgerTransaction?->id,
+            'transaction_no' => $card->ledgerTransaction?->transaction_no,
         ];
     }
 

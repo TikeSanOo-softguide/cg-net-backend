@@ -168,7 +168,7 @@ class TopUpCardManagementTest extends TestCase
             'redeemed_by' => null,
             'office_id' => $office31->id,
             'batch_id' => $batchId,
-            'wallet_transaction_id' => null,
+            'ledger_transaction_id' => null,
         ]);
 
         $this->assertDatabaseHas('top_up_card', [
@@ -179,7 +179,7 @@ class TopUpCardManagementTest extends TestCase
             'redeemed_by' => null,
             'office_id' => $office11->id,
             'batch_id' => $batchId,
-            'wallet_transaction_id' => null,
+            'ledger_transaction_id' => null,
         ]);
 
         $this->assertDatabaseHas('batches', [

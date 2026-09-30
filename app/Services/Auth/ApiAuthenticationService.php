@@ -5,7 +5,9 @@ namespace App\Services\Auth;
 use App\Enums\UserStatus;
 use App\Enums\WalletStatus;
 use App\Models\User;
+use App\Models\Wallet;
 use App\Services\Auth\OtpService;
+use App\Services\Ledger\LedgerPoster;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -18,7 +20,10 @@ final class ApiAuthenticationService
 
     private const RESTRICTED_WALLET_STATUSES = [WalletStatus::Suspended, WalletStatus::Frozen, WalletStatus::Inactive];
 
-    public function __construct(private readonly OtpService $otp) {}
+    public function __construct(
+        private readonly OtpService $otp,
+        private readonly LedgerPoster $ledger,
+    ) {}
 
     public function requestRegistrationOtp(string $phone, string $ip): array
     {
@@ -119,13 +124,15 @@ final class ApiAuthenticationService
             ]);
             $wallet->save();
         } else {
-            $existingUser->wallet()->create([
+            $wallet = $existingUser->wallet()->create([
                 'balance' => 0,
                 'status' => WalletStatus::Active,
                 'version' => 0,
                 'created_by' => $existingUser->id,
             ]);
         }
+
+        $this->ledger->ensureCustomerLiabilityAccount($wallet);
 
         return [
             'user' => $existingUser,
@@ -142,7 +149,7 @@ final class ApiAuthenticationService
             'status' => UserStatus::Active,
         ]);
 
-        $user
+        $wallet = $user
             ->wallet()
             ->withTrashed()
             ->firstOrCreate(
@@ -155,13 +162,19 @@ final class ApiAuthenticationService
                 ],
             );
 
+        if ($wallet->trashed()) {
+            $wallet->restore();
+        }
+
+        $this->ledger->ensureCustomerLiabilityAccount($wallet);
+
         return [
             'user' => $user,
             'token' => $this->createToken($user),
         ];
     }
 
-    private function isRestrictedForReRegistration(User $user, ?\App\Models\Wallet $wallet): bool
+    private function isRestrictedForReRegistration(User $user, ?Wallet $wallet): bool
     {
         return in_array($user->status, self::RESTRICTED_USER_STATUSES, true) ||
             in_array($wallet?->status, self::RESTRICTED_WALLET_STATUSES, true);

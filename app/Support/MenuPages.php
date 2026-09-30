@@ -13,12 +13,6 @@ final class MenuPages
     {
         return [
             [
-                'path' => '/logs/security',
-                'titleKey' => 'menu.security_logs',
-                'name' => 'logs.security',
-                'permission' => 'activity.view',
-            ],
-            [
                 'path' => '/cpe/inventory',
                 'titleKey' => 'menu.cpe_inventory',
                 'name' => 'cpe.inventory',

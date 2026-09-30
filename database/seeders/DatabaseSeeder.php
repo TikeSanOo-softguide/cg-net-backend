@@ -7,10 +7,11 @@ use App\Enums\ChangePlanStatus;
 use App\Enums\CustomerPackageStatus;
 use App\Enums\RequestStatus;
 use App\Enums\UserStatus;
+use App\Enums\LedgerAccountCode;
+use App\Enums\LedgerTransactionStatus;
+use App\Enums\LedgerTransactionType;
 use App\Enums\WalletActorType;
 use App\Enums\WalletStatus;
-use App\Enums\WalletTransactionStatus;
-use App\Enums\WalletTransactionType;
 use App\Models\Admin;
 use App\Models\Announcement;
 use App\Models\Area;
@@ -24,13 +25,14 @@ use App\Models\CpeDevice;
 use App\Models\CustomerPackage;
 use App\Models\Gallery;
 use App\Models\InstallationApplication;
+use App\Models\LedgerTransaction;
 use App\Models\NotificationCustom;
 use App\Models\Package;
 use App\Models\RelocationRequest;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\Wallet;
-use App\Models\WalletTransaction;
+use App\Services\Ledger\LedgerPoster;
 use App\Support\AppPermissions;
 use Database\Factories\Support\MyanmarFake;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -48,6 +50,7 @@ class DatabaseSeeder extends Seeder
         $admins = $this->seedAdmins();
         $areas = $this->seedAreas();
         $packages = $this->seedPackages();
+        app(LedgerPoster::class)->ensureSystemAccounts();
         $users = $this->seedCustomers($packages);
         $this->seedOffices();
         $this->seedServiceRequests($users, $areas, $packages);
@@ -118,6 +121,7 @@ class DatabaseSeeder extends Seeder
 
     private function seedWalletSystem(): void
     {
+        (new LedgerAccountSeeder())->run();
         (new WalletSeeder())->run();
     }
 
@@ -206,11 +210,35 @@ class DatabaseSeeder extends Seeder
                 'balance' => fake()->randomElement([0, 5000, 15000, 42000]),
             ]);
 
-            WalletTransaction::factory()
-                ->count(3)
+            app(LedgerPoster::class)->ensureCustomerLiabilityAccount($wallet);
+
+            // Seeded opening balances are represented as an adjustment credit so the ledger reconciles.
+            if ((int) $wallet->balance > 0) {
+                $opening = (int) $wallet->balance;
+                $wallet->update(['balance' => 0]);
+                app(LedgerPoster::class)->creditWallet(
+                    wallet: $wallet->fresh(),
+                    amount: $opening,
+                    contraAccount: LedgerAccountCode::AdjustmentExpense,
+                    type: LedgerTransactionType::Adjustment,
+                    status: LedgerTransactionStatus::Completed,
+                    idempotencyKey: 'seed-opening:'.$wallet->id,
+                    actorType: WalletActorType::System,
+                    actorId: $user->id,
+                );
+            }
+
+            LedgerTransaction::factory()
+                ->count(2)
                 ->create([
                     'wallet_id' => $wallet->id,
-                    'type' => fake()->randomElement(WalletTransactionType::cases()),
+                    'type' => fake()->randomElement([
+                        LedgerTransactionType::Topup,
+                        LedgerTransactionType::FtthBill,
+                        LedgerTransactionType::Refund,
+                    ]),
+                    'status' => LedgerTransactionStatus::Pending,
+                    'amount' => fake()->numberBetween(1000, 5000),
                 ]);
 
             CpeDevice::factory()->create([
@@ -362,25 +390,42 @@ class DatabaseSeeder extends Seeder
                     ],
                 );
 
-                $transaction = WalletTransaction::query()->create([
-                    'wallet_id' => $wallet->id,
-                    'transaction_no' => 'BILL-' . strtoupper(fake()->bothify('???-####')),
-                    'type' => WalletTransactionType::FtthBill,
-                    'status' => WalletTransactionStatus::Completed,
-                    'amount' => $amount,
-                    'idempotency_key' => fake()->unique()->uuid(),
-                    'actor_type' => WalletActorType::System->value,
-                    'actor_id' => $user->id,
-                    'ip_address' => fake()->ipv4(),
-                    'user_agent' => fake()->userAgent(),
-                ]);
+                app(LedgerPoster::class)->ensureCustomerLiabilityAccount($wallet);
+
+                $poster = app(LedgerPoster::class);
+                $wallet = $wallet->fresh();
+
+                if ((int) $wallet->balance < $amount) {
+                    $poster->creditWallet(
+                        wallet: $wallet,
+                        amount: $amount - (int) $wallet->balance,
+                        contraAccount: LedgerAccountCode::CashTopup,
+                        type: LedgerTransactionType::Topup,
+                        status: LedgerTransactionStatus::Completed,
+                        idempotencyKey: 'seed-bill-topup:'.$user->id.':'.$index,
+                        actorType: WalletActorType::System,
+                        actorId: $user->id,
+                    );
+                }
+
+                $transaction = $poster->debitWallet(
+                    wallet: $wallet->fresh(),
+                    amount: $amount,
+                    contraAccount: LedgerAccountCode::FtthClearing,
+                    type: LedgerTransactionType::FtthBill,
+                    status: LedgerTransactionStatus::Completed,
+                    idempotencyKey: 'seed-bill:'.$user->id.':'.$index,
+                    actorType: WalletActorType::System,
+                    actorId: $user->id,
+                    transactionNo: 'BILL-'.strtoupper(fake()->bothify('???-####')),
+                );
 
                 BillPayment::query()->create([
-                    'wallet_transaction_id' => $transaction->id,
+                    'ledger_transaction_id' => $transaction->id,
                     'broadband_account_number' => $user->broadband_account_number,
                     'status' => BillPaymentStatus::Completed,
-                    'external_bill_ref' => 'BILL-' . fake()->numerify('####'),
-                    'external_payment_ref' => 'PAY-' . fake()->numerify('####'),
+                    'external_bill_ref' => 'BILL-'.fake()->numerify('####'),
+                    'external_payment_ref' => 'PAY-'.fake()->numerify('####'),
                     'external_response' => ['gateway' => 'kbzpay'],
                     'confirmed_at' => $paidAt,
                 ]);

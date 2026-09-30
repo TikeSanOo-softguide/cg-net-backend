@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum WalletTransactionStatus: string
+enum LedgerTransactionStatus: string
 {
     case Pending = 'pending';
     case Processing = 'processing';

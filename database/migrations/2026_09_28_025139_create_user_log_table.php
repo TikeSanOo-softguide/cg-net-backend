@@ -13,6 +13,7 @@ return new class extends Migration {
         Schema::create('user_log', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->string('event');
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
             $table->json('metadata')->nullable();

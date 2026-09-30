@@ -9,6 +9,7 @@ use App\Enums\AdminStatus;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Responses\LoginResponse;
 use App\Models\Admin;
+use App\Services\SecurityLogService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -70,6 +71,17 @@ class FortifyServiceProvider extends ServiceProvider
 
                 $failedLoginActivity->log('admin_login_failed');
 
+                app(SecurityLogService::class)->recordLoginFailure(
+                    guard: 'admin',
+                    identity: (string) $username,
+                    actor: $admin,
+                    metadata: [
+                        'username' => $username,
+                        'reason' => 'Invalid credentials',
+                    ],
+                    request: $request,
+                );
+
                 return null;
             }
 
@@ -84,6 +96,17 @@ class FortifyServiceProvider extends ServiceProvider
                         'status' => $admin->status->value,
                     ])
                     ->log('admin_login_blocked');
+
+                app(SecurityLogService::class)->record(
+                    event: 'login_blocked',
+                    actor: $admin,
+                    metadata: [
+                        'username' => $admin->username,
+                        'reason' => 'Inactive account',
+                        'status' => $admin->status->value,
+                    ],
+                    request: $request,
+                );
 
                 throw ValidationException::withMessages([
                     Fortify::username() => __('auth.inactive'),
@@ -101,13 +124,15 @@ class FortifyServiceProvider extends ServiceProvider
                 ])
                 ->log('admin_logged_in');
 
+            app(SecurityLogService::class)->clearLoginFailures('admin', $admin->username);
+
             return $admin;
         });
 
         $this->registerLoginRoutes();
 
         RateLimiter::for('login', function (Request $request) {
-            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())) . '|' . $request->ip());
+            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())));
 
             return Limit::perMinute(5)->by($throttleKey);
         });

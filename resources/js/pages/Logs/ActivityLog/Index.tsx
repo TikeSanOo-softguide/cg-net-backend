@@ -56,7 +56,7 @@ type ActivityLogProps = {
 
 function visitIndex(filters: Filters) {
     router.get(
-        '/activity-logs',
+        '/logs/activity',
         {
             username: filters.username || undefined,
             event: filters.event || undefined,
@@ -91,7 +91,7 @@ export default function ActivityLogIndex({ logs, filters, filterOptions }: Activ
             if (value) query.set(key, value);
         });
 
-        window.location.href = `/activity-logs/export?${query.toString()}`;
+        window.location.href = `/logs/activity/export?${query.toString()}`;
     };
 
     const onAdminSelect = (value: string) => {

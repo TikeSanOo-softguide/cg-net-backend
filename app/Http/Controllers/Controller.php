@@ -16,9 +16,10 @@ abstract class Controller
 
         UserLog::create([
             'user_id' => $userId,
+            'event' => $action,
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
-            'metadata' => array_merge(['action' => $action], $extraData),
+            'metadata' => new \stdClass(),
         ]);
     }
 }

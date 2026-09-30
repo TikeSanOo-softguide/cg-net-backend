@@ -23,7 +23,7 @@ class ActivityLogController extends Controller
             ->withQueryString()
             ->through(fn(Activity $activity) => $this->payload($activity));
 
-        return Inertia::render('Log/ActivityLog/Index', [
+        return Inertia::render('Logs/ActivityLog/Index', [
             'logs' => $logs,
             'filters' => $filters,
             'filterOptions' => [
@@ -39,10 +39,7 @@ class ActivityLogController extends Controller
         $this->validateDateRange($request);
         $filters = $this->filters($request);
 
-        return Excel::download(
-            new ActivityLogExport($this->query($filters)),
-            'activity-logs-' . now()->format('Ymd-His') . '.xlsx',
-        );
+        return Excel::download(new ActivityLogExport($this->query($filters)), 'activity-logs.xlsx');
     }
 
     /** @return array{username: string, event: string, log: string, from: string, to: string, sort: string, direction: string} */

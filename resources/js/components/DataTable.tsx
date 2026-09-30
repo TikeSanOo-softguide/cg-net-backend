@@ -24,7 +24,7 @@ import { ColumnHeaderLabel, ToolbarIconButton } from '@/components/data-table/to
 import { Pagination, type Paginated } from '@/components/Pagination';
 import { SearchInput } from '@/components/SearchInput';
 import { TableActionButton } from '@/components/TableActionButton';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TableCheckbox } from '@/components/ui/table-checkbox';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -42,6 +42,7 @@ export type DataTableColumn<T> = {
 };
 type DataTableProps<T> = {
     title?: string;
+    description?: string;
     titleIcon?: LucideIcon;
     data: T[];
     columns: DataTableColumn<T>[];
@@ -58,6 +59,8 @@ type DataTableProps<T> = {
     onSort?: (column: string) => void;
     pagination?: Paginated<T>;
     paginationSummary?: string;
+    clientPagination?: boolean;
+    clientPageSize?: number;
     href?: (row: T) => string | undefined;
     onView?: (row: T) => void;
     actions?: (row: T) => ReactNode;
@@ -83,6 +86,7 @@ type DataTableProps<T> = {
 
 export function DataTable<T>({
     title,
+    description,
     titleIcon: TitleIcon,
     data,
     columns,
@@ -99,6 +103,8 @@ export function DataTable<T>({
     onSort,
     pagination,
     paginationSummary,
+    clientPagination = false,
+    clientPageSize = 10,
     href,
     onView,
     actions,
@@ -123,6 +129,7 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
     const { t } = useTranslation();
     const [query, setQuery] = useState('');
+    const [clientPage, setClientPage] = useState(1);
     const [internalSelectedIds, setInternalSelectedIds] = useState<string[]>([]);
     const noResults = emptyLabel ?? t('common.no_results');
     const searchValue = onSearchChange ? (search ?? '') : query;
@@ -185,12 +192,53 @@ export function DataTable<T>({
         );
     }, [columns, data, query, serverDriven]);
 
+    const useClientPagination = clientPagination && !pagination;
+    const pageSize = Math.max(1, clientPageSize);
+    const lastClientPage = Math.max(1, Math.ceil(rows.length / pageSize));
+    const currentClientPage = Math.min(clientPage, lastClientPage);
+    const clientOffset = (currentClientPage - 1) * pageSize;
+    const visibleRows = useClientPagination ? rows.slice(clientOffset, clientOffset + pageSize) : rows;
+    const clientPaginationMeta: Paginated<T> | undefined = useClientPagination
+        ? {
+              data: visibleRows,
+              current_page: currentClientPage,
+              last_page: lastClientPage,
+              per_page: pageSize,
+              total: rows.length,
+              from: rows.length > 0 ? clientOffset + 1 : null,
+              to: rows.length > 0 ? Math.min(clientOffset + pageSize, rows.length) : null,
+              links: [
+                  {
+                      url: null,
+                      label: `&laquo; ${t('common.previous_page')}`,
+                      active: false,
+                      page: Math.max(1, currentClientPage - 1),
+                      disabled: currentClientPage === 1,
+                  },
+                  ...Array.from({ length: lastClientPage }, (_, index) => ({
+                      url: null,
+                      label: String(index + 1),
+                      active: currentClientPage === index + 1,
+                      page: index + 1,
+                  })),
+                  {
+                      url: null,
+                      label: `${t('common.next_page')} &raquo;`,
+                      active: false,
+                      page: Math.min(lastClientPage, currentClientPage + 1),
+                      disabled: currentClientPage === lastClientPage,
+                  },
+              ],
+          }
+        : undefined;
+    const renderedPagination = pagination ?? clientPaginationMeta;
+
     const mobileImage = columns.find((column) => column.mobile === 'image');
     const mobileTitle = columns.find((column) => column.mobile === 'title');
     const mobileSubtitle = columns.find((column) => column.mobile === 'subtitle');
     const mobileMeta = columns.find((column) => column.mobile === 'meta');
     const mobileBadge = columns.find((column) => column.mobile === 'badge');
-    const indexStart = pagination?.from ?? 1;
+    const indexStart = pagination?.from ?? (useClientPagination ? clientOffset + 1 : 1);
     const selectableIds = rows.filter((row) => isRowSelectable?.(row) ?? true).map((row) => getRowId(row));
     const selectedOnPage = selectableIds.filter((id) => selectedIds.includes(id));
     const allSelected = selectableIds.length > 0 && selectedOnPage.length === selectableIds.length;
@@ -325,6 +373,7 @@ export function DataTable<T>({
 
     const hasToolbar =
         Boolean(title) ||
+        Boolean(description) ||
         Boolean(filters) ||
         showSearch ||
         showDelete ||
@@ -354,6 +403,7 @@ export function DataTable<T>({
                                 {title}
                             </CardTitle>
                         ) : null}
+                        {description ? <CardDescription>{description}</CardDescription> : null}
                         <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
                             <div
                                 className={cn(
@@ -365,7 +415,13 @@ export function DataTable<T>({
                                 {showSearch ? (
                                     <SearchInput
                                         value={searchValue}
-                                        onChange={onSearchChange ?? setQuery}
+                                        onChange={(value) => {
+                                            if (!onSearchChange) {
+                                                setClientPage(1);
+                                            }
+
+                                            (onSearchChange ?? setQuery)(value);
+                                        }}
                                         placeholder={searchPlaceholder ?? t('common.search')}
                                         size="sm"
                                         className="w-full sm:max-w-64"
@@ -491,7 +547,7 @@ export function DataTable<T>({
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {rows.length === 0 ? (
+                                        {visibleRows.length === 0 ? (
                                             <TableRow className="hover:bg-transparent">
                                                 <TableCell
                                                     colSpan={columnCount}
@@ -501,7 +557,7 @@ export function DataTable<T>({
                                                 </TableCell>
                                             </TableRow>
                                         ) : (
-                                            rows.map((row, index) => {
+                                            visibleRows.map((row, index) => {
                                                 const id = getRowId(row);
                                                 const enabled = isRowSelectable?.(row) ?? true;
                                                 const selected = selectedIds.includes(id);
@@ -558,7 +614,7 @@ export function DataTable<T>({
                             </div>
 
                             <ul className="flex flex-col gap-2 p-2.5 sm:hidden">
-                                {rows.length === 0 ? (
+                                {visibleRows.length === 0 ? (
                                     <li
                                         className={cn(
                                             'rounded-[6px] bg-muted/30 px-3 py-6 text-center text-sm text-muted-foreground',
@@ -568,7 +624,7 @@ export function DataTable<T>({
                                         {noResults}
                                     </li>
                                 ) : (
-                                    rows.map((row, index) => {
+                                    visibleRows.map((row, index) => {
                                         const id = getRowId(row);
                                         const enabled = isRowSelectable?.(row) ?? true;
                                         const selected = selectedIds.includes(id);
@@ -633,15 +689,19 @@ export function DataTable<T>({
                             </ul>
                         </div>
                     </div>
-                    {pagination ? (
+                    {renderedPagination &&
+                    (pagination
+                        ? pagination.total > pagination.per_page
+                        : useClientPagination && rows.length > pageSize) ? (
                         <Pagination
-                            meta={pagination}
+                            meta={renderedPagination}
+                            onPageChange={useClientPagination ? setClientPage : undefined}
                             summary={
                                 paginationSummary ??
                                 t('common.showing')
-                                    .replace(':from', String(pagination.from ?? 0))
-                                    .replace(':to', String(pagination.to ?? 0))
-                                    .replace(':total', String(pagination.total))
+                                    .replace(':from', String(renderedPagination.from ?? 0))
+                                    .replace(':to', String(renderedPagination.to ?? 0))
+                                    .replace(':total', String(renderedPagination.total))
                             }
                         />
                     ) : null}
