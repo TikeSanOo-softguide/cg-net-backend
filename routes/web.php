@@ -582,6 +582,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::get('/activity/export', [ActivityLogController::class, 'export'])
                 ->middleware('can:activity.view')
                 ->name('activity.export');
+            Route::get('/security/export', [SecurityLogController::class, 'export'])
+                ->middleware('can:activity.view')
+                ->name('security.export');
             Route::get('/security', [SecurityLogController::class, 'index'])
                 ->middleware('can:activity.view')
                 ->name('security');

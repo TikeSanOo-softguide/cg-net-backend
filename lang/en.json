@@ -297,6 +297,18 @@
         "value": "Value",
         "unknown": "Unknown"
     },
+    "security_logs": {
+        "details": "Security Log Details",
+        "actor": "Actor",
+        "actor_type": "Actor Type",
+        "event": "Event",
+        "ip_address": "IP Address",
+        "date": "Occurred at",
+        "user_agent": "User Agent",
+        "metadata": "Metadata",
+        "system": "System",
+        "invalid_date_range": "To date must be equal to or after the from date."
+    },
     "common": {
         "profile": "Profile",
         "logout": "Log out",

@@ -2,14 +2,14 @@
 
 namespace App\Exports;
 
-use App\Models\UserLog;
+use App\Models\SecurityLog;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 
-class UserLogExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapping
+class SecurityLogExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapping
 {
     public function __construct(private readonly Builder $query) {}
 
@@ -20,21 +20,20 @@ class UserLogExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapp
 
     public function headings(): array
     {
-        return ['User', 'Email', 'IP Address', 'User Agent', 'Event', 'Metadata', 'Occurred At'];
+        return ['Actor', 'Event', 'IP Address', 'User Agent', 'Metadata', 'Occurred At'];
     }
 
     public function map(mixed $log): array
     {
-        /** @var UserLog $log */
-        $metadata = $log->metadata ?? [];
+        /** @var SecurityLog $log */
+        $actor = $log->actor;
 
         return [
-            $log->user?->name ?? 'Unknown',
-            $log->user?->email ?? '',
+            $actor ? $actor->username ?? ($actor->name ?? ($actor->phone ?? 'Unknown')) : 'System',
+            $log->event,
             $log->ip_address ?? '',
             $log->user_agent ?? '',
-            $log->event,
-            json_encode($metadata, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '',
+            $log->metadata ? json_encode($log->metadata) : '',
             $log->created_at?->toDateTimeString() ?? '',
         ];
     }

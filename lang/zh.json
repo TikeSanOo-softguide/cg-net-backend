@@ -289,6 +289,18 @@
         "value": "值",
         "unknown": "未知"
     },
+    "security_logs": {
+        "details": "安全日志详情",
+        "actor": "操作人",
+        "actor_type": "操作人类型",
+        "event": "事件",
+        "ip_address": "IP 地址",
+        "date": "发生时间",
+        "user_agent": "用户代理",
+        "metadata": "元数据",
+        "system": "系统",
+        "invalid_date_range": "结束日期必须等于或晚于开始日期。"
+    },
     "common": {
         "profile": "个人资料",
         "logout": "退出登录",
