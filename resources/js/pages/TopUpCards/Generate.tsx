@@ -207,7 +207,11 @@ export default function TopUpCardsGenerate({
 
     const batchDescription =
         generationStatus === 'processing'
-            ? t(generation?.source === 'csv_import' ? 'top_up_cards.importing_csv' : 'top_up_cards.generating')
+            ? t(
+                  generation?.source === 'csv_import'
+                      ? 'top_up_cards.import_csv.importing_csv'
+                      : 'top_up_cards.generating',
+              )
             : t('top_up_cards.batch_description');
     const batchProgress =
         generationStatus === 'processing' && (generation?.total_chunks ?? 0) > 0

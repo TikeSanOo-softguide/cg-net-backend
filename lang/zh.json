@@ -47,7 +47,7 @@
         "transactions": "交易记录",
         "top_up_card_management": "充值卡管理",
         "top_up_card_assign": "充值卡分配",
-        "top_up_card_office_assign": "网点分配",
+        "top_up_card_batch_import": "网点分配",
         "top_up_card_batch": "批量生成",
         "top_up_card_offices": "网点",
         "redeem_history": "兑换记录",
@@ -112,7 +112,7 @@
         "user_logs_description": "查看用户活动和账户事件。",
         "top_up_card_batch_description": "生成并管理充值卡批次。",
         "top_up_card_offices_description": "管理网点并分配充值卡。",
-        "top_up_card_office_assign_description": "将导入的充值卡分配给网点。",
+        "top_up_card_batch_import_description": "批量导入并管理充值卡。",
         "redeem_history_description": "查看充值卡兑换历史和使用情况。",
         "installation_applications_description": "审核和处理宽带安装申请。",
         "failure_reports_description": "跟踪并处理客户故障报告。",
@@ -1006,11 +1006,6 @@
         "to_date": "结束日期",
         "generate_title": "生成充值卡",
         "generate_description": "选择面额、设置有效期并生成充值卡。",
-        "csv_import_title": "从 CSV 导入充值卡",
-        "csv_import_description": "上传包含 serial_no、pin、amount、expire_at 列的 CSV，后台将处理导入。",
-        "csv_file": "CSV 文件（最大 30 MB）",
-        "import_csv": "导入 CSV",
-        "importing_csv": "正在导入 CSV…",
         "batch_title": "已生成批次",
         "batch_description": "最新生成的卡片可在此打印和导出。",
         "denominations": "面额",
@@ -1105,6 +1100,14 @@
             "delete_title": "删除网点",
             "delete_description": "已分配的卡片会保留，但此网点将被删除。"
         },
+        "import_csv": {
+            "label": "导入 CSV",
+            "import": "导入",
+            "csv_import_title": "从 CSV 导入卡片",
+            "description": "请上传包含 serial_no、pin、amount、expire_at 字段的 CSV 文件。导入任务将在后台执行。",
+            "csv_file": "CSV 文件（最大 30 MB）",
+            "importing_csv": "正在导入 CSV…"
+        },
         "validation": {
             "office_name_required": "网点名称为必填项。",
             "office_name_unique": "该网点名称已被使用。",
@@ -1121,7 +1124,9 @@
             "quantity_total": "一次最多生成 :max 张卡（数量 × 网点数）。",
             "offices_required": "请先添加至少一个网点再生成卡。",
             "expires_required": "有效期为必填项。",
-            "expires_future": "有效期必须是今天或之后。"
+            "expires_future": "有效期必须是今天或之后。",
+            "csv_file_type": "请上传有效的 CSV 文件。",
+            "import_csv_required": "请选择要导入的 CSV 文件。"
         }
     },
     "packages": {

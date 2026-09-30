@@ -47,7 +47,7 @@
         "transactions": "Transactions",
         "top_up_card_management": "Top-Up Cards",
         "top_up_card_assign": "Top-Up Card Assign",
-        "top_up_card_office_assign": "Office Assignment",
+        "top_up_card_batch_import": "Batch Import",
         "top_up_card_batch": "Batch Generation",
         "top_up_card_offices": "Offices",
         "redeem_history": "Redeem History",
@@ -122,7 +122,7 @@
         "user_logs_description": "Review user activity and account events.",
         "top_up_card_batch_description": "Generate and manage top-up card batches.",
         "top_up_card_offices_description": "Manage offices and assign top-up cards.",
-        "top_up_card_office_assign_description": "Assign imported top-up cards to offices.",
+        "top_up_card_batch_import_description": "Import and manage top-up card batches.",
         "redeem_history_description": "Review top-up card redemption history and usage.",
         "installation_applications_description": "Review and process broadband installation applications.",
         "failure_reports_description": "Track and resolve customer failure reports.",
@@ -1016,11 +1016,6 @@
         "to_date": "To Date",
         "generate_title": "Generate Cards",
         "generate_description": "Choose denominations, set expiry, and create top-up cards.",
-        "csv_import_title": "Import cards from CSV",
-        "csv_import_description": "Upload a CSV with serial_no, pin, amount, expire_at columns. Imports run in the background.",
-        "csv_file": "CSV file (up to 30 MB)",
-        "import_csv": "Import CSV",
-        "importing_csv": "Importing CSV…",
         "batch_title": "Generated Batch",
         "batch_description": "The latest generated cards appear here for print and export.",
         "denominations": "Denominations",
@@ -1117,6 +1112,14 @@
             "delete_title": "Delete office",
             "delete_description": "Assigned cards will remain, but this office will be removed."
         },
+        "import_csv": {
+            "label": "Import CSV",
+            "import": "Import",
+            "csv_import_title": "Import cards from CSV",
+            "description": "Upload a CSV with serial_no, pin, amount, expire_at columns. Imports run in the background.",
+            "csv_file": "CSV file (up to 30 MB)",
+            "importing_csv": "Importing CSV…"
+        },
         "validation": {
             "office_name_required": "Office name is required.",
             "office_name_unique": "This office name is already in use.",
@@ -1133,7 +1136,9 @@
             "quantity_total": "You can generate at most :max cards at once (quantity × offices).",
             "offices_required": "Add at least one office before generating cards.",
             "expires_required": "Expiry date is required.",
-            "expires_future": "Expiry date must be today or later."
+            "expires_future": "Expiry date must be today or later.",
+            "csv_file_type": "Please upload a valid CSV file.",
+            "import_csv_required": "Please select a CSV file to import."
         }
     },
     "packages": {
