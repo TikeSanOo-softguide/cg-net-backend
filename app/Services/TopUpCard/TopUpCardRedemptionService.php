@@ -23,11 +23,13 @@ class TopUpCardRedemptionService
 {
     private const MAX_WALLET_BALANCE = 2147483647;
 
-    private const FAILED_PIN_LIMIT_PER_USER = 5;
+    private const FAILED_PIN_LIMIT_PER_USER = 7;
 
-    private const FAILED_PIN_LIMIT_PER_IP = 20;
+    private const FAILED_PIN_LIMIT_PER_IP = 15;
 
-    private const FAILED_PIN_DECAY_SECONDS = 60;
+    private const FAILED_PIN_DECAY_SECONDS_PER_USER = 30 * 60;
+
+    private const FAILED_PIN_DECAY_SECONDS_PER_IP = 60 * 60;
 
     /**
     * @return array{http_status: int, body: array<string, mixed>, headers: array<string, string>}
@@ -104,9 +106,14 @@ class TopUpCardRedemptionService
                         $userRateLimited ? RateLimiter::availableIn($userFailureKey) : 0,
                         $ipRateLimited ? RateLimiter::availableIn($ipFailureKey) : 0,
                     );
+                    $message = match (true) {
+                        $userRateLimited && $ipRateLimited => 'Both rate limits reached: the authenticated user limit (10 failed top-up attempts per 30 minutes) and the IP limit (20 failed top-up attempts per 1 hour). Check Retry-After before trying again.',
+                        $userRateLimited => 'Authenticated user rate limit reached: 10 failed top-up attempts. Check Retry-After; the limit lasts up to 30 minutes.',
+                        default => 'IP rate limit reached: 20 failed top-up attempts from this IP address. Check Retry-After; the limit lasts up to 1 hour.',
+                    };
 
                     return $this->response(429, [
-                        'message' => 'Too many incorrect PIN attempts. Try again later.',
+                        'message' => $message,
                     ], ['Retry-After' => (string) $retryAfter]);
                 }
 
@@ -117,8 +124,8 @@ class TopUpCardRedemptionService
                 $pinMatches = TopUpCardPin::check($pin, $card?->pin ?? str_repeat('0', 64));
 
                 if (!$card || !$pinMatches) {
-                    RateLimiter::hit($userFailureKey, self::FAILED_PIN_DECAY_SECONDS);
-                    RateLimiter::hit($ipFailureKey, self::FAILED_PIN_DECAY_SECONDS);
+                    RateLimiter::hit($userFailureKey, self::FAILED_PIN_DECAY_SECONDS_PER_USER);
+                    RateLimiter::hit($ipFailureKey, self::FAILED_PIN_DECAY_SECONDS_PER_IP);
 
                     return $this->response(400, ['message' => 'Invalid or unavailable top-up card.']);
                 }
@@ -153,6 +160,9 @@ class TopUpCardRedemptionService
                     $card->wallet_transaction_id !== null ||
                     $card->expires_at?->copy()->endOfDay()->isPast()
                 ) {
+                    RateLimiter::hit($userFailureKey, self::FAILED_PIN_DECAY_SECONDS_PER_USER);
+                    RateLimiter::hit($ipFailureKey, self::FAILED_PIN_DECAY_SECONDS_PER_IP);
+
                     return $this->response(400, ['message' => 'Invalid or unavailable top-up card.']);
                 }
 
@@ -171,7 +181,7 @@ class TopUpCardRedemptionService
                 $now = now();
                 $transaction = WalletTransaction::query()->create([
                     'wallet_id' => $wallet->id,
-                    'transaction_no' => 'TOPUP-' . Str::uuid(),
+                    'transaction_no' => 'TOPUP-' . Str::ulid(),
                     'type' => WalletTransactionType::Topup,
                     'status' => WalletTransactionStatus::Completed,
                     'amount' => $amount,

@@ -37,14 +37,13 @@ class RedeemController extends Controller
     public function topUpAccount(TopUpAccountRequest $request): JsonResponse
     {
         /** @var User $user */
-        $user = $request->user();
-        $data = $request->validated();
+        $validated = $request->validated();
 
         $result = $this->redemption->redeem(
-            user: $user,
-            phone: (string) $data['phone'],
-            pin: (string) $data['pin'],
-            idempotencyKey: (string) $data['idempotency_key'],
+            user: $request->user(),
+            phone: (string) $validated['phone'],
+            pin: (string) $validated['pin'],
+            idempotencyKey: (string) $validated['idempotency_key'],
             ipAddress: $request->ip(),
             userAgent: $request->userAgent(),
         );

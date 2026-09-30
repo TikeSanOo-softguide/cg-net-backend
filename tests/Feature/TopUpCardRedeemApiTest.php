@@ -122,6 +122,53 @@ class TopUpCardRedeemApiTest extends TestCase
         $this->assertDatabaseCount('wallet_entries', 1);
     }
 
+    public function test_repeated_used_card_pin_counts_toward_user_rate_limit(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('top-up-repeat-pin')->plainTextToken;
+        $wallet = Wallet::factory()->create(['user_id' => $user->id, 'balance' => 1000]);
+        $pin = '1234567890123456';
+        $card = TopUpCard::factory()->create([
+            'amount' => 500,
+            'pin' => TopUpCardPin::hash($pin),
+        ]);
+        $userFailureKey = 'top-up-card-pin-failure:user:' . hash('sha256', (string) $user->id);
+        $ipFailureKey = 'top-up-card-pin-failure:ip:' . hash('sha256', (string) request()->ip());
+
+        RateLimiter::clear($userFailureKey);
+        RateLimiter::clear($ipFailureKey);
+
+        $this->withToken($token)
+            ->postJson('/api/redeem/top-up-account', [
+                'phone' => $user->phone,
+                'pin' => $pin,
+                'idempotency_key' => 'repeat-pin-initial-001',
+            ])
+            ->assertOk();
+
+        for ($attempt = 1; $attempt <= 10; $attempt++) {
+            $this->postJson('/api/redeem/top-up-account', [
+                'phone' => $user->phone,
+                'pin' => $pin,
+                'idempotency_key' => 'repeat-pin-retry-' . $attempt,
+            ])
+                ->assertBadRequest()
+                ->assertExactJson(['message' => 'Invalid or unavailable top-up card.']);
+        }
+
+        $this->postJson('/api/redeem/top-up-account', [
+            'phone' => $user->phone,
+            'pin' => $pin,
+            'idempotency_key' => 'repeat-pin-limited-001',
+        ])
+            ->assertStatus(429)
+            ->assertJsonPath('message', 'Authenticated user rate limit reached: 10 failed top-up attempts. Check Retry-After; the limit lasts up to 30 minutes.');
+
+        $this->assertSame(1500, $wallet->fresh()->balance);
+        $this->assertSame(TopUpCardStatus::Used, $card->fresh()->status);
+        $this->assertDatabaseCount('wallet_transactions', 1);
+    }
+
     public function test_invalid_pin_does_not_change_card_or_wallet(): void
     {
         $user = User::factory()->create();
@@ -165,7 +212,7 @@ class TopUpCardRedeemApiTest extends TestCase
             ])
             ->assertOk();
 
-        for ($attempt = 0; $attempt < 5; $attempt++) {
+        for ($attempt = 0; $attempt < 10; $attempt++) {
             $this->postJson('/api/redeem/top-up-account', [
                 'phone' => $user->phone,
                 'pin' => 'incorrect-pin-' . $attempt,
@@ -173,17 +220,64 @@ class TopUpCardRedeemApiTest extends TestCase
             ])->assertBadRequest();
         }
 
-        $this->postJson('/api/redeem/top-up-account', [
+        $limitedResponse = $this->postJson('/api/redeem/top-up-account', [
             'phone' => $user->phone,
             'pin' => 'another-incorrect-pin',
             'idempotency_key' => 'pin-limit-final-001',
         ])
             ->assertStatus(429)
-            ->assertJsonPath('message', 'Too many incorrect PIN attempts. Try again later.');
+            ->assertHeader('Retry-After')
+            ->assertJsonPath('message', 'Authenticated user rate limit reached: 10 failed top-up attempts. Check Retry-After; the limit lasts up to 30 minutes.');
+
+        $this->assertGreaterThan(0, (int) $limitedResponse->headers->get('Retry-After'));
+        $this->assertLessThanOrEqual(30 * 60, (int) $limitedResponse->headers->get('Retry-After'));
 
         $this->assertSame(1500, $wallet->fresh()->balance);
         $this->assertSame(TopUpCardStatus::Used, $card->fresh()->status);
         $this->assertDatabaseCount('wallet_transactions', 1);
+    }
+
+    public function test_ip_rate_limit_blocks_after_twenty_failed_pin_attempts(): void
+    {
+        $users = User::factory()->count(5)->create();
+        $ipFailureKey = 'top-up-card-pin-failure:ip:' . hash('sha256', (string) request()->ip());
+
+        RateLimiter::clear($ipFailureKey);
+
+        foreach ($users as $user) {
+            RateLimiter::clear('top-up-card-pin-failure:user:' . hash('sha256', (string) $user->id));
+            Wallet::factory()->create(['user_id' => $user->id, 'balance' => 1000]);
+        }
+
+        for ($userIndex = 0; $userIndex < 4; $userIndex++) {
+            $user = $users[$userIndex];
+            $token = $user->createToken('top-up-ip-limit')->plainTextToken;
+
+            for ($attempt = 0; $attempt < 5; $attempt++) {
+                $this->withToken($token)
+                    ->postJson('/api/redeem/top-up-account', [
+                        'phone' => $user->phone,
+                        'pin' => 'invalid-ip-pin-' . $userIndex . '-' . $attempt,
+                        'idempotency_key' => 'ip-limit-' . $userIndex . '-' . $attempt,
+                    ])
+                    ->assertBadRequest();
+            }
+        }
+
+        $blockedUser = $users[4];
+        $blockedToken = $blockedUser->createToken('top-up-ip-limit')->plainTextToken;
+        $limitedResponse = $this->withToken($blockedToken)
+            ->postJson('/api/redeem/top-up-account', [
+                'phone' => $blockedUser->phone,
+                'pin' => 'invalid-ip-limit-final',
+                'idempotency_key' => 'ip-limit-final-001',
+            ])
+            ->assertStatus(429)
+            ->assertHeader('Retry-After')
+            ->assertJsonPath('message', 'IP rate limit reached: 20 failed top-up attempts from this IP address. Check Retry-After; the limit lasts up to 1 hour.');
+
+        $this->assertGreaterThan(0, (int) $limitedResponse->headers->get('Retry-After'));
+        $this->assertLessThanOrEqual(60 * 60, (int) $limitedResponse->headers->get('Retry-After'));
     }
 
     public function test_phone_selects_the_recipient_account_wallet(): void

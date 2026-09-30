@@ -121,6 +121,8 @@
             margin-top: 22px;
         }
 
+        .serial-actions { display: flex; gap: 8px; }
+
         button {
             min-height: 42px;
             padding: 0 15px;
@@ -195,6 +197,7 @@
             .fields, .results { grid-template-columns: 1fr; }
             .section-heading { align-items: flex-start; flex-direction: column; gap: 6px; }
             .actions { align-items: stretch; flex-direction: column; }
+            .serial-actions { flex-direction: column; }
             button { width: 100%; }
         }
     </style>
@@ -203,7 +206,7 @@
 <main>
     <p class="eyebrow">Internal API tool</p>
     <h1>Top-up race tester</h1>
-    <p class="intro">Send two simultaneous requests with the same phone and PIN. A one-time card should credit the wallet once; the competing request should be rejected.</p>
+    <p class="intro">Test a completed redemption retry with the same key, or send two simultaneous requests to check one-time card redemption.</p>
 
     <section class="workspace" aria-label="Top-up API test">
         <div class="form-section">
@@ -221,24 +224,57 @@
                     <div class="field">
                         <label for="phone">Account phone</label>
                         <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="off" spellcheck="false" required>
-                        <p class="hint">Must match the authenticated account.</p>
+                        <p class="hint">The wallet for this phone number receives the top-up.</p>
                     </div>
                     <div class="field">
                         <label for="pin">Top-up card PIN</label>
                         <input id="pin" name="pin" type="password" autocomplete="new-password" spellcheck="false" required>
                     </div>
                     <div class="field full">
+                        <label for="second-phone">Second account phone</label>
+                        <input id="second-phone" name="second_phone" type="tel" inputmode="tel" autocomplete="off" spellcheck="false">
+                        <p class="hint">Used only by the two-phone, same-PIN test.</p>
+                    </div>
+                    <div class="field full">
                         <label for="idempotency-key">Idempotency key</label>
                         <input id="idempotency-key" name="idempotency_key" type="text" minlength="8" maxlength="100" autocomplete="off" spellcheck="false" required>
                         <label class="hint"><input id="reuse-idempotency-key" type="checkbox"> Reuse this key for both parallel requests (retry simulation)</label>
+                    </div>
+                    <div class="field full">
+                        <label>Four distinct users for the IP-limit test</label>
+                        <p class="hint">Enter one bearer token per user. Each user sends five failed attempts from this same browser IP, followed by one IP-limit check.</p>
+                        <div class="fields">
+                            <div class="field">
+                                <label for="ip-token-1">User 1 bearer token</label>
+                                <input id="ip-token-1" type="password" autocomplete="off" spellcheck="false">
+                            </div>
+                            <div class="field">
+                                <label for="ip-token-2">User 2 bearer token</label>
+                                <input id="ip-token-2" type="password" autocomplete="off" spellcheck="false">
+                            </div>
+                            <div class="field">
+                                <label for="ip-token-3">User 3 bearer token</label>
+                                <input id="ip-token-3" type="password" autocomplete="off" spellcheck="false">
+                            </div>
+                            <div class="field">
+                                <label for="ip-token-4">User 4 bearer token</label>
+                                <input id="ip-token-4" type="password" autocomplete="off" spellcheck="false">
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="actions">
                     <button id="race-button" class="primary" type="button">Send two simultaneous requests</button>
+                    <button id="different-phone-button" class="secondary" type="button">Same PIN, two different phones</button>
                     <button id="single-button" class="secondary" type="button">Send one request</button>
+                    <button id="retry-button" class="secondary" type="button">Retry after success with same key</button>
+                    <button id="rate-limit-button" class="secondary" type="button">Test invalid-PIN rate limit</button>
+                    <button id="same-pin-rate-limit-button" class="secondary" type="button">Test repeated PIN rate limit</button>
+                    <button id="ip-rate-limit-button" class="secondary" type="button">Test shared IP limit</button>
                     <button id="new-key-button" class="secondary" type="button">Generate new key</button>
                 </div>
+                <p class="hint">The repeated-PIN test may redeem an active card on its first request. These tests can block the user for 30 minutes or the IP for one hour.</p>
                 <p id="status" class="status-line" role="status" aria-live="polite"></p>
             </form>
         </div>
@@ -255,10 +291,14 @@
                         <input id="serial-no" name="serial_no" type="text" maxlength="32" autocomplete="off" spellcheck="false" required>
                     </div>
                     <div class="field" style="align-self: end">
-                        <button id="serial-check-button" class="secondary" type="submit">Check serial</button>
+                        <div class="serial-actions">
+                            <button id="serial-check-button" class="secondary" type="submit">Check serial</button>
+                            <button id="serial-clear-button" class="secondary" type="button">Clear</button>
+                        </div>
                     </div>
                 </div>
             </form>
+            <p id="serial-status" class="status-line" role="status" aria-live="polite"></p>
         </div>
 
         <div class="results-section">
@@ -276,16 +316,30 @@
     const form = document.querySelector('#request-form');
     const tokenInput = document.querySelector('#token');
     const phoneInput = document.querySelector('#phone');
+    const secondPhoneInput = document.querySelector('#second-phone');
     const pinInput = document.querySelector('#pin');
     const idempotencyInput = document.querySelector('#idempotency-key');
     const reuseIdempotencyInput = document.querySelector('#reuse-idempotency-key');
     const newKeyButton = document.querySelector('#new-key-button');
     const raceButton = document.querySelector('#race-button');
+    const differentPhoneButton = document.querySelector('#different-phone-button');
     const singleButton = document.querySelector('#single-button');
+    const retryButton = document.querySelector('#retry-button');
+    const rateLimitButton = document.querySelector('#rate-limit-button');
+    const samePinRateLimitButton = document.querySelector('#same-pin-rate-limit-button');
+    const ipRateLimitButton = document.querySelector('#ip-rate-limit-button');
+    const ipTokenInputs = [
+        document.querySelector('#ip-token-1'),
+        document.querySelector('#ip-token-2'),
+        document.querySelector('#ip-token-3'),
+        document.querySelector('#ip-token-4'),
+    ];
     const serialCheckForm = document.querySelector('#serial-check-form');
     const serialInput = document.querySelector('#serial-no');
     const serialCheckButton = document.querySelector('#serial-check-button');
+    const serialClearButton = document.querySelector('#serial-clear-button');
     const statusLine = document.querySelector('#status');
+    const serialStatusLine = document.querySelector('#serial-status');
     const results = document.querySelector('#results');
     const empty = document.querySelector('#empty');
     const originLabel = document.querySelector('#target-origin');
@@ -301,7 +355,12 @@
 
     function setBusy(busy) {
         raceButton.disabled = busy;
+        differentPhoneButton.disabled = busy;
         singleButton.disabled = busy;
+        retryButton.disabled = busy;
+        rateLimitButton.disabled = busy;
+        samePinRateLimitButton.disabled = busy;
+        ipRateLimitButton.disabled = busy;
     }
 
     function addResult(label) {
@@ -354,7 +413,8 @@
             }
 
             result.code.textContent = `HTTP ${response.status}`;
-            result.body.textContent = body;
+            const retryAfter = response.headers.get('Retry-After');
+            result.body.textContent = retryAfter ? `Retry-After: ${retryAfter}s\n${body}` : body;
             result.card.dataset.state = response.ok ? 'success' : (response.status >= 500 ? 'error' : 'failure');
             return response.status;
         } catch (error) {
@@ -374,12 +434,13 @@
         const serialNo = serialInput.value.trim();
 
         if (!token) {
-            statusLine.textContent = 'Enter a Sanctum token.';
-            statusLine.className = 'status-line error';
+            serialStatusLine.textContent = 'Enter a Sanctum token.';
+            serialStatusLine.className = 'status-line error';
             return;
         }
 
         const result = addResult('Serial validity check');
+        result.card.dataset.kind = 'serial-check';
         serialCheckButton.disabled = true;
 
         try {
@@ -406,20 +467,28 @@
             result.code.textContent = `HTTP ${response.status}`;
             result.body.textContent = body;
             result.card.dataset.state = response.ok ? 'success' : (response.status >= 500 ? 'error' : 'failure');
-            statusLine.textContent = 'Serial check complete.';
-            statusLine.className = response.ok ? 'status-line success' : 'status-line';
+            serialStatusLine.textContent = 'Serial check complete.';
+            serialStatusLine.className = response.ok ? 'status-line success' : 'status-line';
         } catch (error) {
             result.code.textContent = 'Network error';
             result.body.textContent = error instanceof Error ? error.message : 'Request failed';
             result.card.dataset.state = 'error';
-            statusLine.textContent = 'Serial check failed to reach the server.';
-            statusLine.className = 'status-line error';
+            serialStatusLine.textContent = 'Serial check failed to reach the server.';
+            serialStatusLine.className = 'status-line error';
         } finally {
             serialCheckButton.disabled = false;
         }
     }
 
-    async function submitRequests(count) {
+    function clearSerialCheck() {
+        serialInput.value = '';
+        results.querySelectorAll('[data-kind="serial-check"]').forEach((result) => result.remove());
+        empty.hidden = results.childElementCount > 0;
+        serialStatusLine.textContent = '';
+        serialStatusLine.className = 'status-line';
+    }
+
+    async function submitRequests(count, retry = false) {
         if (!form.reportValidity()) return;
 
         const token = tokenInput.value.trim();
@@ -435,37 +504,241 @@
 
         results.replaceChildren();
         empty.hidden = true;
-        statusLine.textContent = count === 2 ? 'Requests are being sent concurrently…' : 'Request is being sent…';
+        statusLine.textContent = retry
+            ? 'Sending the first request, then retrying with the same key…'
+            : (count === 2 ? 'Requests are being sent concurrently…' : 'Request is being sent…');
         statusLine.className = 'status-line';
         setBusy(true);
 
-        const requestKeys = count === 1 || reuseIdempotencyInput.checked
+        const requestKeys = retry || count === 1 || reuseIdempotencyInput.checked
             ? Array(count).fill(idempotencyKey)
             : [idempotencyKey, createIdempotencyKey()];
 
-        const responses = await Promise.all(
-            Array.from({ length: count }, (_, index) =>
-                sendRequest(
-                    count === 1 ? 'Request' : `Concurrent request ${index + 1}`,
-                    token,
-                    phone,
-                    pin,
-                    requestKeys[index],
+        let responses;
+
+        if (retry) {
+            const firstResponse = await sendRequest('Initial request', token, phone, pin, requestKeys[0]);
+            const retryResponse = await sendRequest('Retry with same key', token, phone, pin, requestKeys[1]);
+            responses = [firstResponse, retryResponse];
+        } else {
+            responses = await Promise.all(
+                Array.from({ length: count }, (_, index) =>
+                    sendRequest(
+                        count === 1 ? 'Request' : `Concurrent request ${index + 1}`,
+                        token,
+                        phone,
+                        pin,
+                        requestKeys[index],
+                    ),
                 ),
-            ),
-        );
+            );
+        }
 
         setBusy(false);
-        statusLine.textContent = count === 2
-            ? (responses.filter((code) => code === 200).length === 1
-                ? 'One request succeeded. Check the other response; it should not credit the card again.'
-                : 'Both requests completed. Review each response and the wallet transaction count.')
-            : 'Request complete.';
+        statusLine.textContent = retry
+            ? 'Retry completed. Compare the balance and transaction_no in both responses.'
+            : (count === 2
+                ? (responses.filter((code) => code === 200).length === 1
+                    ? 'One request succeeded. Check the other response; it should not credit the card again.'
+                    : 'Both requests completed. Review each response and the wallet transaction count.')
+                : 'Request complete.');
         statusLine.className = responses.includes(200) ? 'status-line success' : 'status-line';
     }
 
+    async function testPinRateLimit() {
+        if (!tokenInput.reportValidity() || !phoneInput.reportValidity()) return;
+
+        const token = tokenInput.value.trim();
+        const phone = phoneInput.value.trim();
+        const invalidPin = `rate-limit-test-${createIdempotencyKey()}`;
+        const responses = [];
+
+        results.replaceChildren();
+        empty.hidden = true;
+        statusLine.textContent = 'Sending invalid PIN attempts until the rate limit responds…';
+        statusLine.className = 'status-line';
+        setBusy(true);
+
+        for (let attempt = 1; attempt <= 11; attempt++) {
+            const response = await sendRequest(
+                `Invalid PIN attempt ${attempt}`,
+                token,
+                phone,
+                invalidPin,
+                createIdempotencyKey(),
+            );
+            responses.push(response);
+
+            if (response === 429) break;
+        }
+
+        setBusy(false);
+        const limitedAt = responses.indexOf(429);
+        statusLine.textContent = limitedAt >= 0
+            ? `Received HTTP 429 on attempt ${limitedAt + 1}. Check the response body for the PIN rate-limit message.`
+            : `No HTTP 429 after ${responses.length} invalid attempts. Check recent failures and rate-limit configuration.`;
+        statusLine.className = limitedAt >= 0 ? 'status-line success' : 'status-line error';
+    }
+
+    async function testRepeatedPinRateLimit() {
+        if (!tokenInput.reportValidity() || !phoneInput.reportValidity() || !pinInput.reportValidity()) return;
+
+        const token = tokenInput.value.trim();
+        const phone = phoneInput.value.trim();
+        const pin = pinInput.value.trim();
+        let limitedAt = null;
+        let unexpectedResponse = null;
+        let successfulTopUps = 0;
+
+        results.replaceChildren();
+        empty.hidden = true;
+        statusLine.textContent = 'Sending the entered PIN repeatedly with a new idempotency key each time…';
+        statusLine.className = 'status-line';
+        setBusy(true);
+
+        for (let attempt = 1; attempt <= 12; attempt++) {
+            const response = await sendRequest(
+                `Same PIN attempt ${attempt}`,
+                token,
+                phone,
+                pin,
+                createIdempotencyKey(),
+            );
+
+            if (response === 200) successfulTopUps++;
+            if (response === 429) {
+                limitedAt = attempt;
+                break;
+            }
+
+            if (response !== 200 && response !== 400) {
+                unexpectedResponse = { attempt, status: response };
+                break;
+            }
+        }
+
+        setBusy(false);
+        statusLine.textContent = limitedAt !== null
+            ? `Rate limit reached on attempt ${limitedAt}. Review the responses and Retry-After; successful top-ups: ${successfulTopUps}.`
+            : (unexpectedResponse
+                ? `Stopped on attempt ${unexpectedResponse.attempt} with HTTP ${unexpectedResponse.status ?? 'network error'}. Check the response details.`
+                : `No rate limit after ${successfulTopUps} successful top-ups and ${12 - successfulTopUps} failed attempts. Check prior counters and the response details.`);
+        statusLine.className = limitedAt !== null ? 'status-line success' : 'status-line error';
+    }
+
+    async function testIpRateLimit() {
+        if (!phoneInput.reportValidity()) return;
+
+        const tokens = ipTokenInputs.map((input) => input.value.trim());
+
+        if (tokens.some((token) => !token)) {
+            statusLine.textContent = 'Enter bearer tokens for all four users.';
+            statusLine.className = 'status-line error';
+            return;
+        }
+
+        if (new Set(tokens).size !== tokens.length) {
+            statusLine.textContent = 'Enter a distinct bearer token for each user.';
+            statusLine.className = 'status-line error';
+            return;
+        }
+
+        const phone = phoneInput.value.trim();
+        const invalidPin = `ip-rate-limit-test-${createIdempotencyKey()}`;
+        let limitedAt = null;
+        let unexpectedResponse = null;
+
+        results.replaceChildren();
+        empty.hidden = true;
+        statusLine.textContent = 'Sending five invalid PIN attempts for each user from this IP…';
+        statusLine.className = 'status-line';
+        setBusy(true);
+
+        for (let attempt = 1; attempt <= 21; attempt++) {
+            const userIndex = attempt === 21 ? 0 : Math.floor((attempt - 1) / 5);
+            const response = await sendRequest(
+                attempt === 21
+                    ? 'IP limit check (request 21)'
+                    : `User ${userIndex + 1}, failure ${((attempt - 1) % 5) + 1}`,
+                tokens[userIndex],
+                phone,
+                invalidPin,
+                createIdempotencyKey(),
+            );
+
+            if (response === 429) {
+                limitedAt = attempt;
+                break;
+            }
+
+            if (response !== 400) {
+                unexpectedResponse = { attempt, status: response };
+                break;
+            }
+        }
+
+        setBusy(false);
+        statusLine.textContent = limitedAt === 21
+            ? 'IP limit reached as expected on request 21. Check the response for the IP-limit message and Retry-After.'
+            : (limitedAt !== null
+                ? `Received HTTP 429 early on request ${limitedAt}. Check for earlier account or IP failures.`
+                : (unexpectedResponse
+                    ? `Stopped on request ${unexpectedResponse.attempt} with HTTP ${unexpectedResponse.status ?? 'network error'}. Check the response details and tokens.`
+                    : 'No HTTP 429 after 21 requests. Confirm the tokens belong to four different users and the IP is shared.'));
+        statusLine.className = limitedAt === 21 ? 'status-line success' : 'status-line error';
+    }
+
+    async function testSamePinWithDifferentPhones() {
+        if (!form.reportValidity()) return;
+
+        const token = tokenInput.value.trim();
+        const phone = phoneInput.value.trim();
+        const secondPhone = secondPhoneInput.value.trim();
+
+        if (!secondPhone) {
+            statusLine.textContent = 'Enter a second account phone number.';
+            statusLine.className = 'status-line error';
+            secondPhoneInput.focus();
+            return;
+        }
+
+        if (phone.replace(/\D/g, '') === secondPhone.replace(/\D/g, '')) {
+            statusLine.textContent = 'Enter two different account phone numbers.';
+            statusLine.className = 'status-line error';
+            secondPhoneInput.focus();
+            return;
+        }
+
+        const pin = pinInput.value.trim();
+        results.replaceChildren();
+        empty.hidden = true;
+        statusLine.textContent = 'Sending the same card PIN to both phone numbers simultaneously…';
+        statusLine.className = 'status-line';
+        setBusy(true);
+
+        const responses = await Promise.all([
+            sendRequest('First phone redemption', token, phone, pin, createIdempotencyKey()),
+            sendRequest('Second phone redemption', token, secondPhone, pin, createIdempotencyKey()),
+        ]);
+        const successCount = responses.filter((response) => response === 200).length;
+
+        setBusy(false);
+        statusLine.textContent = successCount === 1
+            ? 'One request succeeded. The other should report that the card is invalid or unavailable.'
+            : (successCount === 0
+                ? 'Neither request succeeded. Review both responses.'
+                : 'Both requests succeeded. Check wallet balances and transactions for duplicate redemption.');
+        statusLine.className = successCount === 1 ? 'status-line success' : 'status-line error';
+    }
+
     raceButton.addEventListener('click', () => submitRequests(2));
+    differentPhoneButton.addEventListener('click', testSamePinWithDifferentPhones);
     singleButton.addEventListener('click', () => submitRequests(1));
+    retryButton.addEventListener('click', () => submitRequests(2, true));
+    rateLimitButton.addEventListener('click', testPinRateLimit);
+    samePinRateLimitButton.addEventListener('click', testRepeatedPinRateLimit);
+    ipRateLimitButton.addEventListener('click', testIpRateLimit);
+    serialClearButton.addEventListener('click', clearSerialCheck);
     newKeyButton.addEventListener('click', () => { idempotencyInput.value = createIdempotencyKey(); });
     serialCheckForm.addEventListener('submit', checkSerialNo);
 </script>
