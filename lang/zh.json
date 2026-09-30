@@ -95,6 +95,16 @@
         "eod_reports_description": "查看每日钱包账本活动和交易状态。",
         "ledger_health": "账本健康状况",
         "ledger_health_description": "检查钱包余额与账本记录的一致性。",
+        "customer_reports": "客户报表",
+        "customer_reports_description": "查看客户增长和活跃情况报表。",
+        "billing_reports": "账单与支付",
+        "billing_reports_description": "查看账单和支付相关报表。",
+        "top_up_reports": "充值报表",
+        "top_up_reports_description": "查看充值活动和交易相关报表。",
+        "service_request_reports": "服务请求报表",
+        "service_request_reports_description": "查看服务请求及处理情况报表。",
+        "app_usage_reports": "应用使用情况",
+        "app_usage_reports_description": "查看移动应用使用情况和活动报表。",
         "settings": "设置",
         "app_version": "应用版本与功能",
         "language_management": "语言管理",
@@ -191,6 +201,114 @@
                 "force_update_required": "请选择是否启用强制更新。",
                 "status_required": "请选择状态。"
             }
+        }
+    },
+    "billing_report": {
+        "reporting_period": "报告周期",
+        "yearly": "按年",
+        "date_range": "日期范围",
+        "year": "年份",
+        "select_year": "选择年份",
+        "invalid_date_range": "结束日期必须等于或晚于开始日期。",
+        "loading": "正在应用...",
+        "successful": "成功",
+        "pending": "待处理",
+        "failed": "失败",
+        "refunded": "已退款",
+        "payment_method": "支付方式",
+        "package": "套餐",
+        "reset": "重置",
+        "apply_filters": "应用筛选",
+        "collected_points": "已收取积分",
+        "outstanding_balance": "未结余额",
+        "successful_payments": "成功付款数",
+        "failed_payments": "失败付款数",
+        "refunds_issued": "已退款积分",
+        "points": "积分",
+        "successful_payment_points": "成功付款积分",
+        "pending_payment_points": "待处理付款积分",
+        "failed_payment_points": "失败付款积分",
+        "refunded_points": "已退款积分",
+        "trend_period": "按日、周或月统计",
+        "collection_trend": "收款趋势",
+        "no_data": "所选筛选条件没有数据",
+        "payment_methods": "支付方式",
+        "payment_methods_description": "已收取积分的占比"
+    },
+    "service_request_report": {
+        "loading_chart": "正在加载图表",
+        "filters": {
+            "period": "报告周期",
+            "yearly": "按年",
+            "date_range": "日期范围",
+            "year": "年份",
+            "select_year": "选择年份",
+            "start_date": "开始日期",
+            "end_date": "结束日期",
+            "request_type": "请求类型",
+            "all_request_types": "所有请求类型",
+            "status": "状态",
+            "all_statuses": "所有状态"
+        },
+        "actions": {
+            "label": "操作",
+            "all": "全部",
+            "reset": "重置",
+            "loading": "加载中...",
+            "apply": "应用"
+        },
+        "errors": {
+            "invalid_date_range": "结束日期必须等于或晚于开始日期。",
+            "load": "无法加载服务请求报告。",
+            "http": "无法加载服务请求报告。",
+            "network": "网络错误导致报告无法加载。"
+        },
+        "summary": {
+            "total_requests": "请求总数",
+            "total_note": "此周期内的请求",
+            "pending_requests": "待处理请求",
+            "pending_note": "当前审核中",
+            "completed_requests": "已完成请求",
+            "completed_note": "已批准的请求",
+            "no_requests": "此周期内没有请求"
+        },
+        "volume": {
+            "title": "请求量",
+            "description": "所选周期内创建的请求",
+            "empty": "所选筛选条件没有服务请求。"
+        },
+        "types": {
+            "title": "请求类型",
+            "description": "按服务类型统计请求数量",
+            "empty": "所选筛选条件没有类型数据。",
+            "installation_application": "宽带申请",
+            "failure_report": "故障报告",
+            "relocation": "迁移",
+            "change_plan": "更改套餐",
+            "change_password": "更改密码"
+        },
+        "statuses": {
+            "title": "请求状态",
+            "description": "按当前状态分组的请求",
+            "empty": "所选筛选条件没有状态数据。"
+        },
+        "resolution": {
+            "title": "处理分析",
+            "description": "从请求创建到最近一次最终状态更新的平均时长",
+            "loading": "正在加载处理分析",
+            "request_type": "请求类型",
+            "total": "总数",
+            "average": "平均处理时长",
+            "empty": "所选筛选条件没有处理数据。"
+        },
+        "chart": {
+            "period": "周期：",
+            "requests": "请求"
+        },
+        "duration": {
+            "minutes": "分钟",
+            "hours": "小时",
+            "days": "天"
         }
     },
     "dashboard": {
