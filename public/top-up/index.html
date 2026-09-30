@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer">
+    <meta name="color-scheme" content="light">
+    <title>Top-up API Tester</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --ink: #172923;
+            --muted: #65756d;
+            --line: #d8e0d9;
+            --paper: #f3f6f1;
+            --surface: #ffffff;
+            --green: #176c4d;
+            --green-dark: #10563c;
+            --orange: #d1743f;
+            --red: #a33a32;
+            --shadow: 0 16px 44px rgb(23 41 35 / 8%);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background:
+                linear-gradient(135deg, rgb(23 108 77 / 5%), transparent 42%),
+                var(--paper);
+            color: var(--ink);
+            font-family: "IBM Plex Sans", "Avenir Next", ui-sans-serif, system-ui, sans-serif;
+        }
+
+        main {
+            width: min(100% - 32px, 860px);
+            margin: 0 auto;
+            padding: 44px 0 64px;
+        }
+
+        .eyebrow {
+            margin: 0 0 10px;
+            color: var(--green);
+            font-size: 11px;
+            font-weight: 750;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(28px, 5vw, 42px);
+            line-height: 1.08;
+            font-weight: 720;
+        }
+
+        .intro {
+            max-width: 620px;
+            margin: 12px 0 30px;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.65;
+        }
+
+        .workspace {
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: var(--surface);
+            box-shadow: var(--shadow);
+        }
+
+        .form-section, .results-section { padding: 24px; }
+        .results-section { border-top: 1px solid var(--line); background: #fbfcfa; }
+
+        .section-heading {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        h2 { margin: 0; font-size: 15px; font-weight: 700; }
+        .route { color: var(--muted); font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+        .fields {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .field { display: grid; gap: 7px; min-width: 0; }
+        .field.full { grid-column: 1 / -1; }
+
+        label { font-size: 12px; font-weight: 650; }
+
+        input {
+            width: 100%;
+            min-height: 44px;
+            padding: 10px 12px;
+            border: 1px solid #c7d1c9;
+            border-radius: 5px;
+            outline: none;
+            background: #fff;
+            color: var(--ink);
+            font: 14px/1.3 inherit;
+        }
+
+        input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgb(23 108 77 / 13%); }
+        input[type="password"], input[name="phone"] { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+        .hint { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            margin-top: 22px;
+        }
+
+        button {
+            min-height: 42px;
+            padding: 0 15px;
+            border: 1px solid transparent;
+            border-radius: 5px;
+            cursor: pointer;
+            font: inherit;
+            font-size: 13px;
+            font-weight: 680;
+            transition: background-color .15s ease, border-color .15s ease, transform .15s ease;
+        }
+
+        button:hover:not(:disabled) { transform: translateY(-1px); }
+        button:focus-visible { outline: 3px solid rgb(23 108 77 / 25%); outline-offset: 2px; }
+        button:disabled { cursor: wait; opacity: .6; }
+        .primary { background: var(--green); color: white; }
+        .primary:hover:not(:disabled) { background: var(--green-dark); }
+        .secondary { border-color: var(--line); background: white; color: var(--ink); }
+        .secondary:hover:not(:disabled) { border-color: var(--green); }
+
+        .status-line { min-height: 20px; margin: 12px 0 0; color: var(--muted); font-size: 12px; }
+        .status-line.error { color: var(--red); }
+        .status-line.success { color: var(--green); }
+
+        .results {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .result {
+            min-width: 0;
+            border: 1px solid var(--line);
+            border-left: 3px solid #9baaa0;
+            border-radius: 5px;
+            background: white;
+        }
+
+        .result[data-state="success"] { border-left-color: var(--green); }
+        .result[data-state="failure"] { border-left-color: var(--orange); }
+        .result[data-state="error"] { border-left-color: var(--red); }
+
+        .result-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 12px 13px;
+            border-bottom: 1px solid #edf0ed;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .result-code { color: var(--muted); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+        pre {
+            overflow: auto;
+            min-height: 54px;
+            max-height: 190px;
+            margin: 0;
+            padding: 12px 13px;
+            color: #34473d;
+            font: 11px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .empty { margin: 0; color: var(--muted); font-size: 12px; }
+
+        @media (max-width: 620px) {
+            main { width: min(100% - 22px, 860px); padding-top: 28px; }
+            .form-section, .results-section { padding: 17px; }
+            .fields, .results { grid-template-columns: 1fr; }
+            .section-heading { align-items: flex-start; flex-direction: column; gap: 6px; }
+            .actions { align-items: stretch; flex-direction: column; }
+            button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<main>
+    <p class="eyebrow">Internal API tool</p>
+    <h1>Top-up race tester</h1>
+    <p class="intro">Send two simultaneous requests with the same phone and PIN. A one-time card should credit the wallet once; the competing request should be rejected.</p>
+
+    <section class="workspace" aria-label="Top-up API test">
+        <div class="form-section">
+            <div class="section-heading">
+                <h2>Request credentials</h2>
+                <span class="route">POST /api/redeem/top-up-account</span>
+            </div>
+
+            <form id="request-form" autocomplete="off">
+                <div class="fields">
+                    <div class="field full">
+                        <label for="token">Sanctum bearer token</label>
+                        <input id="token" name="token" type="password" autocomplete="off" spellcheck="false" required>
+                    </div>
+                    <div class="field">
+                        <label for="phone">Account phone</label>
+                        <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="off" spellcheck="false" required>
+                        <p class="hint">Must match the authenticated account.</p>
+                    </div>
+                    <div class="field">
+                        <label for="pin">Top-up card PIN</label>
+                        <input id="pin" name="pin" type="password" autocomplete="new-password" spellcheck="false" required>
+                    </div>
+                    <div class="field full">
+                        <label for="idempotency-key">Idempotency key</label>
+                        <input id="idempotency-key" name="idempotency_key" type="text" minlength="8" maxlength="100" autocomplete="off" spellcheck="false" required>
+                        <label class="hint"><input id="reuse-idempotency-key" type="checkbox"> Reuse this key for both parallel requests (retry simulation)</label>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button id="race-button" class="primary" type="button">Send two simultaneous requests</button>
+                    <button id="single-button" class="secondary" type="button">Send one request</button>
+                    <button id="new-key-button" class="secondary" type="button">Generate new key</button>
+                </div>
+                <p id="status" class="status-line" role="status" aria-live="polite"></p>
+            </form>
+        </div>
+
+        <div class="form-section" style="border-top: 1px solid var(--line)">
+            <div class="section-heading">
+                <h2>Check serial number</h2>
+                <span class="route">POST /api/redeem/check-serial-no</span>
+            </div>
+            <form id="serial-check-form" autocomplete="off">
+                <div class="fields">
+                    <div class="field">
+                        <label for="serial-no">Card serial number</label>
+                        <input id="serial-no" name="serial_no" type="text" maxlength="32" autocomplete="off" spellcheck="false" required>
+                    </div>
+                    <div class="field" style="align-self: end">
+                        <button id="serial-check-button" class="secondary" type="submit">Check serial</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="results-section">
+            <div class="section-heading">
+                <h2>Responses</h2>
+                <span class="route" id="target-origin"></span>
+            </div>
+            <p id="empty" class="empty">No requests sent yet.</p>
+            <div id="results" class="results" aria-live="polite"></div>
+        </div>
+    </section>
+</main>
+
+<script>
+    const form = document.querySelector('#request-form');
+    const tokenInput = document.querySelector('#token');
+    const phoneInput = document.querySelector('#phone');
+    const pinInput = document.querySelector('#pin');
+    const idempotencyInput = document.querySelector('#idempotency-key');
+    const reuseIdempotencyInput = document.querySelector('#reuse-idempotency-key');
+    const newKeyButton = document.querySelector('#new-key-button');
+    const raceButton = document.querySelector('#race-button');
+    const singleButton = document.querySelector('#single-button');
+    const serialCheckForm = document.querySelector('#serial-check-form');
+    const serialInput = document.querySelector('#serial-no');
+    const serialCheckButton = document.querySelector('#serial-check-button');
+    const statusLine = document.querySelector('#status');
+    const results = document.querySelector('#results');
+    const empty = document.querySelector('#empty');
+    const originLabel = document.querySelector('#target-origin');
+
+    originLabel.textContent = window.location.origin === 'null' ? 'Open from the backend host' : window.location.origin;
+    idempotencyInput.value = createIdempotencyKey();
+
+    function createIdempotencyKey() {
+        return window.crypto?.randomUUID
+            ? window.crypto.randomUUID()
+            : `topup-${Date.now()}-${Math.random().toString(36).slice(2, 14)}`;
+    }
+
+    function setBusy(busy) {
+        raceButton.disabled = busy;
+        singleButton.disabled = busy;
+    }
+
+    function addResult(label) {
+        const card = document.createElement('article');
+        card.className = 'result';
+        card.dataset.state = 'pending';
+
+        const header = document.createElement('div');
+        header.className = 'result-head';
+
+        const title = document.createElement('span');
+        title.textContent = label;
+
+        const code = document.createElement('span');
+        code.className = 'result-code';
+        code.textContent = 'Waiting';
+
+        const body = document.createElement('pre');
+        body.textContent = 'Request sent';
+        header.append(title, code);
+        card.append(header, body);
+        results.append(card);
+        empty.hidden = true;
+
+        return { card, code, body };
+    }
+
+    async function sendRequest(label, token, phone, pin, idempotencyKey) {
+        const result = addResult(label);
+
+        try {
+            const response = await fetch('/api/redeem/top-up-account', {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ phone, pin, idempotency_key: idempotencyKey }),
+                cache: 'no-store',
+                credentials: 'same-origin',
+            });
+            const rawBody = await response.text();
+            let body;
+
+            try {
+                body = JSON.stringify(JSON.parse(rawBody), null, 2);
+            } catch {
+                body = rawBody || '(empty response)';
+            }
+
+            result.code.textContent = `HTTP ${response.status}`;
+            result.body.textContent = body;
+            result.card.dataset.state = response.ok ? 'success' : (response.status >= 500 ? 'error' : 'failure');
+            return response.status;
+        } catch (error) {
+            result.code.textContent = 'Network error';
+            result.body.textContent = error instanceof Error ? error.message : 'Request failed';
+            result.card.dataset.state = 'error';
+            return null;
+        }
+    }
+
+    async function checkSerialNo(event) {
+        event.preventDefault();
+
+        if (!serialCheckForm.reportValidity()) return;
+
+        const token = tokenInput.value.trim();
+        const serialNo = serialInput.value.trim();
+
+        if (!token) {
+            statusLine.textContent = 'Enter a Sanctum token.';
+            statusLine.className = 'status-line error';
+            return;
+        }
+
+        const result = addResult('Serial validity check');
+        serialCheckButton.disabled = true;
+
+        try {
+            const response = await fetch('/api/redeem/check-serial-no', {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ serial_no: serialNo }),
+                cache: 'no-store',
+                credentials: 'same-origin',
+            });
+            const rawBody = await response.text();
+            let body;
+
+            try {
+                body = JSON.stringify(JSON.parse(rawBody), null, 2);
+            } catch {
+                body = rawBody || '(empty response)';
+            }
+
+            result.code.textContent = `HTTP ${response.status}`;
+            result.body.textContent = body;
+            result.card.dataset.state = response.ok ? 'success' : (response.status >= 500 ? 'error' : 'failure');
+            statusLine.textContent = 'Serial check complete.';
+            statusLine.className = response.ok ? 'status-line success' : 'status-line';
+        } catch (error) {
+            result.code.textContent = 'Network error';
+            result.body.textContent = error instanceof Error ? error.message : 'Request failed';
+            result.card.dataset.state = 'error';
+            statusLine.textContent = 'Serial check failed to reach the server.';
+            statusLine.className = 'status-line error';
+        } finally {
+            serialCheckButton.disabled = false;
+        }
+    }
+
+    async function submitRequests(count) {
+        if (!form.reportValidity()) return;
+
+        const token = tokenInput.value.trim();
+        const phone = phoneInput.value.trim();
+        const pin = pinInput.value.trim();
+        const idempotencyKey = idempotencyInput.value.trim();
+
+        if (!token) {
+            statusLine.textContent = 'Enter a Sanctum token.';
+            statusLine.className = 'status-line error';
+            return;
+        }
+
+        results.replaceChildren();
+        empty.hidden = true;
+        statusLine.textContent = count === 2 ? 'Requests are being sent concurrently…' : 'Request is being sent…';
+        statusLine.className = 'status-line';
+        setBusy(true);
+
+        const requestKeys = count === 1 || reuseIdempotencyInput.checked
+            ? Array(count).fill(idempotencyKey)
+            : [idempotencyKey, createIdempotencyKey()];
+
+        const responses = await Promise.all(
+            Array.from({ length: count }, (_, index) =>
+                sendRequest(
+                    count === 1 ? 'Request' : `Concurrent request ${index + 1}`,
+                    token,
+                    phone,
+                    pin,
+                    requestKeys[index],
+                ),
+            ),
+        );
+
+        setBusy(false);
+        statusLine.textContent = count === 2
+            ? (responses.filter((code) => code === 200).length === 1
+                ? 'One request succeeded. Check the other response; it should not credit the card again.'
+                : 'Both requests completed. Review each response and the wallet transaction count.')
+            : 'Request complete.';
+        statusLine.className = responses.includes(200) ? 'status-line success' : 'status-line';
+    }
+
+    raceButton.addEventListener('click', () => submitRequests(2));
+    singleButton.addEventListener('click', () => submitRequests(1));
+    newKeyButton.addEventListener('click', () => { idempotencyInput.value = createIdempotencyKey(); });
+    serialCheckForm.addEventListener('submit', checkSerialNo);
+</script>
+</body>
+</html>

@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\Package\PackageController;
 use App\Http\Controllers\Api\Package\SpeedController;
 use App\Http\Controllers\Api\Package\TermController;
 use App\Http\Controllers\Api\Promotion\PromotionController;
+use App\Http\Controllers\Api\Redeem\RedeemController;
 use App\Http\Controllers\Api\Region\RegionController;
 use App\Http\Controllers\Api\Service\ServiceController;
 use App\Http\Controllers\Api\ServiceRequest\BroadbandApplicationRequestController;
@@ -120,8 +121,10 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::prefix('broadband-account')->group(function () {
         Route::post('/connect', [BroadbandAccountController::class, 'connect']);
     });
-});
 
-if (app()->isLocal()) {
-    require __DIR__ . '/dev.php';
-}
+    Route::prefix('redeem')->group(function () {
+        Route::post('/check-serial-no', [RedeemController::class, 'checkSerialNo']);
+        Route::post('/top-up-account', [RedeemController::class, 'topUpAccount']);
+
+    });
+});

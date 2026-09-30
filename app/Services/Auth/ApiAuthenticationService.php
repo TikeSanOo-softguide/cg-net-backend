@@ -174,7 +174,7 @@ final class ApiAuthenticationService
         return $user->createToken(
             'flutter',
             $scopes,
-            now()->addMinutes((int) config('auth_api.access_token_ttl_minutes', 15)),
+            now()->addMinutes((int) config('auth_api.access_token_ttl_minutes', 600000)),
         )->plainTextToken;
     }
 }
