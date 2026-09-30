@@ -366,13 +366,13 @@ export const navigation: NavGroup[] = [
             {
                 labelKey: 'menu.admin_activity_logs',
                 descriptionKey: 'menu.admin_activity_logs_description',
-                href: '/logs/activity-logs',
+                href: '/logs/activity',
                 icon: Activity,
             },
             {
                 labelKey: 'menu.user_logs',
                 descriptionKey: 'menu.user_logs_description',
-                href: '/logs/user-logs',
+                href: '/logs/users',
                 icon: UserRound,
             },
         ],
