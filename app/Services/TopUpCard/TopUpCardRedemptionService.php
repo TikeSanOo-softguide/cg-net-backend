@@ -3,33 +3,35 @@
 namespace App\Services\TopUpCard;
 
 use App\Enums\TopUpCardStatus;
+use App\Enums\LedgerAccountCode;
+use App\Enums\LedgerTransactionStatus;
+use App\Enums\LedgerTransactionType;
 use App\Enums\UserStatus;
 use App\Enums\WalletActorType;
-use App\Enums\WalletEntryType;
 use App\Enums\WalletStatus;
-use App\Enums\WalletTransactionStatus;
-use App\Enums\WalletTransactionType;
+use App\Models\LedgerTransaction;
 use App\Models\TopUpCard;
 use App\Models\User;
-use App\Models\WalletEntry;
-use App\Models\WalletTransaction;
+use App\Models\Wallet;
+use App\Services\Ledger\LedgerPoster;
 use App\Support\TopUpCardPin;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Str;
 
 class TopUpCardRedemptionService
 {
     private const MAX_WALLET_BALANCE = 2147483647;
 
-    private const FAILED_PIN_LIMIT_PER_USER = 7;
+    private const FAILED_PIN_LIMIT_PER_USER = 10;
 
-    private const FAILED_PIN_LIMIT_PER_IP = 15;
+    private const FAILED_PIN_LIMIT_PER_IP = 20;
 
     private const FAILED_PIN_DECAY_SECONDS_PER_USER = 30 * 60;
 
     private const FAILED_PIN_DECAY_SECONDS_PER_IP = 60 * 60;
+
+    public function __construct(private readonly LedgerPoster $ledger) {}
 
     /**
      * @return array{http_status: int, body: array<string, mixed>, headers: array<string, string>}
@@ -110,14 +112,13 @@ class TopUpCardRedemptionService
                     return $this->response(400, ['message' => 'Invalid or unavailable top-up card.']);
                 }
 
-                $existing = WalletTransaction::query()
-                    ->with(['topUpCard', 'walletEntry'])
-                    ->where('wallet_id', $wallet->id)
+                $existing = LedgerTransaction::query()
+                    ->with(['topUpCard', 'entries.ledgerAccount'])
                     ->where('idempotency_key', $idempotencyKey)
                     ->first();
 
                 if ($existing !== null) {
-                    return $this->existingResponse($existing, $card);
+                    return $this->existingResponse($existing, $wallet, $card);
                 }
 
                 if (
@@ -142,39 +143,34 @@ class TopUpCardRedemptionService
                     return $this->response(409, ['message' => 'This action could not be completed.']);
                 }
 
-                $balanceAfter = $balanceBefore + $amount;
                 $now = now();
-                $transaction = WalletTransaction::query()->create([
-                    'wallet_id' => $wallet->id,
-                    'transaction_no' => 'TOPUP-' . Str::ulid(),
-                    'type' => WalletTransactionType::Topup,
-                    'status' => WalletTransactionStatus::Completed,
-                    'amount' => $amount,
-                    'idempotency_key' => $idempotencyKey,
-                    'actor_type' => WalletActorType::User,
-                    'actor_id' => $actor->id,
-                    'ip_address' => $ipAddress,
-                    'user_agent' => $userAgent,
-                ]);
+                $transaction = $this->ledger->creditWallet(
+                    wallet: $wallet,
+                    amount: $amount,
+                    contraAccount: LedgerAccountCode::CashTopup,
+                    type: LedgerTransactionType::Topup,
+                    status: LedgerTransactionStatus::Completed,
+                    idempotencyKey: $idempotencyKey,
+                    actorType: WalletActorType::User,
+                    actorId: $actor->id,
+                    ipAddress: $ipAddress,
+                    userAgent: $userAgent,
+                );
 
-                $wallet->balance = $balanceAfter;
-                $wallet->incrementVersion();
-                $wallet->updated_by = $actor->id;
-                $wallet->save();
+                if (! $transaction->wasRecentlyCreated) {
+                    return $this->existingResponse(
+                        $transaction->load(['topUpCard', 'entries.ledgerAccount']),
+                        $wallet,
+                        $card,
+                    );
+                }
 
-                WalletEntry::query()->create([
-                    'wallet_transaction_id' => $transaction->id,
-                    'wallet_id' => $wallet->id,
-                    'amount' => $amount,
-                    'balance_before' => $balanceBefore,
-                    'balance_after' => $balanceAfter,
-                    'type' => WalletEntryType::Credit,
-                ]);
+                $balanceAfter = (int) $wallet->refresh()->balance;
 
                 $card->status = TopUpCardStatus::Used;
                 $card->redeemed_at = $now;
                 $card->redeemed_by = $actor->id;
-                $card->wallet_transaction_id = $transaction->id;
+                $card->ledger_transaction_id = $transaction->id;
                 $card->save();
 
                 return $this->response(200, [
@@ -231,13 +227,33 @@ class TopUpCardRedemptionService
     /**
      * @return array{http_status: int, body: array<string, mixed>, headers: array<string, string>}
      */
-    protected function existingResponse(WalletTransaction $existing, TopUpCard $card): array
+    protected function existingResponse(
+        LedgerTransaction $existing,
+        Wallet $wallet,
+        TopUpCard $card,
+    ): array
     {
+        $entries = $existing->entries;
+        $liabilityEntry = $existing->walletLiabilityEntry();
+        $hasCashTopupDebit = $entries->contains(
+            fn ($entry): bool => $entry->ledgerAccount?->code === LedgerAccountCode::CashTopup->value &&
+                (int) $entry->debit === (int) $existing->amount &&
+                (int) $entry->credit === 0,
+        );
+
         if (
-            $existing->type !== WalletTransactionType::Topup ||
-            $existing->status !== WalletTransactionStatus::Completed ||
+            (int) $existing->wallet_id !== (int) $wallet->id ||
+            $existing->type !== LedgerTransactionType::Topup ||
+            $existing->status !== LedgerTransactionStatus::Completed ||
             $existing->topUpCard?->getKey() !== $card->getKey() ||
-            $existing->walletEntry === null
+            $liabilityEntry === null ||
+            (int) $liabilityEntry->debit !== 0 ||
+            (int) $liabilityEntry->credit !== (int) $existing->amount ||
+            $liabilityEntry->balance_after === null ||
+            $entries->count() !== 2 ||
+            ! $hasCashTopupDebit ||
+            (int) $entries->sum('debit') !== (int) $existing->amount ||
+            (int) $entries->sum('credit') !== (int) $existing->amount
         ) {
             return $this->response(409, ['message' => 'Idempotency key has already been used.']);
         }
@@ -245,7 +261,7 @@ class TopUpCardRedemptionService
         return $this->response(200, [
             'message' => 'Top-up already processed.',
             'amount' => $existing->amount,
-            'balance' => $existing->walletEntry->balance_after,
+            'balance' => $liabilityEntry->balance_after,
             'transaction_no' => $existing->transaction_no,
         ]);
     }
