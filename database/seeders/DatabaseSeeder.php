@@ -222,7 +222,7 @@ class DatabaseSeeder extends Seeder
                     contraAccount: LedgerAccountCode::AdjustmentExpense,
                     type: LedgerTransactionType::Adjustment,
                     status: LedgerTransactionStatus::Completed,
-                    idempotencyKey: 'seed-opening:'.$wallet->id,
+                    idempotencyKey: 'seed-opening:' . $wallet->id,
                     actorType: WalletActorType::System,
                     actorId: $user->id,
                 );
@@ -402,7 +402,7 @@ class DatabaseSeeder extends Seeder
                         contraAccount: LedgerAccountCode::CashTopup,
                         type: LedgerTransactionType::Topup,
                         status: LedgerTransactionStatus::Completed,
-                        idempotencyKey: 'seed-bill-topup:'.$user->id.':'.$index,
+                        idempotencyKey: 'seed-bill-topup:' . $user->id . ':' . $index,
                         actorType: WalletActorType::System,
                         actorId: $user->id,
                     );
@@ -414,18 +414,18 @@ class DatabaseSeeder extends Seeder
                     contraAccount: LedgerAccountCode::FtthClearing,
                     type: LedgerTransactionType::FtthBill,
                     status: LedgerTransactionStatus::Completed,
-                    idempotencyKey: 'seed-bill:'.$user->id.':'.$index,
+                    idempotencyKey: 'seed-bill:' . $user->id . ':' . $index,
                     actorType: WalletActorType::System,
                     actorId: $user->id,
-                    transactionNo: 'BILL-'.strtoupper(fake()->bothify('???-####')),
+                    transactionNo: 'BILL-' . strtoupper(fake()->bothify('???-####')),
                 );
 
                 BillPayment::query()->create([
                     'ledger_transaction_id' => $transaction->id,
                     'broadband_account_number' => $user->broadband_account_number,
                     'status' => BillPaymentStatus::Completed,
-                    'external_bill_ref' => 'BILL-'.fake()->numerify('####'),
-                    'external_payment_ref' => 'PAY-'.fake()->numerify('####'),
+                    'external_bill_ref' => 'BILL-' . fake()->numerify('####'),
+                    'external_payment_ref' => 'PAY-' . fake()->numerify('####'),
                     'external_response' => ['gateway' => 'kbzpay'],
                     'confirmed_at' => $paidAt,
                 ]);

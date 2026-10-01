@@ -320,6 +320,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::get('/export', [TopUpCardController::class, 'export'])
                 ->middleware('can:top-up-cards.view')
                 ->name('export');
+            Route::post('/offices/validate-import', [OfficeController::class, 'validateImport'])
+                ->middleware('can:top-up-cards.update')
+                ->name('offices.validate-import');
             Route::get('/card-history', [TopUpCardController::class, 'cardHistory'])
                 ->middleware('can:top-up-cards.view')
                 ->name('card-history');

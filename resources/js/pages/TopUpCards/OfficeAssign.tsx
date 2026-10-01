@@ -18,6 +18,7 @@ import { Spinner } from '@/components/ui/spinner';
 import type { Paginated } from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
 import { TopUpCardImportTable } from '@/components/top-up-cards/TopUpCardImportTable';
+import type { TopUpCardCsvPreview } from '@/components/top-up-cards/TopUpCardImportDialog';
 
 type BatchRow = {
     id: number;
@@ -37,6 +38,7 @@ type BatchTableRow = {
 type ImportProgress = {
     status: 'processing' | 'completed' | 'failed' | null;
     message: string | null;
+    message_replace?: Record<string, string | number>;
     total_cards: number;
     completed_cards: number;
     completed_chunks: number;
@@ -90,6 +92,7 @@ export default function OfficeAssignPage({ batchPage, batches, importProgress, f
     const [batchFilter, setBatchFilter] = useState(filters.batch);
     const [statusFilter, setStatusFilter] = useState(filters.status);
     const pollInFlight = useRef(false);
+    const previousImportStatus = useRef(importProgress?.status);
     const importErrorMessage = importError
         ? t(importError.key).replace(/:([a-z_]+)/g, (_, key: string) => String(importError.replace?.[key] ?? `:${key}`))
         : null;
@@ -104,6 +107,19 @@ export default function OfficeAssignPage({ batchPage, batches, importProgress, f
             setImportError(flash.import_error);
         }
     }, [flash?.import_error_token]);
+
+    useEffect(() => {
+        const failedAfterProcessing =
+            previousImportStatus.current === 'processing' && importProgress?.status === 'failed';
+        previousImportStatus.current = importProgress?.status;
+
+        if (failedAfterProcessing && importProgress.message) {
+            setImportError({
+                key: importProgress.message,
+                replace: importProgress.message_replace,
+            });
+        }
+    }, [importProgress?.status, importProgress?.message]);
 
     useEffect(() => {
         if (importProgress?.status !== 'processing') {
@@ -160,6 +176,30 @@ export default function OfficeAssignPage({ batchPage, batches, importProgress, f
         );
     };
 
+    const checkImport = async (file: File): Promise<TopUpCardCsvPreview> => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const xsrfCookie = document.cookie.split('; ').find((cookie) => cookie.startsWith('XSRF-TOKEN='));
+        const xsrfToken = xsrfCookie ? decodeURIComponent(xsrfCookie.slice('XSRF-TOKEN='.length)) : '';
+        const response = await fetch('/top-up-cards/offices/validate-import', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                ...(xsrfToken ? { 'X-XSRF-TOKEN': xsrfToken } : {}),
+            },
+            body: formData,
+        });
+        const payload = await response.json().catch(() => null);
+
+        if (!response.ok) {
+            throw payload?.error ?? { key: 'csv.import_errors.read_failed' };
+        }
+
+        return payload as TopUpCardCsvPreview;
+    };
+
     return (
         <>
             <Head title={t('top_up_cards.office.assign_cards')} />
@@ -194,6 +234,7 @@ export default function OfficeAssignPage({ batchPage, batches, importProgress, f
                     importProcessing={importProgress?.status === 'processing'}
                     onBatchChange={(value) => refreshCards(value === 'all' ? '' : value, statusFilter)}
                     onStatusChange={(value) => refreshCards(batchFilter, value === 'all' ? '' : value)}
+                    onCheckImport={checkImport}
                     onImport={importCards}
                 />
             </PageContent>
@@ -209,7 +250,7 @@ export default function OfficeAssignPage({ batchPage, batches, importProgress, f
                     <DialogHeader className="text-left">
                         <DialogTitle className="flex items-center gap-2 text-danger">
                             <CircleAlertIcon className="size-5" />
-                            {t('top_up_cards.import_errors.title')}
+                            {t('csv.import_errors.title')}
                         </DialogTitle>
                         <DialogDescription className="whitespace-pre-wrap text-left text-foreground">
                             {importErrorMessage}
@@ -218,7 +259,6 @@ export default function OfficeAssignPage({ batchPage, batches, importProgress, f
                     <DialogFooter>
                         <DialogClose asChild>
                             <Button type="button" variant="destructive">
-                                <XIcon className="size-4" />
                                 {t('common.close')}
                             </Button>
                         </DialogClose>
