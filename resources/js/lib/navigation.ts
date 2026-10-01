@@ -603,11 +603,12 @@ export const reports = [
         href: '/reports/billing',
         icon: Banknote,
     },
+
     {
-        labelKey: 'menu.eod_reports',
-        descriptionKey: 'menu.eod_reports_description',
-        href: '/reports/eod',
-        icon: CalendarDays,
+        labelKey: 'menu.top_up_reports',
+        descriptionKey: 'menu.top_up_reports_description',
+        href: '/reports/top-ups',
+        icon: CreditCard,
     },
     {
         labelKey: 'menu.ledger_health',
@@ -616,10 +617,10 @@ export const reports = [
         icon: Activity,
     },
     {
-        labelKey: 'menu.top_up_reports',
-        descriptionKey: 'menu.top_up_reports_description',
-        href: '/reports/top-ups',
-        icon: CreditCard,
+        labelKey: 'menu.eod_reports',
+        descriptionKey: 'menu.eod_reports_description',
+        href: '/reports/eod',
+        icon: CalendarDays,
     },
     {
         labelKey: 'menu.service_request_reports',

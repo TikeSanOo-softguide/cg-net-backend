@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 
 import { useTranslation } from '@/hooks/useTranslation';
+import { navigationResetHeaders } from '@/lib/navigation-stack';
 import { cn } from '@/lib/utils';
 
 /** Shared logo frame — same on login and dashboard */
@@ -60,7 +61,7 @@ export function BrandLockup({
     }
 
     return (
-        <Link href={href} className={classes}>
+        <Link href={href} headers={navigationResetHeaders} className={classes}>
             {content}
         </Link>
     );

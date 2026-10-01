@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import {
-    ArrowLeftIcon,
     CalendarDays,
     CheckCheck,
     ClipboardList,
@@ -11,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
+import { BackButton } from '@/components/BackButton';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { FormControl } from '@/components/ui/form-control';
 import { FormField } from '@/components/ui/form-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useReturnTo } from '@/hooks/useReturnTo';
 import { useTranslation } from '@/hooks/useTranslation';
 
 type Filters = {
@@ -82,6 +83,7 @@ export default function ServiceRequestReportsIndex({
     resolution_analysis,
 }: Props) {
     const { t, locale } = useTranslation();
+    const returnTo = useReturnTo('/reports');
     const [filters, setFilters] = useState(reportFilters);
     const [dateError, setDateError] = useState<string>();
     const [reportError, setReportError] = useState<string>();
@@ -191,10 +193,7 @@ export default function ServiceRequestReportsIndex({
                         title={t('menu.service_request_reports')}
                         description={t('menu.service_request_reports_description')}
                     />
-                    <Button type="button" size="sm" className="gap-1.5" onClick={() => router.visit('/reports')}>
-                        <ArrowLeftIcon className="size-3.5" strokeWidth={1.9} />
-                        {t('common.back')}
-                    </Button>
+                    <BackButton href={returnTo} />
                 </div>
 
                 <form onSubmit={applyFilters}>

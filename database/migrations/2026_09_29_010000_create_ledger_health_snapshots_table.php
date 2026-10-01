@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\LedgerHealthScanType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -10,12 +11,16 @@ return new class extends Migration {
         Schema::create('ledger_health_snapshots', function (Blueprint $table) {
             $table->id();
             $table->foreignId('requested_by')->nullable()->constrained('admins')->nullOnDelete();
+            $table->string('type', 16)->default(LedgerHealthScanType::Full->value);
+            $table->timestamp('window_start')->nullable();
+            $table->timestamp('window_end')->nullable();
             $table->string('status', 16);
             $table->json('results')->nullable();
             $table->text('error')->nullable();
             $table->timestamp('checked_at')->nullable();
             $table->timestamps();
             $table->index(['status', 'id']);
+            $table->index(['type', 'status', 'id']);
         });
     }
 

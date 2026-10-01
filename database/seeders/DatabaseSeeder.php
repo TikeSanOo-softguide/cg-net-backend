@@ -5,11 +5,11 @@ namespace Database\Seeders;
 use App\Enums\BillPaymentStatus;
 use App\Enums\ChangePlanStatus;
 use App\Enums\CustomerPackageStatus;
-use App\Enums\RequestStatus;
-use App\Enums\UserStatus;
 use App\Enums\LedgerAccountCode;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
+use App\Enums\RequestStatus;
+use App\Enums\UserStatus;
 use App\Enums\WalletActorType;
 use App\Enums\WalletStatus;
 use App\Models\Admin;
@@ -196,7 +196,6 @@ class DatabaseSeeder extends Seeder
                 'status' => CustomerPackageStatus::Active,
             ]);
 
-
             if ($index % 4 === 0) {
                 CustomerPackage::factory()
                     ->expired()
@@ -303,30 +302,30 @@ class DatabaseSeeder extends Seeder
             $condition = $index % 3;
             $status =
                 $index < 10
-                ? ChangePlanStatus::UnderReview
-                : ($index < 17
-                    ? ChangePlanStatus::Approved
-                    : ChangePlanStatus::Cancelled);
+                    ? ChangePlanStatus::UnderReview
+                    : ($index < 17
+                        ? ChangePlanStatus::Approved
+                        : ChangePlanStatus::Cancelled);
 
             $newPackage = match ($condition) {
                 0 => $currentPackage?->speed
                     ? Package::query()
-                    ->whereKeyNot($currentPackageId)
-                    ->whereHas('speed', fn($query) => $query->where('mbps', '<', $currentPackage->speed->mbps))
-                    ->first()
+                        ->whereKeyNot($currentPackageId)
+                        ->whereHas('speed', fn($query) => $query->where('mbps', '<', $currentPackage->speed->mbps))
+                        ->first()
                     : null,
                 1 => $currentPackage?->speed
                     ? Package::query()
-                    ->whereKeyNot($currentPackageId)
-                    ->whereHas('speed', fn($query) => $query->where('mbps', '>', $currentPackage->speed->mbps))
-                    ->first()
+                        ->whereKeyNot($currentPackageId)
+                        ->whereHas('speed', fn($query) => $query->where('mbps', '>', $currentPackage->speed->mbps))
+                        ->first()
                     : null,
                 default => $currentPackage?->speed
                     ? Package::query()
-                    ->whereKeyNot($currentPackageId)
-                    ->where('network_id', '!=', $currentPackage->network_id)
-                    ->whereHas('speed', fn($query) => $query->where('mbps', $currentPackage->speed->mbps))
-                    ->first()
+                        ->whereKeyNot($currentPackageId)
+                        ->where('network_id', '!=', $currentPackage->network_id)
+                        ->whereHas('speed', fn($query) => $query->where('mbps', $currentPackage->speed->mbps))
+                        ->first()
                     : null,
             };
 
@@ -380,7 +379,7 @@ class DatabaseSeeder extends Seeder
                 }
 
                 $paidAt = now()->subDays($index * 2);
-                $amount = fake()->randomElement([15000, 25000, 35000, 45000]);
+                $amount = fake()->randomElement([50, 100, 250, 500]);
 
                 $wallet = $user->wallet()->firstOrCreate(
                     ['user_id' => $user->id],

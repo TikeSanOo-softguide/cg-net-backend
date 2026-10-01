@@ -53,7 +53,7 @@ class EodReportController extends Controller
             )
             ->values();
 
-        $recentEntries = LedgerEntry::query()
+        $entries = LedgerEntry::query()
             ->with([
                 'wallet.user:id,name',
                 'ledgerTransaction:id,transaction_no,type',
@@ -62,17 +62,9 @@ class EodReportController extends Controller
             ->whereDate('created_at', $date)
             ->latest('created_at')
             ->latest('id')
-            ->limit(100)
-            ->get([
-                'id',
-                'ledger_transaction_id',
-                'wallet_id',
-                'debit',
-                'credit',
-                'balance_after',
-                'created_at',
-            ])
-            ->map(
+            ->paginate(15)
+            ->withQueryString()
+            ->through(
                 fn (LedgerEntry $entry): array => [
                     'id' => $entry->id,
                     'transaction_no' => $entry->ledgerTransaction?->transaction_no,
@@ -84,8 +76,7 @@ class EodReportController extends Controller
                     'balance_after' => (int) $entry->balance_after,
                     'created_at' => $entry->created_at,
                 ],
-            )
-            ->values();
+            );
 
         return Inertia::render('Reports/Eod/Index', [
             'date' => $date,
@@ -95,13 +86,12 @@ class EodReportController extends Controller
                 'debits' => (int) $debits,
                 'net' => (int) $credits - (int) $debits,
                 'completed_transactions' => $transactionStatuses[LedgerTransactionStatus::Completed->value] ?? 0,
-                'pending_transactions' =>
-                    ($transactionStatuses[LedgerTransactionStatus::Pending->value] ?? 0) +
+                'pending_transactions' => ($transactionStatuses[LedgerTransactionStatus::Pending->value] ?? 0) +
                     ($transactionStatuses[LedgerTransactionStatus::Processing->value] ?? 0),
                 'failed_transactions' => $transactionStatuses[LedgerTransactionStatus::Failed->value] ?? 0,
             ],
             'breakdown' => $breakdown,
-            'recentEntries' => $recentEntries,
+            'entries' => $entries,
         ]);
     }
 }

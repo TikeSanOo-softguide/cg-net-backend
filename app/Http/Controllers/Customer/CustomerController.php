@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Customer;
 
-use App\Enums\UserStatus;
 use App\Enums\CustomerPackageStatus;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
+use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\BindAccountNumberRequest;
 use App\Http\Requests\Customer\CustomerData;
@@ -17,7 +17,6 @@ use App\Services\BroarbandAccount\BroadbandAccountService;
 use App\Services\Ledger\LedgerPoster;
 use App\Services\Transaction\TransactionService;
 use App\Support\PackageLabel;
-use App\Support\ReturnTo;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -86,8 +85,6 @@ class CustomerController extends Controller
                     'created_at' => $customer->created_at?->toDateString(),
                 ];
             });
-
-        ReturnTo::remember($request, 'customers.show');
 
         return Inertia::render('Customer/Index', [
             'customers' => $customers,
@@ -194,8 +191,8 @@ class CustomerController extends Controller
 
         $transactionPage =
             $request->string('transactions')->toString() === 'all'
-            ? $transactions->paginate($transactionFilters, 'transaction_page')
-            : null;
+                ? $transactions->paginate($transactionFilters, 'transaction_page')
+                : null;
 
         $packageRows = $customer->customerPackages->sortByDesc('start_date')->values()->map(
             fn($row) => [
@@ -211,9 +208,6 @@ class CustomerController extends Controller
                 'status' => $row->status->value,
             ],
         );
-
-        ReturnTo::captureReferer($request, 'customers.show');
-        $returnTo = ReturnTo::get('customers.show', route('customers.index', absolute: false));
 
         $accountBinding = null;
         $broadbandPackage = null;
@@ -253,18 +247,18 @@ class CustomerController extends Controller
                 'balance' => number_format((float) ($customer->wallet?->balance ?? 0), 0, '.', ''),
                 'transaction_overview' => $transactionOverview,
                 'transactions' =>
-                $customer->wallet?->transactions
-                    ->map(
-                        fn($transaction) => [
-                            'id' => $transaction->id,
-                            'transaction_no' => $transaction->transaction_no,
-                            'type' => $transaction->type->value,
-                            'status' => $transaction->status->value,
-                            'amount' => number_format((float) $transaction->amount, 0, '.', ''),
-                            'created_at' => $transaction->created_at?->toDateString(),
-                        ],
-                    )
-                    ->values() ?? collect(),
+                    $customer->wallet?->transactions
+                        ->map(
+                            fn($transaction) => [
+                                'id' => $transaction->id,
+                                'transaction_no' => $transaction->transaction_no,
+                                'type' => $transaction->type->value,
+                                'status' => $transaction->status->value,
+                                'amount' => number_format((float) $transaction->amount, 0, '.', ''),
+                                'created_at' => $transaction->created_at?->toDateString(),
+                            ],
+                        )
+                        ->values() ?? collect(),
             ],
             'transactionPage' => $transactionPage,
             'transactionFilters' => [
@@ -283,7 +277,6 @@ class CustomerController extends Controller
                 'statuses' => array_column(LedgerTransactionStatus::cases(), 'value'),
             ],
             'topUpHistory' => $topUpHistory,
-            'return_to' => $returnTo,
         ]);
     }
 

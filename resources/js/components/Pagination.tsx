@@ -29,6 +29,104 @@ type PaginationProps = {
     onPageChange?: (page: number) => void;
 };
 
+/**
+ * Build Previous / page window / Next links matching Laravel UrlWindow.
+ */
+export function buildWindowedPaginationLinks(
+    currentPage: number,
+    lastPage: number,
+    previousLabel: string,
+    nextLabel: string,
+    onEachSide = 3,
+): PaginatedLink[] {
+    const current = Math.min(Math.max(1, currentPage), Math.max(1, lastPage));
+    const last = Math.max(1, lastPage);
+    const links: PaginatedLink[] = [
+        {
+            url: null,
+            label: `&laquo; ${previousLabel}`,
+            active: false,
+            page: Math.max(1, current - 1),
+            disabled: current === 1,
+        },
+    ];
+
+    for (const page of windowedPageNumbers(current, last, onEachSide)) {
+        if (page === null) {
+            links.push({
+                url: null,
+                label: '...',
+                active: false,
+                disabled: true,
+            });
+            continue;
+        }
+
+        links.push({
+            url: null,
+            label: String(page),
+            active: current === page,
+            page,
+        });
+    }
+
+    links.push({
+        url: null,
+        label: `${nextLabel} &raquo;`,
+        active: false,
+        page: Math.min(last, current + 1),
+        disabled: current === last,
+    });
+
+    return links;
+}
+
+/**
+ * Mirror Illuminate\Pagination\UrlWindow page ranges.
+ * - start: 1..10, ..., last-1, last
+ * - middle: 1, 2, ..., current±3, ..., last-1, last
+ * - end: 1, 2, ..., last 10 pages
+ */
+function windowedPageNumbers(current: number, last: number, onEachSide: number): Array<number | null> {
+    if (last < onEachSide * 2 + 8) {
+        return Array.from({ length: last }, (_, index) => index + 1);
+    }
+
+    const window = onEachSide + 4;
+
+    if (current <= window) {
+        return [
+            ...range(1, window + onEachSide),
+            null,
+            ...range(last - 1, last),
+        ];
+    }
+
+    if (current > last - window) {
+        return [
+            ...range(1, 2),
+            null,
+            ...range(last - (window + (onEachSide - 1)), last),
+        ];
+    }
+
+    return [
+        ...range(1, 2),
+        null,
+        ...range(current - onEachSide, current + onEachSide),
+        null,
+        ...range(last - 1, last),
+    ];
+}
+
+function range(start: number, end: number): number[] {
+    if (end < start) {
+        return [];
+    }
+
+    return Array.from({ length: end - start + 1 }, (_, index) => start + index);
+}
+
 export function Pagination({ meta, summary, onPageChange }: PaginationProps) {
     const { t } = useTranslation();
 

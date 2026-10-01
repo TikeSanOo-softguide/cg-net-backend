@@ -6,8 +6,10 @@ use App\Models\Admin;
 use App\Models\NotificationCustom;
 use App\Support\AppPermissions;
 use App\Support\JsonTranslations;
+use App\Support\NavigationStack;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use Symfony\Component\HttpFoundation\Response;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -19,6 +21,14 @@ class HandleInertiaRequests extends Middleware
      * @var string
      */
     protected $rootView = 'app';
+
+    public function handle(Request $request, \Closure $next): Response
+    {
+        $response = parent::handle($request, $next);
+        NavigationStack::commit($request, $response);
+
+        return $response;
+    }
 
     /**
      * Determines the current asset version.
@@ -51,8 +61,7 @@ class HandleInertiaRequests extends Middleware
                         'username' => $user->username,
                     ]
                     : null,
-                'permissions' =>
-                    $user instanceof Admin ? $user->getAllPermissions()->pluck('name')->values()->all() : [],
+                'permissions' => $user instanceof Admin ? $user->getAllPermissions()->pluck('name')->values()->all() : [],
                 'roles' => $user instanceof Admin ? $user->getRoleNames()->values()->all() : [],
                 'is_super_admin' => $user instanceof Admin && $user->hasRole(AppPermissions::SuperAdmin),
             ],
@@ -61,6 +70,7 @@ class HandleInertiaRequests extends Middleware
             'unreadNotifications' => $user ? NotificationCustom::query()->where('is_read', false)->count() : 0,
             'recentNotifications' => $user ? $this->recentNotifications() : [],
             'flash' => $this->flashPayload($request),
+            'return_to' => NavigationStack::preview($request),
         ];
     }
 
@@ -76,7 +86,7 @@ class HandleInertiaRequests extends Middleware
             ->limit(5)
             ->get()
             ->map(
-                fn(NotificationCustom $notification): array => [
+                fn (NotificationCustom $notification): array => [
                     'id' => $notification->id,
                     'title' => $notification->title,
                     'body' => $notification->body,

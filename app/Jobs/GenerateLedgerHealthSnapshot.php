@@ -29,16 +29,20 @@ class GenerateLedgerHealthSnapshot implements ShouldQueue
     {
         $snapshot = LedgerHealthSnapshot::query()->find($this->snapshotId);
 
-        if (!$snapshot || $snapshot->status !== 'queued') {
+        if (! $snapshot || $snapshot->status !== 'queued') {
             return;
         }
 
         $snapshot->update(['status' => 'running']);
 
         try {
+            $usesWindow = $snapshot->type->usesWindow();
+            $windowStart = $usesWindow ? $snapshot->window_start : null;
+            $windowEnd = $usesWindow ? $snapshot->window_end : null;
+
             $snapshot->update([
                 'status' => 'completed',
-                'results' => $report->generate(),
+                'results' => $report->generate($windowStart, $windowEnd),
                 'error' => null,
                 'checked_at' => now(),
             ]);
