@@ -1,0 +1,895 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer">
+    <meta name="color-scheme" content="light">
+    <title>Top-up API Tester</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --ink: #172923;
+            --muted: #65756d;
+            --line: #d8e0d9;
+            --paper: #f3f6f1;
+            --surface: #ffffff;
+            --green: #176c4d;
+            --green-dark: #10563c;
+            --orange: #d1743f;
+            --red: #a33a32;
+            --shadow: 0 16px 44px rgb(23 41 35 / 8%);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background:
+                linear-gradient(135deg, rgb(23 108 77 / 5%), transparent 42%),
+                var(--paper);
+            color: var(--ink);
+            font-family: "IBM Plex Sans", "Avenir Next", ui-sans-serif, system-ui, sans-serif;
+        }
+
+        main {
+            width: min(100% - 32px, 1680px);
+            margin: 0 auto;
+            padding: 10px 0 64px;
+        }
+
+        .eyebrow {
+            margin: 0 0 10px;
+            color: var(--green);
+            font-size: 11px;
+            font-weight: 750;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(28px, 5vw, 42px);
+            line-height: 1.08;
+            font-weight: 720;
+        }
+
+        .intro {
+            max-width: 620px;
+            margin: 12px 0 30px;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.65;
+        }
+
+        .workspace {
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: var(--surface);
+            box-shadow: var(--shadow);
+        }
+
+        .form-section, .results-section { padding: 24px; }
+        .results-section { border-top: 1px solid var(--line); background: #fbfcfa; }
+
+        .section-heading {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 5px;
+        }
+
+        h2 { margin: 0; font-size: 15px; font-weight: 700; }
+        .route { color: var(--muted); font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+        .fields {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .redemption-layout {
+            display: grid;
+            grid-template-columns: minmax(340px, .9fr) minmax(0, 1.4fr);
+            align-items: start;
+            gap: 24px;
+        }
+
+        .credentials-column, .test-column { min-width: 0; }
+        .test-column .section-heading { margin-bottom: 0; }
+
+        .field { display: grid; gap: 7px; min-width: 0; }
+        .field.full { grid-column: 1 / -1; }
+
+        label { font-size: 12px; font-weight: 650; }
+
+        input {
+            width: 100%;
+            min-height: 44px;
+            padding: 10px 12px;
+            border: 1px solid #c7d1c9;
+            border-radius: 5px;
+            outline: none;
+            background: #fff;
+            color: var(--ink);
+            font: 14px/1.3 inherit;
+        }
+
+        input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgb(23 108 77 / 13%); }
+        input[type="password"], input[name="phone"] { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+        .hint { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
+
+        .key-control { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+        .key-control button { min-height: 44px; }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .test-card {
+            display: flex;
+            min-width: 0;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 12px;
+            border: 1px solid var(--line);
+            border-left: 4px solid var(--test-accent);
+            border-radius: 5px;
+            background: var(--test-tint);
+        }
+
+        .test-card[data-test="concurrency"] { --test-accent: #176c4d; --test-tint: #edf6f1; }
+        .test-card[data-test="two-phones"] { --test-accent: #286a9c; --test-tint: #eef5fa; }
+        .test-card[data-test="single"] { --test-accent: #9b6a12; --test-tint: #faf5e8; }
+        .test-card[data-test="replay"] { --test-accent: #247b78; --test-tint: #edf7f5; }
+        .test-card[data-test="invalid-pin"] { --test-accent: #a33a32; --test-tint: #fbf0ef; }
+        .test-card[data-test="repeated-pin"] { --test-accent: #b45d20; --test-tint: #fbf2eb; }
+        .test-card[data-test="shared-ip"] { --test-accent: #52647f; --test-tint: #f0f3f7; }
+        .test-card[data-test="notification"] { --test-accent: #9c4f69; --test-tint: #faf0f4; }
+
+        .test-card h3 { margin: 0; color: var(--test-accent); font-size: 13px; line-height: 1.4; }
+        .test-card p { flex: 1; margin: 7px 0 14px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+        .test-card button { width: 240px; }
+
+        .serial-actions { display: flex; gap: 8px; }
+
+        button {
+            min-height: 42px;
+            padding: 0 15px;
+            border: 1px solid transparent;
+            border-radius: 5px;
+            cursor: pointer;
+            font: inherit;
+            font-size: 13px;
+            font-weight: 680;
+            transition: background-color .15s ease, border-color .15s ease, transform .15s ease;
+        }
+
+        button:hover:not(:disabled) { transform: translateY(-1px); }
+        button:focus-visible { outline: 3px solid rgb(23 108 77 / 25%); outline-offset: 2px; }
+        button:disabled { cursor: wait; opacity: .6; }
+        .primary { background: var(--green); color: white; }
+        .primary:hover:not(:disabled) { background: var(--green-dark); }
+        .secondary { border-color: var(--line); background: white; color: var(--ink); }
+        .secondary:hover:not(:disabled) { border-color: var(--green); }
+        .test-card button { border-color: var(--test-accent); background: var(--test-accent); color: #fff; }
+        .test-card button:hover:not(:disabled) {
+            border-color: var(--test-accent);
+            background: var(--test-accent);
+            color: #fff;
+            filter: brightness(.9);
+        }
+
+        .status-line { min-height: 20px; margin: 12px 0 0; color: var(--muted); font-size: 12px; }
+        .status-line.error { color: var(--red); }
+        .status-line.success { color: var(--green); }
+
+        .results {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .result {
+            min-width: 0;
+            border: 1px solid var(--line);
+            border-left: 3px solid #9baaa0;
+            border-radius: 5px;
+            background: white;
+        }
+
+        .result[data-state="success"] { border-left-color: var(--green); }
+        .result[data-state="failure"] { border-left-color: var(--orange); }
+        .result[data-state="error"] { border-left-color: var(--red); }
+
+        .result-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 12px 13px;
+            border-bottom: 1px solid #edf0ed;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .result-code { color: var(--muted); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+        pre {
+            overflow: auto;
+            min-height: 54px;
+            max-height: 190px;
+            margin: 0;
+            padding: 12px 13px;
+            color: #34473d;
+            font: 11px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .empty { margin: 0; color: var(--muted); font-size: 12px; }
+
+        @media (max-width: 1000px) {
+            .redemption-layout { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 620px) {
+            main { width: min(100% - 22px, 1180px); padding-top: 28px; }
+            .form-section, .results-section { padding: 17px; }
+            .fields, .results { grid-template-columns: 1fr; }
+            .section-heading { align-items: flex-start; flex-direction: column; gap: 6px; }
+            .test-grid { grid-template-columns: 1fr; }
+            .key-control { grid-template-columns: 1fr; }
+            .serial-actions { flex-direction: column; }
+            button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<main>
+    <!-- <p class="eyebrow">Internal API tool</p> -->
+    <!-- <h1>Top-up race tester</h1> -->
+    <!-- <p class="intro">Test a completed redemption retry with the same key, or send two simultaneous requests to check one-time card redemption.</p> -->
+
+    <section class="workspace" aria-label="Top-up API test">
+        <div class="form-section">
+            <div class="section-heading">
+                <h2>Request credentials</h2>
+                <span class="route">POST /api/redeem/top-up-account</span>
+            </div>
+
+            <form id="request-form" autocomplete="off">
+                <div class="redemption-layout">
+                    <div class="credentials-column">
+                        <div class="fields">
+                    <div class="field full">
+                        <label for="token">Sanctum bearer token</label>
+                        <input id="token" name="token" type="password" autocomplete="off" spellcheck="false" required>
+                    </div>
+                    <div class="field">
+                        <label for="phone">Account phone</label>
+                        <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="off" spellcheck="false" required>
+                        <p class="hint">The wallet for this phone number receives the top-up.</p>
+                    </div>
+                    <div class="field">
+                        <label for="pin">Top-up card PIN</label>
+                        <input id="pin" name="pin" type="password" autocomplete="new-password" spellcheck="false" required>
+                    </div>
+                    <div class="field full">
+                        <label for="second-phone">Second account phone</label>
+                        <input id="second-phone" name="second_phone" type="tel" inputmode="tel" autocomplete="off" spellcheck="false">
+                        <p class="hint">Used only by the two-phone, same-PIN test.</p>
+                    </div>
+                    <div class="field full">
+                        <label for="idempotency-key">Idempotency key</label>
+                        <div class="key-control">
+                            <input id="idempotency-key" name="idempotency_key" type="text" minlength="8" maxlength="100" autocomplete="off" spellcheck="false" required>
+                            <button id="new-key-button" class="secondary" type="button">Generate new key</button>
+                        </div>
+                        <label class="hint"><input id="reuse-idempotency-key" type="checkbox"> Reuse this key for both parallel requests (retry simulation)</label>
+                    </div>
+                    <div class="field full">
+                        <label>Four distinct users for the IP-limit test</label>
+                        <p class="hint">Enter one bearer token per user. Each user sends five failed attempts from this same browser IP, followed by one IP-limit check.</p>
+                        <div class="fields">
+                            <div class="field">
+                                <label for="ip-token-1">User 1 bearer token</label>
+                                <input id="ip-token-1" type="password" autocomplete="off" spellcheck="false">
+                            </div>
+                            <div class="field">
+                                <label for="ip-token-2">User 2 bearer token</label>
+                                <input id="ip-token-2" type="password" autocomplete="off" spellcheck="false">
+                            </div>
+                            <!-- <div class="field">
+                                <label for="ip-token-3">User 3 bearer token</label>
+                                <input id="ip-token-3" type="password" autocomplete="off" spellcheck="false">
+                            </div>
+                            <div class="field">
+                                <label for="ip-token-4">User 4 bearer token</label>
+                                <input id="ip-token-4" type="password" autocomplete="off" spellcheck="false">
+                            </div> -->
+                        </div>
+                        </div>
+                    </div>
+                    </div>
+
+                    <section class="test-column" aria-label="Redemption tests">
+                        <!-- <div class="section-heading">
+                            <h2>Redemption tests</h2>
+                        </div> -->
+                        <div class="test-grid">
+                    <article class="test-card" data-test="concurrency">
+                        <h3>Concurrent same-card redemption</h3>
+                        <p>Send two simultaneous requests and check that only one redeems the card.</p>
+                        <button id="race-button" class="primary" type="button">Run concurrency test</button>
+                    </article>
+                    <article class="test-card" data-test="two-phones">
+                        <h3>Same PIN for two phones</h3>
+                        <p>Send the same card PIN to two different recipient accounts at once.</p>
+                        <button id="different-phone-button" class="secondary" type="button">Run two-phone test</button>
+                    </article>
+                    <article class="test-card" data-test="single">
+                        <h3>Single redemption</h3>
+                        <p>Send one redemption request using the credentials above.</p>
+                        <button id="single-button" class="secondary" type="button">Run single-request test</button>
+                    </article>
+                    <article class="test-card" data-test="replay">
+                        <h3>Existing transaction replay</h3>
+                        <p>Redeem once, then repeat with the same key and verify the original transaction is returned.</p>
+                        <button id="retry-button" class="secondary" type="button">Run replay test</button>
+                    </article>
+                    <article class="test-card" data-test="invalid-pin">
+                        <h3>Invalid PIN rate limit</h3>
+                        <p>Send invalid PIN attempts until the authenticated-user limit responds.</p>
+                        <button id="rate-limit-button" class="secondary" type="button">Run invalid-PIN test</button>
+                    </article>
+                    <article class="test-card" data-test="repeated-pin">
+                        <h3>Repeated PIN rate limit</h3>
+                        <p>Repeat the entered PIN with a fresh idempotency key for each request.</p>
+                        <button id="same-pin-rate-limit-button" class="secondary" type="button">Run repeated-PIN test</button>
+                    </article>
+                    <article class="test-card" data-test="shared-ip">
+                        <h3>Shared IP rate limit</h3>
+                        <p>Use the four additional user tokens above to test the shared IP threshold.</p>
+                        <button id="ip-rate-limit-button" class="secondary" type="button">Run shared-IP test</button>
+                    </article>
+                    <article class="test-card" data-test="notification">
+                        <h3>Top-up push notification</h3>
+                        <p>Use an active card and verify the push on the recipient's registered device.</p>
+                        <button id="notification-test-button" class="secondary" type="button">Run notification test</button>
+                    </article>
+                        </div>
+                        <!-- <p class="hint">The repeated-PIN test may redeem an active card on its first request. These tests can block the user for 30 minutes or the IP for one hour.</p> -->
+                        <p id="status" class="status-line" role="status" aria-live="polite"></p>
+                    </section>
+                </div>
+            </form>
+        </div>
+
+        <div class="form-section" style="border-top: 1px solid var(--line)">
+            <div class="section-heading">
+                <h2>Check serial number</h2>
+                <span class="route">POST /api/redeem/check-serial-no</span>
+            </div>
+            <form id="serial-check-form" autocomplete="off">
+                <div class="fields">
+                    <div class="field">
+                        <label for="serial-no">Card serial number</label>
+                        <input id="serial-no" name="serial_no" type="text" maxlength="32" autocomplete="off" spellcheck="false" required>
+                    </div>
+                    <div class="field" style="align-self: end">
+                        <div class="serial-actions">
+                            <button id="serial-check-button" class="secondary" type="submit">Check serial</button>
+                            <button id="serial-clear-button" class="secondary" type="button">Clear</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            <p id="serial-status" class="status-line" role="status" aria-live="polite"></p>
+        </div>
+
+        <div class="results-section">
+            <div class="section-heading">
+                <h2>Responses</h2>
+                <span class="route" id="target-origin"></span>
+            </div>
+            <p id="empty" class="empty">No requests sent yet.</p>
+            <div id="results" class="results" aria-live="polite"></div>
+        </div>
+    </section>
+</main>
+
+<script>
+    const form = document.querySelector('#request-form');
+    const tokenInput = document.querySelector('#token');
+    const phoneInput = document.querySelector('#phone');
+    const secondPhoneInput = document.querySelector('#second-phone');
+    const pinInput = document.querySelector('#pin');
+    const idempotencyInput = document.querySelector('#idempotency-key');
+    const reuseIdempotencyInput = document.querySelector('#reuse-idempotency-key');
+    const newKeyButton = document.querySelector('#new-key-button');
+    const raceButton = document.querySelector('#race-button');
+    const differentPhoneButton = document.querySelector('#different-phone-button');
+    const singleButton = document.querySelector('#single-button');
+    const retryButton = document.querySelector('#retry-button');
+    const rateLimitButton = document.querySelector('#rate-limit-button');
+    const samePinRateLimitButton = document.querySelector('#same-pin-rate-limit-button');
+    const ipRateLimitButton = document.querySelector('#ip-rate-limit-button');
+    const notificationTestButton = document.querySelector('#notification-test-button');
+    const ipTokenInputs = [
+        document.querySelector('#ip-token-1'),
+        document.querySelector('#ip-token-2'),
+        document.querySelector('#ip-token-3'),
+        document.querySelector('#ip-token-4'),
+    ];
+    const serialCheckForm = document.querySelector('#serial-check-form');
+    const serialInput = document.querySelector('#serial-no');
+    const serialCheckButton = document.querySelector('#serial-check-button');
+    const serialClearButton = document.querySelector('#serial-clear-button');
+    const statusLine = document.querySelector('#status');
+    const serialStatusLine = document.querySelector('#serial-status');
+    const results = document.querySelector('#results');
+    const empty = document.querySelector('#empty');
+    const originLabel = document.querySelector('#target-origin');
+
+    originLabel.textContent = window.location.origin === 'null' ? 'Open from the backend host' : window.location.origin;
+    idempotencyInput.value = createIdempotencyKey();
+
+    function createIdempotencyKey() {
+        return window.crypto?.randomUUID
+            ? window.crypto.randomUUID()
+            : `topup-${Date.now()}-${Math.random().toString(36).slice(2, 14)}`;
+    }
+
+    function setBusy(busy) {
+        raceButton.disabled = busy;
+        differentPhoneButton.disabled = busy;
+        singleButton.disabled = busy;
+        retryButton.disabled = busy;
+        rateLimitButton.disabled = busy;
+        samePinRateLimitButton.disabled = busy;
+        ipRateLimitButton.disabled = busy;
+        notificationTestButton.disabled = busy;
+    }
+
+    function addResult(label) {
+        const card = document.createElement('article');
+        card.className = 'result';
+        card.dataset.state = 'pending';
+
+        const header = document.createElement('div');
+        header.className = 'result-head';
+
+        const title = document.createElement('span');
+        title.textContent = label;
+
+        const code = document.createElement('span');
+        code.className = 'result-code';
+        code.textContent = 'Waiting';
+
+        const body = document.createElement('pre');
+        body.textContent = 'Request sent';
+        header.append(title, code);
+        card.append(header, body);
+        results.append(card);
+        empty.hidden = true;
+
+        return { card, code, body };
+    }
+
+    async function sendRequest(label, token, phone, pin, idempotencyKey) {
+        const result = addResult(label);
+
+        try {
+            const response = await fetch('/api/redeem/top-up-account', {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ phone, pin, idempotency_key: idempotencyKey }),
+                cache: 'no-store',
+                credentials: 'same-origin',
+            });
+            const rawBody = await response.text();
+            let body;
+
+            try {
+                body = JSON.stringify(JSON.parse(rawBody), null, 2);
+            } catch {
+                body = rawBody || '(empty response)';
+            }
+
+            result.code.textContent = `HTTP ${response.status}`;
+            const retryAfter = response.headers.get('Retry-After');
+            result.body.textContent = retryAfter ? `Retry-After: ${retryAfter}s\n${body}` : body;
+            result.card.dataset.state = response.ok ? 'success' : (response.status >= 500 ? 'error' : 'failure');
+            return response.status;
+        } catch (error) {
+            result.code.textContent = 'Network error';
+            result.body.textContent = error instanceof Error ? error.message : 'Request failed';
+            result.card.dataset.state = 'error';
+            return null;
+        }
+    }
+
+    function readLastResponseBody() {
+        const body = results.lastElementChild?.querySelector('pre')?.textContent;
+
+        try {
+            return JSON.parse(body ?? '');
+        } catch {
+            return null;
+        }
+    }
+
+    async function checkSerialNo(event) {
+        event.preventDefault();
+
+        if (!serialCheckForm.reportValidity()) return;
+
+        const token = tokenInput.value.trim();
+        const serialNo = serialInput.value.trim();
+
+        if (!token) {
+            serialStatusLine.textContent = 'Enter a Sanctum token.';
+            serialStatusLine.className = 'status-line error';
+            return;
+        }
+
+        const result = addResult('Serial validity check');
+        result.card.dataset.kind = 'serial-check';
+        serialCheckButton.disabled = true;
+
+        try {
+            const response = await fetch('/api/redeem/check-serial-no', {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ serial_no: serialNo }),
+                cache: 'no-store',
+                credentials: 'same-origin',
+            });
+            const rawBody = await response.text();
+            let body;
+
+            try {
+                body = JSON.stringify(JSON.parse(rawBody), null, 2);
+            } catch {
+                body = rawBody || '(empty response)';
+            }
+
+            result.code.textContent = `HTTP ${response.status}`;
+            result.body.textContent = body;
+            result.card.dataset.state = response.ok ? 'success' : (response.status >= 500 ? 'error' : 'failure');
+            serialStatusLine.textContent = 'Serial check complete.';
+            serialStatusLine.className = response.ok ? 'status-line success' : 'status-line';
+        } catch (error) {
+            result.code.textContent = 'Network error';
+            result.body.textContent = error instanceof Error ? error.message : 'Request failed';
+            result.card.dataset.state = 'error';
+            serialStatusLine.textContent = 'Serial check failed to reach the server.';
+            serialStatusLine.className = 'status-line error';
+        } finally {
+            serialCheckButton.disabled = false;
+        }
+    }
+
+    function clearSerialCheck() {
+        serialInput.value = '';
+        results.querySelectorAll('[data-kind="serial-check"]').forEach((result) => result.remove());
+        empty.hidden = results.childElementCount > 0;
+        serialStatusLine.textContent = '';
+        serialStatusLine.className = 'status-line';
+    }
+
+    async function submitRequests(count, retry = false) {
+        if (!form.reportValidity()) return;
+
+        const token = tokenInput.value.trim();
+        const phone = phoneInput.value.trim();
+        const pin = pinInput.value.trim();
+        const idempotencyKey = idempotencyInput.value.trim();
+
+        if (!token) {
+            statusLine.textContent = 'Enter a Sanctum token.';
+            statusLine.className = 'status-line error';
+            return;
+        }
+
+        results.replaceChildren();
+        empty.hidden = true;
+        statusLine.textContent = retry
+            ? 'Sending the first request, then retrying with the same key…'
+            : (count === 2 ? 'Requests are being sent concurrently…' : 'Request is being sent…');
+        statusLine.className = 'status-line';
+        setBusy(true);
+
+        const requestKeys = retry || count === 1 || reuseIdempotencyInput.checked
+            ? Array(count).fill(idempotencyKey)
+            : [idempotencyKey, createIdempotencyKey()];
+
+        let responses;
+        let replayPassed = false;
+
+        if (retry) {
+            const firstResponse = await sendRequest('Initial request', token, phone, pin, requestKeys[0]);
+            const firstBody = readLastResponseBody();
+            const retryResponse = await sendRequest('Retry with same key', token, phone, pin, requestKeys[1]);
+            const retryBody = readLastResponseBody();
+            responses = [firstResponse, retryResponse];
+            replayPassed = firstResponse === 200 && retryResponse === 200
+                && retryBody?.message === 'Top-up already processed.'
+                && retryBody.transaction_no === firstBody?.transaction_no
+                && retryBody.balance === firstBody?.balance;
+        } else {
+            responses = await Promise.all(
+                Array.from({ length: count }, (_, index) =>
+                    sendRequest(
+                        count === 1 ? 'Request' : `Concurrent request ${index + 1}`,
+                        token,
+                        phone,
+                        pin,
+                        requestKeys[index],
+                    ),
+                ),
+            );
+        }
+
+        setBusy(false);
+        statusLine.textContent = retry
+            ? (replayPassed
+                ? 'Existing transaction replay passed: the response, transaction number, and balance match.'
+                : 'Existing transaction replay failed. Use an active card and check that the second response says "Top-up already processed" with the same transaction number and balance.')
+            : (count === 2
+                ? (responses.filter((code) => code === 200).length === 1
+                    ? 'One request succeeded. Check the other response; it should not credit the card again.'
+                    : 'Both requests completed. Review each response and the wallet transaction count.')
+                : 'Request complete.');
+        statusLine.className = retry
+            ? (replayPassed ? 'status-line success' : 'status-line error')
+            : (responses.includes(200) ? 'status-line success' : 'status-line');
+    }
+
+    async function testTopUpNotification() {
+        idempotencyInput.value = createIdempotencyKey();
+
+        if (!form.reportValidity()) return;
+
+        const token = tokenInput.value.trim();
+        const phone = phoneInput.value.trim();
+        const pin = pinInput.value.trim();
+        const idempotencyKey = idempotencyInput.value.trim();
+
+        results.replaceChildren();
+        empty.hidden = true;
+        statusLine.textContent = 'Sending a redemption with a fresh idempotency key…';
+        statusLine.className = 'status-line';
+        setBusy(true);
+
+        const response = await sendRequest('Notification test redemption', token, phone, pin, idempotencyKey);
+        const body = readLastResponseBody();
+        setBusy(false);
+
+        if (response === 200 && body?.message === 'Top-up successful.') {
+            statusLine.textContent = 'Redemption succeeded. Verify the "Wallet topped up" push on the recipient device; FCM delivery cannot be confirmed by this page.';
+            statusLine.className = 'status-line success';
+        } else if (response === 200 && body?.message === 'Top-up already processed.') {
+            statusLine.textContent = 'This was a replay, so no new push was sent. Use an unused active card to test notification delivery.';
+            statusLine.className = 'status-line error';
+        } else {
+            statusLine.textContent = `Redemption did not succeed (HTTP ${response ?? 'network error'}). No success notification is expected.`;
+            statusLine.className = 'status-line error';
+        }
+    }
+
+    async function testPinRateLimit() {
+        if (!tokenInput.reportValidity() || !phoneInput.reportValidity()) return;
+
+        const token = tokenInput.value.trim();
+        const phone = phoneInput.value.trim();
+        const invalidPin = `rate-limit-test-${createIdempotencyKey()}`;
+        const responses = [];
+
+        results.replaceChildren();
+        empty.hidden = true;
+        statusLine.textContent = 'Sending invalid PIN attempts until the rate limit responds…';
+        statusLine.className = 'status-line';
+        setBusy(true);
+
+        for (let attempt = 1; attempt <= 11; attempt++) {
+            const response = await sendRequest(
+                `Invalid PIN attempt ${attempt}`,
+                token,
+                phone,
+                invalidPin,
+                createIdempotencyKey(),
+            );
+            responses.push(response);
+
+            if (response === 429) break;
+        }
+
+        setBusy(false);
+        const limitedAt = responses.indexOf(429);
+        statusLine.textContent = limitedAt >= 0
+            ? `Received HTTP 429 on attempt ${limitedAt + 1}. Check the response body for the PIN rate-limit message.`
+            : `No HTTP 429 after ${responses.length} invalid attempts. Check recent failures and rate-limit configuration.`;
+        statusLine.className = limitedAt >= 0 ? 'status-line success' : 'status-line error';
+    }
+
+    async function testRepeatedPinRateLimit() {
+        if (!tokenInput.reportValidity() || !phoneInput.reportValidity() || !pinInput.reportValidity()) return;
+
+        const token = tokenInput.value.trim();
+        const phone = phoneInput.value.trim();
+        const pin = pinInput.value.trim();
+        let limitedAt = null;
+        let unexpectedResponse = null;
+        let successfulTopUps = 0;
+
+        results.replaceChildren();
+        empty.hidden = true;
+        statusLine.textContent = 'Sending the entered PIN repeatedly with a new idempotency key each time…';
+        statusLine.className = 'status-line';
+        setBusy(true);
+
+        for (let attempt = 1; attempt <= 12; attempt++) {
+            const response = await sendRequest(
+                `Same PIN attempt ${attempt}`,
+                token,
+                phone,
+                pin,
+                createIdempotencyKey(),
+            );
+
+            if (response === 200) successfulTopUps++;
+            if (response === 429) {
+                limitedAt = attempt;
+                break;
+            }
+
+            if (response !== 200 && response !== 400) {
+                unexpectedResponse = { attempt, status: response };
+                break;
+            }
+        }
+
+        setBusy(false);
+        statusLine.textContent = limitedAt !== null
+            ? `Rate limit reached on attempt ${limitedAt}. Review the responses and Retry-After; successful top-ups: ${successfulTopUps}.`
+            : (unexpectedResponse
+                ? `Stopped on attempt ${unexpectedResponse.attempt} with HTTP ${unexpectedResponse.status ?? 'network error'}. Check the response details.`
+                : `No rate limit after ${successfulTopUps} successful top-ups and ${12 - successfulTopUps} failed attempts. Check prior counters and the response details.`);
+        statusLine.className = limitedAt !== null ? 'status-line success' : 'status-line error';
+    }
+
+    async function testIpRateLimit() {
+        if (!phoneInput.reportValidity()) return;
+
+        const tokens = ipTokenInputs.map((input) => input.value.trim());
+
+        if (tokens.some((token) => !token)) {
+            statusLine.textContent = 'Enter bearer tokens for all four users.';
+            statusLine.className = 'status-line error';
+            return;
+        }
+
+        if (new Set(tokens).size !== tokens.length) {
+            statusLine.textContent = 'Enter a distinct bearer token for each user.';
+            statusLine.className = 'status-line error';
+            return;
+        }
+
+        const phone = phoneInput.value.trim();
+        const invalidPin = `ip-rate-limit-test-${createIdempotencyKey()}`;
+        let limitedAt = null;
+        let unexpectedResponse = null;
+
+        results.replaceChildren();
+        empty.hidden = true;
+        statusLine.textContent = 'Sending five invalid PIN attempts for each user from this IP…';
+        statusLine.className = 'status-line';
+        setBusy(true);
+
+        for (let attempt = 1; attempt <= 21; attempt++) {
+            const userIndex = attempt === 21 ? 0 : Math.floor((attempt - 1) / 5);
+            const response = await sendRequest(
+                attempt === 21
+                    ? 'IP limit check (request 21)'
+                    : `User ${userIndex + 1}, failure ${((attempt - 1) % 5) + 1}`,
+                tokens[userIndex],
+                phone,
+                invalidPin,
+                createIdempotencyKey(),
+            );
+
+            if (response === 429) {
+                limitedAt = attempt;
+                break;
+            }
+
+            if (response !== 400) {
+                unexpectedResponse = { attempt, status: response };
+                break;
+            }
+        }
+
+        setBusy(false);
+        statusLine.textContent = limitedAt === 21
+            ? 'IP limit reached as expected on request 21. Check the response for the IP-limit message and Retry-After.'
+            : (limitedAt !== null
+                ? `Received HTTP 429 early on request ${limitedAt}. Check for earlier account or IP failures.`
+                : (unexpectedResponse
+                    ? `Stopped on request ${unexpectedResponse.attempt} with HTTP ${unexpectedResponse.status ?? 'network error'}. Check the response details and tokens.`
+                    : 'No HTTP 429 after 21 requests. Confirm the tokens belong to four different users and the IP is shared.'));
+        statusLine.className = limitedAt === 21 ? 'status-line success' : 'status-line error';
+    }
+
+    async function testSamePinWithDifferentPhones() {
+        if (!form.reportValidity()) return;
+
+        const token = tokenInput.value.trim();
+        const phone = phoneInput.value.trim();
+        const secondPhone = secondPhoneInput.value.trim();
+
+        if (!secondPhone) {
+            statusLine.textContent = 'Enter a second account phone number.';
+            statusLine.className = 'status-line error';
+            secondPhoneInput.focus();
+            return;
+        }
+
+        if (phone.replace(/\D/g, '') === secondPhone.replace(/\D/g, '')) {
+            statusLine.textContent = 'Enter two different account phone numbers.';
+            statusLine.className = 'status-line error';
+            secondPhoneInput.focus();
+            return;
+        }
+
+        const pin = pinInput.value.trim();
+        results.replaceChildren();
+        empty.hidden = true;
+        statusLine.textContent = 'Sending the same card PIN to both phone numbers simultaneously…';
+        statusLine.className = 'status-line';
+        setBusy(true);
+
+        const responses = await Promise.all([
+            sendRequest('First phone redemption', token, phone, pin, createIdempotencyKey()),
+            sendRequest('Second phone redemption', token, secondPhone, pin, createIdempotencyKey()),
+        ]);
+        const successCount = responses.filter((response) => response === 200).length;
+
+        setBusy(false);
+        statusLine.textContent = successCount === 1
+            ? 'One request succeeded. The other should report that the card is invalid or unavailable.'
+            : (successCount === 0
+                ? 'Neither request succeeded. Review both responses.'
+                : 'Both requests succeeded. Check wallet balances and transactions for duplicate redemption.');
+        statusLine.className = successCount === 1 ? 'status-line success' : 'status-line error';
+    }
+
+    raceButton.addEventListener('click', () => submitRequests(2));
+    differentPhoneButton.addEventListener('click', testSamePinWithDifferentPhones);
+    singleButton.addEventListener('click', () => submitRequests(1));
+    retryButton.addEventListener('click', () => submitRequests(2, true));
+    rateLimitButton.addEventListener('click', testPinRateLimit);
+    samePinRateLimitButton.addEventListener('click', testRepeatedPinRateLimit);
+    ipRateLimitButton.addEventListener('click', testIpRateLimit);
+    notificationTestButton.addEventListener('click', testTopUpNotification);
+    serialClearButton.addEventListener('click', clearSerialCheck);
+    newKeyButton.addEventListener('click', () => { idempotencyInput.value = createIdempotencyKey(); });
+    serialCheckForm.addEventListener('submit', checkSerialNo);
+</script>
+</body>
+</html>
