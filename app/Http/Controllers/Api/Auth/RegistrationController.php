@@ -9,7 +9,7 @@ use App\Http\Requests\Api\Auth\VerifyOtpRequest;
 use App\Http\Resources\UserResource;
 use App\Services\Auth\ApiAuthenticationService;
 use App\Services\DeviceToken\DeviceTokenService;
-use App\Services\SecurityLogService;
+use App\Services\SecurityLog\SecurityLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\RateLimiter;
 use App\Models\User;

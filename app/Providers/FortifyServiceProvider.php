@@ -9,7 +9,7 @@ use App\Enums\AdminStatus;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Responses\LoginResponse;
 use App\Models\Admin;
-use App\Services\SecurityLogService;
+use App\Services\SecurityLog\SecurityLogService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;

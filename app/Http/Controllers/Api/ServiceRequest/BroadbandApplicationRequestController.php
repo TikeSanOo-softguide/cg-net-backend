@@ -8,7 +8,7 @@ use App\Http\Requests\ServiceRequest\CreateBroadbandApplicationRequest;
 use App\Http\Requests\ServiceRequest\UpdateBroadbandApplicationRequest;
 use App\Http\Resources\BroadbandApplication\BroadbandApplicationResource;
 use App\Models\InstallationApplication;
-use App\Services\TelegramService;
+use App\Services\Telegram\TelegramService;
 use App\Support\StoresPublicImage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
