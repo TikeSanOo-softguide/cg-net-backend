@@ -128,3 +128,8 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
     });
 });
+
+if (app()->isLocal()) {
+    require __DIR__ . '/dev.php';
+}
+
