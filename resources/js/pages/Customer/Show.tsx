@@ -61,7 +61,6 @@ type PackageRow = {
     account_number: string | null;
     start_date: string | null;
     expiry_date: string | null;
-    auto_renew: boolean;
     status: string;
 };
 
@@ -87,10 +86,7 @@ type TransactionSummary = {
     amount: string;
 };
 
-type TransactionOverview = Record<
-    'topup' | 'ftth_bill' | 'wifi_package' | 'refund' | 'adjustment',
-    TransactionSummary
->;
+type TransactionOverview = Record<'topup' | 'ftth_bill' | 'wifi_package' | 'refund' | 'adjustment', TransactionSummary>;
 
 type CustomersShowProps = {
     customer: Customer;

@@ -248,9 +248,8 @@ class WalletSeeder extends Seeder
                 'user_id' => $user->id,
                 'package_id' => $package->id,
                 'package_order_id' => $packageOrder->id,
-                'start_date' => now()->subDays(7),
-                'expiry_date' => now()->addDays(30),
-                'auto_renew' => false,
+                'starts_at' => now()->subDays(7),
+                'expires_at' => now()->addDays(30),
                 'status' => CustomerPackageStatus::Active,
             ]);
         } elseif ($orderOutcome === PackageOrderStatus::Failed) {

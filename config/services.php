@@ -52,4 +52,8 @@ return [
     'broadband' => [
         'url' => env('BROADBAND_API_URL'),
     ],
+
+    'package_activation' => [
+        'driver' => env('PACKAGE_ACTIVATION_DRIVER', 'unconfigured'),
+    ],
 ];

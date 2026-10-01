@@ -6,17 +6,21 @@ use App\Models\Admin;
 use App\Services\Auth\Otp\MockOtpProvider;
 use App\Services\Auth\Otp\OtpProviderInterface;
 use App\Services\Auth\Otp\SmsPohOtpProvider;
+use App\Services\PackageActivation\FakePackageActivationService;
+use App\Services\PackageActivation\PackageActivationServiceInterface;
+use App\Services\PackageActivation\RealPackageActivationService;
 use App\Support\AppPermissions;
 use App\Support\JsonTranslations;
 use App\Support\Like;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
-use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use RuntimeException;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,11 +33,13 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(OtpProviderInterface::class, function (): OtpProviderInterface {
             return match (config('otp.provider')) {
-                'mock' => new MockOtpProvider(),
-                'smspoh' => new SmsPohOtpProvider(),
+                'mock' => new MockOtpProvider,
+                'smspoh' => new SmsPohOtpProvider,
                 default => throw new \InvalidArgumentException('Unsupported OTP provider.'),
             };
         });
+
+        $this->app->singleton(PackageActivationServiceInterface::class, fn (): PackageActivationServiceInterface => $this->packageActivationService());
 
         if ($this->app->environment('local') && class_exists(\Laravel\Telescope\TelescopeServiceProvider::class)) {
             $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
@@ -60,6 +66,21 @@ class AppServiceProvider extends ServiceProvider
 
             return null;
         });
+    }
+
+    private function packageActivationService(): PackageActivationServiceInterface
+    {
+        $driver = (string) config('services.package_activation.driver', 'unconfigured');
+
+        if ($driver !== 'fake') {
+            return new RealPackageActivationService;
+        }
+
+        if (! $this->app->environment('local')) {
+            throw new RuntimeException('Fake package activation is only allowed when APP_ENV=local.');
+        }
+
+        return new FakePackageActivationService;
     }
 
     private function configureRateLimiting(): void

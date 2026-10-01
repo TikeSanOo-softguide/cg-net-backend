@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\Gallery\GalleryController;
 use App\Http\Controllers\Api\News\NewsController;
 use App\Http\Controllers\Api\Notification\AnnouncementController;
 use App\Http\Controllers\Api\Package\AddonController;
+use App\Http\Controllers\Api\Package\BuyPackageController;
 use App\Http\Controllers\Api\Package\NetworkController;
 use App\Http\Controllers\Api\Package\PackageController;
 use App\Http\Controllers\Api\Package\SpeedController;
@@ -78,6 +79,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('/device-tokens', [DeviceTokenController::class, 'store']);
     Route::delete('/device-tokens', [DeviceTokenController::class, 'destroy']);
 
+    Route::post('/packages/buy', [BuyPackageController::class, 'buy']);
     Route::post('/ftth-bills/pay', [FtthBillController::class, 'pay']);
 
     Route::prefix('relocation-requests')->group(function () {
@@ -130,6 +132,6 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 });
 
 if (app()->isLocal()) {
-    require __DIR__ . '/dev.php';
+    require __DIR__.'/dev.php';
 }
 

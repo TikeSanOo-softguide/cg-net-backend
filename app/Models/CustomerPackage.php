@@ -3,8 +3,9 @@
 namespace App\Models;
 
 use App\Enums\CustomerPackageStatus;
-use App\Models\PackageOrder;
+use Database\Factories\CustomerPackageFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,25 +18,22 @@ use Illuminate\Database\Eloquent\SoftDeletes;
         'package_order_id',
         'username',
         'password',
-        'start_date',
-        'expiry_date',
-        'expired_at',
-        'auto_renew',
+        'starts_at',
+        'expires_at',
         'status',
     ]),
 ]
+#[Hidden(['password'])]
 class CustomerPackage extends Model
 {
-    /** @use HasFactory<\Database\Factories\CustomerPackageFactory> */
+    /** @use HasFactory<CustomerPackageFactory> */
     use HasFactory, SoftDeletes;
 
     protected function casts(): array
     {
         return [
-            'start_date' => 'date',
-            'expiry_date' => 'date',
-            'expired_at' => 'datetime',
-            'auto_renew' => 'boolean',
+            'starts_at' => 'datetime',
+            'expires_at' => 'datetime',
             'status' => CustomerPackageStatus::class,
         ];
     }

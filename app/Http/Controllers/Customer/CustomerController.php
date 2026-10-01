@@ -194,8 +194,8 @@ class CustomerController extends Controller
 
         $transactionPage =
             $request->string('transactions')->toString() === 'all'
-                ? $transactions->paginate($transactionFilters, 'transaction_page')
-                : null;
+            ? $transactions->paginate($transactionFilters, 'transaction_page')
+            : null;
 
         $packageRows = $customer->customerPackages->sortByDesc('start_date')->values()->map(
             fn($row) => [
@@ -206,9 +206,8 @@ class CustomerController extends Controller
                     'zh' => PackageLabel::make($row->package, 'zh'),
                 ],
                 'account_number' => $customer->broadband_account_number,
-                'start_date' => $row->start_date,
-                'expiry_date' => $row->expiry_date,
-                'auto_renew' => $row->auto_renew,
+                'start_date' => $row->starts_at,
+                'expiry_date' => $row->expires_at,
                 'status' => $row->status->value,
             ],
         );
@@ -254,18 +253,18 @@ class CustomerController extends Controller
                 'balance' => number_format((float) ($customer->wallet?->balance ?? 0), 0, '.', ''),
                 'transaction_overview' => $transactionOverview,
                 'transactions' =>
-                    $customer->wallet?->transactions
-                        ->map(
-                            fn($transaction) => [
-                                'id' => $transaction->id,
-                                'transaction_no' => $transaction->transaction_no,
-                                'type' => $transaction->type->value,
-                                'status' => $transaction->status->value,
-                                'amount' => number_format((float) $transaction->amount, 0, '.', ''),
-                                'created_at' => $transaction->created_at?->toDateString(),
-                            ],
-                        )
-                        ->values() ?? collect(),
+                $customer->wallet?->transactions
+                    ->map(
+                        fn($transaction) => [
+                            'id' => $transaction->id,
+                            'transaction_no' => $transaction->transaction_no,
+                            'type' => $transaction->type->value,
+                            'status' => $transaction->status->value,
+                            'amount' => number_format((float) $transaction->amount, 0, '.', ''),
+                            'created_at' => $transaction->created_at?->toDateString(),
+                        ],
+                    )
+                    ->values() ?? collect(),
             ],
             'transactionPage' => $transactionPage,
             'transactionFilters' => [
