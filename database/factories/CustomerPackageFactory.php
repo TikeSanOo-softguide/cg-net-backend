@@ -20,9 +20,8 @@ class CustomerPackageFactory extends Factory
         return [
             'user_id' => User::factory(),
             'package_id' => Package::factory(),
-            'start_date' => $start,
-            'expiry_date' => (clone $start)->modify('+30 days'),
-            'auto_renew' => fake()->boolean(40),
+            'starts_at' => $start,
+            'expires_at' => (clone $start)->modify('+30 days'),
             'status' => CustomerPackageStatus::Active,
         ];
     }
@@ -30,9 +29,9 @@ class CustomerPackageFactory extends Factory
     public function expired(): static
     {
         return $this->state(
-            fn() => [
+            fn () => [
                 'status' => CustomerPackageStatus::Expired,
-                'expiry_date' => now()->subDays(10),
+                'expires_at' => now()->subDays(10),
             ],
         );
     }
