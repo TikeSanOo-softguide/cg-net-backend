@@ -21,16 +21,6 @@ use Illuminate\Support\Facades\RateLimiter;
 
 class TopUpCardRedemptionService
 {
-    private const MAX_WALLET_BALANCE = 100000000;
-
-    private const FAILED_PIN_LIMIT_PER_USER = 10;
-
-    private const FAILED_PIN_LIMIT_PER_IP = 20;
-
-    private const FAILED_PIN_DECAY_SECONDS_PER_USER = 30 * 60;
-
-    private const FAILED_PIN_DECAY_SECONDS_PER_IP = 60 * 60;
-
     public function __construct(private readonly LedgerPoster $ledger) {}
 
     /**
@@ -144,7 +134,11 @@ class TopUpCardRedemptionService
                 $amount = (int) $card->amount;
                 $balanceBefore = (int) $wallet->balance;
 
-                if ($amount < 1 || $balanceBefore < 0 || $amount > self::MAX_WALLET_BALANCE - $balanceBefore) {
+                if (
+                    $amount < 1 ||
+                    $balanceBefore < 0 ||
+                    $amount > (int) config('top_up_cards.redemption.max_wallet_balance') - $balanceBefore
+                ) {
                     return $this->response(409, [
                         'success' => false,
                         'message' => 'This action could not be completed.',
@@ -264,8 +258,14 @@ class TopUpCardRedemptionService
         $userFailureKey = $this->userFailureKey($userId);
         $ipFailureKey = $this->ipFailureKey($ipAddress);
 
-        $userRateLimited = RateLimiter::tooManyAttempts($userFailureKey, self::FAILED_PIN_LIMIT_PER_USER);
-        $ipRateLimited = RateLimiter::tooManyAttempts($ipFailureKey, self::FAILED_PIN_LIMIT_PER_IP);
+        $userRateLimited = RateLimiter::tooManyAttempts(
+            $userFailureKey,
+            (int) config('top_up_cards.redemption.failed_pin_limits.user.max_attempts'),
+        );
+        $ipRateLimited = RateLimiter::tooManyAttempts(
+            $ipFailureKey,
+            (int) config('top_up_cards.redemption.failed_pin_limits.ip.max_attempts'),
+        );
 
         if (!$userRateLimited && !$ipRateLimited) {
             return null;
@@ -287,8 +287,14 @@ class TopUpCardRedemptionService
 
     protected function registerPinFailure(string $userId, string $ipAddress): void
     {
-        RateLimiter::hit($this->userFailureKey($userId), self::FAILED_PIN_DECAY_SECONDS_PER_USER);
-        RateLimiter::hit($this->ipFailureKey($ipAddress), self::FAILED_PIN_DECAY_SECONDS_PER_IP);
+        RateLimiter::hit(
+            $this->userFailureKey($userId),
+            (int) config('top_up_cards.redemption.failed_pin_limits.user.decay_seconds'),
+        );
+        RateLimiter::hit(
+            $this->ipFailureKey($ipAddress),
+            (int) config('top_up_cards.redemption.failed_pin_limits.ip.decay_seconds'),
+        );
     }
 
     protected function userFailureKey(string $userId): string
