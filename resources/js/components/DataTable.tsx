@@ -21,7 +21,7 @@ import {
     toolbarFiltersWrapperClass,
 } from '@/components/data-table/styles';
 import { ColumnHeaderLabel, ToolbarIconButton } from '@/components/data-table/toolbar';
-import { Pagination, type Paginated } from '@/components/Pagination';
+import { buildWindowedPaginationLinks, Pagination, type Paginated } from '@/components/Pagination';
 import { SearchInput } from '@/components/SearchInput';
 import { TableActionButton } from '@/components/TableActionButton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -207,28 +207,12 @@ export function DataTable<T>({
               total: rows.length,
               from: rows.length > 0 ? clientOffset + 1 : null,
               to: rows.length > 0 ? Math.min(clientOffset + pageSize, rows.length) : null,
-              links: [
-                  {
-                      url: null,
-                      label: `&laquo; ${t('common.previous_page')}`,
-                      active: false,
-                      page: Math.max(1, currentClientPage - 1),
-                      disabled: currentClientPage === 1,
-                  },
-                  ...Array.from({ length: lastClientPage }, (_, index) => ({
-                      url: null,
-                      label: String(index + 1),
-                      active: currentClientPage === index + 1,
-                      page: index + 1,
-                  })),
-                  {
-                      url: null,
-                      label: `${t('common.next_page')} &raquo;`,
-                      active: false,
-                      page: Math.min(lastClientPage, currentClientPage + 1),
-                      disabled: currentClientPage === lastClientPage,
-                  },
-              ],
+              links: buildWindowedPaginationLinks(
+                  currentClientPage,
+                  lastClientPage,
+                  t('common.previous_page'),
+                  t('common.next_page'),
+              ),
           }
         : undefined;
     const renderedPagination = pagination ?? clientPaginationMeta;

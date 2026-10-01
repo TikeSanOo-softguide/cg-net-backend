@@ -32,6 +32,7 @@ import { FormControl } from '@/components/ui/form-control';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useReturnTo } from '@/hooks/useReturnTo';
+import { navigationPopHeaders } from '@/lib/navigation-stack';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn, formatDate, formatDateTime } from '@/lib/utils';
 
@@ -129,7 +130,7 @@ export default function CustomersShow({
             return;
         }
 
-        router.visit(returnTo);
+        router.visit(returnTo, { headers: navigationPopHeaders });
     };
 
     const localizePackageName = (value: LocalizedText | null | undefined): string => {

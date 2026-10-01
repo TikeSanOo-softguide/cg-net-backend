@@ -7,9 +7,7 @@ use App\Enums\LedgerTransactionType;
 use App\Enums\WalletActorType;
 use App\Exports\TransactionExport;
 use App\Http\Controllers\Controller;
-
 use App\Services\Transaction\TransactionService;
-use App\Support\ReturnTo;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -21,8 +19,6 @@ class TransactionController extends Controller
     {
         $filters = $transactions->filters($request);
 
-        ReturnTo::captureReferer($request, 'transactions.index');
-
         return Inertia::render('Transactions/Index', [
             'transactions' => $transactions->paginate($filters),
             'filters' => $filters,
@@ -32,7 +28,6 @@ class TransactionController extends Controller
                 'statuses' => array_column(LedgerTransactionStatus::cases(), 'value'),
             ],
             'scope' => $filters['customer_id'] ? 'customer' : 'global',
-            ...ReturnTo::prop('transactions.index'),
         ]);
     }
 
@@ -40,7 +35,7 @@ class TransactionController extends Controller
     {
         return Excel::download(
             new TransactionExport($transactions->query($transactions->filters($request))),
-            'transactions-' . now()->format('Ymd-His') . '.xlsx',
+            'transactions-'.now()->format('Ymd-His').'.xlsx',
         );
     }
 }

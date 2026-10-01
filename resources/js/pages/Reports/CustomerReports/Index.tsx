@@ -12,6 +12,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { FormControl } from '@/components/ui/form-control';
 import { FormField } from '@/components/ui/form-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useReturnTo } from '@/hooks/useReturnTo';
 import { useTranslation } from '@/hooks/useTranslation';
 
 type Filters = {
@@ -42,6 +43,7 @@ type DonutSegment = {
 
 export default function CustomerReportsIndex({ filters: reportFilters, years, summary }: Props) {
     const { t, locale } = useTranslation();
+    const returnTo = useReturnTo('/reports');
     const [filters, setFilters] = useState(reportFilters);
     const [dateError, setDateError] = useState<string>();
     const [isLoading, setIsLoading] = useState(false);
@@ -120,7 +122,7 @@ export default function CustomerReportsIndex({ filters: reportFilters, years, su
                         title={t('menu.customer_reports')}
                         description={t('menu.customer_reports_description')}
                     />
-                    <BackButton href="/reports" />
+                    <BackButton href={returnTo} />
                 </div>
 
                 <form onSubmit={applyFilters}>

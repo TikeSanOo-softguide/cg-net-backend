@@ -16,6 +16,12 @@ class TransactionService
     /** @return array{customer_id: int|null, search: string, open_transaction: string, actor_type: string, type: string, status: string, direction: string, from: string, to: string} */
     public function filters(Request $request): array
     {
+        $hasDateRange = $request->query->has('from') || $request->query->has('to');
+        $hasTransactionSearch = $request->filled('search') || $request->filled('open_transaction');
+        $defaultDate = ! $hasDateRange && ! $hasTransactionSearch ? now()->toDateString() : '';
+        $from = $request->query('from');
+        $to = $request->query('to');
+
         return [
             'customer_id' => $request->integer('customer_id') ?: null,
             'search' => trim($request->string('search')->toString()),
@@ -24,8 +30,8 @@ class TransactionService
             'type' => $request->string('type')->toString(),
             'status' => $request->string('status')->toString(),
             'direction' => $request->string('direction')->toString(),
-            'from' => $request->date('from')?->toDateString() ?? '',
-            'to' => $request->date('to')?->toDateString() ?? '',
+            'from' => $from === '' ? '' : $request->date('from')?->toDateString() ?? $defaultDate,
+            'to' => $to === '' ? '' : $request->date('to')?->toDateString() ?? $defaultDate,
         ];
     }
 
@@ -44,44 +50,44 @@ class TransactionService
             ])
             ->when(
                 $filters['customer_id'],
-                fn($query) => $query->whereHas(
+                fn ($query) => $query->whereHas(
                     'wallet',
-                    fn($wallet) => $wallet->where('user_id', $filters['customer_id']),
+                    fn ($wallet) => $wallet->where('user_id', $filters['customer_id']),
                 ),
             )
             ->when(
                 $filters['open_transaction'] !== '',
-                fn($query) => $query->where('transaction_no', $filters['open_transaction']),
+                fn ($query) => $query->where('transaction_no', $filters['open_transaction']),
             )
             ->when($filters['search'] !== '', function ($query) use ($filters): void {
                 $query->where(function ($query) use ($filters): void {
                     $query
-                        ->whereLike('transaction_no', '%' . $filters['search'] . '%')
-                        ->orWhereLike('idempotency_key', '%' . $filters['search'] . '%')
-                        ->orWhereLike('type', '%' . $filters['search'] . '%')
-                        ->orWhereLike('ip_address', '%' . $filters['search'] . '%')
-                        ->orWhereLike('user_agent', '%' . $filters['search'] . '%')
+                        ->whereLike('transaction_no', '%'.$filters['search'].'%')
+                        ->orWhereLike('idempotency_key', '%'.$filters['search'].'%')
+                        ->orWhereLike('type', '%'.$filters['search'].'%')
+                        ->orWhereLike('ip_address', '%'.$filters['search'].'%')
+                        ->orWhereLike('user_agent', '%'.$filters['search'].'%')
                         ->orWhereHas('wallet.user', function ($user) use ($filters): void {
                             $user
-                                ->whereLike('name', '%' . $filters['search'] . '%')
-                                ->orWhereLike('phone', '%' . $filters['search'] . '%');
+                                ->whereLike('name', '%'.$filters['search'].'%')
+                                ->orWhereLike('phone', '%'.$filters['search'].'%');
                         });
                 });
             })
             ->when(
                 in_array($filters['actor_type'], array_column(WalletActorType::cases(), 'value'), true),
-                fn($query) => $query->where('actor_type', $filters['actor_type']),
+                fn ($query) => $query->where('actor_type', $filters['actor_type']),
             )
             ->when(
                 in_array($filters['type'], array_column(LedgerTransactionType::cases(), 'value'), true),
-                fn($query) => $query->where('type', $filters['type']),
+                fn ($query) => $query->where('type', $filters['type']),
             )
             ->when(
                 in_array($filters['status'], array_column(LedgerTransactionStatus::cases(), 'value'), true),
-                fn($query) => $query->where('status', $filters['status']),
+                fn ($query) => $query->where('status', $filters['status']),
             )
-            ->when($filters['from'], fn($query) => $query->whereDate('created_at', '>=', $filters['from']))
-            ->when($filters['to'], fn($query) => $query->whereDate('created_at', '<=', $filters['to']))
+            ->when($filters['from'], fn ($query) => $query->whereDate('created_at', '>=', $filters['from']))
+            ->when($filters['to'], fn ($query) => $query->whereDate('created_at', '<=', $filters['to']))
             ->when(in_array($filters['direction'], ['credit', 'debit'], true), function ($query) use ($filters): void {
                 $query->whereHas('entries', function ($entry) use ($filters): void {
                     $entry->whereNotNull('wallet_id')->whereColumn('wallet_id', 'ledger_transactions.wallet_id');
@@ -101,7 +107,7 @@ class TransactionService
         return $this->query($filters)
             ->paginate(15, ['*'], $pageName)
             ->withQueryString()
-            ->through(fn(LedgerTransaction $transaction) => $this->payload($transaction));
+            ->through(fn (LedgerTransaction $transaction) => $this->payload($transaction));
     }
 
     public function payload(LedgerTransaction $transaction): array

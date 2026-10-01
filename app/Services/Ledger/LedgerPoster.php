@@ -189,14 +189,16 @@ class LedgerPoster
             $resolvedLines = [];
             $totalDebit = 0;
             $totalCredit = 0;
-            $walletDelta = 0; // liability: credit increases balance, debit decreases
+            $walletDelta = 0;
 
             foreach ($lines as $index => $line) {
                 $debit = (int) ($line['debit'] ?? 0);
                 $credit = (int) ($line['credit'] ?? 0);
 
                 if ($debit < 0 || $credit < 0 || ($debit > 0 && $credit > 0) || ($debit === 0 && $credit === 0)) {
-                    throw new InvalidArgumentException('Each ledger line must be a debit or a credit, not both or neither.');
+                    throw new InvalidArgumentException(
+                        'Each ledger line must be a debit or a credit, not both or neither.',
+                    );
                 }
 
                 $account = $this->resolveAccount($line['account'], $customerAccount);
@@ -300,8 +302,10 @@ class LedgerPoster
         $transaction->update(['status' => LedgerTransactionStatus::Failed]);
     }
 
-    private function resolveAccount(LedgerAccountCode|LedgerAccount|string $account, LedgerAccount $customerAccount): LedgerAccount
-    {
+    private function resolveAccount(
+        LedgerAccountCode|LedgerAccount|string $account,
+        LedgerAccount $customerAccount,
+    ): LedgerAccount {
         if ($account instanceof LedgerAccount) {
             return $account;
         }

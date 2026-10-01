@@ -1,12 +1,15 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { CalendarDays, CircleDollarSign, FileCheck2, Wallet } from 'lucide-react';
+import { ArrowDownToLine, ArrowUpFromLine, BookOpen, CircleCheck, CircleX, Clock3, Scale } from 'lucide-react';
 
 import { BackButton } from '@/components/BackButton';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
+import { Pagination, type Paginated } from '@/components/Pagination';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField } from '@/components/ui/form-field';
+import { useReturnTo } from '@/hooks/useReturnTo';
 import { useTranslation } from '@/hooks/useTranslation';
 import { TOP_UP_CARD_CURRENCY } from '@/lib/top-up-cards';
 import type { SupportedLocale } from '@/types';
@@ -19,7 +22,7 @@ type EntryBreakdown = {
     debits: number;
 };
 
-type RecentEntry = {
+type LedgerEntryRow = {
     id: number;
     transaction_no: string;
     customer_id: number | null;
@@ -43,7 +46,7 @@ type Props = {
         failed_transactions: number;
     };
     breakdown: EntryBreakdown[];
-    recentEntries: RecentEntry[];
+    entries: Paginated<LedgerEntryRow>;
 };
 
 const localeTags: Record<SupportedLocale, string> = {
@@ -62,32 +65,33 @@ function transactionHref(transactionNo: string): string {
     return `/billing/transactions?${query.toString()}`;
 }
 
-export default function EodReportIndex({ date, summary, breakdown, recentEntries }: Props) {
+export default function EodReportIndex({ date, summary, breakdown, entries }: Props) {
     const { t, locale } = useTranslation();
+    const returnTo = useReturnTo('/reports');
     const numberFormat = new Intl.NumberFormat(localeTags[locale]);
     const metrics = [
         {
             label: t('eod_report.ledger_entries'),
             value: numberFormat.format(summary.entries),
-            icon: FileCheck2,
+            icon: BookOpen,
         },
-        { label: t('eod_report.credits'), value: amount(summary.credits, locale), icon: CircleDollarSign },
-        { label: t('eod_report.debits'), value: amount(summary.debits, locale), icon: Wallet },
-        { label: t('eod_report.net_movement'), value: amount(summary.net, locale), icon: CircleDollarSign },
+        { label: t('eod_report.wallet_inflow'), value: amount(summary.credits, locale), icon: ArrowDownToLine },
+        { label: t('eod_report.wallet_outflow'), value: amount(summary.debits, locale), icon: ArrowUpFromLine },
+        { label: t('eod_report.net_movement'), value: amount(summary.net, locale), icon: Scale },
         {
             label: t('eod_report.completed_transactions'),
             value: numberFormat.format(summary.completed_transactions),
-            icon: FileCheck2,
+            icon: CircleCheck,
         },
         {
             label: t('eod_report.pending_transactions'),
             value: numberFormat.format(summary.pending_transactions),
-            icon: CalendarDays,
+            icon: Clock3,
         },
         {
             label: t('eod_report.failed_transactions'),
             value: numberFormat.format(summary.failed_transactions),
-            icon: CalendarDays,
+            icon: CircleX,
         },
     ];
 
@@ -104,11 +108,16 @@ export default function EodReportIndex({ date, summary, breakdown, recentEntries
             <PageContent className="gap-3 lg:gap-3.5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <PageHeader title={t('menu.eod_reports')} description={t('menu.eod_reports_description')} />
-                    <BackButton href="/reports" />
+                    <BackButton href={returnTo} />
                 </div>
 
                 <div className="flex flex-wrap items-end justify-between gap-3">
-                    <FormField label={t('eod_report.date')} htmlFor="eod-date" className="w-full sm:w-64">
+                    <FormField
+                        label={t('eod_report.date')}
+                        htmlFor="eod-date"
+                        icon={CalendarDays}
+                        className="w-full sm:w-64 [&>div:last-child]:hidden"
+                    >
                         <DatePicker
                             id="eod-date"
                             value={date}
@@ -117,7 +126,6 @@ export default function EodReportIndex({ date, summary, breakdown, recentEntries
                             }
                         />
                     </FormField>
-                    <p className="text-xs text-muted-foreground">{t('eod_report.latest_entries')}</p>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -176,66 +184,89 @@ export default function EodReportIndex({ date, summary, breakdown, recentEntries
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>{t('eod_report.recent_entries')}</CardTitle>
+                        <CardTitle>{t('eod_report.day_entries')}</CardTitle>
                     </CardHeader>
-                    <CardContent className="overflow-x-auto">
-                        {recentEntries.length ? (
-                            <table className="w-full min-w-[760px] text-left text-sm">
-                                <thead className="border-b border-border text-xs text-muted-foreground">
-                                    <tr>
-                                        <th className="px-3 py-2 font-medium">{t('eod_report.transaction_no')}</th>
-                                        <th className="px-3 py-2 font-medium">{t('eod_report.customer')}</th>
-                                        <th className="px-3 py-2 font-medium">{t('eod_report.transaction_type')}</th>
-                                        <th className="px-3 py-2 font-medium">{t('eod_report.direction')}</th>
-                                        <th className="px-3 py-2 text-right font-medium">{t('eod_report.amount')}</th>
-                                        <th className="px-3 py-2 text-right font-medium">
-                                            {t('eod_report.balance_after')}
-                                        </th>
-                                        <th className="px-3 py-2 font-medium">{t('eod_report.created_at')}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {recentEntries.map((entry) => (
-                                        <tr key={entry.id} className="border-b border-border/70 last:border-0">
-                                            <td className="px-3 py-2.5 font-mono text-xs">
-                                                <Link
-                                                    href={transactionHref(entry.transaction_no)}
-                                                    className="text-primary underline-offset-4 hover:underline"
-                                                >
-                                                    {entry.transaction_no}
-                                                </Link>
-                                            </td>
-                                            <td className="px-3 py-2.5">
-                                                {entry.customer && entry.customer_id ? (
-                                                    <Link
-                                                        href={`/customers/${entry.customer_id}`}
-                                                        className="text-primary underline-offset-4 hover:underline"
-                                                    >
-                                                        {entry.customer}
-                                                    </Link>
-                                                ) : (
-                                                    (entry.customer ?? '—')
-                                                )}
-                                            </td>
-                                            <td className="px-3 py-2.5">
-                                                {transactionTypeLabel(entry.transaction_type)}
-                                            </td>
-                                            <td className="px-3 py-2.5">{t(`eod_report.${entry.direction}`)}</td>
-                                            <td className="px-3 py-2.5 text-right tabular-nums">
-                                                {amount(entry.amount, locale)}
-                                            </td>
-                                            <td className="px-3 py-2.5 text-right tabular-nums">
-                                                {amount(entry.balance_after, locale)}
-                                            </td>
-                                            <td className="whitespace-nowrap px-3 py-2.5 text-xs text-muted-foreground">
-                                                {formatDateTime(entry.created_at)}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                    <CardContent className="overflow-x-auto p-0">
+                        {entries.data.length ? (
+                            <>
+                                <div className="overflow-x-auto px-0">
+                                    <table className="w-full min-w-[760px] text-left text-sm">
+                                        <thead className="border-b border-border text-xs text-muted-foreground">
+                                            <tr>
+                                                <th className="px-3 py-2 font-medium sm:px-5">
+                                                    {t('eod_report.transaction_no')}
+                                                </th>
+                                                <th className="px-3 py-2 font-medium">{t('eod_report.customer')}</th>
+                                                <th className="px-3 py-2 font-medium">
+                                                    {t('eod_report.transaction_type')}
+                                                </th>
+                                                <th className="px-3 py-2 font-medium">{t('eod_report.direction')}</th>
+                                                <th className="px-3 py-2 text-right font-medium">
+                                                    {t('eod_report.amount')}
+                                                </th>
+                                                <th className="px-3 py-2 text-right font-medium">
+                                                    {t('eod_report.balance_after')}
+                                                </th>
+                                                <th className="px-3 py-2 font-medium sm:pr-5">
+                                                    {t('eod_report.created_at')}
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {entries.data.map((entry) => (
+                                                <tr key={entry.id} className="border-b border-border/70 last:border-0">
+                                                    <td className="px-3 py-2.5 font-mono text-xs sm:px-5">
+                                                        <Link
+                                                            href={transactionHref(entry.transaction_no)}
+                                                            className="text-primary underline-offset-4 hover:underline"
+                                                        >
+                                                            {entry.transaction_no}
+                                                        </Link>
+                                                    </td>
+                                                    <td className="px-3 py-2.5">
+                                                        {entry.customer && entry.customer_id ? (
+                                                            <Link
+                                                                href={`/customers/${entry.customer_id}`}
+                                                                className="text-primary underline-offset-4 hover:underline"
+                                                            >
+                                                                {entry.customer}
+                                                            </Link>
+                                                        ) : (
+                                                            (entry.customer ?? '—')
+                                                        )}
+                                                    </td>
+                                                    <td className="px-3 py-2.5">
+                                                        {transactionTypeLabel(entry.transaction_type)}
+                                                    </td>
+                                                    <td className="px-3 py-2.5">
+                                                        {t(`eod_report.${entry.direction}`)}
+                                                    </td>
+                                                    <td className="px-3 py-2.5 text-right tabular-nums">
+                                                        {amount(entry.amount, locale)}
+                                                    </td>
+                                                    <td className="px-3 py-2.5 text-right tabular-nums">
+                                                        {amount(entry.balance_after, locale)}
+                                                    </td>
+                                                    <td className="whitespace-nowrap px-3 py-2.5 text-xs text-muted-foreground sm:pr-5">
+                                                        {formatDateTime(entry.created_at)}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div className="border-t border-border">
+                                    <Pagination
+                                        meta={entries}
+                                        summary={t('common.showing')
+                                            .replace(':from', String(entries.from ?? 0))
+                                            .replace(':to', String(entries.to ?? 0))
+                                            .replace(':total', String(entries.total))}
+                                    />
+                                </div>
+                            </>
                         ) : (
-                            <p className="py-5 text-sm text-muted-foreground">{t('eod_report.no_entries')}</p>
+                            <p className="px-5 py-5 text-sm text-muted-foreground">{t('eod_report.no_entries')}</p>
                         )}
                     </CardContent>
                 </Card>

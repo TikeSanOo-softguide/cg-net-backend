@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, Link } from '@inertiajs/react';
 import { ArrowLeftRightIcon, CalendarIcon, XIcon, EyeIcon, SearchIcon, UserIcon } from 'lucide-react';
 
 import { BackButton } from '@/components/BackButton';
@@ -98,8 +98,8 @@ function visitIndex(filters: Filters, baseUrl: string, embeddedCustomer = false)
             type: filters.type || undefined,
             status: filters.status || undefined,
             direction: filters.direction || undefined,
-            from: filters.from || undefined,
-            to: filters.to || undefined,
+            from: filters.from,
+            to: filters.to,
             transactions: embeddedCustomer ? 'all' : undefined,
         },
         { preserveState: true, preserveScroll: true, replace: true },
@@ -125,12 +125,14 @@ function actorLabel(actorType: string, t: (key: string) => string): string {
 function DetailItem({
     label,
     value,
+    href,
     copyable = false,
     className,
     secondary,
 }: {
     label: string;
     value: string | number | null | undefined;
+    href?: string;
     copyable?: boolean;
     className?: string;
     secondary?: string | null;
@@ -140,7 +142,13 @@ function DetailItem({
             <dt className="text-[13px] text-muted-foreground">{label}</dt>
             <dd className="mt-0.5 break-words text-[13px] font-medium">
                 <span className="flex items-center gap-1.5">
-                    <span className="text-foreground">{value || '—'}</span>
+                    {href && value !== null && value !== undefined && value !== '' ? (
+                        <Link href={href} className="text-primary underline-offset-4 hover:underline">
+                            {value}
+                        </Link>
+                    ) : (
+                        <span className="text-foreground">{value || '—'}</span>
+                    )}
                     {copyable && value !== null && value !== undefined && value !== '' ? (
                         <CopyValueButton value={String(value)} label={label} />
                     ) : null}
@@ -221,6 +229,12 @@ export function TransactionsTable({
 
         window.location.href = `/billing/transactions/export?${query.toString()}`;
     };
+
+    function transactionHref(transactionNo: string): string {
+        const query = new URLSearchParams({ search: transactionNo, open_transaction: transactionNo });
+
+        return `/billing/transactions?${query.toString()}`;
+    }
 
     return (
         <>
@@ -417,12 +431,26 @@ export function TransactionsTable({
                             </span>
                         ),
                     },
-                    {
-                        id: 'customer',
-                        header: t('transactions.customer'),
-                        mobile: 'subtitle',
-                        cell: (row) => row.customer?.name ?? '—',
-                    },
+                    ...(!embeddedCustomer
+                        ? [
+                              {
+                                  id: 'customer',
+                                  header: t('transactions.customer'),
+                                  mobile: 'subtitle' as const,
+                                  cell: (row: TransactionRow) =>
+                                      row.customer ? (
+                                          <Link
+                                              href={`/customers/${row.customer.id}`}
+                                              className="font-medium text-primary underline-offset-4 hover:underline"
+                                          >
+                                              <span className="tabular-nums">{row.customer.name}</span>
+                                          </Link>
+                                      ) : (
+                                          <span>{t('ledger_health_report.unknown_customer')}</span>
+                                      ),
+                              },
+                          ]
+                        : []),
                     {
                         id: 'type',
                         header: t('transactions.type'),
@@ -496,6 +524,7 @@ export function TransactionsTable({
                             <DetailItem
                                 label={t('transactions.detail_fields.reversal_of')}
                                 value={selected.reversal_of}
+                                href={selected.reversal_of ? transactionHref(selected.reversal_of) : undefined}
                                 copyable
                             />{' '}
                             <DetailItem

@@ -3,6 +3,7 @@ import { ArrowLeftIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
+import { navigationPopHeaders } from '@/lib/navigation-stack';
 import { cn } from '@/lib/utils';
 
 type BackButtonProps = {
@@ -14,8 +15,9 @@ type BackButtonProps = {
 };
 
 /**
- * Shared back control. Prefers an explicit href (usually Inertia `return_to`
- * from the server session), then falls back to a default path.
+ * Shared back control. Visits the previous screen in the session trail and
+ * pops that screen. Callers that pass onClick own the visit and should send
+ * navigationPopHeaders when they leave the current screen.
  */
 export function BackButton({ href, fallback = '/', label, className, onClick }: BackButtonProps) {
     const { t } = useTranslation();
@@ -32,7 +34,7 @@ export function BackButton({ href, fallback = '/', label, className, onClick }: 
                     return;
                 }
 
-                router.visit(target);
+                router.visit(target, { headers: navigationPopHeaders });
             }}
         >
             <ArrowLeftIcon className="size-3.5" strokeWidth={1.9} />

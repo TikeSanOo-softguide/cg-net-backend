@@ -5,7 +5,7 @@ type ReturnToProps = {
 };
 
 /**
- * Read the server-provided return URL for the current page's Back button.
+ * Previous screen in the session navigation trail, when this page was opened from another screen.
  */
 export function useReturnTo(fallback: string): string {
     const page = usePage<ReturnToProps>();

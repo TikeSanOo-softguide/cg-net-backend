@@ -568,6 +568,7 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 ->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::post('/check', 'check')->name('check');
+                    Route::post('/daily-scan', 'updateDailyScan')->name('daily-scan');
                 });
             Route::get('/service-requests', [ServiceRequestController::class, 'index'])->name(
                 'reports.service-requests',
