@@ -7,7 +7,8 @@ use App\Enums\LedgerTransactionType;
 use App\Enums\WalletActorType;
 use App\Exports\TransactionExport;
 use App\Http\Controllers\Controller;
-use App\Services\TransactionService;
+
+use App\Services\Transaction\TransactionService;
 use App\Support\ReturnTo;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -39,7 +40,7 @@ class TransactionController extends Controller
     {
         return Excel::download(
             new TransactionExport($transactions->query($transactions->filters($request))),
-            'transactions-'.now()->format('Ymd-His').'.xlsx',
+            'transactions-' . now()->format('Ymd-His') . '.xlsx',
         );
     }
 }
