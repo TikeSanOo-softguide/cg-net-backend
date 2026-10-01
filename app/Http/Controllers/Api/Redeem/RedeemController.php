@@ -22,7 +22,6 @@ class RedeemController extends Controller
 
         $isValid = $status === TopUpCardStatus::Active;
 
-        // Avoid leaking precise lifecycle state to authenticated clients.
         return response()->json(
             ['message' => $isValid ? 'This top-up card is valid.' : 'This top-up card is invalid.'],
             $isValid ? 200 : 400,

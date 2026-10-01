@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\RateLimiter;
 
 class TopUpCardRedemptionService
 {
-    private const MAX_WALLET_BALANCE = 2147483647;
+    private const MAX_WALLET_BALANCE = 100000000;
 
     private const FAILED_PIN_LIMIT_PER_USER = 10;
 
@@ -188,7 +188,6 @@ class TopUpCardRedemptionService
 
                 return $this->response(200, [
                     'success' => true,
-                    'result' => 'success',
                     'message' => 'Top-up successful.',
                     'amount' => $amount,
                     'balance' => $balanceAfter,
