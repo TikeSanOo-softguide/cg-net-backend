@@ -25,8 +25,18 @@
         "import_errors": {
             "invalid_headers": "The CSV headers are invalid.",
             "invalid_row": "The CSV contains an invalid row at line :line.",
+            "invalid_serial_no": "Serial number must be exactly 16 digits at line :line.",
+            "invalid_pin": "PIN must be exactly 16 digits at line :line.",
+            "invalid_office_code": "Office code :office_code at line :line does not match an existing office.",
             "required_field": "The CSV field ':field' is required at line :line.",
-            "read_failed": "The CSV file could not be read."
+            "read_failed": "The CSV file could not be read.",
+            "title": "CSV import failed",
+            "duplicate_serial": "The CSV contains a duplicate serial number at line :line.",
+            "duplicate_pin": "The CSV contains a duplicate PIN at line :line.",
+            "too_many_cards": "The CSV contains more than :max cards.",
+            "no_cards": "The CSV file contains no cards.",
+            "serial_not_found": "The CSV serial number ':serial' at line :line was not found.",
+            "serial_not_pending": "The CSV serial number ':serial' at line :line is no longer pending."
         }
     },
     "menu": {
@@ -1234,19 +1244,6 @@
         "total": "Top-up-card Total",
         "detail": "Top-up-card Detail",
         "description": "Manage top-up cards, including their status, value, expiry date, and redemption details.",
-        "import_errors": {
-            "title": "CSV import failed",
-            "invalid_headers": "The CSV headers are invalid.",
-            "invalid_row": "The CSV contains an invalid row at line :line.",
-            "required_field": "The CSV field ':field' is required at line :line.",
-            "duplicate_serial": "The CSV contains a duplicate serial number at line :line.",
-            "duplicate_pin": "The CSV contains a duplicate PIN at line :line.",
-            "too_many_cards": "The CSV contains more than :max cards.",
-            "no_cards": "The CSV file contains no cards.",
-            "serial_not_found": "The CSV serial number ':serial' at line :line was not found.",
-            "serial_not_pending": "The CSV serial number ':serial' at line :line is no longer pending.",
-            "read_failed": "The CSV file could not be read."
-        },
         "transaction_no": "Transaction Number",
         "from_date": "From Date",
         "to_date": "To Date",
@@ -1260,6 +1257,7 @@
         "custom_amount": "Custom amount",
         "quantity": "Quantity",
         "total_value": "Total value",
+        "total_points": "Total Points",
         "available_cards": "Available cards",
         "increase": "Increase quantity",
         "decrease": "Decrease quantity",
@@ -1346,10 +1344,17 @@
             "select": "Select office",
             "no_office": "No office",
             "delete_title": "Delete office",
-            "delete_description": "Assigned cards will remain, but this office will be removed."
+            "delete_description": "Assigned cards will remain, but this office will be removed.",
+            "created": "Office created successfully.",
+            "updated": "Office updated successfully.",
+            "deleted": "Office deleted successfully."
         },
         "import_csv": {
             "label": "Import CSV",
+            "check": "Check CSV",
+            "checking": "Checking…",
+            "checked": "CSV is valid. :count rows checked.",
+            "preview_limit": "Showing :shown of :total rows.",
             "import": "Import",
             "csv_import_title": "Import cards from CSV",
             "description": "Upload a CSV with serial_no, pin, amount, expire_at columns. Imports run in the background.",

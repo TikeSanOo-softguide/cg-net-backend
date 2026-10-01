@@ -25,6 +25,9 @@
         "import_errors": {
             "invalid_headers": "CSV 标题无效。",
             "invalid_row": "CSV 第 :line 行的数据无效。",
+            "invalid_serial_no": "第 :line 行的序列号必须正好为 16 位数字。",
+            "invalid_pin": "第 :line 行的 PIN 必须正好为 16 位数字。",
+            "invalid_office_code": "第 :line 行的办公室代码 :office_code 与现有办公室不匹配。",
             "required_field": "CSV 字段“:field”在第 :line 行不能为空。",
             "read_failed": "无法读取 CSV 文件。"
         }
@@ -304,6 +307,24 @@
             "load": "无法加载服务请求报告。",
             "http": "无法加载服务请求报告。",
             "network": "网络错误导致报告无法加载。"
+        },
+        "csv": {
+            "import_errors": {
+                "invalid_headers": "CSV 表头无效。",
+                "invalid_row": "CSV 在第 :line 行包含无效数据。",
+                "invalid_serial_no": "第 :line 行的序列号必须正好为 16 位数字。",
+                "invalid_pin": "第 :line 行的 PIN 必须正好为 16 位数字。",
+                "invalid_office_code": "第 :line 行的办公室代码 :office_code 与现有办公室不匹配。",
+                "required_field": "第 :line 行的 CSV 字段“:field”为必填项。",
+                "read_failed": "无法读取 CSV 文件。",
+                "title": "CSV 导入失败",
+                "duplicate_serial": "CSV 在第 :line 行包含重复的序列号。",
+                "duplicate_pin": "CSV 在第 :line 行包含重复的 PIN。",
+                "too_many_cards": "CSV 中的卡片数量超过 :max 张。",
+                "no_cards": "CSV 文件中没有卡片数据。",
+                "serial_not_found": "未找到第 :line 行的 CSV 序列号“:serial”。",
+                "serial_not_pending": "第 :line 行的 CSV 序列号“:serial”已不再处于待处理状态。"
+            }
         },
         "summary": {
             "total_requests": "请求总数",
@@ -1234,19 +1255,6 @@
         "total": "充值卡总数",
         "detail": "充值卡详情",
         "description": "查看充值卡的面值、状态、有效期和兑换详情。",
-        "import_errors": {
-            "title": "CSV 导入失败",
-            "invalid_headers": "CSV 标题无效。",
-            "invalid_row": "CSV 第 :line 行的数据无效。",
-            "required_field": "CSV 字段“:field”在第 :line 行不能为空。",
-            "duplicate_serial": "CSV 第 :line 行包含重复的序列号。",
-            "duplicate_pin": "CSV 第 :line 行包含重复的 PIN。",
-            "too_many_cards": "CSV 卡片数量超过 :max 张。",
-            "no_cards": "CSV 文件中没有卡片。",
-            "serial_not_found": "未找到 CSV 第 :line 行的序列号“:serial”。",
-            "serial_not_pending": "CSV 第 :line 行的序列号“:serial”已不再处于待处理状态。",
-            "read_failed": "无法读取 CSV 文件。"
-        },
         "transaction_no": "交易编号",
         "from_date": "开始日期",
         "to_date": "结束日期",
@@ -1260,6 +1268,7 @@
         "custom_amount": "自定义金额",
         "quantity": "数量",
         "total_value": "总价值",
+        "total_points": "总积分",
         "available_cards": "可用卡片",
         "increase": "增加数量",
         "decrease": "减少数量",
@@ -1344,10 +1353,17 @@
             "select": "选择网点",
             "no_office": "无网点",
             "delete_title": "删除网点",
-            "delete_description": "已分配的卡片会保留，但此网点将被删除。"
+            "delete_description": "已分配的卡片会保留，但此网点将被删除。",
+            "created": "网点创建成功。",
+            "updated": "网点更新成功。",
+            "deleted": "网点删除成功。"
         },
         "import_csv": {
             "label": "导入 CSV",
+            "check": "检查 CSV",
+            "checking": "正在检查…",
+            "checked": "CSV 有效，已检查 :count 行。",
+            "preview_limit": "显示 :total 行中的 :shown 行。",
             "import": "导入",
             "csv_import_title": "从 CSV 导入卡片",
             "description": "请上传包含 serial_no、pin、amount、expire_at 字段的 CSV 文件。导入任务将在后台执行。",

@@ -28,6 +28,11 @@ type TopUpCardListTableProps = {
         id: number;
         batch_no: string;
     }[];
+    offices: {
+        id: number;
+        name: string;
+        code: string;
+    }[];
     filters: CardHistoryFilters;
     search: string;
     loading?: boolean;
@@ -39,6 +44,7 @@ export function TopUpCardListTable({
     cards,
     amounts,
     batches,
+    offices,
     filters,
     search,
     loading = false,
@@ -101,7 +107,6 @@ export function TopUpCardListTable({
                             <FormField
                                 label={t('common.status')}
                                 htmlFor="status"
-                                icon={CircleDotIcon}
                                 className="w-full shrink-0 sm:w-40 mr-3"
                                 labelClassName="text-[13px]"
                             >
@@ -165,6 +170,36 @@ export function TopUpCardListTable({
                                 />
                             </FormField>
                             <FormField
+                                label={t('top_up_cards.office.title')}
+                                htmlFor="office"
+                                className="w-full shrink-0 sm:w-50"
+                                labelClassName="text-[13px]"
+                            >
+                                <Select
+                                    value={filters.office || 'all'}
+                                    onValueChange={(value) =>
+                                        onFilter({
+                                            ...filters,
+                                            office: value === 'all' ? '' : value,
+                                        })
+                                    }
+                                >
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue placeholder={t('common.all')} />
+                                    </SelectTrigger>
+
+                                    <SelectContent>
+                                        <SelectItem value="all">{t('common.all')}</SelectItem>
+
+                                        {offices.map((office) => (
+                                            <SelectItem key={office.id} value={String(office.id)}>
+                                                {office.name}:{office.code}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </FormField>
+                            <FormField
                                 label={t('top_up_cards.from_date')}
                                 htmlFor="from"
                                 icon={CalendarIcon}
@@ -206,6 +241,16 @@ export function TopUpCardListTable({
                             cell: (row) => formatTopUpAmount(row.amount),
                         },
                         {
+                            id: 'batch_no',
+                            header: t('top_up_cards.batch_no'),
+                            cell: (row) => row.batch_no ?? '—',
+                        },
+                        {
+                            id: 'office',
+                            header: t('top_up_cards.office.title'),
+                            cell: (row) => `${row.office?.name || '—'}`,
+                        },
+                        {
                             id: 'status',
                             header: t('common.status'),
                             mobile: 'badge',
@@ -216,12 +261,6 @@ export function TopUpCardListTable({
                             header: t('top_up_cards.expires_at'),
                             className: 'text-muted-foreground',
                             cell: (row) => formatDate(row.expires_at) ?? '—',
-                        },
-
-                        {
-                            id: 'batch_no',
-                            header: t('top_up_cards.batch_no'),
-                            cell: (row) => row.batch_no ?? '—',
                         },
                     ]}
                     actions={(row) => (

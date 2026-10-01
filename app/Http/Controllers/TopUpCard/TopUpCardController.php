@@ -346,9 +346,9 @@ class TopUpCardController extends Controller
     }
 
     /**
-    * @param  list<string>  $officeCodes
+     * @param  list<string>  $officeCodes
      * @param  list<array{value: int|string, quantity: int}>  $amounts
-    * @return list<array{office_code: string, amounts: list<array{value: int|string, quantity: int}>}>
+     * @return list<array{office_code: string, amounts: list<array{value: int|string, quantity: int}>}>
      */
     private function buildGenerationPlan(array $officeCodes, array $amounts, int $chunkSize): array
     {
@@ -506,25 +506,26 @@ class TopUpCardController extends Controller
     }
 
     /**
-     * @return list<array{id: int, name: string}>
+     * @return list<array{id: int, name: string, code: string}>
      */
     private function officeOptions(): array
     {
-        /** @var list<array{id: int, name: string}>|null $cached */
+        /** @var list<array{id: int, name: string, code: string}>|null $cached */
         $cached = Cache::get('top_up_cards.office_options');
 
-        if (is_array($cached) && $cached !== []) {
+        if (is_array($cached) && isset($cached[0]['code'])) {
             return $cached;
         }
 
         $offices = Office::query()
-            ->select(['id', 'name'])
+            ->select(['id', 'name', 'cd'])
             ->orderBy('name')
             ->get()
             ->map(
                 fn(Office $office): array => [
                     'id' => (int) $office->id,
                     'name' => (string) $office->name,
+                    'code' => (string) $office->cd,
                 ],
             )
             ->all();
@@ -750,6 +751,7 @@ class TopUpCardController extends Controller
         $search = trim($request->string('search')->toString());
         $status = $request->string('status')->toString();
         $amount = $request->string('amount')->toString();
+        $office = $request->string('office')->toString();
         $batch = $request->string('batch')->toString();
         $from = $request->string('from')->toString();
         $to = $request->string('to')->toString();
@@ -771,7 +773,12 @@ class TopUpCardController extends Controller
             ->get();
 
         $cards = TopUpCard::query()
-            ->with(['redeemedBy:id,name,phone', 'batch:id,batch_no,status', 'ledgerTransaction:id,transaction_no'])
+            ->with([
+                'redeemedBy:id,name,phone',
+                'batch:id,batch_no,status',
+                'office:id,name,cd',
+                'ledgerTransaction:id,transaction_no',
+            ])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->whereLike('serial_no', "%{$search}%");
             })
@@ -780,6 +787,9 @@ class TopUpCardController extends Controller
             })
             ->when($amount !== '' && is_numeric($amount), function ($query) use ($amount): void {
                 $query->where('amount', $amount);
+            })
+            ->when(ctype_digit($office), function ($query) use ($office): void {
+                $query->where('office_id', (int) $office);
             })
             ->when($batch !== '', function ($query) use ($batch): void {
                 if (ctype_digit($batch)) {
@@ -805,6 +815,7 @@ class TopUpCardController extends Controller
             'cards' => $cards,
             'generated' => $request->session()->get('top_up_card_export_batch', []),
             'amounts' => $this->amountOptions(),
+            'offices' => $this->officeOptions(),
             'batches' => $batches,
             'stats' => $this->stats(),
             'filters' => [
@@ -812,6 +823,7 @@ class TopUpCardController extends Controller
                 'status' => $status,
                 'amount' => $amount,
                 'batch' => $batch,
+                'office' => $office,
                 'from' => $from,
                 'to' => $to,
                 'sort' => $sort,
@@ -843,6 +855,12 @@ class TopUpCardController extends Controller
             'redeemed_by_phone' => $card->redeemedBy?->phone,
             'batch_no' => $card->batch?->batch_no,
             'batch_status' => $card->batch?->status,
+            'office' => $card->office
+                ? [
+                    'name' => $card->office->name,
+                    'code' => (string) $card->office->cd,
+                ]
+                : null,
             'transaction_id' => $card->ledgerTransaction?->id,
             'transaction_no' => $card->ledgerTransaction?->transaction_no,
         ];
