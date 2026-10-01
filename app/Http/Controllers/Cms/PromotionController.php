@@ -29,12 +29,13 @@ class PromotionController extends Controller
         return Inertia::render('Cms/promotion/Index', [
             'items' => $listing['paginator']->through(fn(Promotion $item) => $this->payload($item)),
             'filters' => $listing['filters'],
+            'basePath' => $this->promotionsBasePath(),
         ]);
     }
 
     public function create(): RedirectResponse
     {
-        return redirect()->route('cms.promotions.index');
+        return redirect()->route($this->promotionsIndexRoute());
     }
 
     public function store(StorePromotionRequest $request): RedirectResponse
@@ -52,12 +53,12 @@ class PromotionController extends Controller
 
         activity('cms')->causedBy($request->user())->performedOn($promotion)->event('created')->log('promotion_created');
 
-        return redirect()->route('cms.promotions.index')->with('success', 'cms.promotions.created');
+        return redirect()->route($this->promotionsIndexRoute())->with('success', 'cms.promotions.created');
     }
 
     public function edit(Promotion $promotion): RedirectResponse
     {
-        return redirect()->route('cms.promotions.index');
+        return redirect()->route($this->promotionsIndexRoute());
     }
 
     public function update(UpdatePromotionRequest $request, Promotion $promotion): RedirectResponse
@@ -77,7 +78,7 @@ class PromotionController extends Controller
 
         activity('cms')->causedBy($request->user())->performedOn($promotion)->event('updated')->log('promotion_updated');
 
-        return redirect()->route('cms.promotions.index')->with('success', 'cms.promotions.updated');
+        return redirect()->route($this->promotionsIndexRoute())->with('success', 'cms.promotions.updated');
     }
 
     public function destroy(Request $request, Promotion $promotion): RedirectResponse
@@ -87,7 +88,7 @@ class PromotionController extends Controller
 
         activity('cms')->causedBy($request->user())->performedOn($promotion)->event('deleted')->log('promotion_deleted');
 
-        return redirect()->route('cms.promotions.index')->with('success', 'cms.promotions.deleted');
+        return redirect()->route($this->promotionsIndexRoute())->with('success', 'cms.promotions.deleted');
     }
 
     public function bulkDestroy(Request $request): RedirectResponse
@@ -95,10 +96,24 @@ class PromotionController extends Controller
         return CmsBulkDelete::run(
             $request,
             Promotion::query(),
-            'cms.promotions.index',
+            $this->promotionsIndexRoute(),
             'promotion_deleted',
             beforeDelete: fn(Promotion $promotion) => StoresPublicImage::delete($promotion->image_url),
         );
+    }
+
+    private function promotionsIndexRoute(): string
+    {
+        return request()->routeIs('notifications.promotions.*')
+            ? 'notifications.promotions.index'
+            : 'cms.promotions.index';
+    }
+
+    private function promotionsBasePath(): string
+    {
+        return request()->routeIs('notifications.promotions.*')
+            ? '/notifications/promotions'
+            : '/cms/promotions';
     }
 
     /**

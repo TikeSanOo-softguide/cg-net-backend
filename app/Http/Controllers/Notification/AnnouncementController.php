@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Notification;
 
 use App\Enums\AnnouncementStatus;
+use App\Enums\AnnouncementType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Notification\StoreAnnouncementRequest;
 use App\Http\Requests\Notification\UpdateAnnouncementRequest;
@@ -18,6 +19,12 @@ class AnnouncementController extends Controller
     {
         $search = trim((string) $request->string('search'));
         $status = $request->string('status')->toString();
+        $type = $request->string('type')->toString();
+        $types = array_column(AnnouncementType::cases(), 'value');
+
+        if (! in_array($type, $types, true)) {
+            $type = '';
+        }
         $sort = $request->string('sort')->toString();
         $direction = $request->string('direction')->toString() === 'asc' ? 'asc' : 'desc';
         $sortable = ['content', 'status', 'created_at'];
@@ -30,7 +37,10 @@ class AnnouncementController extends Controller
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
-                        ->whereLike('content_en', '%' . $search . '%')
+                        ->whereLike('title_en', '%' . $search . '%')
+                        ->orWhereLike('title_zh', '%' . $search . '%')
+                        ->orWhereLike('title_my', '%' . $search . '%')
+                        ->orWhereLike('content_en', '%' . $search . '%')
                         ->orWhereLike('content_zh', '%' . $search . '%')
                         ->orWhereLike('content_my', '%' . $search . '%');
                 });
@@ -62,6 +72,7 @@ class AnnouncementController extends Controller
                     };
                 },
             )
+            ->when($type !== '', fn ($query) => $query->where('type', $type))
             ->orderBy($sort, $direction)
             ->paginate(15)
             ->withQueryString()
@@ -72,6 +83,7 @@ class AnnouncementController extends Controller
             'filters' => [
                 'search' => $search,
                 'status' => $status,
+                'type' => $type,
                 'sort' => $sort,
                 'direction' => $direction,
             ],
@@ -157,6 +169,10 @@ class AnnouncementController extends Controller
     {
         return [
             'id' => $announcement->id,
+            'type' => $announcement->type->value,
+            'title_en' => $announcement->title_en,
+            'title_zh' => $announcement->title_zh,
+            'title_my' => $announcement->title_my,
             'content_en' => $announcement->content_en,
             'content_my' => $announcement->content_my,
             'content_zh' => $announcement->content_zh,

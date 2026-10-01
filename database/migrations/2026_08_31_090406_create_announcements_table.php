@@ -9,6 +9,10 @@ return new class extends Migration {
     {
         Schema::create('announcements', function (Blueprint $table) {
             $table->id();
+            $table->string('type')->default('announce')->index();
+            $table->string('title_en', 120);
+            $table->string('title_zh', 120);
+            $table->string('title_my', 120);
             $table->text('content_en');
             $table->text('content_zh');
             $table->text('content_my');

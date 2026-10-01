@@ -8,6 +8,7 @@ import {
     FileTextIcon,
     MegaphoneIcon,
     PlusIcon,
+    SettingsIcon,
     SquarePenIcon,
     Trash2Icon,
     XIcon,
@@ -27,6 +28,7 @@ import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Button } from '@/components/ui/button';
 import { FormControl } from '@/components/ui/form-control';
 import { FormField } from '@/components/ui/form-field';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { ToolbarIconButton } from '@/components/data-table/toolbar';
@@ -43,6 +45,7 @@ import { cn, formatDateTime } from '@/lib/utils';
 type Filters = {
     search: string;
     status: string;
+    type: string;
 };
 
 type Props = {
@@ -50,12 +53,13 @@ type Props = {
     filters: Filters;
 };
 
-function visitIndex(search: string, status: string) {
+function visitIndex(search: string, status: string, type: string) {
     router.get(
         '/notifications/announcement',
         {
             search: search || undefined,
             status: status || undefined,
+            type: type || undefined,
         },
         { preserveState: true, preserveScroll: true, replace: true },
     );
@@ -104,17 +108,16 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
 
     useEffect(() => () => window.clearTimeout(debounce.current), []);
 
-    const getContent = (row: AnnouncementItem): string => {
-        switch (locale) {
-            case 'my':
-                return row.content_my ?? row.content_en ?? '';
-
-            case 'zh':
-                return row.content_zh ?? row.content_en ?? '';
-
-            default:
-                return row.content_en ?? '';
+    const localized = (row: AnnouncementItem, field: 'title' | 'content'): string => {
+        if (locale === 'my') {
+            return row[`${field}_my`] || row[`${field}_en`] || '';
         }
+
+        if (locale === 'zh') {
+            return row[`${field}_zh`] || row[`${field}_en`] || '';
+        }
+
+        return row[`${field}_en`] || '';
     };
 
     return (
@@ -130,10 +133,25 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
                             toolbarFiltersWrapperClass,
                         )}
                     >
+                        <FormControl icon={MegaphoneIcon} compact className="w-full shrink-0 sm:w-40">
+                            <Select
+                                value={filters.type || 'all'}
+                                onValueChange={(value) => visitIndex(search, status, value === 'all' ? '' : value)}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder={t('notification.announcement.type')} />
+                                </SelectTrigger>
+                                <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                    <SelectItem value="all">{t('common.all')}</SelectItem>
+                                    <SelectItem value="announce">{t('notification.announcement.types.announce')}</SelectItem>
+                                    <SelectItem value="system">{t('notification.announcement.types.system')}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </FormControl>
                         <FormControl icon={CircleDotIcon} compact className="w-full shrink-0 sm:w-44">
                             <Select
                                 value={status || 'all'}
-                                onValueChange={(value) => visitIndex(search, value === 'all' ? '' : value)}
+                                onValueChange={(value) => visitIndex(search, value === 'all' ? '' : value, filters.type)}
                             >
                                 <SelectTrigger className="w-full">
                                     <SelectValue placeholder={t('common.status')} />
@@ -152,7 +170,7 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
                             onChange={(value) => {
                                 setSearch(value);
                                 window.clearTimeout(debounce.current);
-                                debounce.current = window.setTimeout(() => visitIndex(value, status), 300);
+                                debounce.current = window.setTimeout(() => visitIndex(value, status, filters.type), 300);
                             }}
                             placeholder={t('common.search')}
                             size="sm"
@@ -184,18 +202,26 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
                                 className="flex items-start gap-2.5 rounded-[12px] border border-border/70 bg-white p-3 shadow-[0_2px_8px_rgb(23_50_54/0.06)] dark:bg-card dark:shadow-[0_2px_8px_rgb(0_0_0/0.22)] sm:p-4"
                             >
                                 <span className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-primary/12 text-primary">
-                                    <MegaphoneIcon className="size-5" strokeWidth={1.8} />
+                                    {item.type === 'system' ? (
+                                        <SettingsIcon className="size-5" strokeWidth={1.8} />
+                                    ) : (
+                                        <MegaphoneIcon className="size-5" strokeWidth={1.8} />
+                                    )}
                                 </span>
                                 <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-3">
-                                        <h2 className="text-[15px] font-semibold text-primary">
-                                            {item.start_date || item.end_date
-                                                ? `${formatDateTime(item.start_date, true)} ~ ${formatDateTime(item.end_date, true)}`
-                                                : '—'}
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-primary uppercase">
+                                            {t(`notification.announcement.types.${item.type}`)}
+                                        </span>
+                                        <h2 className="min-w-0 truncate text-[15px] font-semibold text-primary">
+                                            {localized(item, 'title') || '—'}
                                         </h2>
                                     </div>
-                                    <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-foreground">
-                                        {getContent(item)}
+                                    <p className="mt-1 line-clamp-2 text-sm leading-6 text-foreground">{localized(item, 'content')}</p>
+                                    <p className="mt-1 text-[11px] text-muted-foreground">
+                                        {item.start_date || item.end_date
+                                            ? `${formatDateTime(item.start_date, true)} ~ ${formatDateTime(item.end_date, true)}`
+                                            : '—'}
                                     </p>
                                 </div>
                                 <div className="flex shrink-0 items-center gap-1">
@@ -316,6 +342,14 @@ function AnnouncementDetailDialog({
                         <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
                             <div>
                                 <FormField
+                                    label={t('notification.announcement.title_en')}
+                                    htmlFor="view-title-en"
+                                    icon={FileTextIcon}
+                                    className="mb-3"
+                                >
+                                    <Input id="view-title-en" value={item.title_en || '—'} readOnly />
+                                </FormField>
+                                <FormField
                                     label={t('notification.announcement.content_en')}
                                     htmlFor="view-content-en"
                                     icon={FileTextIcon}
@@ -332,6 +366,14 @@ function AnnouncementDetailDialog({
 
                             <div className="sm:pl-1.5">
                                 <FormField
+                                    label={t('notification.announcement.title_zh')}
+                                    htmlFor="view-title-zh"
+                                    icon={FileTextIcon}
+                                    className="mb-3"
+                                >
+                                    <Input id="view-title-zh" value={item.title_zh || '—'} readOnly />
+                                </FormField>
+                                <FormField
                                     label={t('notification.announcement.content_zh')}
                                     htmlFor="view-content-zh"
                                     icon={FileTextIcon}
@@ -347,6 +389,14 @@ function AnnouncementDetailDialog({
                             </div>
 
                             <div>
+                                <FormField
+                                    label={t('notification.announcement.title_my')}
+                                    htmlFor="view-title-my"
+                                    icon={FileTextIcon}
+                                    className="mb-3"
+                                >
+                                    <Input id="view-title-my" value={item.title_my || '—'} readOnly />
+                                </FormField>
                                 <FormField
                                     label={t('notification.announcement.content_my')}
                                     htmlFor="view-content-my"

@@ -43,18 +43,6 @@ final class MenuPages
                 'permission' => 'billing.view',
             ],
             [
-                'path' => '/notifications/compose',
-                'titleKey' => 'menu.push_composer',
-                'name' => 'notifications.compose',
-                'permission' => 'notifications.view',
-            ],
-            [
-                'path' => '/notifications/categories',
-                'titleKey' => 'menu.notification_categories',
-                'name' => 'notifications.categories',
-                'permission' => 'notifications.view',
-            ],
-            [
                 'path' => '/settings/languages',
                 'titleKey' => 'menu.language_management',
                 'name' => 'settings.languages',

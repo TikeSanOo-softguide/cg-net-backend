@@ -59,7 +59,10 @@ final class ApiAuthenticationService
     /** @return array{user: User, token: string} */
     public function login(string $phone, string $password, string $ip): array
     {
-        $user = User::query()->where('phone', $phone)->first();
+        $user = User::query()
+            ->where('phone', $phone)
+            ->orWhere('phone', '+' . $phone)
+            ->first();
         $accountKey = $user?->exists
             ? 'auth:login:user:' . hash('sha256', $user->getKey() . '|' . $phone)
             : 'auth:login:user:' . hash('sha256', $phone);

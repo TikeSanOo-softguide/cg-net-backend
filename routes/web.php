@@ -16,6 +16,7 @@ use App\Http\Controllers\Log\SecurityLogController;
 use App\Http\Controllers\Log\UserLogController;
 use App\Http\Controllers\MenuPage\MenuPageController;
 use App\Http\Controllers\Notification\AnnouncementController;
+use App\Http\Controllers\Notification\PushNotificationController;
 use App\Http\Controllers\Package\AddonController;
 use App\Http\Controllers\Package\NetworkController;
 use App\Http\Controllers\Package\PackageController;
@@ -212,6 +213,45 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                         ->middleware('can:notifications.view')
                         ->name('show');
                 });
+
+            Route::prefix('promotions')
+                ->name('promotions.')
+                ->group(function () {
+                    Route::get('/', [PromotionController::class, 'index'])
+                        ->middleware('can:notifications.view')
+                        ->name('index');
+                    Route::get('/create', [PromotionController::class, 'create'])
+                        ->middleware('can:notifications.create')
+                        ->name('create');
+                    Route::post('/', [PromotionController::class, 'store'])
+                        ->middleware('can:notifications.create')
+                        ->name('store');
+                    Route::delete('/bulk-destroy', [PromotionController::class, 'bulkDestroy'])
+                        ->middleware('can:notifications.delete')
+                        ->name('bulk-destroy');
+                    Route::get('/{promotion}/edit', [PromotionController::class, 'edit'])
+                        ->middleware('can:notifications.update')
+                        ->name('edit');
+                    Route::put('/{promotion}', [PromotionController::class, 'update'])
+                        ->middleware('can:notifications.update')
+                        ->name('update');
+                    Route::delete('/{promotion}', [PromotionController::class, 'destroy'])
+                        ->middleware('can:notifications.delete')
+                        ->name('destroy');
+                });
+
+            Route::get('/compose', [PushNotificationController::class, 'index'])
+                ->middleware('can:notifications.view')
+                ->name('compose');
+            Route::post('/compose/push-now', [PushNotificationController::class, 'pushNow'])
+                ->middleware('can:notifications.create')
+                ->name('compose.push-now');
+            Route::post('/compose/schedule', [PushNotificationController::class, 'schedule'])
+                ->middleware('can:notifications.create')
+                ->name('compose.schedule');
+            Route::post('/compose/{schedule}/cancel', [PushNotificationController::class, 'cancel'])
+                ->middleware('can:notifications.update')
+                ->name('compose.cancel');
         });
 
     Route::prefix('support')

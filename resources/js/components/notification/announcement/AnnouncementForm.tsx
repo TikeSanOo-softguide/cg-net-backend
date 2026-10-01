@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react';
 import type { InertiaFormProps } from '@inertiajs/react';
-import { CalendarClockIcon, CircleDotIcon, CalendarIcon, FileTextIcon } from 'lucide-react';
+import { CalendarClockIcon, CheckIcon, CircleDotIcon, CalendarIcon, FileTextIcon, MegaphoneIcon, SettingsIcon, TypeIcon } from 'lucide-react';
 
 import { FormField } from '@/components/ui/form-field';
 import { CmsFormShell } from '@/components/cms/shared/CmsFormShell';
@@ -8,12 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { StaffStatusSwitch } from '@/components/staff/StaffStatusSwitch';
 import { useTranslation } from '@/hooks/useTranslation';
-import { validateAnnouncement, validateAnnouncementField } from '@/lib/announcement-validation';
+import { ANNOUNCEMENT_TYPES, validateAnnouncement, validateAnnouncementField, type AnnouncementType } from '@/lib/announcement-validation';
 import { formControlStateClass } from '@/lib/form-control';
 import { cn } from '@/lib/utils';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 
 export type AnnouncementFormValues = {
+    type: AnnouncementType;
+    title_en: string;
+    title_zh: string;
+    title_my: string;
     content_en: string;
     content_zh: string;
     content_my: string;
@@ -32,6 +36,10 @@ type AnnouncementFormProps = {
 export function AnnouncementForm({ form, onSubmit, onCancel, mode = 'create' }: AnnouncementFormProps) {
     const { t } = useTranslation();
     const [touched, setTouched] = useState<Record<keyof AnnouncementFormValues, boolean>>({
+        type: false,
+        title_en: false,
+        title_zh: false,
+        title_my: false,
         content_en: false,
         content_zh: false,
         content_my: false,
@@ -70,6 +78,10 @@ export function AnnouncementForm({ form, onSubmit, onCancel, mode = 'create' }: 
         event.preventDefault();
         setSubmitted(true);
         setTouched({
+            type: true,
+            title_en: true,
+            title_zh: true,
+            title_my: true,
             content_en: true,
             content_zh: true,
             content_my: true,
@@ -92,7 +104,78 @@ export function AnnouncementForm({ form, onSubmit, onCancel, mode = 'create' }: 
 
     return (
         <CmsFormShell onSubmit={submit} onCancel={onCancel} processing={form.processing} mode={mode}>
+            <div className="sm:col-span-2">
+                <p className="mb-2 text-[12px] font-medium text-foreground">{t('notification.announcement.type')}</p>
+                <div className="grid grid-cols-2 gap-2">
+                    {ANNOUNCEMENT_TYPES.map((type) => {
+                        const selected = form.data.type === type;
+                        const Icon = type === 'system' ? SettingsIcon : MegaphoneIcon;
+
+                        return (
+                            <button
+                                key={type}
+                                type="button"
+                                aria-pressed={selected}
+                                onClick={() => {
+                                    setField('type', type);
+                                    markTouched('type');
+                                }}
+                                className={cn(
+                                    'group flex items-center gap-2 rounded-[6px] border px-2.5 py-2 text-left transition-colors',
+                                    selected
+                                        ? 'border-primary bg-primary/10 ring-1 ring-primary/25'
+                                        : 'border-border/70 bg-background hover:border-primary/30',
+                                )}
+                            >
+                                <span
+                                    className={cn(
+                                        'flex size-8 shrink-0 items-center justify-center rounded-[6px] transition-colors',
+                                        selected
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'bg-muted text-muted-foreground group-hover:text-primary',
+                                    )}
+                                >
+                                    <Icon className="size-3.5" strokeWidth={1.8} />
+                                </span>
+                                <span className="min-w-0 flex-1">
+                                    <span className={cn('block truncate text-[12px] font-semibold leading-4', selected ? 'text-primary' : 'text-foreground')}>
+                                        {t(`notification.announcement.types.${type}`)}
+                                    </span>
+                                </span>
+                                <span
+                                    className={cn(
+                                        'flex size-4 shrink-0 items-center justify-center rounded-full border',
+                                        selected
+                                            ? 'border-primary bg-primary text-primary-foreground'
+                                            : 'border-border bg-background text-transparent',
+                                    )}
+                                >
+                                    <CheckIcon className="size-2.5" strokeWidth={3} />
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+                {fieldError('type') ? <p className="mt-1.5 text-[12px] text-danger">{fieldError('type')}</p> : null}
+            </div>
             <div>
+                <FormField
+                    label={t('notification.announcement.title_en')}
+                    htmlFor="title_en"
+                    error={fieldError('title_en')}
+                    required
+                    icon={TypeIcon}
+                    className="mb-3"
+                >
+                    <Input
+                        id="title_en"
+                        value={form.data.title_en}
+                        aria-invalid={fieldState('title_en') === 'error'}
+                        className={formControlStateClass(fieldState('title_en'))}
+                        onBlur={() => markTouched('title_en')}
+                        onChange={(event) => setField('title_en', event.target.value)}
+                    />
+                </FormField>
                 <FormField
                     label={t('notification.announcement.content_en')}
                     htmlFor="content_en"
@@ -113,6 +196,23 @@ export function AnnouncementForm({ form, onSubmit, onCancel, mode = 'create' }: 
             </div>
             <div className="md:ml-3">
                 <FormField
+                    label={t('notification.announcement.title_zh')}
+                    htmlFor="title_zh"
+                    error={fieldError('title_zh')}
+                    required
+                    icon={TypeIcon}
+                    className="mb-3"
+                >
+                    <Input
+                        id="title_zh"
+                        value={form.data.title_zh}
+                        aria-invalid={fieldState('title_zh') === 'error'}
+                        className={formControlStateClass(fieldState('title_zh'))}
+                        onBlur={() => markTouched('title_zh')}
+                        onChange={(event) => setField('title_zh', event.target.value)}
+                    />
+                </FormField>
+                <FormField
                     label={t('notification.announcement.content_zh')}
                     htmlFor="content_zh"
                     error={fieldError('content_zh')}
@@ -123,6 +223,7 @@ export function AnnouncementForm({ form, onSubmit, onCancel, mode = 'create' }: 
                         id="content_zh"
                         className={cn('h-36', formControlStateClass(fieldState('content_zh')))}
                         value={form.data.content_zh}
+                        rows={5}
                         aria-invalid={fieldState('content_zh') === 'error'}
                         onBlur={() => markTouched('content_zh')}
                         onChange={(event) => setField('content_zh', event.target.value)}
@@ -130,6 +231,23 @@ export function AnnouncementForm({ form, onSubmit, onCancel, mode = 'create' }: 
                 </FormField>
             </div>
             <div>
+                <FormField
+                    label={t('notification.announcement.title_my')}
+                    htmlFor="title_my"
+                    error={fieldError('title_my')}
+                    required
+                    icon={TypeIcon}
+                    className="mb-3"
+                >
+                    <Input
+                        id="title_my"
+                        value={form.data.title_my}
+                        aria-invalid={fieldState('title_my') === 'error'}
+                        className={formControlStateClass(fieldState('title_my'))}
+                        onBlur={() => markTouched('title_my')}
+                        onChange={(event) => setField('title_my', event.target.value)}
+                    />
+                </FormField>
                 <FormField
                     label={t('notification.announcement.content_my')}
                     htmlFor="content_my"
@@ -141,6 +259,7 @@ export function AnnouncementForm({ form, onSubmit, onCancel, mode = 'create' }: 
                         id="content_my"
                         className={cn('h-36', formControlStateClass(fieldState('content_my')))}
                         value={form.data.content_my}
+                        rows={5}
                         aria-invalid={fieldState('content_my') === 'error'}
                         onBlur={() => markTouched('content_my')}
                         onChange={(event) => setField('content_my', event.target.value)}

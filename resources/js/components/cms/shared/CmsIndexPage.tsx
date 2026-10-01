@@ -36,6 +36,7 @@ type CmsIndexPageProps<T extends { id: number }> = {
     formDialog?: ReactNode;
     extraFilters?: ReactNode;
     showSearch?: boolean;
+    permissionPrefix?: string;
 };
 
 export function CmsIndexPage<T extends { id: number }>({
@@ -52,6 +53,7 @@ export function CmsIndexPage<T extends { id: number }>({
     formDialog,
     extraFilters,
     showSearch = true,
+    permissionPrefix = 'cms',
 }: CmsIndexPageProps<T>) {
     const { t } = useTranslation();
     const can = useCan();
@@ -59,7 +61,7 @@ export function CmsIndexPage<T extends { id: number }>({
     const [pendingIds, setPendingIds] = useState<number[]>([]);
     const [processing, setProcessing] = useState(false);
     const debounce = useRef<number>(0);
-    const canDelete = can('cms.delete');
+    const canDelete = can(`${permissionPrefix}.delete`);
 
     useEffect(() => {
         setSearch(filters.search);
@@ -153,7 +155,7 @@ export function CmsIndexPage<T extends { id: number }>({
                         {extraFilters}
                     </>
                 }
-                onCreate={can('cms.create') ? onCreate : undefined}
+                onCreate={can(`${permissionPrefix}.create`) ? onCreate : undefined}
                 createLabel={t(createLabelKey)}
                 onBulkDelete={
                     canDelete ? (ids) => visitBulkDelete(`${destroyBase}/bulk-destroy`, ids.map(Number)) : undefined
@@ -161,7 +163,7 @@ export function CmsIndexPage<T extends { id: number }>({
                 bulkDeleteTitle={t('cms.bulk_delete_title')}
                 actions={(row) => (
                     <>
-                        {can('cms.update') ? (
+                        {can(`${permissionPrefix}.update`) ? (
                             <TableActionButton
                                 label={t('common.edit')}
                                 icon={SquarePenIcon}
