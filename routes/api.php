@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\ServiceRequest\ChangePlanRequestController;
 use App\Http\Controllers\Api\ServiceRequest\FailureReportController;
 use App\Http\Controllers\Api\ServiceRequest\RelocationRequestController;
 use App\Http\Controllers\Api\Settings\AppVersionController;
+use App\Http\Controllers\ChangePassword\ChangePasswordController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -117,6 +118,10 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::put('/{installationApplication}', [BroadbandApplicationRequestController::class, 'update']);
         Route::patch('/{installationApplication}/cancel', [BroadbandApplicationRequestController::class, 'cancel']);
         Route::delete('/{installationApplication}', [BroadbandApplicationRequestController::class, 'destroy']);
+    });
+    Route::prefix('change-password')->group(function () {
+        Route::post('/', [ChangePasswordController::class, 'store']);
+        Route::post('/verify-otp', [ChangePasswordController::class, 'verifyOtp']);
     });
 
     Route::prefix('broadband-account')->group(function () {
