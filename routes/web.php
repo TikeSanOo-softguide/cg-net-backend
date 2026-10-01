@@ -26,6 +26,7 @@ use App\Http\Controllers\Reports\CustomerReportController;
 use App\Http\Controllers\Reports\EodReportController;
 use App\Http\Controllers\Reports\LedgerHealthReportController;
 use App\Http\Controllers\Reports\ReportController;
+use App\Http\Controllers\TopUpReport\TopUpReportController;
 use App\Http\Controllers\ServiceRequest\BroadbandApplicationRequestController;
 use App\Http\Controllers\ServiceRequest\ChangePasswordRequestController;
 use App\Http\Controllers\ServiceRequest\ChangePlanRequestController;
@@ -556,6 +557,7 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::get('/', [ReportController::class, 'index'])->name('index');
             Route::get('/customers', [CustomerReportController::class, 'index'])->name('customers');
             Route::get('/billing', [BillingReportController::class, 'index'])->name('reports.billing');
+            Route::get('/top-ups', [TopUpReportController::class, 'index'])->name('top-ups');
             Route::get('/eod', [EodReportController::class, 'index'])->name('eod');
             Route::prefix('ledger-health')
                 ->name('ledger-health.')

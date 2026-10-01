@@ -203,6 +203,33 @@
             }
         }
     },
+    "top_up_report": {
+        "reporting_period": "报告周期",
+        "yearly": "按年",
+        "date_range": "日期范围",
+        "year": "年份",
+        "select_year": "选择年份",
+        "invalid_date_range": "结束日期必须等于或晚于开始日期。",
+        "office": "办公室",
+        "all_offices": "所有办公室",
+        "denomination": "卡片面值",
+        "all_denominations": "所有面值",
+        "reset": "重置",
+        "apply_filters": "应用筛选",
+        "loading": "正在应用...",
+        "total_cards": "充值卡总数",
+        "used_cards": "已使用卡片",
+        "left_cards": "可用卡片",
+        "activity_title": "充值卡活动",
+        "activity_description": "按发行日期统计生成和兑换的卡片",
+        "generated": "已生成",
+        "redeemed": "已兑换",
+        "office_distribution": "各办公室卡片",
+        "office_distribution_description": "按办公室代码统计发行卡片",
+        "cards": "卡片",
+        "unassigned": "未分配",
+        "no_data": "所选筛选条件没有数据"
+    },
     "billing_report": {
         "reporting_period": "报告周期",
         "yearly": "按年",

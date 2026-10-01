@@ -203,6 +203,33 @@
             }
         }
     },
+    "top_up_report": {
+        "reporting_period": "Reporting period",
+        "yearly": "Yearly",
+        "date_range": "Date range",
+        "year": "Year",
+        "select_year": "Select year",
+        "invalid_date_range": "End date must be on or after the start date.",
+        "office": "Office",
+        "all_offices": "All offices",
+        "denomination": "Card value",
+        "all_denominations": "All values",
+        "reset": "Reset",
+        "apply_filters": "Apply filters",
+        "loading": "Applying...",
+        "total_cards": "Total top-up cards",
+        "used_cards": "Used cards",
+        "left_cards": "Available cards",
+        "activity_title": "Top-up activity",
+        "activity_description": "Cards generated and redeemed by issue date",
+        "generated": "Generated",
+        "redeemed": "Redeemed",
+        "office_distribution": "Cards by office",
+        "office_distribution_description": "Issued cards by office code",
+        "cards": "Cards",
+        "unassigned": "Unassigned",
+        "no_data": "No data found for the selected filters"
+    },
     "billing_report": {
         "reporting_period": "Reporting period",
         "yearly": "Yearly",
