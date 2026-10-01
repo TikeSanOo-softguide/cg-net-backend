@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\SecurityLog;
 
 use App\Models\SecurityLog;
 use Illuminate\Database\Eloquent\Model;

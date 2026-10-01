@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Transaction;
 
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
@@ -44,49 +44,47 @@ class TransactionService
             ])
             ->when(
                 $filters['customer_id'],
-                fn ($query) => $query->whereHas(
+                fn($query) => $query->whereHas(
                     'wallet',
-                    fn ($wallet) => $wallet->where('user_id', $filters['customer_id']),
+                    fn($wallet) => $wallet->where('user_id', $filters['customer_id']),
                 ),
             )
             ->when(
                 $filters['open_transaction'] !== '',
-                fn ($query) => $query->where('transaction_no', $filters['open_transaction']),
+                fn($query) => $query->where('transaction_no', $filters['open_transaction']),
             )
             ->when($filters['search'] !== '', function ($query) use ($filters): void {
                 $query->where(function ($query) use ($filters): void {
                     $query
-                        ->whereLike('transaction_no', '%'.$filters['search'].'%')
-                        ->orWhereLike('idempotency_key', '%'.$filters['search'].'%')
-                        ->orWhereLike('type', '%'.$filters['search'].'%')
-                        ->orWhereLike('ip_address', '%'.$filters['search'].'%')
-                        ->orWhereLike('user_agent', '%'.$filters['search'].'%')
+                        ->whereLike('transaction_no', '%' . $filters['search'] . '%')
+                        ->orWhereLike('idempotency_key', '%' . $filters['search'] . '%')
+                        ->orWhereLike('type', '%' . $filters['search'] . '%')
+                        ->orWhereLike('ip_address', '%' . $filters['search'] . '%')
+                        ->orWhereLike('user_agent', '%' . $filters['search'] . '%')
                         ->orWhereHas('wallet.user', function ($user) use ($filters): void {
                             $user
-                                ->whereLike('name', '%'.$filters['search'].'%')
-                                ->orWhereLike('phone', '%'.$filters['search'].'%');
+                                ->whereLike('name', '%' . $filters['search'] . '%')
+                                ->orWhereLike('phone', '%' . $filters['search'] . '%');
                         });
                 });
             })
             ->when(
                 in_array($filters['actor_type'], array_column(WalletActorType::cases(), 'value'), true),
-                fn ($query) => $query->where('actor_type', $filters['actor_type']),
+                fn($query) => $query->where('actor_type', $filters['actor_type']),
             )
             ->when(
                 in_array($filters['type'], array_column(LedgerTransactionType::cases(), 'value'), true),
-                fn ($query) => $query->where('type', $filters['type']),
+                fn($query) => $query->where('type', $filters['type']),
             )
             ->when(
                 in_array($filters['status'], array_column(LedgerTransactionStatus::cases(), 'value'), true),
-                fn ($query) => $query->where('status', $filters['status']),
+                fn($query) => $query->where('status', $filters['status']),
             )
-            ->when($filters['from'], fn ($query) => $query->whereDate('created_at', '>=', $filters['from']))
-            ->when($filters['to'], fn ($query) => $query->whereDate('created_at', '<=', $filters['to']))
+            ->when($filters['from'], fn($query) => $query->whereDate('created_at', '>=', $filters['from']))
+            ->when($filters['to'], fn($query) => $query->whereDate('created_at', '<=', $filters['to']))
             ->when(in_array($filters['direction'], ['credit', 'debit'], true), function ($query) use ($filters): void {
                 $query->whereHas('entries', function ($entry) use ($filters): void {
-                    $entry
-                        ->whereNotNull('wallet_id')
-                        ->whereColumn('wallet_id', 'ledger_transactions.wallet_id');
+                    $entry->whereNotNull('wallet_id')->whereColumn('wallet_id', 'ledger_transactions.wallet_id');
 
                     if ($filters['direction'] === 'credit') {
                         $entry->where('credit', '>', 0);
@@ -103,15 +101,13 @@ class TransactionService
         return $this->query($filters)
             ->paginate(15, ['*'], $pageName)
             ->withQueryString()
-            ->through(fn (LedgerTransaction $transaction) => $this->payload($transaction));
+            ->through(fn(LedgerTransaction $transaction) => $this->payload($transaction));
     }
 
     public function payload(LedgerTransaction $transaction): array
     {
         $liabilityEntry = $transaction->walletLiabilityEntry();
-        $direction = $liabilityEntry
-            ? ($liabilityEntry->isCredit() ? 'credit' : 'debit')
-            : null;
+        $direction = $liabilityEntry ? ($liabilityEntry->isCredit() ? 'credit' : 'debit') : null;
 
         return [
             'id' => $transaction->id,

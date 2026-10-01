@@ -7,7 +7,7 @@ use App\Http\Requests\Api\Auth\LoginRequest;
 use App\Http\Resources\UserResource;
 use App\Services\Auth\ApiAuthenticationService;
 use App\Services\DeviceToken\DeviceTokenService;
-use App\Services\SecurityLogService;
+use App\Services\SecurityLog\SecurityLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;

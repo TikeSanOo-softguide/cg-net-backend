@@ -13,7 +13,8 @@ use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 use Symfony\Component\HttpFoundation\Response;
-use App\Services\SecurityLogService;
+use App\Services\SecurityLog\SecurityLogService;
+
 use Illuminate\Auth\Access\AuthorizationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 return Application::configure(basePath: dirname(__DIR__))

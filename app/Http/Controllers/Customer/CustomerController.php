@@ -15,7 +15,7 @@ use App\Http\Requests\Customer\UpdateCustomerStatusRequest;
 use App\Models\User;
 use App\Services\BroarbandAccount\BroadbandAccountService;
 use App\Services\Ledger\LedgerPoster;
-use App\Services\TransactionService;
+use App\Services\Transaction\TransactionService;
 use App\Support\PackageLabel;
 use App\Support\ReturnTo;
 use Illuminate\Http\RedirectResponse;
@@ -170,15 +170,13 @@ class CustomerController extends Controller
             ['key' => 'adjustment', 'type' => LedgerTransactionType::Adjustment],
         ])
             ->map(function (array $type) use ($walletTransactions) {
-                $filtered = $walletTransactions->filter(
-                    fn ($transaction) => $transaction->type === $type['type'],
-                );
+                $filtered = $walletTransactions->filter(fn($transaction) => $transaction->type === $type['type']);
 
                 return [
                     $type['key'] => [
                         'count' => $filtered->count(),
                         'amount' => number_format(
-                            (float) $filtered->sum(fn ($transaction) => (float) $transaction->amount),
+                            (float) $filtered->sum(fn($transaction) => (float) $transaction->amount),
                             0,
                             '.',
                             '',
