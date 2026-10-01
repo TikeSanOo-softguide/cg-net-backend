@@ -6,6 +6,7 @@ import {
     Banknote,
     Bell,
     Boxes,
+    CalendarDays,
     ClipboardList,
     Contact,
     CreditCard,
@@ -602,11 +603,24 @@ export const reports = [
         href: '/reports/billing',
         icon: Banknote,
     },
+
     {
         labelKey: 'menu.top_up_reports',
         descriptionKey: 'menu.top_up_reports_description',
         href: '/reports/top-ups',
         icon: CreditCard,
+    },
+    {
+        labelKey: 'menu.ledger_health',
+        descriptionKey: 'menu.ledger_health_description',
+        href: '/reports/ledger-health',
+        icon: Activity,
+    },
+    {
+        labelKey: 'menu.eod_reports',
+        descriptionKey: 'menu.eod_reports_description',
+        href: '/reports/eod',
+        icon: CalendarDays,
     },
     {
         labelKey: 'menu.service_request_reports',

@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('customer_packages', function (Blueprint $table) {
@@ -14,17 +15,14 @@ return new class extends Migration {
             $table->foreignId('package_order_id')->nullable()->constrained('package_orders')->nullOnDelete();
             $table->string('username')->nullable();
             $table->string('password')->nullable();
-            $table->date('start_date');
-            $table->date('expiry_date')->nullable();
-            $table->timestamp('expired_at')->nullable();
-            $table->boolean('auto_renew')->default(false);
+            $table->timestamp('starts_at')->nullable();
+            $table->timestamp('expires_at')->nullable();
             $table->string('status', 16)->default('active');
             $table->timestamps();
             $table->softDeletes();
             $table->index(['user_id', 'status']);
             $table->index(['package_id', 'status']);
-            $table->index('expired_at');
-            $table->index('expiry_date');
+            $table->index('expires_at');
         });
     }
 

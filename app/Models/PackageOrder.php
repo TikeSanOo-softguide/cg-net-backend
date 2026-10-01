@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['user_id', 'package_id', 'wallet_transaction_id', 'status', 'snapshot', 'completed_at'])]
+#[Fillable(['user_id', 'package_id', 'ledger_transaction_id', 'status', 'snapshot', 'completed_at'])]
 class PackageOrder extends Model
 {
     use HasFactory;
@@ -37,9 +37,9 @@ class PackageOrder extends Model
         return $this->belongsTo(Package::class);
     }
 
-    public function walletTransaction(): BelongsTo
+    public function ledgerTransaction(): BelongsTo
     {
-        return $this->belongsTo(WalletTransaction::class);
+        return $this->belongsTo(LedgerTransaction::class);
     }
 
     public function customerPackage(): HasOne

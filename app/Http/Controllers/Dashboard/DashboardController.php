@@ -114,9 +114,9 @@ class DashboardController extends Controller
                 (float) BillPayment::query()
                     ->where('status', BillPaymentStatus::Completed)
                     ->whereDate('confirmed_at', today())
-                    ->with('walletTransaction:id,amount')
+                    ->with('ledgerTransaction:id,amount')
                     ->get()
-                    ->sum(fn(BillPayment $payment) => (float) ($payment->walletTransaction?->amount ?? 0)),
+                    ->sum(fn(BillPayment $payment) => (float) ($payment->ledgerTransaction?->amount ?? 0)),
                 2,
                 '.',
                 '',
@@ -136,12 +136,12 @@ class DashboardController extends Controller
         $revenue = BillPayment::query()
             ->where('status', BillPaymentStatus::Completed)
             ->whereBetween('confirmed_at', [$start, $end])
-            ->with('walletTransaction:id,amount')
-            ->get(['confirmed_at', 'wallet_transaction_id'])
+            ->with('ledgerTransaction:id,amount')
+            ->get(['confirmed_at', 'ledger_transaction_id'])
             ->groupBy(fn(BillPayment $payment) => $payment->confirmed_at?->toDateString())
             ->map(
                 fn(Collection $rows) => (float) $rows->sum(
-                    fn(BillPayment $payment) => (float) ($payment->walletTransaction?->amount ?? 0),
+                    fn(BillPayment $payment) => (float) ($payment->ledgerTransaction?->amount ?? 0),
                 ),
             );
 

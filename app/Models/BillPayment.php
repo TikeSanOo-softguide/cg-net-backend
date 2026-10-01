@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[
     Fillable([
-        'wallet_transaction_id',
+        'ledger_transaction_id',
         'broadband_account_number',
         'status',
         'external_bill_ref',
@@ -36,8 +36,8 @@ class BillPayment extends Model
         ];
     }
 
-    public function walletTransaction(): BelongsTo
+    public function ledgerTransaction(): BelongsTo
     {
-        return $this->belongsTo(WalletTransaction::class);
+        return $this->belongsTo(LedgerTransaction::class);
     }
 }

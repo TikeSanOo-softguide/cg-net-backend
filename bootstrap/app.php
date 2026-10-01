@@ -13,7 +13,8 @@ use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 use Symfony\Component\HttpFoundation\Response;
-use App\Services\SecurityLogService;
+use App\Services\SecurityLog\SecurityLogService;
+
 use Illuminate\Auth\Access\AuthorizationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 return Application::configure(basePath: dirname(__DIR__))
@@ -41,7 +42,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {
             $statusCode = $response->getStatusCode();
 
-            if (in_array($statusCode, [401, 403], true)) {
+            $isStorageUrl = $request->is('storage/*') || str_contains($request->path(), 'storage/');
+
+            if (in_array($statusCode, [401, 403], true) && !$isStorageUrl) {
                 app(SecurityLogService::class)->record(
                     event: 'unauthorized_access',
                     actor: $request->user(),

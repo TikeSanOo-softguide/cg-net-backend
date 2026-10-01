@@ -15,6 +15,7 @@ type SearchableSelectProps = {
     options: SearchableSelectOption[];
     placeholder?: string;
     searchPlaceholder?: string;
+    noResultsMessage?: string;
     className?: string;
     triggerClassName?: string;
     disabled?: boolean;
@@ -26,6 +27,7 @@ function SearchableSelect({
     options,
     placeholder = 'Select...',
     searchPlaceholder = 'Search...',
+    noResultsMessage = 'No results found.',
     className,
     triggerClassName,
     disabled = false,
@@ -138,7 +140,7 @@ function SearchableSelect({
                 className={cn(
                     'group flex h-8 w-full min-w-0 items-center justify-between gap-2',
                     'rounded-[8px] border border-input bg-surface',
-                    'px-3 py-2 text-sm text-foreground whitespace-nowrap',
+                    'px-3 py-2 text-[11px] text-foreground whitespace-nowrap',
                     'shadow-none outline-none transition-colors duration-200',
                     'hover:border-primary/35',
                     'focus-visible:border-primary',
@@ -211,7 +213,7 @@ function SearchableSelect({
                                         'border border-input',
                                         'bg-surface',
                                         'pl-8 pr-2',
-                                        'text-sm text-foreground',
+                                        'text-[11px] text-foreground',
                                         'outline-none',
                                         'placeholder:text-muted-foreground',
                                         'transition-colors',
@@ -234,8 +236,8 @@ function SearchableSelect({
                                 </div>
                             )}
                             {filteredOptions.length === 0 ? (
-                                <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                                    No results found.
+                                <div className="px-2 py-6 text-center text-[11px] text-muted-foreground">
+                                    {noResultsMessage}
                                 </div>
                             ) : (
                                 filteredOptions.map((option) => {

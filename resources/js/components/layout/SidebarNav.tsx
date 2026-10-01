@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTranslation } from '@/hooks/useTranslation';
 import { groupIsActive, isActivePath, navigation, type NavGroup, type NavItem } from '@/lib/navigation';
+import { navigationResetHeaders } from '@/lib/navigation-stack';
 import { cn } from '@/lib/utils';
 
 const EXPANDED_KEY = 'isp-admin-sidebar-pinned';
@@ -174,6 +175,7 @@ function RailFlyout({
                                       <li key={child.href}>
                                           <Link
                                               href={child.href}
+                                              headers={navigationResetHeaders}
                                               onClick={() => {
                                                   setOpen(false);
                                                   onNavigate?.();
@@ -387,7 +389,12 @@ function SidebarGroup({
             {row}
         </button>
     ) : (
-        <Link href={href} onClick={onNavigate} className="block w-full outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-[6px]">
+        <Link
+            href={href}
+            headers={navigationResetHeaders}
+            onClick={onNavigate}
+            className="block w-full outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-[6px]"
+        >
             {row}
         </Link>
     );
@@ -409,6 +416,7 @@ function SidebarGroup({
                             <li key={child.href}>
                                 <Link
                                     href={child.href}
+                                    headers={navigationResetHeaders}
                                     onClick={onNavigate}
                                     aria-current={childActive ? 'page' : undefined}
                                     tabIndex={expanded && open ? 0 : -1}

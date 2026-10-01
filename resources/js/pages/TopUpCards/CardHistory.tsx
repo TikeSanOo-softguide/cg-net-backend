@@ -18,6 +18,11 @@ type Props = {
         id: number;
         batch_no: string;
     }[];
+    offices: {
+        id: number;
+        name: string;
+        code: string;
+    }[];
     filters: CardHistoryFilters;
     stats: {
         total: number;
@@ -37,6 +42,7 @@ function visitIndex(filters: CardHistoryFilters, onStart?: () => void, onFinish?
             status: filters.status || undefined,
             batch: filters.batch || undefined,
             amount: filters.amount || undefined,
+            office: filters.office || undefined,
             from: filters.from || undefined,
             to: filters.to || undefined,
             sort: filters.sort || 'created_at',
@@ -52,7 +58,7 @@ function visitIndex(filters: CardHistoryFilters, onStart?: () => void, onFinish?
     );
 }
 
-export default function CardHistory({ cards, batches, generated = [], amounts, stats, filters }: Props) {
+export default function CardHistory({ cards, batches, generated = [], amounts, offices, stats, filters }: Props) {
     const { t } = useTranslation();
     const [search, setSearch] = useState(filters.search);
     const [tableLoading, setTableLoading] = useState(false);
@@ -127,6 +133,7 @@ export default function CardHistory({ cards, batches, generated = [], amounts, s
                         cards={cards}
                         amounts={amounts}
                         batches={batches}
+                        offices={offices}
                         filters={filters}
                         search={search}
                         loading={tableLoading}

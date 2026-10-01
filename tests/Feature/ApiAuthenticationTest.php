@@ -45,6 +45,14 @@ class ApiAuthenticationTest extends TestCase
 
         $response->assertCreated()->assertJsonStructure(['token', 'user' => ['id', 'phone', 'name']]);
         $this->assertDatabaseHas('users', ['phone' => '95912345678', 'name' => 'New User']);
+
+        $user = \App\Models\User::query()->where('phone', '95912345678')->firstOrFail();
+        $this->assertDatabaseHas('wallets', ['user_id' => $user->id, 'balance' => 0]);
+        $this->assertDatabaseHas('ledger_accounts', [
+            'wallet_id' => $user->wallet->id,
+            'type' => 'liability',
+            'code' => 'CUST-'.$user->wallet->id,
+        ]);
     }
 
     public function test_invalid_otp_does_not_verify(): void

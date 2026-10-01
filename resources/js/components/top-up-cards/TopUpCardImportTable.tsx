@@ -8,7 +8,7 @@ import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { Paginated } from '@/components/Pagination';
 import { formatDate } from '@/lib/utils';
-import { TopUpCardImportDialog } from './TopUpCardImportDialog';
+import { TopUpCardImportDialog, type TopUpCardCsvPreview } from './TopUpCardImportDialog';
 import { FormField } from '../ui/form-field';
 import { SearchableSelect } from '../SearchableSelect';
 
@@ -33,6 +33,7 @@ type TopUpCardImportTableProps = {
     statusFilter: string;
     onBatchChange: (value: string) => void;
     onStatusChange: (value: string) => void;
+    onCheckImport: (file: File) => Promise<TopUpCardCsvPreview>;
     onImport: (file: File) => void;
     importProcessing?: boolean;
 };
@@ -45,6 +46,7 @@ export function TopUpCardImportTable({
     statusFilter,
     onBatchChange,
     onStatusChange,
+    onCheckImport,
     onImport,
     importProcessing = false,
 }: TopUpCardImportTableProps) {
@@ -63,7 +65,12 @@ export function TopUpCardImportTable({
                 emptyLabel={t('top_up_cards.empty_table')}
                 filters={
                     <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
-                        <FormControl compact className="w-full shrink-0 sm:w-48">
+                        <FormField
+                            label={t('top_up_cards.batch_no')}
+                            htmlFor="status"
+                            className="w-full shrink-0 sm:w-50 mr-3"
+                            labelClassName="text-[13px]"
+                        >
                             <SearchableSelect
                                 value={batchFilter || 'all'}
                                 onValueChange={onBatchChange}
@@ -73,18 +80,22 @@ export function TopUpCardImportTable({
                                 ]}
                                 placeholder={t('top_up_cards.batch_no') as string}
                                 searchPlaceholder={t('top_up_cards.batch_no') as string}
-                                className="w-full"
+                                className="w-full text-xs"
                             />
-                        </FormControl>
-
-                        <FormControl compact className="w-full shrink-0 sm:w-35">
+                        </FormField>
+                        <FormField
+                            label={t('common.status')}
+                            htmlFor="status"
+                            className="w-full shrink-0 sm:w-40 mr-3"
+                            labelClassName="text-[13px]"
+                        >
                             <Select value={statusFilter || 'all'} onValueChange={onStatusChange}>
                                 <SelectTrigger className="w-full">
                                     <SelectValue placeholder={t('common.status')} />
                                 </SelectTrigger>
 
                                 <SelectContent>
-                                    <SelectItem value="all">{t('top_up_cards.office.all_status')}</SelectItem>
+                                    <SelectItem value="all">{t('common.all')}</SelectItem>
 
                                     <SelectItem value="active">{t('status.active')}</SelectItem>
 
@@ -95,7 +106,7 @@ export function TopUpCardImportTable({
                                     <SelectItem value="blocked">{t('status.blocked')}</SelectItem>
                                 </SelectContent>
                             </Select>
-                        </FormControl>
+                        </FormField>
                     </div>
                 }
                 alwaysShowBulkActions
@@ -145,15 +156,15 @@ export function TopUpCardImportTable({
                         header: t('top_up_cards.expires_at'),
                         cell: (row) => formatDate(row.expires_at) ?? '—',
                     },
-                    {
-                        id: 'assigned_cards_count',
-                        header: t('top_up_cards.office.assigned_cards'),
-                        cell: (row) => row.assigned_cards_count.toLocaleString(),
-                    },
                 ]}
             />
 
-            <TopUpCardImportDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} onImport={onImport} />
+            <TopUpCardImportDialog
+                open={importDialogOpen}
+                onOpenChange={setImportDialogOpen}
+                onCheck={onCheckImport}
+                onImport={onImport}
+            />
         </>
     );
 }

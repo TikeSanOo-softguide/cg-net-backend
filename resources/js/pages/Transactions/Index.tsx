@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, Link } from '@inertiajs/react';
 import { ArrowLeftRightIcon, CalendarIcon, XIcon, EyeIcon, SearchIcon, UserIcon } from 'lucide-react';
 
+import { BackButton } from '@/components/BackButton';
 import { DataTable } from '@/components/DataTable';
 import { CopyValueButton } from '@/components/CopyValueButton';
 import { FormDialog } from '@/components/FormDialog';
@@ -16,11 +17,11 @@ import { FormControl } from '@/components/ui/form-control';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useReturnTo } from '@/hooks/useReturnTo';
 import { useTranslation } from '@/hooks/useTranslation';
 import { toolbarInputClass } from '@/components/data-table/styles';
 import { formControlStateClass } from '@/lib/form-control';
 import { formatTopUpAmount, formatTopUpNumber, TOP_UP_CARD_CURRENCY } from '@/lib/top-up-cards';
-import { WALLET_TRANSFERS_ENABLED } from '@/lib/featureFlags';
 import { cn, formatDateTime } from '@/lib/utils';
 
 type Customer = {
@@ -49,14 +50,6 @@ export type TransactionRow = {
         type: string;
         balance_before: number;
         balance_after: number;
-    } | null;
-    wallet_transfer: {
-        from_wallet_id: number;
-        from_wallet_user: { name: string; phone: string } | null;
-        to_wallet_id: number;
-        to_wallet_user: { name: string; phone: string } | null;
-        amount: number;
-        note: string | null;
     } | null;
     related: {
         bill_payment_id: number | null;
@@ -87,6 +80,7 @@ export type TransactionsProps = {
         statuses: string[];
     };
     scope: 'global' | 'customer';
+    return_to?: string | null;
 };
 
 type TransactionsTableProps = TransactionsProps & {
@@ -104,8 +98,8 @@ function visitIndex(filters: Filters, baseUrl: string, embeddedCustomer = false)
             type: filters.type || undefined,
             status: filters.status || undefined,
             direction: filters.direction || undefined,
-            from: filters.from || undefined,
-            to: filters.to || undefined,
+            from: filters.from,
+            to: filters.to,
             transactions: embeddedCustomer ? 'all' : undefined,
         },
         { preserveState: true, preserveScroll: true, replace: true },
@@ -131,12 +125,14 @@ function actorLabel(actorType: string, t: (key: string) => string): string {
 function DetailItem({
     label,
     value,
+    href,
     copyable = false,
     className,
     secondary,
 }: {
     label: string;
     value: string | number | null | undefined;
+    href?: string;
     copyable?: boolean;
     className?: string;
     secondary?: string | null;
@@ -146,7 +142,13 @@ function DetailItem({
             <dt className="text-[13px] text-muted-foreground">{label}</dt>
             <dd className="mt-0.5 break-words text-[13px] font-medium">
                 <span className="flex items-center gap-1.5">
-                    <span className="text-foreground">{value || '—'}</span>
+                    {href && value !== null && value !== undefined && value !== '' ? (
+                        <Link href={href} className="text-primary underline-offset-4 hover:underline">
+                            {value}
+                        </Link>
+                    ) : (
+                        <span className="text-foreground">{value || '—'}</span>
+                    )}
                     {copyable && value !== null && value !== undefined && value !== '' ? (
                         <CopyValueButton value={String(value)} label={label} />
                     ) : null}
@@ -174,10 +176,15 @@ export function TransactionsTable({
     const [selected, setSelected] = useState<TransactionRow | null>(null);
     const [dateError, setDateError] = useState<string>();
     const debounce = useRef<number>(0);
+    const transactionToOpen = new URLSearchParams(window.location.search).get('open_transaction');
 
     useEffect(() => setSearch(filters.search), [filters.search]);
     useEffect(() => setFrom(filters.from), [filters.from]);
     useEffect(() => setTo(filters.to), [filters.to]);
+    useEffect(() => {
+        const transaction = transactions.data.find((row) => row.transaction_no === transactionToOpen);
+        if (transaction) setSelected(transaction);
+    }, [transactionToOpen, transactions.data]);
     useEffect(() => () => window.clearTimeout(debounce.current), []);
 
     const updateSearch = (value: string) => {
@@ -222,6 +229,12 @@ export function TransactionsTable({
 
         window.location.href = `/billing/transactions/export?${query.toString()}`;
     };
+
+    function transactionHref(transactionNo: string): string {
+        const query = new URLSearchParams({ search: transactionNo, open_transaction: transactionNo });
+
+        return `/billing/transactions?${query.toString()}`;
+    }
 
     return (
         <>
@@ -418,12 +431,26 @@ export function TransactionsTable({
                             </span>
                         ),
                     },
-                    {
-                        id: 'customer',
-                        header: t('transactions.customer'),
-                        mobile: 'subtitle',
-                        cell: (row) => row.customer?.name ?? '—',
-                    },
+                    ...(!embeddedCustomer
+                        ? [
+                              {
+                                  id: 'customer',
+                                  header: t('transactions.customer'),
+                                  mobile: 'subtitle' as const,
+                                  cell: (row: TransactionRow) =>
+                                      row.customer ? (
+                                          <Link
+                                              href={`/customers/${row.customer.id}`}
+                                              className="font-medium text-primary underline-offset-4 hover:underline"
+                                          >
+                                              <span className="tabular-nums">{row.customer.name}</span>
+                                          </Link>
+                                      ) : (
+                                          <span>{t('ledger_health_report.unknown_customer')}</span>
+                                      ),
+                              },
+                          ]
+                        : []),
                     {
                         id: 'type',
                         header: t('transactions.type'),
@@ -497,6 +524,7 @@ export function TransactionsTable({
                             <DetailItem
                                 label={t('transactions.detail_fields.reversal_of')}
                                 value={selected.reversal_of}
+                                href={selected.reversal_of ? transactionHref(selected.reversal_of) : undefined}
                                 copyable
                             />{' '}
                             <DetailItem
@@ -534,34 +562,6 @@ export function TransactionsTable({
                                 label={t('transactions.detail_fields.idempotency_key')}
                                 value={selected.idempotency_key}
                             />{' '}
-                            {WALLET_TRANSFERS_ENABLED ? (
-                                <>
-                                    <DetailItem
-                                        label={t('transactions.detail_fields.transfer_from_wallet')}
-                                        value={selected.wallet_transfer?.from_wallet_id}
-                                        copyable
-                                        secondary={
-                                            selected.wallet_transfer?.from_wallet_user
-                                                ? `${selected.wallet_transfer.from_wallet_user.name} · ${selected.wallet_transfer.from_wallet_user.phone}`
-                                                : null
-                                        }
-                                    />
-                                    <DetailItem
-                                        label={t('transactions.detail_fields.transfer_to_wallet')}
-                                        value={selected.wallet_transfer?.to_wallet_id}
-                                        copyable
-                                        secondary={
-                                            selected.wallet_transfer?.to_wallet_user
-                                                ? `${selected.wallet_transfer.to_wallet_user.name} · ${selected.wallet_transfer.to_wallet_user.phone}`
-                                                : null
-                                        }
-                                    />
-                                    <DetailItem
-                                        label={t('transactions.detail_fields.transfer_note')}
-                                        value={selected.wallet_transfer?.note}
-                                    />
-                                </>
-                            ) : null}
                             <DetailItem
                                 label={t('transactions.detail_fields.bill_payment_id')}
                                 value={selected.related.bill_payment_id}
@@ -607,12 +607,16 @@ export function TransactionsTable({
 
 export default function TransactionsIndex(props: TransactionsProps) {
     const { t } = useTranslation();
+    const returnTo = useReturnTo('');
 
     return (
         <>
             <Head title={t('menu.transactions')} />
             <PageContent>
-                <PageHeader title={t('menu.transactions')} description={t('transactions.description')} />
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <PageHeader title={t('menu.transactions')} description={t('transactions.description')} />
+                    {returnTo ? <BackButton href={returnTo} /> : null}
+                </div>
                 <TransactionsTable {...props} />
             </PageContent>
         </>
