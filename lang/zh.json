@@ -235,6 +235,21 @@
         "payment_methods": "支付方式",
         "payment_methods_description": "已收取积分的占比"
     },
+    "customer_report": {
+        "total_users": "注册用户",
+        "active_users": "活跃用户",
+        "suspended_users": "已停用用户",
+        "connected_users": "已连接宽带",
+        "total_wallet_points": "钱包积分总额",
+        "user_status_breakdown": "用户状态分布",
+        "broadband_breakdown": "宽带连接情况",
+        "status": "账户状态",
+        "all_statuses": "所有状态",
+        "joined_at": "注册时间",
+        "invalid_date_range": "结束日期必须等于或晚于开始日期。",
+        "apply_filters": "应用筛选",
+        "reset": "重置"
+    },
     "service_request_report": {
         "loading_chart": "正在加载图表",
         "filters": {

@@ -22,6 +22,7 @@ use App\Http\Controllers\Package\SpeedController;
 use App\Http\Controllers\Package\TermController;
 use App\Http\Controllers\Region\RegionManagementController;
 use App\Http\Controllers\Reports\BillingReportController;
+use App\Http\Controllers\Reports\CustomerReportController;
 use App\Http\Controllers\Reports\EodReportController;
 use App\Http\Controllers\Reports\LedgerHealthReportController;
 use App\Http\Controllers\Reports\ReportController;
@@ -553,6 +554,7 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         ->middleware('can:reports.view')
         ->group(function () {
             Route::get('/', [ReportController::class, 'index'])->name('index');
+            Route::get('/customers', [CustomerReportController::class, 'index'])->name('customers');
             Route::get('/billing', [BillingReportController::class, 'index'])->name('reports.billing');
             Route::get('/eod', [EodReportController::class, 'index'])->name('eod');
             Route::prefix('ledger-health')

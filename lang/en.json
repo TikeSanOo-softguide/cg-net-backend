@@ -235,6 +235,21 @@
         "payment_methods": "Payment methods",
         "payment_methods_description": "Share of collected points"
     },
+    "customer_report": {
+        "total_users": "Registered users",
+        "active_users": "Active users",
+        "suspended_users": "Suspended users",
+        "connected_users": "Broadband connected",
+        "total_wallet_points": "Total wallet points",
+        "user_status_breakdown": "User status breakdown",
+        "broadband_breakdown": "Broadband connection",
+        "status": "Account status",
+        "all_statuses": "All statuses",
+        "joined_at": "Registered at",
+        "invalid_date_range": "End date must be on or after the start date.",
+        "apply_filters": "Apply filters",
+        "reset": "Reset"
+    },
     "service_request_report": {
         "loading_chart": "Loading chart",
         "filters": {

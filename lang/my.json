@@ -227,6 +227,21 @@
         "payment_methods": "ငွေပေးချေမှုနည်းလမ်းများ",
         "payment_methods_description": "ကောက်ခံရရှိသော ပွိုင့်များ၏ အချိုးအစား"
     },
+    "customer_report": {
+        "total_users": "မှတ်ပုံတင်ထားသော အသုံးပြုသူများ",
+        "active_users": "အသုံးပြုနေသော အသုံးပြုသူများ",
+        "suspended_users": "ဆိုင်းငံ့ထားသော အသုံးပြုသူများ",
+        "connected_users": "ဘရော့်ဒ်ဘန်း ချိတ်ဆက်ထားသူများ",
+        "total_wallet_points": "ပိုက်ဆံအိတ် ပွိုင့်စုစုပေါင်း",
+        "user_status_breakdown": "အသုံးပြုသူ အခြေအနေ အချိုးအစား",
+        "broadband_breakdown": "ဘရော့်ဒ်ဘန်း ချိတ်ဆက်မှု",
+        "status": "အကောင့်အခြေအနေ",
+        "all_statuses": "အခြေအနေအားလုံး",
+        "joined_at": "မှတ်ပုံတင်သည့်ရက်",
+        "invalid_date_range": "ပြီးဆုံးရက်သည် စတင်ရက်နှင့် တူညီရမည် သို့မဟုတ် နောက်ပိုင်းဖြစ်ရမည်။",
+        "apply_filters": "စစ်ထုတ်ရန်",
+        "reset": "ပြန်လည်သတ်မှတ်ရန်"
+    },
     "service_request_report": {
         "loading_chart": "ဇယားကို ဖွင့်နေသည်",
         "filters": {

@@ -36,6 +36,7 @@ export type DataTableColumn<T> = {
     header: string;
     cell: (row: T) => ReactNode;
     className?: string;
+    headerClassName?: string;
     mobile?: 'image' | 'title' | 'subtitle' | 'meta' | 'badge' | false;
     searchValue?: (row: T) => string;
     sortable?: boolean;
@@ -509,7 +510,11 @@ export function DataTable<T>({
                                                 return (
                                                     <TableHead
                                                         key={column.id}
-                                                        className={cn(headerCellClass, EDGE_CELL)}
+                                                        className={cn(
+                                                            headerCellClass,
+                                                            EDGE_CELL,
+                                                            column.headerClassName,
+                                                        )}
                                                     >
                                                         {column.sortable && onSort ? (
                                                             <button
