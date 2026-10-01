@@ -7,6 +7,7 @@ use App\Listeners\PruneInvalidFcmTokens;
 use App\Models\DeviceToken;
 use App\Models\User;
 use App\Notifications\FtthBillPaymentStatusNotification;
+use App\Notifications\TopUpCardRedemptionNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\Events\NotificationFailed;
 use Kreait\Firebase\Exception\Messaging\NotFound;
@@ -110,6 +111,36 @@ class DeviceTokenTest extends TestCase
             'amount' => '1500',
             'broadband_account_number' => 'CG12345678',
             'refund_transaction_no' => 'REFUND-1',
+        ], $message['data']);
+    }
+
+    public function test_top_up_notification_skips_users_without_device_tokens(): void
+    {
+        $user = User::factory()->create();
+        $notification = new TopUpCardRedemptionNotification('TOPUP-1', 500, 1500);
+
+        $this->assertSame([], $notification->via($user));
+
+        DeviceToken::query()->create(['user_id' => $user->id, 'token' => 'device-a']);
+
+        $this->assertSame([FcmChannel::class], $notification->via($user));
+    }
+
+    public function test_top_up_notification_builds_fcm_payload(): void
+    {
+        $user = User::factory()->create();
+        $notification = new TopUpCardRedemptionNotification('TOPUP-1', 500, 1500);
+
+        $message = $notification->toFcm($user)->toArray();
+
+        $this->assertSame('Wallet topped up', $message['notification']['title']);
+        $this->assertSame('Your wallet was credited with 500 MMK. New balance: 1,500 MMK.', $message['notification']['body']);
+        $this->assertSame([
+            'type' => 'top_up_card_redemption',
+            'event' => 'completed',
+            'transaction_no' => 'TOPUP-1',
+            'amount' => '500',
+            'balance' => '1500',
         ], $message['data']);
     }
 
