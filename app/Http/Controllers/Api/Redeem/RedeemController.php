@@ -16,9 +16,7 @@ class RedeemController extends Controller
 
     public function checkSerialNo(SerialNoCheckRequest $request): JsonResponse
     {
-        $status = TopUpCard::query()
-            ->where('serial_no', $request->validated('serial_no'))
-            ->value('status');
+        $status = TopUpCard::query()->where('serial_no', $request->validated('serial_no'))->value('status');
 
         $isValid = $status === TopUpCardStatus::Active;
 

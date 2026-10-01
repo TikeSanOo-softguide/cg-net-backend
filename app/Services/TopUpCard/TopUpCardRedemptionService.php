@@ -48,7 +48,15 @@ class TopUpCardRedemptionService
         $pinDigest = TopUpCardPin::hash($pin);
 
         try {
-            return DB::transaction(function () use ($user, $phone, $pin, $pinDigest, $idempotencyKey, $ipAddress, $userAgent): array {
+            return DB::transaction(function () use (
+                $user,
+                $phone,
+                $pin,
+                $pinDigest,
+                $idempotencyKey,
+                $ipAddress,
+                $userAgent,
+            ): array {
                 $actorId = $user->getKey();
                 $recipientId = User::query()->where('phone', $phone)->value('id');
 
@@ -83,13 +91,6 @@ class TopUpCardRedemptionService
                     ]);
                 }
 
-                if ((string) $account->phone !== $phone) {
-                    return $this->response(404, [
-                        'success' => false,
-                        'message' => 'Account not found.',
-                    ]);
-                }
-
                 $wallet = $account->wallet()->lockForUpdate()->first();
 
                 if (!$wallet) {
@@ -112,10 +113,7 @@ class TopUpCardRedemptionService
                     return $rateLimitResponse;
                 }
 
-                $card = TopUpCard::query()
-                    ->where('pin', $pinDigest)
-                    ->lockForUpdate()
-                    ->first();
+                $card = TopUpCard::query()->where('pin', $pinDigest)->lockForUpdate()->first();
 
                 $pinMatches = TopUpCardPin::check($pin, $card?->pin ?? str_repeat('0', 64));
 
@@ -146,11 +144,7 @@ class TopUpCardRedemptionService
                 $amount = (int) $card->amount;
                 $balanceBefore = (int) $wallet->balance;
 
-                if (
-                    $amount < 1 ||
-                    $balanceBefore < 0 ||
-                    $amount > self::MAX_WALLET_BALANCE - $balanceBefore
-                ) {
+                if ($amount < 1 || $balanceBefore < 0 || $amount > self::MAX_WALLET_BALANCE - $balanceBefore) {
                     return $this->response(409, [
                         'success' => false,
                         'message' => 'This action could not be completed.',
@@ -170,7 +164,7 @@ class TopUpCardRedemptionService
                     userAgent: $userAgent,
                 );
 
-                if (! $transaction->wasRecentlyCreated) {
+                if (!$transaction->wasRecentlyCreated) {
                     return $this->existingResponse(
                         $transaction->load(['topUpCard', 'entries.ledgerAccount']),
                         $wallet,
@@ -206,10 +200,10 @@ class TopUpCardRedemptionService
 
     protected function cardIsRedeemable(TopUpCard $card): bool
     {
-        return $card->status === TopUpCardStatus::Active
-            && $card->redeemed_at === null
-            && $card->ledger_transaction_id === null
-            && !$card->expires_at?->copy()->endOfDay()->isPast();
+        return $card->status === TopUpCardStatus::Active &&
+            $card->redeemed_at === null &&
+            $card->ledger_transaction_id === null &&
+            !$card->expires_at?->copy()->endOfDay()->isPast();
     }
 
     protected function findExistingByIdempotencyKey(string $idempotencyKey): ?LedgerTransaction
@@ -249,9 +243,7 @@ class TopUpCardRedemptionService
         }
 
         $recipientId = User::query()->where('phone', $phone)->value('id');
-        $wallet = $recipientId
-            ? Wallet::query()->where('user_id', $recipientId)->first()
-            : null;
+        $wallet = $recipientId ? Wallet::query()->where('user_id', $recipientId)->first() : null;
         $card = TopUpCard::query()->where('pin', $pinDigest)->first();
 
         if ($wallet === null || $card === null) {
@@ -312,15 +304,12 @@ class TopUpCardRedemptionService
     /**
      * @return array{http_status: int, body: array<string, mixed>, headers: array<string, string>}
      */
-    protected function existingResponse(
-        LedgerTransaction $existing,
-        Wallet $wallet,
-        TopUpCard $card,
-    ): array {
+    protected function existingResponse(LedgerTransaction $existing, Wallet $wallet, TopUpCard $card): array
+    {
         $entries = $existing->entries;
         $liabilityEntry = $existing->walletLiabilityEntry();
         $hasCashTopupDebit = $entries->contains(
-            fn ($entry): bool => $entry->ledgerAccount?->code === LedgerAccountCode::CashTopup->value &&
+            fn($entry): bool => $entry->ledgerAccount?->code === LedgerAccountCode::CashTopup->value &&
                 (int) $entry->debit === (int) $existing->amount &&
                 (int) $entry->credit === 0,
         );

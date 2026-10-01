@@ -127,11 +127,9 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::prefix('redeem')->group(function () {
         Route::post('/check-serial-no', [RedeemController::class, 'checkSerialNo']);
         Route::post('/top-up-account', [RedeemController::class, 'topUpAccount']);
-
     });
 });
 
 if (app()->isLocal()) {
-    require __DIR__.'/dev.php';
+    require __DIR__ . '/dev.php';
 }
-
