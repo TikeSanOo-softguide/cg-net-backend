@@ -1,114 +1,372 @@
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
+import { FormField } from '@/components/ui/form-field';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Head, Link } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import {
-    ArrowDownRight,
-    ArrowLeft,
-    ArrowUpRight,
-    CircleDollarSign,
+    ArrowLeftIcon,
+    CalendarDays,
+    CircleAlert,
+    CircleDotIcon,
+    Coins,
     CreditCard,
     Receipt,
+    RotateCcw,
+    SlidersHorizontal,
     WalletCards,
 } from 'lucide-react';
+import { FormControl } from '@/components/ui/form-control';
 
-const summary = [
-    { label: 'Collected this month', value: 'MMK 48.2M', change: '+12.8%', icon: CircleDollarSign, positive: true },
-    { label: 'Outstanding balance', value: 'MMK 8.7M', change: '-4.2%', icon: WalletCards, positive: true },
-    { label: 'Successful payments', value: '2,846', change: '+8.4%', icon: CreditCard, positive: true },
-    { label: 'Refunds issued', value: 'MMK 1.1M', change: '+2.1%', icon: Receipt, positive: false },
-];
+type Filters = {
+    mode: 'yearly' | 'date_range';
+    year: string;
+    from: string;
+    to: string;
+    status: string;
+    method: string;
+    package: string;
+};
 
-const trend = [
-    { month: 'Apr', value: 58 },
-    { month: 'May', value: 72 },
-    { month: 'Jun', value: 64 },
-    { month: 'Jul', value: 83 },
-    { month: 'Aug', value: 76 },
-    { month: 'Sep', value: 92 },
-];
+type Props = {
+    filters: Filters;
+    years: { value: string; label: string }[];
+    summary: {
+        collected_points: number;
+        outstanding_points: number;
+        successful_payments: number;
+        failed_payments: number;
+        refunded_points: number;
+    };
+    trend: { label: string; points: number; percentage: number }[];
+    trendStatus: string;
+    trendHasData: boolean;
+    methods: { name: string; points: number; percentage: number }[];
+    paymentMethods: { value: string; label: string }[];
+    packages: { value: string; label: string }[];
+};
 
-const methods = [
-    { name: 'Mobile wallet', amount: 'MMK 21.4M', percentage: 44, color: 'bg-primary' },
-    { name: 'Bank transfer', amount: 'MMK 15.8M', percentage: 33, color: 'bg-success' },
-    { name: 'Top-up cards', amount: 'MMK 7.2M', percentage: 15, color: 'bg-warning' },
-    { name: 'Cash collection', amount: 'MMK 3.8M', percentage: 8, color: 'bg-info' },
-];
+const formatPoints = (points: number, pointsLabel: string) =>
+    `${new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(points)} ${pointsLabel}`;
 
-const transactions = [
-    {
-        id: 'INV-10482',
-        customer: 'Aung Min Oo',
-        method: 'Mobile wallet',
-        amount: 'MMK 85,000',
-        status: 'Paid',
-        date: 'Today, 10:42 AM',
-    },
-    {
-        id: 'INV-10481',
-        customer: 'Su Su Hlaing',
-        method: 'Bank transfer',
-        amount: 'MMK 120,000',
-        status: 'Paid',
-        date: 'Today, 09:18 AM',
-    },
-    {
-        id: 'INV-10480',
-        customer: 'Kyaw Zin',
-        method: 'Top-up card',
-        amount: 'MMK 50,000',
-        status: 'Pending',
-        date: 'Yesterday, 04:36 PM',
-    },
-    {
-        id: 'INV-10479',
-        customer: 'Mya Thiri',
-        method: 'Mobile wallet',
-        amount: 'MMK 95,000',
-        status: 'Refunded',
-        date: 'Yesterday, 02:11 PM',
-    },
-];
+export default function BillingReportsIndex({
+    filters: reportFilters,
+    years,
+    summary,
+    trend,
+    trendStatus,
+    trendHasData,
+    methods,
+    paymentMethods,
+    packages,
+}: Props) {
+    const { t, locale } = useTranslation();
+    const [dateError, setDateError] = useState<string>();
+    const [isLoading, setIsLoading] = useState(false);
+    const [filters, setFilters] = useState<Filters>(reportFilters);
 
-export default function BillingReportsIndex() {
-    const { t } = useTranslation();
+    useEffect(() => {
+        setDateError(undefined);
+        setFilters({
+            mode: reportFilters.mode,
+            year: reportFilters.year,
+            from: reportFilters.from,
+            to: reportFilters.to,
+            status: reportFilters.status ?? 'all',
+            method: reportFilters.method ?? 'all',
+            package: reportFilters.package ?? 'all',
+        });
+    }, [reportFilters]);
+
+    const applyFilters = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        if (filters.mode === 'date_range' && filters.from && filters.to && filters.to < filters.from) {
+            setDateError(t('billing_report.invalid_date_range'));
+            return;
+        }
+
+        setDateError(undefined);
+        const { mode, year, from, to, status, method, package: packageId } = filters;
+        router.get(
+            '/reports/billing',
+            {
+                mode,
+                year: mode === 'yearly' ? year : undefined,
+                from: mode === 'date_range' ? from : undefined,
+                to: mode === 'date_range' ? to : undefined,
+                status: status === 'all' ? undefined : status,
+                method: method === 'all' ? undefined : method,
+                package: packageId === 'all' ? undefined : packageId,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+                onStart: () => setIsLoading(true),
+                onFinish: () => setIsLoading(false),
+            },
+        );
+    };
+
+    const resetFilters = () => router.get('/reports/billing', {}, { preserveState: false, replace: true });
+
+    const rangeLabel = `${reportFilters.from} – ${reportFilters.to}`;
+
+    const summaryCards = [
+        {
+            label: t('billing_report.collected_points'),
+            value: formatPoints(summary.collected_points, t('billing_report.points')),
+            icon: Coins,
+        },
+        {
+            label: t('billing_report.outstanding_balance'),
+            value: formatPoints(summary.outstanding_points, t('billing_report.points')),
+            icon: WalletCards,
+        },
+        {
+            label: t('billing_report.successful_payments'),
+            value: summary.successful_payments.toLocaleString(),
+            icon: CreditCard,
+        },
+        {
+            label: t('billing_report.failed_payments'),
+            value: summary.failed_payments.toLocaleString(),
+            icon: CircleAlert,
+        },
+        {
+            label: t('billing_report.refunds_issued'),
+            value: formatPoints(summary.refunded_points, t('billing_report.points')),
+            icon: Receipt,
+        },
+    ];
+
+    const methodColors = ['bg-primary', 'bg-success', 'bg-warning', 'bg-info'];
+    const trendStatusLabels: Record<string, string> = {
+        successful: t('billing_report.successful_payment_points'),
+        pending: t('billing_report.pending_payment_points'),
+        failed: t('billing_report.failed_payment_points'),
+        refunded: t('billing_report.refunded_points'),
+    };
 
     return (
         <>
             <Head title={t('menu.billing_reports')} />
 
             <PageContent className="gap-3 lg:gap-3.5">
-                <PageHeader title={t('menu.billing_reports')} description={t('menu.billing_reports_description')} />
-
                 <div className="flex items-center justify-between gap-3">
-                    <Link
-                        href="/reports"
-                        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-primary"
-                    >
-                        <ArrowLeft className="size-4" />
-                        Reports & Analytics
-                    </Link>
-                    <Badge variant="outline">September 2026</Badge>
+                    <PageHeader title={t('menu.billing_reports')} description={t('menu.billing_reports_description')} />
+                    <Button type="button" size="sm" className="gap-1.5" onClick={() => router.visit('/reports')}>
+                        <ArrowLeftIcon className="size-3.5" strokeWidth={1.9} />
+                        {t('common.back')}
+                    </Button>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    {summary.map(({ label, value, change, icon: Icon, positive }) => (
+                <form onSubmit={applyFilters}>
+                    <Card>
+                        <CardContent className="">
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 xl:items-end">
+                                <FormField
+                                    label={t('billing_report.reporting_period')}
+                                    htmlFor="billing-mode"
+                                    className="w-full min-w-0"
+                                    labelClassName="text-[13px]"
+                                >
+                                    <FormControl icon={CalendarDays} compact>
+                                        <Select
+                                            value={filters.mode}
+                                            onValueChange={(mode: Filters['mode']) => {
+                                                setDateError(undefined);
+                                                setFilters({ ...filters, mode });
+                                            }}
+                                        >
+                                            <SelectTrigger id="billing-mode" className="w-full text-[11px]">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                                <SelectItem value="yearly">{t('billing_report.yearly')}</SelectItem>
+                                                <SelectItem value="date_range">
+                                                    {t('billing_report.date_range')}
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </FormControl>
+                                </FormField>
+
+                                {filters.mode === 'yearly' ? (
+                                    <FormField
+                                        label={t('billing_report.year')}
+                                        htmlFor="billing-year"
+                                        className="w-full min-w-0"
+                                        labelClassName="text-[13px]"
+                                    >
+                                        <Select
+                                            value={filters.year}
+                                            onValueChange={(year) => setFilters({ ...filters, year })}
+                                        >
+                                            <SelectTrigger id="billing-year" className="w-full text-[11px]">
+                                                <SelectValue placeholder={t('billing_report.select_year')} />
+                                            </SelectTrigger>
+                                            <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                                {years.map((year) => (
+                                                    <SelectItem key={year.value} value={year.value}>
+                                                        {year.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </FormField>
+                                ) : (
+                                    <>
+                                        <FormField
+                                            label={t('common.start_date')}
+                                            htmlFor="billing-from"
+                                            icon={CalendarDays}
+                                            error={dateError}
+                                            className="w-full min-w-0"
+                                            labelClassName="text-[13px]"
+                                        >
+                                            <DatePicker
+                                                id="billing-from"
+                                                value={filters.from}
+                                                max={filters.to || undefined}
+                                                onChange={(from) => {
+                                                    setDateError(undefined);
+                                                    setFilters({ ...filters, from });
+                                                }}
+                                            />
+                                        </FormField>
+
+                                        <FormField
+                                            label={t('common.end_date')}
+                                            htmlFor="billing-to"
+                                            icon={CalendarDays}
+                                            error={dateError}
+                                            className="w-full min-w-0"
+                                            labelClassName="text-[13px]"
+                                        >
+                                            <DatePicker
+                                                id="billing-to"
+                                                value={filters.to}
+                                                min={filters.from || undefined}
+                                                onChange={(to) => {
+                                                    setDateError(undefined);
+                                                    setFilters({ ...filters, to });
+                                                }}
+                                            />
+                                        </FormField>
+                                    </>
+                                )}
+
+                                <FormField
+                                    label={t('billing_report.payment_method')}
+                                    htmlFor="billing-method"
+                                    className="w-full min-w-0"
+                                    labelClassName="text-[13px]"
+                                >
+                                    <FormControl icon={CircleDotIcon} compact className="w-full">
+                                        <Select
+                                            value={filters.method}
+                                            onValueChange={(method) => setFilters({ ...filters, method })}
+                                        >
+                                            <SelectTrigger className="w-full text-[11px]">
+                                                <SelectValue placeholder={t('billing_report.payment_method')} />
+                                            </SelectTrigger>
+
+                                            <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                                <SelectItem value="all">{t('common.all')}</SelectItem>
+
+                                                {paymentMethods.map((method) => (
+                                                    <SelectItem key={method.value} value={method.value}>
+                                                        {method.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </FormControl>
+                                </FormField>
+
+                                <FormField
+                                    label={t('billing_report.package')}
+                                    htmlFor="billing-package"
+                                    className="w-full min-w-0"
+                                    labelClassName="text-[13px]"
+                                >
+                                    <FormControl icon={CircleDotIcon} compact className="w-full">
+                                        <Select
+                                            value={filters.package}
+                                            onValueChange={(value) => setFilters({ ...filters, package: value })}
+                                        >
+                                            <SelectTrigger className="w-full text-[11px]">
+                                                <SelectValue placeholder={t('billing_report.package')} />
+                                            </SelectTrigger>
+
+                                            <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                                <SelectItem value="all">{t('common.all')}</SelectItem>
+
+                                                {packages.map((item) => (
+                                                    <SelectItem key={item.value} value={item.value}>
+                                                        {item.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </FormControl>
+                                </FormField>
+
+                                <FormField
+                                    label={'\u00a0'}
+                                    htmlFor="billing-actions"
+                                    className="w-full min-w-0"
+                                    labelClassName="text-[13px]"
+                                >
+                                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            className="w-full gap-2"
+                                            onClick={resetFilters}
+                                            disabled={isLoading}
+                                        >
+                                            <RotateCcw className="size-4" />
+                                            <span className={locale === 'my' ? 'text-[11px]' : 'text-sm'}>
+                                                {t('billing_report.reset')}
+                                            </span>
+                                        </Button>
+
+                                        <Button
+                                            type="submit"
+                                            id="billing-actions"
+                                            className="w-full gap-2"
+                                            disabled={isLoading}
+                                        >
+                                            <SlidersHorizontal className="size-4" />
+                                            <span className={locale === 'my' ? 'text-[11px]' : 'text-sm'}>
+                                                {isLoading
+                                                    ? t('billing_report.loading')
+                                                    : t('billing_report.apply_filters')}
+                                            </span>
+                                        </Button>
+                                    </div>
+                                </FormField>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </form>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                    {summaryCards.map(({ label, value, icon: Icon }) => (
                         <Card key={label} className="gap-3 py-4">
                             <CardContent className="flex items-start justify-between">
                                 <div>
                                     <p className="text-[12px] text-muted-foreground">{label}</p>
                                     <p className="mt-2 font-heading text-xl font-semibold tracking-tight">{value}</p>
-                                    <span
-                                        className={`mt-2 inline-flex items-center gap-1 text-[12px] ${positive ? 'text-success' : 'text-danger'}`}
-                                    >
-                                        {positive ? (
-                                            <ArrowUpRight className="size-3.5" />
-                                        ) : (
-                                            <ArrowDownRight className="size-3.5" />
-                                        )}
-                                        {change} vs last month
+                                    <span className="mt-2 inline-flex text-[12px] text-muted-foreground">
+                                        {rangeLabel}
                                     </span>
                                 </div>
                                 <span className="flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
@@ -122,45 +380,67 @@ export default function BillingReportsIndex() {
                 <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.45fr_1fr]">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Collection trend</CardTitle>
-                            <CardDescription>Monthly successful payment volume</CardDescription>
+                            <CardTitle>{t('billing_report.collection_trend')}</CardTitle>
+                            <CardDescription>
+                                {trendStatusLabels[trendStatus] ?? trendStatusLabels.successful}{' '}
+                                {t('billing_report.trend_period')}
+                            </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div className="flex h-56 items-end gap-3 border-b border-border px-2 pb-0 pt-6 sm:gap-6">
-                                {trend.map((item) => (
-                                    <div
-                                        key={item.month}
-                                        className="flex h-full flex-1 flex-col items-center justify-end gap-2"
-                                    >
-                                        <span className="text-[11px] text-muted-foreground">{item.value}%</span>
-                                        <div
-                                            className="w-full max-w-12 rounded-t-md bg-primary/15"
-                                            style={{ height: `${item.value}%` }}
-                                        >
-                                            <div className="h-full rounded-t-md bg-primary transition-all hover:bg-primary/80" />
-                                        </div>
-                                        <span className="pb-2 text-[11px] text-muted-foreground">{item.month}</span>
+                            {trendHasData ? (
+                                <div className="overflow-x-auto">
+                                    <div className="flex h-56 min-w-max items-end gap-3 border-b border-border px-2">
+                                        {trend.map((item, index) => (
+                                            <div
+                                                key={`${item.label}-${index}`}
+                                                title={`${item.label}: ${formatPoints(item.points, t('billing_report.points'))}`}
+                                                className="flex h-full w-fit min-w-20 max-w-32 shrink-0 flex-col items-center justify-end gap-2"
+                                            >
+                                                <span className="w-full whitespace-normal break-words text-center text-[10px] text-muted-foreground">
+                                                    {formatPoints(item.points, t('billing_report.points'))}
+                                                </span>
+                                                <div className="flex h-36 w-full items-end justify-center rounded-t-md bg-primary/15">
+                                                    <div
+                                                        className="w-full max-w-17 rounded-t-md bg-primary transition-all hover:bg-primary/80"
+                                                        style={{ height: `${item.percentage}%` }}
+                                                    />
+                                                </div>
+                                                <span className="max-w-full whitespace-normal break-words pb-2 text-center text-[11px] text-muted-foreground">
+                                                    {item.label}
+                                                </span>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
-                            </div>
+                                </div>
+                            ) : (
+                                <div
+                                    className="flex h-56 items-center justify-center text-center text-sm text-muted-foreground"
+                                    role="status"
+                                >
+                                    {t('billing_report.no_data')}
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Payment methods</CardTitle>
-                            <CardDescription>Share of collected revenue</CardDescription>
+                            <CardTitle>{t('billing_report.payment_methods')}</CardTitle>
+                            <CardDescription>{t('billing_report.payment_methods_description')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {methods.map((method) => (
+                            {methods.map((method, index) => (
                                 <div key={method.name}>
                                     <div className="mb-1.5 flex items-center justify-between gap-3 text-[12px]">
                                         <span className="text-muted-foreground">{method.name}</span>
-                                        <span className="font-medium">{method.amount}</span>
+                                        <span className="font-medium">
+                                            {formatPoints(method.points, t('billing_report.points'))} ·{' '}
+                                            {method.percentage}%
+                                        </span>
                                     </div>
                                     <div className="h-2 overflow-hidden rounded-full bg-muted">
                                         <div
-                                            className={`h-full rounded-full ${method.color}`}
+                                            className={`h-full rounded-full ${methodColors[index % methodColors.length]}`}
                                             style={{ width: `${method.percentage}%` }}
                                         />
                                     </div>
@@ -169,62 +449,6 @@ export default function BillingReportsIndex() {
                         </CardContent>
                     </Card>
                 </div>
-
-                <Card>
-                    <CardHeader className="flex-row items-center justify-between">
-                        <div>
-                            <CardTitle>Recent transactions</CardTitle>
-                            <CardDescription>Latest payment activity across all channels</CardDescription>
-                        </div>
-                        <Link
-                            href="/billing/transactions"
-                            className="text-[12px] font-medium text-primary hover:underline"
-                        >
-                            View all
-                        </Link>
-                    </CardHeader>
-                    <CardContent className="overflow-x-auto">
-                        <table className="w-full min-w-[680px] text-left text-[12px]">
-                            <thead className="border-b border-border text-muted-foreground">
-                                <tr>
-                                    <th className="px-3 py-2 font-medium">Invoice</th>
-                                    <th className="px-3 py-2 font-medium">Customer</th>
-                                    <th className="px-3 py-2 font-medium">Method</th>
-                                    <th className="px-3 py-2 font-medium">Amount</th>
-                                    <th className="px-3 py-2 font-medium">Status</th>
-                                    <th className="px-3 py-2 font-medium">Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {transactions.map((transaction) => (
-                                    <tr
-                                        key={transaction.id}
-                                        className="border-b border-border/70 last:border-0 hover:bg-muted/40"
-                                    >
-                                        <td className="px-3 py-3 font-medium">{transaction.id}</td>
-                                        <td className="px-3 py-3">{transaction.customer}</td>
-                                        <td className="px-3 py-3 text-muted-foreground">{transaction.method}</td>
-                                        <td className="px-3 py-3 font-medium">{transaction.amount}</td>
-                                        <td className="px-3 py-3">
-                                            <Badge
-                                                variant={
-                                                    transaction.status === 'Paid'
-                                                        ? 'success'
-                                                        : transaction.status === 'Pending'
-                                                          ? 'warning'
-                                                          : 'secondary'
-                                                }
-                                            >
-                                                {transaction.status}
-                                            </Badge>
-                                        </td>
-                                        <td className="px-3 py-3 text-muted-foreground">{transaction.date}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </CardContent>
-                </Card>
             </PageContent>
         </>
     );

@@ -10,7 +10,6 @@ use App\Http\Controllers\Cms\PromotionController;
 use App\Http\Controllers\Cms\ServiceController;
 use App\Http\Controllers\Customer\CustomerController;
 use App\Http\Controllers\Dashboard\DashboardController;
-use App\Http\Controllers\Invoice\InvoiceController;
 use App\Http\Controllers\Locale\LocaleController;
 use App\Http\Controllers\Log\SecurityLogController;
 use App\Http\Controllers\Log\UserLogController;
@@ -23,14 +22,17 @@ use App\Http\Controllers\Package\SpeedController;
 use App\Http\Controllers\Package\TermController;
 use App\Http\Controllers\Region\RegionManagementController;
 use App\Http\Controllers\Reports\BillingReportController;
+use App\Http\Controllers\Reports\CustomerReportController;
 use App\Http\Controllers\Reports\EodReportController;
 use App\Http\Controllers\Reports\LedgerHealthReportController;
 use App\Http\Controllers\Reports\ReportController;
+use App\Http\Controllers\TopUpReport\TopUpReportController;
 use App\Http\Controllers\ServiceRequest\BroadbandApplicationRequestController;
 use App\Http\Controllers\ServiceRequest\ChangePasswordRequestController;
 use App\Http\Controllers\ServiceRequest\ChangePlanRequestController;
 use App\Http\Controllers\ServiceRequest\FailureReportController;
 use App\Http\Controllers\ServiceRequest\RelocationRequestController;
+use App\Http\Controllers\ServiceRequest\ServiceRequestController;
 use App\Http\Controllers\Settings\AppVersionController;
 use App\Http\Controllers\Staff\RoleController;
 use App\Http\Controllers\Staff\StaffController;
@@ -553,7 +555,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         ->middleware('can:reports.view')
         ->group(function () {
             Route::get('/', [ReportController::class, 'index'])->name('index');
+            Route::get('/customers', [CustomerReportController::class, 'index'])->name('customers');
             Route::get('/billing', [BillingReportController::class, 'index'])->name('reports.billing');
+            Route::get('/top-ups', [TopUpReportController::class, 'index'])->name('top-ups');
             Route::get('/eod', [EodReportController::class, 'index'])->name('eod');
             Route::prefix('ledger-health')
                 ->name('ledger-health.')
@@ -562,6 +566,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::post('/check', 'check')->name('check');
                 });
+            Route::get('/service-requests', [ServiceRequestController::class, 'index'])->name(
+                'reports.service-requests',
+            );
         });
 
     Route::prefix('settings')

@@ -203,6 +203,156 @@
             }
         }
     },
+    "top_up_report": {
+        "reporting_period": "Reporting period",
+        "yearly": "Yearly",
+        "date_range": "Date range",
+        "year": "Year",
+        "select_year": "Select year",
+        "invalid_date_range": "End date must be on or after the start date.",
+        "office": "Office",
+        "all_offices": "All offices",
+        "denomination": "Card value",
+        "all_denominations": "All values",
+        "reset": "Reset",
+        "apply_filters": "Apply filters",
+        "loading": "Applying...",
+        "total_cards": "Total top-up cards",
+        "used_cards": "Used cards",
+        "left_cards": "Available cards",
+        "activity_title": "Top-up activity",
+        "activity_description": "Cards generated and redeemed by issue date",
+        "generated": "Generated",
+        "redeemed": "Redeemed",
+        "office_distribution": "Cards by office",
+        "office_distribution_description": "Issued cards by office code",
+        "cards": "Cards",
+        "unassigned": "Unassigned",
+        "no_data": "No data found for the selected filters"
+    },
+    "billing_report": {
+        "reporting_period": "Reporting period",
+        "yearly": "Yearly",
+        "date_range": "Date range",
+        "year": "Year",
+        "select_year": "Select year",
+        "invalid_date_range": "End date must be on or after the start date.",
+        "loading": "Applying...",
+        "successful": "Successful",
+        "pending": "Pending",
+        "failed": "Failed",
+        "refunded": "Refunded",
+        "payment_method": "Payment method",
+        "package": "Package",
+        "reset": "Reset",
+        "apply_filters": "Apply filters",
+        "collected_points": "Collected points",
+        "outstanding_balance": "Outstanding balance",
+        "successful_payments": "Successful payments",
+        "failed_payments": "Failed payments",
+        "refunds_issued": "Refunds issued",
+        "points": "Points",
+        "successful_payment_points": "Successful payment points",
+        "pending_payment_points": "Pending payment points",
+        "failed_payment_points": "Failed payment points",
+        "refunded_points": "Refunded points",
+        "trend_period": "by day, week, or month",
+        "collection_trend": "Collection trend",
+        "no_data": "No data found for the selected filters",
+        "payment_methods": "Payment methods",
+        "payment_methods_description": "Share of collected points"
+    },
+    "customer_report": {
+        "total_users": "Registered users",
+        "active_users": "Active users",
+        "suspended_users": "Suspended users",
+        "connected_users": "Broadband connected",
+        "total_wallet_points": "Total wallet points",
+        "user_status_breakdown": "User status breakdown",
+        "broadband_breakdown": "Broadband connection",
+        "status": "Account status",
+        "all_statuses": "All statuses",
+        "joined_at": "Registered at",
+        "invalid_date_range": "End date must be on or after the start date.",
+        "apply_filters": "Apply filters",
+        "reset": "Reset"
+    },
+    "service_request_report": {
+        "loading_chart": "Loading chart",
+        "filters": {
+            "period": "Reporting period",
+            "yearly": "Yearly",
+            "date_range": "Date range",
+            "year": "Year",
+            "select_year": "Select year",
+            "start_date": "Start date",
+            "end_date": "End date",
+            "request_type": "Request type",
+            "all_request_types": "All request types",
+            "status": "Status",
+            "all_statuses": "All statuses"
+        },
+        "actions": {
+            "label": "Actions",
+            "all": "All",
+            "reset": "Reset",
+            "loading": "Loading...",
+            "apply": "Apply filters"
+        },
+        "errors": {
+            "invalid_date_range": "End date must be on or after the start date.",
+            "load": "Unable to load service request reports.",
+            "http": "The service request report could not be loaded.",
+            "network": "A network error prevented the report from loading."
+        },
+        "summary": {
+            "total_requests": "Total Requests",
+            "total_note": "Requests in this period",
+            "pending_requests": "Pending Requests",
+            "pending_note": "Currently under review",
+            "completed_requests": "Completed Requests",
+            "completed_note": "Approved requests",
+            "no_requests": "No requests in this period"
+        },
+        "volume": {
+            "title": "Request Volume",
+            "description": "Requests created over the selected period",
+            "empty": "No service requests found for the selected filters."
+        },
+        "types": {
+            "title": "Request Types",
+            "description": "Request count by service type",
+            "empty": "No request type data for the selected filters.",
+            "installation_application": "Broadband Applications",
+            "failure_report": "Failure Reports",
+            "relocation": "Relocation",
+            "change_plan": "Change Plan",
+            "change_password": "Change Password"
+        },
+        "statuses": {
+            "title": "Request Status",
+            "description": "Requests grouped by current status",
+            "empty": "No request status data for the selected filters."
+        },
+        "resolution": {
+            "title": "Resolution Analysis",
+            "description": "Average time from request creation to its latest finalized status update",
+            "loading": "Loading resolution analysis",
+            "request_type": "Request Type",
+            "total": "Total",
+            "average": "Avg. Resolution",
+            "empty": "No resolution data for the selected filters."
+        },
+        "chart": {
+            "period": "Period:",
+            "requests": "Requests"
+        },
+        "duration": {
+            "minutes": "min",
+            "hours": "hrs",
+            "days": "days"
+        }
+    },
     "dashboard": {
         "welcome_back": "Welcome back",
         "overview": "Overview",
