@@ -25,6 +25,7 @@ import { FormDialog } from '@/components/FormDialog';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCan } from '@/hooks/useCan';
 import { StatCard } from '@/components/StatCard';
+import { useOpenRequestFromQuery } from '@/hooks/useOpenRequestFromQuery';
 
 type RequestItem = {
     id: number;
@@ -69,6 +70,7 @@ export default function ChangePasswordIndex({ requests, filters, statuses, stats
     const [search, setSearch] = useState(filters.search);
     const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
     const debounce = useRef<number>(0);
+    const closeRequestDetails = useOpenRequestFromQuery(requests.data, setSelectedRequest);
 
     const cards = [
         {
@@ -202,7 +204,7 @@ export default function ChangePasswordIndex({ requests, filters, statuses, stats
                 request={selectedRequest}
                 open={selectedRequest !== null}
                 canUpdate={can('service-requests.update')}
-                onOpenChange={(open) => !open && setSelectedRequest(null)}
+                onOpenChange={(open) => !open && closeRequestDetails()}
             />
         </>
     );

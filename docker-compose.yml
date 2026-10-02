@@ -30,6 +30,8 @@ services:
                 condition: service_healthy
             redis:
                 condition: service_started
+            reverb:
+                condition: service_started
 
     horizon:
         build:
@@ -116,7 +118,7 @@ services:
         environment:
             VITE_PORT: ${VITE_PORT:-5173}
             VITE_DEV_SERVER_URL: http://localhost:${VITE_PORT:-5173}
-            VITE_REVERB_ENABLED: ${VITE_REVERB_ENABLED:-false}
+            VITE_REVERB_ENABLED: ${VITE_REVERB_ENABLED:-true}
             VITE_REVERB_APP_KEY: ${REVERB_APP_KEY:-cgnet-reverb-key}
             VITE_REVERB_HOST: localhost
             VITE_REVERB_PORT: ${REVERB_PORT:-8081}
@@ -126,7 +128,6 @@ services:
         command: ['npm', 'run', 'dev']
 
     reverb:
-        profiles: ['reverb']
         build:
             context: .
             dockerfile: Dockerfile

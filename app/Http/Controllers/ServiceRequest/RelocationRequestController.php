@@ -21,10 +21,11 @@ class RelocationRequestController extends Controller
                 ? ''
                 : $request->string('status')->toString())
             : RequestStatus::UnderReview->value;
+        $openRequestId = $request->integer('open_request');
 
         $relocationRequests = RelocationRequest::query()
             ->with(['user:id,name,phone', 'admin:id,username'])
-            ->when($search !== '', function ($query) use ($search): void {
+            ->when($openRequestId < 1 && $search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
                         ->whereHas('user', fn($user) => $user->whereLike('name', '%' . $search . '%'))
@@ -32,9 +33,12 @@ class RelocationRequestController extends Controller
                 });
             })
             ->when(
-                $status !== '' && in_array($status, array_column(RequestStatus::cases(), 'value'), true),
+                $openRequestId < 1 &&
+                    $status !== '' &&
+                    in_array($status, array_column(RequestStatus::cases(), 'value'), true),
                 fn($query) => $query->where('status', $status),
             )
+            ->when($openRequestId > 0, fn($query) => $query->whereKey($openRequestId))
             ->orderBy('preferred_date')
             ->latest('id')
             ->paginate(10)

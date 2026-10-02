@@ -28,6 +28,7 @@ import { StatCard } from '@/components/StatCard';
 import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
 import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
 import { RelocationRequestDetailDialog } from '@/components/service-requests/RelocationRequest/RelocationRequestDetailDialog';
+import { useOpenRequestFromQuery } from '@/hooks/useOpenRequestFromQuery';
 
 type RelocationRequest = {
     id: number;
@@ -72,6 +73,8 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
     const [search, setSearch] = useState(filters.search);
     const [selectedRequest, setSelectedRequest] = useState<RelocationRequest | null>(null);
     const debounce = useRef<number>(0);
+
+    const closeRequestDetails = useOpenRequestFromQuery(requests.data, setSelectedRequest);
 
     const cards = [
         {
@@ -271,7 +274,7 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
 
             <RelocationRequestDetailDialog
                 open={selectedRequest !== null}
-                onOpenChange={(open) => !open && setSelectedRequest(null)}
+                onOpenChange={(open) => !open && closeRequestDetails()}
                 request={selectedRequest}
                 statuses={statuses}
                 canUpdate={can('service-requests.update')}

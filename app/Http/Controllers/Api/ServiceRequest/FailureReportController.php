@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ServiceRequest\CreateFailureReport;
 use App\Http\Requests\ServiceRequest\UpdateFailureReport;
 use App\Http\Resources\FailureReport\FailureReportResource;
+use App\Events\ServiceRequestSubmitted;
 use App\Models\FailureReport;
 use App\Support\StoresPublicImage;
 use Illuminate\Http\Request;
@@ -43,6 +44,7 @@ class FailureReportController extends Controller
                 'contact_phone' => $validated['contact_phone'],
                 'status' => 'under_review',
             ]);
+            ServiceRequestSubmitted::dispatch('failure_report', $failureReport->id);
 
             foreach ($request->file('photos') as $photo) {
                 $imageUrl = StoresPublicImage::store($photo, 'service-request/failure-reports');

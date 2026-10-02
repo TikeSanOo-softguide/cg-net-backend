@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityLog\ActivityLogController;
+use App\Http\Controllers\AdminNotification\AdminNotificationController;
 use App\Http\Controllers\Cms\BannerController;
 use App\Http\Controllers\Cms\CategoryController;
 use App\Http\Controllers\Cms\ContactController;
@@ -54,7 +55,15 @@ Route::post('/locale/{lang}', LocaleController::class)->name('locale.update');
 
 Route::middleware(['auth:web', 'admin.active'])->group(function () {
     Route::get('/', fn(Request $request) => redirect()->to(AdminHome::path($request->user())))->name('home');
-    Route::get('/dashboard', DashboardController::class)->middleware('can:dashboard.view')->name('dashboard');
+    Route::prefix('dashboard')->group(function (): void {
+        Route::get('/', DashboardController::class)->middleware('can:dashboard.view')->name('dashboard');
+        Route::get('/notifications', [AdminNotificationController::class, 'index'])
+            ->middleware('can:notifications.view')
+            ->name('dashboard.notifications.index');
+        Route::put('/notifications/{notification}/read', [AdminNotificationController::class, 'markRead'])
+            ->middleware('can:notifications.view')
+            ->name('dashboard.notifications.read');
+    });
     Route::delete('/dashboard/requests/bulk-destroy', [DashboardController::class, 'bulkDestroy'])
         ->middleware('can:service-requests.delete')
         ->name('dashboard.requests.bulk-destroy');

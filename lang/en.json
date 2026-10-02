@@ -389,6 +389,7 @@
         "other": "Other",
         "request_levels": "Service requests",
         "request_levels_description": "Highest to lowest by type",
+        "request_levels_duration": "Duration · Last 30 days",
         "bulk_deleted": "Selected service requests deleted",
         "bulk_delete_failed": "None of the selected service requests could be deleted.",
         "bulk_delete_partial": "Some selected service requests could not be deleted.",
@@ -432,7 +433,9 @@
         "invalid": "Invalid",
         "blocked": "Blocked",
         "cancelled": "Cancelled",
-        "sent": "Sent"
+        "sent": "Sent",
+        "read": "Read",
+        "unread": "Unread"
     },
     "activity_logs": {
         "admin": "Actor",
@@ -477,6 +480,31 @@
     "pagination": {
         "previous": "Previous",
         "next": "Next"
+    },
+    "admin_notifications": {
+        "description": "Review, search, and filter recent admin notifications.",
+        "search_placeholder": "Search notifications...",
+        "customer_name": "Customer name",
+        "category": "Notification type",
+        "request_type": "Request type",
+        "request_status": "Request status",
+        "read_status": "Read status",
+        "read": "Read",
+        "unread": "Unread",
+        "mark_read": "Mark as read",
+        "empty": "No notifications match these filters.",
+        "categories": {
+            "request": "Request",
+            "security": "Security",
+            "other": "Other"
+        },
+        "request_types": {
+            "installation_application": "Broadband application",
+            "change_password_request": "Change password",
+            "change_plan_request": "Change plan",
+            "failure_report": "Failure report",
+            "relocation_request": "Relocation"
+        }
     },
     "common": {
         "profile": "Profile",
@@ -678,7 +706,8 @@
         "installation": "Installation",
         "failure": "Failure report",
         "relocation": "Relocation",
-        "change_plan": "Change plan"
+        "change_plan": "Change plan",
+        "change_password": "Change password"
     },
     "language": {
         "en": "English",

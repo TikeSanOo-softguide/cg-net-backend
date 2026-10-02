@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ServiceRequest\CreateRelocationRequest;
 use App\Http\Requests\ServiceRequest\UpdateRelocationRequest;
 use App\Http\Resources\RelocationRequest\RelocationRequestResource;
+use App\Events\ServiceRequestSubmitted;
 use App\Models\RelocationRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,6 +31,7 @@ class RelocationRequestController extends Controller
             'user_id' => $request->user()->id,
             'status' => 'under_review',
         ]);
+        ServiceRequestSubmitted::dispatch('relocation_request', $relocation->id);
         $this->logActivity($request, 'create_relocation_request', [
             'relocation_request_id' => $relocation->id,
             'status' => $relocation->status,

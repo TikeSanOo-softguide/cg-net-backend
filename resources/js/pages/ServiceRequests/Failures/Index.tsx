@@ -34,6 +34,7 @@ import { StatCard } from '@/components/StatCard';
 import { DataTable } from '@/components/DataTable';
 import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
 import { FailureReportDetailDialog } from '@/components/service-requests/FailureReport/FailureReportDetailDialog';
+import { useOpenRequestFromQuery } from '@/hooks/useOpenRequestFromQuery';
 
 type FailureReportPhoto = {
     id: number;
@@ -123,6 +124,8 @@ export default function FailureReportsIndex({ reports, filters, statuses, stats 
     const [search, setSearch] = useState(filters.search);
     const debounce = useRef<number>(0);
     const [selectedRequest, setSelectedRequest] = useState<FailureReportRow | null>(null);
+
+    const closeRequestDetails = useOpenRequestFromQuery(reports.data, setSelectedRequest);
 
     useEffect(() => {
         setSearch(filters.search);
@@ -301,7 +304,7 @@ export default function FailureReportsIndex({ reports, filters, statuses, stats 
 
             <FailureReportDetailDialog
                 open={selectedRequest !== null}
-                onOpenChange={(open) => !open && setSelectedRequest(null)}
+                onOpenChange={(open) => !open && closeRequestDetails()}
                 request={selectedRequest}
                 statuses={statuses}
                 canUpdate={can('service-requests.update')}

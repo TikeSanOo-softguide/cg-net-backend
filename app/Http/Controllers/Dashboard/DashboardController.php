@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Enums\BillPaymentStatus;
+use App\Enums\ChangePasswordStatus;
 use App\Enums\ChangePlanStatus;
 use App\Enums\CustomerPackageStatus;
 use App\Enums\ReviewStatus;
 use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Models\BillPayment;
+use App\Models\ChangePasswordRequest;
 use App\Models\ChangePlanRequest;
 use App\Models\CustomerPackage;
 use App\Models\FailureReport;
@@ -34,6 +36,7 @@ class DashboardController extends Controller
         'failure' => FailureReport::class,
         'relocation' => RelocationRequest::class,
         'change_plan' => ChangePlanRequest::class,
+        'change_password' => ChangePasswordRequest::class,
     ];
 
     public function __invoke(): Response
@@ -51,7 +54,11 @@ class DashboardController extends Controller
     {
         $ids = $request->validate([
             'ids' => ['required', 'array', 'min:1'],
-            'ids.*' => ['string', 'distinct', 'regex:/^(installation|failure|relocation|change_plan)-\d+$/'],
+            'ids.*' => [
+                'string',
+                'distinct',
+                'regex:/^(installation|failure|relocation|change_plan|change_password)-\d+$/',
+            ],
         ])['ids'];
 
         $deleted = 0;
@@ -101,7 +108,8 @@ class DashboardController extends Controller
             InstallationApplication::query()->where('status', ReviewStatus::UnderReview)->count() +
             FailureReport::query()->where('status', ReviewStatus::UnderReview)->count() +
             RelocationRequest::query()->where('status', ReviewStatus::UnderReview)->count() +
-            ChangePlanRequest::query()->where('status', ChangePlanStatus::UnderReview)->count();
+            ChangePlanRequest::query()->where('status', ChangePlanStatus::UnderReview)->count() +
+            ChangePasswordRequest::query()->where('status', ChangePasswordStatus::UnderReview)->count();
 
         return [
             'total_customers' => User::query()->count(),
@@ -272,50 +280,91 @@ class DashboardController extends Controller
      */
     private function recentRequests(): array
     {
-        $installs = InstallationApplication::query()->with('user:id,name')->latest()->take(10)->get()->map(
-            fn(InstallationApplication $row) => [
-                'id' => 'installation-' . $row->id,
-                'type' => 'installation',
-                'customer' => $row->user?->name ?? '—',
-                'status' => $row->status->value,
-                'created_at' => $row->created_at?->toIso8601String(),
-            ],
-        );
+        $installs = InstallationApplication::query()
+            ->with('user:id,name')
+            ->whereDate('created_at', today())
+            ->latest()
+            ->take(10)
+            ->get()
+            ->map(
+                fn(InstallationApplication $row) => [
+                    'id' => 'installation-' . $row->id,
+                    'type' => 'installation',
+                    'customer' => $row->user?->name ?? '—',
+                    'status' => $row->status->value,
+                    'created_at' => $row->created_at?->toIso8601String(),
+                ],
+            );
 
-        $failures = FailureReport::query()->with('user:id,name')->latest()->take(10)->get()->map(
-            fn(FailureReport $row) => [
-                'id' => 'failure-' . $row->id,
-                'type' => 'failure',
-                'customer' => $row->user?->name ?? '—',
-                'status' => $row->status->value,
-                'created_at' => $row->created_at?->toIso8601String(),
-            ],
-        );
+        $failures = FailureReport::query()
+            ->with('user:id,name')
+            ->whereDate('created_at', today())
+            ->latest()
+            ->take(10)
+            ->get()
+            ->map(
+                fn(FailureReport $row) => [
+                    'id' => 'failure-' . $row->id,
+                    'type' => 'failure',
+                    'customer' => $row->user?->name ?? '—',
+                    'status' => $row->status->value,
+                    'created_at' => $row->created_at?->toIso8601String(),
+                ],
+            );
 
-        $relocations = RelocationRequest::query()->with('user:id,name')->latest()->take(10)->get()->map(
-            fn(RelocationRequest $row) => [
-                'id' => 'relocation-' . $row->id,
-                'type' => 'relocation',
-                'customer' => $row->user?->name ?? '—',
-                'status' => $row->status->value,
-                'created_at' => $row->created_at?->toIso8601String(),
-            ],
-        );
+        $relocations = RelocationRequest::query()
+            ->with('user:id,name')
+            ->whereDate('created_at', today())
+            ->latest()
+            ->take(10)
+            ->get()
+            ->map(
+                fn(RelocationRequest $row) => [
+                    'id' => 'relocation-' . $row->id,
+                    'type' => 'relocation',
+                    'customer' => $row->user?->name ?? '—',
+                    'status' => $row->status->value,
+                    'created_at' => $row->created_at?->toIso8601String(),
+                ],
+            );
 
-        $changes = ChangePlanRequest::query()->with('user:id,name')->latest()->take(10)->get()->map(
-            fn(ChangePlanRequest $row) => [
-                'id' => 'change_plan-' . $row->id,
-                'type' => 'change_plan',
-                'customer' => $row->user?->name ?? '—',
-                'status' => $row->status->value,
-                'created_at' => $row->created_at?->toIso8601String(),
-            ],
-        );
+        $changes = ChangePlanRequest::query()
+            ->with('user:id,name')
+            ->whereDate('created_at', today())
+            ->latest()
+            ->take(10)
+            ->get()
+            ->map(
+                fn(ChangePlanRequest $row) => [
+                    'id' => 'change_plan-' . $row->id,
+                    'type' => 'change_plan',
+                    'customer' => $row->user?->name ?? '—',
+                    'status' => $row->status->value,
+                    'created_at' => $row->created_at?->toIso8601String(),
+                ],
+            );
+
+        $passwordChanges = ChangePasswordRequest::query()
+            ->with('user:id,name')
+            ->whereDate('created_at', today())
+            ->latest()
+            ->take(10)
+            ->get()
+            ->map(
+                fn(ChangePasswordRequest $row) => [
+                    'id' => 'change_password-' . $row->id,
+                    'type' => 'change_password',
+                    'customer' => $row->user?->name ?? '—',
+                    'status' => $row->status->value,
+                    'created_at' => $row->created_at?->toIso8601String(),
+                ],
+            );
 
         return $installs
             ->concat($failures)
             ->concat($relocations)
             ->concat($changes)
+            ->concat($passwordChanges)
             ->sortByDesc('created_at')
             ->take(10)
             ->values()

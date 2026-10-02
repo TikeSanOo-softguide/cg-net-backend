@@ -23,6 +23,7 @@ import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useOpenRequestFromQuery } from '@/hooks/useOpenRequestFromQuery';
 import { formatDate, truncateText } from '@/lib/utils';
 
 type BroadbandApplication = {
@@ -163,6 +164,8 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
     const [search, setSearch] = useState(filters.search);
     const [selectedRequest, setSelectedRequest] = useState<BroadbandApplication | null>(null);
     const debounce = useRef<number>(0);
+
+    const closeRequestDetails = useOpenRequestFromQuery(requests.data, setSelectedRequest);
 
     const cards = [
         {
@@ -361,7 +364,7 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
 
             <BroadbandApplicationDetailDialog
                 open={selectedRequest !== null}
-                onOpenChange={(open) => !open && setSelectedRequest(null)}
+                onOpenChange={(open) => !open && closeRequestDetails()}
                 request={selectedRequest}
                 canUpdate={can('service-requests.update')}
                 statuses={statuses}

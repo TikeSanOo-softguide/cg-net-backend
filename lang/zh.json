@@ -75,7 +75,7 @@
         "quick_reply_templates": "快捷回复模板",
         "chatbot_flows": "聊天机器人流程",
         "banners": "促销 / 横幅",
-        "cms": "Web App",
+        "cms": "Web 应用",
         "cms_promotions": "促销",
         "cms_banners": "横幅",
         "cms_tags": "标签",
@@ -445,7 +445,9 @@
         "invalid": "无效",
         "blocked": "已阻止",
         "cancelled": "已取消",
-        "sent": "已发送"
+        "sent": "已发送",
+        "read": "已读",
+        "unread": "未读"
     },
     "activity_logs": {
         "admin": "管理员",
@@ -490,6 +492,31 @@
     "pagination": {
         "previous": "上一页",
         "next": "下一页"
+    },
+    "admin_notifications": {
+        "description": "查看、搜索和筛选最近的管理员通知。",
+        "search_placeholder": "搜索通知...",
+        "customer_name": "客户姓名",
+        "category": "通知类型",
+        "request_type": "请求类型",
+        "request_status": "请求状态",
+        "read_status": "已读状态",
+        "read": "已读",
+        "unread": "未读",
+        "mark_read": "标记为已读",
+        "empty": "没有符合筛选条件的通知。",
+        "categories": {
+            "request": "请求",
+            "security": "安全",
+            "other": "其他"
+        },
+        "request_types": {
+            "installation_application": "宽带申请",
+            "change_password_request": "修改密码",
+            "change_plan_request": "更改套餐",
+            "failure_report": "故障报告",
+            "relocation_request": "迁移请求"
+        }
     },
     "common": {
         "profile": "个人资料",
@@ -691,7 +718,8 @@
         "installation": "安装申请",
         "failure": "故障报告",
         "relocation": "迁移",
-        "change_plan": "更改套餐"
+        "change_plan": "更改套餐",
+        "change_password": "更改密码"
     },
     "language": {
         "en": "英语",

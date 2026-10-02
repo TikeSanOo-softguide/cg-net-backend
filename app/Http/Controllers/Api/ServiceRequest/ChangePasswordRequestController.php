@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ServiceRequest\CreateChangePasswordRequest;
 use App\Http\Requests\ServiceRequest\UpdateChangePasswordRequest;
 use App\Http\Resources\ChangePasswordRequest\ChangePasswordRequestResource;
+use App\Events\ServiceRequestSubmitted;
 use App\Models\ChangePasswordRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -28,6 +29,7 @@ class ChangePasswordRequestController extends Controller
             'user_id' => $request->user()->id,
             'status' => 'under_review',
         ]);
+        ServiceRequestSubmitted::dispatch('change_password_request', $password->id);
         $this->logActivity($request, 'create_change_password_request', [
             'change_password_request_id' => $password->id,
             'status' => $password->status,

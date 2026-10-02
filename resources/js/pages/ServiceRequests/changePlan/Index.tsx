@@ -30,6 +30,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { cn, formatDate } from '@/lib/utils';
 import { StatCard } from '@/components/StatCard';
 import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
+import { useOpenRequestFromQuery } from '@/hooks/useOpenRequestFromQuery';
 
 type Filters = {
     search: string;
@@ -53,6 +54,8 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
     const [selectedRequest, setSelectedRequest] = useState<ChangePlanRequestItem | null>(null);
     const [search, setSearch] = useState(filters.search);
     const debounce = useRef<number>(0);
+
+    const closeRequestDetails = useOpenRequestFromQuery(requests.data, setSelectedRequest);
 
     const cards = [
         {
@@ -262,7 +265,7 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
 
             <ChangePlanDetailDialog
                 open={selectedRequest !== null}
-                onOpenChange={(open) => !open && setSelectedRequest(null)}
+                onOpenChange={(open) => !open && closeRequestDetails()}
                 request={selectedRequest}
             />
         </>

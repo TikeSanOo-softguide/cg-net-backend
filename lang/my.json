@@ -433,7 +433,9 @@
         "invalid": "မမှန်ကန်",
         "blocked": "ပိတ်ဆို့ထား",
         "cancelled": "ပယ်ဖျက်ပြီး",
-        "sent": "ပို့ပြီး"
+        "sent": "ပို့ပြီး",
+        "read": "ဖတ်ပြီး",
+        "unread": "မဖတ်ရသေး"
     },
     "activity_logs": {
         "admin": "အက်ဒမင်",
@@ -478,6 +480,31 @@
     "pagination": {
         "previous": "ယခင်",
         "next": "နောက်"
+    },
+    "admin_notifications": {
+        "description": "အက်ဒမင် အကြောင်းကြားစာများကို ကြည့်ရှု၊ ရှာဖွေ၊ စစ်ထုတ်ပါ။",
+        "search_placeholder": "အကြောင်းကြားစာများ ရှာရန်...",
+        "customer_name": "ဖောက်သည်အမည်",
+        "category": "အကြောင်းကြားစာ အမျိုးအစား",
+        "request_type": "တောင်းဆိုမှု အမျိုးအစား",
+        "request_status": "တောင်းဆိုမှု အခြေအနေ",
+        "read_status": "ဖတ်ရှုမှု အခြေအနေ",
+        "read": "ဖတ်ပြီး",
+        "unread": "မဖတ်ရသေး",
+        "mark_read": "ဖတ်ပြီးဟု သတ်မှတ်ရန်",
+        "empty": "ဤစစ်ထုတ်မှုများနှင့် ကိုက်ညီသော အကြောင်းကြားစာ မရှိပါ။",
+        "categories": {
+            "request": "တောင်းဆိုမှု",
+            "security": "လုံခြုံရေး",
+            "other": "အခြား"
+        },
+        "request_types": {
+            "installation_application": "ဘရော့ဒ်ဘန်း လျှောက်လွှာ",
+            "change_password_request": "စကားဝှက် ပြောင်းရန်",
+            "change_plan_request": "ပက်ကေ့ဂျ် ပြောင်းရန်",
+            "failure_report": "ချို့ယွင်းချက် တိုင်ကြားမှု",
+            "relocation_request": "နေရာပြောင်းရွှေ့မှု"
+        }
     },
     "common": {
         "profile": "ပရိုဖိုင်",
@@ -679,7 +706,8 @@
         "installation": "တပ်ဆင်မှု",
         "failure": "ချို့ယွင်းမှု",
         "relocation": "နေရာပြောင်းရွှေ့",
-        "change_plan": "အစီအစဉ်ပြောင်း"
+        "change_plan": "အစီအစဉ်ပြောင်း",
+        "change_password": "စကားဝှက်ပြောင်း"
     },
     "language": {
         "en": "အင်္ဂလိပ်",
