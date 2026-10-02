@@ -112,7 +112,7 @@ export function TopUpCardImportTable({
                 }
                 alwaysShowBulkActions
                 bulkActions={
-                    can('top-up-cards.update') ? (
+                    can('top-up-cards.create') ? (
                         <div className="flex items-center gap-2">
                             <Button
                                 type="button"

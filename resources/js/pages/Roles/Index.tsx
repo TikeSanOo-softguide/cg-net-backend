@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { EyeIcon, PlusIcon, SquarePenIcon, Trash2Icon, UsersIcon } from 'lucide-react';
+import { DownloadIcon, EyeIcon, PlusIcon, SquarePenIcon, Trash2Icon, UsersIcon } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { PageContent } from '@/components/PageContent';
@@ -9,6 +9,7 @@ import {
     PERMISSION_ACTION_META,
     PERMISSION_ACTIONS,
     permissionModuleIcon,
+    SYSTEM_EXPORT_PERMISSION,
     type PermissionMatrixGroup,
 } from '@/components/PermissionMatrix';
 import { SearchInput } from '@/components/SearchInput';
@@ -75,7 +76,11 @@ export default function RolesIndex({ roles, matrix, filters }: RolesIndexProps) 
                                 setSearch(value);
                                 window.clearTimeout(debounce.current);
                                 debounce.current = window.setTimeout(() => {
-                                    router.get('/roles', { search: value || undefined }, { preserveState: true, preserveScroll: true, replace: true });
+                                    router.get(
+                                        '/roles',
+                                        { search: value || undefined },
+                                        { preserveState: true, preserveScroll: true, replace: true },
+                                    );
                                 }, 300);
                             }}
                             placeholder={t('staff.search_roles')}
@@ -98,7 +103,9 @@ export default function RolesIndex({ roles, matrix, filters }: RolesIndexProps) 
                     </div>
                     <div className={cn(EDGE_PAD, 'grid gap-3 pb-4 lg:grid-cols-2')}>
                         {roles.length === 0 ? (
-                            <p className="col-span-full py-12 text-center text-[13px] text-muted-foreground">{t('common.no_results')}</p>
+                            <p className="col-span-full py-12 text-center text-[13px] text-muted-foreground">
+                                {t('common.no_results')}
+                            </p>
                         ) : null}
                         {roles.map((role) => {
                             const Icon = roleIcon(role.name);
@@ -113,7 +120,9 @@ export default function RolesIndex({ roles, matrix, filters }: RolesIndexProps) 
                                     </span>
                                     <div className="min-w-0 flex-1">
                                         <h2 className="truncate text-[15px] font-semibold text-primary">{role.name}</h2>
-                                        <p className="mt-0.5 text-[12px] leading-5 text-muted-foreground">{roleDescription(role.name, t)}</p>
+                                        <p className="mt-0.5 text-[12px] leading-5 text-muted-foreground">
+                                            {roleDescription(role.name, t)}
+                                        </p>
                                         <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
                                             <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">
                                                 {role.permissions_count} {t('staff.permissions')}
@@ -147,7 +156,9 @@ export default function RolesIndex({ roles, matrix, filters }: RolesIndexProps) 
                                                 className="z-[90] w-[min(calc(100vw-2rem),420px)] max-h-[min(70vh,520px)] overflow-y-auto overflow-x-hidden p-2.5"
                                                 onCloseAutoFocus={(event) => event.preventDefault()}
                                             >
-                                                <p className="mb-2 px-0.5 text-[11px] font-medium text-muted-foreground">{t('staff.permissions')}</p>
+                                                <p className="mb-2 px-0.5 text-[11px] font-medium text-muted-foreground">
+                                                    {t('staff.permissions')}
+                                                </p>
                                                 <RolePermissionPreview matrix={matrix} permissions={role.permissions} />
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -159,7 +170,7 @@ export default function RolesIndex({ roles, matrix, filters }: RolesIndexProps) 
                                                 onClick={() => openEdit(role)}
                                             />
                                         ) : null}
-                                        {canDelete && ! role.is_locked ? (
+                                        {canDelete && !role.is_locked ? (
                                             <TableActionButton
                                                 label={t('common.delete')}
                                                 icon={Trash2Icon}
@@ -179,7 +190,7 @@ export default function RolesIndex({ roles, matrix, filters }: RolesIndexProps) 
                 onOpenChange={(open) => {
                     setFormOpen(open);
 
-                    if (! open) {
+                    if (!open) {
                         setEditingRole(null);
                     }
                 }}
@@ -189,7 +200,7 @@ export default function RolesIndex({ roles, matrix, filters }: RolesIndexProps) 
             <ConfirmDialog
                 open={pendingIds.length === 1}
                 onOpenChange={(open) => {
-                    if (! open) {
+                    if (!open) {
                         setPendingIds([]);
                     }
                 }}
@@ -211,20 +222,16 @@ export default function RolesIndex({ roles, matrix, filters }: RolesIndexProps) 
     );
 }
 
-function RolePermissionPreview({
-    matrix,
-    permissions,
-}: {
-    matrix: PermissionMatrixGroup[];
-    permissions: string[];
-}) {
+function RolePermissionPreview({ matrix, permissions }: { matrix: PermissionMatrixGroup[]; permissions: string[] }) {
     const { t } = useTranslation();
 
     return (
         <div className="flex flex-col gap-1.5">
             {matrix.map((group) => {
                 const Icon = permissionModuleIcon(group.module);
-                const selectedCount = group.permissions.filter((permission) => permissions.includes(permission.name)).length;
+                const selectedCount = group.permissions.filter((permission) =>
+                    permissions.includes(permission.name),
+                ).length;
 
                 return (
                     <div
@@ -235,7 +242,9 @@ function RolePermissionPreview({
                             <Icon className="size-3.5" strokeWidth={1.8} />
                         </span>
                         <div className="min-w-0 flex-1">
-                            <p className="truncate text-[12px] font-semibold leading-[1.75] text-primary">{t(group.labelKey)}</p>
+                            <p className="truncate text-[12px] font-semibold leading-[1.75] text-primary">
+                                {t(group.labelKey)}
+                            </p>
                             <p className="text-[10px] text-muted-foreground">
                                 {selectedCount}/{group.permissions.length}
                             </p>
@@ -247,7 +256,7 @@ function RolePermissionPreview({
                                 const ActionIcon = meta.icon;
                                 const danger = Boolean(meta.danger);
 
-                                if (! permission) {
+                                if (!permission) {
                                     return <span key={action} className="size-7" />;
                                 }
 
@@ -278,6 +287,33 @@ function RolePermissionPreview({
                     </div>
                 );
             })}
+            <div className="flex items-center gap-2 rounded-[10px] bg-[#f7f9fa] px-2 py-1.5 dark:bg-muted/20">
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-[7px] bg-primary/12 text-primary">
+                    <DownloadIcon className="size-3.5" strokeWidth={1.8} />
+                </span>
+                <div className="min-w-0 flex-1">
+                    <p className="truncate text-[12px] font-semibold leading-[1.75] text-primary">
+                        {t('permissions.system_exports')}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                        {permissions.includes(SYSTEM_EXPORT_PERMISSION) ? '1/1' : '0/1'}
+                    </p>
+                </div>
+                <span
+                    title={t('permissions.export_data')}
+                    className={cn(
+                        'inline-flex size-7 items-center justify-center rounded-[7px] border',
+                        permissions.includes(SYSTEM_EXPORT_PERMISSION)
+                            ? 'border-primary/40 bg-white text-primary shadow-[0_1px_2px_rgb(23_50_54/0.06)] dark:bg-card'
+                            : 'border-transparent bg-white/80 text-muted-foreground dark:bg-card/60',
+                    )}
+                >
+                    <DownloadIcon
+                        className={cn('size-3', !permissions.includes(SYSTEM_EXPORT_PERMISSION) && 'opacity-45')}
+                        strokeWidth={1.9}
+                    />
+                </span>
+            </div>
         </div>
     );
 }

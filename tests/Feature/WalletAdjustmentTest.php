@@ -10,6 +10,8 @@ use App\Models\LedgerTransaction;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Services\Ledger\LedgerPoster;
+use Database\Seeders\RolePermissionSeeder;
+use App\Support\AppPermissions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -38,13 +40,39 @@ class WalletAdjustmentTest extends TestCase
 
         $this->assertSame(1500, (int) $wallet->fresh()->balance);
 
-        $adjustment = LedgerTransaction::query()->where('type', LedgerTransactionType::Adjustment)->latest('id')->first();
+        $adjustment = LedgerTransaction::query()
+            ->where('type', LedgerTransactionType::Adjustment)
+            ->latest('id')
+            ->first();
 
         $this->assertNotNull($adjustment);
         $this->assertSame(500, (int) $adjustment->amount);
         $this->assertSame('Goodwill credit', $adjustment->note);
         $this->assertNull($adjustment->related_transaction_id);
         $this->assertSame(LedgerTransactionStatus::Completed, $adjustment->status);
+    }
+
+    public function test_billing_update_permission_can_adjust_customer_wallet(): void
+    {
+        $admin = Admin::factory()->create();
+        RolePermissionSeeder::sync();
+        $admin->givePermissionTo('billing.update');
+
+        $customer = User::factory()->create();
+        $wallet = Wallet::factory()->create(['user_id' => $customer->id, 'balance' => 1000]);
+        $poster = app(LedgerPoster::class);
+        $poster->ensureSystemAccounts();
+        $poster->ensureCustomerLiabilityAccount($wallet);
+
+        $this->actingAs($admin, 'web')
+            ->post("/customers/{$customer->id}/wallet/adjust", [
+                'direction' => 'credit',
+                'amount' => 500,
+                'note' => 'Billing adjustment',
+            ])
+            ->assertSessionHas('success', 'customers.wallet_adjust.success');
+
+        $this->assertSame(1500, (int) $wallet->fresh()->balance);
     }
 
     public function test_admin_can_debit_with_related_transaction(): void

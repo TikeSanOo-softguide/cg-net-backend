@@ -12,9 +12,12 @@ use App\Models\LedgerTransaction;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Services\Ledger\LedgerPoster;
+use App\Support\AppPermissions;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Maatwebsite\Excel\Facades\Excel;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
@@ -69,6 +72,13 @@ class CustomerManagementTest extends TestCase
 
     public function test_admins_can_view_customer_detail(): void
     {
+        config(['services.broadband.url' => 'https://broadband.test']);
+        Http::fake([
+            'broadband.test/broadband_accounts*' => Http::response([
+                ['account_number' => 'CG12345678', 'customer_name' => 'Aung Aung', 'status' => 'active'],
+            ]),
+        ]);
+
         $admin = Admin::factory()->create();
         $customer = User::factory()->create(['broadband_account_number' => 'CG12345678']);
         CustomerPackage::factory()->create([
@@ -118,13 +128,76 @@ class CustomerManagementTest extends TestCase
         );
 
         $this->actingAs($admin, 'web')
-            ->get('/customers/'.$customer->id)
+            ->get('/customers/' . $customer->id)
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->where('wallet.transaction_overview.adjustment.credit.count', 1)
-                ->where('wallet.transaction_overview.adjustment.credit.amount', '500')
-                ->where('wallet.transaction_overview.adjustment.debit.count', 1)
-                ->where('wallet.transaction_overview.adjustment.debit.amount', '200'));
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->where('wallet.transaction_overview.adjustment.credit.count', 1)
+                    ->where('wallet.transaction_overview.adjustment.credit.amount', '500')
+                    ->where('wallet.transaction_overview.adjustment.debit.count', 1)
+                    ->where('wallet.transaction_overview.adjustment.debit.amount', '200'),
+            );
+    }
+
+    public function test_customer_transactions_detail_loads_without_broadband_api_configuration(): void
+    {
+        config(['services.broadband.url' => null]);
+
+        $admin = Admin::factory()->create();
+        $customer = User::factory()->create(['broadband_account_number' => 'CG12345678']);
+
+        $this->actingAs($admin, 'web')
+            ->get('/customers/' . $customer->id . '?transactions=all')
+            ->assertOk()
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->component('Customer/Show')
+                    ->where('customer.id', $customer->id)
+                    ->where('accountBinding', null)
+                    ->has('transactionPage.data'),
+            );
+    }
+
+    public function test_customer_view_with_export_permission_can_export_only_that_customers_transactions(): void
+    {
+        $this->autoGrantPermissions = false;
+        RolePermissionSeeder::sync();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $admin = Admin::factory()->create();
+        $admin->givePermissionTo(['customers.view', AppPermissions::SystemExport]);
+        $customer = User::factory()->create();
+        $otherCustomer = User::factory()->create();
+        $customerTransaction = LedgerTransaction::factory()->create([
+            'wallet_id' => Wallet::factory()->create(['user_id' => $customer->id])->id,
+        ]);
+        LedgerTransaction::factory()->create([
+            'wallet_id' => Wallet::factory()->create(['user_id' => $otherCustomer->id])->id,
+        ]);
+        Excel::fake();
+
+        $this->actingAs($admin, 'web')
+            ->get('/customers/' . $customer->id . '/transactions/export?customer_id=' . $otherCustomer->id)
+            ->assertOk();
+
+        Excel::assertDownloaded('customer-transactions.xlsx', function ($export) use ($customerTransaction): bool {
+            return $export->query()->get()->modelKeys() === [$customerTransaction->id];
+        });
+    }
+
+    public function test_customer_transaction_export_requires_system_export_permission(): void
+    {
+        $this->autoGrantPermissions = false;
+        RolePermissionSeeder::sync();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $admin = Admin::factory()->create();
+        $admin->givePermissionTo('customers.view');
+        $customer = User::factory()->create();
+
+        $this->actingAs($admin, 'web')
+            ->get('/customers/' . $customer->id . '/transactions/export')
+            ->assertForbidden();
     }
 
     public function test_admin_can_suspend_and_reactivate_a_customer(): void

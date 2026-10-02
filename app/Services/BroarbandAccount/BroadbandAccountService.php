@@ -8,7 +8,13 @@ class BroadbandAccountService
 {
     public function find(string $accountNumber, string $customerName): ?array
     {
-        $response = Http::get(config('services.broadband.url') . '/broadband_accounts', [
+        $url = $this->endpointUrl();
+
+        if ($url === null) {
+            return null;
+        }
+
+        $response = Http::get($url, [
             'account_number' => $accountNumber,
             'customer_name' => $customerName,
         ]);
@@ -24,9 +30,13 @@ class BroadbandAccountService
 
     public function findByAccountNumber(string $accountNumber): ?array
     {
-        $response = Http::get(config('services.broadband.url') . '/broadband_accounts', [
-            'account_number' => $accountNumber,
-        ]);
+        $url = $this->endpointUrl();
+
+        if ($url === null) {
+            return null;
+        }
+
+        $response = Http::get($url, ['account_number' => $accountNumber]);
 
         if ($response->failed()) {
             return null;
@@ -35,5 +45,21 @@ class BroadbandAccountService
         $data = $response->json();
 
         return $data[0] ?? null;
+    }
+
+    private function endpointUrl(): ?string
+    {
+        $baseUrl = trim((string) config('services.broadband.url'));
+        $parts = parse_url($baseUrl);
+
+        if (
+            !is_array($parts) ||
+            !in_array(strtolower($parts['scheme'] ?? ''), ['http', 'https'], true) ||
+            empty($parts['host'])
+        ) {
+            return null;
+        }
+
+        return rtrim($baseUrl, '/') . '/broadband_accounts';
     }
 }

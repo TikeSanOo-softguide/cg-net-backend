@@ -18,8 +18,9 @@ import { FormControl } from '@/components/ui/form-control';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCan } from '@/hooks/useCan';
+
 import { useReturnTo } from '@/hooks/useReturnTo';
+import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { toolbarInputClass } from '@/components/data-table/styles';
 import { formControlStateClass } from '@/lib/form-control';
@@ -183,6 +184,8 @@ export function TransactionsTable({
     const [dateError, setDateError] = useState<string>();
     const debounce = useRef<number>(0);
     const transactionToOpen = new URLSearchParams(window.location.search).get('open_transaction');
+    const canExport = can('system.export') && can(embeddedCustomer ? 'customers.view' : 'billing.view');
+    const canAdjust = can('customers.update') || (!embeddedCustomer && can('billing.update'));
 
     useEffect(() => setSearch(filters.search), [filters.search]);
     useEffect(() => setFrom(filters.from), [filters.from]);
@@ -233,7 +236,8 @@ export function TransactionsTable({
             if (value) query.set(key, String(value));
         });
 
-        window.location.href = `/billing/transactions/export?${query.toString()}`;
+        const exportUrl = embeddedCustomer ? `${baseUrl}/transactions/export` : '/billing/transactions/export';
+        window.location.href = `${exportUrl}?${query.toString()}`;
     };
 
     function transactionHref(transactionNo: string): string {
@@ -251,8 +255,8 @@ export function TransactionsTable({
                 onSearchChange={scope === 'global' || embeddedCustomer ? updateSearch : undefined}
                 searchPlaceholder={t('transactions.search_placeholder')}
                 showSearch={false}
-                showExport
-                onExport={exportTransactions}
+                showExport={canExport}
+                onExport={canExport ? exportTransactions : undefined}
                 pagination={transactions}
                 emptyLabel={t('transactions.empty')}
                 directActions
@@ -630,7 +634,7 @@ export function TransactionsTable({
                                 />
                             </dl>
                         </div>
-                        {can('customers.update') && selected.customer ? (
+                        {canAdjust && selected.customer ? (
                             <div className="flex shrink-0 justify-end border-t border-border/70 px-4 py-3 sm:px-5">
                                 <Button
                                     type="button"

@@ -12,7 +12,9 @@ class AdjustCustomerWalletRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $user = $this->user();
+
+        return $user !== null && ($user->can('customers.update') || $user->can('billing.update'));
     }
 
     /**
@@ -46,10 +48,7 @@ class AdjustCustomerWalletRequest extends FormRequest
             }
 
             if ((int) $related->wallet?->user_id !== (int) $customer->id) {
-                $validator->errors()->add(
-                    'related_transaction_id',
-                    __('customers.wallet_adjust.related_mismatch'),
-                );
+                $validator->errors()->add('related_transaction_id', __('customers.wallet_adjust.related_mismatch'));
             }
         });
     }

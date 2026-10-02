@@ -7,6 +7,7 @@ use App\Enums\LedgerTransactionType;
 use App\Enums\WalletActorType;
 use App\Exports\TransactionExport;
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Services\Transaction\TransactionService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -33,9 +34,22 @@ class TransactionController extends Controller
 
     public function export(Request $request, TransactionService $transactions)
     {
+        return $this->download($transactions, $transactions->filters($request));
+    }
+
+    public function exportCustomer(Request $request, User $customer, TransactionService $transactions)
+    {
+        $filters = $transactions->filters($request);
+        $filters['customer_id'] = $customer->id;
+
+        return $this->download($transactions, $filters, 'customer-transactions.xlsx');
+    }
+
+    private function download(TransactionService $transactions, array $filters, ?string $filename = null)
+    {
         return Excel::download(
-            new TransactionExport($transactions->query($transactions->filters($request))),
-            'transactions-'.now()->format('Ymd-His').'.xlsx',
+            new TransactionExport($transactions->query($filters)),
+            $filename ?? 'transactions-' . now()->format('Ymd-His') . '.xlsx',
         );
     }
 }

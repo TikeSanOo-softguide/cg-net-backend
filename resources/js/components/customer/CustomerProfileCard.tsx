@@ -95,6 +95,7 @@ type CustomerProfileCardProps = {
     name: string;
     phone: string;
     status: string;
+    canUpdate: boolean;
     joined: string | null;
     walletBalance: string;
     transactionOverview: TransactionOverview;
@@ -108,6 +109,7 @@ export function CustomerProfileCard({
     name,
     phone,
     status,
+    canUpdate,
     joined,
     walletBalance,
     transactionOverview,

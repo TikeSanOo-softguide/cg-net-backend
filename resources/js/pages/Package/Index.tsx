@@ -228,11 +228,14 @@ export default function PackageIndex({
                                 direction: nextDirection,
                             });
                         }}
-                        onCreate={() =>
-                            setReferenceForm({
-                                kind: 'network',
-                                item: null,
-                            })
+                        onCreate={
+                            can('packages.create')
+                                ? () =>
+                                      setReferenceForm({
+                                          kind: 'network',
+                                          item: null,
+                                      })
+                                : undefined
                         }
                         createLabel={t('packages.networks.create')}
                         onBulkDelete={
@@ -241,7 +244,7 @@ export default function PackageIndex({
                         bulkDeleteTitle={t('packages.networks.bulk_delete_title')}
                         actions={(row) => (
                             <>
-                                {can('networks.update') ? (
+                                {can('packages.update') ? (
                                     <TableActionButton
                                         label={t('common.edit')}
                                         icon={SquarePenIcon}
@@ -325,11 +328,14 @@ export default function PackageIndex({
                                 direction: nextDirection,
                             });
                         }}
-                        onCreate={() =>
-                            setReferenceForm({
-                                kind: 'speed',
-                                item: null,
-                            })
+                        onCreate={
+                            can('packages.create')
+                                ? () =>
+                                      setReferenceForm({
+                                          kind: 'speed',
+                                          item: null,
+                                      })
+                                : undefined
                         }
                         createLabel={t('packages.speeds.create')}
                         onBulkDelete={
@@ -338,7 +344,7 @@ export default function PackageIndex({
                         bulkDeleteTitle={t('packages.speeds.bulk_delete_title')}
                         actions={(row) => (
                             <>
-                                {can('speeds.update') ? (
+                                {can('packages.update') ? (
                                     <TableActionButton
                                         label={t('common.edit')}
                                         icon={SquarePenIcon}
@@ -412,11 +418,14 @@ export default function PackageIndex({
                                 direction: nextDirection,
                             });
                         }}
-                        onCreate={() =>
-                            setReferenceForm({
-                                kind: 'term',
-                                item: null,
-                            })
+                        onCreate={
+                            can('packages.create')
+                                ? () =>
+                                      setReferenceForm({
+                                          kind: 'term',
+                                          item: null,
+                                      })
+                                : undefined
                         }
                         createLabel={t('packages.terms.create')}
                         onBulkDelete={
@@ -425,7 +434,7 @@ export default function PackageIndex({
                         bulkDeleteTitle={t('packages.terms.bulk_delete_title')}
                         actions={(row) => (
                             <>
-                                {can('terms.update') ? (
+                                {can('packages.update') ? (
                                     <TableActionButton
                                         label={t('common.edit')}
                                         icon={SquarePenIcon}
@@ -501,11 +510,14 @@ export default function PackageIndex({
                                 direction: nextDirection,
                             });
                         }}
-                        onCreate={() =>
-                            setReferenceForm({
-                                kind: 'addon',
-                                item: null,
-                            })
+                        onCreate={
+                            can('packages.create')
+                                ? () =>
+                                      setReferenceForm({
+                                          kind: 'addon',
+                                          item: null,
+                                      })
+                                : undefined
                         }
                         createLabel={t('packages.addons.create')}
                         onBulkDelete={
@@ -514,7 +526,7 @@ export default function PackageIndex({
                         bulkDeleteTitle={t('packages.addons.bulk_delete_title')}
                         actions={(row) => (
                             <>
-                                {can('addons.update') ? (
+                                {can('packages.update') ? (
                                     <TableActionButton
                                         label={t('common.edit')}
                                         icon={SquarePenIcon}

@@ -32,6 +32,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { FormControl } from '@/components/ui/form-control';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
 import { useCan } from '@/hooks/useCan';
 import { useReturnTo } from '@/hooks/useReturnTo';
 import { navigationPopHeaders } from '@/lib/navigation-stack';
@@ -130,9 +131,11 @@ export default function CustomersShow({
     transactionFilterOptions,
 }: CustomersShowProps) {
     const { t, locale } = useTranslation();
+    const can = useCan();
+    const canUpdate = can('customers.update');
     const page = usePage<{ errors?: Record<string, string | undefined> }>();
     const errors = page.props.errors ?? {};
-    const can = useCan();
+
     const [packageTab, setPackageTab] = useState<'active' | 'expired'>('active');
     const showAllTransactions = transactionPage !== null;
     const returnTo = useReturnTo('/customers');
@@ -276,6 +279,7 @@ export default function CustomersShow({
                         name={customer.name}
                         phone={customer.phone}
                         status={customer.status}
+                        canUpdate={canUpdate}
                         joined={customer.created_at}
                         walletBalance={wallet.balance}
                         transactionOverview={wallet.transaction_overview}
@@ -515,15 +519,17 @@ export default function CustomersShow({
                             >
                                 {bindError || '\u00A0'}
                             </p>
-                            <Button
-                                type="button"
-                                variant={customer.status === 'active' ? 'destructive' : 'primary'}
-                                className="w-full"
-                                onClick={() => setStatusOpen(true)}
-                            >
-                                {customer.status === 'active' ? <BanIcon /> : <UserCheckIcon />}
-                                {customer.status === 'active' ? t('customers.suspend') : t('customers.reactivate')}
-                            </Button>
+                            {canUpdate ? (
+                                <Button
+                                    type="button"
+                                    variant={customer.status === 'active' ? 'destructive' : 'primary'}
+                                    className="w-full"
+                                    onClick={() => setStatusOpen(true)}
+                                >
+                                    {customer.status === 'active' ? <BanIcon /> : <UserCheckIcon />}
+                                    {customer.status === 'active' ? t('customers.suspend') : t('customers.reactivate')}
+                                </Button>
+                            ) : null}
                         </form>
                     </div>
                 ) : null}

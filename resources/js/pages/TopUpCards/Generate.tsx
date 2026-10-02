@@ -198,8 +198,9 @@ export default function TopUpCardsGenerate({
 
     const selectedCards = Object.values(selected).reduce((sum, quantity) => sum + quantity, 0);
     const officeMultiplier = Math.max(1, selectedOfficeIds.length || offices.length);
+    const canCreate = can('top-up-cards.create');
     const totalCards = selectedCards * officeMultiplier;
-    const canGenerate = can('top-up-cards.create') && selectedCards > 0 && totalCards <= max_cards && !isGenerating;
+    const canGenerate = canCreate && selectedCards > 0 && totalCards <= max_cards && !isGenerating;
 
     const handleExport = useCallback(() => {
         window.location.href = '/top-up-cards/export';
@@ -223,79 +224,84 @@ export default function TopUpCardsGenerate({
             <Head title={t('menu.top_up_card_batch')} />
             <PageContent>
                 <PageHeader />
-                <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 print:block">
-                    <Card className="flex h-[520px] flex-col gap-3 py-4 print:hidden">
-                        <CardHeader>
-                            <CardTitle className="text-sm">{t('top_up_cards.generate_title')}</CardTitle>
-                            <CardDescription className="text-[12px] leading-4">
-                                {t('top_up_cards.generate_description')}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="min-h-0 flex-1 overflow-y-auto">
-                            <form onSubmit={submit} className="flex flex-col gap-3">
-                                <TopUpCardGenerateForm
-                                    offices={offices}
-                                    selectedOfficeIds={selectedOfficeIds}
-                                    amounts={amounts}
-                                    maxCards={max_cards}
-                                    selected={selected}
-                                    expiresAt={form.data.expires_at}
-                                    processing={isGenerating}
-                                    error={form.errors.amounts ?? form.errors.office_ids ?? form.errors.expires_at}
-                                    onToggle={(amount) => {
-                                        setSelected((current) => {
-                                            const key = String(amount);
+                {canCreate ? (
+                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 print:block">
+                        <Card className="flex h-[520px] flex-col gap-3 py-4 print:hidden">
+                            <CardHeader>
+                                <CardTitle className="text-sm">{t('top_up_cards.generate_title')}</CardTitle>
+                                <CardDescription className="text-[12px] leading-4">
+                                    {t('top_up_cards.generate_description')}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="min-h-0 flex-1 overflow-y-auto">
+                                <form onSubmit={submit} className="flex flex-col gap-3">
+                                    <TopUpCardGenerateForm
+                                        offices={offices}
+                                        selectedOfficeIds={selectedOfficeIds}
+                                        amounts={amounts}
+                                        maxCards={max_cards}
+                                        selected={selected}
+                                        expiresAt={form.data.expires_at}
+                                        processing={isGenerating}
+                                        error={form.errors.amounts ?? form.errors.office_ids ?? form.errors.expires_at}
+                                        onToggle={(amount) => {
+                                            setSelected((current) => {
+                                                const key = String(amount);
 
-                                            if (current[key]) {
-                                                const next = { ...current };
-                                                delete next[key];
+                                                if (current[key]) {
+                                                    const next = { ...current };
+                                                    delete next[key];
 
-                                                return next;
-                                            }
+                                                    return next;
+                                                }
 
-                                            return { ...current, [key]: 1 };
-                                        });
-                                    }}
-                                    onQuantity={(amount, quantity) => {
-                                        setSelected((current) => ({ ...current, [String(amount)]: quantity }));
-                                    }}
-                                    onExpiresAt={(value) => form.setData('expires_at', value)}
-                                    onOfficeIds={setSelectedOfficeIds}
-                                />
-                                <Button
-                                    type="submit"
-                                    variant="primary"
-                                    size="sm"
-                                    disabled={!canGenerate || form.processing}
-                                    className="h-8 w-full"
-                                >
-                                    {isGenerating ? <Spinner size="xs" className="text-current" /> : null}
-                                    {isGenerating ? t('top_up_cards.generating') : t('top_up_cards.generate')}
-                                </Button>
-                            </form>
-                        </CardContent>
-                    </Card>
-                    <Card className="flex h-[520px] flex-col gap-3 py-4 print:h-auto print:overflow-visible print:border-0 print:shadow-none">
-                        <CardHeader className="print:px-0">
-                            <CardTitle className="text-sm">{t('top_up_cards.batch_title')}</CardTitle>
-                            <CardDescription className="flex items-center gap-1.5 text-[12px] leading-4">
-                                {generationStatus === 'processing' ? <Spinner size="xs" /> : null}
-                                {batchDescription}
-                                {batchProgress}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="relative min-h-0 flex-1 overflow-hidden print:overflow-visible print:px-0">
-                            {isGenerating && generated.length === 0 ? (
-                                <SpinnerOverlay
-                                    className="relative inset-auto min-h-[160px]"
-                                    label={t('top_up_cards.generating')}
-                                />
-                            ) : (
-                                <TopUpCardGeneratedBatch cards={generated} onExport={handleExport} />
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
+                                                return { ...current, [key]: 1 };
+                                            });
+                                        }}
+                                        onQuantity={(amount, quantity) => {
+                                            setSelected((current) => ({ ...current, [String(amount)]: quantity }));
+                                        }}
+                                        onExpiresAt={(value) => form.setData('expires_at', value)}
+                                        onOfficeIds={setSelectedOfficeIds}
+                                    />
+                                    <Button
+                                        type="submit"
+                                        variant="primary"
+                                        size="sm"
+                                        disabled={!canGenerate || form.processing}
+                                        className="h-8 w-full"
+                                    >
+                                        {isGenerating ? <Spinner size="xs" className="text-current" /> : null}
+                                        {isGenerating ? t('top_up_cards.generating') : t('top_up_cards.generate')}
+                                    </Button>
+                                </form>
+                            </CardContent>
+                        </Card>
+                        <Card className="flex h-[520px] flex-col gap-3 py-4 print:h-auto print:overflow-visible print:border-0 print:shadow-none">
+                            <CardHeader className="print:px-0">
+                                <CardTitle className="text-sm">{t('top_up_cards.batch_title')}</CardTitle>
+                                <CardDescription className="flex items-center gap-1.5 text-[12px] leading-4">
+                                    {generationStatus === 'processing' ? <Spinner size="xs" /> : null}
+                                    {batchDescription}
+                                    {batchProgress}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="relative min-h-0 flex-1 overflow-hidden print:overflow-visible print:px-0">
+                                {isGenerating && generated.length === 0 ? (
+                                    <SpinnerOverlay
+                                        className="relative inset-auto min-h-[160px]"
+                                        label={t('top_up_cards.generating')}
+                                    />
+                                ) : (
+                                    <TopUpCardGeneratedBatch
+                                        cards={generated}
+                                        onExport={can('system.export') ? handleExport : undefined}
+                                    />
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
+                ) : null}
                 <div className="print:hidden">
                     <TopUpCardTable
                         cards={cards}
