@@ -14,7 +14,7 @@ class SerialNoCheckRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'serial_no' => ['required', 'string', 'max:32'],
+            'serial_no' => ['required', 'string', 'max:16'],
         ];
     }
 }

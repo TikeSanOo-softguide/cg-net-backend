@@ -37,10 +37,14 @@ final class TopUpCardOffices
      */
     public static function resolveIdsByCodes(array $officeCodes): array
     {
-        $officeCodes = array_values(array_unique(array_filter(
-            array_map(static fn(string $code): string => trim($code), $officeCodes),
-            static fn(string $code): bool => preg_match('/^\d{2}$/', $code) === 1,
-        )));
+        $officeCodes = array_values(
+            array_unique(
+                array_filter(
+                    array_map(static fn(string $code): string => trim($code), $officeCodes),
+                    static fn(string $code): bool => preg_match('/^\d{2}$/', $code) === 1,
+                ),
+            ),
+        );
 
         if ($officeCodes === []) {
             return [];

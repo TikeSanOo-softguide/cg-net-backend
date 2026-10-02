@@ -289,7 +289,7 @@
                     <div class="field full">
                         <label for="idempotency-key">Idempotency key</label>
                         <div class="key-control">
-                            <input id="idempotency-key" name="idempotency_key" type="text" minlength="8" maxlength="100" autocomplete="off" spellcheck="false" required>
+                            <input id="idempotency-key" name="idempotency_key" type="text" minlength="8" maxlength="93" autocomplete="off" spellcheck="false" required>
                             <button id="new-key-button" class="secondary" type="button">Generate new key</button>
                         </div>
                         <label class="hint"><input id="reuse-idempotency-key" type="checkbox"> Reuse this key for both parallel requests (retry simulation)</label>
@@ -447,6 +447,10 @@
             : `topup-${Date.now()}-${Math.random().toString(36).slice(2, 14)}`;
     }
 
+    function createInvalidPin() {
+        return Array.from({ length: 16 }, () => Math.floor(Math.random() * 10)).join('');
+    }
+
     function setBusy(busy) {
         raceButton.disabled = busy;
         differentPhoneButton.disabled = busy;
@@ -493,8 +497,9 @@
                     Accept: 'application/json',
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
+                    'Idempotency-Key': idempotencyKey,
                 },
-                body: JSON.stringify({ phone, pin, idempotency_key: idempotencyKey }),
+                body: JSON.stringify({ phone, pin }),
                 cache: 'no-store',
                 credentials: 'same-origin',
             });
@@ -698,7 +703,7 @@
 
         const token = tokenInput.value.trim();
         const phone = phoneInput.value.trim();
-        const invalidPin = `rate-limit-test-${createIdempotencyKey()}`;
+        const invalidPin = createInvalidPin();
         const responses = [];
 
         results.replaceChildren();
@@ -792,7 +797,7 @@
         }
 
         const phone = phoneInput.value.trim();
-        const invalidPin = `ip-rate-limit-test-${createIdempotencyKey()}`;
+        const invalidPin = createInvalidPin();
         let limitedAt = null;
         let unexpectedResponse = null;
 
