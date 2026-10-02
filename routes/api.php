@@ -130,7 +130,9 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     });
 
     Route::prefix('redeem')->group(function () {
-        Route::post('/check-serial-no', [RedeemController::class, 'checkSerialNo']);
+        Route::post('/check-serial-no', [RedeemController::class, 'checkSerialNo'])->middleware(
+            'throttle:serial-check',
+        );
         Route::post('/top-up-account', [RedeemController::class, 'topUpAccount']);
     });
 });

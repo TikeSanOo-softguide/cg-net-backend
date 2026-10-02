@@ -15,14 +15,10 @@ class TopUpAccountRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $phone = $this->input('phone');
-
-        if (is_string($phone)) {
-            try {
-                $this->merge(['phone' => PhoneNumber::normalize($phone)]);
-            } catch (InvalidArgumentException) {
-                $this->merge(['phone' => trim($phone)]);
-            }
+        try {
+            $this->merge(['phone' => PhoneNumber::normalize((string) $this->input('phone'))]);
+        } catch (InvalidArgumentException) {
+            // The validation rule below returns the normal API validation response.
         }
 
         $pin = $this->input('pin');
@@ -31,19 +27,19 @@ class TopUpAccountRequest extends FormRequest
             $this->merge(['pin' => trim($pin)]);
         }
 
-        $idempotencyKey = $this->input('idempotency_key');
+        $header = $this->headers->get('Idempotency-Key');
 
-        if (is_string($idempotencyKey)) {
-            $this->merge(['idempotency_key' => trim($idempotencyKey)]);
-        }
+        $this->merge([
+            'idempotency_key' => is_string($header) ? trim($header) : $header,
+        ]);
     }
 
     public function rules(): array
     {
         return [
             'phone' => ['required', 'string', 'regex:/^[1-9][0-9]{7,14}$/'],
-            'pin' => ['required', 'string', 'max:128'],
-            'idempotency_key' => ['required', 'string', 'min:8', 'max:100'],
+            'pin' => ['required', 'string', 'regex:/^[0-9]+$/', 'max:16'],
+            'idempotency_key' => ['required', 'string', 'min:8', 'max:93', 'not_regex:/^refund:/i'],
         ];
     }
 }
