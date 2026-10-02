@@ -64,7 +64,9 @@ services:
                 condition: service_started
 
     scheduler:
-        image: cg-net-backend-app
+        build:
+            context: .
+            dockerfile: Dockerfile
         container_name: cg-net-scheduler
         restart: unless-stopped
         working_dir: /var/www/html

@@ -22,6 +22,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
         'amount',
         'idempotency_key',
         'reversal_of',
+        'related_transaction_id',
+        'note',
         'actor_type',
         'actor_id',
         'ip_address',
@@ -60,6 +62,16 @@ class LedgerTransaction extends Model
     public function reversals(): HasMany
     {
         return $this->hasMany(self::class, 'reversal_of');
+    }
+
+    public function relatedTransaction(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'related_transaction_id');
+    }
+
+    public function relatedAdjustments(): HasMany
+    {
+        return $this->hasMany(self::class, 'related_transaction_id');
     }
 
     public function entries(): HasMany

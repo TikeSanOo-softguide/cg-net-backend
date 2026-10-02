@@ -6,7 +6,9 @@ use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
 use App\Enums\WalletActorType;
 use App\Models\LedgerTransaction;
+use App\Models\Wallet;
 use App\Support\PackageLabel;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -16,9 +18,6 @@ class TransactionService
     /** @return array{customer_id: int|null, search: string, open_transaction: string, actor_type: string, type: string, status: string, direction: string, from: string, to: string} */
     public function filters(Request $request): array
     {
-        $hasDateRange = $request->query->has('from') || $request->query->has('to');
-        $hasTransactionSearch = $request->filled('search') || $request->filled('open_transaction');
-        $defaultDate = ! $hasDateRange && ! $hasTransactionSearch ? now()->toDateString() : '';
         $from = $request->query('from');
         $to = $request->query('to');
 
@@ -30,8 +29,8 @@ class TransactionService
             'type' => $request->string('type')->toString(),
             'status' => $request->string('status')->toString(),
             'direction' => $request->string('direction')->toString(),
-            'from' => $from === '' ? '' : $request->date('from')?->toDateString() ?? $defaultDate,
-            'to' => $to === '' ? '' : $request->date('to')?->toDateString() ?? $defaultDate,
+            'from' => $from === '' ? '' : $request->date('from')?->toDateString() ?? '',
+            'to' => $to === '' ? '' : $request->date('to')?->toDateString() ?? '',
         ];
     }
 
@@ -47,12 +46,13 @@ class TransactionService
                 'topUpCard',
                 'billPayment',
                 'reversalOf:id,transaction_no',
+                'relatedTransaction:id,transaction_no',
             ])
             ->when(
                 $filters['customer_id'],
-                fn ($query) => $query->whereHas(
-                    'wallet',
-                    fn ($wallet) => $wallet->where('user_id', $filters['customer_id']),
+                fn ($query) => $query->whereIn(
+                    'wallet_id',
+                    Wallet::query()->select('id')->where('user_id', $filters['customer_id']),
                 ),
             )
             ->when(
@@ -86,18 +86,25 @@ class TransactionService
                 in_array($filters['status'], array_column(LedgerTransactionStatus::cases(), 'value'), true),
                 fn ($query) => $query->where('status', $filters['status']),
             )
-            ->when($filters['from'], fn ($query) => $query->whereDate('created_at', '>=', $filters['from']))
-            ->when($filters['to'], fn ($query) => $query->whereDate('created_at', '<=', $filters['to']))
+            ->when(
+                $filters['from'],
+                fn ($query) => $query->where('created_at', '>=', Carbon::parse($filters['from'])->startOfDay()),
+            )
+            ->when(
+                $filters['to'],
+                fn ($query) => $query->where('created_at', '<', Carbon::parse($filters['to'])->addDay()->startOfDay()),
+            )
             ->when(in_array($filters['direction'], ['credit', 'debit'], true), function ($query) use ($filters): void {
-                $query->whereHas('entries', function ($entry) use ($filters): void {
-                    $entry->whereNotNull('wallet_id')->whereColumn('wallet_id', 'ledger_transactions.wallet_id');
+                $column = $filters['direction'];
 
-                    if ($filters['direction'] === 'credit') {
-                        $entry->where('credit', '>', 0);
-                    } else {
-                        $entry->where('debit', '>', 0);
-                    }
-                });
+                $query->whereExists(
+                    fn ($entry) => $entry
+                        ->selectRaw('1')
+                        ->from('ledger_entries')
+                        ->whereColumn('ledger_entries.ledger_transaction_id', 'ledger_transactions.id')
+                        ->whereNotNull('ledger_entries.wallet_id')
+                        ->where("ledger_entries.{$column}", '>', 0),
+                );
             })
             ->latest();
     }
@@ -137,6 +144,13 @@ class TransactionService
             'user_agent' => $transaction->user_agent,
             'idempotency_key' => $transaction->idempotency_key,
             'reversal_of' => $transaction->reversalOf?->transaction_no,
+            'related_transaction' => $transaction->relatedTransaction
+                ? [
+                    'id' => $transaction->relatedTransaction->id,
+                    'transaction_no' => $transaction->relatedTransaction->transaction_no,
+                ]
+                : null,
+            'note' => $transaction->note,
             'wallet_entry' => $liabilityEntry
                 ? [
                     'type' => $direction,

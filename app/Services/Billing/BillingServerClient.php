@@ -14,7 +14,6 @@ class BillingServerClient
     public function lookupBillAmount(string $accountNumber): int
     {
         $url = $this->url(config('services.billing.amount_lookup_endpoint', '/bill-details'));
-
         $response = Http::acceptJson()
             ->withHeaders($this->headers())
             ->timeout(15)
@@ -227,10 +226,7 @@ class BillingServerClient
      */
     protected function billingRef(array $payload): ?string
     {
-        $value = $payload['billing_ref']
-            ?? $payload['external_bill_ref']
-            ?? $payload['reference']
-            ?? null;
+        $value = $payload['billing_ref'] ?? ($payload['external_bill_ref'] ?? ($payload['reference'] ?? null));
 
         return $value !== null ? (string) $value : null;
     }
@@ -240,10 +236,8 @@ class BillingServerClient
      */
     protected function paymentRef(array $payload, ?string $fallback = null): ?string
     {
-        $value = $payload['payment_ref']
-            ?? $payload['external_payment_ref']
-            ?? $payload['transaction_id']
-            ?? $fallback;
+        $value =
+            $payload['payment_ref'] ?? ($payload['external_payment_ref'] ?? ($payload['transaction_id'] ?? $fallback));
 
         return $value !== null ? (string) $value : null;
     }

@@ -85,6 +85,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
     Route::delete('/customers/{customer}/accounts', [CustomerController::class, 'unbindAccount'])
         ->middleware('can:customers.update')
         ->name('customers.accounts.unbind');
+    Route::post('/customers/{customer}/wallet/adjust', [CustomerController::class, 'adjustWallet'])
+        ->middleware('can:customers.update')
+        ->name('customers.wallet.adjust');
     Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])
         ->middleware('can:customers.delete')
         ->name('customers.destroy');

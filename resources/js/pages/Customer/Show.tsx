@@ -17,6 +17,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { CustomerFormDialog } from '@/components/customer/CustomerFormDialog';
 import { CustomerProfileCard } from '@/components/customer/CustomerProfileCard';
 import { DetailSection } from '@/components/customer/DetailSection';
+import { WalletAdjustDialog } from '@/components/customer/WalletAdjustDialog';
 import { TransactionsTable, type Filters as TransactionFilters, type TransactionRow } from '@/pages/Transactions/Index';
 import { formatPhoneLocal } from '@/lib/phone';
 import { formatTopUpNumber, TOP_UP_CARD_CURRENCY } from '@/lib/top-up-cards';
@@ -31,11 +32,11 @@ import { Spinner } from '@/components/ui/spinner';
 import { FormControl } from '@/components/ui/form-control';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useCan } from '@/hooks/useCan';
 import { useReturnTo } from '@/hooks/useReturnTo';
 import { navigationPopHeaders } from '@/lib/navigation-stack';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn, formatDate, formatDateTime } from '@/lib/utils';
-import { useCan } from '@/hooks/useCan';
 
 type Customer = {
     id: number;
@@ -88,7 +89,16 @@ type TransactionSummary = {
     amount: string;
 };
 
-type TransactionOverview = Record<'topup' | 'ftth_bill' | 'wifi_package' | 'refund' | 'adjustment', TransactionSummary>;
+type TransactionOverview = {
+    topup: TransactionSummary;
+    ftth_bill: TransactionSummary;
+    wifi_package: TransactionSummary;
+    refund: TransactionSummary;
+    adjustment: {
+        credit: TransactionSummary;
+        debit: TransactionSummary;
+    };
+};
 
 type CustomersShowProps = {
     customer: Customer;
@@ -122,6 +132,7 @@ export default function CustomersShow({
     const { t, locale } = useTranslation();
     const page = usePage<{ errors?: Record<string, string | undefined> }>();
     const errors = page.props.errors ?? {};
+    const can = useCan();
     const [packageTab, setPackageTab] = useState<'active' | 'expired'>('active');
     const showAllTransactions = transactionPage !== null;
     const returnTo = useReturnTo('/customers');
@@ -143,11 +154,11 @@ export default function CustomersShow({
     };
     const [statusOpen, setStatusOpen] = useState(false);
     const [formOpen, setFormOpen] = useState(false);
+    const [adjustOpen, setAdjustOpen] = useState(false);
     const [unbindAccount, setUnbindAccount] = useState(false);
     const [statusProcessing, setStatusProcessing] = useState(false);
     const [unbindProcessing, setUnbindProcessing] = useState(false);
     const [bindTouched, setBindTouched] = useState(false);
-    const can = useCan();
 
     const bindForm = useForm({ account_number: '' });
 
@@ -268,11 +279,12 @@ export default function CustomersShow({
                         joined={customer.created_at}
                         walletBalance={wallet.balance}
                         transactionOverview={wallet.transaction_overview}
-                        onEdit={() => setFormOpen(true)}
+                        onEdit={can('customers.update') ? () => setFormOpen(true) : undefined}
                         onViewTransactions={() =>
                             router.get(`/customers/${customer.id}`, { transactions: 'all' }, { preserveScroll: true })
                         }
-                        onToggleStatus={() => setStatusOpen(true)}
+                        onToggleStatus={can('customers.update') ? () => setStatusOpen(true) : undefined}
+                        onAdjustWallet={can('customers.update') ? () => setAdjustOpen(true) : undefined}
                     />
                 ) : null}
 
@@ -535,6 +547,13 @@ export default function CustomersShow({
             </PageContent>
 
             <CustomerFormDialog open={formOpen} onOpenChange={setFormOpen} customer={customer} />
+
+            <WalletAdjustDialog
+                open={adjustOpen}
+                onOpenChange={setAdjustOpen}
+                customerId={customer.id}
+                customerName={customer.name}
+            />
 
             <ConfirmDialog
                 open={statusOpen}

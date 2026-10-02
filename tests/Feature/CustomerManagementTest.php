@@ -2,12 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Enums\LedgerAccountCode;
+use App\Enums\LedgerTransactionStatus;
+use App\Enums\LedgerTransactionType;
 use App\Enums\UserStatus;
 use App\Models\Admin;
 use App\Models\CustomerPackage;
+use App\Models\LedgerTransaction;
 use App\Models\User;
 use App\Models\Wallet;
-use App\Models\LedgerTransaction;
+use App\Services\Ledger\LedgerPoster;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -86,6 +90,41 @@ class CustomerManagementTest extends TestCase
                     ->where('wallet.balance', '15000')
                     ->has('wallet.transactions', 1),
             );
+    }
+
+    public function test_customer_detail_summarizes_adjustment_credits_and_debits_separately(): void
+    {
+        $admin = Admin::factory()->create();
+        $customer = User::factory()->create();
+        $wallet = Wallet::factory()->create(['user_id' => $customer->id, 'balance' => 1500]);
+        $ledger = app(LedgerPoster::class);
+        $ledger->ensureSystemAccounts();
+        $ledger->ensureCustomerLiabilityAccount($wallet);
+        $ledger->creditWallet(
+            wallet: $wallet,
+            amount: 500,
+            contraAccount: LedgerAccountCode::AdjustmentExpense,
+            type: LedgerTransactionType::Adjustment,
+            status: LedgerTransactionStatus::Completed,
+            idempotencyKey: 'customer-detail-adjustment-credit',
+        );
+        $ledger->debitWallet(
+            wallet: $wallet->fresh(),
+            amount: 200,
+            contraAccount: LedgerAccountCode::AdjustmentExpense,
+            type: LedgerTransactionType::Adjustment,
+            status: LedgerTransactionStatus::Completed,
+            idempotencyKey: 'customer-detail-adjustment-debit',
+        );
+
+        $this->actingAs($admin, 'web')
+            ->get('/customers/'.$customer->id)
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('wallet.transaction_overview.adjustment.credit.count', 1)
+                ->where('wallet.transaction_overview.adjustment.credit.amount', '500')
+                ->where('wallet.transaction_overview.adjustment.debit.count', 1)
+                ->where('wallet.transaction_overview.adjustment.debit.amount', '200'));
     }
 
     public function test_admin_can_suspend_and_reactivate_a_customer(): void
