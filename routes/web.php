@@ -287,19 +287,19 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 ->name('quick-replies.')
                 ->group(function () {
                     Route::get('/', [QuickRepliesController::class, 'index'])
-                        ->middleware('can:quick-replies.view')
+                        ->middleware('can:support.view')
                         ->name('index');
                     Route::post('/replies', [QuickRepliesController::class, 'store'])
-                        ->middleware('can:quick-replies.store')
+                        ->middleware('can:support.create')
                         ->name('store');
-                    Route::put('/replies/{reply}', [QuickRepliesController::class, 'update'])
-                        ->middleware('can:quick-replies.update')
+                    Route::put('/replies/{quickReply}', [QuickRepliesController::class, 'update'])
+                        ->middleware('can:support.update')
                         ->name('update');
                     Route::delete('/bulk-destroy', [QuickRepliesController::class, 'bulkDestroy'])
-                        ->middleware('can:quick-replies.delete')
+                        ->middleware('can:support.delete')
                         ->name('bulk-destroy');
-                    Route::delete('/replies/{reply}', [QuickRepliesController::class, 'destroy'])
-                        ->middleware('can:quick-replies.delete')
+                    Route::delete('/replies/{quickReply}', [QuickRepliesController::class, 'destroy'])
+                        ->middleware('can:support.delete')
                         ->name('destroy');
                 });
 
