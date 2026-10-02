@@ -35,6 +35,7 @@ import { useReturnTo } from '@/hooks/useReturnTo';
 import { navigationPopHeaders } from '@/lib/navigation-stack';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn, formatDate, formatDateTime } from '@/lib/utils';
+import { useCan } from '@/hooks/useCan';
 
 type Customer = {
     id: number;
@@ -145,13 +146,89 @@ export default function CustomersShow({
     const [unbindAccount, setUnbindAccount] = useState(false);
     const [statusProcessing, setStatusProcessing] = useState(false);
     const [unbindProcessing, setUnbindProcessing] = useState(false);
+    const [bindTouched, setBindTouched] = useState(false);
+    const can = useCan();
 
     const bindForm = useForm({ account_number: '' });
+
+    const getBindValidationError = (value: string) => {
+        if (!value.trim()) {
+            return t('customers.account_number_required');
+        }
+
+        if (Array.from(value).length > 32) {
+            return t('customers.account_number_max');
+        }
+
+        return undefined;
+    };
+
+    const bindValidationError = bindTouched ? getBindValidationError(bindForm.data.account_number) : undefined;
+
+    const bindServerError = bindForm.errors.account_number ? t(bindForm.errors.account_number) : undefined;
+
+    const bindError = bindValidationError ?? bindServerError ?? (bindTouched ? undefined : errors.account_number);
+
+    const updateAccountNumber = (value: string) => {
+        bindForm.clearErrors('account_number');
+        bindForm.setData('account_number', value);
+        setBindTouched(true);
+    };
 
     const nextStatus = customer.status === 'active' ? 'suspended' : 'active';
     const filteredHistory = useMemo(
         () => packageHistory.filter((row) => row.status === packageTab),
         [packageTab, packageHistory],
+    );
+
+    const bindFilters = (
+        <form
+            className="hidden items-start gap-1.5 sm:flex"
+            onSubmit={(event) => {
+                event.preventDefault();
+                setBindTouched(true);
+
+                if (getBindValidationError(bindForm.data.account_number)) {
+                    return;
+                }
+
+                bindForm.post(`/customers/${customer.id}/account`, {
+                    preserveScroll: true,
+                    onSuccess: () => bindForm.reset(),
+                });
+            }}
+        >
+            <div className="flex flex-col">
+                <FormControl icon={HashIcon} compact className="w-80">
+                    <Input
+                        value={bindForm.data.account_number}
+                        onChange={(event) => updateAccountNumber(event.target.value)}
+                        placeholder={t('customers.account_number')}
+                        className="h-8 text-[12px] placeholder:text-[12px]"
+                        aria-invalid={Boolean(bindError)}
+                    />
+                </FormControl>
+
+                <p className={`mt-1 min-h-4 px-1 text-[11px] leading-4 ${bindError ? 'text-danger' : 'invisible'}`}>
+                    {bindError || '\u00A0'}
+                </p>
+            </div>
+
+            <Button
+                type="submit"
+                size="sm"
+                className="h-8 shrink-0 gap-1 px-2.5 text-[11px]"
+                disabled={bindForm.processing}
+            >
+                {bindForm.processing ? (
+                    <Spinner size="xs" className="text-current" />
+                ) : (
+                    <Link2Icon className="size-3.5" strokeWidth={1.85} />
+                )}
+
+                {t('customers.bind_account')}
+            </Button>
+        </form>
     );
 
     const packageTabs = (
@@ -205,6 +282,7 @@ export default function CustomersShow({
                             icon={WifiIcon}
                             title={t('customers.broadband_accounts')}
                             description={t('customers.broadband_hint')}
+                            actions={can('customers.update') ? (!accountBinding ? bindFilters : undefined) : null}
                         >
                             <DataTable
                                 data={accountBinding ? [accountBinding] : []}
@@ -214,15 +292,17 @@ export default function CustomersShow({
                                 showSearch={false}
                                 directActions
                                 className="shadow-none"
-                                actions={(row) => (
-                                    <TableActionButton
-                                        label={t('customers.remove_account')}
-                                        icon={UnlinkIcon}
-                                        tone="danger"
-                                        size="sm"
-                                        onClick={() => setUnbindAccount(true)}
-                                    />
-                                )}
+                                actions={(row) =>
+                                    can('customers.update') ? (
+                                        <TableActionButton
+                                            label={t('customers.remove_account')}
+                                            icon={UnlinkIcon}
+                                            tone="danger"
+                                            size="sm"
+                                            onClick={() => setUnbindAccount(true)}
+                                        />
+                                    ) : null
+                                }
                                 columns={[
                                     {
                                         id: 'account_number',
@@ -256,10 +336,6 @@ export default function CustomersShow({
                                     },
                                 ]}
                             />
-
-                            {errors.account_number ? (
-                                <p className="mt-2 px-1 text-[11px] text-danger">{errors.account_number}</p>
-                            ) : null}
                         </DetailSection>
 
                         <DetailSection
@@ -385,7 +461,13 @@ export default function CustomersShow({
                             className="flex flex-col gap-2"
                             onSubmit={(event) => {
                                 event.preventDefault();
-                                bindForm.post(`/customers/${customer.id}/accounts`, {
+                                setBindTouched(true);
+
+                                if (getBindValidationError(bindForm.data.account_number)) {
+                                    return;
+                                }
+
+                                bindForm.post(`/customers/${customer.id}/account`, {
                                     preserveScroll: true,
                                     onSuccess: () => bindForm.reset(),
                                 });
@@ -399,9 +481,10 @@ export default function CustomersShow({
                                     <Input
                                         id="account_number"
                                         value={bindForm.data.account_number}
-                                        onChange={(event) => bindForm.setData('account_number', event.target.value)}
+                                        onChange={(event) => updateAccountNumber(event.target.value)}
                                         placeholder={t('customers.account_number')}
                                         className="h-8 text-[11px] placeholder:text-[11px]"
+                                        aria-invalid={Boolean(bindError)}
                                     />
                                 </FormControl>
                                 <Button type="submit" size="sm" className="shrink-0" disabled={bindForm.processing}>
@@ -413,6 +496,13 @@ export default function CustomersShow({
                                     {t('customers.bind_account')}
                                 </Button>
                             </div>
+                            <p
+                                className={`min-h-4 px-1 text-[11px] leading-4 ${
+                                    bindError ? 'text-danger' : 'invisible'
+                                }`}
+                            >
+                                {bindError || '\u00A0'}
+                            </p>
                             <Button
                                 type="button"
                                 variant={customer.status === 'active' ? 'destructive' : 'primary'}

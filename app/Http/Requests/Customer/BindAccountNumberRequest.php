@@ -26,4 +26,13 @@ class BindAccountNumberRequest extends FormRequest
             ],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'account_number.required' => 'customers.account_number_required',
+            'account_number.max' => 'customers.account_number_max',
+            'account_number.unique' => 'customers.account_bound_elsewhere',
+        ];
+    }
 }

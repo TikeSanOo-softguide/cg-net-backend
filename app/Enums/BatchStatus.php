@@ -6,5 +6,5 @@ enum BatchStatus: string
 {
     case Active = 'active';
     case Expired = 'expired';
-    case Cancelled = 'cancelled';
+    case Blocked = 'blocked';
 }

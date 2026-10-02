@@ -373,14 +373,34 @@ class CustomerController extends Controller
         );
     }
 
-    public function bindAccount(BindAccountNumberRequest $request, User $customer): RedirectResponse
-    {
+    public function bindAccount(
+        BroadbandAccountService $broadbandAccountService,
+        BindAccountNumberRequest $request,
+        User $customer,
+    ): RedirectResponse {
         $accountNumber = trim($request->validated('account_number'));
-        if ($customer->broadband_account_number === $accountNumber) {
-            return back()->withErrors(['account_number' => __('customers.account_already_bound')]);
+
+        $account = $broadbandAccountService->findByAccountNumber($accountNumber);
+
+        if (!$account) {
+            return back()->withErrors([
+                'account_number' => 'customers.account_not_found',
+            ]);
         }
 
-        $customer->update(['broadband_account_number' => $accountNumber]);
+        if ($customer->broadband_account_number === $accountNumber) {
+            return back()->with('success', 'customers.account_already_bound');
+        }
+
+        if ($customer->broadband_account_number !== null) {
+            return back()->withErrors([
+                'account_number' => 'customers.account_bounded',
+            ]);
+        }
+
+        $customer->update([
+            'broadband_account_number' => $accountNumber,
+        ]);
 
         activity('customers')
             ->causedBy($request->user())

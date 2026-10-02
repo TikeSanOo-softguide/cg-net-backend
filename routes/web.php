@@ -79,9 +79,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
     Route::patch('/customers/{customer}/status', [CustomerController::class, 'updateStatus'])
         ->middleware('can:customers.update')
         ->name('customers.status');
-    Route::post('/customers/{customer}/accounts', [CustomerController::class, 'bindAccount'])
+    Route::post('/customers/{customer}/account', [CustomerController::class, 'bindAccount'])
         ->middleware('can:customers.update')
-        ->name('customers.accounts.bind');
+        ->name('customers.account.bind');
     Route::delete('/customers/{customer}/accounts', [CustomerController::class, 'unbindAccount'])
         ->middleware('can:customers.update')
         ->name('customers.accounts.unbind');
@@ -357,6 +357,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::post('/offices/import', [OfficeController::class, 'import'])
                 ->middleware('can:top-up-cards.update')
                 ->name('offices.import');
+            Route::patch('/batches/{batch}/void', [OfficeController::class, 'voidBatch'])
+                ->middleware('can:top-up-cards.update')
+                ->name('batches.void');
             Route::get('/export', [TopUpCardController::class, 'export'])
                 ->middleware('can:top-up-cards.view')
                 ->name('export');
