@@ -20,6 +20,7 @@ class CustomerPackageFactory extends Factory
         return [
             'user_id' => User::factory(),
             'package_id' => Package::factory(),
+            'username' => fake()->unique()->userName(),
             'starts_at' => $start,
             'expires_at' => (clone $start)->modify('+30 days'),
             'status' => CustomerPackageStatus::Active,
