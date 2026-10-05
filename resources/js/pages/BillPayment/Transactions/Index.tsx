@@ -601,6 +601,11 @@ export function TransactionsTable({
                                 <DetailItem
                                     label={t('transactions.detail_fields.bill_payment_id')}
                                     value={selected.related.bill_payment_id}
+                                    href={
+                                        selected.related.bill_payment_id
+                                            ? `/billing/bill-payments?payment_id=${selected.related.bill_payment_id}`
+                                            : undefined
+                                    }
                                     copyable
                                     secondary={
                                         selected.related.bill_payment_account

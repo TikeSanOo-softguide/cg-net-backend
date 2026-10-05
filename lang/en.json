@@ -130,6 +130,8 @@
         "invoices_description": "Search, filter, and manage customer invoices.",
         "payment_gateway_logs_description": "Review payment gateway requests, responses, and errors.",
         "transactions_description": "Search, filter, and review billing transactions.",
+        "bill_payment": "Bill Payment",
+        "bill_payment_description": "Review FTTH bill payment transactions.",
         "logs_description": "Review security, administrator, and user activity logs.",
         "security_logs_description": "Review security events and access activity.",
         "admin_activity_logs_description": "Review administrator actions and system audit logs.",
@@ -771,6 +773,13 @@
             "top_up_card_id": "Top-up card ID",
             "top_up_card_serial_no": "Top-up card serial no."
         }
+    },
+    "bill_payments": {
+        "account_number": "Broadband account",
+        "payment_reference": "Payment reference",
+        "confirmed_at": "Confirmed at",
+        "search_placeholder": "Search transaction, customer, or account",
+        "empty": "No bill payments found."
     },
     "customers": {
         "index_description": "Search, filter, and manage app users.",

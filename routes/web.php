@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ActivityLog\ActivityLogController;
 use App\Http\Controllers\AdminNotification\AdminNotificationController;
+use App\Http\Controllers\BillPayment\BillPaymentController;
 use App\Http\Controllers\Cms\BannerController;
 use App\Http\Controllers\Cms\CategoryController;
 use App\Http\Controllers\Cms\ContactController;
@@ -43,7 +44,7 @@ use App\Http\Controllers\Support\ChatFlows\ChatbotFlowsController;
 use App\Http\Controllers\TopUpCard\OfficeController;
 use App\Http\Controllers\Support\QuickReplies\QuickRepliesController;
 use App\Http\Controllers\TopUpCard\TopUpCardController;
-use App\Http\Controllers\Transaction\TransactionController;
+use App\Http\Controllers\BillPayment\TransactionController;
 use App\Support\AdminHome;
 use App\Support\AppPermissions;
 use App\Support\MenuPages;
@@ -113,6 +114,10 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         ->middleware('can:billing.view')
         ->group(function () {
             Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions');
+            Route::get('/bill-payments', [BillPaymentController::class, 'index'])->name('bill-payments');
+            Route::get('/bill-payments/export', [BillPaymentController::class, 'export'])
+                ->middleware('can:' . AppPermissions::SystemExport)
+                ->name('bill-payments.export');
             Route::get('/transactions/export', [TransactionController::class, 'export'])
                 ->middleware('can:' . AppPermissions::SystemExport)
                 ->name('transactions.export');

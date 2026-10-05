@@ -18,7 +18,11 @@ import { CustomerFormDialog } from '@/components/customer/CustomerFormDialog';
 import { CustomerProfileCard } from '@/components/customer/CustomerProfileCard';
 import { DetailSection } from '@/components/customer/DetailSection';
 import { WalletAdjustDialog } from '@/components/customer/WalletAdjustDialog';
-import { TransactionsTable, type Filters as TransactionFilters, type TransactionRow } from '@/pages/Transactions/Index';
+import {
+    TransactionsTable,
+    type Filters as TransactionFilters,
+    type TransactionRow,
+} from '@/pages/BillPayment/Transactions/Index';
 import { formatPhoneLocal } from '@/lib/phone';
 import { formatTopUpNumber, TOP_UP_CARD_CURRENCY } from '@/lib/top-up-cards';
 import { DataTable } from '@/components/DataTable';

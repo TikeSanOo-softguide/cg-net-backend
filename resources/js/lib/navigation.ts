@@ -157,6 +157,12 @@ export const navigation: NavGroup[] = [
                 href: '/billing/transactions',
                 icon: Receipt,
             },
+            {
+                labelKey: 'menu.bill_payment',
+                descriptionKey: 'menu.bill_payment_description',
+                href: '/billing/bill-payments',
+                icon: Receipt,
+            },
         ],
     },
     {

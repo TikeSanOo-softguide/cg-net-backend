@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Transaction;
+namespace App\Http\Controllers\BillPayment;
 
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
@@ -20,7 +20,7 @@ class TransactionController extends Controller
     {
         $filters = $transactions->filters($request);
 
-        return Inertia::render('Transactions/Index', [
+        return Inertia::render('BillPayment/Transactions/Index', [
             'transactions' => $transactions->paginate($filters),
             'filters' => $filters,
             'filterOptions' => [

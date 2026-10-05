@@ -123,6 +123,8 @@
         "invoices_description": "搜索、筛选并管理客户发票。",
         "payment_gateway_logs_description": "查看支付网关请求、响应和错误。",
         "transactions_description": "搜索、筛选并查看账单交易。",
+        "bill_payment": "账单支付",
+        "bill_payment_description": "查看 FTTH 账单支付交易。",
         "logs_description": "查看安全、管理员和用户活动日志。",
         "security_logs_description": "查看安全事件和访问活动。",
         "admin_activity_logs_description": "查看管理员操作和系统审计日志。",
@@ -783,6 +785,13 @@
             "top_up_card_id": "充值卡 ID",
             "top_up_card_serial_no": "充值卡序列号"
         }
+    },
+    "bill_payments": {
+        "account_number": "宽带账户",
+        "payment_reference": "支付参考号",
+        "confirmed_at": "确认时间",
+        "search_placeholder": "搜索交易、客户或账户",
+        "empty": "没有账单支付记录。"
     },
     "customers": {
         "index_description": "搜索、筛选并管理应用用户。",
