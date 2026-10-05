@@ -361,9 +361,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::get('/offices', [OfficeController::class, 'index'])
                 ->middleware('can:top-up-cards.view')
                 ->name('offices');
-            Route::get('/office-assign', [OfficeController::class, 'officeAssign'])
+            Route::get('/card-import', [OfficeController::class, 'cardImport'])
                 ->middleware('can:top-up-cards.view')
-                ->name('office-assign');
+                ->name('card-import');
             Route::post('/offices', [OfficeController::class, 'store'])
                 ->middleware('can:top-up-cards.create')
                 ->name('offices.store');
@@ -373,9 +373,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::delete('/offices/{office}', [OfficeController::class, 'destroy'])
                 ->middleware('can:top-up-cards.delete')
                 ->name('offices.destroy');
-            Route::post('/offices/import', [OfficeController::class, 'import'])
+            Route::post('/cards/import', [OfficeController::class, 'import'])
                 ->middleware('can:top-up-cards.create')
-                ->name('offices.import');
+                ->name('cards.import');
             Route::patch('/batches/{batch}/void', [OfficeController::class, 'voidBatch'])
                 ->middleware('can:top-up-cards.update')
                 ->name('batches.void');

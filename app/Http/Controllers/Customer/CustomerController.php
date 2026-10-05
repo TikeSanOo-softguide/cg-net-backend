@@ -19,6 +19,7 @@ use App\Services\Customer\WalletAdjustmentService;
 use App\Services\Ledger\LedgerPoster;
 use App\Services\Transaction\TransactionService;
 use App\Support\PackageLabel;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -253,7 +254,14 @@ class CustomerController extends Controller
         $broadbandPackage = null;
 
         if ($customer->broadband_account_number !== null) {
-            $accountBinding = $broadbandAccountService->findByAccountNumber($customer->broadband_account_number);
+            try {
+                $accountBinding = $broadbandAccountService->findByAccountNumber($customer->broadband_account_number);
+            } catch (ConnectionException) {
+                $accountBinding = [
+                    'account_number' => $customer->broadband_account_number,
+                    'status' => 'unknown',
+                ];
+            }
 
             if ($accountBinding) {
                 $currentCustomerPackageId = (int) ($accountBinding['current_customer_package_id'] ?? 0);
@@ -261,7 +269,12 @@ class CustomerController extends Controller
                 $customerPackage = $customer
                     ->customerPackages()
                     ->with('package')
-                    ->whereKey($currentCustomerPackageId)
+                    ->where('status', 'active')
+                    ->where('starts_at', '<=', now())
+                    ->where(function ($query) {
+                        $query->whereNull('expires_at')->orWhere('expires_at', '>=', now());
+                    })
+                    ->latest('starts_at')
                     ->first();
 
                 $broadbandPackage = $customerPackage?->package;
@@ -420,7 +433,13 @@ class CustomerController extends Controller
     ): RedirectResponse {
         $accountNumber = trim($request->validated('account_number'));
 
-        $account = $broadbandAccountService->findByAccountNumber($accountNumber);
+        try {
+            $account = $broadbandAccountService->findByAccountNumber($accountNumber);
+        } catch (ConnectionException $e) {
+            return back()->withErrors([
+                'account_number' => 'customers.account_service_unavailable',
+            ]);
+        }
 
         if (!$account) {
             return back()->withErrors([

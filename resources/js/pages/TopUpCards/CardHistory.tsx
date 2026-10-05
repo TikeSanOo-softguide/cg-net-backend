@@ -8,7 +8,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { CardHistoryFilters, type TopUpCardRow } from '@/lib/top-up-cards';
 import { Ban, CalendarX, ClipboardCheck, Clock3, CreditCard, TicketIcon } from 'lucide-react';
 import { StatCard } from '@/components/StatCard';
-import { TopUpCardListTable } from '@/components/top-up-cards/TopUpCardListTable';
+import { TopUpCardHistoryTable } from '@/components/top-up-cards/TopUpCardHistoryTable';
 
 type Props = {
     cards: Paginated<TopUpCardRow>;
@@ -129,7 +129,7 @@ export default function CardHistory({ cards, batches, generated = [], amounts, o
                 <PageHeader />
                 <StatCard items={cardList} className="xl:grid-cols-6" />
                 <div className="print:hidden">
-                    <TopUpCardListTable
+                    <TopUpCardHistoryTable
                         cards={cards}
                         amounts={amounts}
                         batches={batches}

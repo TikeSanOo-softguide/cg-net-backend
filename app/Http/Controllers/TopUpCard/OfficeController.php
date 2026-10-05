@@ -40,7 +40,7 @@ class OfficeController extends Controller
         ]);
     }
 
-    public function officeAssign(Request $request): Response
+    public function cardImport(Request $request): Response
     {
         $batch = $request->has('batch')
             ? $request->string('batch')->toString()
@@ -84,7 +84,7 @@ class OfficeController extends Controller
                 ],
             );
 
-        return Inertia::render('TopUpCards/OfficeAssign', [
+        return Inertia::render('TopUpCards/CardImport', [
             'batchPage' => $batchPage,
             'batches' => $batches,
             'importProgress' => $this->importProgress($request),
@@ -111,7 +111,7 @@ class OfficeController extends Controller
     public function import(Request $request): RedirectResponse
     {
         $request->validate([
-            'file' => ['required', 'file', 'extensions:csv', 'mimes:csv', 'max:30000'],
+            'file' => ['required', 'file', 'extensions:csv', 'extensions:csv', 'max:30000'],
         ]);
 
         $lock = Cache::lock('top_up_card_generation:lock', 20);
@@ -174,7 +174,7 @@ class OfficeController extends Controller
                 ->onConnection('redis')
                 ->onQueue('top-up-cards');
 
-            return redirect()->route('top-up-cards.office-assign')->with('info', 'top_up_cards.generation_started');
+            return redirect()->route('top-up-cards.card-import')->with('info', 'top_up_cards.generation_started');
         } catch (\Throwable $exception) {
             if (is_string($path)) {
                 Storage::disk('local')->delete($path);
@@ -198,7 +198,7 @@ class OfficeController extends Controller
     public function validateImport(Request $request): JsonResponse
     {
         $request->validate([
-            'file' => ['required', 'file', 'extensions:csv', 'mimes:csv', 'max:30000'],
+            'file' => ['required', 'file', 'extensions:csv', 'extensions:csv', 'max:30000'],
         ]);
 
         $path = $request->file('file')->store('imports/top-up-cards/validation', 'local');
@@ -288,9 +288,13 @@ class OfficeController extends Controller
 
     public function destroy(Office $office): RedirectResponse
     {
+        if ($office->topUpCards()->exists()) {
+            return back()->with('error', __('top_up_cards.office.office_cannot_delete'));
+        }
+
         $office->delete();
         Cache::forget('top_up_cards.office_options');
 
-        return back()->with('success', 'top_up_cards.office.deleted');
+        return back()->with('success', __('top_up_cards.office.deleted'));
     }
 }

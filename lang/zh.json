@@ -888,7 +888,8 @@
             "password_min": "密码至少需要 8 个字符。",
             "password_confirmation_required": "请确认密码。",
             "password_confirmation_mismatch": "两次输入的密码不一致。",
-            "status_required": "请选择状态。"
+            "status_required": "请选择状态。",
+            "account_service_unavailable": "宽带账户服务目前不可用。"
         }
     },
     "change_plan": {
@@ -1528,7 +1529,8 @@
             "delete_description": "已分配的卡片会保留，但此网点将被删除。",
             "created": "网点创建成功。",
             "updated": "网点更新成功。",
-            "deleted": "网点删除成功。"
+            "deleted": "网点删除成功。",
+            "office_cannot_delete": "此办公室无法删除。"
         },
         "import_csv": {
             "label": "导入 CSV",

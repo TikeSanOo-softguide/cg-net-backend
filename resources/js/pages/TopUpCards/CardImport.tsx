@@ -70,9 +70,9 @@ type ImportError = {
     replace?: Record<string, string | number>;
 };
 
-function visitOfficeAssign(filters: Props['filters']) {
+function visitCardImport(filters: Props['filters']) {
     router.get(
-        '/top-up-cards/office-assign',
+        '/top-up-cards/card-import',
         {
             batch: filters.batch,
             status: filters.status,
@@ -85,7 +85,7 @@ function visitOfficeAssign(filters: Props['filters']) {
     );
 }
 
-export default function OfficeAssignPage({ batchPage, batches, importProgress, filters }: Props) {
+export default function CardImportPage({ batchPage, batches, importProgress, filters }: Props) {
     const { t } = useTranslation();
     const { flash } = usePage<PageProps>().props;
     const [importError, setImportError] = useState<ImportError | null>(null);
@@ -153,7 +153,7 @@ export default function OfficeAssignPage({ batchPage, batches, importProgress, f
     const refreshCards = (nextBatch: string, nextStatus: string) => {
         setBatchFilter(nextBatch);
         setStatusFilter(nextStatus);
-        visitOfficeAssign({
+        visitCardImport({
             batch: nextBatch,
             status: nextStatus,
         });
@@ -161,10 +161,10 @@ export default function OfficeAssignPage({ batchPage, batches, importProgress, f
 
     const importCards = (file: File) => {
         router.post(
-            '/top-up-cards/offices/import',
+            '/top-up-cards/cards/import',
             {
                 file,
-                return: 'office-assign',
+                return: 'card-import',
             },
             {
                 forceFormData: true,
