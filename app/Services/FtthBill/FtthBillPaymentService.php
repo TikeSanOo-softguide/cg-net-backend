@@ -16,7 +16,9 @@ use App\Models\User;
 use App\Models\Wallet;
 use App\Notifications\FtthBillPaymentStatusNotification;
 use App\Services\Billing\BillingServerClient;
+use App\Services\BroarbandAccount\BroadbandAccountService;
 use App\Services\Ledger\LedgerPoster;
+use Illuminate\Support\Carbon;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -27,6 +29,7 @@ class FtthBillPaymentService
     public function __construct(
         protected BillingServerClient $billing,
         protected LedgerPoster $ledger,
+        protected BroadbandAccountService $broadbandAccounts,
     ) {}
 
     /**
@@ -44,7 +47,7 @@ class FtthBillPaymentService
     ): array {
         $wallet = $user->wallet;
 
-        if (! $wallet) {
+        if (!$wallet) {
             return $this->response(404, [
                 'success' => false,
                 'message' => 'Wallet not found.',
@@ -121,6 +124,122 @@ class FtthBillPaymentService
     }
 
     /**
+     * @return array{http_status: int, body: array<string, mixed>}
+     */
+    public function pendingSlip(User $user): array
+    {
+        $accountNumber = $user->broadband_account_number;
+
+        if (!$accountNumber) {
+            return $this->response(422, [
+                'success' => false,
+                'message' => 'Broadband account number not found.',
+            ]);
+        }
+
+        try {
+            $slip = $this->billing->lookupPendingBillSlip($accountNumber);
+        } catch (RuntimeException $exception) {
+            return $this->response(502, [
+                'success' => false,
+                'message' => $exception->getMessage(),
+            ]);
+        }
+
+        $billMonth = $slip['bill_month'];
+        $billMonthLabel = Carbon::createFromFormat('!Y-m', $billMonth)->format('F Y');
+        unset($slip['bill_month'], $slip['bill_month_label'], $slip['paid_slips']);
+
+        $broadbandAccount = $this->broadbandAccounts->findByAccountNumber($accountNumber);
+
+        return $this->response(200, [
+            'success' => true,
+            'message' => 'Pending FTTH bill slip retrieved.',
+            'data' => [
+                'bill_month' => $billMonth,
+                'bill_month_label' => $billMonthLabel,
+                'customer_name' => $broadbandAccount['customer_name'] ?? null,
+                'payment_method' => 'CTO',
+                'slip' => $slip,
+            ],
+        ]);
+    }
+
+    /**
+     * @return array{http_status: int, body: array<string, mixed>}
+     */
+    public function paidSlips(User $user): array
+    {
+        $accountNumber = $user->broadband_account_number;
+
+        if (!$accountNumber) {
+            return $this->response(422, [
+                'success' => false,
+                'message' => 'Broadband account number not found.',
+            ]);
+        }
+
+        try {
+            $paidSlips = $this->billing->lookupPaidBillSlips($accountNumber);
+            $broadbandAccount = $this->broadbandAccounts->findByAccountNumber($accountNumber);
+            $customerName = $broadbandAccount['customer_name'] ?? null;
+            $paidSlips = array_map(
+                fn(array $paidSlip): array => $this->formatPaidSlip($paidSlip, $accountNumber, $customerName),
+                $paidSlips,
+            );
+            usort(
+                $paidSlips,
+                fn(array $first, array $second): int => strcmp($second['bill_month'], $first['bill_month']),
+            );
+        } catch (RuntimeException $exception) {
+            return $this->response(502, [
+                'success' => false,
+                'message' => $exception->getMessage(),
+            ]);
+        }
+
+        return $this->response(200, [
+            'success' => true,
+            'message' => 'Paid FTTH bill slips retrieved.',
+            'data' => [
+                'paid_slips' => $paidSlips,
+            ],
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $paidSlip
+     * @return array<string, mixed>
+     */
+    protected function formatPaidSlip(array $paidSlip, string $accountNumber, ?string $customerName): array
+    {
+        $paidSlipData = is_array($paidSlip['data'] ?? null) ? $paidSlip['data'] : [];
+        $billMonth = $paidSlip['bill_month'] ?? ($paidSlipData['bill_month'] ?? null);
+
+        if (!is_string($billMonth) || preg_match('/^\d{4}-(0[1-9]|1[0-2])$/D', $billMonth) !== 1) {
+            throw new RuntimeException('The billing server returned a paid slip without a valid bill month.');
+        }
+
+        $slip = $paidSlip['slip'] ?? ($paidSlipData['slip'] ?? null);
+        if (!is_array($slip)) {
+            $slip = array_intersect_key(
+                [...$paidSlip, ...$paidSlipData],
+                array_flip(['account_number', 'amount', 'slip_url', 'url']),
+            );
+        }
+
+        $slip['account_number'] ??= $accountNumber;
+
+        return [
+            'bill_month' => $billMonth,
+            'bill_month_label' => Carbon::createFromFormat('!Y-m', $billMonth)->format('F Y'),
+            'customer_name' => $customerName,
+            'payment_method' => 'CTO',
+            'slip' => $slip,
+        ];
+    }
+
+    /**
      * Settle a stuck Processing FTTH debit after consulting the billing server.
      */
     public function reconcile(LedgerTransaction $transaction): void
@@ -183,8 +302,7 @@ class FtthBillPaymentService
 
         $retrySeconds = (int) config('services.billing.processing_retry_seconds', 300);
 
-        ReconcileStuckFtthBillPaymentsJob::dispatch($transaction->id)
-            ->delay(now()->addSeconds(max(1, $retrySeconds)));
+        ReconcileStuckFtthBillPaymentsJob::dispatch($transaction->id)->delay(now()->addSeconds(max(1, $retrySeconds)));
     }
 
     protected function debitWallet(
@@ -299,8 +417,7 @@ class FtthBillPaymentService
 
         $delaySeconds = (int) config('services.billing.processing_grace_seconds', 120);
 
-        ReconcileStuckFtthBillPaymentsJob::dispatch($transaction->id)
-            ->delay(now()->addSeconds(max(1, $delaySeconds)));
+        ReconcileStuckFtthBillPaymentsJob::dispatch($transaction->id)->delay(now()->addSeconds(max(1, $delaySeconds)));
 
         $this->notifyUser(
             $transaction->wallet?->user,
@@ -376,7 +493,14 @@ class FtthBillPaymentService
     ): LedgerTransaction {
         $refunded = false;
 
-        $refundTransaction = DB::transaction(function () use ($debitTransaction, $wallet, $user, $accountNumber, $billingResponse, &$refunded) {
+        $refundTransaction = DB::transaction(function () use (
+            $debitTransaction,
+            $wallet,
+            $user,
+            $accountNumber,
+            $billingResponse,
+            &$refunded,
+        ) {
             /** @var LedgerTransaction $lockedDebit */
             $lockedDebit = LedgerTransaction::query()->whereKey($debitTransaction->id)->lockForUpdate()->firstOrFail();
 
@@ -409,7 +533,7 @@ class FtthBillPaymentService
                 contraAccount: LedgerAccountCode::FtthClearing,
                 type: LedgerTransactionType::Refund,
                 status: LedgerTransactionStatus::Completed,
-                idempotencyKey: 'refund:'.$lockedDebit->idempotency_key,
+                idempotencyKey: 'refund:' . $lockedDebit->idempotency_key,
                 actorType: WalletActorType::System,
                 actorId: $user->id,
                 reversalOf: $lockedDebit->id,
@@ -452,13 +576,15 @@ class FtthBillPaymentService
         string $accountNumber,
         ?string $refundTransactionNo = null,
     ): void {
-        $user?->notify(new FtthBillPaymentStatusNotification(
-            event: $event,
-            transactionNo: $transaction->transaction_no,
-            amount: (int) $transaction->amount,
-            accountNumber: $accountNumber,
-            refundTransactionNo: $refundTransactionNo,
-        ));
+        $user?->notify(
+            new FtthBillPaymentStatusNotification(
+                event: $event,
+                transactionNo: $transaction->transaction_no,
+                amount: (int) $transaction->amount,
+                accountNumber: $accountNumber,
+                refundTransactionNo: $refundTransactionNo,
+            ),
+        );
     }
 
     /**
@@ -477,25 +603,17 @@ class FtthBillPaymentService
         $payload = is_array($billingResponse['payload'] ?? null) ? $billingResponse['payload'] : [];
 
         $billRef =
-            $billingResponse['billing_ref']
-            ?? $billingResponse['external_bill_ref']
-            ?? $payload['billing_ref']
-            ?? $payload['external_bill_ref']
-            ?? $payload['reference']
-            ?? null;
+            $billingResponse['billing_ref'] ??
+            ($billingResponse['external_bill_ref'] ??
+                ($payload['billing_ref'] ?? ($payload['external_bill_ref'] ?? ($payload['reference'] ?? null))));
 
         $paymentRef =
-            $billingResponse['external_payment_ref']
-            ?? $billingResponse['payment_ref']
-            ?? $payload['payment_ref']
-            ?? $payload['external_payment_ref']
-            ?? $payload['transaction_id']
-            ?? null;
+            $billingResponse['external_payment_ref'] ??
+            ($billingResponse['payment_ref'] ??
+                ($payload['payment_ref'] ??
+                    ($payload['external_payment_ref'] ?? ($payload['transaction_id'] ?? null))));
 
-        $externalResponse = [
-            ...$billingResponse,
-            'broadband_account_number' => $accountNumber,
-        ];
+        $externalResponse = [...$billingResponse, 'broadband_account_number' => $accountNumber];
 
         if ($phase !== null) {
             $externalResponse['phase'] = $phase;

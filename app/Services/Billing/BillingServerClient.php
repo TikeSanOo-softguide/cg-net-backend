@@ -46,6 +46,71 @@ class BillingServerClient
     }
 
     /**
+     * The billing server selects the pending month for this account.
+     *
+     * @return array<string, mixed>
+     * @throws RuntimeException when the bill slip cannot be resolved
+     */
+    public function lookupPendingBillSlip(string $accountNumber): array
+    {
+        $payload = $this->lookupBillDetails($accountNumber);
+
+        if (
+            !is_string($payload['bill_month'] ?? null) ||
+            preg_match('/^\d{4}-(0[1-9]|1[0-2])$/D', $payload['bill_month']) !== 1
+        ) {
+            throw new RuntimeException('The billing server did not return a valid pending bill month.');
+        }
+
+        return $payload;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     * @throws RuntimeException when paid slips cannot be retrieved
+     */
+    public function lookupPaidBillSlips(string $accountNumber): array
+    {
+        $payload = $this->lookupBillDetails($accountNumber);
+
+        if (!is_array($payload['paid_slips'] ?? null) || !array_is_list($payload['paid_slips'])) {
+            throw new RuntimeException('The billing server did not return a valid paid slip list.');
+        }
+
+        return $payload['paid_slips'];
+    }
+
+    /**
+     * @return array<string, mixed>
+     * @throws RuntimeException when bill details cannot be retrieved
+     */
+    protected function lookupBillDetails(string $accountNumber): array
+    {
+        $url = $this->url(config('services.billing.amount_lookup_endpoint', '/bill-details'));
+
+        $response = Http::acceptJson()
+            ->withHeaders($this->headers())
+            ->timeout(15)
+            ->connectTimeout(5)
+            ->retry(2, 100, throw: false)
+            ->get($url, [
+                'account_number' => $accountNumber,
+            ]);
+
+        if (!$response->successful()) {
+            throw new RuntimeException('Unable to retrieve FTTH bill details from the billing server.');
+        }
+
+        $payload = $response->json();
+
+        if (!is_array($payload)) {
+            throw new RuntimeException('The billing server returned invalid FTTH bill details.');
+        }
+
+        return $payload;
+    }
+
+    /**
      * Charge / extend plan on the billing server.
      *
      * Intentionally does not retry: a timeout after the remote side succeeded

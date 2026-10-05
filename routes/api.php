@@ -85,7 +85,19 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::delete('/device-tokens', [DeviceTokenController::class, 'destroy']);
 
     Route::post('/packages/buy', [BuyPackageController::class, 'buy']);
-    Route::post('/ftth-bills/pay', [FtthBillController::class, 'pay']);
+
+    Route::prefix('ftth-bills')->group(function () {
+        Route::post('/pay', [FtthBillController::class, 'pay']);
+        Route::get('/pending-slip', [FtthBillController::class, 'pendingSlip']);
+        Route::get('/paid-slips', [FtthBillController::class, 'paidSlips']);
+    });
+
+    Route::prefix('redeem')->group(function () {
+        Route::post('/check-serial-no', [RedeemController::class, 'checkSerialNo'])->middleware(
+            'throttle:serial-check',
+        );
+        Route::post('/top-up-account', [RedeemController::class, 'topUpAccount']);
+    });
 
     Route::prefix('relocation-requests')->group(function () {
         Route::get('/', [RelocationRequestController::class, 'index']);
@@ -131,13 +143,6 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
     Route::prefix('broadband-account')->group(function () {
         Route::post('/connect', [BroadbandAccountController::class, 'connect']);
-    });
-
-    Route::prefix('redeem')->group(function () {
-        Route::post('/check-serial-no', [RedeemController::class, 'checkSerialNo'])->middleware(
-            'throttle:serial-check',
-        );
-        Route::post('/top-up-account', [RedeemController::class, 'topUpAccount']);
     });
 });
 

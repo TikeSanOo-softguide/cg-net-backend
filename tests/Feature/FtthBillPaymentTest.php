@@ -24,6 +24,252 @@ class FtthBillPaymentTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_pending_slip_returns_bill_month_from_billing_server(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->startOfDay());
+
+        Http::fake([
+            'billing-server.test/bill-details*' => Http::response(
+                [
+                    'amount' => 1000,
+                    'bill_month' => '2026-11',
+                    'bill_month_label' => 'Nov 2026',
+                    'slip_url' => 'https://billing-server.test/slips/next-month',
+                ],
+                200,
+            ),
+            ...$this->broadbandAccountFake(),
+        ]);
+
+        [$user] = $this->makePayer(balance: 1500);
+        $user->update(['name' => 'App Profile Name']);
+
+        $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
+            ->getJson('/api/ftth-bills/pending-slip')
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.bill_month', '2026-11')
+            ->assertJsonPath('data.bill_month_label', 'November 2026')
+            ->assertJsonPath('data.customer_name', 'Broadband Account Holder')
+            ->assertJsonPath('data.payment_method', 'CTO')
+            ->assertJsonPath('data.slip.slip_url', 'https://billing-server.test/slips/next-month');
+
+        Http::assertSent(
+            fn($request) => str_contains($request->url(), 'account_number=' . $user->broadband_account_number) &&
+                !str_contains($request->url(), 'bill_month='),
+        );
+    }
+
+    public function test_pending_slip_does_not_calculate_month_from_local_payment_count(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->startOfDay());
+
+        Http::fake([
+            'billing-server.test/bill-details*' => Http::response(
+                [
+                    'amount' => 1000,
+                    'bill_month' => '2026-12',
+                    'bill_month_label' => 'Dec 2026',
+                    'slip_url' => 'https://billing-server.test/slips/december',
+                ],
+                200,
+            ),
+            ...$this->broadbandAccountFake(),
+        ]);
+
+        [$user] = $this->makePayer(balance: 1500);
+
+        $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
+            ->getJson('/api/ftth-bills/pending-slip')
+            ->assertOk()
+            ->assertJsonPath('data.bill_month', '2026-12')
+            ->assertJsonPath('data.slip.slip_url', 'https://billing-server.test/slips/december');
+
+        Http::assertSent(fn($request) => !str_contains($request->url(), 'bill_month='));
+    }
+
+    public function test_pending_slip_label_formats_january_with_the_new_year(): void
+    {
+        $this->travelTo(now()->setDate(2026, 12, 2)->startOfDay());
+
+        Http::fake([
+            'billing-server.test/bill-details*' => Http::response([
+                'amount' => 1000,
+                'bill_month' => '2027-01',
+                'bill_month_label' => 'Jan 2027',
+                'slip_url' => 'https://billing-server.test/slips/january',
+            ], 200),
+            ...$this->broadbandAccountFake(),
+        ]);
+
+        [$user] = $this->makePayer(balance: 1500);
+
+        $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
+            ->getJson('/api/ftth-bills/pending-slip')
+            ->assertOk()
+            ->assertJsonPath('data.bill_month', '2027-01')
+            ->assertJsonPath('data.bill_month_label', 'January 2027');
+    }
+
+    public function test_pending_slip_returns_current_month_when_current_month_is_unpaid(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->startOfDay());
+
+        Http::fake([
+            'billing-server.test/bill-details*' => Http::response(
+                [
+                    'amount' => 1000,
+                    'bill_month' => '2026-10',
+                    'bill_month_label' => 'Oct 2026',
+                    'slip_url' => 'https://billing-server.test/slips/current-month',
+                ],
+                200,
+            ),
+            ...$this->broadbandAccountFake(),
+        ]);
+
+        [$user] = $this->makePayer(balance: 1500);
+
+        $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
+            ->getJson('/api/ftth-bills/pending-slip')
+            ->assertOk()
+            ->assertJsonPath('data.bill_month', '2026-10')
+            ->assertJsonPath('data.bill_month_label', 'October 2026')
+            ->assertJsonPath('data.slip.slip_url', 'https://billing-server.test/slips/current-month');
+
+        Http::assertSent(fn($request) => !str_contains($request->url(), 'bill_month='));
+    }
+
+    public function test_pending_slip_uses_server_bill_month_when_payment_is_confirmed_later(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 5)->startOfDay());
+
+        Http::fake([
+            'billing-server.test/bill-details*' => Http::response([
+                'amount' => 250,
+                'bill_month' => '2026-10',
+                'bill_month_label' => 'Oct 2026',
+                'slip_url' => 'https://billing-server.test/slips/october',
+            ], 200),
+            ...$this->broadbandAccountFake(),
+        ]);
+
+        [$user, $wallet] = $this->makePayer(balance: 1500);
+        $transaction = LedgerTransaction::factory()->create([
+            'wallet_id' => $wallet->id,
+            'type' => LedgerTransactionType::FtthBill,
+            'status' => LedgerTransactionStatus::Completed,
+        ]);
+        BillPayment::query()->create([
+            'ledger_transaction_id' => $transaction->id,
+            'broadband_account_number' => $user->broadband_account_number,
+            'status' => BillPaymentStatus::Completed,
+            'confirmed_at' => now(),
+        ]);
+
+        $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
+            ->getJson('/api/ftth-bills/pending-slip')
+            ->assertOk()
+            ->assertJsonPath('data.bill_month', '2026-10')
+            ->assertJsonPath('data.bill_month_label', 'October 2026')
+            ->assertJsonPath('data.slip.slip_url', 'https://billing-server.test/slips/october');
+
+        Http::assertSent(fn($request) => !str_contains($request->url(), 'bill_month='));
+    }
+
+    public function test_pending_slip_uses_server_month_even_when_local_payment_exists(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 5)->startOfDay());
+
+        Http::fake([
+            'billing-server.test/bill-details*' => Http::response([
+                'amount' => 250,
+                'bill_month' => '2026-10',
+                'bill_month_label' => 'Oct 2026',
+                'slip_url' => 'https://billing-server.test/slips/october',
+            ], 200),
+            ...$this->broadbandAccountFake(),
+        ]);
+
+        [$user, $wallet] = $this->makePayer(balance: 1500);
+        $transaction = LedgerTransaction::factory()->create([
+            'wallet_id' => $wallet->id,
+            'type' => LedgerTransactionType::FtthBill,
+            'status' => LedgerTransactionStatus::Completed,
+        ]);
+        BillPayment::query()->create([
+            'ledger_transaction_id' => $transaction->id,
+            'broadband_account_number' => $user->broadband_account_number,
+            'status' => BillPaymentStatus::Completed,
+            'confirmed_at' => now(),
+        ]);
+
+        $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
+            ->getJson('/api/ftth-bills/pending-slip')
+            ->assertOk()
+            ->assertJsonPath('data.bill_month', '2026-10');
+    }
+
+    public function test_paid_slips_returns_all_slips_from_billing_server(): void
+    {
+        $billingPaidSlips = [
+            [
+                'bill_month' => '2026-08',
+                'amount' => 250,
+                'payment_ref' => 'PAY-1000',
+            ],
+            [
+                'bill_month' => '2026-09',
+                'amount' => 250,
+                'payment_ref' => 'PAY-1001',
+            ],
+        ];
+
+        Http::fake([
+            'billing-server.test/bill-details*' => Http::response([
+                'amount' => 250,
+                'bill_month' => '2026-10',
+                'paid_slips' => $billingPaidSlips,
+            ], 200),
+            ...$this->broadbandAccountFake(),
+        ]);
+
+        [$user] = $this->makePayer(balance: 1500);
+        $expectedPaidSlips = [
+            [
+                'bill_month' => '2026-09',
+                'bill_month_label' => 'September 2026',
+                'customer_name' => 'Broadband Account Holder',
+                'payment_method' => 'CTO',
+                'slip' => [
+                    'account_number' => $user->broadband_account_number,
+                    'amount' => 250,
+                ],
+            ],
+            [
+                'bill_month' => '2026-08',
+                'bill_month_label' => 'August 2026',
+                'customer_name' => 'Broadband Account Holder',
+                'payment_method' => 'CTO',
+                'slip' => [
+                    'account_number' => $user->broadband_account_number,
+                    'amount' => 250,
+                ],
+            ],
+        ];
+
+        $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
+            ->getJson('/api/ftth-bills/paid-slips')
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.paid_slips', $expectedPaidSlips);
+
+        Http::assertSent(
+            fn($request) => str_contains($request->url(), 'account_number=' . $user->broadband_account_number) &&
+                !str_contains($request->url(), 'bill_month='),
+        );
+    }
+
     public function test_user_can_pay_ftth_bill_when_wallet_has_enough_balance(): void
     {
         Notification::fake();
@@ -94,8 +340,8 @@ class FtthBillPaymentTest extends TestCase
         Notification::assertSentTo(
             $user,
             FtthBillPaymentStatusNotification::class,
-            fn (FtthBillPaymentStatusNotification $notification) => $notification->event === BillPaymentNotificationEvent::Completed &&
-                $notification->amount === 1000,
+            fn(FtthBillPaymentStatusNotification $notification) => $notification->event ===
+                BillPaymentNotificationEvent::Completed && $notification->amount === 1000,
         );
     }
 
@@ -147,7 +393,8 @@ class FtthBillPaymentTest extends TestCase
         Notification::assertSentTo(
             $user,
             FtthBillPaymentStatusNotification::class,
-            fn (FtthBillPaymentStatusNotification $notification) => $notification->event === BillPaymentNotificationEvent::Refunded &&
+            fn(FtthBillPaymentStatusNotification $notification) => $notification->event ===
+                BillPaymentNotificationEvent::Refunded &&
                 $notification->refundTransactionNo === $refund->transaction_no,
         );
     }
@@ -196,13 +443,14 @@ class FtthBillPaymentTest extends TestCase
 
         Queue::assertPushed(
             ReconcileStuckFtthBillPaymentsJob::class,
-            fn (ReconcileStuckFtthBillPaymentsJob $job) => $job->ledgerTransactionId === $transaction->id,
+            fn(ReconcileStuckFtthBillPaymentsJob $job) => $job->ledgerTransactionId === $transaction->id,
         );
 
         Notification::assertSentTo(
             $user,
             FtthBillPaymentStatusNotification::class,
-            fn (FtthBillPaymentStatusNotification $notification) => $notification->event === BillPaymentNotificationEvent::Processing &&
+            fn(FtthBillPaymentStatusNotification $notification) => $notification->event ===
+                BillPaymentNotificationEvent::Processing &&
                 $notification->transactionNo === $transaction->transaction_no,
         );
     }
@@ -363,7 +611,8 @@ class FtthBillPaymentTest extends TestCase
         Notification::assertSentTo(
             $user,
             FtthBillPaymentStatusNotification::class,
-            fn (FtthBillPaymentStatusNotification $notification) => $notification->event === BillPaymentNotificationEvent::Completed,
+            fn(FtthBillPaymentStatusNotification $notification) => $notification->event ===
+                BillPaymentNotificationEvent::Completed,
         );
 
         (new ReconcileStuckFtthBillPaymentsJob($transaction->id))->handle(app(FtthBillPaymentService::class));
@@ -416,7 +665,8 @@ class FtthBillPaymentTest extends TestCase
         Notification::assertSentTo(
             $user,
             FtthBillPaymentStatusNotification::class,
-            fn (FtthBillPaymentStatusNotification $notification) => $notification->event === BillPaymentNotificationEvent::Refunded,
+            fn(FtthBillPaymentStatusNotification $notification) => $notification->event ===
+                BillPaymentNotificationEvent::Refunded,
         );
     }
 
@@ -454,5 +704,15 @@ class FtthBillPaymentTest extends TestCase
         $user->deviceTokens()->create(['token' => 'fcm-' . fake()->unique()->uuid()]);
 
         return [$user, $wallet];
+    }
+
+    /** @return array<string, \Illuminate\Http\Client\Response> */
+    private function broadbandAccountFake(): array
+    {
+        return [
+            '*broadband_accounts*' => Http::response([
+                ['customer_name' => 'Broadband Account Holder'],
+            ], 200),
+        ];
     }
 }
