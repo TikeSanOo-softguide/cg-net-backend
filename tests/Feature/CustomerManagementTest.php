@@ -15,6 +15,7 @@ use App\Services\Ledger\LedgerPoster;
 use App\Support\AppPermissions;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Maatwebsite\Excel\Facades\Excel;
@@ -99,6 +100,25 @@ class CustomerManagementTest extends TestCase
                     ->has('packageHistory', 1)
                     ->where('wallet.balance', '15000')
                     ->has('wallet.transactions', 1),
+            );
+    }
+
+    public function test_customer_detail_remains_available_when_broadband_service_cannot_be_reached(): void
+    {
+        config(['services.broadband.url' => 'https://broadband.test']);
+        Http::fake(fn() => throw new ConnectionException('DNS lookup failed.'));
+
+        $admin = Admin::factory()->create();
+        $customer = User::factory()->create(['broadband_account_number' => 'CG0000007']);
+
+        $this->actingAs($admin, 'web')
+            ->get('/customers/' . $customer->id)
+            ->assertOk()
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->component('Customer/Show')
+                    ->where('accountBinding.account_number', 'CG0000007')
+                    ->where('accountBinding.status', 'unknown'),
             );
     }
 

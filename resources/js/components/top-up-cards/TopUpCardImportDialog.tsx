@@ -41,6 +41,7 @@ export function TopUpCardImportDialog({ open, onOpenChange, onCheck, onImport }:
     const [checking, setChecking] = useState(false);
     const [checkedFile, setCheckedFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<TopUpCardCsvPreview | null>(null);
+    const [dragging, setDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const checkRequestId = useRef(0);
     const translatedError = (validationError: TopUpCardCsvValidationError) =>
@@ -59,14 +60,17 @@ export function TopUpCardImportDialog({ open, onOpenChange, onCheck, onImport }:
         setChecking(false);
         setCheckedFile(null);
         setPreview(null);
+        setDragging(false);
 
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
     }, [open]);
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const selectedFile = event.target.files?.[0] ?? null;
+    const handleSelectedFile = (selectedFile: File | null) => {
+        if (checking) {
+            return;
+        }
 
         checkRequestId.current++;
         setError(null);
@@ -84,11 +88,78 @@ export function TopUpCardImportDialog({ open, onOpenChange, onCheck, onImport }:
 
         if (!isCsv) {
             setError(t('top_up_cards.validation.csv_file_type'));
-            event.target.value = '';
+
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+
             return;
         }
 
         setFile(selectedFile);
+    };
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        handleSelectedFile(event.target.files?.[0] ?? null);
+    };
+
+    const handleBrowse = () => {
+        if (checking) {
+            return;
+        }
+
+        fileInputRef.current?.click();
+    };
+
+    const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (!checking) {
+            setDragging(true);
+        }
+    };
+
+    const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (!checking) {
+            setDragging(true);
+        }
+    };
+
+    const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        setDragging(false);
+    };
+
+    const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        setDragging(false);
+
+        if (checking) {
+            return;
+        }
+
+        const droppedFile = event.dataTransfer.files?.[0] ?? null;
+
+        handleSelectedFile(droppedFile);
+    };
+
+    const handleDropZoneKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+        if (checking) {
+            return;
+        }
+
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            handleBrowse();
+        }
     };
 
     const handleCheck = async () => {
@@ -132,6 +203,12 @@ export function TopUpCardImportDialog({ open, onOpenChange, onCheck, onImport }:
         setFile(null);
         setCheckedFile(null);
         setPreview(null);
+        setError(null);
+
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+
         onOpenChange(false);
     };
 
@@ -157,22 +234,86 @@ export function TopUpCardImportDialog({ open, onOpenChange, onCheck, onImport }:
             >
                 <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-5">
                     <div className="flex flex-col gap-2">
-                        <Input
-                            ref={fileInputRef}
-                            type="file"
-                            accept=".csv,text/csv"
-                            onChange={handleFileChange}
-                            aria-invalid={!!error}
-                        />
+                        <label className="text-sm font-medium text-foreground">
+                            {t('top_up_cards.import_csv.csv_file')}
+                        </label>
+                        <div className="relative">
+                            <Input
+                                ref={fileInputRef}
+                                id="top-up-card-csv"
+                                type="file"
+                                accept=".csv,text/csv"
+                                onChange={handleFileChange}
+                                aria-invalid={!!error}
+                                className="sr-only"
+                            />
 
-                        {file ? <p className="text-sm text-muted-foreground">{file.name}</p> : null}
+                            <div
+                                role="button"
+                                tabIndex={checking ? -1 : 0}
+                                aria-disabled={checking}
+                                onClick={handleBrowse}
+                                onKeyDown={handleDropZoneKeyDown}
+                                onDragOver={handleDragOver}
+                                onDragEnter={handleDragEnter}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                                className={[
+                                    'flex min-h-32 w-full flex-col items-center justify-center',
+                                    'rounded-[10px] border-2 border-dashed px-6 py-6 text-center',
+                                    'transition-all duration-200',
+
+                                    checking ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
+
+                                    error
+                                        ? 'border-danger bg-danger/5'
+                                        : dragging
+                                          ? 'border-primary bg-primary/15 shadow-[0_10px_28px_rgb(23_50_54/0.10)]'
+                                          : 'border-primary/35 bg-[linear-gradient(180deg,hsl(var(--primary)/0.08),hsl(var(--primary)/0.02))] hover:border-primary hover:bg-primary/10 hover:shadow-[0_10px_28px_rgb(23_50_54/0.08)]',
+                                ].join(' ')}
+                            >
+                                <span
+                                    className={[
+                                        'flex size-10 items-center justify-center rounded-full',
+                                        'bg-primary/12 text-primary',
+                                        'shadow-[0_0_0_6px_hsl(var(--primary)/0.06)]',
+                                        'transition-transform duration-200',
+
+                                        dragging ? 'scale-110' : '',
+                                    ].join(' ')}
+                                >
+                                    <FileUp className="size-5" strokeWidth={1.6} />
+                                </span>
+                                <p className="mt-2.5 text-[12px] font-medium leading-5 text-foreground">
+                                    {dragging
+                                        ? 'Drop your CSV file here'
+                                        : file
+                                          ? file.name
+                                          : 'Drag & drop your CSV file here'}
+                                </p>
+                                <p className="mt-0.5 text-[10px] leading-4 text-muted-foreground">CSV files only</p>
+                                <span
+                                    className={[
+                                        'mt-2.5 inline-flex h-7 items-center justify-center',
+                                        'rounded-[4px] bg-primary px-2.5',
+                                        'text-[11px] font-medium text-primary-foreground shadow-sm',
+                                    ].join(' ')}
+                                >
+                                    Browse CSV
+                                </span>
+                            </div>
+                        </div>
 
                         {error ? <p className="text-sm text-danger">{error}</p> : null}
                     </div>
 
                     {preview ? (
                         <section className="min-h-0 space-y-2">
-                            <p className="text-sm font-medium text-foreground">
+                            <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+                                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                    <CheckIcon className="size-3.5" strokeWidth={2} />
+                                </span>
+
                                 {t('top_up_cards.import_csv.checked').replace(
                                     ':count',
                                     preview.total_rows.toLocaleString(),

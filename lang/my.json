@@ -876,7 +876,8 @@
             "password_min": "စကားဝှက်သည် အနည်းဆုံး စာလုံး ၈ လုံး ရှိရပါမည်။",
             "password_confirmation_required": "စကားဝှက်ကို အတည်ပြုပါ။",
             "password_confirmation_mismatch": "အတည်ပြု စကားဝှက် မကိုက်ညီပါ။",
-            "status_required": "အခြေအနေ ရွေးပါ။"
+            "status_required": "အခြေအနေ ရွေးပါ။",
+            "account_service_unavailable": "Broadband အကောင့်ဝန်ဆောင်မှုကို လက်ရှိတွင် အသုံးပြု၍မရပါ။"
         }
     },
     "change_plan": {
@@ -1520,7 +1521,8 @@
             "delete_description": "တာဝန်ပေးထားသော ကတ်များ ကျန်ရှိမည်ဖြစ်သော်လည်း ဤရုံးကို ဖျက်မည်။",
             "created": "ရုံးအချက်အလက် ထည့်သွင်းပြီးပါပြီ",
             "updated": "ရုံးအချက်အလက် ပြင်ဆင်ပြီးပါပြီ",
-            "deleted": "ရုံးအချက်အလက် ဖယင်ပြီးပါပြီ"
+            "deleted": "ရုံးအချက်အလက် ဖယင်ပြီးပါပြီ",
+            "office_cannot_delete": "ဤရုံးကို ဖျက်၍မရပါ။"
         },
         "import_csv": {
             "label": "CSV တင်သွင်းရန်",

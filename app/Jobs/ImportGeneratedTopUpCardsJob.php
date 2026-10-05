@@ -480,7 +480,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
         $delimiter = $this->detectDelimiter($firstLine);
 
         if (preg_match('/^sep=(,|;|\t|\|)$/i', $directive, $matches) === 1) {
-            $delimiter = $matches[1] === "\t" ? "\t" : $matches[1];
+            $delimiter = $matches[1];
             $headerLine = fgets($stream);
 
             if ($headerLine === false) {
@@ -492,7 +492,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
         $headers = array_map(static function ($header): string {
             $header = preg_replace('/^\xEF\xBB\xBF/', '', (string) $header) ?? '';
             $header = strtolower(trim($header));
-            $header = strtolower(rtrim($header, "* \t"));
+            $header = rtrim($header, "* \t");
             $header = str_replace([' ', '-'], '_', $header);
 
             return match ($header) {

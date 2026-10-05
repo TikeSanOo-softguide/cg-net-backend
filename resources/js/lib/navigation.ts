@@ -179,7 +179,7 @@ export const navigation: NavGroup[] = [
             {
                 labelKey: 'menu.top_up_card_batch_import',
                 descriptionKey: 'menu.top_up_card_batch_import_description',
-                href: '/top-up-cards/office-assign',
+                href: '/top-up-cards/card-import',
                 icon: FileUp,
             },
             {

@@ -136,6 +136,38 @@ class TopUpCardManagementTest extends TestCase
         ]);
     }
 
+    public function test_admins_can_import_csv_with_a_single_data_row(): void
+    {
+        $actor = Admin::factory()->create();
+        $actor->assignRole(AppPermissions::SuperAdmin);
+        Storage::fake('local');
+        Queue::fake();
+        $office = Office::query()->create(['name' => 'Office 31', 'address' => 'Main Street', 'cd' => '31']);
+        $serialNo = '2609111128316006';
+
+        $this->actingAs($actor, 'web')
+            ->post('/top-up-cards/cards/import', [
+                'file' => UploadedFile::fake()->createWithContent(
+                    'cards.csv',
+                    "serial_no,pin,amount,expires_at\n{$serialNo},1234567890123456,1000,2030-12-31\n",
+                ),
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect('/top-up-cards/card-import');
+
+        Queue::assertPushed(ImportGeneratedTopUpCardsJob::class, 1);
+        Queue::pushedJobs()[ImportGeneratedTopUpCardsJob::class][0]['job']->handle();
+
+        $card = TopUpCard::query()->where('serial_no', $serialNo)->firstOrFail();
+        $this->assertSame(TopUpCardStatus::Active, $card->status);
+        $this->assertSame($office->id, $card->office_id);
+        $this->assertDatabaseHas('batches', [
+            'id' => $card->batch_id,
+            'quantity' => 1,
+            'total_value' => 1000,
+        ]);
+    }
+
     public function test_admins_can_import_csv_cards_while_preserving_generation_flow(): void
     {
         $actor = Admin::factory()->create();
@@ -152,12 +184,12 @@ class TopUpCardManagementTest extends TestCase
         ]);
 
         $this->actingAs($actor, 'web')
-            ->post('/top-up-cards/offices/import', [
+            ->post('/top-up-cards/cards/import', [
                 'file' => UploadedFile::fake()->createWithContent('cards.csv', $csv),
                 'return' => 'assign',
             ])
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/top-up-cards/office-assign');
+            ->assertRedirect('/top-up-cards/card-import');
 
         Queue::assertPushed(ImportGeneratedTopUpCardsJob::class, 1);
         Queue::pushedJobs()[ImportGeneratedTopUpCardsJob::class][0]['job']->handle();
@@ -225,7 +257,7 @@ class TopUpCardManagementTest extends TestCase
                 'file' => UploadedFile::fake()->createWithContent('cards.csv', $csv),
                 'return' => 'assign',
             ])
-            ->assertRedirect('/top-up-cards/office-assign');
+            ->assertRedirect('/top-up-cards/card-import');
 
         $job = Queue::pushedJobs()[ImportGeneratedTopUpCardsJob::class][0]['job'];
 
@@ -260,7 +292,7 @@ class TopUpCardManagementTest extends TestCase
                 'file' => UploadedFile::fake()->createWithContent('cards.csv', $csv),
                 'return' => 'assign',
             ])
-            ->assertRedirect('/top-up-cards/office-assign');
+            ->assertRedirect('/top-up-cards/card-import');
 
         $job = Queue::pushedJobs()[ImportGeneratedTopUpCardsJob::class][0]['job'];
 
@@ -296,7 +328,7 @@ class TopUpCardManagementTest extends TestCase
                 'file' => UploadedFile::fake()->createWithContent('cards.csv', $csv),
                 'return' => 'assign',
             ])
-            ->assertRedirect('/top-up-cards/office-assign');
+            ->assertRedirect('/top-up-cards/card-import');
 
         $job = Queue::pushedJobs()[ImportGeneratedTopUpCardsJob::class][0]['job'];
 
@@ -325,7 +357,7 @@ class TopUpCardManagementTest extends TestCase
                 'file' => UploadedFile::fake()->createWithContent('cards.csv', $csv),
                 'return' => 'assign',
             ])
-            ->assertRedirect('/top-up-cards/office-assign');
+            ->assertRedirect('/top-up-cards/card-import');
 
         $job = Queue::pushedJobs()[ImportGeneratedTopUpCardsJob::class][0]['job'];
         DB::unprepared(
@@ -444,11 +476,11 @@ class TopUpCardManagementTest extends TestCase
         $active = TopUpCard::factory()->create(['status' => TopUpCardStatus::Active]);
 
         $this->actingAs($actor, 'web')
-            ->get('/top-up-cards/office-assign')
+            ->get('/top-up-cards/card-import')
             ->assertOk()
             ->assertInertia(
                 fn(Assert $page) => $page
-                    ->component('TopUpCards/OfficeAssign')
+                    ->component('TopUpCards/CardImport')
                     ->has('batchPage.data', 1)
                     ->where('batchPage.data.0.id', $active->batch_id)
                     ->where('batchPage.data.0.batch_no', $active->batch->batch_no)
@@ -468,11 +500,11 @@ class TopUpCardManagementTest extends TestCase
         TopUpCard::factory()->create(['batch_id' => $cancelledBatch->id, 'status' => TopUpCardStatus::Active]);
 
         $this->actingAs($actor, 'web')
-            ->get('/top-up-cards/office-assign?status=cancelled')
+            ->get('/top-up-cards/card-import?status=cancelled')
             ->assertOk()
             ->assertInertia(
                 fn(Assert $page) => $page
-                    ->component('TopUpCards/OfficeAssign')
+                    ->component('TopUpCards/CardImport')
                     ->has('batchPage.data', 1)
                     ->where('batchPage.data.0.id', $cancelledBatch->id)
                     ->where('batchPage.data.0.status', 'cancelled'),
@@ -521,11 +553,11 @@ class TopUpCardManagementTest extends TestCase
         $csv = "serial_no,pin,amount,expires_at,status\n2609111128886006,1234567890123456,1000,{$card->expires_at->toDateString()},pending\n";
 
         $this->actingAs($actor, 'web')
-            ->post('/top-up-cards/offices/import', [
+            ->post('/top-up-cards/cards/import', [
                 'file' => UploadedFile::fake()->createWithContent('cards.csv', $csv),
                 'return' => 'assign',
             ])
-            ->assertRedirect('/top-up-cards/office-assign');
+            ->assertRedirect('/top-up-cards/card-import');
 
         Queue::assertPushed(ImportGeneratedTopUpCardsJob::class, 1);
         $job = Queue::pushedJobs()[ImportGeneratedTopUpCardsJob::class][0]['job'];

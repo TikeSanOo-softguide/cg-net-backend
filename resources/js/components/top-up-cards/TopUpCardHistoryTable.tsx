@@ -21,7 +21,7 @@ import { SearchableSelect } from '../SearchableSelect';
 import { CopyValueButton } from '../CopyValueButton';
 import { FormField } from '../ui/form-field';
 
-type TopUpCardListTableProps = {
+type TopUpCardHistoryProps = {
     cards: Paginated<TopUpCardRow>;
     amounts: number[];
     batches: {
@@ -40,7 +40,7 @@ type TopUpCardListTableProps = {
     onFilter: (next: CardHistoryFilters) => void;
 };
 
-export function TopUpCardListTable({
+export function TopUpCardHistoryTable({
     cards,
     amounts,
     batches,
@@ -50,7 +50,7 @@ export function TopUpCardListTable({
     loading = false,
     onSearchChange,
     onFilter,
-}: TopUpCardListTableProps) {
+}: TopUpCardHistoryProps) {
     const { t } = useTranslation();
     const can = useCan();
     const [voiding, setVoiding] = useState<TopUpCardRow | null>(null);
@@ -107,7 +107,7 @@ export function TopUpCardListTable({
                             <FormField
                                 label={t('common.status')}
                                 htmlFor="status"
-                                className="w-full shrink-0 sm:w-40 mr-3"
+                                className="w-full shrink-0 sm:w-40"
                                 labelClassName="text-[13px]"
                             >
                                 <Select

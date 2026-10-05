@@ -875,7 +875,8 @@
             "password_min": "The password must be at least 8 characters.",
             "password_confirmation_required": "Please confirm the password.",
             "password_confirmation_mismatch": "The password confirmation does not match.",
-            "status_required": "Please select a status."
+            "status_required": "Please select a status.",
+            "account_service_unavailable": "The broadband account service is currently unavailable."
         }
     },
     "change_plan": {
@@ -1520,7 +1521,8 @@
             "delete_description": "Assigned cards will remain, but this office will be removed.",
             "created": "Office created successfully.",
             "updated": "Office updated successfully.",
-            "deleted": "Office deleted successfully."
+            "deleted": "Office deleted successfully.",
+            "office_cannot_delete": "This office cannot be deleted."
         },
         "import_csv": {
             "label": "Import CSV",

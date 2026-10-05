@@ -69,11 +69,7 @@ export default function OfficePage({ offices, officeCds, filters }: Props) {
                 icon={editing ? UserRoundIcon : PlusIcon}
             >
                 {formOpen ? (
-                    <TopUpCardOfficeForm
-                        item={editing}
-                        officeCds={officeCds}
-                        onClose={() => setFormOpen(false)}
-                    />
+                    <TopUpCardOfficeForm item={editing} officeCds={officeCds} onClose={() => setFormOpen(false)} />
                 ) : null}
             </FormDialog>
             <ConfirmDialog
