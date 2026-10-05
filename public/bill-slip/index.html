@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="theme-color" content="#f3f5f1">
+	<title>FTTH Bill Desk</title>
+	<style>
+		@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+		:root {
+			color-scheme: light;
+			--paper: #f3f5f1;
+			--ink: #1a2925;
+			--muted: #66736d;
+			--line: #dce3dc;
+			--surface: #fff;
+			--forest: #176a55;
+			--forest-dark: #105441;
+			--lime: #d8ef8a;
+			--coral: #dc6e54;
+			--danger: #a5332d;
+			--mono: 'DM Mono', ui-monospace, monospace;
+			--sans: 'DM Sans', sans-serif;
+			--display: 'Space Grotesk', sans-serif;
+		}
+
+		* { box-sizing: border-box; }
+
+		body {
+			margin: 0;
+			min-width: 320px;
+			min-height: 100vh;
+			color: var(--ink);
+			background-color: var(--paper);
+			background-image: radial-gradient(#cad5cc 0.7px, transparent 0.7px);
+			background-size: 17px 17px;
+			font-family: var(--sans);
+		}
+
+		button, input { font: inherit; }
+
+		.topbar {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 20px;
+			min-height: 70px;
+			padding: 0 clamp(20px, 5vw, 72px);
+			color: #f9fcf7;
+			background: var(--ink);
+		}
+
+		.brand {
+			display: flex;
+			align-items: center;
+			gap: 11px;
+			font-family: var(--display);
+			font-size: 16px;
+			font-weight: 700;
+		}
+
+		.brand-mark {
+			display: grid;
+			width: 30px;
+			height: 30px;
+			place-items: center;
+			color: var(--ink);
+			background: var(--lime);
+			border-radius: 8px;
+			font-size: 12px;
+		}
+
+		.topbar-note {
+			color: #b7c5bd;
+			font-family: var(--mono);
+			font-size: 11px;
+		}
+
+		main {
+			width: min(1180px, calc(100% - 40px));
+			margin: 0 auto;
+			padding: 52px 0 72px;
+		}
+
+		.intro {
+			display: flex;
+			align-items: end;
+			justify-content: space-between;
+			gap: 28px;
+			margin-bottom: 30px;
+			animation: rise-in 420ms ease-out both;
+		}
+
+		.eyebrow, .step-label {
+			color: var(--forest);
+			font-family: var(--mono);
+			font-size: 11px;
+			letter-spacing: 0;
+			text-transform: uppercase;
+		}
+
+		h1, h2, p { margin-top: 0; }
+
+		h1 {
+			margin-bottom: 8px;
+			font-family: var(--display);
+			font-size: clamp(32px, 5vw, 48px);
+			line-height: 1.08;
+		}
+
+		.intro p {
+			margin-bottom: 0;
+			color: var(--muted);
+			font-size: 14px;
+		}
+
+		.api-pill {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			flex: none;
+			padding: 9px 12px;
+			border: 1px solid var(--line);
+			border-radius: 5px;
+			color: var(--muted);
+			background: rgba(255, 255, 255, .72);
+			font-family: var(--mono);
+			font-size: 11px;
+		}
+
+		.api-dot {
+			width: 7px;
+			height: 7px;
+			border-radius: 50%;
+			background: var(--coral);
+		}
+
+		.workspace {
+			display: grid;
+			grid-template-columns: minmax(300px, 390px) minmax(0, 1fr);
+			gap: 1px;
+			overflow: hidden;
+			border: 1px solid var(--line);
+			border-radius: 7px;
+			background: var(--line);
+			box-shadow: 0 18px 50px rgba(26, 41, 37, .08);
+			animation: rise-in 520ms 70ms ease-out both;
+		}
+
+		.setup, .results { min-width: 0; background: var(--surface); }
+		.setup { padding: 28px; }
+		.results { padding: 28px clamp(22px, 4vw, 42px); }
+
+		.section-heading {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			margin-bottom: 22px;
+		}
+
+		.step-number {
+			display: grid;
+			width: 26px;
+			height: 26px;
+			place-items: center;
+			border-radius: 50%;
+			color: var(--forest-dark);
+			background: #e5f2de;
+			font-family: var(--mono);
+			font-size: 11px;
+		}
+
+		h2 {
+			margin: 0;
+			font-family: var(--display);
+			font-size: 17px;
+		}
+
+		.field { margin-bottom: 17px; }
+
+		label {
+			display: block;
+			margin-bottom: 7px;
+			color: #35443e;
+			font-size: 12px;
+			font-weight: 700;
+		}
+
+		input {
+			width: 100%;
+			min-height: 43px;
+			padding: 10px 12px;
+			border: 1px solid #cbd5cd;
+			border-radius: 4px;
+			outline: none;
+			color: var(--ink);
+			background: #fcfdfb;
+			font-family: var(--mono);
+			font-size: 12px;
+			transition: border-color 140ms ease, box-shadow 140ms ease;
+		}
+
+		input:focus {
+			border-color: var(--forest);
+			box-shadow: 0 0 0 3px rgba(23, 106, 85, .12);
+		}
+
+		.hint {
+			margin: 7px 0 0;
+			color: var(--muted);
+			font-size: 11px;
+			line-height: 1.5;
+		}
+
+		.key-row { display: flex; gap: 8px; }
+		.key-row input { flex: 1; min-width: 0; }
+
+		.icon-button {
+			width: 43px;
+			flex: none;
+			border: 1px solid var(--line);
+			border-radius: 4px;
+			color: var(--ink);
+			background: #f7f9f6;
+			cursor: pointer;
+			font-family: var(--mono);
+		}
+
+		.icon-button:hover { border-color: var(--forest); color: var(--forest); }
+
+		.actions { display: grid; gap: 9px; margin-top: 23px; }
+
+		.primary-button, .secondary-button {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 9px;
+			width: 100%;
+			min-height: 45px;
+			padding: 11px 15px;
+			border: 1px solid transparent;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 13px;
+			font-weight: 700;
+			transition: background 140ms ease, transform 140ms ease;
+		}
+
+		.primary-button { color: white; background: var(--forest); }
+		.primary-button:hover { background: var(--forest-dark); transform: translateY(-1px); }
+		.secondary-button { color: var(--forest-dark); background: #eaf3e8; }
+		.secondary-button:hover { background: #dfeddb; }
+		button:disabled { opacity: .55; cursor: wait; transform: none; }
+
+		.results-top {
+			display: flex;
+			align-items: start;
+			justify-content: space-between;
+			gap: 18px;
+			padding-bottom: 20px;
+			border-bottom: 1px solid var(--line);
+		}
+
+		.status {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			padding: 7px 9px;
+			border: 1px solid var(--line);
+			border-radius: 4px;
+			color: var(--muted);
+			background: #f8faf7;
+			font-family: var(--mono);
+			font-size: 10px;
+			text-transform: uppercase;
+		}
+
+		.status::before {
+			width: 7px;
+			height: 7px;
+			border-radius: 50%;
+			background: #96a39b;
+			content: '';
+		}
+
+		.status[data-state="success"] { color: var(--forest-dark); border-color: #bfddc1; background: #edf7ea; }
+		.status[data-state="success"]::before { background: var(--forest); }
+		.status[data-state="error"] { color: var(--danger); border-color: #edc3bb; background: #fff3ef; }
+		.status[data-state="error"]::before { background: var(--coral); }
+		.status[data-state="working"]::before { background: #d59627; }
+
+		.output-stack { display: grid; gap: 22px; padding-top: 21px; }
+
+		.output-block { min-width: 0; }
+
+		.output-heading {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			margin-bottom: 9px;
+		}
+
+		.output-heading h3 {
+			margin: 0;
+			font-family: var(--display);
+			font-size: 13px;
+		}
+
+		.output-meta { color: var(--muted); font-family: var(--mono); font-size: 10px; }
+
+		pre {
+			min-height: 110px;
+			max-height: 340px;
+			overflow: auto;
+			margin: 0;
+			padding: 15px;
+			border: 1px solid #e3e9e3;
+			border-radius: 4px;
+			color: #dce9df;
+			background: #20312b;
+			font-family: var(--mono);
+			font-size: 11px;
+			line-height: 1.65;
+			white-space: pre-wrap;
+			overflow-wrap: anywhere;
+		}
+
+		.empty-output {
+			display: grid;
+			min-height: 110px;
+			place-items: center;
+			padding: 20px;
+			border: 1px dashed #cbd6ce;
+			border-radius: 4px;
+			color: #7c8982;
+			font-family: var(--mono);
+			font-size: 11px;
+			text-align: center;
+		}
+
+		.paid-slip-list { display: grid; gap: 12px; }
+
+		.paid-slip-card {
+			padding: 14px;
+			border: 1px solid #e3e9e3;
+			border-radius: 4px;
+			background: #fcfdfb;
+		}
+
+		.paid-slip-card h4 {
+			margin: 0 0 10px;
+			font-family: var(--display);
+			font-size: 13px;
+		}
+
+		.paid-slip-card pre {
+			min-height: 0;
+			max-height: 220px;
+		}
+
+		.paid-slip-link {
+			display: inline-block;
+			margin-top: 10px;
+			color: var(--forest);
+			font-size: 12px;
+			font-weight: 700;
+		}
+
+		.sequence-note {
+			display: flex;
+			gap: 10px;
+			margin-top: 20px;
+			padding: 12px 13px;
+			border-left: 3px solid var(--lime);
+			color: #52625a;
+			background: #f5f8ee;
+			font-size: 11px;
+			line-height: 1.55;
+		}
+
+		.sequence-note strong { color: var(--ink); }
+
+		@keyframes rise-in {
+			from { opacity: 0; transform: translateY(9px); }
+			to { opacity: 1; transform: translateY(0); }
+		}
+
+		@media (max-width: 760px) {
+			main { padding-top: 35px; }
+			.intro { align-items: start; flex-direction: column; margin-bottom: 22px; }
+			.workspace { grid-template-columns: 1fr; }
+			.setup { padding: 24px 20px; }
+			.results { padding: 24px 20px; }
+		}
+
+		@media (prefers-reduced-motion: reduce) {
+			*, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+		}
+	</style>
+</head>
+<body>
+	<header class="topbar">
+		<div class="brand"><span class="brand-mark">CG</span><span>FTTH Bill Desk</span></div>
+		<span class="topbar-note">API TEST WORKSPACE</span>
+	</header>
+
+	<main>
+		<section class="intro" aria-labelledby="page-title">
+			<div>
+				<div class="eyebrow">CUSTOMER BILLING / FTTH</div>
+				<h1 id="page-title">Bill payment</h1>
+				<p>Run a payment and inspect the next pending bill slip.</p>
+			</div>
+			<div class="api-pill"><span class="api-dot" aria-hidden="true"></span><span id="api-origin-label">API NOT CONNECTED</span></div>
+		</section>
+
+		<section class="workspace" aria-label="FTTH bill payment testing">
+			<form class="setup" id="bill-form">
+				<div class="section-heading">
+					<span class="step-number">01</span>
+					<h2>Request details</h2>
+				</div>
+
+				<div class="field">
+					<label for="api-base">API base URL</label>
+					<input id="api-base" name="api-base" type="url" required autocomplete="url" spellcheck="false">
+				</div>
+
+				<div class="field">
+					<label for="token">Sanctum bearer token</label>
+					<input id="token" name="token" type="password" required autocomplete="off" placeholder="Paste access token" spellcheck="false">
+					<p class="hint">Kept in this page only. It is not saved to browser storage.</p>
+				</div>
+
+				<div class="field">
+					<label for="account-number">Broadband account number</label>
+					<input id="account-number" name="account-number" type="text" maxlength="32" autocomplete="off" placeholder="e.g. CG12345678" spellcheck="false">
+					<p class="hint">Pending-slip lookup uses the broadband account linked to this token.</p>
+				</div>
+
+				<div class="field">
+					<label for="idempotency-key">Payment idempotency key</label>
+					<div class="key-row">
+						<input id="idempotency-key" name="idempotency-key" type="text" required minlength="8" maxlength="100" autocomplete="off" spellcheck="false">
+						<button class="icon-button" id="new-key" type="button" aria-label="Generate a new payment key" title="Generate a new payment key">+</button>
+					</div>
+				</div>
+
+				<div class="actions">
+					<button class="primary-button" id="pay-button" type="submit">Pay bill, then fetch pending slip</button>
+					<button class="secondary-button" id="slip-button" type="button">Fetch pending slip only</button>
+					<button class="secondary-button" id="paid-slips-button" type="button">Fetch paid slips</button>
+				</div>
+			</form>
+
+			<section class="results" aria-labelledby="results-title">
+				<div class="results-top">
+					<div class="section-heading" style="margin:0">
+						<span class="step-number">02</span>
+						<h2 id="results-title">Results</h2>
+					</div>
+					<span class="status" id="status" data-state="idle" role="status" aria-live="polite">Ready</span>
+				</div>
+
+				<div class="output-stack">
+					<section class="output-block" aria-labelledby="payment-title">
+						<div class="output-heading">
+							<h3 id="payment-title">Payment response</h3>
+							<span class="output-meta" id="payment-meta">POST /api/ftth-bills/pay</span>
+						</div>
+						<div class="empty-output" id="payment-empty">Payment response will appear here.</div>
+						<pre id="payment-output" hidden></pre>
+					</section>
+
+					<section class="output-block" aria-labelledby="slip-title">
+						<div class="output-heading">
+							<h3 id="slip-title">Pending bill slip</h3>
+							<span class="output-meta" id="slip-meta">GET /api/ftth-bills/pending-slip</span>
+						</div>
+						<div class="empty-output" id="slip-empty">The pending slip will appear after a confirmed payment or a manual lookup.</div>
+						<pre id="slip-output" hidden></pre>
+					</section>
+
+					<section class="output-block" aria-labelledby="paid-slips-title">
+						<div class="output-heading">
+							<h3 id="paid-slips-title">Paid bill slips</h3>
+							<span class="output-meta" id="paid-slips-meta">GET /api/ftth-bills/paid-slips</span>
+						</div>
+						<div class="empty-output" id="paid-slips-empty">Paid slips will appear here after lookup.</div>
+						<div class="paid-slip-list" id="paid-slips-output" hidden></div>
+					</section>
+				</div>
+
+				<div class="sequence-note"><span aria-hidden="true">i</span><span><strong>Payment in progress?</strong> The slip lookup runs only after a completed payment. If the API returns processing, wait for confirmation and fetch the slip separately.</span></div>
+			</section>
+		</section>
+	</main>
+
+	<script>
+		const form = document.querySelector('#bill-form');
+		const apiBase = document.querySelector('#api-base');
+		const tokenInput = document.querySelector('#token');
+		const accountInput = document.querySelector('#account-number');
+		const keyInput = document.querySelector('#idempotency-key');
+		const payButton = document.querySelector('#pay-button');
+		const slipButton = document.querySelector('#slip-button');
+		const paidSlipsButton = document.querySelector('#paid-slips-button');
+		const statusBadge = document.querySelector('#status');
+		const apiOriginLabel = document.querySelector('#api-origin-label');
+
+		apiBase.value = window.location.protocol === 'file:' ? 'http://127.0.0.1:8000' : window.location.origin;
+
+		function makeIdempotencyKey() {
+			return `ftth-web-${crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
+		}
+
+		keyInput.value = makeIdempotencyKey();
+
+		function setStatus(message, state = 'idle') {
+			statusBadge.textContent = message;
+			statusBadge.dataset.state = state;
+		}
+
+		function showOutput(prefix, payload, statusCode) {
+			const empty = document.querySelector(`#${prefix}-empty`);
+			const output = document.querySelector(`#${prefix}-output`);
+			const meta = document.querySelector(`#${prefix}-meta`);
+			empty.hidden = true;
+			output.hidden = false;
+			output.textContent = JSON.stringify(payload, null, 2);
+			meta.textContent = `${prefix === 'payment' ? 'HTTP POST' : 'HTTP GET'} | ${statusCode}`;
+		}
+
+		function clearSlipOutput() {
+			document.querySelector('#slip-output').hidden = true;
+			document.querySelector('#slip-empty').hidden = false;
+			document.querySelector('#slip-meta').textContent = 'GET /api/ftth-bills/pending-slip';
+		}
+
+		async function fetchPaidSlips() {
+			const response = await fetch(requestUrl('/api/ftth-bills/paid-slips'), {
+				method: 'GET',
+				headers: { Accept: 'application/json', Authorization: `Bearer ${tokenInput.value.trim()}` },
+			});
+			const payload = await readResponse(response);
+
+			if (!response.ok || payload.success === false) {
+				renderPaidSlips([], response.status, payload.message || 'Unable to retrieve paid slips.');
+				throw new Error(payload.message || `Paid-slips request failed (${response.status}).`);
+			}
+
+			renderPaidSlips(payload.data?.paid_slips, response.status, payload.message);
+			return payload;
+		}
+
+		function renderPaidSlips(paidSlips, statusCode, emptyMessage = 'No paid slips were returned for this account.') {
+			const empty = document.querySelector('#paid-slips-empty');
+			const list = document.querySelector('#paid-slips-output');
+			const meta = document.querySelector('#paid-slips-meta');
+			list.replaceChildren();
+			meta.textContent = `HTTP GET | ${statusCode}`;
+
+			if (!Array.isArray(paidSlips) || paidSlips.length === 0) {
+				empty.textContent = emptyMessage;
+				empty.hidden = false;
+				list.hidden = true;
+				return;
+			}
+
+			empty.hidden = true;
+			list.hidden = false;
+
+			for (const [index, slip] of paidSlips.entries()) {
+				const card = document.createElement('article');
+				card.className = 'paid-slip-card';
+
+				const heading = document.createElement('h4');
+				heading.textContent = slip.bill_month_label || slip.bill_month || `Paid slip ${index + 1}`;
+				card.append(heading);
+
+				const details = document.createElement('pre');
+				details.textContent = JSON.stringify(slip, null, 2);
+				card.append(details);
+
+				const slipUrl = slip.slip_url || slip.url;
+				if (typeof slipUrl === 'string' && /^https?:\/\//i.test(slipUrl.trim())) {
+					const link = document.createElement('a');
+					link.className = 'paid-slip-link';
+					link.href = slipUrl;
+					link.target = '_blank';
+					link.rel = 'noopener noreferrer';
+					link.textContent = 'Open paid slip';
+					card.append(link);
+				}
+
+				list.append(card);
+			}
+		}
+
+		function requestUrl(path) {
+			return `${apiBase.value.trim().replace(/\/+$/, '')}${path}`;
+		}
+
+		async function readResponse(response) {
+			const text = await response.text();
+			try {
+				return text ? JSON.parse(text) : {};
+			} catch {
+				return { message: text || response.statusText };
+			}
+		}
+
+		async function fetchPendingSlip() {
+			const response = await fetch(requestUrl('/api/ftth-bills/pending-slip'), {
+				method: 'GET',
+				headers: { Accept: 'application/json', Authorization: `Bearer ${tokenInput.value.trim()}` },
+			});
+			const payload = await readResponse(response);
+			showOutput('slip', payload, response.status);
+
+			if (!response.ok || payload.success === false) {
+				throw new Error(payload.message || `Pending-slip request failed (${response.status}).`);
+			}
+
+			return payload;
+		}
+
+		async function fetchSlipAndUpdateStatus() {
+			setStatus('Fetching slip', 'working');
+			try {
+				await fetchPendingSlip();
+				setStatus('Slip ready', 'success');
+			} catch (error) {
+				setStatus('Slip lookup failed', 'error');
+				throw error;
+			}
+		}
+
+		function setBusy(busy) {
+			payButton.disabled = busy;
+			slipButton.disabled = busy;
+			paidSlipsButton.disabled = busy;
+			document.querySelector('#new-key').disabled = busy;
+		}
+
+		form.addEventListener('submit', async (event) => {
+			event.preventDefault();
+			if (!form.reportValidity()) return;
+
+			const idempotencyKey = keyInput.value.trim();
+			keyInput.value = makeIdempotencyKey();
+			setBusy(true);
+			clearSlipOutput();
+			setStatus('Paying bill', 'working');
+			apiOriginLabel.textContent = new URL(apiBase.value).host.toUpperCase();
+
+			try {
+				const response = await fetch(requestUrl('/api/ftth-bills/pay'), {
+					method: 'POST',
+					headers: {
+						Accept: 'application/json',
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${tokenInput.value.trim()}`,
+					},
+					body: JSON.stringify({
+						broadband_account_number: accountInput.value.trim(),
+						idempotency_key: idempotencyKey,
+					}),
+				});
+				const payload = await readResponse(response);
+				showOutput('payment', payload, response.status);
+
+				if (!response.ok || payload.success === false) {
+					setStatus('Payment failed', 'error');
+					return;
+				}
+
+				const billingStatus = payload.data?.billing_status;
+				if (billingStatus !== 'completed') {
+					setStatus(billingStatus === 'processing' ? 'Payment processing' : 'Payment accepted', 'working');
+					return;
+				}
+
+				setStatus('Payment complete', 'success');
+				try {
+					await fetchPendingSlip();
+					setStatus('Payment complete | slip ready', 'success');
+				} catch (error) {
+					setStatus('Paid | slip lookup failed', 'error');
+					document.querySelector('#slip-empty').textContent = error.message;
+				}
+			} catch (error) {
+				showOutput('payment', { message: error.message }, 'network error');
+				setStatus('Request failed', 'error');
+			} finally {
+				setBusy(false);
+			}
+		});
+
+		slipButton.addEventListener('click', async () => {
+			if (!tokenInput.value.trim()) {
+				tokenInput.focus();
+				tokenInput.reportValidity();
+				return;
+			}
+
+			setBusy(true);
+			apiOriginLabel.textContent = new URL(apiBase.value).host.toUpperCase();
+			try {
+				await fetchSlipAndUpdateStatus();
+			} catch (error) {
+				document.querySelector('#slip-empty').hidden = true;
+				document.querySelector('#slip-output').hidden = false;
+				document.querySelector('#slip-output').textContent = JSON.stringify({ message: error.message }, null, 2);
+			} finally {
+				setBusy(false);
+			}
+		});
+
+		paidSlipsButton.addEventListener('click', async () => {
+			if (!tokenInput.value.trim()) {
+				tokenInput.focus();
+				tokenInput.reportValidity();
+				return;
+			}
+
+			setBusy(true);
+			apiOriginLabel.textContent = new URL(apiBase.value).host.toUpperCase();
+			setStatus('Fetching paid slips', 'working');
+
+			try {
+				await fetchPaidSlips();
+				setStatus('Paid slips ready', 'success');
+			} catch (error) {
+				setStatus('Paid-slip lookup failed', 'error');
+				document.querySelector('#paid-slips-empty').hidden = true;
+				document.querySelector('#paid-slips-output').hidden = false;
+				document.querySelector('#paid-slips-output').replaceChildren();
+				const errorMessage = document.createElement('div');
+				errorMessage.className = 'empty-output';
+				errorMessage.textContent = error.message;
+				document.querySelector('#paid-slips-output').append(errorMessage);
+			} finally {
+				setBusy(false);
+			}
+		});
+
+		document.querySelector('#new-key').addEventListener('click', () => {
+			keyInput.value = makeIdempotencyKey();
+		});
+	</script>
+</body>
+</html>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dev;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -22,7 +23,7 @@ use Illuminate\Support\Str;
  */
 class FakeBillingController extends Controller
 {
-    public const DEFAULT_AMOUNT = 25000;
+    public const DEFAULT_AMOUNT = 250;
 
     public function billDetails(Request $request): JsonResponse
     {
@@ -32,9 +33,14 @@ class FakeBillingController extends Controller
             return response()->json(['message' => 'Account not found.'], 404);
         }
 
+        $billMonth = $this->nextBillMonth($account);
+
         return response()->json([
             'account_number' => $account,
             'amount' => str_starts_with($account, 'BIG') ? 999_999_999 : self::DEFAULT_AMOUNT,
+            'bill_month' => $billMonth,
+            'bill_month_label' => Carbon::createFromFormat('!Y-m', $billMonth)->format('F Y'),
+            'paid_slips' => Cache::get($this->paidSlipsCacheKey($account), []),
         ]);
     }
 
@@ -53,9 +59,11 @@ class FakeBillingController extends Controller
             return response()->json(['message' => 'Fake billing gateway timeout.'], 504);
         }
 
+        $billingRef = $this->advanceBillMonth($account, $paymentRef);
+
         return response()->json([
             'success' => true,
-            'billing_ref' => 'FAKE-BILL-'.Str::upper(Str::random(8)),
+            'billing_ref' => $billingRef,
             'payment_ref' => $paymentRef,
         ]);
     }
@@ -69,21 +77,81 @@ class FakeBillingController extends Controller
             return response()->json(['message' => 'Payment not found.'], 404);
         }
 
-        return response()->json(match (true) {
-            str_starts_with($account, 'PENDING-OK') => [
-                'status' => 'completed',
-                'billing_ref' => 'FAKE-BILL-'.Str::upper(Str::random(8)),
-                'payment_ref' => $paymentRef,
-            ],
-            str_starts_with($account, 'PENDING-FAIL') => ['status' => 'failed', 'message' => 'Fake billing marked the payment failed.'],
-            str_starts_with($account, 'PENDING') => ['status' => 'processing'],
-            str_starts_with($account, 'REJECT') => ['status' => 'failed'],
-            default => ['status' => 'completed', 'payment_ref' => $paymentRef],
-        });
+        $billingRef = str_starts_with($account, 'PENDING-OK')
+            ? $this->advanceBillMonth($account, $paymentRef)
+            : 'FAKE-BILL-' . Str::upper(Str::random(8));
+
+        return response()->json(
+            match (true) {
+                str_starts_with($account, 'PENDING-OK') => [
+                    'status' => 'completed',
+                    'billing_ref' => $billingRef,
+                    'payment_ref' => $paymentRef,
+                ],
+                str_starts_with($account, 'PENDING-FAIL') => [
+                    'status' => 'failed',
+                    'message' => 'Fake billing marked the payment failed.',
+                ],
+                str_starts_with($account, 'PENDING') => ['status' => 'processing'],
+                str_starts_with($account, 'REJECT') => ['status' => 'failed'],
+                default => ['status' => 'completed', 'payment_ref' => $paymentRef],
+            },
+        );
     }
 
     private function cacheKey(string $paymentRef): string
     {
-        return 'fake-billing:payment:'.$paymentRef;
+        return 'fake-billing:payment:' . $paymentRef;
+    }
+
+    private function nextBillMonth(string $account): string
+    {
+        return Cache::rememberForever(
+            $this->billMonthCacheKey($account),
+            fn() => now()->startOfMonth()->format('Y-m'),
+        );
+    }
+
+    private function advanceBillMonth(string $account, string $paymentRef): string
+    {
+        $billingRef = Cache::rememberForever(
+            'fake-billing:billing-ref:' . $paymentRef,
+            fn() => 'FAKE-BILL-' . Str::upper(Str::random(8)),
+        );
+
+        if (!Cache::add('fake-billing:advanced:' . $paymentRef, true, now()->addYear())) {
+            return $billingRef;
+        }
+
+        $paidMonth = $this->nextBillMonth($account);
+        $paidSlips = Cache::get($this->paidSlipsCacheKey($account), []);
+        $paidSlips[] = [
+            'account_number' => $account,
+            'bill_month' => $paidMonth,
+            'bill_month_label' => Carbon::createFromFormat('!Y-m', $paidMonth)->format('F Y'),
+            'amount' => str_starts_with($account, 'BIG') ? 999_999_999 : self::DEFAULT_AMOUNT,
+            'billing_ref' => $billingRef,
+            'payment_ref' => $paymentRef,
+            'paid_at' => now()->toIso8601String(),
+        ];
+        Cache::forever($this->paidSlipsCacheKey($account), $paidSlips);
+
+        $nextBillMonth = Carbon::createFromFormat('!Y-m', $paidMonth)
+            ->addMonthNoOverflow()
+            ->format('Y-m');
+
+        Cache::forever($this->billMonthCacheKey($account), $nextBillMonth);
+
+        return $billingRef;
+    }
+
+    private function billMonthCacheKey(string $account): string
+    {
+        return 'fake-billing:next-bill-month:' . $account;
+    }
+
+    private function paidSlipsCacheKey(string $account): string
+    {
+        return 'fake-billing:paid-slips:' . $account;
     }
 }
