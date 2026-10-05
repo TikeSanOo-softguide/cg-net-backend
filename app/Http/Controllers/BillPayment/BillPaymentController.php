@@ -27,6 +27,7 @@ class BillPaymentController extends Controller
 
                 return [
                     'id' => $payment->id,
+                    'ledger_transaction_id' => $payment->ledger_transaction_id,
                     'transaction_no' => $transaction?->transaction_no,
                     'amount' => $transaction?->amount,
                     'customer_name' => $customer?->name,
@@ -35,6 +36,7 @@ class BillPaymentController extends Controller
                     'status' => $payment->status->value,
                     'external_bill_ref' => $payment->external_bill_ref,
                     'external_payment_ref' => $payment->external_payment_ref,
+                    'external_response' => $payment->external_response,
                     'created_at' => $payment->getRawOriginal('created_at'),
                     'confirmed_at' => $payment->confirmed_at?->toIso8601String(),
                 ];

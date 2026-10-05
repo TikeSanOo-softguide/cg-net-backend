@@ -775,9 +775,16 @@
         }
     },
     "bill_payments": {
+        "bill_payment_id": "Bill Payment ID",
+        "ledger_transaction_id": "Ledger Transaction ID",
+        "external_bill_ref": "External Bill Reference",
+        "external_payment_ref": "External Payment Reference",
+        "external_response": "Provider Response",
         "account_number": "Broadband account",
         "payment_reference": "Payment reference",
         "confirmed_at": "Confirmed at",
+        "details": "Bill Payment Details",
+        "details_description": "Read-only bill payment details.",
         "search_placeholder": "Search transaction, customer, or account",
         "empty": "No bill payments found."
     },

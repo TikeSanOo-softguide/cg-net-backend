@@ -1,14 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { CalendarIcon, CircleDotIcon } from 'lucide-react';
+import { CalendarIcon, CircleDotIcon, EyeIcon, ReceiptIcon } from 'lucide-react';
 
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
+import { FormDialog } from '@/components/FormDialog';
 import type { Paginated } from '@/components/Pagination';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
+import { TableActionButton } from '@/components/TableActionButton';
 import { DatePicker } from '@/components/ui/date-picker';
-import { FormControl } from '@/components/ui/form-control';
+import { FormField } from '@/components/ui/form-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCan } from '@/hooks/useCan';
@@ -17,6 +19,7 @@ import { formatDateTime } from '@/lib/utils';
 
 type BillPaymentRow = {
     id: number;
+    ledger_transaction_id: number;
     transaction_no: string | null;
     amount: number | null;
     customer_name: string | null;
@@ -25,6 +28,7 @@ type BillPaymentRow = {
     status: string;
     external_bill_ref: string | null;
     external_payment_ref: string | null;
+    external_response: unknown;
     created_at: string | null;
     confirmed_at: string | null;
 };
@@ -47,6 +51,7 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
     const { t } = useTranslation();
     const can = useCan();
     const [search, setSearch] = useState(filters.search);
+    const [selectedPayment, setSelectedPayment] = useState<BillPaymentRow | null>(null);
     const debounce = useRef<number>(0);
 
     useEffect(() => setSearch(filters.search), [filters.search]);
@@ -77,32 +82,29 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
 
     const columns: DataTableColumn<BillPaymentRow>[] = [
         {
-            id: 'payment_id',
-            header: t('transactions.detail_fields.bill_payment_id'),
-            cell: (payment) => payment.id,
+            id: 'external_bill_ref',
+            header: t('bill_payments.external_bill_ref'),
+            cell: (payment) => payment.external_bill_ref || '—',
         },
         {
-            id: 'transaction_no',
-            header: t('transactions.number'),
-            className: 'font-medium',
-            cell: (payment) => payment.transaction_no || '—',
+            id: 'external_payment_ref',
+            header: t('bill_payments.external_payment_ref'),
+            cell: (payment) => payment.external_payment_ref || '—',
         },
         {
-            id: 'customer',
-            header: t('transactions.customer'),
-            cell: (payment) => (
-                <div className="flex flex-col">
-                    <span>{payment.customer_name || '—'}</span>
-                    {payment.customer_phone ? (
-                        <span className="text-xs text-muted-foreground">{payment.customer_phone}</span>
-                    ) : null}
-                </div>
-            ),
+            id: 'ledger_transaction_id',
+            header: t('bill_payments.ledger_transaction_id'),
+            cell: (payment) => payment.ledger_transaction_id,
         },
         {
             id: 'account',
             header: t('bill_payments.account_number'),
             cell: (payment) => payment.broadband_account_number || '—',
+        },
+        {
+            id: 'customer',
+            header: t('transactions.customer'),
+            cell: (payment) => payment.customer_name || '—',
         },
         {
             id: 'amount',
@@ -116,14 +118,9 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
             cell: (payment) => <StatusBadge status={payment.status} />,
         },
         {
-            id: 'reference',
-            header: t('bill_payments.payment_reference'),
-            cell: (payment) => payment.external_payment_ref || payment.external_bill_ref || '—',
-        },
-        {
             id: 'confirmed_at',
             header: t('bill_payments.confirmed_at'),
-            cell: (payment) => formatDateTime(payment.confirmed_at ?? payment.created_at),
+            cell: (payment) => (payment.confirmed_at ? formatDateTime(payment.confirmed_at) : '—'),
         },
     ];
 
@@ -141,14 +138,31 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                     onExport={can('system.export') ? exportPayments : undefined}
                     pagination={payments}
                     emptyLabel={t('bill_payments.empty')}
+                    directActions
+                    actions={(payment) => (
+                        <TableActionButton
+                            label={t('common.view')}
+                            icon={EyeIcon}
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                setSelectedPayment(payment);
+                            }}
+                        />
+                    )}
                     filters={
-                        <div className="flex w-full flex-wrap items-center gap-2">
-                            <FormControl icon={CircleDotIcon} compact className="w-full shrink-0 sm:w-40">
+                        <div className="flex w-full flex-wrap items-start gap-2">
+                            <FormField
+                                label={t('common.status')}
+                                htmlFor="bill-payment-status"
+                                icon={CircleDotIcon}
+                                className="w-full shrink-0 sm:w-40"
+                                labelClassName="text-[11px]"
+                            >
                                 <Select
                                     value={filters.status || 'all'}
                                     onValueChange={(value) => visit({ status: value === 'all' ? '' : value })}
                                 >
-                                    <SelectTrigger id="bill-payment-status" aria-label={t('common.status')}>
+                                    <SelectTrigger id="bill-payment-status">
                                         <SelectValue placeholder={t('common.status')} />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -160,31 +174,154 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                                         ))}
                                     </SelectContent>
                                 </Select>
-                            </FormControl>
-                            <FormControl icon={CalendarIcon} compact className="w-full shrink-0 sm:w-40">
+                            </FormField>
+                            <FormField
+                                label={t('common.start_date')}
+                                htmlFor="bill-payment-from"
+                                icon={CalendarIcon}
+                                className="w-full shrink-0 sm:w-40"
+                                labelClassName="text-[11px]"
+                            >
                                 <DatePicker
                                     id="bill-payment-from"
                                     value={filters.from}
                                     max={filters.to || undefined}
                                     placeholder={t('common.start_date')}
-                                    aria-label={t('common.start_date')}
                                     onChange={(value) => visit({ from: value })}
                                 />
-                            </FormControl>
-                            <FormControl icon={CalendarIcon} compact className="w-full shrink-0 sm:w-40">
+                            </FormField>
+                            <FormField
+                                label={t('common.end_date')}
+                                htmlFor="bill-payment-to"
+                                icon={CalendarIcon}
+                                className="w-full shrink-0 sm:w-40"
+                                labelClassName="text-[11px]"
+                            >
                                 <DatePicker
                                     id="bill-payment-to"
                                     value={filters.to}
                                     min={filters.from || undefined}
                                     placeholder={t('common.end_date')}
-                                    aria-label={t('common.end_date')}
                                     onChange={(value) => visit({ to: value })}
                                 />
-                            </FormControl>
+                            </FormField>
                         </div>
                     }
                 />
             </PageContent>
+            <BillPaymentDetailDialog
+                payment={selectedPayment}
+                open={selectedPayment !== null}
+                onOpenChange={(open) => {
+                    if (!open) setSelectedPayment(null);
+                }}
+            />
         </>
+    );
+}
+
+function BillPaymentDetailDialog({
+    payment,
+    open,
+    onOpenChange,
+}: {
+    payment: BillPaymentRow | null;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}) {
+    const { t } = useTranslation();
+
+    if (!payment) return null;
+
+    return (
+        <FormDialog
+            open={open}
+            onOpenChange={onOpenChange}
+            title={t('bill_payments.details')}
+            description={payment.transaction_no || t('bill_payments.details_description')}
+            icon={ReceiptIcon}
+            size="lg"
+        >
+            <div className="space-y-3 overflow-y-auto p-4 sm:p-5">
+                <div className="grid gap-3 sm:grid-cols-2">
+                    <PaymentInfo label={t('bill_payments.bill_payment_id')} value={payment.id} />
+                    <PaymentInfo
+                        label={t('bill_payments.ledger_transaction_id')}
+                        value={payment.ledger_transaction_id}
+                    />
+                    <PaymentInfo label={t('bill_payments.external_bill_ref')} value={payment.external_bill_ref} />
+                    <PaymentInfo label={t('bill_payments.external_payment_ref')} value={payment.external_payment_ref} />
+                    <PaymentInfo label={t('bill_payments.account_number')} value={payment.broadband_account_number} />
+                    <PaymentInfo label={t('transactions.customer')} value={payment.customer_name} />
+                    <PaymentInfo label={t('customers.phone')} value={payment.customer_phone} />
+                    <PaymentInfo
+                        label={t('transactions.amount')}
+                        value={payment.amount === null ? null : formatTopUpAmount(payment.amount)}
+                    />
+                    <PaymentInfo label={t('common.status')} value={t(`status.${payment.status}`)} />
+                    <PaymentInfo
+                        label={t('common.created_at')}
+                        value={payment.created_at ? formatDateTime(payment.created_at) : null}
+                    />
+                    <PaymentInfo
+                        label={t('bill_payments.confirmed_at')}
+                        value={payment.confirmed_at ? formatDateTime(payment.confirmed_at) : null}
+                    />
+                </div>
+                {payment.external_response ? (
+                    <div className="overflow-hidden rounded-xl border border-border/60 bg-muted/10">
+                        <div className="border-b border-border/60 bg-muted/20 px-3 py-2 text-xs font-semibold text-muted-foreground sm:px-4">
+                            {t('bill_payments.external_response')}
+                        </div>
+                        <div className="divide-y divide-border/50">
+                            {renderExternalResponseRows(payment.external_response)}
+                        </div>
+                    </div>
+                ) : null}
+            </div>
+        </FormDialog>
+    );
+}
+
+function renderExternalResponseRows(value: unknown): ReactElement[] {
+    if (Array.isArray(value)) {
+        return value.map((item, index) => (
+            <ExternalResponseRow key={`response-${index}`} label={`[${index}]`} value={item} />
+        ));
+    }
+
+    if (value !== null && typeof value === 'object') {
+        const entries = Object.entries(value as Record<string, unknown>);
+
+        return entries.length > 0
+            ? entries.map(([key, child]) => <ExternalResponseRow key={key} label={key} value={child} />)
+            : [<ExternalResponseRow key="response-empty" label="-" value={null} />];
+    }
+
+    return [<ExternalResponseRow key="response-value" label="-" value={value} />];
+}
+
+function ExternalResponseRow({ label, value }: { label: string; value: unknown }) {
+    const displayValue =
+        value === null || value === undefined || value === ''
+            ? '—'
+            : typeof value === 'object'
+              ? JSON.stringify(value)
+              : String(value);
+
+    return (
+        <div className="grid grid-cols-[minmax(120px,0.8fr)_minmax(0,1fr)] gap-3 px-3 py-3 text-xs sm:px-4">
+            <span className="font-medium text-foreground">{label}</span>
+            <span className="min-w-0 break-words text-foreground">{displayValue}</span>
+        </div>
+    );
+}
+
+function PaymentInfo({ label, value }: { label: string; value: string | number | null | undefined }) {
+    return (
+        <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
+            <p className="text-xs font-medium text-muted-foreground">{label}</p>
+            <p className="mt-1 break-words text-sm font-semibold text-foreground">{value ?? '—'}</p>
+        </div>
     );
 }
