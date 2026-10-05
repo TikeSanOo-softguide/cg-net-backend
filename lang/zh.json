@@ -527,7 +527,7 @@
     "common": {
         "profile": "个人资料",
         "logout": "退出登录",
-        "notifications": "今日通知",
+        "notifications": "通知",
         "notifications_new": ":count 条新通知",
         "see_all_notifications": "查看全部通知",
         "no_notifications": "暂无通知",

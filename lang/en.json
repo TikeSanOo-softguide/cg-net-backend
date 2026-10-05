@@ -515,7 +515,7 @@
     "common": {
         "profile": "Profile",
         "logout": "Log out",
-        "notifications": "Today's Notifications",
+        "notifications": "Notifications",
         "notifications_new": ":count new",
         "see_all_notifications": "See All Notifications",
         "no_notifications": "No notifications yet",

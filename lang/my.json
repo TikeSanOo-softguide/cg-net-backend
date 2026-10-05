@@ -117,7 +117,7 @@
         "states": "ပြည်နယ်များ",
         "regions": "ဒေသများ",
         "areas": "ဧရိယာများ",
-        "notifications": "ယနေ့ အကြောင်းကြားစာများ",
+        "notifications": "အကြောင်းကြားစာများ",
         "announcement": "ကြေညာချက်များ",
         "notification_promotions": "ပရိုမိုးရှင်းများ",
         "push_composer": "Push အကြောင်းကြားစာ",
@@ -515,7 +515,7 @@
     "common": {
         "profile": "ပရိုဖိုင်",
         "logout": "ထွက်ရန်",
-        "notifications": "ယနေ့ အကြောင်းကြားစာများ",
+        "notifications": "အကြောင်းကြားစာများ",
         "notifications_new": "အသစ် :count ခု",
         "see_all_notifications": "အကြောင်းကြားစာအားလုံး ကြည့်ရန်",
         "no_notifications": "အကြောင်းကြားစာ မရှိသေးပါ",

@@ -59,6 +59,7 @@ export function NotificationDropdown({ unread }: NotificationDropdownProps) {
     const [open, setOpen] = useState(false);
     const [notifications, setNotifications] = useState(recentNotifications);
     const [unreadCount, setUnreadCount] = useState(unread);
+    const [notificationTotal, setNotificationTotal] = useState<number | null>(null);
     const [pos, setPos] = useState({ top: 0, left: 0, width: 280 });
 
     useEffect(() => {
@@ -68,6 +69,7 @@ export function NotificationDropdown({ unread }: NotificationDropdownProps) {
 
     useEffect(() => {
         if (!open || !canViewNotifications) {
+            setNotificationTotal(null);
             return;
         }
 
@@ -81,15 +83,17 @@ export function NotificationDropdown({ unread }: NotificationDropdownProps) {
                 throw new Error(`Loading admin notifications failed with status ${response.status}.`);
             }
 
-            const result: { data: AdminNotification[]; unread_count: number } = await response.json();
+            const result: { data: AdminNotification[]; total_count: number; unread_count: number } =
+                await response.json();
             setNotifications(result.data);
+            setNotificationTotal(result.total_count);
             setUnreadCount(result.unread_count);
         };
 
         void loadNotifications().catch((error: unknown) => {
             console.error('Unable to load admin notifications.', error);
         });
-    }, [canViewNotifications, open]);
+    }, [canViewNotifications, open, recentNotifications]);
 
     const place = () => {
         if (!rootRef.current) {
@@ -301,18 +305,20 @@ export function NotificationDropdown({ unread }: NotificationDropdownProps) {
                               )}
                           </div>
 
-                          <div className="p-2">
-                              <Button
-                                  asChild
-                                  variant="primary"
-                                  size="sm"
-                                  className="h-7 w-full rounded-[6px] text-[11px] font-medium"
-                              >
-                                  <Link href="/dashboard/notifications" onClick={() => setOpen(false)}>
-                                      {t('common.see_all_notifications')}
-                                  </Link>
-                              </Button>
-                          </div>
+                          {notificationTotal !== null && notificationTotal > 5 ? (
+                              <div className="p-2">
+                                  <Button
+                                      asChild
+                                      variant="primary"
+                                      size="sm"
+                                      className="h-7 w-full rounded-[6px] text-[11px] font-medium"
+                                  >
+                                      <Link href="/dashboard/notifications" onClick={() => setOpen(false)}>
+                                          {t('common.see_all_notifications')}
+                                      </Link>
+                                  </Button>
+                              </div>
+                          ) : null}
                       </div>,
                       document.body,
                   )
