@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react';
-import { UsersIcon, WifiIcon, PackageIcon, BanknoteIcon, ClipboardListIcon } from 'lucide-react';
+import { UsersIcon, UserPlusIcon, PackageIcon, CoinsIcon, ClipboardListIcon } from 'lucide-react';
 
 import { DashboardRegionChart, type RegionChartSlice } from '@/components/dashboard/DashboardRegionChart';
 import { DashboardRequestLevels, type RequestTypeChart } from '@/components/dashboard/DashboardRequestLevels';
@@ -23,12 +23,13 @@ type RecentRequest = {
 type DashboardProps = {
     stats: {
         total_customers: number;
-        active_broadband_accounts: number;
+        monthly_signups: number;
         active_packages: number;
-        todays_revenue: string;
+        todays_topup_usage: number;
         pending_requests: number;
     };
     chart: TrendPoint[];
+    topupUsageChange: number | null;
     regionChart: RegionChartSlice[];
     requestTypeChart: RequestTypeChart;
     recentRequests: RecentRequest[];
@@ -37,6 +38,7 @@ type DashboardProps = {
 export default function DashboardIndex({
     stats,
     chart,
+    topupUsageChange,
     regionChart,
     requestTypeChart,
     recentRequests,
@@ -51,10 +53,10 @@ export default function DashboardIndex({
             icon: UsersIcon,
         },
         {
-            key: 'dashboard.active_broadband_accounts',
-            title: t('dashboard.active_broadband_accounts'),
-            value: stats.active_broadband_accounts.toLocaleString(),
-            icon: WifiIcon,
+            key: 'dashboard.new_signups_this_month',
+            title: t('dashboard.new_signups_this_month'),
+            value: stats.monthly_signups.toLocaleString(),
+            icon: UserPlusIcon,
         },
         {
             key: 'dashboard.active_packages',
@@ -63,10 +65,15 @@ export default function DashboardIndex({
             icon: PackageIcon,
         },
         {
-            key: 'dashboard.todays_revenue',
-            title: t('dashboard.todays_revenue'),
-            value: `${Number(stats.todays_revenue).toLocaleString()} MMK`,
-            icon: BanknoteIcon,
+            key: 'dashboard.todays_topup_usage',
+            title: t('dashboard.todays_topup_usage'),
+            value: (
+                <>
+                    {stats.todays_topup_usage.toLocaleString()}{' '}
+                    <span className="text-[18px] font-medium">{t('dashboard.points')}</span>
+                </>
+            ),
+            icon: CoinsIcon,
         },
         {
             key: 'dashboard.pending_requests',
@@ -85,7 +92,7 @@ export default function DashboardIndex({
                 <StatCard items={cards} />
 
                 <div className="grid grid-cols-1 items-stretch gap-3 xl:grid-cols-3">
-                    <DashboardTrendChart data={chart} isMobile={isMobile} />
+                    <DashboardTrendChart data={chart} isMobile={isMobile} change={topupUsageChange} />
                     <DashboardRegionChart data={regionChart} />
                     <DashboardRequestLevels data={requestTypeChart} />
                 </div>

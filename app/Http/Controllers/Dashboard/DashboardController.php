@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers\Dashboard;
 
-use App\Enums\BillPaymentStatus;
 use App\Enums\ChangePasswordStatus;
 use App\Enums\ChangePlanStatus;
 use App\Enums\CustomerPackageStatus;
+use App\Enums\LedgerTransactionStatus;
+use App\Enums\LedgerTransactionType;
 use App\Enums\ReviewStatus;
-use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
-use App\Models\BillPayment;
 use App\Models\ChangePasswordRequest;
 use App\Models\ChangePlanRequest;
 use App\Models\CustomerPackage;
 use App\Models\FailureReport;
 use App\Models\InstallationApplication;
+use App\Models\LedgerTransaction;
 use App\Models\RelocationRequest;
 use App\Models\User;
 use Carbon\Carbon;
@@ -41,11 +41,14 @@ class DashboardController extends Controller
 
     public function __invoke(): Response
     {
+        [$start, $end] = $this->last30Days();
+
         return Inertia::render('Dashboard/Index', [
             'stats' => $this->stats(),
-            'chart' => $this->chartSeries(),
-            'regionChart' => $this->regionChart(),
-            'requestTypeChart' => $this->requestTypeChart(),
+            'chart' => $this->chartSeries($start, $end),
+            'topupUsageChange' => $this->topupUsageChange($start, $end),
+            'regionChart' => $this->regionChart($start, $end),
+            'requestTypeChart' => $this->requestTypeChart($start, $end),
             'recentRequests' => $this->recentRequests(),
         ]);
     }
@@ -100,7 +103,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * @return array{total_customers: int, active_broadband_accounts: int, active_packages: int, todays_revenue: string, pending_requests: int}
+     * @return array{total_customers: int, monthly_signups: int, active_packages: int, todays_topup_usage: int, pending_requests: int}
      */
     private function stats(): array
     {
@@ -113,45 +116,31 @@ class DashboardController extends Controller
 
         return [
             'total_customers' => User::query()->count(),
-            'active_broadband_accounts' => User::query()
-                ->where('status', UserStatus::Active)
-                ->whereNotNull('broadband_account_number')
+            'monthly_signups' => User::query()
+                ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfDay()])
                 ->count(),
             'active_packages' => CustomerPackage::query()->where('status', CustomerPackageStatus::Active)->count(),
-            'todays_revenue' => number_format(
-                (float) BillPayment::query()
-                    ->where('status', BillPaymentStatus::Completed)
-                    ->whereDate('confirmed_at', today())
-                    ->with('ledgerTransaction:id,amount')
-                    ->get()
-                    ->sum(fn(BillPayment $payment) => (float) ($payment->ledgerTransaction?->amount ?? 0)),
-                2,
-                '.',
-                '',
-            ),
+            'todays_topup_usage' => (int) LedgerTransaction::query()
+                ->where('type', LedgerTransactionType::Topup)
+                ->where('status', LedgerTransactionStatus::Completed)
+                ->whereDate('created_at', today())
+                ->sum('amount'),
             'pending_requests' => $pending,
         ];
     }
 
     /**
-     * @return list<array{date: string, revenue: float, signups: int}>
+     * @return list<array{date: string, topup_usage: int, signups: int}>
      */
-    private function chartSeries(): array
+    private function chartSeries(Carbon $start, Carbon $end): array
     {
-        $start = now()->subDays(29)->startOfDay();
-        $end = now()->endOfDay();
-
-        $revenue = BillPayment::query()
-            ->where('status', BillPaymentStatus::Completed)
-            ->whereBetween('confirmed_at', [$start, $end])
-            ->with('ledgerTransaction:id,amount')
-            ->get(['confirmed_at', 'ledger_transaction_id'])
-            ->groupBy(fn(BillPayment $payment) => $payment->confirmed_at?->toDateString())
-            ->map(
-                fn(Collection $rows) => (float) $rows->sum(
-                    fn(BillPayment $payment) => (float) ($payment->ledgerTransaction?->amount ?? 0),
-                ),
-            );
+        $topupUsage = LedgerTransaction::query()
+            ->where('type', LedgerTransactionType::Topup)
+            ->where('status', LedgerTransactionStatus::Completed)
+            ->whereBetween('created_at', [$start, $end])
+            ->selectRaw('DATE(created_at) as date, SUM(amount) as points')
+            ->groupByRaw('DATE(created_at)')
+            ->pluck('points', 'date');
 
         $signups = User::query()
             ->whereBetween('created_at', [$start, $end])
@@ -160,12 +149,12 @@ class DashboardController extends Controller
             ->map(fn(Collection $rows) => $rows->count());
 
         return collect(CarbonPeriod::create($start, $end))
-            ->map(function (Carbon $day) use ($revenue, $signups) {
+            ->map(function (Carbon $day) use ($topupUsage, $signups) {
                 $key = $day->toDateString();
 
                 return [
                     'date' => $key,
-                    'revenue' => (float) ($revenue[$key] ?? 0),
+                    'topup_usage' => (int) ($topupUsage[$key] ?? 0),
                     'signups' => (int) ($signups[$key] ?? 0),
                 ];
             })
@@ -173,16 +162,40 @@ class DashboardController extends Controller
             ->all();
     }
 
+    private function topupUsageChange(Carbon $start, Carbon $end): ?float
+    {
+        $previousStart = $start->copy()->subDays(30);
+        $previousEnd = $start->copy()->subDay()->endOfDay();
+        $current = $this->topupUsageBetween($start, $end);
+        $previous = $this->topupUsageBetween($previousStart, $previousEnd);
+
+        if ($previous === 0) {
+            return $current > 0 ? 100.0 : null;
+        }
+
+        return round((($current - $previous) / $previous) * 100, 1);
+    }
+
+    private function topupUsageBetween(Carbon $start, Carbon $end): int
+    {
+        return (int) LedgerTransaction::query()
+            ->where('type', LedgerTransactionType::Topup)
+            ->where('status', LedgerTransactionStatus::Completed)
+            ->whereBetween('created_at', [$start, $end])
+            ->sum('amount');
+    }
+
     /**
      * @return list<array{id: int|null, name_en: string, name_zh: string, name_my: string, value: int}>
      */
-    private function regionChart(): array
+    private function regionChart(Carbon $start, Carbon $end): array
     {
         $counts = InstallationApplication::query()
             ->join('areas', 'areas.id', '=', 'installation_applications.area_id')
             ->join('regions', 'regions.id', '=', 'areas.region_id')
             ->whereNull('areas.deleted_at')
             ->whereNull('regions.deleted_at')
+            ->whereBetween('installation_applications.created_at', [$start, $end])
             ->select([
                 'regions.id',
                 'regions.name_en',
@@ -225,13 +238,13 @@ class DashboardController extends Controller
     /**
      * @return array{change: int|null, items: list<array{type: string, value: int, percent: int}>}
      */
-    private function requestTypeChart(): array
+    private function requestTypeChart(Carbon $start, Carbon $end): array
     {
         $items = collect(self::REQUEST_MODELS)
             ->map(
                 fn(string $class, string $type) => [
                     'type' => $type,
-                    'value' => $class::query()->count(),
+                    'value' => $class::query()->whereBetween('created_at', [$start, $end])->count(),
                 ],
             )
             ->sortByDesc('value')
@@ -240,7 +253,7 @@ class DashboardController extends Controller
         $total = (int) $items->sum('value');
 
         return [
-            'change' => $this->requestVolumeChange(),
+            'change' => $this->requestVolumeChange($start, $end),
             'items' => $items
                 ->map(
                     fn(array $row) => [
@@ -253,16 +266,28 @@ class DashboardController extends Controller
         ];
     }
 
-    private function requestVolumeChange(): ?int
+    private function requestVolumeChange(Carbon $start, Carbon $end): ?int
     {
-        $current = $this->requestCountBetween(now()->subDays(29)->startOfDay(), now()->endOfDay());
-        $previous = $this->requestCountBetween(now()->subDays(59)->startOfDay(), now()->subDays(30)->endOfDay());
+        $previousStart = $start->copy()->subDays(30);
+        $previousEnd = $start->copy()->subDay()->endOfDay();
+        $current = $this->requestCountBetween($start, $end);
+        $previous = $this->requestCountBetween($previousStart, $previousEnd);
 
         if ($previous === 0) {
             return $current > 0 ? 100 : null;
         }
 
         return (int) round((($current - $previous) / $previous) * 100);
+    }
+
+    /**
+     * @return array{Carbon, Carbon}
+     */
+    private function last30Days(): array
+    {
+        $end = now();
+
+        return [$end->copy()->subDays(29)->startOfDay(), $end->copy()->endOfDay()];
     }
 
     private function requestCountBetween(Carbon $start, Carbon $end): int

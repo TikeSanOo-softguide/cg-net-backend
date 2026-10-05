@@ -165,96 +165,125 @@ export default function AdminNotificationsIndex({ notifications, categories, fil
                     emptyLabel={t('admin_notifications.empty')}
                     directActions
                     filters={
-                        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
-                            <SearchInput
-                                value={search}
-                                onChange={updateSearch}
-                                placeholder={t('admin_notifications.search_placeholder')}
-                                size="sm"
-                                className="w-full shrink-0 sm:max-w-64"
-                            />
-                            <FormControl icon={BellIcon} compact className="w-full shrink-0 sm:w-48">
-                                <Select
-                                    value={filters.type || 'all'}
-                                    onValueChange={(value) => visit({ type: value === 'all' ? '' : value })}
-                                >
-                                    <SelectTrigger
-                                        className="h-8 text-[11px]"
-                                        aria-label={t('admin_notifications.category')}
-                                    >
-                                        <SelectValue placeholder={t('admin_notifications.category')} />
-                                    </SelectTrigger>
-                                    <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
-                                        <SelectItem value="all">{t('common.all')}</SelectItem>
-                                        {categories.map((category) => (
-                                            <SelectItem key={category} value={category}>
-                                                {categoryLabel(category)}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </FormControl>
-                            <FormControl icon={ClipboardListIcon} compact className="w-full shrink-0 sm:w-52">
-                                <Select
-                                    value={filters.request_type || 'all'}
-                                    onValueChange={(value) => visit({ request_type: value === 'all' ? '' : value })}
-                                >
-                                    <SelectTrigger
-                                        className="h-8 text-[11px]"
-                                        aria-label={t('admin_notifications.request_type')}
-                                    >
-                                        <SelectValue placeholder={t('admin_notifications.request_type')} />
-                                    </SelectTrigger>
-                                    <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
-                                        <SelectItem value="all">{t('common.all')}</SelectItem>
-                                        {requestTypes.map((type) => (
-                                            <SelectItem key={type} value={type}>
-                                                {t(`admin_notifications.request_types.${type}`)}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </FormControl>
-                            <FormControl icon={CircleDotIcon} compact className="w-full shrink-0 sm:w-48">
-                                <Select
-                                    value={filters.status || 'all'}
-                                    onValueChange={(value) => visit({ status: value === 'all' ? '' : value })}
-                                >
-                                    <SelectTrigger
-                                        className="h-8 text-[11px]"
-                                        aria-label={t('admin_notifications.read_status')}
-                                    >
-                                        <SelectValue placeholder={t('admin_notifications.read_status')} />
-                                    </SelectTrigger>
-                                    <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
-                                        <SelectItem value="all">{t('common.all')}</SelectItem>
-                                        <SelectItem value="unread">{t('admin_notifications.unread')}</SelectItem>
-                                        <SelectItem value="read">{t('admin_notifications.read')}</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </FormControl>
-                            <FormControl icon={CalendarIcon} compact className="w-full shrink-0 sm:w-40">
-                                <DatePicker
-                                    id="admin-notification-from"
-                                    value={filters.from}
-                                    max={filters.to || undefined}
-                                    placeholder={t('common.start_date')}
-                                    aria-label={t('common.start_date')}
-                                    className="h-8 text-[11px]"
-                                    onChange={(value) => visit({ from: value })}
+                        <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-6">
+                            <div className="flex min-w-0 flex-col gap-1">
+                                <span className="text-xs font-medium text-muted-foreground">{t('common.search')}</span>
+                                <SearchInput
+                                    value={search}
+                                    onChange={updateSearch}
+                                    placeholder={t('admin_notifications.search_placeholder')}
+                                    ariaLabel={t('common.search')}
+                                    size="sm"
                                 />
-                            </FormControl>
-                            <FormControl icon={CalendarIcon} compact className="w-full shrink-0 sm:w-40">
-                                <DatePicker
-                                    id="admin-notification-to"
-                                    value={filters.to}
-                                    min={filters.from || undefined}
-                                    placeholder={t('common.end_date')}
-                                    aria-label={t('common.end_date')}
-                                    className="h-8 text-[11px]"
-                                    onChange={(value) => visit({ to: value })}
-                                />
-                            </FormControl>
+                            </div>
+
+                            <div className="flex min-w-0 flex-col gap-1">
+                                <span className="text-xs font-medium text-muted-foreground">
+                                    {t('admin_notifications.category')}
+                                </span>
+                                <FormControl icon={BellIcon} compact>
+                                    <Select
+                                        value={filters.type || 'all'}
+                                        onValueChange={(value) => visit({ type: value === 'all' ? '' : value })}
+                                    >
+                                        <SelectTrigger
+                                            className="h-8 text-[11px]"
+                                            aria-label={t('admin_notifications.category')}
+                                        >
+                                            <SelectValue placeholder={t('admin_notifications.category')} />
+                                        </SelectTrigger>
+                                        <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                            <SelectItem value="all">{t('common.all')}</SelectItem>
+                                            {categories.map((category) => (
+                                                <SelectItem key={category} value={category}>
+                                                    {categoryLabel(category)}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </FormControl>
+                            </div>
+                            <div className="flex min-w-0 flex-col gap-1">
+                                <span className="text-xs font-medium text-muted-foreground">
+                                    {t('admin_notifications.request_type')}
+                                </span>
+                                <FormControl icon={ClipboardListIcon} compact>
+                                    <Select
+                                        value={filters.request_type || 'all'}
+                                        onValueChange={(value) => visit({ request_type: value === 'all' ? '' : value })}
+                                    >
+                                        <SelectTrigger
+                                            className="h-8 text-[11px]"
+                                            aria-label={t('admin_notifications.request_type')}
+                                        >
+                                            <SelectValue placeholder={t('admin_notifications.request_type')} />
+                                        </SelectTrigger>
+                                        <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                            <SelectItem value="all">{t('common.all')}</SelectItem>
+                                            {requestTypes.map((type) => (
+                                                <SelectItem key={type} value={type}>
+                                                    {t(`admin_notifications.request_types.${type}`)}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </FormControl>
+                            </div>
+                            <div className="flex min-w-0 flex-col gap-1">
+                                <span className="text-xs font-medium text-muted-foreground">
+                                    {t('admin_notifications.read_status')}
+                                </span>
+                                <FormControl icon={CircleDotIcon} compact>
+                                    <Select
+                                        value={filters.status || 'all'}
+                                        onValueChange={(value) => visit({ status: value === 'all' ? '' : value })}
+                                    >
+                                        <SelectTrigger
+                                            className="h-8 text-[11px]"
+                                            aria-label={t('admin_notifications.read_status')}
+                                        >
+                                            <SelectValue placeholder={t('admin_notifications.read_status')} />
+                                        </SelectTrigger>
+                                        <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                            <SelectItem value="all">{t('common.all')}</SelectItem>
+                                            <SelectItem value="unread">{t('admin_notifications.unread')}</SelectItem>
+                                            <SelectItem value="read">{t('admin_notifications.read')}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </FormControl>
+                            </div>
+                            <div className="flex min-w-0 flex-col gap-1">
+                                <span className="text-xs font-medium text-muted-foreground">
+                                    {t('common.start_date')}
+                                </span>
+                                <FormControl icon={CalendarIcon} compact>
+                                    <DatePicker
+                                        id="admin-notification-from"
+                                        value={filters.from}
+                                        max={filters.to || undefined}
+                                        placeholder={t('common.start_date')}
+                                        aria-label={t('common.start_date')}
+                                        className="h-8 text-[11px]"
+                                        onChange={(value) => visit({ from: value })}
+                                    />
+                                </FormControl>
+                            </div>
+                            <div className="flex min-w-0 flex-col gap-1">
+                                <span className="text-xs font-medium text-muted-foreground">
+                                    {t('common.end_date')}
+                                </span>
+                                <FormControl icon={CalendarIcon} compact>
+                                    <DatePicker
+                                        id="admin-notification-to"
+                                        value={filters.to}
+                                        min={filters.from || undefined}
+                                        placeholder={t('common.end_date')}
+                                        aria-label={t('common.end_date')}
+                                        className="h-8 text-[11px]"
+                                        onChange={(value) => visit({ to: value })}
+                                    />
+                                </FormControl>
+                            </div>
                         </div>
                     }
                     actions={(row) => (

@@ -125,6 +125,8 @@ export function DashboardRegionChart({ data }: DashboardRegionChartProps) {
                     </CardTitle>
                     <CardDescription className="mt-0.5 text-[11px] leading-4">
                         {t('dashboard.installations_by_region')}
+                        {' · '}
+                        {t('dashboard.last_30_days')}
                     </CardDescription>
                 </div>
             </CardHeader>

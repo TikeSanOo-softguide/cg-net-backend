@@ -71,10 +71,17 @@ class HandleInertiaRequests extends Middleware
             'unreadNotifications' =>
                 $user instanceof Admin
                     ? ($user->can('notifications.view')
-                        ? AdminNotification::query()->whereNull('read_at')->count()
+                        ? AdminNotification::query()
+                            ->whereDate('created_at', today()->toDateString())
+                            ->whereNull('read_at')
+                            ->count()
                         : 0)
                     : ($user
-                        ? NotificationCustom::query()->where('user_id', $user->id)->where('is_read', false)->count()
+                        ? NotificationCustom::query()
+                            ->where('user_id', $user->id)
+                            ->whereDate('created_at', today()->toDateString())
+                            ->where('is_read', false)
+                            ->count()
                         : 0),
             'recentNotifications' =>
                 $user instanceof Admin
@@ -97,6 +104,7 @@ class HandleInertiaRequests extends Middleware
         return NotificationCustom::query()
             ->select(['id', 'title', 'body', 'category', 'is_read', 'sent_at', 'created_at'])
             ->where('user_id', $userId)
+            ->whereDate('created_at', today()->toDateString())
             ->latest('sent_at')
             ->latest('id')
             ->limit(5)
@@ -122,6 +130,7 @@ class HandleInertiaRequests extends Middleware
     private function recentAdminNotifications(): array
     {
         return AdminNotification::query()
+            ->whereDate('created_at', today()->toDateString())
             ->latest('created_at')
             ->latest('id')
             ->limit(5)

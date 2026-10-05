@@ -55,6 +55,7 @@ class AdminNotificationController extends Controller
         abort_if($limit < 1 || $limit > 20, 422, 'The notification limit must be between 1 and 20.');
 
         $notifications = AdminNotification::query()
+            ->whereDate('created_at', today()->toDateString())
             ->latest('created_at')
             ->latest('id')
             ->limit($limit)
@@ -64,7 +65,10 @@ class AdminNotificationController extends Controller
 
         return response()->json([
             'data' => $notifications,
-            'unread_count' => AdminNotification::query()->whereNull('read_at')->count(),
+            'unread_count' => AdminNotification::query()
+                ->whereDate('created_at', today()->toDateString())
+                ->whereNull('read_at')
+                ->count(),
         ]);
     }
 
@@ -87,7 +91,6 @@ class AdminNotificationController extends Controller
             'to' => ['nullable', 'date', 'after_or_equal:from'],
         ]);
         $filters['search'] = trim($filters['search'] ?? '');
-
         $notifications = AdminNotification::query()
             ->when($filters['search'] ?? null, function (Builder $query, string $search): void {
                 $term = '%'.$search.'%';
