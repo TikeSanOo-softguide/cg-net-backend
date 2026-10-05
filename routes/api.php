@@ -164,7 +164,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::post('/verify-otp', [ChangePasswordController::class, 'verifyOtp']);
     });
 
-    Route::prefix('chat-flow')->group(function () {
+    Route::prefix('chat')->group(function () {
         Route::post('/start', [ChatFlowController::class, 'start']);
         Route::get('/current', [ChatFlowController::class, 'current']);
         Route::post('/select-option', [ChatFlowController::class, 'selectOption']);
