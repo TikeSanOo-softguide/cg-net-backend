@@ -60,7 +60,7 @@ class CustomerController extends Controller
                 $query->where(function ($query) use ($search): void {
                     $query
                         ->whereLike('users.name', '%' . $search . '%')
-                        ->orWhereLike('users.phone', '%' . $search . '%');
+                        ->orWhereLike('users.phone', '%' . ltrim($search, '+') . '%');
                 });
             })
             ->when($status !== '' && in_array($status, array_column(UserStatus::cases(), 'value'), true), function (
@@ -347,7 +347,10 @@ class CustomerController extends Controller
             ->causedBy($request->user())
             ->performedOn($customer)
             ->event('updated')
-            ->withProperties(Arr::except($payload, ['password']))
+            ->withProperties([
+                ...Arr::except($payload, ['password']),
+                ...isset($payload['password']) ? ['password_reset' => true] : [],
+            ])
             ->log('customer_updated');
 
         if ($request->headers->has('X-Modal')) {

@@ -57,7 +57,7 @@
     </div>
     <button id="register">Log in &amp; register token</button>
     <div id="registerStatus" class="status"></div>
-    <p class="hint">Uses <code>POST /api/auth/login</code> then <code>POST /api/device-tokens</code>. Logging in here signs this customer out of other sessions.</p>
+    <p class="hint">Uses <code>POST /api/auth/otp/request</code>, <code>/otp/verify</code> and <code>/login</code>, then <code>POST /api/device-tokens</code>. Logging in here signs this customer out of other sessions.</p>
 </section>
 
 <section>
@@ -176,7 +176,14 @@
         };
 
         try {
-            const login = await request('/api/auth/login', { phone: $('phone').value.trim(), password: $('password').value });
+            const otp = await request('/api/auth/otp/request', { phone: $('phone').value.trim() });
+            // debug_otp is only returned when OTP_MOCK_EXPOSE_CODE=true in a local/testing environment.
+            const code = otp.debug_otp || window.prompt('Enter the SMS verification code');
+            const verify = await request('/api/auth/otp/verify', { challenge_id: otp.challenge_id, code });
+            if (verify.next_step === 'register') throw new Error('This phone has no account yet. Register it from the app first.');
+            const login = verify.token
+                ? verify
+                : await request('/api/auth/login', { verification_token: verify.verification_token, password: $('password').value });
             await request('/api/device-tokens', { token: fcmToken, platform: 'web' }, login.token);
             setStatus($('registerStatus'), `Registered for user #${login.user?.id ?? '?'} (${login.user?.name ?? 'unknown'}).`);
         } catch (error) {

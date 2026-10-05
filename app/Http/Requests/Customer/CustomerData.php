@@ -4,9 +4,8 @@ namespace App\Http\Requests\Customer;
 
 use App\Enums\UserStatus;
 use App\Models\User;
+use App\Support\PhoneNumber;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
-use Illuminate\Validation\Validator;
 
 final class CustomerData
 {
@@ -23,12 +22,12 @@ final class CustomerData
                 'required',
                 'string',
                 'max:16',
-                'regex:/^\+(959\d{7,10}|66\d{8,9}|86\d{11})$/',
+                'regex:' . PhoneNumber::SUPPORTED_PATTERN,
                 Rule::unique('users', 'phone')->ignore($ignore),
             ],
             'password' => $customer === null
-                ? ['required', 'string', 'min:8', Password::defaults(), 'confirmed']
-                : ['nullable', 'string', 'min:8', Password::defaults(), 'confirmed'],
+                ? ['required', 'string', 'regex:/^\d{6}$/', 'confirmed']
+                : ['nullable', 'string', 'regex:/^\d{6}$/', 'confirmed'],
             'password_confirmation' => $customer === null
                 ? ['required', 'string']
                 : ['nullable', 'string'],
@@ -50,7 +49,7 @@ final class CustomerData
             'phone.unique' => __('customers.validation.phone_taken'),
             'phone.max' => __('customers.validation.phone_invalid'),
             'password.required' => __('customers.validation.password_required'),
-            'password.min' => __('customers.validation.password_min'),
+            'password.regex' => __('customers.validation.password_min'),
             'password.confirmed' => __('customers.validation.password_confirmation_mismatch'),
             'password_confirmation.required' => __('customers.validation.password_confirmation_required'),
             'status.required' => __('customers.validation.status_required'),
@@ -72,19 +71,13 @@ final class CustomerData
         ];
     }
 
+    /**
+     * Admins may type +959…, 09… or 959…; all are stored in the canonical format
+     * (no "+"), the same one the mobile app uses, so one customer = one spelling.
+     */
     public static function preparePhone(mixed $phone): ?string
     {
-        if (! is_string($phone)) {
-            return null;
-        }
-
-        $digits = preg_replace('/\D+/', '', $phone) ?? '';
-
-        if ($digits === '') {
-            return '';
-        }
-
-        return '+'.$digits;
+        return PhoneNumber::normalizeLeniently($phone);
     }
 
     /**

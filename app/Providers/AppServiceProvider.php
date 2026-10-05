@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Admin;
+use App\Services\Auth\ApiTokenService;
 use App\Services\Auth\Otp\MockOtpProvider;
 use App\Services\Auth\Otp\OtpProviderInterface;
 use App\Services\Auth\Otp\SmsPohOtpProvider;
@@ -16,10 +17,12 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Sanctum\Events\TokenAuthenticated;
 use RuntimeException;
 
 class AppServiceProvider extends ServiceProvider
@@ -61,6 +64,12 @@ class AppServiceProvider extends ServiceProvider
 
         $this->registerLikeMacros();
         $this->configureRateLimiting();
+
+        // Sliding window: every authenticated API request pushes the token expiry forward.
+        Event::listen(
+            TokenAuthenticated::class,
+            fn(TokenAuthenticated $event) => $this->app->make(ApiTokenService::class)->slide($event->token),
+        );
 
         Gate::before(function ($user, string $ability): ?bool {
             if ($user instanceof Admin && $user->hasRole(AppPermissions::SuperAdmin)) {

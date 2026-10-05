@@ -4,18 +4,29 @@ namespace App\Services\Auth;
 
 use App\Enums\UserStatus;
 use App\Enums\WalletStatus;
+use App\Exceptions\Auth\InvalidCredentialsException;
 use App\Models\User;
 use App\Models\Wallet;
-use App\Services\Auth\OtpService;
 use App\Services\Ledger\LedgerPoster;
+use Carbon\CarbonInterface;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
+/**
+ * Customer authentication.
+ * requestOtp -> verifyOtp -> next_step=password -> login
+ *                         -> next_step=register -> register
+ *                         -> next_step=authenticated (password step disabled)
+ */
 final class ApiAuthenticationService
 {
+    public const STEP_PASSWORD = 'password';
+    public const STEP_REGISTER = 'register';
+    public const STEP_AUTHENTICATED = 'authenticated';
+
     private const RESTRICTED_USER_STATUSES = [UserStatus::Suspended];
 
     private const RESTRICTED_WALLET_STATUSES = [WalletStatus::Suspended, WalletStatus::Frozen, WalletStatus::Inactive];
@@ -23,21 +34,64 @@ final class ApiAuthenticationService
     public function __construct(
         private readonly OtpService $otp,
         private readonly LedgerPoster $ledger,
+        private readonly ApiTokenService $tokens,
     ) {}
 
-    public function requestRegistrationOtp(string $phone, string $ip): array
+    /** @return array{challenge_id: string, debug_otp: ?string} */
+    public function requestOtp(string $phone, string $ip): array
     {
-        $phoneIsRegistered = User::query()->where('phone', $phone)->exists();
-
-        return $this->otp->request($phone, $ip, !$phoneIsRegistered);
+        return $this->otp->request($phone, $ip);
     }
 
-    public function verifyRegistrationOtp(string $challengeId, string $code): string
+    /**
+     * @return array{
+     *     next_step: string,
+     *     verification_token?: string,
+     *     user?: User,
+     *     token?: string,
+     *     expires_at?: CarbonInterface
+     * }
+     */
+    public function verifyOtp(string $challengeId, string $code): array
     {
-        return $this->otp->verify($challengeId, $code);
+        $verificationToken = $this->otp->verify($challengeId, $code);
+        $phone = (string) $this->otp->phoneForVerificationToken($verificationToken);
+        $user = $this->findUserByPhone($phone);
+
+        if ($user === null) {
+            return ['next_step' => self::STEP_REGISTER, 'verification_token' => $verificationToken];
+        }
+
+        if (config('auth_api.require_password_on_login', true)) {
+            return ['next_step' => self::STEP_PASSWORD, 'verification_token' => $verificationToken];
+        }
+
+        // Password step switched off: a verified OTP is enough to sign in.
+        $session = $this->otp->consumeVerificationToken(
+            $verificationToken,
+            fn(string $phone): array => $this->openSession($this->findUserByPhone($phone)),
+        );
+
+        return ['next_step' => self::STEP_AUTHENTICATED, ...$session];
     }
 
-    /** @return array{user: User, token: string} */
+    public function verifiedPhone(string $verificationToken): string
+    {
+        return $this->otp->phoneForVerificationToken($verificationToken) ??
+            abort(422, 'The verification token is invalid or expired.');
+    }
+
+    /** @return array{user: User, token: string, expires_at: CarbonInterface} */
+    public function login(string $verificationToken, string $password, string $ip): array
+    {
+        return $this->otp->consumeVerificationToken(
+            $verificationToken,
+            fn(string $phone): array => $this->loginWithPassword($phone, $password, $ip),
+            (int) config('auth_api.max_password_attempts', 5),
+        );
+    }
+
+    /** @return array{user: User, token: string, expires_at: CarbonInterface} */
     public function completeRegistration(string $token, array $data): array
     {
         return $this->otp->consumeVerificationToken($token, function (string $phone) use ($data): array {
@@ -61,16 +115,10 @@ final class ApiAuthenticationService
         });
     }
 
-    /** @return array{user: User, token: string} */
-    public function login(string $phone, string $password, string $ip): array
+    /** @return array{user: User, token: string, expires_at: CarbonInterface} */
+    private function loginWithPassword(string $phone, string $password, string $ip): array
     {
-        $user = User::query()
-            ->where('phone', $phone)
-            ->orWhere('phone', '+' . $phone)
-            ->first();
-        $accountKey = $user?->exists
-            ? 'auth:login:user:' . hash('sha256', $user->getKey() . '|' . $phone)
-            : 'auth:login:user:' . hash('sha256', $phone);
+        $accountKey = 'auth:login:user:' . hash('sha256', $phone);
         $ipKey = 'auth:login:ip:' . hash('sha256', $ip);
         $accountMaxAttempts = (int) config('otp.rate_limits.login.max_attempts');
         $ipMaxAttempts = (int) config('otp.rate_limits.login_ip.max_attempts', $accountMaxAttempts);
@@ -90,15 +138,43 @@ final class ApiAuthenticationService
         RateLimiter::hit($accountKey, $decaySeconds);
         RateLimiter::hit($ipKey, $ipDecaySeconds);
 
+        $user = $this->findUserByPhone($phone);
+
         if (!$user || $user->status !== UserStatus::Active || !Hash::check($password, $user->getAuthPassword())) {
-            abort(422, 'The provided credentials are incorrect.');
+            throw new InvalidCredentialsException();
         }
 
         RateLimiter::clear($accountKey);
         RateLimiter::clear($ipKey);
-        $user->tokens()->delete();
 
-        return ['user' => $user, 'token' => $this->createToken($user)];
+        return $this->openSession($user);
+    }
+
+    private function findUserByPhone(string $phone): ?User
+    {
+        // $phone is always canonical (PhoneNumber::normalize): no "+", one row per number.
+        return User::query()->where('phone', $phone)->first();
+    }
+
+    /**
+     * Single active session per customer: signing in revokes older tokens.
+     *
+     * @return array{user: User, token: string, expires_at: CarbonInterface}
+     */
+    private function openSession(?User $user): array
+    {
+        if ($user === null || $user->status !== UserStatus::Active) {
+            throw new InvalidCredentialsException();
+        }
+
+        $user->tokens()->delete();
+        $newToken = $this->tokens->issue($user);
+
+        return [
+            'user' => $user,
+            'token' => $newToken->plainTextToken,
+            'expires_at' => $newToken->accessToken->expires_at,
+        ];
     }
 
     private function restoreExistingUser(User $existingUser, array $data): array
@@ -137,10 +213,7 @@ final class ApiAuthenticationService
 
         $this->ledger->ensureCustomerLiabilityAccount($wallet);
 
-        return [
-            'user' => $existingUser,
-            'token' => $this->createToken($existingUser),
-        ];
+        return $this->openSession($existingUser);
     }
 
     private function createNewUser(string $phone, array $data): array
@@ -171,26 +244,12 @@ final class ApiAuthenticationService
 
         $this->ledger->ensureCustomerLiabilityAccount($wallet);
 
-        return [
-            'user' => $user,
-            'token' => $this->createToken($user),
-        ];
+        return $this->openSession($user);
     }
 
     private function isRestrictedForReRegistration(User $user, ?Wallet $wallet): bool
     {
         return in_array($user->status, self::RESTRICTED_USER_STATUSES, true) ||
             in_array($wallet?->status, self::RESTRICTED_WALLET_STATUSES, true);
-    }
-
-    private function createToken(User $user): string
-    {
-        $scopes = config('auth_api.scopes', ['user:read']);
-
-        return $user->createToken(
-            'flutter',
-            $scopes,
-            now()->addMinutes((int) config('auth_api.access_token_ttl_minutes', 15)),
-        )->plainTextToken;
     }
 }

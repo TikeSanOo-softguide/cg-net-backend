@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Auth\LoginController;
+use App\Http\Controllers\Api\Auth\OtpController;
 use App\Http\Controllers\Api\Auth\RegistrationController;
 use App\Http\Controllers\Api\Banner\BannerController;
 use App\Http\Controllers\Api\BroadbandAccount\BroadbandAccountController;
@@ -29,6 +30,7 @@ use App\Http\Controllers\Api\ServiceRequest\ChangePlanRequestController;
 use App\Http\Controllers\Api\ServiceRequest\FailureReportController;
 use App\Http\Controllers\Api\ServiceRequest\RelocationRequestController;
 use App\Http\Controllers\Api\Settings\AppVersionController;
+use App\Http\Controllers\Api\Transaction\TransactionHistoryController;
 use App\Http\Controllers\ChangePassword\ChangePasswordController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -36,10 +38,10 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('auth')
     ->middleware('throttle:60,1')
     ->group(function () {
-        Route::post('/register/request-otp', [RegistrationController::class, 'requestOtp']);
-        Route::post('/register/verify-otp', [RegistrationController::class, 'verifyOtp']);
-        Route::post('/register/complete', [RegistrationController::class, 'complete']);
+        Route::post('/otp/request', [OtpController::class, 'request']);
+        Route::post('/otp/verify', [OtpController::class, 'verify']);
         Route::post('/login', LoginController::class)->middleware('throttle:30,1');
+        Route::post('/register', RegistrationController::class)->middleware('throttle:30,1');
     });
 
 Route::get('/user', function (Request $request) {
@@ -79,10 +81,25 @@ Route::middleware('throttle:60,1')->group(function () {
 
 Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('/auth/logout', [LoginController::class, 'logout']);
-    Route::get('/customer/profile', [ProfileController::class, 'show']);
+
+    Route::prefix('customer')->group(function () {
+        Route::get('/profile', [ProfileController::class, 'show']);
+        Route::get('/transactions', TransactionHistoryController::class);
+    });
 
     Route::post('/device-tokens', [DeviceTokenController::class, 'store']);
     Route::delete('/device-tokens', [DeviceTokenController::class, 'destroy']);
+
+    Route::prefix('broadband-account')->group(function () {
+        Route::post('/connect', [BroadbandAccountController::class, 'connect']);
+    });
+
+    Route::prefix('redeem')->group(function () {
+        Route::post('/check-serial-no', [RedeemController::class, 'checkSerialNo'])->middleware(
+            'throttle:serial-check',
+        );
+        Route::post('/top-up-account', [RedeemController::class, 'topUpAccount']);
+    });
 
     Route::post('/packages/buy', [BuyPackageController::class, 'buy']);
 
@@ -106,6 +123,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::patch('/{relocationRequest}/cancel', [RelocationRequestController::class, 'cancel']);
         Route::delete('/{relocationRequest}', [RelocationRequestController::class, 'destroy']);
     });
+
     Route::prefix('failure-reports')->group(function () {
         Route::get('/', [FailureReportController::class, 'index']);
         Route::post('/create', [FailureReportController::class, 'store']);
@@ -114,6 +132,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::patch('/{failureReport}/cancel', [FailureReportController::class, 'cancel']);
         Route::delete('/{failureReport}', [FailureReportController::class, 'destroy']);
     });
+
     Route::prefix('change-plan-requests')->group(function () {
         Route::get('/', [ChangePlanRequestController::class, 'index']);
         Route::post('/create', [ChangePlanRequestController::class, 'store']);
@@ -121,6 +140,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::put('/{changePlanRequest}', [ChangePlanRequestController::class, 'update']);
         Route::delete('/{changePlanRequest}', [ChangePlanRequestController::class, 'destroy']);
     });
+
     Route::prefix('change-password-requests')->group(function () {
         Route::get('/', [ChangePasswordRequestController::class, 'index']);
         Route::post('/create', [ChangePasswordRequestController::class, 'store']);
@@ -128,6 +148,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::put('/{changePasswordRequest}', [ChangePasswordRequestController::class, 'update']);
         Route::delete('/{changePasswordRequest}', [ChangePasswordRequestController::class, 'destroy']);
     });
+
     Route::prefix('broadband-applications')->group(function () {
         Route::get('/', [BroadbandApplicationRequestController::class, 'index']);
         Route::post('/create', [BroadbandApplicationRequestController::class, 'store']);
@@ -136,13 +157,10 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::patch('/{installationApplication}/cancel', [BroadbandApplicationRequestController::class, 'cancel']);
         Route::delete('/{installationApplication}', [BroadbandApplicationRequestController::class, 'destroy']);
     });
+
     Route::prefix('change-password')->group(function () {
         Route::post('/', [ChangePasswordController::class, 'store']);
         Route::post('/verify-otp', [ChangePasswordController::class, 'verifyOtp']);
-    });
-
-    Route::prefix('broadband-account')->group(function () {
-        Route::post('/connect', [BroadbandAccountController::class, 'connect']);
     });
 });
 

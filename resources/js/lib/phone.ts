@@ -27,12 +27,14 @@ export function parsePhone(value: string | null | undefined): ParsedPhone {
 
     for (const option of COUNTRIES) {
         if (digits.startsWith(option.dial) && digits.length > option.dial.length) {
+            const local = digits.slice(option.dial.length);
+
             return {
                 country: option.country,
                 dial: option.dial,
                 flagSrc: option.flagSrc,
                 label: option.label,
-                local: digits.slice(option.dial.length),
+                local: option.country === 'mm' || option.country === 'th' ? local.replace(/^0/, '') : local,
                 raw,
             };
         }
@@ -50,7 +52,11 @@ export function parsePhone(value: string | null | undefined): ParsedPhone {
 
 export function composePhone(country: PhoneCountry, local: string): string {
     const option = COUNTRIES.find((item) => item.country === country);
-    const localDigits = digitsOnly(local);
+    let localDigits = digitsOnly(local);
+
+    if (country === 'mm' || country === 'th') {
+        localDigits = localDigits.replace(/^0/, '');
+    }
 
     if (!option || localDigits === '') {
         return localDigits;
@@ -63,10 +69,10 @@ export function formatPhoneLocal(value: string | null | undefined): string {
     return parsePhone(value).local || '—';
 }
 
-const LOCAL_LENGTH: Record<Exclude<PhoneCountry, 'unknown'>, { min: number; max: number }> = {
-    mm: { min: 7, max: 10 },
-    th: { min: 8, max: 9 },
-    cn: { min: 11, max: 11 },
+const LOCAL_PATTERN: Record<Exclude<PhoneCountry, 'unknown'>, RegExp> = {
+    mm: /^9[2-9]\d{7,10}$/,
+    th: /^[689]\d{8}$/,
+    cn: /^1[3-9]\d{9}$/,
 };
 
 export function isValidAppUserPhone(value: string | null | undefined): boolean {
@@ -76,7 +82,5 @@ export function isValidAppUserPhone(value: string | null | undefined): boolean {
         return false;
     }
 
-    const length = LOCAL_LENGTH[parsed.country];
-
-    return parsed.local.length >= length.min && parsed.local.length <= length.max;
+    return LOCAL_PATTERN[parsed.country].test(parsed.local);
 }

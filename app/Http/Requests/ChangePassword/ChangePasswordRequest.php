@@ -3,7 +3,6 @@
 namespace App\Http\Requests\ChangePassword;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rules\Password;
 
 class ChangePasswordRequest extends FormRequest
 {
@@ -24,7 +23,7 @@ class ChangePasswordRequest extends FormRequest
     {
         return [
             'current_password' => ['required', 'string', 'current_password:sanctum'],
-            'new_password' => ['required', 'string', Password::defaults(), 'confirmed', 'different:current_password'],
+            'new_password' => ['required', 'string', 'regex:/^\d{6}$/', 'confirmed', 'different:current_password'],
         ];
     }
 }

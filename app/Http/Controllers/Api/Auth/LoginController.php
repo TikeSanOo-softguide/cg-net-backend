@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\LoginRequest;
 use App\Http\Resources\UserResource;
+use App\Models\User;
 use App\Services\Auth\ApiAuthenticationService;
 use App\Services\DeviceToken\DeviceTokenService;
 use App\Services\SecurityLog\SecurityLogService;
@@ -12,23 +13,23 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
-use App\Models\User;
 
 class LoginController extends Controller
 {
     public function __construct(protected SecurityLogService $securityLogService) {}
+
     public function __invoke(LoginRequest $request, ApiAuthenticationService $service): JsonResponse
     {
-        $phone = $request->string('phone')->toString();
+        $verificationToken = $request->string('verification_token')->toString();
+        $phone = $service->verifiedPhone($verificationToken);
 
         try {
-            $result = $service->login($phone, $request->string('password')->toString(), $request->ip());
+            $result = $service->login($verificationToken, $request->string('password')->toString(), $request->ip());
         } catch (ValidationException | HttpExceptionInterface $e) {
-            $targetUser = User::where('phone', $phone)->first();
             $this->securityLogService->recordLoginFailure(
                 guard: 'user',
                 identity: $phone,
-                actor: $targetUser,
+                actor: User::where('phone', $phone)->first(),
                 metadata: [
                     'phone' => $phone,
                     'reason' =>
@@ -52,11 +53,14 @@ class LoginController extends Controller
 
         $this->logActivity($request, 'login_success', [
             'user_id' => $result['user']->id,
-            'phone' => $result['user']->phone ?? null,
+            'phone' => $result['user']->phone,
+            'method' => 'password',
         ]);
 
         return response()->json([
             'token' => $result['token'],
+            'token_type' => 'Bearer',
+            'expires_at' => $result['expires_at']->toIso8601String(),
             'user' => new UserResource($result['user']),
         ]);
     }
@@ -64,8 +68,8 @@ class LoginController extends Controller
     public function logout(Request $request): JsonResponse
     {
         $user = $request->user();
-        $request->user()->tokens()->delete();
-        $request->user()->deviceTokens()->delete();
+        $user->tokens()->delete();
+        $user->deviceTokens()->delete();
         $this->logActivity($request, 'logout', [
             'user_id' => $user->id,
         ]);

@@ -243,6 +243,21 @@ class CustomerManagementTest extends TestCase
         $this->assertSame(UserStatus::Active, $customer->fresh()->status);
     }
 
+    public function test_suspending_a_customer_revokes_their_api_tokens(): void
+    {
+        $admin = Admin::factory()->create();
+        $customer = User::factory()->create(['status' => UserStatus::Active]);
+        $customer->createToken('flutter');
+        $customer->deviceTokens()->create(['token' => 'device-token', 'platform' => 'android']);
+
+        $this->actingAs($admin, 'web')
+            ->patch('/customers/' . $customer->id . '/status', ['status' => 'suspended'])
+            ->assertRedirect();
+
+        $this->assertDatabaseCount('personal_access_tokens', 0);
+        $this->assertDatabaseCount('device_tokens', 0);
+    }
+
     public function test_admin_can_bind_and_unbind_a_broadband_account_number(): void
     {
         $admin = Admin::factory()->create();
@@ -292,20 +307,21 @@ class CustomerManagementTest extends TestCase
         $response = $this->actingAs($admin, 'web')->post('/customers', [
             'name' => 'Hla Hla',
             'phone' => '+95911112222',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => '123456',
+            'password_confirmation' => '123456',
             'status' => 'active',
         ]);
 
-        $customer = User::query()->where('phone', '+95911112222')->first();
+        // Typed with a "+", stored in the canonical format (no "+") shared with the app.
+        $customer = User::query()->where('phone', '95911112222')->first();
 
         $this->assertNotNull($customer);
         $response->assertRedirect('/customers/' . $customer->id);
         $this->assertDatabaseHas('users', [
             'name' => 'Hla Hla',
-            'phone' => '+95911112222',
+            'phone' => '95911112222',
         ]);
-        $this->assertTrue(Hash::check('password123', $customer->password));
+        $this->assertTrue(Hash::check('123456', $customer->password));
         $this->assertDatabaseHas('wallets', [
             'user_id' => $customer->id,
             'balance' => 0,
@@ -326,11 +342,30 @@ class CustomerManagementTest extends TestCase
             ->post('/customers', [
                 'name' => 'Duplicate Phone',
                 'phone' => '+95933334444',
-                'password' => 'password123',
-                'password_confirmation' => 'password123',
+                'password' => '123456',
+                'password_confirmation' => '123456',
                 'status' => 'active',
             ])
             ->assertSessionHasErrors('phone');
+    }
+
+    public function test_admin_customer_password_must_be_six_digits(): void
+    {
+        $admin = Admin::factory()->create();
+
+        foreach (['12345', '1234567', '12ab56'] as $password) {
+            $this->actingAs($admin, 'web')
+                ->post('/customers', [
+                    'name' => 'Invalid PIN',
+                    'phone' => '+95922223333',
+                    'password' => $password,
+                    'password_confirmation' => $password,
+                    'status' => 'active',
+                ])
+                ->assertSessionHasErrors('password');
+        }
+
+        $this->assertDatabaseMissing('users', ['phone' => '95922223333']);
     }
 
     public function test_admins_can_update_a_customer(): void
@@ -364,6 +399,70 @@ class CustomerManagementTest extends TestCase
             'subject_id' => $customer->id,
             'causer_id' => $admin->id,
         ]);
+    }
+
+    public function test_admin_password_reset_signs_the_customer_out_and_is_audited_without_the_password(): void
+    {
+        $admin = Admin::factory()->create();
+        $customer = User::factory()->create([
+            'phone' => '+95955556666',
+            'status' => UserStatus::Active,
+        ]);
+        $customer->createToken('flutter');
+        $customer->deviceTokens()->create(['token' => 'device-token', 'platform' => 'android']);
+
+        $this->actingAs($admin, 'web')
+            ->put('/customers/' . $customer->id, [
+                'name' => $customer->name,
+                'phone' => '+95955556666',
+                'status' => 'active',
+                'password' => '654321',
+                'password_confirmation' => '654321',
+            ])
+            ->assertRedirect('/customers/' . $customer->id);
+
+        $this->assertTrue(Hash::check('654321', $customer->fresh()->password));
+        $this->assertDatabaseCount('personal_access_tokens', 0);
+        $this->assertDatabaseCount('device_tokens', 0);
+
+        $log = \Illuminate\Support\Facades\DB::table('activity_log')
+            ->where('description', 'customer_updated')
+            ->where('subject_id', $customer->id)
+            ->first();
+        $this->assertNotNull($log);
+        $this->assertEquals($admin->id, $log->causer_id);
+
+        $properties = json_decode($log->properties, true);
+        $this->assertTrue($properties['password_reset']);
+        $this->assertArrayNotHasKey('password', $properties);
+        $this->assertStringNotContainsString('654321', $log->properties);
+    }
+
+    public function test_admin_edit_without_a_password_keeps_sessions_and_is_not_marked_as_a_reset(): void
+    {
+        $admin = Admin::factory()->create();
+        $customer = User::factory()->create([
+            'phone' => '+95955556666',
+            'status' => UserStatus::Active,
+        ]);
+        $customer->createToken('flutter');
+
+        $this->actingAs($admin, 'web')
+            ->put('/customers/' . $customer->id, [
+                'name' => 'Renamed Customer',
+                'phone' => '+95955556666',
+                'status' => 'active',
+            ])
+            ->assertRedirect('/customers/' . $customer->id);
+
+        $this->assertDatabaseCount('personal_access_tokens', 1);
+
+        $log = \Illuminate\Support\Facades\DB::table('activity_log')
+            ->where('description', 'customer_updated')
+            ->where('subject_id', $customer->id)
+            ->first();
+        $this->assertNotNull($log);
+        $this->assertArrayNotHasKey('password_reset', json_decode($log->properties, true));
     }
 
     public function test_admins_can_delete_a_customer(): void

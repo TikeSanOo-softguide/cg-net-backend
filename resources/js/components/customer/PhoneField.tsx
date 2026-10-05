@@ -50,6 +50,25 @@ export function PhoneField({
         onChange(composePhone(nextCountry, local));
     };
 
+    const handlePhoneChange = (value: string) => {
+        const trimmed = value.trim();
+
+        if (trimmed.startsWith('+') || trimmed.startsWith('00')) {
+            const international = parsePhone(
+                trimmed.startsWith('00') ? `+${trimmed.slice(2)}` : trimmed,
+            );
+
+            if (international.country !== 'unknown') {
+                setSelectedCountry(international.country);
+                onChange(composePhone(international.country, international.local));
+
+                return;
+            }
+        }
+
+        onChange(composePhone(selectedCountry, value.replace(/\D+/g, '')));
+    };
+
     return (
         <div className={cn('flex min-w-0 items-stretch gap-2', className)}>
             <Select value={selectedCountry} onValueChange={handleCountryChange}>
@@ -83,7 +102,7 @@ export function PhoneField({
                 aria-invalid={invalid}
                 placeholder="97000000"
                 onBlur={onBlur}
-                onChange={(event) => onChange(composePhone(selectedCountry, event.target.value.replace(/\D+/g, '')))}
+                onChange={(event) => handlePhoneChange(event.target.value)}
             />
         </div>
     );

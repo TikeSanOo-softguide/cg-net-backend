@@ -11,6 +11,9 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::job(new ProcessDuePushSchedulesJob())->everyMinute();
+
+Schedule::command('sanctum:prune-expired --hours=24')->daily();
+
 Schedule::command(RunDailyLedgerHealthScan::class)
     ->dailyAt('16:00')
     ->timezone(config('app.timezone'))
