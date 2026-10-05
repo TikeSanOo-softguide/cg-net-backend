@@ -90,7 +90,7 @@ class BroadbandApplicationRequestController extends Controller
             "📅 Term: {$application->package->term->months} months\n" .
             "📋 Status: {$application->status->value}";
 
-        $this->telegram->sendMessage($message);
+        $this->telegram->broadbandApplicaiton($message);
         $application->load(['package.network', 'package.speed', 'package.term', 'area.region.state', 'photos']);
 
         return new BroadbandApplicationResource($application);
