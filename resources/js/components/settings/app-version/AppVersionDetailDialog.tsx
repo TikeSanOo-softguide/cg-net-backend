@@ -15,12 +15,13 @@ import type { AppVersionFormData } from './AppVersionForm';
 
 type AppVersionDetailDialogProps = {
     open: boolean;
+    canEdit: boolean;
     onOpenChange: (open: boolean) => void;
     item: AppVersionFormData | null;
     onEdit: (item: AppVersionFormData) => void;
 };
 
-export function AppVersionDetailDialog({ open, onOpenChange, item, onEdit }: AppVersionDetailDialogProps) {
+export function AppVersionDetailDialog({ open, canEdit, onOpenChange, item, onEdit }: AppVersionDetailDialogProps) {
     const { t } = useTranslation();
 
     if (!item) return null;
@@ -73,7 +74,9 @@ export function AppVersionDetailDialog({ open, onOpenChange, item, onEdit }: App
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-[12px] font-medium text-foreground">{t('settings.app_version.version')}</label>
+                        <label className="text-[12px] font-medium text-foreground">
+                            {t('settings.app_version.version')}
+                        </label>
                         <div className="flex h-10 items-center rounded-md border border-border bg-muted/20 px-3 text-xs font-medium">
                             {item.version || '—'}
                         </div>
@@ -152,15 +155,17 @@ export function AppVersionDetailDialog({ open, onOpenChange, item, onEdit }: App
                 >
                     {t('common.close')}
                 </Button>
-                <Button
-                    type="button"
-                    size="sm"
-                    variant="primary"
-                    className={formActionSubmitClass}
-                    onClick={() => onEdit(item)}
-                >
-                    {t('common.edit')}
-                </Button>
+                {canEdit ? (
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="primary"
+                        className={formActionSubmitClass}
+                        onClick={() => onEdit(item)}
+                    >
+                        {t('common.edit')}
+                    </Button>
+                ) : null}
             </div>
         </FormDialog>
     );

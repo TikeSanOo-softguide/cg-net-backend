@@ -89,6 +89,7 @@ function getStatus(item: AnnouncementItem) {
 
 export default function AnnouncementsIndex({ announcement, filters }: Props) {
     const { t, locale } = useTranslation();
+    const can = useCan();
     const [search, setSearch] = useState(filters.search);
     const [status, setStatus] = useState(filters.status);
     const [pendingIds, setPendingIds] = useState<number[]>([]);
@@ -143,15 +144,21 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
                                 </SelectTrigger>
                                 <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
                                     <SelectItem value="all">{t('common.all')}</SelectItem>
-                                    <SelectItem value="announce">{t('notification.announcement.types.announce')}</SelectItem>
-                                    <SelectItem value="system">{t('notification.announcement.types.system')}</SelectItem>
+                                    <SelectItem value="announce">
+                                        {t('notification.announcement.types.announce')}
+                                    </SelectItem>
+                                    <SelectItem value="system">
+                                        {t('notification.announcement.types.system')}
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
                         </FormControl>
                         <FormControl icon={CircleDotIcon} compact className="w-full shrink-0 sm:w-44">
                             <Select
                                 value={status || 'all'}
-                                onValueChange={(value) => visitIndex(search, value === 'all' ? '' : value, filters.type)}
+                                onValueChange={(value) =>
+                                    visitIndex(search, value === 'all' ? '' : value, filters.type)
+                                }
                             >
                                 <SelectTrigger className="w-full">
                                     <SelectValue placeholder={t('common.status')} />
@@ -170,22 +177,27 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
                             onChange={(value) => {
                                 setSearch(value);
                                 window.clearTimeout(debounce.current);
-                                debounce.current = window.setTimeout(() => visitIndex(value, status, filters.type), 300);
+                                debounce.current = window.setTimeout(
+                                    () => visitIndex(value, status, filters.type),
+                                    300,
+                                );
                             }}
                             placeholder={t('common.search')}
                             size="sm"
                             className="w-full sm:max-w-64"
                         />
                         <div className="flex shrink-0 items-center justify-end sm:ms-auto">
-                            <ToolbarIconButton
-                                label={t('notification.announcement.create')}
-                                icon={PlusIcon}
-                                prominent
-                                onClick={() => {
-                                    setEditingItem(null);
-                                    setFormOpen(true);
-                                }}
-                            />
+                            {can('notifications.create') ? (
+                                <ToolbarIconButton
+                                    label={t('notification.announcement.create')}
+                                    icon={PlusIcon}
+                                    prominent
+                                    onClick={() => {
+                                        setEditingItem(null);
+                                        setFormOpen(true);
+                                    }}
+                                />
+                            ) : null}
                         </div>
                     </div>
 
@@ -217,7 +229,9 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
                                             {localized(item, 'title') || '—'}
                                         </h2>
                                     </div>
-                                    <p className="mt-1 line-clamp-2 text-sm leading-6 text-foreground">{localized(item, 'content')}</p>
+                                    <p className="mt-1 line-clamp-2 text-sm leading-6 text-foreground">
+                                        {localized(item, 'content')}
+                                    </p>
                                     <p className="mt-1 text-[11px] text-muted-foreground">
                                         {item.start_date || item.end_date
                                             ? `${formatDateTime(item.start_date, true)} ~ ${formatDateTime(item.end_date, true)}`
@@ -235,21 +249,25 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
                                             setDetailOpen(true);
                                         }}
                                     />
-                                    <TableActionButton
-                                        label={t('common.edit')}
-                                        icon={SquarePenIcon}
-                                        tone="edit"
-                                        onClick={() => {
-                                            setEditingItem(item);
-                                            setFormOpen(true);
-                                        }}
-                                    />
-                                    <TableActionButton
-                                        label={t('common.delete')}
-                                        icon={Trash2Icon}
-                                        tone="danger"
-                                        onClick={() => setPendingIds([item.id])}
-                                    />
+                                    {can('notifications.update') ? (
+                                        <TableActionButton
+                                            label={t('common.edit')}
+                                            icon={SquarePenIcon}
+                                            tone="edit"
+                                            onClick={() => {
+                                                setEditingItem(item);
+                                                setFormOpen(true);
+                                            }}
+                                        />
+                                    ) : null}
+                                    {can('notifications.delete') ? (
+                                        <TableActionButton
+                                            label={t('common.delete')}
+                                            icon={Trash2Icon}
+                                            tone="danger"
+                                            onClick={() => setPendingIds([item.id])}
+                                        />
+                                    ) : null}
                                 </div>
                             </article>
                         ))}

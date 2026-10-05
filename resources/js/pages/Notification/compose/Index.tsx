@@ -66,15 +66,21 @@ export default function PushComposeIndex({ schedules }: Props) {
             <PageContent>
                 <PageHeader />
 
-                <Card className="gap-0 overflow-hidden border-0 py-0 shadow-[0_4px_16px_rgb(23_50_54/0.06)] dark:shadow-[0_4px_16px_rgb(0_0_0/0.22)]">
-                    <div className="border-b border-border/70 px-4 py-3.5 sm:px-5">
-                        <h2 className="text-[14px] font-semibold text-foreground">{t('notification.push.composer_title')}</h2>
-                        <p className="mt-0.5 text-[12px] text-muted-foreground">{t('notification.push.composer_description')}</p>
-                    </div>
-                    <div className="px-4 py-4 sm:px-5 sm:py-5">
-                        <PushNotificationForm />
-                    </div>
-                </Card>
+                {can('notifications.create') ? (
+                    <Card className="gap-0 overflow-hidden border-0 py-0 shadow-[0_4px_16px_rgb(23_50_54/0.06)] dark:shadow-[0_4px_16px_rgb(0_0_0/0.22)]">
+                        <div className="border-b border-border/70 px-4 py-3.5 sm:px-5">
+                            <h2 className="text-[14px] font-semibold text-foreground">
+                                {t('notification.push.composer_title')}
+                            </h2>
+                            <p className="mt-0.5 text-[12px] text-muted-foreground">
+                                {t('notification.push.composer_description')}
+                            </p>
+                        </div>
+                        <div className="px-4 py-4 sm:px-5 sm:py-5">
+                            <PushNotificationForm />
+                        </div>
+                    </Card>
+                ) : null}
 
                 {schedules.length > 0 ? (
                     <Card className="gap-0 overflow-hidden border-0 py-0 shadow-[0_4px_16px_rgb(23_50_54/0.06)] dark:shadow-[0_4px_16px_rgb(0_0_0/0.22)]">
@@ -105,10 +111,7 @@ export default function PushComposeIndex({ schedules }: Props) {
                                 </thead>
                                 <tbody>
                                     {schedules.map((item) => (
-                                        <tr
-                                            key={item.id}
-                                            className="border-b border-border/50 last:border-b-0"
-                                        >
+                                        <tr key={item.id} className="border-b border-border/50 last:border-b-0">
                                             <td className="px-4 py-3 sm:px-5">
                                                 <p className="max-w-[280px] truncate text-[13px] font-medium text-foreground">
                                                     {localizedTitle(item)}

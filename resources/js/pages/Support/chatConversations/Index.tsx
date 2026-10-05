@@ -1,8 +1,10 @@
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import { useCan } from '@/hooks/useCan';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { useTranslation } from '@/hooks/useTranslation';
+import { cn } from '@/lib/utils';
 import { ConversationList } from './ConversationList';
 import { ConversationThread } from './ConversationThread';
 import { QuickRepliesPanel } from './QuickRepliesPanel';
@@ -24,6 +26,8 @@ export default function Index({
     filters,
 }: IndexProps) {
     const { t } = useTranslation();
+    const can = useCan();
+    const canReply = can('support.create');
     const [message, setMessage] = useState('');
 
     useEffect(() => {
@@ -58,19 +62,32 @@ export default function Index({
             />
             <PageContent className="h-full min-h-0 gap-3 overflow-hidden">
                 <PageHeader />
-                <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1fr)] overflow-hidden rounded-lg border border-border bg-background shadow-sm lg:grid-cols-[minmax(12rem,0.8fr)_minmax(0,2fr)_minmax(14rem,1fr)] lg:grid-rows-none">
+                <div
+                    className={cn(
+                        'grid min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-background shadow-sm lg:grid-rows-none',
+                        canReply
+                            ? 'grid-rows-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1fr)] lg:grid-cols-[minmax(12rem,0.8fr)_minmax(0,2fr)_minmax(14rem,1fr)]'
+                            : 'grid-rows-[minmax(0,1fr)_minmax(0,1.5fr)] lg:grid-cols-[minmax(12rem,0.8fr)_minmax(0,2fr)]',
+                    )}
+                >
                     <ConversationList
                         conversations={conversations}
                         filters={filters}
                         selectedId={selectedConversation?.id}
                     />
-                    <ConversationThread conversation={selectedConversation} insertedMessage={message} />
-                    <QuickRepliesPanel
-                        quickReplies={quickReplies}
-                        categories={quickReplyCategories}
+                    <ConversationThread
                         conversation={selectedConversation}
-                        onUse={setMessage}
+                        insertedMessage={message}
+                        canReply={canReply}
                     />
+                    {canReply ? (
+                        <QuickRepliesPanel
+                            quickReplies={quickReplies}
+                            categories={quickReplyCategories}
+                            conversation={selectedConversation}
+                            onUse={setMessage}
+                        />
+                    ) : null}
                 </div>
             </PageContent>
         </>

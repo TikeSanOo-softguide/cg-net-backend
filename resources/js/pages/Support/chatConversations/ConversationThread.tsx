@@ -11,9 +11,9 @@ import { cn } from '@/lib/utils';
 import { Avatar, formatDateTime } from './ConversationList';
 import type { Conversation } from './types';
 
-type ConversationThreadProps = { conversation: Conversation | null; insertedMessage?: string };
+type ConversationThreadProps = { conversation: Conversation | null; insertedMessage?: string; canReply: boolean };
 
-export function ConversationThread({ conversation, insertedMessage }: ConversationThreadProps) {
+export function ConversationThread({ conversation, insertedMessage, canReply }: ConversationThreadProps) {
     const { t } = useTranslation();
     const form = useForm({ message: '' });
     const messagesContainerRef = useRef<HTMLDivElement | null>(null);
@@ -59,7 +59,7 @@ export function ConversationThread({ conversation, insertedMessage }: Conversati
         );
 
     const sendMessage = () => {
-        if (!form.data.message.trim()) return;
+        if (!canReply || !form.data.message.trim()) return;
 
         pendingAgentSendRef.current = true;
         setSendFailed(false);
@@ -132,47 +132,49 @@ export function ConversationThread({ conversation, insertedMessage }: Conversati
                     );
                 })}
             </div>
-            <form onSubmit={submit} className="border-t border-border p-3 sm:p-4">
-                <div className="flex items-end gap-2 rounded-lg border border-border bg-background p-2 focus-within:ring-2 focus-within:ring-ring/30">
-                    <Button type="button" variant="ghost" size="icon" className="size-8 min-h-8">
-                        <PaperclipIcon />
-                    </Button>
-                    <Input
-                        value={form.data.message}
-                        onChange={(event) => {
-                            form.setData('message', event.target.value);
-                            form.clearErrors('message');
-                            setSendFailed(false);
-                        }}
-                        placeholder={t('support.chat_conversations.type_message')}
-                        className="h-8 min-h-8 flex-1 border-0 bg-transparent px-1 shadow-none focus-visible:ring-0"
-                    />
-                    <Button type="button" variant="ghost" size="icon" className="size-8 min-h-8">
-                        <SmileIcon />
-                    </Button>
-                    <Button type="submit" size="sm" disabled={form.processing || !form.data.message.trim()}>
-                        <SendIcon />{' '}
-                        {form.processing
-                            ? t('support.chat_conversations.sending')
-                            : t('support.chat_conversations.send')}
-                    </Button>
-                </div>
-                {sendFailed || form.errors.message ? (
-                    <div className="mt-2 flex items-center justify-between gap-3 text-xs text-danger" role="alert">
-                        <span>{t('support.chat_conversations.failed_to_send')}</span>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={sendMessage}
-                            disabled={form.processing}
-                        >
-                            {t('support.chat_conversations.retry')}
+            {canReply ? (
+                <form onSubmit={submit} className="border-t border-border p-3 sm:p-4">
+                    <div className="flex items-end gap-2 rounded-lg border border-border bg-background p-2 focus-within:ring-2 focus-within:ring-ring/30">
+                        <Button type="button" variant="ghost" size="icon" className="size-8 min-h-8">
+                            <PaperclipIcon />
+                        </Button>
+                        <Input
+                            value={form.data.message}
+                            onChange={(event) => {
+                                form.setData('message', event.target.value);
+                                form.clearErrors('message');
+                                setSendFailed(false);
+                            }}
+                            placeholder={t('support.chat_conversations.type_message')}
+                            className="h-8 min-h-8 flex-1 border-0 bg-transparent px-1 shadow-none focus-visible:ring-0"
+                        />
+                        <Button type="button" variant="ghost" size="icon" className="size-8 min-h-8">
+                            <SmileIcon />
+                        </Button>
+                        <Button type="submit" size="sm" disabled={form.processing || !form.data.message.trim()}>
+                            <SendIcon />{' '}
+                            {form.processing
+                                ? t('support.chat_conversations.sending')
+                                : t('support.chat_conversations.send')}
                         </Button>
                     </div>
-                ) : null}
-                <p className="mt-1 text-right text-[10px] text-muted-foreground">{form.data.message.length}/2000</p>
-            </form>
+                    {sendFailed || form.errors.message ? (
+                        <div className="mt-2 flex items-center justify-between gap-3 text-xs text-danger" role="alert">
+                            <span>{t('support.chat_conversations.failed_to_send')}</span>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={sendMessage}
+                                disabled={form.processing}
+                            >
+                                {t('support.chat_conversations.retry')}
+                            </Button>
+                        </div>
+                    ) : null}
+                    <p className="mt-1 text-right text-[10px] text-muted-foreground">{form.data.message.length}/2000</p>
+                </form>
+            ) : null}
         </main>
     );
 }

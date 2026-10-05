@@ -32,6 +32,7 @@ import { useCan } from '@/hooks/useCan';
 
 export default function ChatFlowsIndex() {
     const { t } = useTranslation();
+    const can = useCan();
     const { steps, actionOptions } = usePage<{
         steps: Step[];
         actionOptions: ChatFlowActionOption[];
@@ -76,7 +77,7 @@ export default function ChatFlowsIndex() {
                     title={t('menu.chatbot_flows')}
                     description={t('menu.chatbot_flows_description')}
                     actions={
-                        steps.length > 0 ? (
+                        steps.length > 0 && can('support.create') ? (
                             <Button size="sm" onClick={openNewStep}>
                                 <PlusIcon />
                                 {t('support.chatbot_flows.create_step')}
@@ -102,10 +103,12 @@ export default function ChatFlowsIndex() {
                                 </p>
                             </div>
 
-                            <Button size="sm" onClick={openNewStep}>
-                                <PlusIcon />
-                                {t('support.chatbot_flows.add_first_step')}
-                            </Button>
+                            {can('support.create') ? (
+                                <Button size="sm" onClick={openNewStep}>
+                                    <PlusIcon />
+                                    {t('support.chatbot_flows.add_first_step')}
+                                </Button>
+                            ) : null}
                         </CardContent>
                     </Card>
                 ) : (
@@ -188,23 +191,27 @@ export default function ChatFlowsIndex() {
                                     </div>
 
                                     <div className="flex gap-1">
-                                        <TableActionButton
-                                            label={t('common.edit')}
-                                            icon={SquarePenIcon}
-                                            tone="edit"
-                                            onClick={() => {
-                                                setEditingStep(selectedStep);
-                                                setStepDialogOpen(true);
-                                            }}
-                                        />
-                                        <TableActionButton
-                                            label={t('common.delete')}
-                                            icon={Trash2Icon}
-                                            tone="danger"
-                                            onClick={() => {
-                                                setDeleting({ type: 'step', id: selectedStep.id });
-                                            }}
-                                        />
+                                        {can('support.update') ? (
+                                            <TableActionButton
+                                                label={t('common.edit')}
+                                                icon={SquarePenIcon}
+                                                tone="edit"
+                                                onClick={() => {
+                                                    setEditingStep(selectedStep);
+                                                    setStepDialogOpen(true);
+                                                }}
+                                            />
+                                        ) : null}
+                                        {can('support.delete') ? (
+                                            <TableActionButton
+                                                label={t('common.delete')}
+                                                icon={Trash2Icon}
+                                                tone="danger"
+                                                onClick={() => {
+                                                    setDeleting({ type: 'step', id: selectedStep.id });
+                                                }}
+                                            />
+                                        ) : null}
                                     </div>
                                 </CardHeader>
 
@@ -249,16 +256,18 @@ export default function ChatFlowsIndex() {
                                             </p>
                                         </div>
 
-                                        <Button
-                                            size="sm"
-                                            onClick={() => {
-                                                setEditingOption(null);
-                                                setOptionDialogOpen(true);
-                                            }}
-                                        >
-                                            <PlusIcon />
-                                            {t('support.chatbot_flows.create_option')}
-                                        </Button>
+                                        {can('support.create') ? (
+                                            <Button
+                                                size="sm"
+                                                onClick={() => {
+                                                    setEditingOption(null);
+                                                    setOptionDialogOpen(true);
+                                                }}
+                                            >
+                                                <PlusIcon />
+                                                {t('support.chatbot_flows.create_option')}
+                                            </Button>
+                                        ) : null}
                                     </div>
 
                                     <div className="divide-y rounded-md border">
@@ -293,20 +302,24 @@ export default function ChatFlowsIndex() {
                                                         tone="primary"
                                                         onClick={() => setViewingOption(option)}
                                                     />
-                                                    <TableActionButton
-                                                        label={t('common.edit')}
-                                                        icon={SquarePenIcon}
-                                                        tone="edit"
-                                                        onClick={() => editOption(option)}
-                                                    />
-                                                    <TableActionButton
-                                                        label={t('common.delete')}
-                                                        icon={Trash2Icon}
-                                                        tone="danger"
-                                                        onClick={() => {
-                                                            setDeleting({ type: 'option', id: option.id });
-                                                        }}
-                                                    />
+                                                    {can('support.update') ? (
+                                                        <TableActionButton
+                                                            label={t('common.edit')}
+                                                            icon={SquarePenIcon}
+                                                            tone="edit"
+                                                            onClick={() => editOption(option)}
+                                                        />
+                                                    ) : null}
+                                                    {can('support.delete') ? (
+                                                        <TableActionButton
+                                                            label={t('common.delete')}
+                                                            icon={Trash2Icon}
+                                                            tone="danger"
+                                                            onClick={() => {
+                                                                setDeleting({ type: 'option', id: option.id });
+                                                            }}
+                                                        />
+                                                    ) : null}
                                                 </div>
                                             ))
                                         ) : (
@@ -579,7 +592,7 @@ function OptionDetailDialog({
                     <XIcon className="size-3.5" strokeWidth={1.85} />
                     {t('common.close')}
                 </Button>
-                {can('chatbot-flows.update') && onEdit ? (
+                {can('support.update') && onEdit ? (
                     <Button
                         type="button"
                         size="sm"

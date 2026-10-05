@@ -281,6 +281,7 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         ->group(function () {
             Route::prefix('conversations')
                 ->name('conversations.')
+                ->middleware('can:support.view')
                 ->group(function () {
                     Route::get('/', [ChatConversationsController::class, 'index'])->name('chat-conversations.index');
 
@@ -288,18 +289,20 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                         'chat-conversations.show',
                     );
 
-                    Route::post('/{conversation}/messages', [ChatConversationsController::class, 'sendMessage'])->name(
-                        'chat-conversations.messages.store',
-                    );
+                    Route::post('/{conversation}/messages', [ChatConversationsController::class, 'sendMessage'])
+                        ->name('chat-conversations.messages.store')
+                        ->middleware('can:support.create');
 
-                    Route::put('/{conversation}/status', [ChatConversationsController::class, 'updateStatus'])->name(
-                        'chat-conversations.status',
-                    );
+                    Route::put('/{conversation}/status', [ChatConversationsController::class, 'updateStatus'])
+                        ->name('chat-conversations.status')
+                        ->middleware('can:support.update');
 
                     Route::post('/{conversation}/quick-replies/{quickReply}', [
                         ChatConversationsController::class,
                         'useQuickReply',
-                    ])->name('chat-conversations.quick-reply');
+                    ])
+                        ->middleware('can:support.create')
+                        ->name('chat-conversations.quick-reply');
                 });
             Route::prefix('quick-replies')
                 ->name('quick-replies.')
@@ -325,22 +328,20 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 ->name('chatbot-flows.')
                 ->controller(ChatbotFlowsController::class)
                 ->group(function () {
-                    Route::get('/', 'index')->middleware('can:chatbot-flows.view')->name('index');
-                    Route::post('/steps', 'storeStep')->middleware('can:chatbot-flows.store')->name('steps.store');
-                    Route::put('/steps/{step}', 'updateStep')
-                        ->middleware('can:chatbot-flows.update')
-                        ->name('steps.update');
+                    Route::get('/', 'index')->middleware('can:support.view')->name('index');
+                    Route::post('/steps', 'storeStep')->middleware('can:support.create')->name('steps.store');
+                    Route::put('/steps/{step}', 'updateStep')->middleware('can:support.update')->name('steps.update');
                     Route::delete('/steps/{step}', 'destroyStep')
-                        ->middleware('can:chatbot-flows.delete')
+                        ->middleware('can:support.delete')
                         ->name('steps.destroy');
                     Route::post('/steps/{step}/options', 'storeOption')
-                        ->middleware('can:chatbot-flows.store')
+                        ->middleware('can:support.create')
                         ->name('options.store');
                     Route::put('/steps/{step}/options/{option}', 'updateOption')
-                        ->middleware('can:chatbot-flows.update')
+                        ->middleware('can:support.update')
                         ->name('options.update');
                     Route::delete('/steps/{step}/options/{option}', 'destroyOption')
-                        ->middleware('can:chatbot-flows.delete')
+                        ->middleware('can:support.delete')
                         ->name('options.destroy');
                 });
         });
