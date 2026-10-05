@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Auth\RegistrationController;
 use App\Http\Controllers\Api\Banner\BannerController;
 use App\Http\Controllers\Api\BroadbandAccount\BroadbandAccountController;
 use App\Http\Controllers\Api\Category\CategoryController;
+use App\Http\Controllers\Api\ChatFlow\ChatFlowController;
 use App\Http\Controllers\Api\Contact\ContactController;
 use App\Http\Controllers\Api\Customer\ProfileController;
 use App\Http\Controllers\Api\DeviceToken\DeviceTokenController;
@@ -161,6 +162,12 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::prefix('change-password')->group(function () {
         Route::post('/', [ChangePasswordController::class, 'store']);
         Route::post('/verify-otp', [ChangePasswordController::class, 'verifyOtp']);
+    });
+
+    Route::prefix('chat-flow')->group(function () {
+        Route::post('/start', [ChatFlowController::class, 'start']);
+        Route::get('/current', [ChatFlowController::class, 'current']);
+        Route::post('/select-option', [ChatFlowController::class, 'selectOption']);
     });
 });
 

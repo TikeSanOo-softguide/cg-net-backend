@@ -64,6 +64,7 @@ class DatabaseSeeder extends Seeder
         $this->seedAnnouncements();
         $this->seedTopUpCards();
         $this->seedWalletSystem();
+        $this->seedChatFlow();
         $this->seedChatConversations();
         $this->seedAppVersions();
 
@@ -136,6 +137,11 @@ class DatabaseSeeder extends Seeder
         (new OfficeSeeder())->run();
     }
 
+    private function seedChatFlow(): void
+    {
+        (new ChatFlowSeeder())->run();
+    }
+
     private function seedChatConversations(): void
     {
         (new ChatConversationSeeder())->run();
@@ -173,12 +179,14 @@ class DatabaseSeeder extends Seeder
         $showcaseCustomers = $this->showcaseCustomers();
 
         $users = collect($showcaseCustomers)
-            ->map(fn (array $row) => User::factory()->create([
-                'phone' => MyanmarFake::phone('mm'),
-                'name' => $row['name'],
-                'status' => $row['status'],
-                'broadband_account_number' => $row['account_number'],
-            ]))
+            ->map(
+                fn(array $row) => User::factory()->create([
+                    'phone' => MyanmarFake::phone('mm'),
+                    'name' => $row['name'],
+                    'status' => $row['status'],
+                    'broadband_account_number' => $row['account_number'],
+                ]),
+            )
             ->concat(User::factory()->count(10)->create())
             ->values();
 
@@ -393,30 +401,30 @@ class DatabaseSeeder extends Seeder
             $condition = $index % 3;
             $status =
                 $index < 10
-                    ? ChangePlanStatus::UnderReview
-                    : ($index < 17
-                        ? ChangePlanStatus::Approved
-                        : ChangePlanStatus::Cancelled);
+                ? ChangePlanStatus::UnderReview
+                : ($index < 17
+                    ? ChangePlanStatus::Approved
+                    : ChangePlanStatus::Cancelled);
 
             $newPackage = match ($condition) {
                 0 => $currentPackage?->speed
                     ? Package::query()
-                        ->whereKeyNot($currentPackageId)
-                        ->whereHas('speed', fn($query) => $query->where('mbps', '<', $currentPackage->speed->mbps))
-                        ->first()
+                    ->whereKeyNot($currentPackageId)
+                    ->whereHas('speed', fn($query) => $query->where('mbps', '<', $currentPackage->speed->mbps))
+                    ->first()
                     : null,
                 1 => $currentPackage?->speed
                     ? Package::query()
-                        ->whereKeyNot($currentPackageId)
-                        ->whereHas('speed', fn($query) => $query->where('mbps', '>', $currentPackage->speed->mbps))
-                        ->first()
+                    ->whereKeyNot($currentPackageId)
+                    ->whereHas('speed', fn($query) => $query->where('mbps', '>', $currentPackage->speed->mbps))
+                    ->first()
                     : null,
                 default => $currentPackage?->speed
                     ? Package::query()
-                        ->whereKeyNot($currentPackageId)
-                        ->where('network_id', '!=', $currentPackage->network_id)
-                        ->whereHas('speed', fn($query) => $query->where('mbps', $currentPackage->speed->mbps))
-                        ->first()
+                    ->whereKeyNot($currentPackageId)
+                    ->where('network_id', '!=', $currentPackage->network_id)
+                    ->whereHas('speed', fn($query) => $query->where('mbps', $currentPackage->speed->mbps))
+                    ->first()
                     : null,
             };
 
