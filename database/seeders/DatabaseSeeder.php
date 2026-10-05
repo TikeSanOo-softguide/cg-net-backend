@@ -38,6 +38,7 @@ use Database\Factories\Support\MyanmarFake;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
 {
@@ -169,32 +170,42 @@ class DatabaseSeeder extends Seeder
      */
     private function seedCustomers($packages)
     {
-        $showcasePhones = [
-            ['phone' => MyanmarFake::phone('mm'), 'name' => 'Myanmar User'],
-            ['phone' => MyanmarFake::phone('th'), 'name' => 'Thailand User'],
-            ['phone' => MyanmarFake::phone('cn'), 'name' => 'China User'],
-        ];
+        $showcaseCustomers = $this->showcaseCustomers();
 
-        $users = collect($showcasePhones)
-            ->map(fn(array $row) => User::factory()->create($row))
-            ->concat(User::factory()->count(17)->create())
+        $users = collect($showcaseCustomers)
+            ->map(fn (array $row) => User::factory()->create([
+                'phone' => MyanmarFake::phone('mm'),
+                'name' => $row['name'],
+                'status' => $row['status'],
+                'broadband_account_number' => $row['account_number'],
+            ]))
+            ->concat(User::factory()->count(10)->create())
             ->values();
 
-        return $users->each(function (User $user, int $index) use ($packages): void {
-            if ($index >= 3 && $index < 6) {
+        return $users->each(function (User $user, int $index) use ($packages, $showcaseCustomers): void {
+            if ($index === count($showcaseCustomers)) {
+                $this->syncCustomerPackageIdSequence();
+            }
+
+            if ($index >= 10 && $index < 13) {
                 $user->update(['status' => UserStatus::Suspended]);
             }
             $package = $packages->random();
-            $accountNumber = 'CG' . fake()->unique()->numerify('########');
+            $showcaseCustomer = $showcaseCustomers[$index] ?? null;
+            $accountNumber = $showcaseCustomer['account_number'] ?? 'CG' . fake()->unique()->numerify('########');
             $user->update(['broadband_account_number' => $accountNumber]);
 
-            CustomerPackage::factory()->create([
+            $customerPackage = CustomerPackage::factory()->make([
                 'user_id' => $user->id,
                 'package_id' => $package->id,
                 'starts_at' => now()->subDays(10),
                 'expires_at' => now()->addDays($package->validity_days - 10),
                 'status' => CustomerPackageStatus::Active,
             ]);
+            if ($showcaseCustomer) {
+                $customerPackage->forceFill(['id' => $showcaseCustomer['customer_package_id']]);
+            }
+            $customerPackage->save();
 
             if ($index % 4 === 0) {
                 CustomerPackage::factory()
@@ -251,6 +262,86 @@ class DatabaseSeeder extends Seeder
                 ])
                 ->save();
         });
+    }
+
+    private function syncCustomerPackageIdSequence(): void
+    {
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return;
+        }
+
+        DB::statement(
+            "SELECT setval(pg_get_serial_sequence('customer_packages', 'id'), COALESCE(MAX(id), 1), COUNT(*) > 0) FROM customer_packages",
+        );
+    }
+
+    /**
+     * @return list<array{account_number: string, name: string, status: UserStatus, customer_package_id: int}>
+     */
+    private function showcaseCustomers(): array
+    {
+        return [
+            [
+                'account_number' => 'CG0000001',
+                'name' => 'Robert Anderson',
+                'status' => UserStatus::Active,
+                'customer_package_id' => 78,
+            ],
+            [
+                'account_number' => 'CG0000002',
+                'name' => 'Patricia Martinez',
+                'status' => UserStatus::Active,
+                'customer_package_id' => 77,
+            ],
+            [
+                'account_number' => 'CG0000003',
+                'name' => 'Aung Aung',
+                'status' => UserStatus::Suspended,
+                'customer_package_id' => 4,
+            ],
+            [
+                'account_number' => 'CG0000004',
+                'name' => 'Su Su',
+                'status' => UserStatus::Suspended,
+                'customer_package_id' => 5,
+            ],
+            [
+                'account_number' => 'CG0000005',
+                'name' => 'Kyaw Kyaw',
+                'status' => UserStatus::Active,
+                'customer_package_id' => 7,
+            ],
+            [
+                'account_number' => 'CG0000006',
+                'name' => 'Hla Hla',
+                'status' => UserStatus::Active,
+                'customer_package_id' => 8,
+            ],
+            [
+                'account_number' => 'CG0000007',
+                'name' => 'Ko Ko',
+                'status' => UserStatus::Suspended,
+                'customer_package_id' => 9,
+            ],
+            [
+                'account_number' => 'CG0000008',
+                'name' => 'Su Mon',
+                'status' => UserStatus::Active,
+                'customer_package_id' => 10,
+            ],
+            [
+                'account_number' => 'CG0000009',
+                'name' => 'Min Min',
+                'status' => UserStatus::Suspended,
+                'customer_package_id' => 12,
+            ],
+            [
+                'account_number' => 'CG0000010',
+                'name' => 'Thiri',
+                'status' => UserStatus::Active,
+                'customer_package_id' => 13,
+            ],
+        ];
     }
 
     /**

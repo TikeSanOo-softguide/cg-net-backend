@@ -458,6 +458,43 @@ class TopUpCardManagementTest extends TestCase
         $this->assertNotSame($pending->id, $active->id);
     }
 
+    public function test_office_assignment_filters_by_batch_status(): void
+    {
+        $actor = Admin::factory()->create();
+        $actor->assignRole(AppPermissions::SuperAdmin);
+        $activeBatch = Batch::factory()->create(['status' => 'active']);
+        $cancelledBatch = Batch::factory()->create(['status' => 'cancelled']);
+        TopUpCard::factory()->create(['batch_id' => $activeBatch->id, 'status' => TopUpCardStatus::Active]);
+        TopUpCard::factory()->create(['batch_id' => $cancelledBatch->id, 'status' => TopUpCardStatus::Active]);
+
+        $this->actingAs($actor, 'web')
+            ->get('/top-up-cards/office-assign?status=cancelled')
+            ->assertOk()
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->component('TopUpCards/OfficeAssign')
+                    ->has('batchPage.data', 1)
+                    ->where('batchPage.data.0.id', $cancelledBatch->id)
+                    ->where('batchPage.data.0.status', 'cancelled'),
+            );
+    }
+
+    public function test_active_batch_can_be_cancelled(): void
+    {
+        $actor = Admin::factory()->create();
+        $actor->assignRole(AppPermissions::SuperAdmin);
+        $batch = Batch::factory()->create(['status' => 'active']);
+
+        $this->actingAs($actor, 'web')
+            ->patch('/top-up-cards/batches/' . $batch->id . '/cancel')
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('batches', [
+            'id' => $batch->id,
+            'status' => 'cancelled',
+        ]);
+    }
+
     public function test_office_assign_csv_import_does_not_activate_existing_pending_cards(): void
     {
         $actor = Admin::factory()->create();

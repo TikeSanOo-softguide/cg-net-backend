@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Support\ChatConversations;
 
+use App\Enums\QuickReplyCategory;
 use App\Http\Controllers\Controller;
 use App\Models\ChatConversation;
 use App\Models\QuickReply;
@@ -92,7 +93,7 @@ class ChatConversationsController extends Controller
 
         $quickReplies = QuickReply::query()
             ->orderBy('keyword')
-            ->get();
+            ->get(['id', 'keyword', 'category', 'response_en', 'response_my', 'response_zh']);
 
         return Inertia::render(
             'Support/chatConversations/Index',
@@ -100,6 +101,10 @@ class ChatConversationsController extends Controller
                 'conversations' => $conversations,
                 'selectedConversation' => $selectedConversation,
                 'quickReplies' => $quickReplies,
+                'quickReplyCategories' => array_map(
+                    fn(QuickReplyCategory $category) => $category->value,
+                    QuickReplyCategory::cases(),
+                ),
                 'filters' => [
                     'search' => $search,
                     'status' => $status,
@@ -147,7 +152,11 @@ class ChatConversationsController extends Controller
         ChatConversation $conversation,
         QuickReply $quickReply
     ) {
-        $language = $conversation->language ?: 'en';
+        $language = $request->string('language')->toString();
+
+        if (! in_array($language, ['en', 'my', 'zh'], true)) {
+            $language = 'en';
+        }
 
         $field = match ($language) {
             'my' => 'response_my',

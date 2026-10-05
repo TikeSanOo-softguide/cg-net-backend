@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ServiceRequest\CreateBroadbandApplicationRequest;
 use App\Http\Requests\ServiceRequest\UpdateBroadbandApplicationRequest;
 use App\Http\Resources\BroadbandApplication\BroadbandApplicationResource;
+use App\Events\ServiceRequestSubmitted;
 use App\Models\InstallationApplication;
 use App\Services\Telegram\TelegramService;
 use App\Support\StoresPublicImage;
@@ -49,6 +50,7 @@ class BroadbandApplicationRequestController extends Controller
                 'user_id' => $request->user()->id,
                 'status' => RequestStatus::UnderReview->value,
             ]);
+            ServiceRequestSubmitted::dispatch('installation_application', $application->id);
 
             foreach ($request->file('photos', []) as $photo) {
                 $application->photos()->create([

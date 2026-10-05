@@ -76,6 +76,8 @@ class LedgerPoster
         ?string $userAgent = null,
         ?string $transactionNo = null,
         ?int $reversalOf = null,
+        ?int $relatedTransactionId = null,
+        ?string $note = null,
     ): LedgerTransaction {
         return $this->post(
             wallet: $wallet,
@@ -93,6 +95,8 @@ class LedgerPoster
             userAgent: $userAgent,
             transactionNo: $transactionNo,
             reversalOf: $reversalOf,
+            relatedTransactionId: $relatedTransactionId,
+            note: $note,
         );
     }
 
@@ -112,6 +116,8 @@ class LedgerPoster
         ?string $userAgent = null,
         ?string $transactionNo = null,
         ?int $reversalOf = null,
+        ?int $relatedTransactionId = null,
+        ?string $note = null,
     ): LedgerTransaction {
         return $this->post(
             wallet: $wallet,
@@ -129,6 +135,8 @@ class LedgerPoster
             userAgent: $userAgent,
             transactionNo: $transactionNo,
             reversalOf: $reversalOf,
+            relatedTransactionId: $relatedTransactionId,
+            note: $note,
         );
     }
 
@@ -148,6 +156,8 @@ class LedgerPoster
         ?string $userAgent = null,
         ?string $transactionNo = null,
         ?int $reversalOf = null,
+        ?int $relatedTransactionId = null,
+        ?string $note = null,
     ): LedgerTransaction {
         if ($amount < 1) {
             throw new InvalidArgumentException('Ledger amount must be at least 1.');
@@ -175,6 +185,8 @@ class LedgerPoster
             $userAgent,
             $transactionNo,
             $reversalOf,
+            $relatedTransactionId,
+            $note,
         ) {
             /** @var Wallet $locked */
             $locked = Wallet::query()->whereKey($wallet->id)->lockForUpdate()->firstOrFail();
@@ -247,6 +259,8 @@ class LedgerPoster
                 'amount' => $amount,
                 'idempotency_key' => $idempotencyKey,
                 'reversal_of' => $reversalOf,
+                'related_transaction_id' => $relatedTransactionId,
+                'note' => $note,
                 'actor_type' => $actorType,
                 'actor_id' => $actorId,
                 'ip_address' => $ipAddress,

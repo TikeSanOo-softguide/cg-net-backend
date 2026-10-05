@@ -42,6 +42,19 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {
             $statusCode = $response->getStatusCode();
 
+            if ($statusCode === 429 && $request->is('api/redeem/check-serial-no')) {
+                $retryAfter = (int) $response->headers->get('Retry-After', 1800);
+
+                return response()->json(
+                    [
+                        'message' => 'Too many attempts. Please try again after 30 minutes.',
+                        'retry_after' => $retryAfter,
+                    ],
+                    429,
+                    $response->headers->all(),
+                );
+            }
+
             $isStorageUrl = $request->is('storage/*') || str_contains($request->path(), 'storage/');
 
             if (in_array($statusCode, [401, 403], true) && !$isStorageUrl) {

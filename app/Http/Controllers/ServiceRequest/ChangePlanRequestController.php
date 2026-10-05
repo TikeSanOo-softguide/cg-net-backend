@@ -19,6 +19,7 @@ class ChangePlanRequestController extends Controller
         $status = $request->has('status')
             ? $request->string('status')->toString()
             : ChangePlanStatus::UnderReview->value;
+        $openRequestId = $request->integer('open_request');
 
         $changePlanRequests = ChangePlanRequest::query()
             ->with([
@@ -35,7 +36,7 @@ class ChangePlanRequestController extends Controller
                 },
                 'admin:id,username',
             ])
-            ->when($search !== '', function ($query) use ($search): void {
+            ->when($openRequestId < 1 && $search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
                         ->whereHas('user', fn($user) => $user->whereLike('name', '%' . $search . '%'))
@@ -43,9 +44,12 @@ class ChangePlanRequestController extends Controller
                 });
             })
             ->when(
-                $status !== '' && in_array($status, array_column(ChangePlanStatus::cases(), 'value'), true),
+                $openRequestId < 1 &&
+                    $status !== '' &&
+                    in_array($status, array_column(ChangePlanStatus::cases(), 'value'), true),
                 fn($query) => $query->where('status', $status),
             )
+            ->when($openRequestId > 0, fn($query) => $query->whereKey($openRequestId))
             ->orderBy('preferred_date')
             ->latest('id')
             ->paginate(10)

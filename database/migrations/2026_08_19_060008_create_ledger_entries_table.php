@@ -22,7 +22,7 @@ return new class extends Migration {
             $table->unique(['ledger_transaction_id', 'line_no']);
             $table->index(['ledger_account_id', 'id']);
             $table->index(['wallet_id', 'id']);
-            $table->index('ledger_transaction_id');
+            $table->index(['ledger_transaction_id', 'wallet_id', 'credit', 'debit'], 'ledger_entries_tx_wallet_direction_index');
         });
     }
 

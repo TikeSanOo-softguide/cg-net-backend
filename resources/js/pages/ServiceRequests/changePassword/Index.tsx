@@ -23,7 +23,9 @@ import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FormDialog } from '@/components/FormDialog';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useCan } from '@/hooks/useCan';
 import { StatCard } from '@/components/StatCard';
+import { useOpenRequestFromQuery } from '@/hooks/useOpenRequestFromQuery';
 
 type RequestItem = {
     id: number;
@@ -64,9 +66,11 @@ function visit(filters: Filters) {
 
 export default function ChangePasswordIndex({ requests, filters, statuses, stats }: Props) {
     const { t } = useTranslation();
+    const can = useCan();
     const [search, setSearch] = useState(filters.search);
     const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
     const debounce = useRef<number>(0);
+    const closeRequestDetails = useOpenRequestFromQuery(requests.data, setSelectedRequest);
 
     const cards = [
         {
@@ -199,7 +203,8 @@ export default function ChangePasswordIndex({ requests, filters, statuses, stats
             <ChangePasswordDetailDialog
                 request={selectedRequest}
                 open={selectedRequest !== null}
-                onOpenChange={(open) => !open && setSelectedRequest(null)}
+                canUpdate={can('service-requests.update')}
+                onOpenChange={(open) => !open && closeRequestDetails()}
             />
         </>
     );
@@ -208,10 +213,12 @@ export default function ChangePasswordIndex({ requests, filters, statuses, stats
 function ChangePasswordDetailDialog({
     request,
     open,
+    canUpdate,
     onOpenChange,
 }: {
     request: RequestItem | null;
     open: boolean;
+    canUpdate: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
     const { t } = useTranslation();
@@ -306,7 +313,7 @@ function ChangePasswordDetailDialog({
                 </div>
                 <div className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/10 p-3">
                     <StatusBadge status={request.status} />
-                    {request?.status !== 'cancelled' && (
+                    {canUpdate && request?.status !== 'cancelled' && (
                         <Button type="button" size="sm" disabled={processing} onClick={updateStatus}>
                             {t(`status.${nextButton}`)}
                         </Button>

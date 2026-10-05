@@ -47,7 +47,7 @@ class TopUpCardRedemptionService
                 $ipAddress,
                 $userAgent,
             ): array {
-                $actorId = $user->getKey();
+                $userId = $user->getKey();
                 $recipientId = User::query()->where('phone', $phone)->value('id');
 
                 if (!$recipientId) {
@@ -58,16 +58,16 @@ class TopUpCardRedemptionService
                 }
 
                 $users = User::query()
-                    ->whereKey(array_values(array_unique([$actorId, $recipientId])))
+                    ->whereKey(array_values(array_unique([$userId, $recipientId])))
                     ->orderBy('id')
                     ->lockForUpdate()
                     ->get()
                     ->keyBy('id');
 
-                $actor = $users->get($actorId);
+                $user = $users->get($userId);
                 $account = $users->get($recipientId);
 
-                if (!$actor || $actor->status !== UserStatus::Active) {
+                if (!$user || $user->status !== UserStatus::Active) {
                     return $this->response(403, [
                         'success' => false,
                         'message' => 'Account is not available.',
@@ -97,7 +97,7 @@ class TopUpCardRedemptionService
                     ]);
                 }
 
-                $rateLimitResponse = $this->rateLimitResponse((string) $actor->getKey(), $ipAddress);
+                $rateLimitResponse = $this->rateLimitResponse((string) $userId, $ipAddress);
 
                 if ($rateLimitResponse !== null) {
                     return $rateLimitResponse;
@@ -108,7 +108,7 @@ class TopUpCardRedemptionService
                 $pinMatches = TopUpCardPin::check($pin, $card?->pin ?? str_repeat('0', 64));
 
                 if (!$card || !$pinMatches) {
-                    $this->registerPinFailure((string) $actor->getKey(), $ipAddress);
+                    $this->registerPinFailure((string) $userId, $ipAddress);
 
                     return $this->response(400, [
                         'success' => false,
@@ -123,7 +123,7 @@ class TopUpCardRedemptionService
                 }
 
                 if (!$this->cardIsRedeemable($card)) {
-                    $this->registerPinFailure((string) $actor->getKey(), $ipAddress);
+                    $this->registerPinFailure((string) $userId, $ipAddress);
 
                     return $this->response(400, [
                         'success' => false,
@@ -153,7 +153,7 @@ class TopUpCardRedemptionService
                     status: LedgerTransactionStatus::Completed,
                     idempotencyKey: $idempotencyKey,
                     actorType: WalletActorType::User,
-                    actorId: $actor->id,
+                    actorId: $userId,
                     ipAddress: $ipAddress,
                     userAgent: $userAgent,
                 );
@@ -170,7 +170,7 @@ class TopUpCardRedemptionService
 
                 $card->status = TopUpCardStatus::Used;
                 $card->redeemed_at = now();
-                $card->redeemed_by = $actor->id;
+                $card->redeemed_by = $userId;
                 $card->ledger_transaction_id = $transaction->id;
                 $card->save();
 

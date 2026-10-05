@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Cache;
 final class TopUpCardGenerationStatus
 {
     /**
-        * @return array{token: string, status: string|null, total_cards: int, source: string|null}|null
+     * @return array{token: string, status: string|null, total_cards: int, source: string|null}|null
      */
     public static function forToken(?string $token): ?array
     {
@@ -39,7 +39,7 @@ final class TopUpCardGenerationStatus
     }
 
     /**
-        * @return array{token: string, status: string|null, total_cards: int, source: string|null}|null
+     * @return array{token: string, status: string|null, total_cards: int, source: string|null}|null
      */
     public static function forSession(?string $token): ?array
     {

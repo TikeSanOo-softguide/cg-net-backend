@@ -389,6 +389,7 @@
         "other": "Other",
         "request_levels": "Service requests",
         "request_levels_description": "Highest to lowest by type",
+        "request_levels_duration": "Duration · Last 30 days",
         "bulk_deleted": "Selected service requests deleted",
         "bulk_delete_failed": "None of the selected service requests could be deleted.",
         "bulk_delete_partial": "Some selected service requests could not be deleted.",
@@ -432,7 +433,9 @@
         "invalid": "Invalid",
         "blocked": "Blocked",
         "cancelled": "Cancelled",
-        "sent": "Sent"
+        "sent": "Sent",
+        "read": "Read",
+        "unread": "Unread"
     },
     "activity_logs": {
         "admin": "Actor",
@@ -477,6 +480,31 @@
     "pagination": {
         "previous": "Previous",
         "next": "Next"
+    },
+    "admin_notifications": {
+        "description": "Review, search, and filter recent admin notifications.",
+        "search_placeholder": "Search notifications...",
+        "customer_name": "Customer name",
+        "category": "Notification type",
+        "request_type": "Request type",
+        "request_status": "Request status",
+        "read_status": "Read status",
+        "read": "Read",
+        "unread": "Unread",
+        "mark_read": "Mark as read",
+        "empty": "No notifications match these filters.",
+        "categories": {
+            "request": "Request",
+            "security": "Security",
+            "other": "Other"
+        },
+        "request_types": {
+            "installation_application": "Broadband application",
+            "change_password_request": "Change password",
+            "change_plan_request": "Change plan",
+            "failure_report": "Failure report",
+            "relocation_request": "Relocation"
+        }
     },
     "common": {
         "profile": "Profile",
@@ -678,7 +706,8 @@
         "installation": "Installation",
         "failure": "Failure report",
         "relocation": "Relocation",
-        "change_plan": "Change plan"
+        "change_plan": "Change plan",
+        "change_password": "Change password"
     },
     "language": {
         "en": "English",
@@ -723,6 +752,8 @@
         },
         "detail_fields": {
             "reversal_of": "Reversal of",
+            "related_transaction": "Related transaction",
+            "note": "Note",
             "customer_phone": "Customer phone",
             "wallet_id": "Wallet ID",
             "idempotency_key": "Idempotency key",
@@ -754,6 +785,9 @@
         "broadband_accounts": "Broadband accounts",
         "accounts": "Accounts",
         "account_number": "Account number",
+        "account_bounded": "This customer is already connected to another broadband account.",
+        "account_number_required": "Account number is required.",
+        "account_number_max": "Account number may not exceed 32 characters.",
         "bind_account": "Bind account",
         "remove_account": "Remove account",
         "remove_account_title": "Remove broadband account",
@@ -807,6 +841,23 @@
         "top_up_history": "Top-up history",
         "top_up_history_hint": "Redeemed top-up cards.",
         "redeemed_at": "Redeemed at",
+        "wallet_adjust": {
+            "action": "Adjust balance",
+            "title": "Adjust wallet balance",
+            "description": "Post a manual credit or debit adjustment for this customer.",
+            "description_related": "Post a manual adjustment linked to transaction",
+            "direction": "Direction",
+            "credit": "Credit (add balance)",
+            "debit": "Debit (remove balance)",
+            "amount": "Amount",
+            "note": "Reason",
+            "note_placeholder": "Why is this adjustment needed?",
+            "related_transaction": "Related transaction",
+            "related_mismatch": "Related transaction must belong to this customer.",
+            "no_wallet": "This customer does not have a wallet.",
+            "submit": "Post adjustment",
+            "success": "Wallet balance adjusted."
+        },
         "no_top_ups": "No top-up history",
         "serial_no": "Serial no.",
         "validation": {
@@ -814,7 +865,7 @@
             "name_min": "The name must be at least 2 characters.",
             "name_max": "The name may not be greater than 255 characters.",
             "phone_required": "Please enter a phone number.",
-            "phone_invalid": "Please enter a valid Myanmar (+95), Thailand (+66), or China (+86) mobile number.",
+            "phone_invalid": "Please enter a valid mobile number.",
             "phone_taken": "This phone number is already in use.",
             "password_required": "Please enter a password.",
             "password_min": "The password must be at least 8 characters.",
@@ -1176,6 +1227,8 @@
         "create": "Create",
         "update": "Update",
         "delete": "Delete",
+        "system_exports": "System Exports",
+        "export_data": "Export Data",
         "select_all": "Select all",
         "clear": "Clear"
     },
@@ -1430,6 +1483,10 @@
         "range_month": "This month",
         "batch_no": "Batch Number",
         "2year": "2 Years",
+        "block_batch": "Block batch",
+        "block_batch_title": "Block this batch?",
+        "block_batch_description": "The batch status will be set to blocked.",
+        "batch_blocked": "Batch blocked.",
         "office": {
             "title": "Offices",
             "name": "Office",
@@ -1688,6 +1745,83 @@
         "copy_address": "Copy Address"
     },
     "support": {
+        "chat_conversations": {
+            "app_name": "CGNet Chat",
+            "page_title": "Chat Conversations",
+            "conversations": "Conversations",
+            "all": "All",
+            "open": "Open",
+            "pending": "Pending",
+            "closed": "Closed",
+            "search_conversations": "Search conversations...",
+            "no_conversations": "No conversations",
+            "select_conversation": "Select a conversation",
+            "unassigned": "Unassigned",
+            "send": "Send",
+            "type_message": "Type a message...",
+            "guest": "Guest",
+            "attachment": "Attachment",
+            "no_messages_yet": "No messages yet",
+            "sending": "Sending",
+            "failed_to_send": "Failed to send",
+            "retry": "Retry"
+        },
+        "quick_replies": {
+            "create": "Add Quick Reply",
+            "create_description": "Create a response your support team can reuse.",
+            "edit": "Edit Quick Reply",
+            "edit_description": "Update this quick reply.",
+            "details": "Quick Reply Details",
+            "details_description": "Review the keyword, category, and translated responses.",
+            "basic_information": "Basic information",
+            "translated_responses": "Translated responses",
+            "search_placeholder": "Search keyword or response",
+            "keyword": "Keyword",
+            "category": "Category",
+            "all_categories": "All categories",
+            "response": "Response",
+            "response_en": "English Response",
+            "response_my": "Myanmar Response",
+            "response_zh": "Chinese Response",
+            "english": "English",
+            "myanmar": "Myanmar",
+            "chinese": "Chinese",
+            "empty": "No quick replies found.",
+            "panel_title": "Quick replies",
+            "panel_search": "Search quick replies",
+            "panel_empty": "No quick replies found.",
+            "no_matching_replies": "No matching quick replies.",
+            "clear_search": "Clear search",
+            "language": "Reply language",
+            "use": "Use",
+            "delete_title": "Delete Quick Reply",
+            "delete_description": "Are you sure you want to delete this quick reply?",
+            "bulk_delete_title": "Delete Selected Quick Replies",
+            "bulk_delete_description": "Are you sure you want to delete :count selected quick replies?",
+            "created": "Quick Reply created successfully.",
+            "updated": "Quick Reply updated successfully.",
+            "deleted": "Quick Reply deleted successfully.",
+            "bulk_deleted": "Selected Quick Replies deleted successfully.",
+            "categories": {
+                "internet": "Internet",
+                "payment": "Payment",
+                "package": "Package",
+                "technical": "Technical",
+                "account": "Account"
+            },
+            "validation": {
+                "keyword_required": "Please enter a keyword.",
+                "keyword_max": "The keyword may not be greater than 50 characters.",
+                "keyword_unique": "This keyword is already used by another quick reply.",
+                "category_invalid": "Please select a valid category.",
+                "response_en_required": "Please enter the English response.",
+                "response_en_max": "The English response may not be greater than 5000 characters.",
+                "response_my_required": "Please enter the Myanmar response.",
+                "response_my_max": "The Myanmar response may not be greater than 5000 characters.",
+                "response_zh_required": "Please enter the Chinese response.",
+                "response_zh_max": "The Chinese response may not be greater than 5000 characters."
+            }
+        },
         "chatbot_flows": {
             "no_step": "No steps yet",
             "no_step_description": "Start building your chatbot flow by adding your first step.",

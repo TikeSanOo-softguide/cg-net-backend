@@ -26,10 +26,11 @@ class ChangePasswordRequestController extends Controller
             ChangePasswordStatus::Approved->value,
             ChangePasswordStatus::Cancelled->value,
         ];
+        $openRequestId = $request->integer('open_request');
 
         $requests = ChangePasswordRequest::query()
             ->with(['user:id,name,phone'])
-            ->when($search !== '', function ($query) use ($search): void {
+            ->when($openRequestId < 1 && $search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
                         ->whereLike('contact_name', '%' . $search . '%')
@@ -40,7 +41,11 @@ class ChangePasswordRequestController extends Controller
                 });
             })
             ->whereIn('status', $statuses)
-            ->when($status !== '' && in_array($status, $statuses, true), fn($query) => $query->where('status', $status))
+            ->when(
+                $openRequestId < 1 && $status !== '' && in_array($status, $statuses, true),
+                fn($query) => $query->where('status', $status),
+            )
+            ->when($openRequestId > 0, fn($query) => $query->whereKey($openRequestId))
             ->orderBy('created_at')
             ->orderBy('id')
             ->paginate(15)

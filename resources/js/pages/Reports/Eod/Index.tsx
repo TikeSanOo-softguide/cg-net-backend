@@ -59,6 +59,12 @@ function amount(value: number, locale: SupportedLocale): string {
     return `${new Intl.NumberFormat(localeTags[locale]).format(value)} ${TOP_UP_CARD_CURRENCY}`;
 }
 
+function failedTransactionsHref(date: string): string {
+    const query = new URLSearchParams({ status: 'failed', from: date, to: date });
+
+    return `/billing/transactions?${query.toString()}`;
+}
+
 function transactionHref(transactionNo: string): string {
     const query = new URLSearchParams({ search: transactionNo, open_transaction: transactionNo });
 
@@ -82,16 +88,20 @@ export default function EodReportIndex({ date, summary, breakdown, entries }: Pr
             label: t('eod_report.completed_transactions'),
             value: numberFormat.format(summary.completed_transactions),
             icon: CircleCheck,
+            statusColor: 'text-success',
         },
         {
             label: t('eod_report.pending_transactions'),
             value: numberFormat.format(summary.pending_transactions),
             icon: Clock3,
+            statusColor: 'text-warning',
         },
         {
             label: t('eod_report.failed_transactions'),
             value: numberFormat.format(summary.failed_transactions),
             icon: CircleX,
+            statusColor: 'text-danger',
+            href: failedTransactionsHref(date),
         },
     ];
 
@@ -129,16 +139,27 @@ export default function EodReportIndex({ date, summary, breakdown, entries }: Pr
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    {metrics.map(({ label, value, icon: Icon }) => (
+                    {metrics.map(({ label, value, icon: Icon, href, statusColor }) => (
                         <Card key={label} className="gap-2 py-4">
                             <CardContent className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
                                     <p className="text-xs text-muted-foreground">{label}</p>
-                                    <p className="mt-2 break-words font-heading text-xl font-semibold tabular-nums">
-                                        {value}
+                                    <p
+                                        className={`mt-2 break-words font-heading text-xl font-semibold tabular-nums ${statusColor ?? ''}`}
+                                    >
+                                        {href ? (
+                                            <Link
+                                                href={href}
+                                                className="underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                            >
+                                                {value}
+                                            </Link>
+                                        ) : (
+                                            value
+                                        )}
                                     </p>
                                 </div>
-                                <Icon className="size-4 shrink-0 text-muted-foreground" />
+                                <Icon className={`size-4 shrink-0 ${statusColor ?? 'text-primary'}`} />
                             </CardContent>
                         </Card>
                     ))}

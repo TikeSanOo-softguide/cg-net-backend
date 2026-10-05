@@ -1,6 +1,10 @@
 import { useState } from 'react';
+import { router } from '@inertiajs/react';
+import { BanIcon } from 'lucide-react';
 import { DataTable } from '@/components/DataTable';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { StatusBadge } from '@/components/StatusBadge';
+import { TableActionButton } from '@/components/TableActionButton';
 import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -54,6 +58,7 @@ export function TopUpCardImportTable({
     const can = useCan();
 
     const [importDialogOpen, setImportDialogOpen] = useState(false);
+    const [voiding, setVoiding] = useState<BatchTableRow | null>(null);
 
     return (
         <>
@@ -67,11 +72,12 @@ export function TopUpCardImportTable({
                     <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
                         <FormField
                             label={t('top_up_cards.batch_no')}
-                            htmlFor="status"
+                            htmlFor="batch-filter"
                             className="w-full shrink-0 sm:w-50 mr-3"
                             labelClassName="text-[13px]"
                         >
                             <SearchableSelect
+                                id="batch-filter"
                                 value={batchFilter || 'all'}
                                 onValueChange={onBatchChange}
                                 options={[
@@ -85,24 +91,19 @@ export function TopUpCardImportTable({
                         </FormField>
                         <FormField
                             label={t('common.status')}
-                            htmlFor="status"
+                            htmlFor="batch-status"
                             className="w-full shrink-0 sm:w-40 mr-3"
                             labelClassName="text-[13px]"
                         >
                             <Select value={statusFilter || 'all'} onValueChange={onStatusChange}>
-                                <SelectTrigger className="w-full">
+                                <SelectTrigger id="batch-status" className="w-full">
                                     <SelectValue placeholder={t('common.status')} />
                                 </SelectTrigger>
 
                                 <SelectContent>
                                     <SelectItem value="all">{t('common.all')}</SelectItem>
-
                                     <SelectItem value="active">{t('status.active')}</SelectItem>
-
-                                    <SelectItem value="used">{t('status.used')}</SelectItem>
-
                                     <SelectItem value="expired">{t('status.expired')}</SelectItem>
-
                                     <SelectItem value="blocked">{t('status.blocked')}</SelectItem>
                                 </SelectContent>
                             </Select>
@@ -111,7 +112,7 @@ export function TopUpCardImportTable({
                 }
                 alwaysShowBulkActions
                 bulkActions={
-                    can('top-up-cards.update') ? (
+                    can('top-up-cards.create') ? (
                         <div className="flex items-center gap-2">
                             <Button
                                 type="button"
@@ -157,6 +158,46 @@ export function TopUpCardImportTable({
                         cell: (row) => formatDate(row.expires_at) ?? '—',
                     },
                 ]}
+                actions={(row) =>
+                    can('top-up-cards.update') && row.status === 'active' ? (
+                        <TableActionButton
+                            label={t('top_up_cards.block_batch')}
+                            icon={BanIcon}
+                            tone="danger"
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                setVoiding(row);
+                            }}
+                        />
+                    ) : null
+                }
+            />
+
+            <ConfirmDialog
+                open={voiding !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setVoiding(null);
+                    }
+                }}
+                title={t('top_up_cards.block_batch_title')}
+                description={t('top_up_cards.block_batch_description')}
+                destructive
+                confirmLabel={t('top_up_cards.void')}
+                onConfirm={() => {
+                    if (!voiding) {
+                        return;
+                    }
+
+                    router.patch(
+                        `/top-up-cards/batches/${voiding.id}/void`,
+                        {},
+                        {
+                            preserveScroll: true,
+                            onFinish: () => setVoiding(null),
+                        },
+                    );
+                }}
             />
 
             <TopUpCardImportDialog

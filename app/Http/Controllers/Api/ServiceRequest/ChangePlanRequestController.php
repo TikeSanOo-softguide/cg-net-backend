@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ServiceRequest\CreateChangePlanRequest;
 use App\Http\Requests\ServiceRequest\UpdateChangePlanRequest;
 use App\Http\Resources\ChangePlanRequest\ChangePlanRequestResource;
+use App\Events\ServiceRequestSubmitted;
 use App\Models\ChangePlanRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -38,6 +39,7 @@ class ChangePlanRequestController extends Controller
             'user_id' => $request->user()->id,
             'status' => 'under_review',
         ]);
+        ServiceRequestSubmitted::dispatch('change_plan_request', $changePlanRequest->id);
 
         $this->logActivity($request, 'create_change_plan_request', [
             'change_plan_request_id' => $changePlanRequest->id,

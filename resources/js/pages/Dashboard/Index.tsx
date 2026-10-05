@@ -1,8 +1,6 @@
-import { useState } from 'react';
-import { Head, router } from '@inertiajs/react';
-import { UsersIcon, WifiIcon, PackageIcon, BanknoteIcon, ClipboardListIcon, Trash2Icon } from 'lucide-react';
+import { Head } from '@inertiajs/react';
+import { UsersIcon, WifiIcon, PackageIcon, BanknoteIcon, ClipboardListIcon } from 'lucide-react';
 
-import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DashboardRegionChart, type RegionChartSlice } from '@/components/dashboard/DashboardRegionChart';
 import { DashboardRequestLevels, type RequestTypeChart } from '@/components/dashboard/DashboardRequestLevels';
 import { DashboardTrendChart, type TrendPoint } from '@/components/dashboard/DashboardTrendChart';
@@ -11,11 +9,8 @@ import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { StatCard } from '@/components/StatCard';
 import { StatusBadge } from '@/components/StatusBadge';
-import { TableActionButton } from '@/components/TableActionButton';
-import { useCan } from '@/hooks/useCan';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTranslation } from '@/hooks/useTranslation';
-import { visitBulkDelete } from '@/lib/bulk-delete';
 
 type RecentRequest = {
     id: string;
@@ -47,11 +42,7 @@ export default function DashboardIndex({
     recentRequests,
 }: DashboardProps) {
     const { t } = useTranslation();
-    const can = useCan();
     const isMobile = useMediaQuery('(max-width: 639px)');
-    const [pendingIds, setPendingIds] = useState<string[]>([]);
-    const [processing, setProcessing] = useState(false);
-    const canDelete = can('service-requests.delete');
     const cards = [
         {
             key: 'dashboard.total_customers',
@@ -107,26 +98,6 @@ export default function DashboardIndex({
                     titleIcon={ClipboardListIcon}
                     data={recentRequests}
                     getRowId={(row) => row.id}
-                    directActions
-                    onBulkDelete={
-                        canDelete ? (ids) => visitBulkDelete('/dashboard/requests/bulk-destroy', ids) : undefined
-                    }
-                    bulkDeleteTitle={t('dashboard.bulk_delete_title')}
-                    actions={
-                        canDelete
-                            ? (row) => (
-                                  <TableActionButton
-                                      label={t('common.delete')}
-                                      icon={Trash2Icon}
-                                      tone="danger"
-                                      onClick={(event) => {
-                                          event.stopPropagation();
-                                          setPendingIds([row.id]);
-                                      }}
-                                  />
-                              )
-                            : undefined
-                    }
                     columns={[
                         {
                             id: 'customer',
@@ -161,34 +132,6 @@ export default function DashboardIndex({
                     ]}
                 />
             </PageContent>
-            <ConfirmDialog
-                open={pendingIds.length === 1}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        setPendingIds([]);
-                    }
-                }}
-                title={t('dashboard.delete_title')}
-                description={t('dashboard.delete_description')}
-                confirmLabel={t('common.delete')}
-                destructive
-                processing={processing}
-                onConfirm={() => {
-                    if (pendingIds.length !== 1) {
-                        return;
-                    }
-
-                    router.delete('/dashboard/requests/bulk-destroy', {
-                        data: { ids: pendingIds },
-                        preserveScroll: true,
-                        onStart: () => setProcessing(true),
-                        onFinish: () => {
-                            setProcessing(false);
-                            setPendingIds([]);
-                        },
-                    });
-                }}
-            />
         </>
     );
 }

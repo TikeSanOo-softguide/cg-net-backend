@@ -231,30 +231,35 @@ class ChatConversationSeeder extends Seeder
         $quickReplies = [
             [
                 'keyword' => 'No Internet',
+                'category' => 'internet',
                 'response_en' => "We're sorry to hear you're not getting internet. Let's troubleshoot this together. First, please try restarting your modem and router.",
                 'response_my' => 'အင်တာနက်အသုံးပြု၍ မရသည့်အတွက် တောင်းပန်ပါတယ်။ Modem နှင့် Router ကို Restart ပြုလုပ်ပြီး ပြန်လည်စမ်းသပ်ပေးပါ။',
                 'response_zh' => '很抱歉您无法连接互联网。请先重新启动您的调制解调器和路由器，然后再次尝试连接。',
             ],
             [
                 'keyword' => 'Slow Internet',
+                'category' => 'internet',
                 'response_en' => "I understand your internet is running slowly. Let's check a few things to improve your connection.",
                 'response_my' => 'အင်တာနက်နှေးကွေးနေသည်ကို နားလည်ပါတယ်။ Connection ပိုမိုကောင်းမွန်စေရန် အချက်အချို့ကို စစ်ဆေးပေးပါမယ်။',
                 'response_zh' => '我了解您的网络运行缓慢。让我们检查几个方面来改善您的连接。',
             ],
             [
                 'keyword' => 'Payment Confirmation',
+                'category' => 'payment',
                 'response_en' => 'Your payment has been confirmed. Your service will remain active.',
                 'response_my' => 'သင့်ငွေပေးချေမှုကို အတည်ပြုပြီးပါပြီ။ သင့်ဝန်ဆောင်မှု ဆက်လက်အသုံးပြုနိုင်ပါတယ်။',
                 'response_zh' => '您的付款已经确认。您的服务将继续保持有效。',
             ],
             [
                 'keyword' => 'Package Information',
+                'category' => 'package',
                 'response_en' => 'Your package is currently in transit. You can track it using the tracking number on our website or in the app.',
                 'response_my' => 'သင့် Package သည် ပို့ဆောင်နေဆဲဖြစ်ပါတယ်။ Website သို့မဟုတ် App မှ Tracking Number ဖြင့် စစ်ဆေးနိုင်ပါတယ်။',
                 'response_zh' => '您的套餐目前正在运输中。您可以通过网站或应用程序中的追踪号码查看。',
             ],
             [
                 'keyword' => 'Router Restart',
+                'category' => 'technical',
                 'response_en' => 'Please unplug your router, wait 30 seconds, and plug it back in. This can help resolve many connection issues.',
                 'response_my' => 'Router ကို ဖြုတ်ပြီး စက္ကန့် ၃၀ ခန့်စောင့်ပြီး ပြန်တပ်ပေးပါ။ Connection ပြဿနာများကို ဖြေရှင်းနိုင်ပါတယ်။',
                 'response_zh' => '请拔掉路由器电源，等待30秒，然后重新插入。这可以帮助解决许多连接问题。',

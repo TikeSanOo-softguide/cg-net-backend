@@ -7,6 +7,7 @@ use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
 use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Customer\AdjustCustomerWalletRequest;
 use App\Http\Requests\Customer\BindAccountNumberRequest;
 use App\Http\Requests\Customer\CustomerData;
 use App\Http\Requests\Customer\StoreCustomerRequest;
@@ -14,6 +15,7 @@ use App\Http\Requests\Customer\UpdateCustomerRequest;
 use App\Http\Requests\Customer\UpdateCustomerStatusRequest;
 use App\Models\User;
 use App\Services\BroarbandAccount\BroadbandAccountService;
+use App\Services\Customer\WalletAdjustmentService;
 use App\Services\Ledger\LedgerPoster;
 use App\Services\Transaction\TransactionService;
 use App\Support\PackageLabel;
@@ -158,30 +160,68 @@ class CustomerController extends Controller
                 ],
             );
 
-        $walletTransactions = $customer->wallet?->transactions()->get() ?? collect();
+        $walletId = $customer->wallet?->id;
+        $walletTransactionSummaries = collect();
+
+        if ($walletId) {
+            $walletEntryTotals = DB::table('ledger_entries')
+                ->select('ledger_transaction_id')
+                ->selectRaw('SUM(credit) as credit_amount')
+                ->selectRaw('SUM(debit) as debit_amount')
+                ->selectRaw('MAX(CASE WHEN credit > 0 THEN 1 ELSE 0 END) as has_credit')
+                ->selectRaw('MAX(CASE WHEN debit > 0 THEN 1 ELSE 0 END) as has_debit')
+                ->where('wallet_id', $walletId)
+                ->groupBy('ledger_transaction_id');
+
+            $walletTransactionSummaries = DB::table('ledger_transactions as transactions')
+                ->leftJoinSub(
+                    $walletEntryTotals,
+                    'wallet_entry_totals',
+                    'wallet_entry_totals.ledger_transaction_id',
+                    '=',
+                    'transactions.id',
+                )
+                ->where('transactions.wallet_id', $walletId)
+                ->select('transactions.type')
+                ->selectRaw('COUNT(*) as count')
+                ->selectRaw('SUM(transactions.amount) as amount')
+                ->selectRaw('SUM(COALESCE(wallet_entry_totals.credit_amount, 0)) as credit_amount')
+                ->selectRaw('SUM(COALESCE(wallet_entry_totals.debit_amount, 0)) as debit_amount')
+                ->selectRaw('SUM(COALESCE(wallet_entry_totals.has_credit, 0)) as credit_count')
+                ->selectRaw('SUM(COALESCE(wallet_entry_totals.has_debit, 0)) as debit_count')
+                ->groupBy('transactions.type')
+                ->get()
+                ->keyBy('type');
+        }
+
+        $formatAmount = fn($amount) => number_format((float) $amount, 0, '.', '');
+        $adjustmentSummary = $walletTransactionSummaries->get(LedgerTransactionType::Adjustment->value);
         $transactionOverview = collect([
             ['key' => 'topup', 'type' => LedgerTransactionType::Topup],
             ['key' => 'ftth_bill', 'type' => LedgerTransactionType::FtthBill],
             ['key' => 'wifi_package', 'type' => LedgerTransactionType::WifiPackage],
             ['key' => 'refund', 'type' => LedgerTransactionType::Refund],
-            ['key' => 'adjustment', 'type' => LedgerTransactionType::Adjustment],
         ])
-            ->map(function (array $type) use ($walletTransactions) {
-                $filtered = $walletTransactions->filter(fn($transaction) => $transaction->type === $type['type']);
+            ->mapWithKeys(function (array $type) use ($walletTransactionSummaries, $formatAmount) {
+                $summary = $walletTransactionSummaries->get($type['type']->value);
 
                 return [
                     $type['key'] => [
-                        'count' => $filtered->count(),
-                        'amount' => number_format(
-                            (float) $filtered->sum(fn($transaction) => (float) $transaction->amount),
-                            0,
-                            '.',
-                            '',
-                        ),
+                        'count' => (int) ($summary->count ?? 0),
+                        'amount' => $formatAmount($summary->amount ?? 0),
                     ],
                 ];
             })
-            ->collapse();
+            ->put('adjustment', [
+                'credit' => [
+                    'count' => (int) ($adjustmentSummary->credit_count ?? 0),
+                    'amount' => $formatAmount($adjustmentSummary->credit_amount ?? 0),
+                ],
+                'debit' => [
+                    'count' => (int) ($adjustmentSummary->debit_count ?? 0),
+                    'amount' => $formatAmount($adjustmentSummary->debit_amount ?? 0),
+                ],
+            ]);
 
         $transactionFilters = [...$transactions->filters($request), 'customer_id' => $customer->id];
         $transactionStatus = $transactionFilters['status'];
@@ -373,14 +413,34 @@ class CustomerController extends Controller
         );
     }
 
-    public function bindAccount(BindAccountNumberRequest $request, User $customer): RedirectResponse
-    {
+    public function bindAccount(
+        BroadbandAccountService $broadbandAccountService,
+        BindAccountNumberRequest $request,
+        User $customer,
+    ): RedirectResponse {
         $accountNumber = trim($request->validated('account_number'));
-        if ($customer->broadband_account_number === $accountNumber) {
-            return back()->withErrors(['account_number' => __('customers.account_already_bound')]);
+
+        $account = $broadbandAccountService->findByAccountNumber($accountNumber);
+
+        if (!$account) {
+            return back()->withErrors([
+                'account_number' => 'customers.account_not_found',
+            ]);
         }
 
-        $customer->update(['broadband_account_number' => $accountNumber]);
+        if ($customer->broadband_account_number === $accountNumber) {
+            return back()->with('success', 'customers.account_already_bound');
+        }
+
+        if ($customer->broadband_account_number !== null) {
+            return back()->withErrors([
+                'account_number' => 'customers.account_bounded',
+            ]);
+        }
+
+        $customer->update([
+            'broadband_account_number' => $accountNumber,
+        ]);
 
         activity('customers')
             ->causedBy($request->user())
@@ -414,6 +474,40 @@ class CustomerController extends Controller
             ->log('broadband_account_unbound');
 
         return back()->with('success', 'customers.account_unbound');
+    }
+
+    public function adjustWallet(
+        AdjustCustomerWalletRequest $request,
+        User $customer,
+        WalletAdjustmentService $adjustments,
+    ): RedirectResponse {
+        $transaction = $adjustments->adjust(
+            customer: $customer,
+            direction: $request->string('direction')->toString(),
+            amount: $request->integer('amount'),
+            note: $request->string('note')->toString(),
+            adminId: (int) $request->user()->getAuthIdentifier(),
+            ipAddress: $request->ip(),
+            userAgent: $request->userAgent(),
+            relatedTransactionId: $request->filled('related_transaction_id')
+                ? $request->integer('related_transaction_id')
+                : null,
+        );
+
+        activity('customers')
+            ->causedBy($request->user())
+            ->performedOn($customer)
+            ->event('wallet_adjusted')
+            ->withProperties([
+                'transaction_no' => $transaction->transaction_no,
+                'direction' => $request->string('direction')->toString(),
+                'amount' => $transaction->amount,
+                'note' => $transaction->note,
+                'related_transaction_id' => $transaction->related_transaction_id,
+            ])
+            ->log('wallet_adjusted');
+
+        return back()->with('success', 'customers.wallet_adjust.success');
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\TopUpCard;
 
+use App\Enums\BatchStatus;
 use App\Enums\TopUpCardStatus;
 use App\Http\Controllers\Controller;
 use App\Jobs\ImportGeneratedTopUpCardsJob;
@@ -45,21 +46,15 @@ class OfficeController extends Controller
             ? $request->string('batch')->toString()
             : (string) $request->session()->get('top_up_card_office_batch', '');
         $status = $request->string('status')->toString();
-        $cardFilters = function ($query) use ($status): void {
-            $query
-                ->where('status', '!=', TopUpCardStatus::Pending)
-                ->when(
-                    in_array($status, array_column(TopUpCardStatus::cases(), 'value'), true),
-                    fn($query) => $query->where('status', $status),
-                );
-        };
+        $batchStatus = BatchStatus::tryFrom($status);
 
         $batchPage = Batch::query()
-            ->whereHas('topUpCards', $cardFilters)
+            ->whereHas('topUpCards', fn($query) => $query->where('status', '!=', TopUpCardStatus::Pending->value))
+            ->when($batchStatus, fn($query) => $query->where('status', $batchStatus))
             ->when($batch !== '' && is_numeric($batch), fn($query) => $query->whereKey((int) $batch))
             ->withCount([
                 'topUpCards as assigned_cards_count' => fn($query) => $query
-                    ->where('status', '!=', TopUpCardStatus::Pending)
+                    ->where('status', '!=', TopUpCardStatus::Pending->value)
                     ->whereNotNull('office_id'),
             ])
             ->latest('id')
@@ -79,7 +74,7 @@ class OfficeController extends Controller
 
         $batches = Batch::query()
             ->select(['id', 'batch_no', 'expires_at'])
-            ->whereHas('topUpCards', fn($query) => $query->where('status', '!=', TopUpCardStatus::Pending))
+            ->whereHas('topUpCards', fn($query) => $query->where('status', '!=', TopUpCardStatus::Pending->value))
             ->latest('id')
             ->get()
             ->map(
@@ -98,6 +93,19 @@ class OfficeController extends Controller
                 'status' => $status,
             ],
         ]);
+    }
+
+    public function voidBatch(Batch $batch): RedirectResponse
+    {
+        abort_unless($batch->status === BatchStatus::Active, 409);
+
+        $batch->topUpCards()->update([
+            'status' => TopUpCardStatus::Blocked,
+        ]);
+
+        $batch->update(['status' => BatchStatus::Blocked]);
+
+        return back()->with('success', 'status.blocked');
     }
 
     public function import(Request $request): RedirectResponse

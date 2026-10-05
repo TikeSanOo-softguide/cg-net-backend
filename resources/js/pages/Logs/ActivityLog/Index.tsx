@@ -13,6 +13,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useCan } from '@/hooks/useCan';
 import { formControlStateClass } from '@/lib/form-control';
 import { formatDateTime, truncateText } from '@/lib/utils';
 
@@ -72,6 +73,7 @@ function visitIndex(filters: Filters) {
 
 export default function ActivityLogIndex({ logs, filters, filterOptions }: ActivityLogProps) {
     const { t } = useTranslation();
+    const can = useCan();
     const [username, setUsername] = useState(filters.username);
     const [event, setEvent] = useState(filters.event);
     const [log, setLog] = useState(filters.log);
@@ -136,8 +138,8 @@ export default function ActivityLogIndex({ logs, filters, filterOptions }: Activ
                     data={logs.data}
                     getRowId={(row) => String(row.id)}
                     showSearch={false}
-                    showExport
-                    onExport={exportLogs}
+                    showExport={can('system.export')}
+                    onExport={can('system.export') ? exportLogs : undefined}
                     directActions
                     actions={(row) => (
                         <TableActionButton

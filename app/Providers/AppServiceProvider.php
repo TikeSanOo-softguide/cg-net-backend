@@ -33,13 +33,16 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(OtpProviderInterface::class, function (): OtpProviderInterface {
             return match (config('otp.provider')) {
-                'mock' => new MockOtpProvider,
-                'smspoh' => new SmsPohOtpProvider,
+                'mock' => new MockOtpProvider(),
+                'smspoh' => new SmsPohOtpProvider(),
                 default => throw new \InvalidArgumentException('Unsupported OTP provider.'),
             };
         });
 
-        $this->app->singleton(PackageActivationServiceInterface::class, fn (): PackageActivationServiceInterface => $this->packageActivationService());
+        $this->app->singleton(
+            PackageActivationServiceInterface::class,
+            fn(): PackageActivationServiceInterface => $this->packageActivationService(),
+        );
 
         if ($this->app->environment('local') && class_exists(\Laravel\Telescope\TelescopeServiceProvider::class)) {
             $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
@@ -73,18 +76,22 @@ class AppServiceProvider extends ServiceProvider
         $driver = (string) config('services.package_activation.driver', 'unconfigured');
 
         if ($driver !== 'fake') {
-            return new RealPackageActivationService;
+            return new RealPackageActivationService();
         }
 
-        if (! $this->app->environment('local')) {
+        if (!$this->app->environment('local')) {
             throw new RuntimeException('Fake package activation is only allowed when APP_ENV=local.');
         }
 
-        return new FakePackageActivationService;
+        return new FakePackageActivationService();
     }
 
     private function configureRateLimiting(): void
     {
+        RateLimiter::for('serial-check', function (Request $request) {
+            return Limit::perMinutes(30, 5)->by((string) ($request->user()?->getAuthIdentifier() ?: $request->ip()));
+        });
+
         RateLimiter::for('top-up-card-generation', function (Request $request) {
             $maxAttempts = max(1, (int) config('top_up_cards.rate_limit_per_minute', 5));
 

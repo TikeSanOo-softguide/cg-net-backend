@@ -15,7 +15,7 @@ import {
 
 type GeneratedBatchProps = {
     cards: TopUpCardRow[];
-    onExport: () => void;
+    onExport?: () => void;
 };
 
 type BatchCardProps = {
@@ -73,11 +73,7 @@ const TopUpCardBatchItem = memo(function TopUpCardBatchItem({
                                 onClick={() => onTogglePin(card.serial_no)}
                                 aria-label={open ? hideLabel : revealLabel}
                             >
-                                {open ? (
-                                    <EyeOffIcon className="size-3.5" />
-                                ) : (
-                                    <EyeIcon className="size-3.5" />
-                                )}
+                                {open ? <EyeOffIcon className="size-3.5" /> : <EyeIcon className="size-3.5" />}
                             </button>
                         ) : null}
                     </div>
@@ -101,10 +97,7 @@ const TopUpCardBatchItem = memo(function TopUpCardBatchItem({
     );
 });
 
-export const TopUpCardGeneratedBatch = memo(function TopUpCardGeneratedBatch({
-    cards,
-    onExport,
-}: GeneratedBatchProps) {
+export const TopUpCardGeneratedBatch = memo(function TopUpCardGeneratedBatch({ cards, onExport }: GeneratedBatchProps) {
     const { t } = useTranslation();
     const [revealed, setRevealed] = useState<Record<string, boolean>>({});
 
@@ -131,10 +124,12 @@ export const TopUpCardGeneratedBatch = memo(function TopUpCardGeneratedBatch({
     return (
         <div className="flex h-full min-h-0 flex-col gap-2.5">
             <div className="flex flex-wrap gap-1.5 print:hidden">
-                <Button type="button" size="sm" variant="outline" className="h-7 text-[11px]" onClick={onExport}>
-                    <DownloadIcon className="size-3.5" strokeWidth={1.9} />
-                    {t('common.export')}
-                </Button>
+                {onExport ? (
+                    <Button type="button" size="sm" variant="outline" className="h-7 text-[11px]" onClick={onExport}>
+                        <DownloadIcon className="size-3.5" strokeWidth={1.9} />
+                        {t('common.export')}
+                    </Button>
+                ) : null}
                 <Button
                     type="button"
                     size="sm"

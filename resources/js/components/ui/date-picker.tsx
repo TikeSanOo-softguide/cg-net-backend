@@ -49,7 +49,11 @@ function startOfDay(date: Date): Date {
 }
 
 function isSameDay(left: Date, right: Date): boolean {
-    return left.getFullYear() === right.getFullYear() && left.getMonth() === right.getMonth() && left.getDate() === right.getDate();
+    return (
+        left.getFullYear() === right.getFullYear() &&
+        left.getMonth() === right.getMonth() &&
+        left.getDate() === right.getDate()
+    );
 }
 
 function weekdayLabels(tag: string): string[] {
@@ -90,6 +94,7 @@ type DatePickerProps = {
     clearable?: boolean;
     placeholder?: string;
     className?: string;
+    'aria-label'?: string;
     'aria-invalid'?: boolean;
     onChange: (value: string) => void;
     onBlur?: () => void;
@@ -106,6 +111,7 @@ export function DatePicker({
     clearable = true,
     placeholder,
     className,
+    'aria-label': ariaLabel,
     'aria-invalid': ariaInvalid,
     onChange,
     onBlur,
@@ -120,8 +126,7 @@ export function DatePicker({
     const today = startOfDay(new Date());
     const minDate = min ? parseIsoDate(min) : null;
     const maxDate = max ? parseIsoDate(max) : null;
-    const todayDisabled =
-        (minDate !== null && today < minDate) || (maxDate !== null && today > maxDate);
+    const todayDisabled = (minDate !== null && today < minDate) || (maxDate !== null && today > maxDate);
     const display = selected
         ? new Intl.DateTimeFormat(tag, { day: 'numeric', month: 'short', year: 'numeric' }).format(selected)
         : '';
@@ -157,7 +162,7 @@ export function DatePicker({
             onOpenChange={(next) => {
                 setOpen(next);
 
-                if (! next) {
+                if (!next) {
                     onBlur?.();
                 }
             }}
@@ -167,6 +172,7 @@ export function DatePicker({
                     id={id}
                     type="button"
                     disabled={disabled}
+                    aria-label={ariaLabel}
                     aria-invalid={ariaInvalid || undefined}
                     aria-required={required || undefined}
                     data-slot="input"
@@ -216,7 +222,7 @@ export function DatePicker({
                         </span>
                     ))}
                     {cells.map((date, index) => {
-                        if (! date) {
+                        if (!date) {
                             return <span key={`empty-${index}`} className="size-8" />;
                         }
 
@@ -235,8 +241,8 @@ export function DatePicker({
                                     selectedDay
                                         ? 'bg-primary text-primary-foreground shadow-[0_4px_10px_hsl(var(--primary)/0.28)]'
                                         : isToday
-                                            ? 'text-primary ring-1 ring-primary/40'
-                                            : 'text-foreground hover:bg-primary/10 hover:text-primary',
+                                          ? 'text-primary ring-1 ring-primary/40'
+                                          : 'text-foreground hover:bg-primary/10 hover:text-primary',
                                     dayDisabled && 'pointer-events-none opacity-35',
                                 )}
                             >
@@ -257,7 +263,7 @@ export function DatePicker({
                     {clearable ? (
                         <button
                             type="button"
-                            disabled={! value}
+                            disabled={!value}
                             className="text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
                             onClick={() => {
                                 onChange('');

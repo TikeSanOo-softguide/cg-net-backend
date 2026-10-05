@@ -6,6 +6,7 @@ import { BackButton } from '@/components/BackButton';
 import { DataTable } from '@/components/DataTable';
 import { CopyValueButton } from '@/components/CopyValueButton';
 import { FormDialog } from '@/components/FormDialog';
+import { WalletAdjustDialog } from '@/components/customer/WalletAdjustDialog';
 import type { Paginated } from '@/components/Pagination';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
@@ -17,7 +18,9 @@ import { FormControl } from '@/components/ui/form-control';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { useReturnTo } from '@/hooks/useReturnTo';
+import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { toolbarInputClass } from '@/components/data-table/styles';
 import { formControlStateClass } from '@/lib/form-control';
@@ -46,6 +49,8 @@ export type TransactionRow = {
     user_agent: string | null;
     idempotency_key: string | null;
     reversal_of: string | null;
+    related_transaction: { id: number; transaction_no: string } | null;
+    note: string | null;
     wallet_entry: {
         type: string;
         balance_before: number;
@@ -170,13 +175,17 @@ export function TransactionsTable({
     embeddedCustomer = false,
 }: TransactionsTableProps) {
     const { t } = useTranslation();
+    const can = useCan();
     const [search, setSearch] = useState(filters.search);
     const [from, setFrom] = useState(filters.from);
     const [to, setTo] = useState(filters.to);
     const [selected, setSelected] = useState<TransactionRow | null>(null);
+    const [adjustOpen, setAdjustOpen] = useState(false);
     const [dateError, setDateError] = useState<string>();
     const debounce = useRef<number>(0);
     const transactionToOpen = new URLSearchParams(window.location.search).get('open_transaction');
+    const canExport = can('system.export') && can(embeddedCustomer ? 'customers.view' : 'billing.view');
+    const canAdjust = can('customers.update') || (!embeddedCustomer && can('billing.update'));
 
     useEffect(() => setSearch(filters.search), [filters.search]);
     useEffect(() => setFrom(filters.from), [filters.from]);
@@ -227,7 +236,8 @@ export function TransactionsTable({
             if (value) query.set(key, String(value));
         });
 
-        window.location.href = `/billing/transactions/export?${query.toString()}`;
+        const exportUrl = embeddedCustomer ? `${baseUrl}/transactions/export` : '/billing/transactions/export';
+        window.location.href = `${exportUrl}?${query.toString()}`;
     };
 
     function transactionHref(transactionNo: string): string {
@@ -245,8 +255,8 @@ export function TransactionsTable({
                 onSearchChange={scope === 'global' || embeddedCustomer ? updateSearch : undefined}
                 searchPlaceholder={t('transactions.search_placeholder')}
                 showSearch={false}
-                showExport
-                onExport={exportTransactions}
+                showExport={canExport}
+                onExport={canExport ? exportTransactions : undefined}
                 pagination={transactions}
                 emptyLabel={t('transactions.empty')}
                 directActions
@@ -518,89 +528,141 @@ export function TransactionsTable({
                 size="lg"
             >
                 {selected ? (
-                    <div className="min-h-0 overflow-y-auto px-4 py-4 sm:px-5">
-                        <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <DetailItem label={t('transactions.number')} value={selected.transaction_no} copyable />
-                            <DetailItem
-                                label={t('transactions.detail_fields.reversal_of')}
-                                value={selected.reversal_of}
-                                href={selected.reversal_of ? transactionHref(selected.reversal_of) : undefined}
-                                copyable
-                            />{' '}
-                            <DetailItem
-                                label={t('transactions.actor_type')}
-                                value={selected.actor_type ? actorLabel(selected.actor_type, t) : null}
-                            />
-                            <DetailItem label={t('transactions.detail_fields.actor_id')} value={selected.actor_id} />
-                            <DetailItem label={t('transactions.customer')} value={selected.customer?.name} />
-                            <DetailItem
-                                label={t('transactions.detail_fields.customer_phone')}
-                                value={selected.customer?.phone}
-                                copyable
-                            />
-                            <DetailItem
-                                label={t('transactions.detail_fields.wallet_id')}
-                                value={selected.wallet_id}
-                                copyable
-                            />
-                            <DetailItem label={t('transactions.type')} value={transactionLabel(selected.type, t)} />
-                            <DetailItem
-                                label={t('transactions.direction')}
-                                value={selected.direction ? t(`transactions.${selected.direction}`) : null}
-                            />
-                            <DetailItem label={t('transactions.amount')} value={formatTopUpAmount(selected.amount)} />
-                            <DetailItem
-                                label={t('transactions.detail_fields.balance_before')}
-                                value={formatTopUpAmount(selected.wallet_entry?.balance_before ?? '')}
-                            />
-                            <DetailItem
-                                label={t('transactions.detail_fields.balance_after')}
-                                value={formatTopUpAmount(selected.wallet_entry?.balance_after ?? '')}
-                            />
-                            <DetailItem label={t('common.status')} value={t(`status.${selected.status}`)} />
-                            <DetailItem
-                                label={t('transactions.detail_fields.idempotency_key')}
-                                value={selected.idempotency_key}
-                            />{' '}
-                            <DetailItem
-                                label={t('transactions.detail_fields.bill_payment_id')}
-                                value={selected.related.bill_payment_id}
-                                copyable
-                                secondary={
-                                    selected.related.bill_payment_account
-                                        ? `${selected.related.bill_payment_account.broadband_account_number} · ${selected.related.bill_payment_account.customer_name}`
-                                        : null
-                                }
-                            />
-                            <DetailItem
-                                label={t('transactions.detail_fields.package_order_id')}
-                                value={selected.related.package_order_id}
-                                copyable
-                                secondary={
-                                    selected.related.package_order_detail
-                                        ? `${selected.related.package_order_detail.package ?? '—'} · ${t(`status.${selected.related.package_order_detail.status}`)}`
-                                        : null
-                                }
-                            />
-                            <DetailItem
-                                label={t('transactions.detail_fields.top_up_card_serial_no')}
-                                value={selected.related.top_up_card_serial_no}
-                                copyable
-                            />
-                            <DetailItem label={t('common.created_at')} value={formatDateTime(selected.created_at)} />
-                            <DetailItem
-                                label={t('transactions.detail_fields.ip_address')}
-                                value={selected.ip_address}
-                            />
-                            <DetailItem
-                                className="sm:col-span-2"
-                                label={t('transactions.detail_fields.device')}
-                                value={selected.user_agent}
-                            />
-                        </dl>
+                    <div className="flex min-h-0 flex-1 flex-col">
+                        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
+                            <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <DetailItem label={t('transactions.number')} value={selected.transaction_no} copyable />
+                                <DetailItem
+                                    label={t('common.created_at')}
+                                    value={formatDateTime(selected.created_at)}
+                                />
+                                <DetailItem
+                                    label={t('transactions.detail_fields.reversal_of')}
+                                    value={selected.reversal_of}
+                                    href={selected.reversal_of ? transactionHref(selected.reversal_of) : undefined}
+                                    copyable
+                                />
+                                <DetailItem
+                                    label={t('transactions.detail_fields.related_transaction')}
+                                    value={selected.related_transaction?.transaction_no}
+                                    href={
+                                        selected.related_transaction
+                                            ? transactionHref(selected.related_transaction.transaction_no)
+                                            : undefined
+                                    }
+                                    copyable
+                                />
+                                <DetailItem
+                                    label={t('transactions.detail_fields.note')}
+                                    value={selected.note}
+                                    className="sm:col-span-2"
+                                />
+                                <DetailItem
+                                    label={t('transactions.actor_type')}
+                                    value={selected.actor_type ? actorLabel(selected.actor_type, t) : null}
+                                />
+                                <DetailItem
+                                    label={t('transactions.detail_fields.actor_id')}
+                                    value={selected.actor_id}
+                                />
+                                <DetailItem label={t('transactions.customer')} value={selected.customer?.name} />
+                                <DetailItem
+                                    label={t('transactions.detail_fields.customer_phone')}
+                                    value={selected.customer?.phone}
+                                    copyable
+                                />
+                                <DetailItem
+                                    label={t('transactions.detail_fields.wallet_id')}
+                                    value={selected.wallet_id}
+                                    copyable
+                                />
+                                <DetailItem label={t('transactions.type')} value={transactionLabel(selected.type, t)} />
+                                <DetailItem
+                                    label={t('transactions.direction')}
+                                    value={selected.direction ? t(`transactions.${selected.direction}`) : null}
+                                />
+                                <DetailItem
+                                    label={t('transactions.amount')}
+                                    value={formatTopUpAmount(selected.amount)}
+                                />
+                                <DetailItem
+                                    label={t('transactions.detail_fields.balance_before')}
+                                    value={formatTopUpAmount(selected.wallet_entry?.balance_before ?? '')}
+                                />
+                                <DetailItem
+                                    label={t('transactions.detail_fields.balance_after')}
+                                    value={formatTopUpAmount(selected.wallet_entry?.balance_after ?? '')}
+                                />
+                                <DetailItem label={t('common.status')} value={t(`status.${selected.status}`)} />
+                                <DetailItem
+                                    label={t('transactions.detail_fields.idempotency_key')}
+                                    value={selected.idempotency_key}
+                                />
+                                <DetailItem
+                                    label={t('transactions.detail_fields.bill_payment_id')}
+                                    value={selected.related.bill_payment_id}
+                                    copyable
+                                    secondary={
+                                        selected.related.bill_payment_account
+                                            ? `${selected.related.bill_payment_account.broadband_account_number} · ${selected.related.bill_payment_account.customer_name}`
+                                            : null
+                                    }
+                                />
+                                <DetailItem
+                                    label={t('transactions.detail_fields.package_order_id')}
+                                    value={selected.related.package_order_id}
+                                    copyable
+                                    secondary={
+                                        selected.related.package_order_detail
+                                            ? `${selected.related.package_order_detail.package ?? '—'} · ${t(`status.${selected.related.package_order_detail.status}`)}`
+                                            : null
+                                    }
+                                />
+                                <DetailItem
+                                    label={t('transactions.detail_fields.top_up_card_serial_no')}
+                                    value={selected.related.top_up_card_serial_no}
+                                    copyable
+                                />
+                                <DetailItem
+                                    label={t('transactions.detail_fields.ip_address')}
+                                    value={selected.ip_address}
+                                />
+                                <DetailItem
+                                    className="sm:col-span-2"
+                                    label={t('transactions.detail_fields.device')}
+                                    value={selected.user_agent}
+                                />
+                            </dl>
+                        </div>
+                        {canAdjust && selected.customer ? (
+                            <div className="flex shrink-0 justify-end border-t border-border/70 px-4 py-3 sm:px-5">
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-8 gap-1 rounded-[6px] px-2.5 text-[11px]"
+                                    onClick={() => setAdjustOpen(true)}
+                                >
+                                    {t('customers.wallet_adjust.action')}
+                                </Button>
+                            </div>
+                        ) : null}
                     </div>
                 ) : null}
             </FormDialog>
+
+            {selected?.customer ? (
+                <WalletAdjustDialog
+                    open={adjustOpen}
+                    onOpenChange={setAdjustOpen}
+                    customerId={selected.customer.id}
+                    customerName={selected.customer.name}
+                    relatedTransaction={{
+                        id: selected.id,
+                        transaction_no: selected.transaction_no,
+                    }}
+                />
+            ) : null}
         </>
     );
 }

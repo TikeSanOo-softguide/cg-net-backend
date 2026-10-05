@@ -16,6 +16,11 @@ return new class extends Migration {
             $table->bigInteger('amount');
             $table->string('idempotency_key', 100)->unique();
             $table->foreignId('reversal_of')->nullable()->constrained('ledger_transactions')->nullOnDelete();
+            $table->foreignId('related_transaction_id')
+                ->nullable()
+                ->constrained('ledger_transactions')
+                ->nullOnDelete();
+            $table->text('note')->nullable();
             $table->string('actor_type', 32)->nullable();
             $table->unsignedBigInteger('actor_id')->nullable();
             $table->string('ip_address', 45)->nullable();
@@ -26,6 +31,8 @@ return new class extends Migration {
             $table->index('status');
             $table->index(['actor_type', 'actor_id']);
             $table->index('posted_at');
+            $table->index(['wallet_id', 'created_at']);
+            $table->index('created_at');
         });
     }
 

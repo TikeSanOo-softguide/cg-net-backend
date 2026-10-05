@@ -24,11 +24,13 @@ export type ConversationSummary = {
 export type Conversation = ConversationSummary & {
     messages: ChatMessage[];
     current_step?: { name?: string | null } | null;
+    language?: string | null;
 };
 
 export type QuickReply = {
     id: number;
     keyword: string;
+    category: string;
     response_en: string;
     response_my: string;
     response_zh: string;

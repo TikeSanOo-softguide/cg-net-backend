@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Banner\BannerController;
 use App\Http\Controllers\Api\BroadbandAccount\BroadbandAccountController;
 use App\Http\Controllers\Api\Category\CategoryController;
 use App\Http\Controllers\Api\Contact\ContactController;
+use App\Http\Controllers\Api\Customer\ProfileController;
 use App\Http\Controllers\Api\DeviceToken\DeviceTokenController;
 use App\Http\Controllers\Api\FtthBill\FtthBillController;
 use App\Http\Controllers\Api\Gallery\GalleryController;
@@ -78,6 +79,7 @@ Route::middleware('throttle:60,1')->group(function () {
 
 Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('/auth/logout', [LoginController::class, 'logout']);
+    Route::get('/customer/profile', [ProfileController::class, 'show']);
 
     Route::post('/device-tokens', [DeviceTokenController::class, 'store']);
     Route::delete('/device-tokens', [DeviceTokenController::class, 'destroy']);
@@ -132,7 +134,9 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     });
 
     Route::prefix('redeem')->group(function () {
-        Route::post('/check-serial-no', [RedeemController::class, 'checkSerialNo']);
+        Route::post('/check-serial-no', [RedeemController::class, 'checkSerialNo'])->middleware(
+            'throttle:serial-check',
+        );
         Route::post('/top-up-account', [RedeemController::class, 'topUpAccount']);
     });
 });

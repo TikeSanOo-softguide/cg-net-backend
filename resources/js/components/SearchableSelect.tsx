@@ -10,6 +10,7 @@ export type SearchableSelectOption = {
 };
 
 type SearchableSelectProps = {
+    id?: string;
     value: string;
     onValueChange: (value: string) => void;
     options: SearchableSelectOption[];
@@ -22,6 +23,7 @@ type SearchableSelectProps = {
 };
 
 function SearchableSelect({
+    id,
     value,
     onValueChange,
     options,
@@ -134,6 +136,7 @@ function SearchableSelect({
     return (
         <div ref={containerRef} className={cn('relative w-full', className)}>
             <button
+                id={id}
                 type="button"
                 disabled={disabled}
                 onClick={handleOpen}

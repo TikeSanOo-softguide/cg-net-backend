@@ -13,6 +13,7 @@ import {
 import { FormDialog } from '@/components/FormDialog';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
+import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
 import { cn, formatDate } from '@/lib/utils';
@@ -71,6 +72,8 @@ export function ChangePlanDetailDialog({
     statuses = [CHANGE_PLAN_STATUS.UNDER_REVIEW, CHANGE_PLAN_STATUS.APPROVED],
 }: ChangePlanDetailDialogProps) {
     const { t } = useTranslation();
+    const can = useCan();
+    const canUpdate = can('service-requests.update');
 
     const nextStatus =
         request?.status === CHANGE_PLAN_STATUS.UNDER_REVIEW
@@ -242,7 +245,7 @@ export function ChangePlanDetailDialog({
                         </div>
 
                         <div className="flex items-center gap-2">
-                            {request?.status !== 'cancelled' && (
+                            {canUpdate && request?.status !== 'cancelled' && (
                                 <Button
                                     type="button"
                                     size="sm"

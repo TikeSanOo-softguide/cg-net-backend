@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityLog\ActivityLogController;
+use App\Http\Controllers\AdminNotification\AdminNotificationController;
 use App\Http\Controllers\Cms\BannerController;
 use App\Http\Controllers\Cms\CategoryController;
 use App\Http\Controllers\Cms\ContactController;
@@ -44,6 +45,7 @@ use App\Http\Controllers\Support\QuickReplies\QuickRepliesController;
 use App\Http\Controllers\TopUpCard\TopUpCardController;
 use App\Http\Controllers\Transaction\TransactionController;
 use App\Support\AdminHome;
+use App\Support\AppPermissions;
 use App\Support\MenuPages;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -53,7 +55,15 @@ Route::post('/locale/{lang}', LocaleController::class)->name('locale.update');
 
 Route::middleware(['auth:web', 'admin.active'])->group(function () {
     Route::get('/', fn(Request $request) => redirect()->to(AdminHome::path($request->user())))->name('home');
-    Route::get('/dashboard', DashboardController::class)->middleware('can:dashboard.view')->name('dashboard');
+    Route::prefix('dashboard')->group(function (): void {
+        Route::get('/', DashboardController::class)->middleware('can:dashboard.view')->name('dashboard');
+        Route::get('/notifications', [AdminNotificationController::class, 'index'])
+            ->middleware('can:notifications.view')
+            ->name('dashboard.notifications.index');
+        Route::put('/notifications/{notification}/read', [AdminNotificationController::class, 'markRead'])
+            ->middleware('can:notifications.view')
+            ->name('dashboard.notifications.read');
+    });
     Route::delete('/dashboard/requests/bulk-destroy', [DashboardController::class, 'bulkDestroy'])
         ->middleware('can:service-requests.delete')
         ->name('dashboard.requests.bulk-destroy');
@@ -79,15 +89,21 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
     Route::patch('/customers/{customer}/status', [CustomerController::class, 'updateStatus'])
         ->middleware('can:customers.update')
         ->name('customers.status');
-    Route::post('/customers/{customer}/accounts', [CustomerController::class, 'bindAccount'])
+    Route::post('/customers/{customer}/account', [CustomerController::class, 'bindAccount'])
         ->middleware('can:customers.update')
-        ->name('customers.accounts.bind');
+        ->name('customers.account.bind');
     Route::delete('/customers/{customer}/accounts', [CustomerController::class, 'unbindAccount'])
         ->middleware('can:customers.update')
         ->name('customers.accounts.unbind');
+    Route::post('/customers/{customer}/wallet/adjust', [CustomerController::class, 'adjustWallet'])->name(
+        'customers.wallet.adjust',
+    );
     Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])
         ->middleware('can:customers.delete')
         ->name('customers.destroy');
+    Route::get('/customers/{customer}/transactions/export', [TransactionController::class, 'exportCustomer'])
+        ->middleware(['can:customers.view', 'can:' . AppPermissions::SystemExport])
+        ->name('customers.transactions.export');
     Route::get('/customers/{customer}', [CustomerController::class, 'show'])
         ->middleware('can:customers.view')
         ->name('customers.show');
@@ -97,7 +113,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         ->middleware('can:billing.view')
         ->group(function () {
             Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions');
-            Route::get('/transactions/export', [TransactionController::class, 'export'])->name('transactions.export');
+            Route::get('/transactions/export', [TransactionController::class, 'export'])
+                ->middleware('can:' . AppPermissions::SystemExport)
+                ->name('transactions.export');
         });
 
     Route::prefix('regions')
@@ -287,19 +305,19 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 ->name('quick-replies.')
                 ->group(function () {
                     Route::get('/', [QuickRepliesController::class, 'index'])
-                        ->middleware('can:quick-replies.view')
+                        ->middleware('can:support.view')
                         ->name('index');
                     Route::post('/replies', [QuickRepliesController::class, 'store'])
-                        ->middleware('can:quick-replies.store')
+                        ->middleware('can:support.create')
                         ->name('store');
-                    Route::put('/replies/{reply}', [QuickRepliesController::class, 'update'])
-                        ->middleware('can:quick-replies.update')
+                    Route::put('/replies/{quickReply}', [QuickRepliesController::class, 'update'])
+                        ->middleware('can:support.update')
                         ->name('update');
                     Route::delete('/bulk-destroy', [QuickRepliesController::class, 'bulkDestroy'])
-                        ->middleware('can:quick-replies.delete')
+                        ->middleware('can:support.delete')
                         ->name('bulk-destroy');
-                    Route::delete('/replies/{reply}', [QuickRepliesController::class, 'destroy'])
-                        ->middleware('can:quick-replies.delete')
+                    Route::delete('/replies/{quickReply}', [QuickRepliesController::class, 'destroy'])
+                        ->middleware('can:support.delete')
                         ->name('destroy');
                 });
 
@@ -355,13 +373,16 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 ->middleware('can:top-up-cards.delete')
                 ->name('offices.destroy');
             Route::post('/offices/import', [OfficeController::class, 'import'])
-                ->middleware('can:top-up-cards.update')
+                ->middleware('can:top-up-cards.create')
                 ->name('offices.import');
+            Route::patch('/batches/{batch}/void', [OfficeController::class, 'voidBatch'])
+                ->middleware('can:top-up-cards.update')
+                ->name('batches.void');
             Route::get('/export', [TopUpCardController::class, 'export'])
-                ->middleware('can:top-up-cards.view')
+                ->middleware(['can:top-up-cards.view', 'can:' . AppPermissions::SystemExport])
                 ->name('export');
             Route::post('/offices/validate-import', [OfficeController::class, 'validateImport'])
-                ->middleware('can:top-up-cards.update')
+                ->middleware('can:top-up-cards.create')
                 ->name('offices.validate-import');
             Route::get('/card-history', [TopUpCardController::class, 'cardHistory'])
                 ->middleware('can:top-up-cards.view')
@@ -641,10 +662,10 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 ->middleware('can:activity.view')
                 ->name('activity.index');
             Route::get('/activity/export', [ActivityLogController::class, 'export'])
-                ->middleware('can:activity.view')
+                ->middleware(['can:activity.view', 'can:' . AppPermissions::SystemExport])
                 ->name('activity.export');
             Route::get('/security/export', [SecurityLogController::class, 'export'])
-                ->middleware('can:activity.view')
+                ->middleware(['can:activity.view', 'can:' . AppPermissions::SystemExport])
                 ->name('security.export');
             Route::get('/security', [SecurityLogController::class, 'index'])
                 ->middleware('can:activity.view')
@@ -653,7 +674,7 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 ->middleware('can:activity.view')
                 ->name('users.index');
             Route::get('/users/export', [UserLogController::class, 'export'])
-                ->middleware('can:activity.view')
+                ->middleware(['can:activity.view', 'can:' . AppPermissions::SystemExport])
                 ->name('users.export');
         });
 });
