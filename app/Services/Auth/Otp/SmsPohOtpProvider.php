@@ -31,7 +31,11 @@ final class SmsPohOtpProvider implements OtpProviderInterface
         }
 
         if ($response->failed() || !$response->json('requestId')) {
-            throw new RuntimeException('OTP provider rejected the request.');
+            throw new RuntimeException(sprintf(
+                'OTP provider rejected the request (HTTP %d): %s',
+                $response->status(),
+                (string) ($response->json('message') ?? 'no message'),
+            ));
         }
 
         return new OtpChallenge((string) $response->json('requestId'));

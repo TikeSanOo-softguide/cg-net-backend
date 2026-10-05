@@ -35,6 +35,7 @@ return new class extends Migration {
             $table->date('start_date')->nullable()->index();
             $table->date('end_date')->nullable()->index();
             $table->boolean('is_active')->default(true)->index();
+            $table->timestamp('push_sent_at')->nullable()->index();
             $table->string('image_url', 500)->nullable();
             $table->string('slug', 120);
             $table->timestamps();

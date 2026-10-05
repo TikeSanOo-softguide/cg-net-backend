@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'start_date',
     'end_date',
     'is_active',
+    'push_sent_at',
     'image_url',
     'slug',
 ])]
@@ -32,6 +33,7 @@ class Promotion extends Model
             'start_date' => 'date',
             'end_date' => 'date',
             'is_active' => 'boolean',
+            'push_sent_at' => 'datetime',
         ];
     }
 }

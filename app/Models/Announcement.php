@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'start_date',
     'end_date',
     'is_active',
+    'push_sent_at',
 ])]
 class Announcement extends Model
 {
@@ -31,6 +32,7 @@ class Announcement extends Model
             'start_date' => 'datetime',
             'end_date' => 'datetime',
             'is_active' => 'boolean',
+            'push_sent_at' => 'datetime',
         ];
     }
 }

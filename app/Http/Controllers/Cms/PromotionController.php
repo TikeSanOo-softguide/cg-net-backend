@@ -41,7 +41,6 @@ class PromotionController extends Controller
     public function store(StorePromotionRequest $request): RedirectResponse
     {
         $data = $request->safe()->except('image');
-        $data = $request->safe()->except('image');
 
         if ($request->hasFile('image')) {
             $data['image_url'] = StoresPublicImage::store($request->file('image'), 'cms/promotions');

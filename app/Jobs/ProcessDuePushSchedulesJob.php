@@ -31,5 +31,6 @@ class ProcessDuePushSchedulesJob implements ShouldBeUnique, ShouldQueue
     public function handle(PushNotificationService $service): void
     {
         $service->processDue();
+        $service->processDueTitles();
     }
 }

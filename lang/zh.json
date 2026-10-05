@@ -1208,6 +1208,8 @@
             "schedule_time": "安排时间",
             "hour": "时",
             "minute": "分",
+            "am": "上午",
+            "pm": "下午",
             "quick_15m": "+15 分钟",
             "quick_1h": "+1 小时",
             "quick_3h": "+3 小时",

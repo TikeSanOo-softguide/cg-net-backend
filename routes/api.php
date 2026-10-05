@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\FtthBill\FtthBillController;
 use App\Http\Controllers\Api\Gallery\GalleryController;
 use App\Http\Controllers\Api\News\NewsController;
 use App\Http\Controllers\Api\Notification\AnnouncementController;
+use App\Http\Controllers\Api\Notification\InboxController;
 use App\Http\Controllers\Api\Package\AddonController;
 use App\Http\Controllers\Api\Package\BuyPackageController;
 use App\Http\Controllers\Api\Package\NetworkController;
@@ -71,6 +72,7 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::get('/states/{stateId}/regions', [RegionController::class, 'regions']);
     Route::get('/regions/{regionId}/areas', [RegionController::class, 'areas']);
     Route::get('/announcements', [AnnouncementController::class, 'index']);
+    Route::get('/inbox', [InboxController::class, 'index']);
     Route::get('/app-version', [AppVersionController::class, 'index']);
 });
 

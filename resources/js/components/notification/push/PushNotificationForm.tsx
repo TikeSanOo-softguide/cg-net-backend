@@ -1,11 +1,12 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { useForm } from '@inertiajs/react';
-import { CalendarClockIcon, CalendarIcon, ClockIcon, LanguagesIcon, SendIcon, TypeIcon } from 'lucide-react';
+import { CalendarClockIcon, CalendarIcon, ClockIcon, LanguagesIcon, SendIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -26,17 +27,49 @@ const emptyForm = (): PushNotificationFormValues => ({
     schedule_time: '',
 });
 
-const TITLE_FIELDS = ['title_en', 'title_zh', 'title_my'] as const;
-const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
-const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
+const TITLE_FIELDS = [
+    { field: 'title_en', lang: 'en', badge: 'EN' },
+    { field: 'title_zh', lang: 'zh', badge: 'ZH' },
+    { field: 'title_my', lang: 'my', badge: 'MY' },
+] as const;
 
-function splitTime(value: string): { hour: string; minute: string } {
+const HOURS_12 = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
+const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+
+type Period = 'AM' | 'PM';
+
+type TimeParts12 = {
+    hour12: string;
+    minute: string;
+    period: Period;
+};
+
+function splitTime12(value: string): TimeParts12 {
     const match = value.match(/^(\d{2}):(\d{2})$/);
     if (!match) {
-        return { hour: '', minute: '' };
+        return { hour12: '', minute: '', period: 'AM' };
     }
 
-    return { hour: match[1], minute: match[2] };
+    const hour24 = Number(match[1]);
+    const minute = match[2];
+    const period: Period = hour24 >= 12 ? 'PM' : 'AM';
+    const hour12Num = hour24 % 12 === 0 ? 12 : hour24 % 12;
+
+    return {
+        hour12: String(hour12Num).padStart(2, '0'),
+        minute,
+        period,
+    };
+}
+
+function to24Hour(hour12: string, minute: string, period: Period): string {
+    const h = Number(hour12);
+    let hour24 = h % 12;
+    if (period === 'PM') {
+        hour24 += 12;
+    }
+
+    return `${String(hour24).padStart(2, '0')}:${minute}`;
 }
 
 export function PushNotificationForm() {
@@ -63,11 +96,7 @@ export function PushNotificationForm() {
     };
 
     const mode = scheduleEnabled ? 'schedule' : 'now';
-    const timeParts = useMemo(() => splitTime(form.data.schedule_time), [form.data.schedule_time]);
-    const minuteOptions = useMemo(
-        () => [...new Set([...MINUTES, ...(timeParts.minute ? [timeParts.minute] : [])])].sort(),
-        [timeParts.minute],
-    );
+    const timeParts = useMemo(() => splitTime12(form.data.schedule_time), [form.data.schedule_time]);
 
     const fieldState = (field: keyof PushNotificationFormValues): 'idle' | 'error' | 'success' => {
         if (!touched[field] && !submitted) {
@@ -110,30 +139,19 @@ export function PushNotificationForm() {
         }
     };
 
-    const setTimePart = (part: 'hour' | 'minute', value: string) => {
-        if (!value) {
-            setField('schedule_time', '');
+    const writeTime = (next: Partial<TimeParts12>) => {
+        const hour12 = next.hour12 ?? timeParts.hour12;
+        const minute = next.minute ?? timeParts.minute;
+        const period = next.period ?? timeParts.period;
+
+        if (!hour12 || !minute) {
+            if (next.hour12 === '' || next.minute === '') {
+                setField('schedule_time', '');
+            }
             return;
         }
 
-        const hour = part === 'hour' ? value : timeParts.hour || '00';
-        const minute = part === 'minute' ? value : timeParts.minute || '00';
-
-        setField('schedule_time', `${hour}:${minute}`);
-        markTouched('schedule_time');
-    };
-
-    const applyQuickTime = (minutesFromNow: number) => {
-        const date = new Date(Date.now() + minutesFromNow * 60_000);
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, '0');
-        const d = String(date.getDate()).padStart(2, '0');
-        const hour = String(date.getHours()).padStart(2, '0');
-        const minute = String(Math.floor(date.getMinutes() / 5) * 5).padStart(2, '0');
-
-        setField('schedule_date', `${y}-${m}-${d}`);
-        setField('schedule_time', `${hour}:${minute}`);
-        markTouched('schedule_date');
+        setField('schedule_time', to24Hour(hour12, minute, period));
         markTouched('schedule_time');
     };
 
@@ -189,37 +207,43 @@ export function PushNotificationForm() {
     const submitLabel = scheduleEnabled ? t('notification.push.schedule_push') : t('notification.push.push_now');
     const timeState = fieldState('schedule_time');
     const scheduleDisabled = processing || !scheduleEnabled;
-
-    const selectClass =
-        'h-8 min-w-0 flex-1 rounded-[4px] border-0 bg-transparent px-1 text-center text-[13px] font-semibold tabular-nums outline-none disabled:cursor-not-allowed disabled:opacity-70';
+    const timeInvalid = timeState === 'error';
 
     return (
         <form
             onSubmit={submit}
-            className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start xl:grid-cols-[minmax(0,1fr)_320px]"
+            className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-stretch xl:grid-cols-[minmax(0,1fr)_320px]"
         >
-            <section className="rounded-[10px] border border-border/60 bg-background p-3.5 sm:p-4">
-                <div className="mb-3 flex items-center gap-2">
+            <section className="flex h-full flex-col rounded-[10px] border border-border/60 bg-background p-3.5 sm:p-4">
+                <div className="mb-4 flex items-center gap-2">
                     <span className="flex size-6 items-center justify-center rounded-[6px] bg-primary/12 text-primary">
                         <LanguagesIcon className="size-3.5" strokeWidth={1.9} />
                     </span>
                     <p className="text-[12px] font-semibold text-foreground">{t('notification.push.title')}</p>
                 </div>
 
-                <div className="flex flex-col gap-1">
-                    {TITLE_FIELDS.map((field) => (
+                <div className="flex flex-1 flex-col gap-3.5">
+                    {TITLE_FIELDS.map(({ field, lang, badge }) => (
                         <FormField
                             key={field}
-                            label={t(`notification.push.${field}`)}
+                            label={
+                                <span className="inline-flex items-center gap-2">
+                                    <span className="inline-flex h-5 min-w-7 items-center justify-center rounded-[5px] bg-muted px-1.5 text-[10px] font-bold tracking-wide text-muted-foreground">
+                                        {badge}
+                                    </span>
+                                    <span>{t(`language.${lang}`)}</span>
+                                </span>
+                            }
                             htmlFor={`push_${field}`}
                             error={fieldError(field)}
                             required
-                            icon={TypeIcon}
+                            className="[&_[aria-live=polite]]:mt-2"
                         >
                             <Input
                                 id={`push_${field}`}
                                 value={form.data[field]}
                                 maxLength={PUSH_TITLE_MAX_LENGTH}
+                                placeholder={t(`notification.push.${field}`)}
                                 aria-invalid={fieldState(field) === 'error'}
                                 className={formControlStateClass(fieldState(field))}
                                 onBlur={() => markTouched(field)}
@@ -231,14 +255,14 @@ export function PushNotificationForm() {
                 </div>
             </section>
 
-            <aside className="flex flex-col gap-3 rounded-[10px] border border-border/60 bg-muted/15 p-3.5 sm:p-4">
+            <aside
+                className={cn(
+                    'flex flex-col rounded-[10px] border border-border/60 bg-muted/15 p-3.5 sm:p-4',
+                    scheduleEnabled ? 'h-full gap-3.5' : 'self-start',
+                )}
+            >
                 <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                        <p className="text-[12px] font-semibold text-foreground">{t('notification.push.schedule_push')}</p>
-                        <p className="text-[11px] leading-4 text-muted-foreground">
-                            {t('notification.push.schedule_checkbox_hint')}
-                        </p>
-                    </div>
+                    <p className="text-[12px] font-semibold text-foreground">{t('notification.push.schedule_push')}</p>
 
                     <button
                         id="push_schedule_enabled"
@@ -272,13 +296,14 @@ export function PushNotificationForm() {
                     aria-hidden={!scheduleEnabled}
                 >
                     <div className="min-h-0 overflow-hidden">
-                        <div className="flex flex-col gap-1 border-t border-border/60 pt-3">
+                        <div className="flex flex-col gap-3.5 border-t border-border/60 pt-3.5">
                             <FormField
                                 label={t('notification.push.schedule_date')}
                                 htmlFor="push_schedule_date"
                                 error={fieldError('schedule_date')}
                                 required
                                 icon={CalendarIcon}
+                                className="[&_[aria-live=polite]]:mt-2"
                             >
                                 <DatePicker
                                     id="push_schedule_date"
@@ -299,79 +324,146 @@ export function PushNotificationForm() {
                                 htmlFor="push_schedule_hour"
                                 error={fieldError('schedule_time')}
                                 required
+                                className="[&_[aria-live=polite]]:mt-2"
                             >
                                 <div
                                     className={cn(
-                                        'flex h-10 items-center gap-1 rounded-[6px] border bg-surface px-2 transition-colors',
+                                        'rounded-[8px] border bg-surface p-2.5 transition-colors',
                                         timeState === 'error'
                                             ? 'border-danger'
                                             : timeState === 'success'
                                               ? 'border-success'
-                                              : 'border-input hover:border-primary/35 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/40',
+                                              : 'border-input',
                                     )}
                                 >
-                                    <ClockIcon className="size-4 shrink-0 text-muted-foreground" strokeWidth={1.75} />
-                                    <select
-                                        id="push_schedule_hour"
-                                        value={timeParts.hour}
-                                        disabled={scheduleDisabled}
-                                        aria-label={t('notification.push.hour')}
-                                        onBlur={() => markTouched('schedule_time')}
-                                        onChange={(event) => setTimePart('hour', event.target.value)}
-                                        className={selectClass}
-                                    >
-                                        <option value="">{t('notification.push.hour')}</option>
-                                        {HOURS.map((hour) => (
-                                            <option key={hour} value={hour}>
-                                                {hour}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <span className="text-[13px] font-bold text-muted-foreground" aria-hidden>
-                                        :
-                                    </span>
-                                    <select
-                                        id="push_schedule_minute"
-                                        value={timeParts.minute}
-                                        disabled={scheduleDisabled}
-                                        aria-label={t('notification.push.minute')}
-                                        onBlur={() => markTouched('schedule_time')}
-                                        onChange={(event) => setTimePart('minute', event.target.value)}
-                                        className={selectClass}
-                                    >
-                                        <option value="">{t('notification.push.minute')}</option>
-                                        {minuteOptions.map((minute) => (
-                                            <option key={minute} value={minute}>
-                                                {minute}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <div className="flex items-end justify-center gap-1.5">
+                                        <div className="w-[72px] shrink-0">
+                                            <label
+                                                htmlFor="push_schedule_hour"
+                                                className="mb-1 flex items-center gap-1 text-[10px] font-semibold text-muted-foreground"
+                                            >
+                                                <ClockIcon className="size-2.5" strokeWidth={2} />
+                                                {t('notification.push.hour')}
+                                            </label>
+                                            <Select
+                                                value={timeParts.hour12 || undefined}
+                                                disabled={scheduleDisabled}
+                                                onValueChange={(value) => {
+                                                    writeTime({
+                                                        hour12: value,
+                                                        minute: timeParts.minute || '00',
+                                                    });
+                                                    markTouched('schedule_time');
+                                                }}
+                                            >
+                                                <SelectTrigger
+                                                    id="push_schedule_hour"
+                                                    aria-invalid={timeInvalid}
+                                                    className="h-9 px-2 text-[13px] font-semibold tabular-nums"
+                                                >
+                                                    <SelectValue placeholder="--" />
+                                                </SelectTrigger>
+                                                <SelectContent className="min-w-20">
+                                                    {HOURS_12.map((hour) => (
+                                                        <SelectItem key={hour} value={hour} className="font-semibold tabular-nums">
+                                                            {hour}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        <span
+                                            className="mb-2 text-[16px] font-bold leading-none text-muted-foreground"
+                                            aria-hidden
+                                        >
+                                            :
+                                        </span>
+
+                                        <div className="w-[72px] shrink-0">
+                                            <label
+                                                htmlFor="push_schedule_minute"
+                                                className="mb-1 block text-[10px] font-semibold text-muted-foreground"
+                                            >
+                                                {t('notification.push.minute')}
+                                            </label>
+                                            <Select
+                                                value={timeParts.minute || undefined}
+                                                disabled={scheduleDisabled}
+                                                onValueChange={(value) => {
+                                                    writeTime({
+                                                        minute: value,
+                                                        hour12: timeParts.hour12 || '12',
+                                                    });
+                                                    markTouched('schedule_time');
+                                                }}
+                                            >
+                                                <SelectTrigger
+                                                    id="push_schedule_minute"
+                                                    aria-invalid={timeInvalid}
+                                                    className="h-9 px-2 text-[13px] font-semibold tabular-nums"
+                                                >
+                                                    <SelectValue placeholder="--" />
+                                                </SelectTrigger>
+                                                <SelectContent className="min-w-20">
+                                                    {MINUTES.map((minute) => (
+                                                        <SelectItem key={minute} value={minute} className="font-semibold tabular-nums">
+                                                            {minute}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        <div
+                                            className="mb-0 ml-1 grid w-[88px] shrink-0 grid-cols-2 gap-0.5 rounded-[7px] bg-muted/55 p-0.5"
+                                            role="group"
+                                            aria-label={t('notification.push.schedule_time')}
+                                        >
+                                            {(['AM', 'PM'] as const).map((period) => {
+                                                const active = Boolean(form.data.schedule_time) && timeParts.period === period;
+
+                                                return (
+                                                    <button
+                                                        key={period}
+                                                        type="button"
+                                                        disabled={scheduleDisabled}
+                                                        aria-pressed={active}
+                                                        onClick={() =>
+                                                            writeTime({
+                                                                period,
+                                                                hour12: timeParts.hour12 || '12',
+                                                                minute: timeParts.minute || '00',
+                                                            })
+                                                        }
+                                                        className={cn(
+                                                            'h-8 rounded-[5px] text-[10px] font-bold tracking-wide transition-all',
+                                                            'disabled:pointer-events-none disabled:opacity-50',
+                                                            active
+                                                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                                                : 'text-muted-foreground hover:bg-background hover:text-foreground',
+                                                        )}
+                                                    >
+                                                        {t(`notification.push.${period.toLowerCase()}`)}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
                                 </div>
                             </FormField>
-
-                            <div className="-mt-1 flex flex-wrap gap-1.5">
-                                {[
-                                    { label: t('notification.push.quick_15m'), minutes: 15 },
-                                    { label: t('notification.push.quick_1h'), minutes: 60 },
-                                    { label: t('notification.push.quick_3h'), minutes: 180 },
-                                ].map((item) => (
-                                    <button
-                                        key={item.minutes}
-                                        type="button"
-                                        disabled={scheduleDisabled}
-                                        onClick={() => applyQuickTime(item.minutes)}
-                                        className="rounded-full border border-border/70 bg-background px-2.5 py-1 text-[10px] font-semibold text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/8 hover:text-primary disabled:pointer-events-none disabled:opacity-50"
-                                    >
-                                        {item.label}
-                                    </button>
-                                ))}
-                            </div>
                         </div>
                     </div>
                 </div>
 
                 {canCreate ? (
-                    <Button type="submit" size="md" variant="primary" disabled={processing} className="w-full">
+                    <Button
+                        type="submit"
+                        size="md"
+                        variant="primary"
+                        disabled={processing}
+                        className={cn('w-full', scheduleEnabled ? 'mt-auto' : 'mt-3')}
+                    >
                         {processing ? (
                             <Spinner size="xs" className="text-current" />
                         ) : (

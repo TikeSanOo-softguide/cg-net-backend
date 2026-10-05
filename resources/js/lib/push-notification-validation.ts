@@ -87,6 +87,11 @@ export function validatePushNotificationField(
                 return t('notification.push.validation.schedule_time_invalid');
             }
 
+            // Date missing/invalid is handled by schedule_date — don't mislabel as bad time.
+            if (!data.schedule_date.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(data.schedule_date)) {
+                break;
+            }
+
             const scheduled = parseScheduleDateTime(data.schedule_date, value);
             if (!scheduled) {
                 return t('notification.push.validation.schedule_time_invalid');
