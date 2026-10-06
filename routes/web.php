@@ -22,6 +22,7 @@ use App\Http\Controllers\Notification\PushNotificationController;
 use App\Http\Controllers\Package\AddonController;
 use App\Http\Controllers\Package\NetworkController;
 use App\Http\Controllers\Package\PackageController;
+use App\Http\Controllers\Package\PackageOrderController;
 use App\Http\Controllers\Package\SpeedController;
 use App\Http\Controllers\Package\TermController;
 use App\Http\Controllers\Region\RegionManagementController;
@@ -125,6 +126,7 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::get('/transactions/export', [TransactionController::class, 'export'])
                 ->middleware('can:' . AppPermissions::SystemExport)
                 ->name('transactions.export');
+            Route::get('/package-orders', [PackageOrderController::class, 'index'])->name('package-orders.index');
         });
 
     Route::prefix('regions')

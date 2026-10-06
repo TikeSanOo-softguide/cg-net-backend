@@ -31,6 +31,7 @@ import {
     Move,
     Newspaper,
     Package,
+    PackageCheck,
     PenLine,
     Plug,
     Receipt,
@@ -157,6 +158,12 @@ export const navigation: NavGroup[] = [
                 descriptionKey: 'menu.transactions_description',
                 href: '/billing/transactions',
                 icon: Receipt,
+            },
+            {
+                labelKey: 'menu.package_orders',
+                descriptionKey: 'menu.package_orders_description',
+                href: '/billing/package-orders',
+                icon: PackageCheck,
             },
             {
                 labelKey: 'menu.bill_payment',

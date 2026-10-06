@@ -44,6 +44,7 @@
         "connection_status": "连接监控",
         "package_management": "套餐与计划",
         "packages": "套餐",
+        "package_orders": "客户套餐订单",
         "billing": "账单与付款",
         "invoices": "发票",
         "payment_gateway_logs": "支付网关日志",
@@ -120,6 +121,7 @@
         "cpe_assignment_description": "为客户账户分配或解除CPE设备。",
         "connection_status_description": "监控已部署CPE设备的实时连接状态。",
         "packages_description": "搜索、筛选并管理互联网套餐。",
+        "package_orders_description": "查看客户套餐购买记录及其开通详情。",
         "invoices_description": "搜索、筛选并管理客户发票。",
         "payment_gateway_logs_description": "查看支付网关请求、响应和错误。",
         "transactions_description": "搜索、筛选并查看账单交易。",
@@ -777,6 +779,16 @@
         "wifi_package": "Wi-Fi 套餐",
         "refund": "退款",
         "adjustment": "调整"
+    },
+    "package_orders": {
+        "order_details": "套餐订单详情",
+        "search_placeholder": "搜索订单编号、客户或交易",
+        "snapshot": "订单快照",
+        "external_response": "外部服务响应",
+        "completed_at": "完成时间",
+        "service_details": "已开通的服务",
+        "starts_at": "开始时间",
+        "expires_at": "到期时间"
     },
     "transactions": {
         "description": "查看所有客户的钱包交易记录。",

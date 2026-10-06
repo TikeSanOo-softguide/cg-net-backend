@@ -10,7 +10,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use LogicException;
 
-#[Fillable(['user_id', 'package_id', 'ledger_transaction_id', 'status', 'snapshot', 'completed_at'])]
+#[Fillable([
+    'user_id',
+    'package_id',
+    'ledger_transaction_id',
+    'status',
+    'snapshot',
+    'external_response',
+    'completed_at',
+])]
 class PackageOrder extends Model
 {
     use HasFactory;
@@ -30,6 +38,7 @@ class PackageOrder extends Model
     {
         return [
             'snapshot' => 'array',
+            'external_response' => 'array',
             'completed_at' => 'datetime',
             'status' => PackageOrderStatus::class,
         ];

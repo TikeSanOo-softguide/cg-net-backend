@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->foreignId('ledger_transaction_id')->nullable()->constrained('ledger_transactions')->restrictOnDelete();
             $table->string('status', 16)->default('pending');
             $table->json('snapshot')->nullable();
+            $table->json('external_response')->nullable();
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('completed_at')->nullable();
             $table->index('status');

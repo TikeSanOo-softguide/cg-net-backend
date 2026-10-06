@@ -627,7 +627,11 @@ export function TransactionsTable({
                                 <DetailItem
                                     label={t('transactions.detail_fields.package_order_id')}
                                     value={selected.related.package_order_id}
-                                    copyable
+                                    href={
+                                        selected.related.package_order_id
+                                            ? packageOrderHref(selected.related.package_order_id)
+                                            : undefined
+                                    }
                                     secondary={
                                         selected.related.package_order_detail
                                             ? `${selected.related.package_order_detail.package ?? '—'} · ${t(`status.${selected.related.package_order_detail.status}`)}`
@@ -681,6 +685,15 @@ export function TransactionsTable({
             ) : null}
         </>
     );
+}
+
+function packageOrderHref(packageOrderId: number): string {
+    const query = new URLSearchParams({
+        open_package_order: String(packageOrderId),
+        return_to: `${window.location.pathname}${window.location.search}`,
+    });
+
+    return `/billing/package-orders?${query.toString()}`;
 }
 
 export default function TransactionsIndex(props: TransactionsProps) {

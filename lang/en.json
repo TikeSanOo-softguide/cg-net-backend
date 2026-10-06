@@ -51,6 +51,7 @@
         "connection_status": "Connection Monitoring",
         "package_management": "Plans & Packages",
         "packages": "Packages",
+        "package_orders": "Customer Package Orders",
         "billing": "Billing & Payments",
         "invoices": "Invoices",
         "payment_gateway_logs": "Payment Gateway Logs",
@@ -127,6 +128,7 @@
         "cpe_assignment_description": "Assign and unassign CPE devices to customer accounts.",
         "connection_status_description": "Monitor live connection status across deployed CPE devices.",
         "packages_description": "Search, filter, and manage internet packages and plans.",
+        "package_orders_description": "Review customer package purchases and their activation details.",
         "invoices_description": "Search, filter, and manage customer invoices.",
         "payment_gateway_logs_description": "Review payment gateway requests, responses, and errors.",
         "transactions_description": "Search, filter, and review billing transactions.",
@@ -765,6 +767,16 @@
         "wifi_package": "Wi-Fi Package",
         "refund": "Refund",
         "adjustment": "Adjustment"
+    },
+    "package_orders": {
+        "order_details": "Package order details",
+        "search_placeholder": "Search order ID, customer, or transaction",
+        "snapshot": "Order snapshot",
+        "external_response": "External response",
+        "completed_at": "Completed at",
+        "service_details": "Activated service",
+        "starts_at": "Starts at",
+        "expires_at": "Expires at"
     },
     "transactions": {
         "description": "Review wallet transactions across customers.",
