@@ -94,7 +94,7 @@ type TransactionsTableProps = TransactionsProps & {
     embeddedCustomer?: boolean;
 };
 
-function visitIndex(filters: Filters, baseUrl: string, embeddedCustomer = false) {
+function visitIndex(filters: Filters, baseUrl: string, embeddedCustomer = false, returnTo?: string) {
     router.get(
         baseUrl,
         {
@@ -107,6 +107,7 @@ function visitIndex(filters: Filters, baseUrl: string, embeddedCustomer = false)
             from: filters.from,
             to: filters.to,
             transactions: embeddedCustomer ? 'all' : undefined,
+            return_to: returnTo || undefined,
         },
         { preserveState: true, preserveScroll: true, replace: true },
     );
@@ -181,6 +182,7 @@ export function TransactionsTable({
 }: TransactionsTableProps) {
     const { t } = useTranslation();
     const can = useCan();
+    const returnTo = useReturnTo('');
     const [search, setSearch] = useState(filters.search);
     const [from, setFrom] = useState(filters.from);
     const [to, setTo] = useState(filters.to);
@@ -205,7 +207,7 @@ export function TransactionsTable({
         setSearch(value);
         window.clearTimeout(debounce.current);
         debounce.current = window.setTimeout(
-            () => visitIndex({ ...filters, search: value }, baseUrl, embeddedCustomer),
+            () => visitIndex({ ...filters, search: value }, baseUrl, embeddedCustomer, returnTo),
             300,
         );
     };
@@ -221,11 +223,11 @@ export function TransactionsTable({
 
         setDateError(undefined);
         field === 'from' ? setFrom(value) : setTo(value);
-        visitIndex({ ...filters, from: nextFrom, to: nextTo }, baseUrl, embeddedCustomer);
+        visitIndex({ ...filters, from: nextFrom, to: nextTo }, baseUrl, embeddedCustomer, returnTo);
     };
 
     const updateFilter = (field: 'actor_type' | 'type' | 'status' | 'direction', value: string) => {
-        visitIndex({ ...filters, [field]: value === 'all' ? '' : value }, baseUrl, embeddedCustomer);
+        visitIndex({ ...filters, [field]: value === 'all' ? '' : value }, baseUrl, embeddedCustomer, returnTo);
     };
 
     const exportTransactions = () => {
@@ -609,7 +611,10 @@ export function TransactionsTable({
                                     value={selected.related.bill_payment_id}
                                     href={
                                         selected.related.bill_payment_id
-                                            ? `/billing/bill-payments?payment_id=${selected.related.bill_payment_id}`
+                                            ? `/billing/bill-payments?${new URLSearchParams({
+                                                  payment_id: String(selected.related.bill_payment_id),
+                                                  return_to: `${window.location.pathname}${window.location.search}`,
+                                              }).toString()}`
                                             : undefined
                                     }
                                     copyable

@@ -9,6 +9,7 @@ use App\Exports\TransactionExport;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\Transaction\TransactionService;
+use App\Support\NavigationStack;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,7 +21,7 @@ class TransactionController extends Controller
     {
         $filters = $transactions->filters($request);
 
-        return Inertia::render('BillPayment/Transactions/Index', [
+        $props = [
             'transactions' => $transactions->paginate($filters),
             'filters' => $filters,
             'filterOptions' => [
@@ -29,7 +30,14 @@ class TransactionController extends Controller
                 'statuses' => array_column(LedgerTransactionStatus::cases(), 'value'),
             ],
             'scope' => $filters['customer_id'] ? 'customer' : 'global',
-        ]);
+        ];
+
+        if ($request->query->has('return_to')) {
+            $returnTo = $request->query('return_to');
+            $props['return_to'] = is_string($returnTo) ? NavigationStack::sanitize($returnTo) : null;
+        }
+
+        return Inertia::render('BillPayment/Transactions/Index', $props);
     }
 
     public function export(Request $request, TransactionService $transactions)

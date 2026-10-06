@@ -72,6 +72,35 @@ class NavigationStackTest extends TestCase
             );
     }
 
+    public function test_explicit_return_target_is_preserved_for_billing_pages(): void
+    {
+        $admin = $this->admin();
+        $returnTo = '/billing/transactions?search=FTTH-1&open_transaction=FTTH-1';
+
+        $this->actingAs($admin)
+            ->get('/billing/bill-payments?' . http_build_query([
+                'payment_id' => 1,
+                'return_to' => $returnTo,
+            ]))
+            ->assertOk()
+            ->assertInertia(
+                fn(AssertableInertia $page) => $page
+                    ->component('BillPayment/BillPayment/Index')
+                    ->where('return_to', $returnTo),
+            );
+
+        $this->actingAs($admin)
+            ->get('/billing/transactions?' . http_build_query([
+                'return_to' => '/billing/bill-payments?payment_id=1',
+            ]))
+            ->assertOk()
+            ->assertInertia(
+                fn(AssertableInertia $page) => $page
+                    ->component('BillPayment/Transactions/Index')
+                    ->where('return_to', '/billing/bill-payments?payment_id=1'),
+            );
+    }
+
     public function test_menu_resets_a_trail_that_started_on_reports(): void
     {
         $admin = $this->admin();

@@ -7,6 +7,7 @@ use App\Enums\LedgerTransactionType;
 use App\Exports\BillPaymentExport;
 use App\Http\Controllers\Controller;
 use App\Models\BillPayment;
+use App\Support\NavigationStack;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -43,11 +44,18 @@ class BillPaymentController extends Controller
                 ];
             });
 
-        return Inertia::render('BillPayment/BillPayment/Index', [
+        $props = [
             'payments' => $payments,
             'filters' => $filters,
             'statuses' => array_column(BillPaymentStatus::cases(), 'value'),
-        ]);
+        ];
+
+        if ($request->query->has('return_to')) {
+            $returnTo = $request->query('return_to');
+            $props['return_to'] = is_string($returnTo) ? NavigationStack::sanitize($returnTo) : null;
+        }
+
+        return Inertia::render('BillPayment/BillPayment/Index', $props);
     }
 
     public function export(Request $request)

@@ -3,6 +3,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { CalendarIcon, CircleDotIcon, EyeIcon, ReceiptIcon } from 'lucide-react';
 
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
+import { BackButton } from '@/components/BackButton';
 import { FormDialog } from '@/components/FormDialog';
 import type { Paginated } from '@/components/Pagination';
 import { PageContent } from '@/components/PageContent';
@@ -14,6 +15,7 @@ import { FormField } from '@/components/ui/form-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCan } from '@/hooks/useCan';
+import { useReturnTo } from '@/hooks/useReturnTo';
 import { formatTopUpAmount } from '@/lib/top-up-cards';
 import { formatDateTime } from '@/lib/utils';
 import { formatPhoneInternational } from '@/lib/phone';
@@ -47,10 +49,15 @@ type Props = {
     payments: Paginated<BillPaymentRow>;
     filters: Filters;
     statuses: string[];
+    return_to?: string | null;
 };
 
 function transactionHref(transactionNo: string): string {
-    const query = new URLSearchParams({ search: transactionNo, open_transaction: transactionNo });
+    const query = new URLSearchParams({
+        search: transactionNo,
+        open_transaction: transactionNo,
+        return_to: `${window.location.pathname}${window.location.search}`,
+    });
 
     return `/billing/transactions?${query.toString()}`;
 }
@@ -58,6 +65,7 @@ function transactionHref(transactionNo: string): string {
 export default function BillPaymentIndex({ payments, filters, statuses }: Props) {
     const { t } = useTranslation();
     const can = useCan();
+    const returnTo = useReturnTo('');
     const [search, setSearch] = useState(filters.search);
     const [selectedPayment, setSelectedPayment] = useState<BillPaymentRow | null>(null);
     const debounce = useRef<number>(0);
@@ -81,6 +89,7 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                 payment_id: filters.payment_id || undefined,
                 from: (next.from ?? filters.from) || undefined,
                 to: (next.to ?? filters.to) || undefined,
+                return_to: returnTo || undefined,
             },
             { preserveState: true, preserveScroll: true, replace: true },
         );
@@ -163,7 +172,10 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
         <>
             <Head title={t('menu.bill_payment')} />
             <PageContent>
-                <PageHeader title={t('menu.bill_payment')} description={t('menu.bill_payment_description')} />
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <PageHeader title={t('menu.bill_payment')} description={t('menu.bill_payment_description')} />
+                    {returnTo ? <BackButton href={returnTo} /> : null}
+                </div>
                 <DataTable
                     data={payments.data}
                     columns={columns}
