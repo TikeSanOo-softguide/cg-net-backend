@@ -57,6 +57,8 @@ class EodReportController extends Controller
             ->with([
                 'wallet.user:id,name',
                 'ledgerTransaction:id,transaction_no,type',
+                'ledgerTransaction.entries.ledgerAccount:id,code,name,type',
+                'ledgerTransaction.entries.wallet.user:id,name',
             ])
             ->whereNotNull('wallet_id')
             ->whereDate('created_at', $date)
@@ -75,6 +77,23 @@ class EodReportController extends Controller
                     'amount' => $entry->amount(),
                     'balance_after' => (int) $entry->balance_after,
                     'created_at' => $entry->created_at,
+                    'ledger_entries' => $entry->ledgerTransaction?->entries
+                        ->sortBy('line_no')
+                        ->map(
+                            fn (LedgerEntry $line): array => [
+                                'id' => $line->id,
+                                'line_no' => $line->line_no,
+                                'account_code' => $line->ledgerAccount?->code,
+                                'account_name' => $line->ledgerAccount?->name,
+                                'customer' => $line->wallet?->user?->name,
+                                'debit' => (int) $line->debit,
+                                'credit' => (int) $line->credit,
+                                'balance_after' => $line->balance_after === null ? null : (int) $line->balance_after,
+                                'created_at' => $line->created_at,
+                            ],
+                        )
+                        ->values()
+                        ->all() ?? [],
                 ],
             );
 

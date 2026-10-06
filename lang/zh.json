@@ -736,6 +736,13 @@
         "amount": "金额",
         "balance_after": "变动后余额",
         "created_at": "入账时间",
+        "view_double_entries": "查看复式分录",
+        "double_entry_details": "复式分录详情",
+        "entry_date": "分录日期",
+        "line_no": "行号",
+        "account": "总账科目",
+        "debit_total": "借方总额",
+        "credit_total": "贷方总额",
         "no_breakdown": "所选日期没有账本活动。",
         "no_entries": "所选日期没有账本记录。"
     },

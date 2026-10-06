@@ -85,6 +85,10 @@ class EodReportTest extends TestCase
                     ->where('summary.failed_transactions', 1)
                     ->has('breakdown', 3)
                     ->has('entries.data', 3)
+                    ->has('entries.data.0.ledger_entries', 2)
+                    ->where('entries.data.0.ledger_entries.0.line_no', 1)
+                    ->where('entries.data.0.ledger_entries.1.line_no', 2)
+                    ->has('entries.data.0.ledger_entries.0.created_at')
                     ->where('entries.total', 3)
                     ->where('entries.current_page', 1)
                     ->where('entries.per_page', 15),

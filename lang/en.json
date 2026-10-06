@@ -724,6 +724,13 @@
         "amount": "Amount",
         "balance_after": "Balance after",
         "created_at": "Posted at",
+        "view_double_entries": "View double entries",
+        "double_entry_details": "Double-entry details",
+        "entry_date": "Entry date",
+        "line_no": "Line",
+        "account": "Ledger account",
+        "debit_total": "Total debits",
+        "credit_total": "Total credits",
         "no_breakdown": "No ledger activity for this date.",
         "no_entries": "No ledger entries for this date."
     },
