@@ -278,7 +278,6 @@ export default function PackageIndex({
                                 header: t('packages.network'),
                                 className: 'font-medium',
                                 mobile: 'title',
-                                sortable: true,
                                 searchValue: (row) =>
                                     String(
                                         locale === 'en'
@@ -378,7 +377,6 @@ export default function PackageIndex({
                                 header: t('packages.speed'),
                                 className: 'font-medium',
                                 mobile: 'title',
-                                sortable: true,
                                 searchValue: (row) => String((row as SpeedOption).mbps ?? ''),
                                 cell: (row) => (
                                     <span className="inline-flex items-center gap-1.5">
@@ -468,7 +466,6 @@ export default function PackageIndex({
                                 header: t('packages.term'),
                                 className: 'font-medium',
                                 mobile: 'title',
-                                sortable: true,
                                 searchValue: (row) => String((row as TermOption).months ?? ''),
                                 cell: (row) => (
                                     <span className="inline-flex items-center gap-1.5">
@@ -560,7 +557,6 @@ export default function PackageIndex({
                                 header: t('packages.addons.title'),
                                 className: 'font-medium',
                                 mobile: 'title',
-                                sortable: true,
                                 searchValue: (row) =>
                                     String(
                                         locale === 'en'
@@ -696,7 +692,6 @@ export default function PackageIndex({
                             id: 'speed',
                             header: t('packages.speed'),
                             mobile: 'meta',
-                            sortable: true,
                             cell: (row) => <span>{row.speed?.mbps ? `${row.speed.mbps} Mbps` : '—'}</span>,
                         },
 
@@ -704,7 +699,6 @@ export default function PackageIndex({
                             id: 'term',
                             header: t('packages.term'),
                             mobile: 'meta',
-                            sortable: true,
                             cell: (row) => (
                                 <span>{row.term?.months ? `${row.term.months} ${t('packages.months')} ` : '—'}</span>
                             ),
@@ -713,15 +707,13 @@ export default function PackageIndex({
                         {
                             id: 'price',
                             header: t('packages.price'),
-                            sortable: true,
-                            cell: (row) => <span>{row.price ?? '—'} Pts</span>,
+                            cell: (row) => <span>{row.price ?? '0'} Points</span>,
                         },
 
                         {
                             id: 'installation_fee',
                             header: t('packages.installation_fee'),
-                            sortable: true,
-                            cell: (row) => <span>{row.installation_fee ?? '—'} Pts</span>,
+                            cell: (row) => <span>{row.installation_fee ?? '0'} Points</span>,
                         },
                         {
                             id: 'recommended',

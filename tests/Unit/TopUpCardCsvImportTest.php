@@ -57,7 +57,7 @@ class TopUpCardCsvImportTest extends TestCase
         $this->assertSame(
             [
                 [
-                    'office' => 'Office 31:31',
+                    'office' => 'Office 31',
                     'count_50' => 0,
                     'count_100' => 0,
                     'count_250' => 0,

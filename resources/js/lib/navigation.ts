@@ -6,6 +6,7 @@ import {
     Banknote,
     Bell,
     Boxes,
+    Building2,
     CalendarDays,
     ClipboardList,
     Contact,
@@ -174,7 +175,7 @@ export const navigation: NavGroup[] = [
                 labelKey: 'menu.top_up_card_offices',
                 descriptionKey: 'menu.top_up_card_offices_description',
                 href: '/top-up-cards/offices',
-                icon: UserRound,
+                icon: Building2,
             },
             {
                 labelKey: 'menu.top_up_card_batch',

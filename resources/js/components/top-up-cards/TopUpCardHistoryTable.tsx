@@ -364,37 +364,44 @@ export function TopUpCardHistoryTable({
                                 </div>
                             </dl>
                         </div>
+                        {viewing.status === 'used' ? (
+                            <>
+                                <hr className="border-border/60" />
 
-                        <hr className="border-border/60" />
-
-                        <div className="space-y-4">
-                            <dl className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4 text-[13px]">
-                                <div className="space-y-1">
-                                    <dt className="text-muted-foreground">{t('top_up_cards.redeemed_by')}</dt>
-                                    <dd className="font-medium text-foreground">{viewing.redeemed_by ?? '—'}</dd>
+                                <div className="space-y-4">
+                                    <dl className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4 text-[13px]">
+                                        <div className="space-y-1">
+                                            <dt className="text-muted-foreground">{t('top_up_cards.redeemed_by')}</dt>
+                                            <dd className="font-medium text-foreground">
+                                                {viewing.redeemed_by ?? '—'}
+                                            </dd>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <dt className="text-muted-foreground">{t('top_up_cards.redeemed_at')}</dt>
+                                            <dd className="font-medium text-foreground">
+                                                {formatDate(viewing.redeemed_at) ?? '—'}
+                                            </dd>
+                                        </div>
+                                        {viewing.transaction_id ? (
+                                            <div className="space-y-1">
+                                                <dt className="text-muted-foreground">
+                                                    {t('top_up_cards.transaction_no')}
+                                                </dt>
+                                                <dd className="font-medium text-foreground">
+                                                    {viewing.transaction_no ?? '—'}
+                                                    {viewing.transaction_no && (
+                                                        <CopyValueButton
+                                                            value={viewing.transaction_no}
+                                                            label={t('top_up_cards.transaction_no')}
+                                                        />
+                                                    )}
+                                                </dd>
+                                            </div>
+                                        ) : null}
+                                    </dl>
                                 </div>
-                                <div className="space-y-1">
-                                    <dt className="text-muted-foreground">{t('top_up_cards.redeemed_at')}</dt>
-                                    <dd className="font-medium text-foreground">
-                                        {formatDate(viewing.redeemed_at) ?? '—'}
-                                    </dd>
-                                </div>
-                                {viewing.transaction_id ? (
-                                    <div className="space-y-1">
-                                        <dt className="text-muted-foreground">{t('top_up_cards.transaction_no')}</dt>
-                                        <dd className="font-medium text-foreground">
-                                            {viewing.transaction_no ?? '—'}
-                                            {viewing.transaction_no && (
-                                                <CopyValueButton
-                                                    value={viewing.transaction_no}
-                                                    label={t('top_up_cards.transaction_no')}
-                                                />
-                                            )}
-                                        </dd>
-                                    </div>
-                                ) : null}
-                            </dl>
-                        </div>
+                            </>
+                        ) : null}
                     </div>
                 ) : null}
             </FormDialog>

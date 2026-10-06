@@ -67,18 +67,18 @@ export function MultiSelect({
                         aria-invalid={invalid}
                         className={cn(
                             formControlClass,
-                            'relative flex min-w-60  min-h-6 h-auto items-center py-1.5 text-left',
+                            'relative flex min-w-60 rounded-[10px] min-h-6 h-auto items-center py-1.5 text-left',
                             icon && 'pl-10',
                         )}
                     >
                         <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 pr-8">
                             {selected.length === 0 ? (
-                                <span className="text-muted-foreground">{placeholder}</span>
+                                <span className="text-xs text-foreground">{placeholder}</span>
                             ) : (
                                 selected.map((option) => (
                                     <span
                                         key={option.value}
-                                        className="inline-flex max-w-full items-center gap-1 rounded-[6px] bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary"
+                                        className="inline-flex max-w-full items-center gap-1 rounded-[6px] text-xs bg-primary/12 px-2 py-0.5 font-medium text-primary"
                                     >
                                         <span className="truncate">{option.label}</span>
                                         <span

@@ -68,12 +68,15 @@ final class TopUpCard
 
         foreach ($rows as $index => $row) {
             $line = $index + 1;
+            $serial = trim((string) $row[0]);
 
-            if (trim((string) $row[0]) === '' || trim((string) $row[4]) !== TopUpCardStatus::Pending->value) {
+            if (
+                $serial === '' ||
+                strtolower($serial) === 'null' ||
+                trim((string) $row[4]) !== TopUpCardStatus::Pending->value
+            ) {
                 throw new CsvImportException('csv.import_errors.invalid_row', ['line' => $line]);
             }
-
-            $serial = trim((string) $row[0]);
 
             if (isset($serials[$serial])) {
                 throw new CsvImportException('csv.import_errors.duplicate_serial', ['line' => $line]);

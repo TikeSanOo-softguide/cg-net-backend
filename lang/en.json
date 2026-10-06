@@ -172,6 +172,30 @@
     },
 
     "settings": {
+        "general_settings": {
+            "terms_and_conditions": "Terms and Conditions",
+            "faq": "FAQs",
+            "support_contact": "Support Contact",
+            "title": "Title",
+            "description": "Description",
+            "phone": "Phone number",
+            "english": "English",
+            "chinese": "Chinese",
+            "burmese": "Burmese",
+            "content_form_description": "Enter the title and description in all supported languages.",
+            "contact_form_description": "Enter a customer support phone number.",
+            "delete_title": "Delete this item?",
+            "delete_description": "This item will be permanently deleted.",
+            "terms_created": "Terms and conditions created successfully.",
+            "terms_updated": "Terms and conditions updated successfully.",
+            "terms_deleted": "Terms and conditions deleted successfully.",
+            "faq_created": "FAQ created successfully.",
+            "faq_updated": "FAQ updated successfully.",
+            "faq_deleted": "FAQ deleted successfully.",
+            "support_contact_created": "Support contact created successfully.",
+            "support_contact_updated": "Support contact updated successfully.",
+            "support_contact_deleted": "Support contact deleted successfully."
+        },
         "app_version": {
             "label": "App version",
             "version": "Version",

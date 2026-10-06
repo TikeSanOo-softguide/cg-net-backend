@@ -165,6 +165,30 @@
     },
 
     "settings": {
+        "general_settings": {
+            "terms_and_conditions": "条款与条件",
+            "faq": "常见问题",
+            "support_contact": "支持联系方式",
+            "title": "标题",
+            "description": "描述",
+            "phone": "电话号码",
+            "english": "英语",
+            "chinese": "中文",
+            "burmese": "缅甸语",
+            "content_form_description": "请使用所有支持的语言填写标题和描述。",
+            "contact_form_description": "请输入客户支持电话号码。",
+            "delete_title": "删除此项目？",
+            "delete_description": "此项目将被永久删除。",
+            "terms_created": "条款与条件创建成功。",
+            "terms_updated": "条款与条件更新成功。",
+            "terms_deleted": "条款与条件删除成功。",
+            "faq_created": "常见问题创建成功。",
+            "faq_updated": "常见问题更新成功。",
+            "faq_deleted": "常见问题删除成功。",
+            "support_contact_created": "支持联系方式创建成功。",
+            "support_contact_updated": "支持联系方式更新成功。",
+            "support_contact_deleted": "支持联系方式删除成功。"
+        },
         "app_version": {
             "label": "应用版本",
             "version": "版本",

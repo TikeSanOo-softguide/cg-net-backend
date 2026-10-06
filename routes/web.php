@@ -3,6 +3,7 @@
 use App\Http\Controllers\ActivityLog\ActivityLogController;
 use App\Http\Controllers\AdminNotification\AdminNotificationController;
 use App\Http\Controllers\BillPayment\BillPaymentController;
+use App\Http\Controllers\BillPayment\TransactionController;
 use App\Http\Controllers\Cms\BannerController;
 use App\Http\Controllers\Cms\CategoryController;
 use App\Http\Controllers\Cms\ContactController;
@@ -29,7 +30,6 @@ use App\Http\Controllers\Reports\CustomerReportController;
 use App\Http\Controllers\Reports\EodReportController;
 use App\Http\Controllers\Reports\LedgerHealthReportController;
 use App\Http\Controllers\Reports\ReportController;
-use App\Http\Controllers\TopUpReport\TopUpReportController;
 use App\Http\Controllers\ServiceRequest\BroadbandApplicationRequestController;
 use App\Http\Controllers\ServiceRequest\ChangePasswordRequestController;
 use App\Http\Controllers\ServiceRequest\ChangePlanRequestController;
@@ -37,14 +37,18 @@ use App\Http\Controllers\ServiceRequest\FailureReportController;
 use App\Http\Controllers\ServiceRequest\RelocationRequestController;
 use App\Http\Controllers\ServiceRequest\ServiceRequestController;
 use App\Http\Controllers\Settings\AppVersionController;
+use App\Http\Controllers\Settings\GeneralSettings\FaqController;
+use App\Http\Controllers\Settings\GeneralSettings\GeneralSettingsController;
+use App\Http\Controllers\Settings\GeneralSettings\SupportContactController;
+use App\Http\Controllers\Settings\GeneralSettings\TermAndConditionController;
 use App\Http\Controllers\Staff\RoleController;
 use App\Http\Controllers\Staff\StaffController;
 use App\Http\Controllers\Support\ChatConversations\ChatConversationsController;
 use App\Http\Controllers\Support\ChatFlows\ChatbotFlowsController;
-use App\Http\Controllers\TopUpCard\OfficeController;
 use App\Http\Controllers\Support\QuickReplies\QuickRepliesController;
+use App\Http\Controllers\TopUpCard\OfficeController;
 use App\Http\Controllers\TopUpCard\TopUpCardController;
-use App\Http\Controllers\BillPayment\TransactionController;
+use App\Http\Controllers\TopUpReport\TopUpReportController;
 use App\Support\AdminHome;
 use App\Support\AppPermissions;
 use App\Support\MenuPages;
@@ -664,6 +668,55 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::delete('/app-version/{appVersion}', [AppVersionController::class, 'destroy'])
                 ->middleware('can:settings.delete')
                 ->name('app-version.destroy');
+            Route::prefix('general')
+                ->name('general.')
+                ->group(function () {
+                    Route::get('/', [GeneralSettingsController::class, 'index'])
+                        ->middleware('can:settings.view')
+                        ->name('index');
+
+                    Route::post('/terms-and-conditions', [TermAndConditionController::class, 'store'])
+                        ->middleware('can:settings.create')
+                        ->name('terms-and-conditions.store');
+
+                    Route::put('/terms-and-conditions/{termAndCondition}', [
+                        TermAndConditionController::class,
+                        'update',
+                    ])
+                        ->middleware('can:settings.update')
+                        ->name('terms-and-conditions.update');
+
+                    Route::delete('/terms-and-conditions/{termAndCondition}', [
+                        TermAndConditionController::class,
+                        'destroy',
+                    ])
+                        ->middleware('can:settings.delete')
+                        ->name('terms-and-conditions.destroy');
+
+                    Route::post('/faqs', [FaqController::class, 'store'])
+                        ->middleware('can:settings.create')
+                        ->name('faqs.store');
+
+                    Route::put('/faqs/{faq}', [FaqController::class, 'update'])
+                        ->middleware('can:settings.update')
+                        ->name('faqs.update');
+
+                    Route::delete('/faqs/{faq}', [FaqController::class, 'destroy'])
+                        ->middleware('can:settings.delete')
+                        ->name('faqs.destroy');
+
+                    Route::post('/support-contacts', [SupportContactController::class, 'store'])
+                        ->middleware('can:settings.create')
+                        ->name('support-contacts.store');
+
+                    Route::put('/support-contacts/{supportContact}', [SupportContactController::class, 'update'])
+                        ->middleware('can:settings.update')
+                        ->name('support-contacts.update');
+
+                    Route::delete('/support-contacts/{supportContact}', [SupportContactController::class, 'destroy'])
+                        ->middleware('can:settings.delete')
+                        ->name('support-contacts.destroy');
+                });
         });
     Route::prefix('logs')
         ->name('logs.')

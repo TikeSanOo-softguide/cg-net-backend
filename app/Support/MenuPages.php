@@ -48,12 +48,6 @@ final class MenuPages
                 'name' => 'settings.languages',
                 'permission' => 'settings.view',
             ],
-            [
-                'path' => '/settings/general',
-                'titleKey' => 'menu.general_settings',
-                'name' => 'settings.general',
-                'permission' => 'settings.view',
-            ],
         ];
     }
 }
