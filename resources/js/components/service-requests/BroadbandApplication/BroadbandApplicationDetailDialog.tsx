@@ -28,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
 import { CopyValueButton } from '@/components/CopyValueButton';
 import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
+import { formatPhoneInternational } from '@/lib/phone';
 
 export type BroadbandApplicationDetail = {
     id: number;
@@ -159,17 +160,29 @@ export function BroadbandApplicationDetailDialog({
 
                             <div className="flex items-center gap-2">
                                 <PhoneIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                                <span className="text-xs text-muted-foreground">{request.user?.phone ?? '—'}</span>
+                                <span className="text-xs text-muted-foreground">
+                                    {formatPhoneInternational(request.user?.phone)}
+                                </span>
                                 {request.user?.phone && (
-                                    <CopyValueButton value={request.user.phone} label={t('requests.copy_phone')} />
+                                    <CopyValueButton
+                                        value={request.user.phone}
+                                        label={t('requests.copy_phone')}
+                                        format="phone"
+                                    />
                                 )}
                             </div>
 
                             <div className="flex items-center gap-2">
                                 <SmartphoneIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                                <span className="text-xs text-muted-foreground">{request.phone ?? '—'}</span>
+                                <span className="text-xs text-muted-foreground">
+                                    {formatPhoneInternational(request.phone)}
+                                </span>
                                 {request.phone && (
-                                    <CopyValueButton value={request.phone} label={t('requests.copy_phone')} />
+                                    <CopyValueButton
+                                        value={request.phone}
+                                        label={t('requests.copy_phone')}
+                                        format="phone"
+                                    />
                                 )}
                             </div>
                         </div>

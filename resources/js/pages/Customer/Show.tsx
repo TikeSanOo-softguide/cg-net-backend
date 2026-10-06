@@ -23,7 +23,7 @@ import {
     type Filters as TransactionFilters,
     type TransactionRow,
 } from '@/pages/BillPayment/Transactions/Index';
-import { formatPhoneLocal } from '@/lib/phone';
+import { formatPhoneInternational } from '@/lib/phone';
 import { formatTopUpNumber, TOP_UP_CARD_CURRENCY } from '@/lib/top-up-cards';
 import { DataTable } from '@/components/DataTable';
 import { PageContent } from '@/components/PageContent';
@@ -274,7 +274,7 @@ export default function CustomersShow({
             <Head title={customer.name} />
             <PageContent className="gap-4 pb-24 sm:pb-8">
                 <div className="flex items-center justify-between gap-3">
-                    <PageHeader title={customer.name} description={formatPhoneLocal(customer.phone)} />
+                    <PageHeader title={customer.name} description={formatPhoneInternational(customer.phone)} />
                     <BackButton onClick={goBackToCustomerList} fallback={returnTo} />
                 </div>
 

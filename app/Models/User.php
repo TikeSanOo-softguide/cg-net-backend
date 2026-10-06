@@ -15,6 +15,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Laravel\Sanctum\PersonalAccessToken;
+use LogicException;
 
 #[Fillable(['phone', 'name', 'password', 'status', 'broadband_account_number'])]
 #[Hidden(['password', 'remember_token'])]
@@ -25,10 +26,20 @@ class User extends Authenticatable
 
     protected static function booted(): void
     {
+        static::deleting(function (): never {
+            throw new LogicException('Customer accounts cannot be deleted. Suspend the account instead.');
+        });
+        static::forceDeleting(function (): never {
+            throw new LogicException('Customer accounts cannot be deleted. Suspend the account instead.');
+        });
+
         // API tokens live on a long sliding window, so account changes that should
         // end old sessions must do it here, whichever screen or endpoint made them.
         static::updated(function (User $user): void {
-            if ($user->wasChanged('status') && $user->status === UserStatus::Suspended) {
+            if (
+                $user->wasChanged('status') &&
+                in_array($user->status, [UserStatus::Suspended, UserStatus::Deactivated], true)
+            ) {
                 $user->revokeSessions();
 
                 return;

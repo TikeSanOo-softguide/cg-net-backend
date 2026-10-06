@@ -28,6 +28,7 @@ function dotClass(status: string): string {
         case 'invalid':
         case 'blocked':
         case 'cancelled':
+        case 'deactivated':
             return 'bg-red-500';
         case 'suspended':
         case 'slow':

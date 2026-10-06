@@ -7,8 +7,15 @@ use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
 use App\Enums\UserStatus;
 use App\Models\Admin;
+use App\Models\BillPayment;
 use App\Models\CustomerPackage;
+use App\Models\Invoice;
+use App\Models\LedgerAccount;
+use App\Models\LedgerEntry;
 use App\Models\LedgerTransaction;
+use App\Models\PackageOrder;
+use App\Models\Payment;
+use App\Models\TopUpCard;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Services\Ledger\LedgerPoster;
@@ -18,6 +25,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use LogicException;
 use Maatwebsite\Excel\Facades\Excel;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\PermissionRegistrar;
@@ -243,6 +251,52 @@ class CustomerManagementTest extends TestCase
         $this->assertSame(UserStatus::Active, $customer->fresh()->status);
     }
 
+    public function test_admin_can_reactivate_a_deactivated_customer(): void
+    {
+        $admin = Admin::factory()->create();
+        $customer = User::factory()->create(['status' => UserStatus::Deactivated]);
+
+        $this->actingAs($admin, 'web')
+            ->patch('/customers/' . $customer->id . '/status', ['status' => 'active'])
+            ->assertRedirect();
+
+        $this->assertSame(UserStatus::Active, $customer->fresh()->status);
+        $this->assertDatabaseHas('activity_log', [
+            'description' => 'customer_status_updated',
+            'subject_id' => $customer->id,
+            'causer_id' => $admin->id,
+        ]);
+    }
+
+    public function test_admin_cannot_set_customer_status_to_deactivated(): void
+    {
+        $admin = Admin::factory()->create();
+        $customer = User::factory()->create(['status' => UserStatus::Active]);
+
+        $this->actingAs($admin, 'web')
+            ->patch('/customers/' . $customer->id . '/status', ['status' => 'deactivated'])
+            ->assertSessionHasErrors('status');
+
+        $this->assertSame(UserStatus::Active, $customer->fresh()->status);
+    }
+
+    public function test_customer_edit_can_preserve_existing_deactivated_status(): void
+    {
+        $admin = Admin::factory()->create();
+        $customer = User::factory()->create(['status' => UserStatus::Deactivated]);
+
+        $this->actingAs($admin, 'web')
+            ->put('/customers/' . $customer->id, [
+                'name' => 'Updated Customer',
+                'phone' => $customer->phone,
+                'status' => 'deactivated',
+            ])
+            ->assertRedirect('/customers/' . $customer->id);
+
+        $this->assertSame('Updated Customer', $customer->fresh()->name);
+        $this->assertSame(UserStatus::Deactivated, $customer->fresh()->status);
+    }
+
     public function test_suspending_a_customer_revokes_their_api_tokens(): void
     {
         $admin = Admin::factory()->create();
@@ -306,20 +360,20 @@ class CustomerManagementTest extends TestCase
 
         $response = $this->actingAs($admin, 'web')->post('/customers', [
             'name' => 'Hla Hla',
-            'phone' => '+95911112222',
+            'phone' => '+95921112222',
             'password' => '123456',
             'password_confirmation' => '123456',
             'status' => 'active',
         ]);
 
         // Typed with a "+", stored in the canonical format (no "+") shared with the app.
-        $customer = User::query()->where('phone', '95911112222')->first();
+        $customer = User::query()->where('phone', '95921112222')->first();
 
         $this->assertNotNull($customer);
         $response->assertRedirect('/customers/' . $customer->id);
         $this->assertDatabaseHas('users', [
             'name' => 'Hla Hla',
-            'phone' => '95911112222',
+            'phone' => '95921112222',
         ]);
         $this->assertTrue(Hash::check('123456', $customer->password));
         $this->assertDatabaseHas('wallets', [
@@ -465,7 +519,7 @@ class CustomerManagementTest extends TestCase
         $this->assertArrayNotHasKey('password_reset', json_decode($log->properties, true));
     }
 
-    public function test_admins_can_delete_a_customer(): void
+    public function test_customer_deletion_is_rejected(): void
     {
         $admin = Admin::factory()->create();
         $customer = User::factory()->create();
@@ -473,18 +527,12 @@ class CustomerManagementTest extends TestCase
         $this->actingAs($admin, 'web')
             ->from('/customers')
             ->delete('/customers/' . $customer->id)
-            ->assertRedirect('/customers')
-            ->assertSessionHas('success', 'customers.deleted');
+            ->assertForbidden();
 
-        $this->assertSoftDeleted($customer);
-        $this->assertDatabaseHas('activity_log', [
-            'description' => 'customer_deleted',
-            'subject_id' => $customer->id,
-            'causer_id' => $admin->id,
-        ]);
+        $this->assertNotSoftDeleted($customer);
     }
 
-    public function test_admins_can_bulk_delete_customers(): void
+    public function test_bulk_customer_deletion_is_rejected(): void
     {
         $admin = Admin::factory()->create();
         $first = User::factory()->create();
@@ -493,14 +541,69 @@ class CustomerManagementTest extends TestCase
         $this->actingAs($admin, 'web')
             ->from('/customers')
             ->delete('/customers/bulk-destroy', ['ids' => [$first->id, $second->id]])
-            ->assertRedirect('/customers')
-            ->assertSessionHas('success', 'common.bulk_deleted');
+            ->assertForbidden();
 
-        $this->assertSoftDeleted($first);
-        $this->assertSoftDeleted($second);
+        $this->assertNotSoftDeleted($first);
+        $this->assertNotSoftDeleted($second);
     }
 
-    public function test_admins_without_customer_delete_cannot_bulk_delete_customers(): void
+    public function test_customer_model_blocks_soft_and_force_deletion(): void
+    {
+        $customer = User::factory()->create();
+
+        try {
+            $customer->delete();
+            $this->fail('Soft deletion should be prohibited.');
+        } catch (LogicException $exception) {
+            $this->assertStringContainsString('cannot be deleted', $exception->getMessage());
+        }
+
+        try {
+            $customer->forceDelete();
+            $this->fail('Hard deletion should be prohibited.');
+        } catch (LogicException $exception) {
+            $this->assertStringContainsString('cannot be deleted', $exception->getMessage());
+        }
+
+        $this->assertDatabaseHas('users', ['id' => $customer->id, 'deleted_at' => null]);
+    }
+
+    public function test_financial_records_cannot_be_deleted(): void
+    {
+        foreach ([
+            BillPayment::class,
+            CustomerPackage::class,
+            Invoice::class,
+            LedgerAccount::class,
+            LedgerEntry::class,
+            LedgerTransaction::class,
+            PackageOrder::class,
+            Payment::class,
+            TopUpCard::class,
+            Wallet::class,
+        ] as $recordType) {
+            $record = new $recordType();
+            $record->exists = true;
+
+            try {
+                $record->delete();
+                $this->fail($recordType . ' deletion should be prohibited.');
+            } catch (LogicException $exception) {
+                $this->assertStringContainsString('cannot be deleted', $exception->getMessage());
+            }
+
+            if (method_exists($record, 'forceDelete')) {
+                try {
+                    $record->forceDelete();
+                    $this->fail($recordType . ' hard deletion should be prohibited.');
+                } catch (LogicException $exception) {
+                    $this->assertStringContainsString('cannot be deleted', $exception->getMessage());
+                }
+            }
+        }
+    }
+
+    public function test_customer_deletion_remains_blocked_without_delete_permission(): void
     {
         $this->autoGrantPermissions = false;
         RolePermissionSeeder::sync();

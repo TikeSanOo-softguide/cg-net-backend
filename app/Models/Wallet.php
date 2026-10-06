@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use LogicException;
 
 #[Fillable(['user_id', 'balance', 'status', 'version', 'created_by', 'updated_by', 'deleted_by'])]
 class Wallet extends Model
@@ -19,6 +20,16 @@ class Wallet extends Model
     use HasFactory, SoftDeletes;
 
     protected $table = 'wallets';
+
+    protected static function booted(): void
+    {
+        static::deleting(static function (): never {
+            throw new LogicException('Wallet records cannot be deleted.');
+        });
+        static::forceDeleting(static function (): never {
+            throw new LogicException('Wallet records cannot be deleted.');
+        });
+    }
 
     protected function casts(): array
     {

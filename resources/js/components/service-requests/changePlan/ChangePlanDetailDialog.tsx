@@ -18,6 +18,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
 import { cn, formatDate } from '@/lib/utils';
 import { CopyValueButton } from '@/components/CopyValueButton';
+import { formatPhoneInternational } from '@/lib/phone';
 
 export type RelationItem = {
     id: number;
@@ -143,12 +144,13 @@ export function ChangePlanDetailDialog({
                             <p className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <PhoneIcon className="size-3" />
                                 <span className={request.status === 'cancelled' ? 'select-none' : ''}>
-                                    {request.contact_phone}
+                                    {formatPhoneInternational(request.contact_phone)}
                                 </span>
                                 {request.status !== 'cancelled' && (
                                     <CopyValueButton
                                         value={request.contact_phone}
                                         label={t('change_password.copy_contact_phone')}
+                                        format="phone"
                                     />
                                 )}
                             </p>
@@ -166,12 +168,13 @@ export function ChangePlanDetailDialog({
                                 <UserIcon className="size-3" />
                                 <span className="font-mono">{request.user.name}</span>
                                 <span className={`font-mono ${request.status === 'cancelled' ? 'select-none' : ''}`}>
-                                    ({request.user?.phone})
+                                    ({formatPhoneInternational(request.user?.phone)})
                                 </span>
                                 {request.status !== 'cancelled' && (
                                     <CopyValueButton
                                         value={request.user?.phone}
                                         label={t('change_password.copy_account_phone')}
+                                        format="phone"
                                     />
                                 )}
                             </p>

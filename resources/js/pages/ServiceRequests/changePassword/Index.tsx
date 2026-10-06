@@ -26,6 +26,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useCan } from '@/hooks/useCan';
 import { StatCard } from '@/components/StatCard';
 import { useOpenRequestFromQuery } from '@/hooks/useOpenRequestFromQuery';
+import { formatPhoneInternational } from '@/lib/phone';
 
 type RequestItem = {
     id: number;
@@ -172,7 +173,7 @@ export default function ChangePasswordIndex({ requests, filters, statuses, stats
                             cell: (request) => (
                                 <div className="min-w-0 text-xs text-muted-foreground">
                                     <p className="truncate font-medium text-foreground">{request.contact_name}</p>
-                                    <p className="truncate">{request.contact_phone}</p>
+                                    <p className="truncate">{formatPhoneInternational(request.contact_phone)}</p>
                                 </div>
                             ),
                             searchValue: (request) => `${request.contact_name ?? ''} ${request.contact_phone ?? ''}`,
@@ -263,12 +264,13 @@ function ChangePasswordDetailDialog({
                         <p className="flex items-center gap-1 text-xs text-muted-foreground">
                             <PhoneIcon className="size-3" />
                             <span className={request.status === 'cancelled' ? 'select-none' : ''}>
-                                {request.contact_phone}
+                                {formatPhoneInternational(request.contact_phone)}
                             </span>
                             {request.status !== 'cancelled' && (
                                 <CopyValueButton
                                     value={request.contact_phone}
                                     label={t('change_password.copy_contact_phone')}
+                                    format="phone"
                                 />
                             )}
                         </p>
@@ -286,12 +288,13 @@ function ChangePasswordDetailDialog({
                             <UserIcon className="size-3" />
                             <span className="font-mono">{request.user?.name}</span>
                             <span className={`font-mono ${request.status === 'cancelled' ? 'select-none' : ''}`}>
-                                ({request.user?.phone})
+                                ({formatPhoneInternational(request.user?.phone)})
                             </span>
                             {request.status !== 'cancelled' && (
                                 <CopyValueButton
                                     value={request.user?.phone}
                                     label={t('change_password.copy_account_phone')}
+                                    format="phone"
                                 />
                             )}
                         </p>

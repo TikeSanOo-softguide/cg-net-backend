@@ -20,6 +20,7 @@ use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
  * requestOtp -> verifyOtp -> next_step=password -> login
  *                         -> next_step=register -> register
  *                         -> next_step=authenticated (password step disabled)
+ * Deactivated accounts always receive the password step with account_status=deactivated.
  */
 final class ApiAuthenticationService
 {
@@ -46,6 +47,7 @@ final class ApiAuthenticationService
     /**
      * @return array{
      *     next_step: string,
+     *     account_status?: string,
      *     verification_token?: string,
      *     user?: User,
      *     token?: string,
@@ -60,6 +62,14 @@ final class ApiAuthenticationService
 
         if ($user === null) {
             return ['next_step' => self::STEP_REGISTER, 'verification_token' => $verificationToken];
+        }
+
+        if ($user->status === UserStatus::Deactivated) {
+            return [
+                'next_step' => self::STEP_PASSWORD,
+                'account_status' => UserStatus::Deactivated->value,
+                'verification_token' => $verificationToken,
+            ];
         }
 
         if (config('auth_api.require_password_on_login', true)) {
@@ -138,16 +148,28 @@ final class ApiAuthenticationService
         RateLimiter::hit($accountKey, $decaySeconds);
         RateLimiter::hit($ipKey, $ipDecaySeconds);
 
-        $user = $this->findUserByPhone($phone);
+        $session = DB::transaction(function () use ($phone, $password): array {
+            $user = User::query()->where('phone', $phone)->lockForUpdate()->first();
 
-        if (!$user || $user->status !== UserStatus::Active || !Hash::check($password, $user->getAuthPassword())) {
-            throw new InvalidCredentialsException();
-        }
+            if (
+                !$user ||
+                !in_array($user->status, [UserStatus::Active, UserStatus::Deactivated], true) ||
+                !Hash::check($password, $user->getAuthPassword())
+            ) {
+                throw new InvalidCredentialsException();
+            }
+
+            if ($user->status === UserStatus::Deactivated) {
+                $user->update(['status' => UserStatus::Active]);
+            }
+
+            return $this->openSession($user);
+        });
 
         RateLimiter::clear($accountKey);
         RateLimiter::clear($ipKey);
 
-        return $this->openSession($user);
+        return $session;
     }
 
     private function findUserByPhone(string $phone): ?User

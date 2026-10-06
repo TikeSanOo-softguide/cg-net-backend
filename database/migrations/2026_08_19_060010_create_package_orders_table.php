@@ -12,9 +12,9 @@ return new class extends Migration {
     {
         Schema::create('package_orders', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained()->restrictOnDelete();
             $table->foreignId('package_id')->constrained()->restrictOnDelete();
-            $table->foreignId('ledger_transaction_id')->nullable()->constrained('ledger_transactions')->nullOnDelete();
+            $table->foreignId('ledger_transaction_id')->nullable()->constrained('ledger_transactions')->restrictOnDelete();
             $table->string('status', 16)->default('pending');
             $table->json('snapshot')->nullable();
             $table->timestamp('created_at')->useCurrent();

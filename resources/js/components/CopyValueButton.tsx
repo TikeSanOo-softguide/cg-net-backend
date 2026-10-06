@@ -2,13 +2,15 @@ import { useState } from 'react';
 import { CheckIcon, CopyIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { formatPhoneInternational } from '@/lib/phone';
 
 type CopyValueButtonProps = {
     value: string | null | undefined;
     label: string;
+    format?: 'phone';
 };
 
-export function CopyValueButton({ value, label }: CopyValueButtonProps) {
+export function CopyValueButton({ value, label, format }: CopyValueButtonProps) {
     const [copied, setCopied] = useState(false);
 
     const copyValue = async () => {
@@ -16,7 +18,7 @@ export function CopyValueButton({ value, label }: CopyValueButtonProps) {
             return;
         }
 
-        await navigator.clipboard.writeText(value);
+        await navigator.clipboard.writeText(format === 'phone' ? formatPhoneInternational(value) : value);
         setCopied(true);
         window.setTimeout(() => setCopied(false), 1200);
     };

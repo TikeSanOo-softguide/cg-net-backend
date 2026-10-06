@@ -96,6 +96,10 @@ class OtpController extends Controller
 
         $payload = ['next_step' => $result['next_step']];
 
+        if (isset($result['account_status'])) {
+            $payload['account_status'] = $result['account_status'];
+        }
+
         if (isset($result['verification_token'])) {
             $payload['verification_token'] = $result['verification_token'];
 

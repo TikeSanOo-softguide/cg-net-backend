@@ -23,6 +23,7 @@ import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatPhoneInternational } from '@/lib/phone';
 import { cn, formatDate, truncateText } from '@/lib/utils';
 import { StatCard } from '@/components/StatCard';
 import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
@@ -234,7 +235,7 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                             cell: (request) => (
                                 <span className="inline-flex items-center gap-1.5 text-xs">
                                     <PhoneIcon className="size-3.5" />
-                                    {request.phone}
+                                    {formatPhoneInternational(request.phone)}
                                 </span>
                             ),
                             searchValue: (request) => request.phone,

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use LogicException;
 
 #[
     Fillable([
@@ -28,6 +29,16 @@ class CustomerPackage extends Model
 {
     /** @use HasFactory<CustomerPackageFactory> */
     use HasFactory, SoftDeletes;
+
+    protected static function booted(): void
+    {
+        static::deleting(static function (): never {
+            throw new LogicException('CustomerPackage records cannot be deleted.');
+        });
+        static::forceDeleting(static function (): never {
+            throw new LogicException('CustomerPackage records cannot be deleted.');
+        });
+    }
 
     protected function casts(): array
     {

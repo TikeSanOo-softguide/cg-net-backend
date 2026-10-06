@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('bill_payments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('ledger_transaction_id')->unique()->constrained('ledger_transactions')->cascadeOnDelete();
+            $table->foreignId('ledger_transaction_id')->unique()->constrained('ledger_transactions')->restrictOnDelete();
             $table->string('broadband_account_number', 32)->nullable()->index();
             $table->string('status', 16)->default('pending');
             $table->string('external_bill_ref', 100)->nullable();

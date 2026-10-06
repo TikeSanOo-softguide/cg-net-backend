@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->string('code', 64)->unique();
             $table->string('name');
             $table->string('type', 24); // asset, liability, equity, revenue, expense
-            $table->foreignId('wallet_id')->nullable()->unique()->constrained('wallets')->cascadeOnDelete();
+            $table->foreignId('wallet_id')->nullable()->unique()->constrained('wallets')->restrictOnDelete();
             $table->boolean('is_postable')->default(true);
             $table->boolean('is_active')->default(true);
             $table->timestamps();

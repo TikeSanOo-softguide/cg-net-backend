@@ -26,6 +26,7 @@ import { toolbarInputClass } from '@/components/data-table/styles';
 import { formControlStateClass } from '@/lib/form-control';
 import { formatTopUpAmount, formatTopUpNumber, TOP_UP_CARD_CURRENCY } from '@/lib/top-up-cards';
 import { cn, formatDateTime } from '@/lib/utils';
+import { formatPhoneInternational } from '@/lib/phone';
 
 type Customer = {
     id: number;
@@ -132,6 +133,7 @@ function DetailItem({
     value,
     href,
     copyable = false,
+    format,
     className,
     secondary,
 }: {
@@ -139,27 +141,30 @@ function DetailItem({
     value: string | number | null | undefined;
     href?: string;
     copyable?: boolean;
+    format?: 'phone';
     className?: string;
     secondary?: string | null;
 }) {
     return (
-        <div className={className}>
-            <dt className="text-[13px] text-muted-foreground">{label}</dt>
-            <dd className="mt-0.5 break-words text-[13px] font-medium">
+        <div className={cn('rounded-xl border border-border/60 bg-muted/20 p-3.5', className)}>
+            <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
+            <dd className="mt-1 break-words text-sm font-semibold text-foreground">
                 <span className="flex items-center gap-1.5">
                     {href && value !== null && value !== undefined && value !== '' ? (
                         <Link href={href} className="text-primary underline-offset-4 hover:underline">
                             {value}
                         </Link>
                     ) : (
-                        <span className="text-foreground">{value || '—'}</span>
+                        <span className="min-w-0 break-words">
+                            {format === 'phone' ? formatPhoneInternational(String(value ?? '')) : value || '—'}
+                        </span>
                     )}
                     {copyable && value !== null && value !== undefined && value !== '' ? (
-                        <CopyValueButton value={String(value)} label={label} />
+                        <CopyValueButton value={String(value)} label={label} format={format} />
                     ) : null}
                 </span>
                 {secondary ? (
-                    <span className="block text-[12px] font-normal text-muted-foreground">{secondary}</span>
+                    <span className="mt-1 block text-xs font-normal text-muted-foreground">{secondary}</span>
                 ) : null}
             </dd>
         </div>
@@ -529,8 +534,8 @@ export function TransactionsTable({
             >
                 {selected ? (
                     <div className="flex min-h-0 flex-1 flex-col">
-                        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
-                            <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+                            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 <DetailItem label={t('transactions.number')} value={selected.transaction_no} copyable />
                                 <DetailItem
                                     label={t('common.created_at')}
@@ -570,6 +575,7 @@ export function TransactionsTable({
                                     label={t('transactions.detail_fields.customer_phone')}
                                     value={selected.customer?.phone}
                                     copyable
+                                    format="phone"
                                 />
                                 <DetailItem
                                     label={t('transactions.detail_fields.wallet_id')}

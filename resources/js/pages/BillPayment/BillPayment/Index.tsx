@@ -16,6 +16,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useCan } from '@/hooks/useCan';
 import { formatTopUpAmount } from '@/lib/top-up-cards';
 import { formatDateTime } from '@/lib/utils';
+import { formatPhoneInternational } from '@/lib/phone';
 
 type BillPaymentRow = {
     id: number;
@@ -253,7 +254,10 @@ function BillPaymentDetailDialog({
                     <PaymentInfo label={t('bill_payments.external_payment_ref')} value={payment.external_payment_ref} />
                     <PaymentInfo label={t('bill_payments.account_number')} value={payment.broadband_account_number} />
                     <PaymentInfo label={t('transactions.customer')} value={payment.customer_name} />
-                    <PaymentInfo label={t('customers.phone')} value={payment.customer_phone} />
+                    <PaymentInfo
+                        label={t('customers.phone')}
+                        value={formatPhoneInternational(payment.customer_phone)}
+                    />
                     <PaymentInfo
                         label={t('transactions.amount')}
                         value={payment.amount === null ? null : formatTopUpAmount(payment.amount)}

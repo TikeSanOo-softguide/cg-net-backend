@@ -85,6 +85,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
     Route::prefix('customer')->group(function () {
         Route::get('/profile', [ProfileController::class, 'show']);
+        Route::post('/deactivate', [ProfileController::class, 'deactivate']);
         Route::get('/transactions', TransactionHistoryController::class);
     });
 
@@ -108,13 +109,6 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::post('/pay', [FtthBillController::class, 'pay']);
         Route::get('/pending-slip', [FtthBillController::class, 'pendingSlip']);
         Route::get('/paid-slips', [FtthBillController::class, 'paidSlips']);
-    });
-
-    Route::prefix('redeem')->group(function () {
-        Route::post('/check-serial-no', [RedeemController::class, 'checkSerialNo'])->middleware(
-            'throttle:serial-check',
-        );
-        Route::post('/top-up-account', [RedeemController::class, 'topUpAccount']);
     });
 
     Route::prefix('relocation-requests')->group(function () {

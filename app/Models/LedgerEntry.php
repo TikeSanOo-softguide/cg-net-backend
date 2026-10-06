@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use LogicException;
 
 #[
     Fillable([
@@ -23,6 +24,13 @@ class LedgerEntry extends Model
     public $timestamps = false;
 
     protected $table = 'ledger_entries';
+
+    protected static function booted(): void
+    {
+        static::deleting(static function (): never {
+            throw new LogicException('LedgerEntry records cannot be deleted.');
+        });
+    }
 
     protected function casts(): array
     {

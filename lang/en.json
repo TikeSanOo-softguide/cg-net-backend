@@ -422,6 +422,7 @@
         "unpaid": "Unpaid",
         "paid": "Paid",
         "suspended": "Suspended",
+        "deactivated": "Deactivated",
         "terminated": "Terminated",
         "reversed": "Reversed",
         "pending": "Pending",

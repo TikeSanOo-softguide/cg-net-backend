@@ -27,6 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { EDGE_PAD } from '@/components/data-table/styles';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatPhoneInternational } from '@/lib/phone';
 import { cn, formatDate, truncateText } from '@/lib/utils';
 import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
 
@@ -264,7 +265,7 @@ export default function FailureReportsIndex({ reports, filters, statuses, stats 
                             cell: (request) => (
                                 <span className="inline-flex items-center gap-1.5">
                                     <PhoneIcon className="size-3.5" />
-                                    {request.contact_phone}
+                                    {formatPhoneInternational(request.contact_phone)}
                                 </span>
                             ),
                             searchValue: (request) => request.contact_phone,

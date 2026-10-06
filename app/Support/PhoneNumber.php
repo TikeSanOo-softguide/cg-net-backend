@@ -6,18 +6,18 @@ use InvalidArgumentException;
 
 /**
  * Canonical phone format for customers: digits only, country code first, no "+"
- * (for example 95912345678). Everything that stores or looks up users.phone must
+ * (for example 95922345678). Everything that stores or looks up users.phone must
  * go through normalize() so the same number is never saved in two spellings.
  */
 final class PhoneNumber
 {
     /**
-     * Countries the service supports, as a regex over the canonical format:
-     * Myanmar 959…, Thailand 66…, China 86…. Used by the OTP endpoint and the
-     * admin customer form so both accept exactly the same numbers. The admin UI
-     * keeps a matching list in resources/js/lib/phone.ts.
+     * Countries the service supports, as a regex over the canonical format.
+     * Thailand and China use broad mobile prefixes and national lengths rather
+     * than allocated sub-prefix lists, which may change over time. The matching
+     * rules live in resources/js/lib/phone.ts.
      */
-    public const SUPPORTED_PATTERN = '/^(959\d{8,11}|66\d{8,10}|86\d{10,12})$/';
+    public const SUPPORTED_PATTERN = '/^(959[2-9]\d{7,10}|66(?:14\d{7}|[689]\d{8})|861[3-9]\d{9})$/';
 
     /** @throws InvalidArgumentException when the value cannot be a phone number */
     public static function normalize(string $phone): string

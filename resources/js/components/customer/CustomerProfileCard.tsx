@@ -198,7 +198,7 @@ export function CustomerProfileCard({
                 <Fact icon={PhoneIcon} label={t('customers.phone')}>
                     <div className="flex items-center gap-1.5">
                         <PhoneDisplay phone={phone} />
-                        <CopyValueButton value={phone} label={t('customers.phone')} />
+                        <CopyValueButton value={phone} label={t('customers.phone')} format="phone" />
                     </div>
                 </Fact>
                 <Fact icon={CalendarIcon} label={t('customers.joined')}>

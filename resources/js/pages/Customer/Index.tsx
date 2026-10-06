@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { CircleDotIcon, PackageIcon, SquarePenIcon, Trash2Icon, WalletIcon, WifiIcon } from 'lucide-react';
+import { CircleDotIcon, PackageIcon, SquarePenIcon, WalletIcon, WifiIcon } from 'lucide-react';
 
-import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
 import type { Paginated } from '@/components/Pagination';
 import { PageContent } from '@/components/PageContent';
@@ -17,7 +16,6 @@ import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
-import { visitBulkDelete } from '@/lib/bulk-delete';
 import { formatTopUpNumber, TOP_UP_CARD_CURRENCY } from '@/lib/top-up-cards';
 import { formatDate } from '@/lib/utils';
 
@@ -66,11 +64,9 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
     const { t, locale } = useTranslation();
     const can = useCan();
     const [search, setSearch] = useState(filters.search);
-    const [pendingIds, setPendingIds] = useState<number[]>([]);
     const [formOpen, setFormOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState<CustomerFormMember | null>(null);
     const debounce = useRef<number>(0);
-    const canDelete = can('customers.delete');
 
     const localizePackageName = (value: LocalizedText | null | undefined): string => {
         if (!value) {
@@ -124,10 +120,6 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                     }
                     createLabel={t('customers.create')}
                     pagination={customers}
-                    onBulkDelete={
-                        canDelete ? (ids) => visitBulkDelete('/customers/bulk-destroy', ids.map(Number)) : undefined
-                    }
-                    bulkDeleteTitle={t('customers.bulk_delete_title')}
                     actions={(row) => (
                         <>
                             {can('customers.update') ? (
@@ -140,18 +132,6 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                                         event.stopPropagation();
                                         setEditingCustomer(row);
                                         setFormOpen(true);
-                                    }}
-                                />
-                            ) : null}
-                            {canDelete ? (
-                                <TableActionButton
-                                    label={t('common.delete')}
-                                    icon={Trash2Icon}
-                                    tone="danger"
-                                    size="sm"
-                                    onClick={(event) => {
-                                        event.stopPropagation();
-                                        setPendingIds([row.id]);
                                     }}
                                 />
                             ) : null}
@@ -172,6 +152,7 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                                     <SelectItem value="all">{t('customers.all_statuses')}</SelectItem>
                                     <SelectItem value="active">{t('status.active')}</SelectItem>
                                     <SelectItem value="suspended">{t('status.suspended')}</SelectItem>
+                                    <SelectItem value="deactivated">{t('status.deactivated')}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </FormControl>
@@ -254,27 +235,6 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                     }
                 }}
                 customer={editingCustomer}
-            />
-            <ConfirmDialog
-                open={pendingIds.length === 1}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        setPendingIds([]);
-                    }
-                }}
-                title={t('customers.delete_title')}
-                description={t('customers.delete_description')}
-                destructive
-                confirmLabel={t('common.delete')}
-                onConfirm={() => {
-                    if (pendingIds.length !== 1) {
-                        return;
-                    }
-
-                    router.delete(`/customers/${pendingIds[0]}`, {
-                        onFinish: () => setPendingIds([]),
-                    });
-                }}
             />
         </>
     );

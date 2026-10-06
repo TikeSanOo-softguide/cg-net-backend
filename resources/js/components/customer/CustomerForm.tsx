@@ -173,6 +173,9 @@ export function CustomerForm({ form, onSubmit, mode = 'create', submitLabel, onC
                             <SelectContent>
                                 <SelectItem value="active">{t('status.active')}</SelectItem>
                                 <SelectItem value="suspended">{t('status.suspended')}</SelectItem>
+                                <SelectItem value="deactivated" disabled>
+                                    {t('status.deactivated')}
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </FormField>

@@ -38,13 +38,19 @@ class PhoneCanonicalFormatTest extends TestCase
     public static function supportedNumbers(): array
     {
         return [
-            'myanmar with plus' => ['+959123456789'],
-            'myanmar copied international number' => ['+959123456789'],
-            'myanmar local' => ['09123456789'],
-            'myanmar bare' => ['959123456789'],
+            'myanmar with plus' => ['+959223456789'],
+            'myanmar copied international number' => ['+959223456789'],
+            'myanmar local' => ['09223456789'],
+            'myanmar bare' => ['959223456789'],
             'thailand' => ['+66812345678'],
             'thailand local' => ['0812345678'],
+            'thailand 061 mobile range' => ['+66612345678'],
+            'thailand 14 mobile range' => ['+66141234567'],
+            'thailand new 067 range' => ['+66671234567'],
             'china' => ['+8613812345678'],
+            'china 145 mobile range' => ['+8614512345678'],
+            'china 1740 mobile range' => ['+8617400123456'],
+            'china future 194 range' => ['+8619412345678'],
         ];
     }
 
@@ -66,8 +72,9 @@ class PhoneCanonicalFormatTest extends TestCase
             'premium looking' => ['+88212345678'],
             'myanmar too short' => ['+9591234'],
             'myanmar invalid mobile prefix' => ['+95912345678'],
+            'myanmar trunk-zero invalid mobile prefix' => ['+950912345671'],
             'thailand too long' => ['+6681234567890'],
-            'thailand invalid mobile prefix' => ['+66712345678'],
+            'thailand invalid leading digit' => ['+66712345678'],
             'china too short' => ['+86138123'],
             'china invalid mobile prefix' => ['+8612312345678'],
             'letters' => ['not-a-phone'],
@@ -167,9 +174,9 @@ class PhoneCanonicalFormatTest extends TestCase
     public static function duplicateSpellings(): array
     {
         return [
-            'plus' => ['+95933334444'],
-            'local' => ['0933334444'],
-            'bare' => ['95933334444'],
+            'plus' => ['+95923334444'],
+            'local' => ['0923334444'],
+            'bare' => ['95923334444'],
         ];
     }
 

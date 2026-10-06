@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Auth\Otp\MockOtpProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Sanctum\PersonalAccessToken;
 use Tests\TestCase;
@@ -16,7 +17,7 @@ class ApiAuthenticationTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const PHONE = '95912345678';
+    private const PHONE = '95922345678';
 
     protected function setUp(): void
     {
@@ -34,7 +35,7 @@ class ApiAuthenticationTest extends TestCase
 
     public function test_new_phone_is_asked_to_register_and_can_register(): void
     {
-        $verify = $this->verifyOtpFor('+95912345678');
+        $verify = $this->verifyOtpFor('+95922345678');
 
         $this->assertSame('register', $verify['next_step']);
         $this->assertArrayNotHasKey('token', $verify);
@@ -63,7 +64,7 @@ class ApiAuthenticationTest extends TestCase
 
     public function test_registration_requires_matching_password_confirmation(): void
     {
-        $verify = $this->verifyOtpFor('+95912345678');
+        $verify = $this->verifyOtpFor('+95922345678');
 
         $this->postJson('/api/auth/register', [
             'verification_token' => $verify['verification_token'],
@@ -77,7 +78,7 @@ class ApiAuthenticationTest extends TestCase
 
     public function test_registration_requires_a_six_digit_numeric_password(): void
     {
-        $verify = $this->verifyOtpFor('+95912345678');
+        $verify = $this->verifyOtpFor('+95922345678');
 
         foreach (['12345', '1234567', '12ab56'] as $password) {
             $this->postJson('/api/auth/register', [
@@ -93,7 +94,7 @@ class ApiAuthenticationTest extends TestCase
 
     public function test_registration_verification_token_cannot_be_replayed(): void
     {
-        $verify = $this->verifyOtpFor('+95912345678');
+        $verify = $this->verifyOtpFor('+95922345678');
         $data = [
             'verification_token' => $verify['verification_token'],
             'name' => 'new-user',
@@ -108,7 +109,7 @@ class ApiAuthenticationTest extends TestCase
     public function test_registration_is_rejected_when_the_phone_already_has_an_account(): void
     {
         User::factory()->create(['phone' => self::PHONE]);
-        $verify = $this->verifyOtpFor('+95912345678');
+        $verify = $this->verifyOtpFor('+95922345678');
 
         $this->postJson('/api/auth/register', [
             'verification_token' => $verify['verification_token'],
@@ -133,10 +134,10 @@ class ApiAuthenticationTest extends TestCase
             'version' => 0,
             'created_by' => $user->id,
         ]);
-        $user->delete();
-        $wallet->delete();
+        DB::table('users')->where('id', $user->id)->update(['deleted_at' => now()]);
+        DB::table('wallets')->where('id', $wallet->id)->update(['deleted_at' => now()]);
 
-        $verify = $this->verifyOtpFor('+95912345678');
+        $verify = $this->verifyOtpFor('+95922345678');
         $this->assertSame('register', $verify['next_step']);
 
         $this->postJson('/api/auth/register', [
@@ -160,7 +161,7 @@ class ApiAuthenticationTest extends TestCase
         User::factory()->create(['phone' => self::PHONE, 'password' => '123456']);
 
         // The request step must not reveal whether the phone is registered.
-        $challenge = $this->requestOtp('+95912345678');
+        $challenge = $this->requestOtp('+95922345678');
         $this->assertArrayHasKey('debug_otp', $challenge);
 
         $verify = $this->postJson('/api/auth/otp/verify', [
@@ -176,7 +177,7 @@ class ApiAuthenticationTest extends TestCase
     public function test_existing_user_logs_in_with_password_after_otp(): void
     {
         $user = User::factory()->create(['phone' => self::PHONE, 'password' => '123456']);
-        $verify = $this->verifyOtpFor('+95912345678');
+        $verify = $this->verifyOtpFor('+95922345678');
 
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
@@ -191,7 +192,7 @@ class ApiAuthenticationTest extends TestCase
     public function test_login_requires_a_six_digit_numeric_password(): void
     {
         User::factory()->create(['phone' => self::PHONE, 'password' => '123456']);
-        $verify = $this->verifyOtpFor('+95912345678');
+        $verify = $this->verifyOtpFor('+95922345678');
 
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
@@ -209,7 +210,7 @@ class ApiAuthenticationTest extends TestCase
         User::factory()->create(['phone' => self::PHONE, 'password' => '123456']);
 
         $this->postJson('/api/auth/login', [
-            'phone' => '+95912345678',
+            'phone' => '+95922345678',
             'password' => '123456',
         ])->assertUnprocessable();
 
@@ -222,7 +223,7 @@ class ApiAuthenticationTest extends TestCase
     public function test_login_verification_token_cannot_be_reused_after_success(): void
     {
         User::factory()->create(['phone' => self::PHONE, 'password' => '123456']);
-        $verify = $this->verifyOtpFor('+95912345678');
+        $verify = $this->verifyOtpFor('+95922345678');
         $payload = ['verification_token' => $verify['verification_token'], 'password' => '123456'];
 
         $this->postJson('/api/auth/login', $payload)->assertOk();
@@ -233,7 +234,7 @@ class ApiAuthenticationTest extends TestCase
     {
         config()->set('auth_api.max_password_attempts', 3);
         User::factory()->create(['phone' => self::PHONE, 'password' => '123456']);
-        $verify = $this->verifyOtpFor('+95912345678');
+        $verify = $this->verifyOtpFor('+95922345678');
 
         foreach (range(1, 3) as $_) {
             $this->postJson('/api/auth/login', [
@@ -253,7 +254,7 @@ class ApiAuthenticationTest extends TestCase
     public function test_a_wrong_password_below_the_limit_still_allows_a_retry(): void
     {
         User::factory()->create(['phone' => self::PHONE, 'password' => '123456']);
-        $verify = $this->verifyOtpFor('+95912345678');
+        $verify = $this->verifyOtpFor('+95922345678');
 
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
@@ -270,7 +271,7 @@ class ApiAuthenticationTest extends TestCase
     {
         config()->set('auth_api.max_password_attempts', 100);
         User::factory()->create(['phone' => self::PHONE, 'password' => '123456']);
-        $verify = $this->verifyOtpFor('+95912345678');
+        $verify = $this->verifyOtpFor('+95922345678');
         $payload = ['verification_token' => $verify['verification_token'], 'password' => '000000'];
 
         foreach (range(1, 5) as $_) {
@@ -291,7 +292,7 @@ class ApiAuthenticationTest extends TestCase
             'password' => '123456',
             'status' => UserStatus::Suspended,
         ]);
-        $verify = $this->verifyOtpFor('+95912345678');
+        $verify = $this->verifyOtpFor('+95922345678');
 
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
@@ -299,9 +300,92 @@ class ApiAuthenticationTest extends TestCase
         ])->assertUnprocessable();
     }
 
+    public function test_deactivated_user_gets_password_step_even_when_password_login_is_disabled(): void
+    {
+        config()->set('auth_api.require_password_on_login', false);
+        User::factory()->create([
+            'phone' => self::PHONE,
+            'password' => '123456',
+            'status' => UserStatus::Deactivated,
+        ]);
+
+        $verify = $this->verifyOtpFor('+95922345678');
+
+        $this->assertSame('password', $verify['next_step']);
+        $this->assertSame('deactivated', $verify['account_status']);
+        $this->assertArrayHasKey('verification_token', $verify);
+        $this->assertArrayNotHasKey('token', $verify);
+        $this->assertDatabaseCount('personal_access_tokens', 0);
+    }
+
+    public function test_deactivated_user_is_reactivated_after_entering_the_correct_password(): void
+    {
+        $user = User::factory()->create([
+            'phone' => self::PHONE,
+            'password' => '123456',
+            'status' => UserStatus::Deactivated,
+        ]);
+        $verify = $this->verifyOtpFor('+95922345678');
+
+        $response = $this->postJson('/api/auth/login', [
+            'verification_token' => $verify['verification_token'],
+            'password' => '123456',
+        ])->assertOk();
+
+        $this->assertSame(UserStatus::Active, $user->fresh()->status);
+        $response->assertJsonStructure(['token', 'token_type', 'expires_at', 'user']);
+        $this->assertDatabaseCount('personal_access_tokens', 1);
+    }
+
+    public function test_deactivated_user_is_not_reactivated_by_an_incorrect_password(): void
+    {
+        $user = User::factory()->create([
+            'phone' => self::PHONE,
+            'password' => '123456',
+            'status' => UserStatus::Deactivated,
+        ]);
+        $verify = $this->verifyOtpFor('+95922345678');
+
+        $this->postJson('/api/auth/login', [
+            'verification_token' => $verify['verification_token'],
+            'password' => '654321',
+        ])->assertUnprocessable();
+
+        $this->assertSame(UserStatus::Deactivated, $user->fresh()->status);
+        $this->assertDatabaseCount('personal_access_tokens', 0);
+    }
+
+    public function test_customer_can_deactivate_their_account_with_their_password(): void
+    {
+        $user = User::factory()->create(['password' => '123456']);
+        $user->createToken('flutter');
+        $user->deviceTokens()->create(['token' => 'device-token', 'platform' => 'android']);
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson('/api/customer/deactivate', ['password' => '123456'])
+            ->assertOk()
+            ->assertJsonPath('message', 'Account deactivated successfully.');
+
+        $this->assertSame(UserStatus::Deactivated, $user->fresh()->status);
+        $this->assertDatabaseCount('personal_access_tokens', 0);
+        $this->assertDatabaseCount('device_tokens', 0);
+    }
+
+    public function test_customer_cannot_deactivate_their_account_with_an_incorrect_password(): void
+    {
+        $user = User::factory()->create(['password' => '123456']);
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson('/api/customer/deactivate', ['password' => '654321'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('password');
+
+        $this->assertSame(UserStatus::Active, $user->fresh()->status);
+    }
+
     public function test_unregistered_phone_cannot_use_the_login_endpoint(): void
     {
-        $verify = $this->verifyOtpFor('+95912345678');
+        $verify = $this->verifyOtpFor('+95922345678');
 
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
@@ -313,7 +397,7 @@ class ApiAuthenticationTest extends TestCase
     {
         $user = User::factory()->create(['phone' => self::PHONE, 'password' => '123456']);
         $oldToken = $user->createToken('old-device')->plainTextToken;
-        $verify = $this->verifyOtpFor('+95912345678');
+        $verify = $this->verifyOtpFor('+95922345678');
 
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
@@ -332,7 +416,7 @@ class ApiAuthenticationTest extends TestCase
         config()->set('auth_api.require_password_on_login', false);
         $user = User::factory()->create(['phone' => self::PHONE, 'password' => '123456']);
 
-        $verify = $this->verifyOtpFor('+95912345678', ['device_token' => 'otp-only-device', 'platform' => 'android']);
+        $verify = $this->verifyOtpFor('+95922345678', ['device_token' => 'otp-only-device', 'platform' => 'android']);
 
         $this->assertSame('authenticated', $verify['next_step']);
         $this->assertSame($user->id, $verify['user']['id']);
@@ -347,7 +431,7 @@ class ApiAuthenticationTest extends TestCase
     {
         config()->set('auth_api.require_password_on_login', false);
 
-        $this->assertSame('register', $this->verifyOtpFor('+95912345678')['next_step']);
+        $this->assertSame('register', $this->verifyOtpFor('+95922345678')['next_step']);
     }
 
     public function test_switched_off_password_step_rejects_suspended_users(): void
@@ -355,7 +439,7 @@ class ApiAuthenticationTest extends TestCase
         config()->set('auth_api.require_password_on_login', false);
         User::factory()->create(['phone' => self::PHONE, 'status' => UserStatus::Suspended]);
 
-        $challenge = $this->requestOtp('+95912345678');
+        $challenge = $this->requestOtp('+95922345678');
 
         $this->postJson('/api/auth/otp/verify', [
             'challenge_id' => $challenge['challenge_id'],
@@ -476,7 +560,7 @@ class ApiAuthenticationTest extends TestCase
     public function test_login_registers_device_token_when_provided(): void
     {
         $user = User::factory()->create(['phone' => self::PHONE, 'password' => '123456']);
-        $verify = $this->verifyOtpFor('+95912345678');
+        $verify = $this->verifyOtpFor('+95922345678');
 
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
@@ -494,7 +578,7 @@ class ApiAuthenticationTest extends TestCase
 
     public function test_registration_registers_device_token_when_provided(): void
     {
-        $verify = $this->verifyOtpFor('+95912345678');
+        $verify = $this->verifyOtpFor('+95922345678');
 
         $this->postJson('/api/auth/register', [
             'verification_token' => $verify['verification_token'],
@@ -520,7 +604,7 @@ class ApiAuthenticationTest extends TestCase
 
     public function test_invalid_otp_does_not_verify(): void
     {
-        $challenge = $this->requestOtp('+95912345678');
+        $challenge = $this->requestOtp('+95922345678');
 
         $this->postJson('/api/auth/otp/verify', [
             'challenge_id' => $challenge['challenge_id'],
@@ -530,7 +614,7 @@ class ApiAuthenticationTest extends TestCase
 
     public function test_expired_otp_challenge_cannot_be_verified(): void
     {
-        $challenge = $this->requestOtp('+95912345678');
+        $challenge = $this->requestOtp('+95922345678');
         Cache::forget('auth:otp:challenge:' . hash('sha256', $challenge['challenge_id']));
 
         $this->postJson('/api/auth/otp/verify', [
@@ -541,7 +625,7 @@ class ApiAuthenticationTest extends TestCase
 
     public function test_challenge_is_locked_after_five_invalid_attempts(): void
     {
-        $challenge = $this->requestOtp('+95912345678');
+        $challenge = $this->requestOtp('+95922345678');
 
         foreach (range(1, 5) as $_) {
             $this->postJson('/api/auth/otp/verify', [
@@ -563,7 +647,7 @@ class ApiAuthenticationTest extends TestCase
 
     public function test_otp_cannot_be_replayed(): void
     {
-        $challenge = $this->requestOtp('+95912345678');
+        $challenge = $this->requestOtp('+95922345678');
         $payload = [
             'challenge_id' => $challenge['challenge_id'],
             'code' => $challenge['debug_otp'],
@@ -575,19 +659,19 @@ class ApiAuthenticationTest extends TestCase
 
     public function test_otp_request_has_resend_cooldown(): void
     {
-        $this->requestOtp('+95912345678');
-        $this->postJson('/api/auth/otp/request', ['phone' => '+95912345678'])->assertTooManyRequests();
+        $this->requestOtp('+95922345678');
+        $this->postJson('/api/auth/otp/request', ['phone' => '+95922345678'])->assertTooManyRequests();
     }
 
     public function test_otp_response_tells_the_app_how_long_to_disable_resend(): void
     {
         config()->set('otp.resend_cooldown', 45);
 
-        $this->requestOtp('+95912345678');
+        $this->requestOtp('+95922345678');
         $this->assertSame(45, $this->postJson('/api/auth/otp/request', ['phone' => '+95922223333'])->json('resend_after'));
 
         // A tap inside the cooldown is refused with the remaining wait.
-        $this->postJson('/api/auth/otp/request', ['phone' => '+95912345678'])
+        $this->postJson('/api/auth/otp/request', ['phone' => '+95922345678'])
             ->assertTooManyRequests()
             ->assertHeader('Retry-After')
             ->assertJsonPath('reason', 'resend_cooldown')
@@ -598,10 +682,10 @@ class ApiAuthenticationTest extends TestCase
     {
         config()->set('otp.resend_cooldown', 60);
 
-        $this->requestOtp('+95912345678');
+        $this->requestOtp('+95922345678');
         $this->travel(25)->seconds();
 
-        $response = $this->postJson('/api/auth/otp/request', ['phone' => '+95912345678'])
+        $response = $this->postJson('/api/auth/otp/request', ['phone' => '+95922345678'])
             ->assertTooManyRequests()
             ->assertJsonPath('reason', 'resend_cooldown');
 
@@ -612,15 +696,15 @@ class ApiAuthenticationTest extends TestCase
     public function test_rapid_resend_taps_do_not_use_up_the_hourly_allowance(): void
     {
         // One SMS, then four impatient taps inside the cooldown.
-        $this->requestOtp('+95912345678');
+        $this->requestOtp('+95922345678');
 
         foreach (range(1, 4) as $tap) {
-            $this->postJson('/api/auth/otp/request', ['phone' => '+95912345678'])->assertTooManyRequests();
+            $this->postJson('/api/auth/otp/request', ['phone' => '+95922345678'])->assertTooManyRequests();
         }
 
         // Only the one SMS counts: after the cooldown the user can resend normally.
         $this->travel(61)->seconds();
-        $this->postJson('/api/auth/otp/request', ['phone' => '+95912345678'])->assertAccepted();
+        $this->postJson('/api/auth/otp/request', ['phone' => '+95922345678'])->assertAccepted();
 
         $this->assertDatabaseCount('security_logs', 0);
     }
@@ -629,24 +713,24 @@ class ApiAuthenticationTest extends TestCase
     {
         config()->set('otp.resend_cooldown', 60);
 
-        $this->requestOtp('+95912345678');
+        $this->requestOtp('+95922345678');
 
         $this->travel(40)->seconds();
-        $this->postJson('/api/auth/otp/request', ['phone' => '+95912345678'])->assertTooManyRequests();
+        $this->postJson('/api/auth/otp/request', ['phone' => '+95922345678'])->assertTooManyRequests();
 
         // 61s after the first SMS, regardless of the tap at 40s.
         $this->travel(21)->seconds();
-        $this->postJson('/api/auth/otp/request', ['phone' => '+95912345678'])->assertAccepted();
+        $this->postJson('/api/auth/otp/request', ['phone' => '+95922345678'])->assertAccepted();
     }
 
     public function test_hourly_limit_response_carries_retry_after(): void
     {
         foreach (range(1, 3) as $sent) {
-            $this->requestOtp('+95912345678');
+            $this->requestOtp('+95922345678');
             RateLimiter::clear('otp:resend:' . hash('sha256', self::PHONE));
         }
 
-        $this->postJson('/api/auth/otp/request', ['phone' => '+95912345678'])
+        $this->postJson('/api/auth/otp/request', ['phone' => '+95922345678'])
             ->assertTooManyRequests()
             ->assertHeader('Retry-After')
             ->assertJsonPath('reason', 'hourly_limit')
@@ -658,7 +742,7 @@ class ApiAuthenticationTest extends TestCase
         $user = User::factory()->create(['phone' => self::PHONE]);
 
         foreach (range(1, 4) as $attempt) {
-            $response = $this->postJson('/api/auth/otp/request', ['phone' => '+95912345678']);
+            $response = $this->postJson('/api/auth/otp/request', ['phone' => '+95922345678']);
 
             if ($attempt < 4) {
                 $response->assertAccepted();
@@ -680,7 +764,7 @@ class ApiAuthenticationTest extends TestCase
     {
         // Unknown POST paths answer 404 or 405 (the web fallback route is GET-only); never a success.
         foreach (['request-otp', 'verify-otp', 'complete'] as $path) {
-            $status = $this->postJson('/api/auth/register/' . $path, ['phone' => '+95912345678'])->getStatusCode();
+            $status = $this->postJson('/api/auth/register/' . $path, ['phone' => '+95922345678'])->getStatusCode();
 
             $this->assertContains($status, [404, 405]);
         }
@@ -692,7 +776,7 @@ class ApiAuthenticationTest extends TestCase
         app()->detectEnvironment(fn() => 'production');
 
         $provider = new MockOtpProvider();
-        $challenge = $provider->send('+95912345678');
+        $challenge = $provider->send('+95922345678');
 
         $this->assertNull($challenge->debugCode);
     }
@@ -725,7 +809,7 @@ class ApiAuthenticationTest extends TestCase
 
     private function registerNewUser(): \Illuminate\Testing\TestResponse
     {
-        $verify = $this->verifyOtpFor('+95912345678');
+        $verify = $this->verifyOtpFor('+95922345678');
 
         return $this->postJson('/api/auth/register', [
             'verification_token' => $verify['verification_token'],

@@ -23,6 +23,7 @@ import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatPhoneInternational } from '@/lib/phone';
 import { useOpenRequestFromQuery } from '@/hooks/useOpenRequestFromQuery';
 import { formatDate, truncateText } from '@/lib/utils';
 
@@ -279,7 +280,9 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                                     </span>
 
                                     <p className="mt-1 truncate font-mono text-muted-foreground">
-                                        {request.user?.phone || request.id_number}
+                                        {request.user?.phone
+                                            ? formatPhoneInternational(request.user.phone)
+                                            : request.id_number}
                                     </p>
                                 </div>
                             ),
@@ -311,7 +314,7 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                                     </div>
 
                                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                        <span>({request.phone})</span>
+                                        <span>({formatPhoneInternational(request.phone)})</span>
                                     </div>
                                 </div>
                             ),

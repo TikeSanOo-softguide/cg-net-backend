@@ -10,9 +10,9 @@ return new class extends Migration
     {
         Schema::create('customer_packages', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained()->restrictOnDelete();
             $table->foreignId('package_id')->constrained()->restrictOnDelete();
-            $table->foreignId('package_order_id')->nullable()->constrained('package_orders')->nullOnDelete();
+            $table->foreignId('package_order_id')->nullable()->constrained('package_orders')->restrictOnDelete();
             $table->string('username')->nullable();
             $table->string('password')->nullable();
             $table->timestamp('starts_at')->nullable();

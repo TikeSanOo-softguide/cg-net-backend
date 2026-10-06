@@ -9,9 +9,9 @@ return new class extends Migration {
     {
         Schema::create('ledger_entries', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('ledger_transaction_id')->constrained('ledger_transactions')->cascadeOnDelete();
+            $table->foreignId('ledger_transaction_id')->constrained('ledger_transactions')->restrictOnDelete();
             $table->foreignId('ledger_account_id')->constrained('ledger_accounts')->restrictOnDelete();
-            $table->foreignId('wallet_id')->nullable()->constrained('wallets')->nullOnDelete();
+            $table->foreignId('wallet_id')->nullable()->constrained('wallets')->restrictOnDelete();
             $table->unsignedBigInteger('debit')->default(0);
             $table->unsignedBigInteger('credit')->default(0);
             $table->unsignedSmallInteger('line_no');

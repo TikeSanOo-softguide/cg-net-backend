@@ -9,17 +9,17 @@ return new class extends Migration {
     {
         Schema::create('ledger_transactions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('wallet_id')->constrained('wallets')->cascadeOnDelete();
+            $table->foreignId('wallet_id')->constrained('wallets')->restrictOnDelete();
             $table->string('transaction_no', 255)->unique();
             $table->string('type', 24);
             $table->string('status', 16)->default('pending');
             $table->bigInteger('amount');
             $table->string('idempotency_key', 100)->unique();
-            $table->foreignId('reversal_of')->nullable()->constrained('ledger_transactions')->nullOnDelete();
+            $table->foreignId('reversal_of')->nullable()->constrained('ledger_transactions')->restrictOnDelete();
             $table->foreignId('related_transaction_id')
                 ->nullable()
                 ->constrained('ledger_transactions')
-                ->nullOnDelete();
+                ->restrictOnDelete();
             $table->text('note')->nullable();
             $table->string('actor_type', 32)->nullable();
             $table->unsignedBigInteger('actor_id')->nullable();

@@ -7,11 +7,19 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use LogicException;
 
 #[Fillable(['code', 'name', 'type', 'wallet_id', 'is_postable', 'is_active'])]
 class LedgerAccount extends Model
 {
     protected $table = 'ledger_accounts';
+
+    protected static function booted(): void
+    {
+        static::deleting(static function (): never {
+            throw new LogicException('LedgerAccount records cannot be deleted.');
+        });
+    }
 
     protected function casts(): array
     {

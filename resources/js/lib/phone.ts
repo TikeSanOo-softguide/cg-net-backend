@@ -23,7 +23,8 @@ function digitsOnly(value: string): string {
 
 export function parsePhone(value: string | null | undefined): ParsedPhone {
     const raw = (value ?? '').trim();
-    const digits = digitsOnly(raw);
+    const international = raw.startsWith('00') ? `+${raw.slice(2)}` : raw;
+    const digits = digitsOnly(international);
 
     for (const option of COUNTRIES) {
         if (digits.startsWith(option.dial) && digits.length > option.dial.length) {
@@ -62,23 +63,51 @@ export function composePhone(country: PhoneCountry, local: string): string {
         return localDigits;
     }
 
-    return `+${option.dial}${localDigits}`;
+    return `${option.dial}${localDigits}`;
 }
 
-export function formatPhoneLocal(value: string | null | undefined): string {
-    return parsePhone(value).local || '—';
+export function formatPhoneInternational(value: string | null | undefined): string {
+    const normalized = value ? (normalizePhone(value) ?? value) : value;
+    const parsed = parsePhone(normalized);
+
+    return parsed.country === 'unknown' ? parsed.raw || '—' : `+${parsed.dial}${parsed.local}`;
 }
 
 const LOCAL_PATTERN: Record<Exclude<PhoneCountry, 'unknown'>, RegExp> = {
     mm: /^9[2-9]\d{7,10}$/,
-    th: /^[689]\d{8}$/,
+    th: /^(?:14\d{7}|[689]\d{8})$/,
     cn: /^1[3-9]\d{9}$/,
 };
 
-export function isValidAppUserPhone(value: string | null | undefined): boolean {
-    const parsed = parsePhone(value);
+function normalizePhone(value: string): string | null {
+    let phone = value.trim().replace(/[\s().-]+/g, '');
 
-    if (parsed.country === 'unknown' || parsed.local === '') {
+    if (phone.startsWith('00')) {
+        phone = `+${phone.slice(2)}`;
+    }
+
+    if (phone.startsWith('09')) {
+        phone = `+95${phone.slice(1)}`;
+    } else if (phone.startsWith('06') || phone.startsWith('08')) {
+        phone = `+66${phone.slice(1)}`;
+    }
+
+    phone = phone.replace(/^\++/, '');
+
+    if (phone.startsWith('950')) {
+        phone = `95${phone.slice(3)}`;
+    } else if (phone.startsWith('660')) {
+        phone = `66${phone.slice(3)}`;
+    }
+
+    return /^[1-9][0-9]{7,14}$/.test(phone) ? phone : null;
+}
+
+export function isValidAppUserPhone(value: string | null | undefined): boolean {
+    const normalized = normalizePhone(value ?? '');
+    const parsed = parsePhone(normalized);
+
+    if (normalized === null || parsed.country === 'unknown' || parsed.local === '') {
         return false;
     }
 

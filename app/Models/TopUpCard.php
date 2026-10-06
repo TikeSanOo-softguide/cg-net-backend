@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use LogicException;
 
 #[
     Fillable([
@@ -32,6 +33,16 @@ class TopUpCard extends Model
     use HasFactory, SoftDeletes;
 
     protected $table = 'top_up_card';
+
+    protected static function booted(): void
+    {
+        static::deleting(static function (): never {
+            throw new LogicException('TopUpCard records cannot be deleted.');
+        });
+        static::forceDeleting(static function (): never {
+            throw new LogicException('TopUpCard records cannot be deleted.');
+        });
+    }
 
     protected function casts(): array
     {

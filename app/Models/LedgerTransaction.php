@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use LogicException;
 
 #[
     Fillable([
@@ -37,6 +38,13 @@ class LedgerTransaction extends Model
     use HasFactory;
 
     protected $table = 'ledger_transactions';
+
+    protected static function booted(): void
+    {
+        static::deleting(static function (): never {
+            throw new LogicException('LedgerTransaction records cannot be deleted.');
+        });
+    }
 
     protected function casts(): array
     {

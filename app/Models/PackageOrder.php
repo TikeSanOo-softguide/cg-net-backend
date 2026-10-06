@@ -8,11 +8,19 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use LogicException;
 
 #[Fillable(['user_id', 'package_id', 'ledger_transaction_id', 'status', 'snapshot', 'completed_at'])]
 class PackageOrder extends Model
 {
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::deleting(static function (): never {
+            throw new LogicException('PackageOrder records cannot be deleted.');
+        });
+    }
 
     public $timestamps = false;
 

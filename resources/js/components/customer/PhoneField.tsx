@@ -100,7 +100,7 @@ export function PhoneField({
                 value={local}
                 required={required}
                 aria-invalid={invalid}
-                placeholder="97000000"
+                placeholder="970000000"
                 onBlur={onBlur}
                 onChange={(event) => handlePhoneChange(event.target.value)}
             />

@@ -20,6 +20,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { cn, formatDate } from '@/lib/utils';
 import { CopyValueButton } from '@/components/CopyValueButton';
 import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
+import { formatPhoneInternational } from '@/lib/phone';
 
 type FailureReport = {
     id: number;
@@ -128,10 +129,14 @@ export function FailureReportDetailDialog({
                             <p className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <PhoneIcon className="size-3" />
                                 <span className={request.status === 'cancelled' ? 'select-none' : ''}>
-                                    {request.customer_phone}
+                                    {formatPhoneInternational(request.customer_phone)}
                                 </span>
                                 {request.status !== 'cancelled' && (
-                                    <CopyValueButton value={request.customer_phone} label={t('requests.copy_phone')} />
+                                    <CopyValueButton
+                                        value={request.customer_phone}
+                                        label={t('requests.copy_phone')}
+                                        format="phone"
+                                    />
                                 )}
                             </p>
                         </div>
@@ -148,10 +153,14 @@ export function FailureReportDetailDialog({
                                 <UserIcon className="size-3" />
                                 <span className="font-mono">{request.account_customer}</span>
                                 <span className={`font-mono ${request.status === 'cancelled' ? 'select-none' : ''}`}>
-                                    ({request.contact_phone})
+                                    ({formatPhoneInternational(request.contact_phone)})
                                 </span>
                                 {request.status !== 'cancelled' && (
-                                    <CopyValueButton value={request.contact_phone} label={t('requests.copy_phone')} />
+                                    <CopyValueButton
+                                        value={request.contact_phone}
+                                        label={t('requests.copy_phone')}
+                                        format="phone"
+                                    />
                                 )}
                             </p>
                         </div>

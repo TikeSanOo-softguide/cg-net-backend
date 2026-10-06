@@ -10,6 +10,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 import { CopyValueButton } from '@/components/CopyValueButton';
 import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
+import { formatPhoneInternational } from '@/lib/phone';
 
 type RelocationRequest = {
     id: number;
@@ -118,10 +119,14 @@ export function RelocationRequestDetailDialog({
                             <p className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <PhoneIcon className="size-3" />
                                 <span className={request.status === 'cancelled' ? 'select-none' : ''}>
-                                    {request.phone}
+                                    {formatPhoneInternational(request.phone)}
                                 </span>
                                 {request.status !== 'cancelled' && (
-                                    <CopyValueButton value={request.phone} label={t('requests.copy_phone')} />
+                                    <CopyValueButton
+                                        value={request.phone}
+                                        label={t('requests.copy_phone')}
+                                        format="phone"
+                                    />
                                 )}
                             </p>
                         </div>
@@ -138,10 +143,14 @@ export function RelocationRequestDetailDialog({
                                 <UserIcon className="size-3" />
                                 <span className="font-mono">{request.user.name}</span>
                                 <span className={`font-mono ${request.status === 'cancelled' ? 'select-none' : ''}`}>
-                                    ({request.user?.phone})
+                                    ({formatPhoneInternational(request.user.phone)})
                                 </span>
                                 {request.status !== 'cancelled' && (
-                                    <CopyValueButton value={request.user.phone} label={t('requests.copy_phone')} />
+                                    <CopyValueButton
+                                        value={request.user.phone}
+                                        label={t('requests.copy_phone')}
+                                        format="phone"
+                                    />
                                 )}
                             </p>
                         </div>

@@ -31,7 +31,14 @@ final class CustomerData
             'password_confirmation' => $customer === null
                 ? ['required', 'string']
                 : ['nullable', 'string'],
-            'status' => ['required', Rule::enum(UserStatus::class)],
+            'status' => [
+                'required',
+                Rule::in([
+                    UserStatus::Active->value,
+                    UserStatus::Suspended->value,
+                    ...($customer?->status === UserStatus::Deactivated ? [UserStatus::Deactivated->value] : []),
+                ]),
+            ],
         ];
     }
 
@@ -53,7 +60,7 @@ final class CustomerData
             'password.confirmed' => __('customers.validation.password_confirmation_mismatch'),
             'password_confirmation.required' => __('customers.validation.password_confirmation_required'),
             'status.required' => __('customers.validation.status_required'),
-            'status.enum' => __('customers.validation.status_required'),
+            'status.in' => __('customers.validation.status_required'),
         ];
     }
 
