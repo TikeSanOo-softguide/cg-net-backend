@@ -297,12 +297,13 @@ function BillPaymentDetailDialog({
                         value={payment.transaction_no}
                         href={payment.transaction_no ? transactionHref(payment.transaction_no) : undefined}
                     />
+                    <PaymentInfo label={t('bill_payments.external_bill_ref')} value={payment.external_bill_ref} />
+                    <PaymentInfo label={t('bill_payments.external_payment_ref')} value={payment.external_payment_ref} />
                     <PaymentInfo
                         label={t('bill_payments.ledger_transaction_id')}
                         value={payment.ledger_transaction_id}
                     />
-                    <PaymentInfo label={t('bill_payments.external_bill_ref')} value={payment.external_bill_ref} />
-                    <PaymentInfo label={t('bill_payments.external_payment_ref')} value={payment.external_payment_ref} />
+
                     <PaymentInfo label={t('bill_payments.account_number')} value={payment.broadband_account_number} />
                     <PaymentInfo label={t('transactions.customer')} value={payment.customer_name} />
                     <PaymentInfo
