@@ -7,20 +7,20 @@ import { PageHeader } from '@/components/PageHeader';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 
-import { FaqFormDialog, type FaqItem } from '@/components/settings/general-settings/Faq/FaqFormDialog';
-import { FaqTable } from '@/components/settings/general-settings/Faq/FaqTable';
+import { FaqFormDialog, type FaqItem } from '@/components/settings/general-settings/faq/FaqFormDialog';
+import { FaqTable } from '@/components/settings/general-settings/faq/FaqTable';
 
 import {
     TermAndConditionFormDialog,
     type TermAndConditionItem,
-} from '@/components/settings/general-settings/TermAndConditon/TermAndConditionFormDialog';
-import { TermAndConditionTable } from '@/components/settings/general-settings/TermAndConditon/TermAndConditionTable';
+} from '@/components/settings/general-settings/term-and-conditon/TermAndConditionFormDialog';
+import { TermAndConditionTable } from '@/components/settings/general-settings/term-and-conditon/TermAndConditionTable';
 
 import {
     SupportContactFormDialog,
     type SupportContactItem,
-} from '@/components/settings/general-settings/SupportContact/SupportContactFormDialog';
-import { SupportContactTable } from '@/components/settings/general-settings/SupportContact/SupportContactTable';
+} from '@/components/settings/general-settings/support-contact/SupportContactFormDialog';
+import { SupportContactTable } from '@/components/settings/general-settings/support-contact/SupportContactTable';
 
 type Props = {
     termsAndConditions: TermAndConditionItem[];

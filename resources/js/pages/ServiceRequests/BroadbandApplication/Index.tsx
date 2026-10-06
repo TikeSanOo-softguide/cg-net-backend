@@ -1,17 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import {
-    BookX,
-    CalendarIcon,
-    CircleCheckBig,
-    ClipboardList,
-    MapPinIcon,
-    PhoneIcon,
-    ScanEye,
-    WifiIcon,
-} from 'lucide-react';
+import { BookX, CalendarIcon, CircleCheckBig, ClipboardList, MapPinIcon, ScanEye, WifiIcon } from 'lucide-react';
 
-import { BroadbandApplicationDetailDialog } from '@/components/service-requests/BroadbandApplication/BroadbandApplicationDetailDialog';
+import { BroadbandApplicationDetailDialog } from '@/components/service-requests/broadband-application/BroadbandApplicationDetailDialog';
 import { DataTable } from '@/components/DataTable';
 import type { Paginated } from '@/components/Pagination';
 import { PageContent } from '@/components/PageContent';

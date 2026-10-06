@@ -28,7 +28,7 @@ import { cn, formatDate, truncateText } from '@/lib/utils';
 import { StatCard } from '@/components/StatCard';
 import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
 import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
-import { RelocationRequestDetailDialog } from '@/components/service-requests/RelocationRequest/RelocationRequestDetailDialog';
+import { RelocationRequestDetailDialog } from '@/components/service-requests/relocation-request/RelocationRequestDetailDialog';
 import { useOpenRequestFromQuery } from '@/hooks/useOpenRequestFromQuery';
 
 type RelocationRequest = {

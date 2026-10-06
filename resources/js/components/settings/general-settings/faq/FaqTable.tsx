@@ -1,6 +1,6 @@
 import { PencilIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 
-import type { FaqItem } from '@/components/settings/general-settings/Faq/FaqFormDialog';
+import type { FaqItem } from '@/components/settings/general-settings/faq/FaqFormDialog';
 import { TableActionButton } from '@/components/TableActionButton';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';

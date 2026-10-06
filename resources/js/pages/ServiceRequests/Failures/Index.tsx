@@ -34,7 +34,7 @@ import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
 import { StatCard } from '@/components/StatCard';
 import { DataTable } from '@/components/DataTable';
 import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
-import { FailureReportDetailDialog } from '@/components/service-requests/FailureReport/FailureReportDetailDialog';
+import { FailureReportDetailDialog } from '@/components/service-requests/failure-report/FailureReportDetailDialog';
 import { useOpenRequestFromQuery } from '@/hooks/useOpenRequestFromQuery';
 
 type FailureReportPhoto = {

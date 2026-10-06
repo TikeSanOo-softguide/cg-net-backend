@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { useForm } from '@inertiajs/react';
-import { PhoneIcon, PlusIcon, SquarePenIcon } from 'lucide-react';
+import { PhoneIcon, SquarePenIcon } from 'lucide-react';
 
 import { FormActionBar } from '@/components/FormActionBar';
 import { FormDialog } from '@/components/FormDialog';
