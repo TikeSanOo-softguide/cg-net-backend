@@ -30,6 +30,7 @@ class BillPaymentController extends Controller
                     'ledger_transaction_id' => $payment->ledger_transaction_id,
                     'transaction_no' => $transaction?->transaction_no,
                     'amount' => $transaction?->amount,
+                    'customer_id' => $customer?->id,
                     'customer_name' => $customer?->name,
                     'customer_phone' => $customer?->phone,
                     'broadband_account_number' => $payment->broadband_account_number,

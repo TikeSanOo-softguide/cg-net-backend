@@ -23,6 +23,7 @@ type BillPaymentRow = {
     ledger_transaction_id: number;
     transaction_no: string | null;
     amount: number | null;
+    customer_id: number | null;
     customer_name: string | null;
     customer_phone: string | null;
     broadband_account_number: string | null;
@@ -62,6 +63,12 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
     const debounce = useRef<number>(0);
 
     useEffect(() => setSearch(filters.search), [filters.search]);
+    useEffect(() => {
+        if (filters.payment_id <= 0) return;
+
+        const payment = payments.data.find((row) => row.id === filters.payment_id);
+        if (payment) setSelectedPayment(payment);
+    }, [filters.payment_id, payments.data]);
     useEffect(() => () => window.clearTimeout(debounce.current), []);
 
     const visit = (next: Partial<Filters>) => {
@@ -122,7 +129,17 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
         {
             id: 'customer',
             header: t('transactions.customer'),
-            cell: (payment) => payment.customer_name || '—',
+            cell: (payment) =>
+                payment.customer_id && payment.customer_name ? (
+                    <Link
+                        href={`/customers/${payment.customer_id}`}
+                        className="text-primary underline-offset-4 hover:underline"
+                    >
+                        {payment.customer_name}
+                    </Link>
+                ) : (
+                    payment.customer_name || '—'
+                ),
         },
         {
             id: 'amount',
