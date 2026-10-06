@@ -3,19 +3,21 @@ import { MessageCircleIcon, SearchIcon } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/useTranslation';
 
 import type { ChatFilters, ConversationSummary } from './types';
 
 type ConversationListProps = { conversations: ConversationSummary[]; filters: ChatFilters; selectedId?: number };
 
 const statusFilters = [
-    { value: '', label: 'All' },
-    { value: 'open', label: 'Open' },
-    { value: 'waiting_agent', label: 'Pending' },
-    { value: 'closed', label: 'Closed' },
+    { value: '', key: 'all' },
+    { value: 'open', key: 'open' },
+    { value: 'waiting_agent', key: 'pending' },
+    { value: 'closed', key: 'closed' },
 ];
 
 export function ConversationList({ conversations, filters, selectedId }: ConversationListProps) {
+    const { t } = useTranslation();
     const visit = (params: Record<string, string | undefined>) => {
         router.get(
             '/support/conversations',
@@ -28,7 +30,9 @@ export function ConversationList({ conversations, filters, selectedId }: Convers
         <aside className="flex min-h-0 min-w-0 flex-col overflow-hidden border-b border-border bg-background lg:border-b-0 lg:border-r">
             <div className="border-b border-border px-4 py-4">
                 <div className="mb-3 flex items-center justify-between">
-                    <h2 className="text-sm font-semibold text-foreground">Chat conversations</h2>
+                    <h2 className="text-sm font-semibold text-foreground">
+                        {t('support.chat_conversations.conversations')}
+                    </h2>
                     <MessageCircleIcon className="size-4 text-muted-foreground" />
                 </div>
                 <div className="relative">
@@ -36,7 +40,7 @@ export function ConversationList({ conversations, filters, selectedId }: Convers
                     <Input
                         defaultValue={filters.search ?? ''}
                         onChange={(event) => visit({ search: event.target.value || undefined })}
-                        placeholder="Search conversations..."
+                        placeholder={t('support.chat_conversations.search_conversations')}
                         className="h-9 pl-9 text-xs"
                     />
                 </div>
@@ -53,7 +57,7 @@ export function ConversationList({ conversations, filters, selectedId }: Convers
                                     : 'bg-muted text-muted-foreground hover:bg-muted/70',
                             )}
                         >
-                            {status.label}
+                            {t(`support.chat_conversations.${status.key}`)}
                         </button>
                     ))}
                 </div>
@@ -75,22 +79,23 @@ export function ConversationList({ conversations, filters, selectedId }: Convers
                             selectedId === conversation.id && 'bg-primary/5 shadow-[inset_2px_0_0_hsl(var(--primary))]',
                         )}
                     >
-                        <Avatar name={conversation.user?.name ?? 'Guest'} />
+                        <Avatar name={conversation.user?.name ?? t('support.chat_conversations.guest')} />
                         <span className="min-w-0 flex-1">
                             <span className="flex items-center justify-between gap-2">
                                 <span className="truncate text-xs font-semibold text-foreground">
-                                    {conversation.user?.name ?? 'Guest'}
+                                    {conversation.user?.name ?? t('support.chat_conversations.guest')}
                                 </span>
                                 <span className="shrink-0 text-[10px] text-muted-foreground">
                                     {formatTime(conversation.updated_at)}
                                 </span>
                             </span>
                             <span className="mt-1 block truncate text-[11px] text-muted-foreground">
-                                {conversation.latest_message?.message ?? 'No messages yet'}
+                                {conversation.latest_message?.message ??
+                                    t('support.chat_conversations.no_messages_yet')}
                             </span>
                             <span className="mt-1.5 flex items-center gap-1.5 text-[10px]">
                                 <StatusDot status={conversation.status} />
-                                <span className="text-muted-foreground">{statusLabel(conversation.status)}</span>
+                                <span className="text-muted-foreground">{statusLabel(conversation.status, t)}</span>
                                 {conversation.unread_count > 0 ? (
                                     <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 font-semibold text-primary-foreground">
                                         {conversation.unread_count}
@@ -101,7 +106,9 @@ export function ConversationList({ conversations, filters, selectedId }: Convers
                     </button>
                 ))}
                 {conversations.length === 0 ? (
-                    <p className="px-4 py-8 text-center text-xs text-muted-foreground">No conversations found.</p>
+                    <p className="px-4 py-8 text-center text-xs text-muted-foreground">
+                        {t('support.chat_conversations.no_conversations')}
+                    </p>
                 ) : null}
             </div>
         </aside>
@@ -142,8 +149,11 @@ function StatusDot({ status }: { status: string }) {
     );
 }
 
-function statusLabel(status: string) {
-    return status === 'waiting_agent' ? 'Pending' : status === 'closed' ? 'Closed' : status === 'bot' ? 'Bot' : 'Open';
+function statusLabel(status: string, t: (key: string) => string) {
+    const key =
+        status === 'waiting_agent' ? 'pending' : status === 'closed' ? 'closed' : status === 'bot' ? 'bot' : 'open';
+
+    return t(`support.chat_conversations.${key}`);
 }
 
 export function formatTime(value: string | null | undefined) {

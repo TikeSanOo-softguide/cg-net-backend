@@ -12,9 +12,10 @@ import { formatDate, truncateText } from '@/lib/utils';
 type Props = {
     items: Paginated<PromotionItem>;
     filters: CmsFilters;
+    basePath?: string;
 };
 
-export default function PromotionsIndex({ items, filters }: Props) {
+export default function PromotionsIndex({ items, filters, basePath = '/cms/promotions' }: Props) {
     const { t, locale } = useTranslation();
     const [formOpen, setFormOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<PromotionItem | null>(null);
@@ -48,12 +49,13 @@ export default function PromotionsIndex({ items, filters }: Props) {
 
     return (
         <>
-            <Head title={t('menu.cms_promotions')} />
+            <Head title={t(basePath.startsWith('/notifications') ? 'menu.notification_promotions' : 'menu.cms_promotions')} />
             <CmsIndexPage
                 createLabelKey="cms.create_promotion"
                 searchPlaceholderKey="cms.promotions.search_placeholder"
-                indexHref="/cms/promotions"
-                destroyBase="/cms/promotions"
+                indexHref={basePath}
+                destroyBase={basePath}
+                permissionPrefix={basePath.startsWith('/notifications') ? 'notifications' : 'cms'}
                 items={items}
                 filters={filters}
                 statusFilter="active"
@@ -76,6 +78,7 @@ export default function PromotionsIndex({ items, filters }: Props) {
                             }
                         }}
                         item={editingItem}
+                        basePath={basePath}
                     />
                 }
                 columns={[
@@ -91,11 +94,11 @@ export default function PromotionsIndex({ items, filters }: Props) {
                                     src={imageUrl}
                                     alt=""
                                     width={220}
-                                    height={90}
+                                    style={{ aspectRatio: '925 / 390' }}
                                     className="h-auto w-[220px] rounded object-cover"
                                 />
                             ) : (
-                                <NoImage width={220} height={90} />
+                                <NoImage width={220} aspectRatio="925 / 390" />
                             );
                         },
                     },

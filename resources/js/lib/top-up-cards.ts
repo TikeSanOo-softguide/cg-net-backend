@@ -1,5 +1,3 @@
-export const TOP_UP_CARD_PRESETS = [50, 100, 250, 500] as const;
-
 export const TOP_UP_CARD_CURRENCY = 'Points';
 
 export type TopUpCardRow = {
@@ -13,8 +11,8 @@ export type TopUpCardRow = {
     redeemed_by_id?: number | null;
     redeemed_by: string | null;
     redeemed_by_phone?: string | null;
-    agent_id?: number | null;
-    agent?: string | null;
+    office_id?: number | null;
+    office?: { name: string; code: string } | null;
     batch_no: string | null;
     batch_status: string | null;
     transaction_id: string | number;
@@ -35,6 +33,7 @@ export type CardHistoryFilters = {
     search: string;
     status: string;
     amount: string;
+    office: string;
     batch: string;
     from: string;
     to: string;
@@ -56,6 +55,24 @@ export type RedeemHistoryStats = {
     value: string;
     month: number;
     customers: number;
+};
+
+export type BatchRow = {
+    id: number;
+    batch_no: string;
+    total_value: number;
+    status: string;
+    quantity: number;
+    expires_at: string | null;
+};
+
+export type BatchFilters = {
+    search: string;
+    status: string;
+    from: string;
+    to: string;
+    sort: string;
+    direction: 'asc' | 'desc';
 };
 
 export function formatTopUpNumber(value: string | number): string {

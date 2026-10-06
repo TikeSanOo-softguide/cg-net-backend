@@ -6,6 +6,7 @@ use App\Enums\TopUpCardStatus;
 use App\Models\TopUpCard as TopUpCardModel;
 use App\Support\Csv;
 use App\Support\CsvImportException;
+use InvalidArgumentException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -16,7 +17,12 @@ final class TopUpCard
     /**
      * @var list<string>
      */
-    private const Headers = ['serial_no*', 'pin*', 'amount*', 'expires_at*', 'status*'];
+    private const ExportHeaders = ['serial_no', 'pin', 'amount', 'expires_at'];
+
+    /**
+     * @var list<string>
+     */
+    private const ImportHeaders = ['serial_no*', 'pin*', 'amount*', 'expires_at*', 'status*'];
 
     /**
      * @param list<array<string, mixed>> $cards
@@ -24,14 +30,16 @@ final class TopUpCard
     public static function export(array $cards, string $filename = 'top-up-cards.csv'): StreamedResponse
     {
         return Csv::export(
-            self::Headers,
-            array_map(fn(array $card): array => [
-                $card['serial_no'] ?? '',
-                $card['pin'] ?? '',
-                self::formatAmount($card['amount'] ?? 0),
-                $card['expires_at'] ?? '',
-                $card['status'] ?? '',
-            ], $cards),
+            self::ExportHeaders,
+            array_map(
+                fn(array $card): array => [
+                    $card['serial_no'] ?? '',
+                    $card['pin'] ?? '',
+                    self::formatAmount($card['amount'] ?? 0),
+                    $card['expires_at'] ?? '',
+                ],
+                $cards,
+            ),
             $filename,
         );
     }
@@ -42,34 +50,46 @@ final class TopUpCard
      */
     public static function import(UploadedFile $file): int
     {
-        $rows = Csv::import($file, self::Headers);
+        try {
+            $rows = Csv::import($file, self::ImportHeaders);
+        } catch (CsvImportException $exception) {
+            if (
+                $exception->translationKey === 'csv.import_errors.required_field' &&
+                ($exception->replace['field'] ?? null) === 'serial_no'
+            ) {
+                throw new CsvImportException('csv.import_errors.invalid_row', [
+                    'line' => (int) ($exception->replace['line'] ?? 0),
+                ]);
+            }
+
+            throw $exception;
+        }
         $serials = [];
 
         foreach ($rows as $index => $row) {
             $line = $index + 1;
-
-            if (trim((string) $row[0]) === '' || trim((string) $row[4]) !== TopUpCardStatus::Pending->value) {
-                throw new CsvImportException('top_up_cards.import_errors.invalid_row', ['line' => $line]);
-            }
-
             $serial = trim((string) $row[0]);
 
+            if (
+                $serial === '' ||
+                strtolower($serial) === 'null' ||
+                trim((string) $row[4]) !== TopUpCardStatus::Pending->value
+            ) {
+                throw new CsvImportException('csv.import_errors.invalid_row', ['line' => $line]);
+            }
+
             if (isset($serials[$serial])) {
-                throw new CsvImportException('top_up_cards.import_errors.duplicate_serial', ['line' => $line]);
+                throw new CsvImportException('csv.import_errors.duplicate_serial', ['line' => $line]);
             }
 
             $serials[$serial] = $line;
         }
-
         if ($serials === []) {
-            throw new CsvImportException('top_up_cards.import_errors.no_cards');
+            throw new CsvImportException('csv.import_errors.no_cards');
         }
 
         return DB::transaction(function () use ($serials): int {
-            $cards = TopUpCardModel::query()
-                ->whereIn('serial_no', array_keys($serials))
-                ->lockForUpdate()
-                ->get();
+            $cards = TopUpCardModel::query()->whereIn('serial_no', array_keys($serials))->lockForUpdate()->get();
 
             $cardsBySerial = $cards->keyBy('serial_no');
 
@@ -77,14 +97,14 @@ final class TopUpCard
                 $card = $cardsBySerial->get($serial);
 
                 if ($card === null) {
-                    throw new CsvImportException('top_up_cards.import_errors.serial_not_found', [
+                    throw new CsvImportException('csv.import_errors.serial_not_found', [
                         'serial' => $serial,
                         'line' => $line,
                     ]);
                 }
 
                 if ($card->status !== TopUpCardStatus::Pending) {
-                    throw new CsvImportException('top_up_cards.import_errors.serial_not_pending', [
+                    throw new CsvImportException('csv.import_errors.serial_not_pending', [
                         'serial' => $serial,
                         'line' => $line,
                     ]);
@@ -95,7 +115,9 @@ final class TopUpCard
 
             TopUpCardModel::query()
                 ->whereIn('id', $cards->modelKeys())
-                ->update(['status' => TopUpCardStatus::Active]);
+                ->update([
+                    'status' => TopUpCardStatus::Active,
+                ]);
 
             return (int) $batchIds->first();
         });

@@ -63,12 +63,12 @@ export function validateBannerField(
             return t('validation.integer');
         }
 
-        if (value < 0) {
+        if (String(value).length < 0) {
             return t('cms.banner.validation.min');
         }
 
-        if (value > 99) {
-            return t('cms.banner.validation.sort_order_max');
+        if (String(value).length > 9) {
+            return t('packages.validation.max');
         }
 
         return undefined;

@@ -2,6 +2,8 @@
 
 namespace App\Services\Auth;
 
+use App\Exceptions\Auth\InvalidCredentialsException;
+use App\Exceptions\Auth\OtpThrottledException;
 use App\Services\Auth\Otp\OtpProviderInterface;
 use Closure;
 use Illuminate\Contracts\Cache\LockTimeoutException;
@@ -16,9 +18,26 @@ final class OtpService
     /** @return array{challenge_id: string, debug_otp: ?string} */
     public function request(string $phone, string $ip, bool $sendProviderOtp = true): array
     {
-        $this->ensureCooldown($phone);
-        $this->ensureRateLimit('otp:request:' . hash('sha256', $phone . '|' . $ip), 'otp_request');
-        $this->ensureRateLimit('otp:request:ip:' . hash('sha256', $ip), 'otp_request_ip');
+        // Check every limit first and spend budget only once the request is accepted.
+        // A rejected tap (cooldown, limit) must not use up the hourly allowance or
+        // restart the cooldown, otherwise impatient taps on "Resend" lock the user
+        // out after a single SMS.
+        $cooldownKey = 'otp:resend:' . hash('sha256', $phone);
+        $phoneIpKey = 'otp:request:' . hash('sha256', $phone . '|' . $ip);
+        $ipKey = 'otp:request:ip:' . hash('sha256', $ip);
+
+        $this->assertWithinLimit(
+            $cooldownKey,
+            1,
+            'Please wait before requesting another code.',
+            OtpThrottledException::REASON_RESEND_COOLDOWN,
+        );
+        $this->assertWithinLimit($phoneIpKey, $this->maxAttempts('otp_request'));
+        $this->assertWithinLimit($ipKey, $this->maxAttempts('otp_request_ip'));
+
+        RateLimiter::hit($cooldownKey, (int) config('otp.resend_cooldown'));
+        RateLimiter::hit($phoneIpKey, $this->decaySeconds('otp_request'));
+        RateLimiter::hit($ipKey, $this->decaySeconds('otp_request_ip'));
 
         $challengeId = bin2hex(random_bytes(32));
 
@@ -83,10 +102,15 @@ final class OtpService
                 $this->store()->forget($key);
 
                 $verificationToken = bin2hex(random_bytes(32));
+                $verificationTtl = (int) config('otp.verification_token_ttl');
                 $this->store()->put(
                     $this->verificationKey($verificationToken),
-                    ['phone' => $phone],
-                    (int) config('otp.verification_token_ttl'),
+                    [
+                        'phone' => $phone,
+                        'failures' => 0,
+                        'expires_at' => now()->addSeconds($verificationTtl)->timestamp,
+                    ],
+                    $verificationTtl,
                 );
 
                 return $verificationToken;
@@ -96,12 +120,28 @@ final class OtpService
         }
     }
 
-    public function consumeVerificationToken(string $token, Closure $callback): mixed
+    /** Phone a still-valid verification token belongs to, without consuming it. */
+    public function phoneForVerificationToken(string $token): ?string
+    {
+        $state = $this->store()->get($this->verificationKey($token));
+
+        return is_array($state) && isset($state['phone']) ? (string) $state['phone'] : null;
+    }
+
+    /**
+     * Runs $callback with the verified phone and burns the token on success.
+     *
+     * If $callback throws InvalidCredentialsException the token is kept so the
+     * user can retry, but only $maxFailures times; after that it is burned and a
+     * fresh OTP is required. Any other exception leaves the token untouched.
+     */
+    public function consumeVerificationToken(string $token, Closure $callback, ?int $maxFailures = null): mixed
     {
         try {
             return Cache::lock($this->verificationLockKey($token), 10)->block(3, function () use (
                 $token,
                 $callback,
+                $maxFailures,
             ): mixed {
                 $key = $this->verificationKey($token);
                 $state = $this->store()->get($key);
@@ -110,7 +150,16 @@ final class OtpService
                     $this->invalidToken();
                 }
 
-                $result = $callback((string) $state['phone']);
+                try {
+                    $result = $callback((string) $state['phone']);
+                } catch (InvalidCredentialsException $exception) {
+                    if ($maxFailures !== null) {
+                        $this->recordVerificationFailure($key, $state, $maxFailures);
+                    }
+
+                    throw $exception;
+                }
+
                 $this->store()->forget($key);
 
                 return $result;
@@ -118,6 +167,24 @@ final class OtpService
         } catch (LockTimeoutException $exception) {
             throw new TooManyRequestsHttpException(3, 'Registration is already in progress.', $exception);
         }
+    }
+
+    private function recordVerificationFailure(string $key, array $state, int $maxFailures): void
+    {
+        $failures = ((int) ($state['failures'] ?? 0)) + 1;
+
+        if ($failures >= $maxFailures) {
+            $this->store()->forget($key);
+
+            return;
+        }
+
+        $state['failures'] = $failures;
+        $remaining = isset($state['expires_at'])
+            ? max(1, (int) $state['expires_at'] - now()->timestamp)
+            : (int) config('otp.verification_token_ttl');
+
+        $this->store()->put($key, $state, $remaining);
     }
 
     private function ensureRateLimit(string $key, string $limit): void
@@ -132,18 +199,26 @@ final class OtpService
         RateLimiter::hit($key, $decaySeconds);
     }
 
-    private function ensureCooldown(string $phone): void
-    {
-        $key = 'otp:resend:' . hash('sha256', $phone);
-
-        if (RateLimiter::tooManyAttempts($key, 1)) {
-            throw new TooManyRequestsHttpException(
-                RateLimiter::availableIn($key),
-                'Please wait before requesting another code.',
-            );
+    /** Throws 429 (with Retry-After) when $key is exhausted. Does not count the call. */
+    private function assertWithinLimit(
+        string $key,
+        int $maxAttempts,
+        string $message = 'Too many OTP requests. Please try again later.',
+        string $reason = OtpThrottledException::REASON_RATE_LIMITED,
+    ): void {
+        if (RateLimiter::tooManyAttempts($key, $maxAttempts)) {
+            throw new OtpThrottledException(RateLimiter::availableIn($key), $reason, $message);
         }
+    }
 
-        RateLimiter::hit($key, (int) config('otp.resend_cooldown'));
+    private function maxAttempts(string $limit): int
+    {
+        return (int) config("otp.rate_limits.$limit.max_attempts");
+    }
+
+    private function decaySeconds(string $limit): int
+    {
+        return (int) config("otp.rate_limits.$limit.decay_seconds");
     }
 
     private function invalidOtp(): never

@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use LogicException;
 
 #[
     Fillable([
-        'wallet_transaction_id',
-        'broadband_account_id',
+        'ledger_transaction_id',
+        'broadband_account_number',
         'status',
         'external_bill_ref',
         'external_payment_ref',
@@ -22,6 +23,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class BillPayment extends Model
 {
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::deleting(static function (): never {
+            throw new LogicException('BillPayment records cannot be deleted.');
+        });
+    }
 
     public $timestamps = false;
 
@@ -36,13 +44,8 @@ class BillPayment extends Model
         ];
     }
 
-    public function walletTransaction(): BelongsTo
+    public function ledgerTransaction(): BelongsTo
     {
-        return $this->belongsTo(WalletTransaction::class);
-    }
-
-    public function broadbandAccount(): BelongsTo
-    {
-        return $this->belongsTo(BroadbandAccount::class);
+        return $this->belongsTo(LedgerTransaction::class);
     }
 }

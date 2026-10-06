@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('quick_replies', function (Blueprint $table) {
             $table->id();
             $table->string('keyword', 50);
+            $table->string('category', 32)->default('technical');
             $table->text('response_en');
             $table->text('response_my');
             $table->text('response_zh');

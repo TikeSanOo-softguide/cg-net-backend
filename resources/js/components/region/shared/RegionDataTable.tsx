@@ -125,7 +125,7 @@ export function RegionDataTable<T extends { id: number }>({
                     searchPlaceholder={t(searchLabelKey)}
                     title={t(titleKey)}
                     pagination={items}
-                    onCreate={onCreate}
+                    onCreate={can('regions.create') ? onCreate : undefined}
                     createLabel={t(createLabelKey)}
                     onBulkDelete={
                         can('regions.delete')

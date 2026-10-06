@@ -26,6 +26,7 @@ type PromotionFormDialogProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     item: PromotionItem | null;
+    basePath?: string;
 };
 
 function emptyPromotionForm(): PromotionFormValues {
@@ -45,7 +46,7 @@ function emptyPromotionForm(): PromotionFormValues {
     };
 }
 
-export function PromotionFormDialog({ open, onOpenChange, item }: PromotionFormDialogProps) {
+export function PromotionFormDialog({ open, onOpenChange, item, basePath = '/cms/promotions' }: PromotionFormDialogProps) {
     const { t } = useTranslation();
     const isEdit = item !== null;
 
@@ -62,6 +63,7 @@ export function PromotionFormDialog({ open, onOpenChange, item }: PromotionFormD
                 <PromotionFormDialogBody
                     key={item ? `edit-${item.id}` : 'create'}
                     item={item}
+                    basePath={basePath}
                     onClose={() => onOpenChange(false)}
                 />
             ) : null}
@@ -69,7 +71,15 @@ export function PromotionFormDialog({ open, onOpenChange, item }: PromotionFormD
     );
 }
 
-function PromotionFormDialogBody({ item, onClose }: { item: PromotionItem | null; onClose: () => void }) {
+function PromotionFormDialogBody({
+    item,
+    basePath,
+    onClose,
+}: {
+    item: PromotionItem | null;
+    basePath: string;
+    onClose: () => void;
+}) {
     const isEdit = item !== null;
     const form = useForm<PromotionFormValues>(
         item
@@ -101,12 +111,12 @@ function PromotionFormDialogBody({ item, onClose }: { item: PromotionItem | null
 
         if (isEdit && item) {
             form.transform((data) => ({ ...data, _method: 'put' }));
-            form.post(`/cms/promotions/${item.id}`, options);
+            form.post(`${basePath}/${item.id}`, options);
 
             return;
         }
 
-        form.post('/cms/promotions', options);
+        form.post(basePath, options);
     };
 
     return (

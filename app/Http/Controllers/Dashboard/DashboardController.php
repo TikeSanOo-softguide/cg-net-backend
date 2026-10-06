@@ -2,23 +2,23 @@
 
 namespace App\Http\Controllers\Dashboard;
 
-use App\Enums\BillPaymentStatus;
-use App\Enums\BroadbandAccountStatus;
+use App\Enums\ChangePasswordStatus;
 use App\Enums\ChangePlanStatus;
 use App\Enums\CustomerPackageStatus;
+use App\Enums\LedgerTransactionStatus;
+use App\Enums\LedgerTransactionType;
 use App\Enums\ReviewStatus;
 use App\Http\Controllers\Controller;
-use App\Models\BillPayment;
-use App\Models\BroadbandAccount;
+use App\Models\ChangePasswordRequest;
 use App\Models\ChangePlanRequest;
 use App\Models\CustomerPackage;
 use App\Models\FailureReport;
 use App\Models\InstallationApplication;
+use App\Models\LedgerTransaction;
 use App\Models\RelocationRequest;
 use App\Models\User;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -36,15 +36,19 @@ class DashboardController extends Controller
         'failure' => FailureReport::class,
         'relocation' => RelocationRequest::class,
         'change_plan' => ChangePlanRequest::class,
+        'change_password' => ChangePasswordRequest::class,
     ];
 
     public function __invoke(): Response
     {
+        [$start, $end] = $this->last30Days();
+
         return Inertia::render('Dashboard/Index', [
             'stats' => $this->stats(),
-            'chart' => $this->chartSeries(),
-            'regionChart' => $this->regionChart(),
-            'requestTypeChart' => $this->requestTypeChart(),
+            'chart' => $this->chartSeries($start, $end),
+            'topupUsageChange' => $this->topupUsageChange($start, $end),
+            'regionChart' => $this->regionChart($start, $end),
+            'requestTypeChart' => $this->requestTypeChart($start, $end),
             'recentRequests' => $this->recentRequests(),
         ]);
     }
@@ -53,7 +57,11 @@ class DashboardController extends Controller
     {
         $ids = $request->validate([
             'ids' => ['required', 'array', 'min:1'],
-            'ids.*' => ['string', 'distinct', 'regex:/^(installation|failure|relocation|change_plan)-\d+$/'],
+            'ids.*' => [
+                'string',
+                'distinct',
+                'regex:/^(installation|failure|relocation|change_plan|change_password)-\d+$/',
+            ],
         ])['ids'];
 
         $deleted = 0;
@@ -95,7 +103,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * @return array{total_customers: int, active_broadband_accounts: int, active_packages: int, todays_revenue: string, pending_requests: int}
+     * @return array{total_customers: int, monthly_signups: int, active_packages: int, todays_topup_usage: int, pending_requests: int}
      */
     private function stats(): array
     {
@@ -103,48 +111,32 @@ class DashboardController extends Controller
             InstallationApplication::query()->where('status', ReviewStatus::UnderReview)->count() +
             FailureReport::query()->where('status', ReviewStatus::UnderReview)->count() +
             RelocationRequest::query()->where('status', ReviewStatus::UnderReview)->count() +
-            ChangePlanRequest::query()->where('status', ChangePlanStatus::UnderReview)->count();
+            ChangePlanRequest::query()->where('status', ChangePlanStatus::UnderReview)->count() +
+            ChangePasswordRequest::query()->where('status', ChangePasswordStatus::UnderReview)->count();
 
         return [
             'total_customers' => User::query()->count(),
-            'active_broadband_accounts' => BroadbandAccount::query()
-                ->where('status', BroadbandAccountStatus::Active)
+            'monthly_signups' => User::query()
+                ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfDay()])
                 ->count(),
             'active_packages' => CustomerPackage::query()->where('status', CustomerPackageStatus::Active)->count(),
-            'todays_revenue' => number_format(
-                (float) BillPayment::query()
-                    ->where('status', BillPaymentStatus::Completed)
-                    ->whereDate('confirmed_at', today())
-                    ->with('walletTransaction:id,amount')
-                    ->get()
-                    ->sum(fn(BillPayment $payment) => (float) ($payment->walletTransaction?->amount ?? 0)),
-                2,
-                '.',
-                '',
-            ),
+            'todays_topup_usage' => (int) LedgerTransaction::query()
+                ->where('type', LedgerTransactionType::Topup)
+                ->where('status', LedgerTransactionStatus::Completed)
+                ->whereDate('created_at', today())
+                ->sum('amount'),
             'pending_requests' => $pending,
         ];
     }
 
     /**
-     * @return list<array{date: string, revenue: float, signups: int}>
+     * @return list<array{date: string, topup_usage: int, signups: int, ftth_bill_payments: int, wifi_package_orders: int}>
      */
-    private function chartSeries(): array
+    private function chartSeries(Carbon $start, Carbon $end): array
     {
-        $start = now()->subDays(29)->startOfDay();
-        $end = now()->endOfDay();
-
-        $revenue = BillPayment::query()
-            ->where('status', BillPaymentStatus::Completed)
-            ->whereBetween('confirmed_at', [$start, $end])
-            ->with('walletTransaction:id,amount')
-            ->get(['confirmed_at', 'wallet_transaction_id'])
-            ->groupBy(fn(BillPayment $payment) => $payment->confirmed_at?->toDateString())
-            ->map(
-                fn(Collection $rows) => (float) $rows->sum(
-                    fn(BillPayment $payment) => (float) ($payment->walletTransaction?->amount ?? 0),
-                ),
-            );
+        $topupUsage = $this->transactionVolumeByDay(LedgerTransactionType::Topup, $start, $end);
+        $ftthBillPayments = $this->transactionVolumeByDay(LedgerTransactionType::FtthBill, $start, $end);
+        $wifiPackageOrders = $this->transactionVolumeByDay(LedgerTransactionType::WifiPackage, $start, $end);
 
         $signups = User::query()
             ->whereBetween('created_at', [$start, $end])
@@ -153,29 +145,66 @@ class DashboardController extends Controller
             ->map(fn(Collection $rows) => $rows->count());
 
         return collect(CarbonPeriod::create($start, $end))
-            ->map(function (Carbon $day) use ($revenue, $signups) {
+            ->map(function (Carbon $day) use ($topupUsage, $signups, $ftthBillPayments, $wifiPackageOrders) {
                 $key = $day->toDateString();
 
                 return [
                     'date' => $key,
-                    'revenue' => (float) ($revenue[$key] ?? 0),
+                    'topup_usage' => (int) ($topupUsage[$key] ?? 0),
                     'signups' => (int) ($signups[$key] ?? 0),
+                    'ftth_bill_payments' => (int) ($ftthBillPayments[$key] ?? 0),
+                    'wifi_package_orders' => (int) ($wifiPackageOrders[$key] ?? 0),
                 ];
             })
             ->values()
             ->all();
     }
 
+    private function transactionVolumeByDay(LedgerTransactionType $type, Carbon $start, Carbon $end): Collection
+    {
+        return LedgerTransaction::query()
+            ->where('type', $type)
+            ->where('status', LedgerTransactionStatus::Completed)
+            ->whereBetween('created_at', [$start, $end])
+            ->selectRaw('DATE(created_at) as date, SUM(amount) as points')
+            ->groupByRaw('DATE(created_at)')
+            ->pluck('points', 'date');
+    }
+
+    private function topupUsageChange(Carbon $start, Carbon $end): ?float
+    {
+        $previousStart = $start->copy()->subDays(30);
+        $previousEnd = $start->copy()->subDay()->endOfDay();
+        $current = $this->topupUsageBetween($start, $end);
+        $previous = $this->topupUsageBetween($previousStart, $previousEnd);
+
+        if ($previous === 0) {
+            return $current > 0 ? 100.0 : null;
+        }
+
+        return round((($current - $previous) / $previous) * 100, 1);
+    }
+
+    private function topupUsageBetween(Carbon $start, Carbon $end): int
+    {
+        return (int) LedgerTransaction::query()
+            ->where('type', LedgerTransactionType::Topup)
+            ->where('status', LedgerTransactionStatus::Completed)
+            ->whereBetween('created_at', [$start, $end])
+            ->sum('amount');
+    }
+
     /**
      * @return list<array{id: int|null, name_en: string, name_zh: string, name_my: string, value: int}>
      */
-    private function regionChart(): array
+    private function regionChart(Carbon $start, Carbon $end): array
     {
         $counts = InstallationApplication::query()
             ->join('areas', 'areas.id', '=', 'installation_applications.area_id')
             ->join('regions', 'regions.id', '=', 'areas.region_id')
             ->whereNull('areas.deleted_at')
             ->whereNull('regions.deleted_at')
+            ->whereBetween('installation_applications.created_at', [$start, $end])
             ->select([
                 'regions.id',
                 'regions.name_en',
@@ -218,13 +247,13 @@ class DashboardController extends Controller
     /**
      * @return array{change: int|null, items: list<array{type: string, value: int, percent: int}>}
      */
-    private function requestTypeChart(): array
+    private function requestTypeChart(Carbon $start, Carbon $end): array
     {
         $items = collect(self::REQUEST_MODELS)
             ->map(
                 fn(string $class, string $type) => [
                     'type' => $type,
-                    'value' => $class::query()->count(),
+                    'value' => $class::query()->whereBetween('created_at', [$start, $end])->count(),
                 ],
             )
             ->sortByDesc('value')
@@ -233,7 +262,7 @@ class DashboardController extends Controller
         $total = (int) $items->sum('value');
 
         return [
-            'change' => $this->requestVolumeChange(),
+            'change' => $this->requestVolumeChange($start, $end),
             'items' => $items
                 ->map(
                     fn(array $row) => [
@@ -246,16 +275,28 @@ class DashboardController extends Controller
         ];
     }
 
-    private function requestVolumeChange(): ?int
+    private function requestVolumeChange(Carbon $start, Carbon $end): ?int
     {
-        $current = $this->requestCountBetween(now()->subDays(29)->startOfDay(), now()->endOfDay());
-        $previous = $this->requestCountBetween(now()->subDays(59)->startOfDay(), now()->subDays(30)->endOfDay());
+        $previousStart = $start->copy()->subDays(30);
+        $previousEnd = $start->copy()->subDay()->endOfDay();
+        $current = $this->requestCountBetween($start, $end);
+        $previous = $this->requestCountBetween($previousStart, $previousEnd);
 
         if ($previous === 0) {
             return $current > 0 ? 100 : null;
         }
 
         return (int) round((($current - $previous) / $previous) * 100);
+    }
+
+    /**
+     * @return array{Carbon, Carbon}
+     */
+    private function last30Days(): array
+    {
+        $end = now();
+
+        return [$end->copy()->subDays(29)->startOfDay(), $end->copy()->endOfDay()];
     }
 
     private function requestCountBetween(Carbon $start, Carbon $end): int
@@ -273,50 +314,91 @@ class DashboardController extends Controller
      */
     private function recentRequests(): array
     {
-        $installs = InstallationApplication::query()->with('user:id,name')->latest()->take(10)->get()->map(
-            fn(InstallationApplication $row) => [
-                'id' => 'installation-' . $row->id,
-                'type' => 'installation',
-                'customer' => $row->user?->name ?? '—',
-                'status' => $row->status->value,
-                'created_at' => $row->created_at?->toIso8601String(),
-            ],
-        );
+        $installs = InstallationApplication::query()
+            ->with('user:id,name')
+            ->whereDate('created_at', today())
+            ->latest()
+            ->take(10)
+            ->get()
+            ->map(
+                fn(InstallationApplication $row) => [
+                    'id' => 'installation-' . $row->id,
+                    'type' => 'installation',
+                    'customer' => $row->user?->name ?? '—',
+                    'status' => $row->status->value,
+                    'created_at' => $row->created_at?->toIso8601String(),
+                ],
+            );
 
-        $failures = FailureReport::query()->with('user:id,name')->latest()->take(10)->get()->map(
-            fn(FailureReport $row) => [
-                'id' => 'failure-' . $row->id,
-                'type' => 'failure',
-                'customer' => $row->user?->name ?? '—',
-                'status' => $row->status->value,
-                'created_at' => $row->created_at?->toIso8601String(),
-            ],
-        );
+        $failures = FailureReport::query()
+            ->with('user:id,name')
+            ->whereDate('created_at', today())
+            ->latest()
+            ->take(10)
+            ->get()
+            ->map(
+                fn(FailureReport $row) => [
+                    'id' => 'failure-' . $row->id,
+                    'type' => 'failure',
+                    'customer' => $row->user?->name ?? '—',
+                    'status' => $row->status->value,
+                    'created_at' => $row->created_at?->toIso8601String(),
+                ],
+            );
 
-        $relocations = RelocationRequest::query()->with('user:id,name')->latest()->take(10)->get()->map(
-            fn(RelocationRequest $row) => [
-                'id' => 'relocation-' . $row->id,
-                'type' => 'relocation',
-                'customer' => $row->user?->name ?? '—',
-                'status' => $row->status->value,
-                'created_at' => $row->created_at?->toIso8601String(),
-            ],
-        );
+        $relocations = RelocationRequest::query()
+            ->with('user:id,name')
+            ->whereDate('created_at', today())
+            ->latest()
+            ->take(10)
+            ->get()
+            ->map(
+                fn(RelocationRequest $row) => [
+                    'id' => 'relocation-' . $row->id,
+                    'type' => 'relocation',
+                    'customer' => $row->user?->name ?? '—',
+                    'status' => $row->status->value,
+                    'created_at' => $row->created_at?->toIso8601String(),
+                ],
+            );
 
-        $changes = ChangePlanRequest::query()->with('user:id,name')->latest()->take(10)->get()->map(
-            fn(ChangePlanRequest $row) => [
-                'id' => 'change_plan-' . $row->id,
-                'type' => 'change_plan',
-                'customer' => $row->user?->name ?? '—',
-                'status' => $row->status->value,
-                'created_at' => $row->created_at?->toIso8601String(),
-            ],
-        );
+        $changes = ChangePlanRequest::query()
+            ->with('user:id,name')
+            ->whereDate('created_at', today())
+            ->latest()
+            ->take(10)
+            ->get()
+            ->map(
+                fn(ChangePlanRequest $row) => [
+                    'id' => 'change_plan-' . $row->id,
+                    'type' => 'change_plan',
+                    'customer' => $row->user?->name ?? '—',
+                    'status' => $row->status->value,
+                    'created_at' => $row->created_at?->toIso8601String(),
+                ],
+            );
+
+        $passwordChanges = ChangePasswordRequest::query()
+            ->with('user:id,name')
+            ->whereDate('created_at', today())
+            ->latest()
+            ->take(10)
+            ->get()
+            ->map(
+                fn(ChangePasswordRequest $row) => [
+                    'id' => 'change_password-' . $row->id,
+                    'type' => 'change_password',
+                    'customer' => $row->user?->name ?? '—',
+                    'status' => $row->status->value,
+                    'created_at' => $row->created_at?->toIso8601String(),
+                ],
+            );
 
         return $installs
             ->concat($failures)
             ->concat($relocations)
             ->concat($changes)
+            ->concat($passwordChanges)
             ->sortByDesc('created_at')
             ->take(10)
             ->values()

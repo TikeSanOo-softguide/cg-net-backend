@@ -10,22 +10,26 @@ export type SearchableSelectOption = {
 };
 
 type SearchableSelectProps = {
+    id?: string;
     value: string;
     onValueChange: (value: string) => void;
     options: SearchableSelectOption[];
     placeholder?: string;
     searchPlaceholder?: string;
+    noResultsMessage?: string;
     className?: string;
     triggerClassName?: string;
     disabled?: boolean;
 };
 
 function SearchableSelect({
+    id,
     value,
     onValueChange,
     options,
     placeholder = 'Select...',
     searchPlaceholder = 'Search...',
+    noResultsMessage = 'No results found.',
     className,
     triggerClassName,
     disabled = false,
@@ -50,6 +54,11 @@ function SearchableSelect({
         return options.filter((option) => option.label.toLowerCase().includes(keyword));
     }, [options, search]);
 
+    const closeDropdown = React.useCallback(() => {
+        setOpen(false);
+        setSearch('');
+    }, []);
+
     React.useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as Node;
@@ -70,59 +79,71 @@ function SearchableSelect({
     }, []);
 
     React.useEffect(() => {
-        if (open) {
-            const updatePosition = () => {
-                const trigger = containerRef.current?.getBoundingClientRect();
-
-                if (!trigger) {
-                    return;
-                }
-
-                setDropdownPosition({
-                    top: trigger.bottom + 4,
-                    left: trigger.left,
-                    width: trigger.width,
-                });
-            };
-
-            updatePosition();
-            window.addEventListener('resize', updatePosition);
-            window.addEventListener('scroll', updatePosition, true);
-
-            requestAnimationFrame(() => {
-                searchRef.current?.focus();
-            });
-
-            return () => {
-                window.removeEventListener('resize', updatePosition);
-                window.removeEventListener('scroll', updatePosition, true);
-            };
+        if (!open) {
+            return;
         }
+        const handlePointerDown = (event: PointerEvent) => {
+            const target = event.target as Node;
+            const clickedTrigger = containerRef.current?.contains(target);
+            const clickedDropdown = dropdownRef.current?.contains(target);
+            if (!clickedTrigger && !clickedDropdown) {
+                closeDropdown();
+            }
+        };
+        document.addEventListener('pointerdown', handlePointerDown, true);
+        return () => {
+            document.removeEventListener('pointerdown', handlePointerDown, true);
+        };
+    }, [open, closeDropdown]);
+    React.useEffect(() => {
+        if (!open) {
+            return;
+        }
+        const updatePosition = () => {
+            const trigger = containerRef.current?.getBoundingClientRect();
+            if (!trigger) {
+                return;
+            }
+            setDropdownPosition({ top: trigger.bottom + 4, left: trigger.left, width: trigger.width });
+        };
+        updatePosition();
+        window.addEventListener('resize', updatePosition);
+        window.addEventListener('scroll', updatePosition, true);
+        requestAnimationFrame(() => {
+            searchRef.current?.focus();
+        });
+        return () => {
+            window.removeEventListener('resize', updatePosition);
+            window.removeEventListener('scroll', updatePosition, true);
+        };
     }, [open]);
-
+    React.useEffect(() => {
+        if (disabled && open) {
+            closeDropdown();
+        }
+    }, [disabled, open, closeDropdown]);
     const handleOpen = () => {
         if (disabled) {
             return;
         }
         setOpen((current) => !current);
     };
-
     const handleSelect = (optionValue: string) => {
         onValueChange(optionValue);
-        setOpen(false);
-        setSearch('');
+        closeDropdown();
     };
 
     return (
         <div ref={containerRef} className={cn('relative w-full', className)}>
             <button
+                id={id}
                 type="button"
                 disabled={disabled}
                 onClick={handleOpen}
                 className={cn(
                     'group flex h-8 w-full min-w-0 items-center justify-between gap-2',
                     'rounded-[8px] border border-input bg-surface',
-                    'px-3 py-2 text-sm text-foreground whitespace-nowrap',
+                    'px-3 py-2 text-[11px] text-foreground whitespace-nowrap',
                     'shadow-none outline-none transition-colors duration-200',
                     'hover:border-primary/35',
                     'focus-visible:border-primary',
@@ -147,10 +168,8 @@ function SearchableSelect({
                 <span className={cn('min-w-0 truncate', !selectedOption && 'text-muted-foreground')}>
                     {selectedOption?.label ?? placeholder}
                 </span>
-
-                {open ? <ChevronUpIcon className="size-4" /> : <ChevronDownIcon className="size-4" />}
+                {open ? <ChevronUpIcon className="size-4" /> : <ChevronDownIcon className="size-4" />}{' '}
             </button>
-
             {open &&
                 typeof document !== 'undefined' &&
                 createPortal(
@@ -186,7 +205,6 @@ function SearchableSelect({
                                         'size-4 text-muted-foreground',
                                     )}
                                 />
-
                                 <input
                                     ref={searchRef}
                                     type="text"
@@ -198,41 +216,35 @@ function SearchableSelect({
                                         'border border-input',
                                         'bg-surface',
                                         'pl-8 pr-2',
-                                        'text-sm text-foreground',
+                                        'text-[11px] text-foreground',
                                         'outline-none',
                                         'placeholder:text-muted-foreground',
                                         'transition-colors',
-
                                         'focus:border-primary',
                                         'focus:ring-1',
                                         'focus:ring-primary/40',
                                     )}
-                                    onClick={(event) => event.stopPropagation()}
                                     onKeyDown={(event) => {
                                         if (event.key === 'Escape') {
-                                            setOpen(false);
-                                            setSearch('');
+                                            closeDropdown();
                                         }
                                     }}
                                 />
                             </div>
                         </div>
-
                         <div className="max-h-60 overflow-y-auto p-1">
                             {filteredOptions.length > 8 && (
                                 <div className="flex items-center justify-center py-1 text-muted-foreground">
-                                    <ChevronUpIcon className="size-4" />
+                                    <ChevronUpIcon className="size-4" />{' '}
                                 </div>
                             )}
-
                             {filteredOptions.length === 0 ? (
-                                <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                                    No results found.
+                                <div className="px-2 py-6 text-center text-[11px] text-muted-foreground">
+                                    {noResultsMessage}
                                 </div>
                             ) : (
                                 filteredOptions.map((option) => {
                                     const isSelected = option.value === value;
-
                                     return (
                                         <button
                                             key={option.value}
@@ -250,23 +262,20 @@ function SearchableSelect({
                                                 'transition-colors',
                                                 'hover:bg-accent',
                                                 'hover:text-accent-foreground',
-
                                                 isSelected && 'bg-accent text-accent-foreground',
                                             )}
                                         >
-                                            <span className="min-w-0 truncate">{option.label}</span>
-
+                                            <span className="min-w-0 truncate"> {option.label} </span>{' '}
                                             <span className="absolute right-2 flex size-3.5 items-center justify-center">
-                                                {isSelected && <CheckIcon className="size-4" />}
+                                                {isSelected && <CheckIcon className="size-4" />}{' '}
                                             </span>
                                         </button>
                                     );
                                 })
                             )}
-
                             {filteredOptions.length > 8 && (
                                 <div className="flex items-center justify-center py-1 text-muted-foreground">
-                                    <ChevronDownIcon className="size-4" />
+                                    <ChevronDownIcon className="size-4" />{' '}
                                 </div>
                             )}
                         </div>

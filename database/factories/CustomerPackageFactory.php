@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Enums\CustomerPackageStatus;
-use App\Models\BroadbandAccount;
 use App\Models\CustomerPackage;
 use App\Models\Package;
 use App\Models\User;
@@ -20,20 +19,21 @@ class CustomerPackageFactory extends Factory
 
         return [
             'user_id' => User::factory(),
-            'broadband_account_id' => BroadbandAccount::factory(),
             'package_id' => Package::factory(),
-            'start_date' => $start,
-            'expiry_date' => (clone $start)->modify('+30 days'),
-            'auto_renew' => fake()->boolean(40),
+            'username' => fake()->unique()->userName(),
+            'starts_at' => $start,
+            'expires_at' => (clone $start)->modify('+30 days'),
             'status' => CustomerPackageStatus::Active,
         ];
     }
 
     public function expired(): static
     {
-        return $this->state(fn () => [
-            'status' => CustomerPackageStatus::Expired,
-            'expiry_date' => now()->subDays(10),
-        ]);
+        return $this->state(
+            fn () => [
+                'status' => CustomerPackageStatus::Expired,
+                'expires_at' => now()->subDays(10),
+            ],
+        );
     }
 }

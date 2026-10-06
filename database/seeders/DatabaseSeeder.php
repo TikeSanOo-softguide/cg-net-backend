@@ -5,18 +5,18 @@ namespace Database\Seeders;
 use App\Enums\BillPaymentStatus;
 use App\Enums\ChangePlanStatus;
 use App\Enums\CustomerPackageStatus;
+use App\Enums\LedgerAccountCode;
+use App\Enums\LedgerTransactionStatus;
+use App\Enums\LedgerTransactionType;
 use App\Enums\RequestStatus;
 use App\Enums\UserStatus;
 use App\Enums\WalletActorType;
 use App\Enums\WalletStatus;
-use App\Enums\WalletTransactionStatus;
-use App\Enums\WalletTransactionType;
 use App\Models\Admin;
 use App\Models\Announcement;
 use App\Models\Area;
 use App\Models\Banner;
 use App\Models\BillPayment;
-use App\Models\BroadbandAccount;
 use App\Models\Category;
 use App\Models\ChangePasswordRequest;
 use App\Models\ChangePlanRequest;
@@ -25,22 +25,20 @@ use App\Models\CpeDevice;
 use App\Models\CustomerPackage;
 use App\Models\Gallery;
 use App\Models\InstallationApplication;
+use App\Models\LedgerTransaction;
 use App\Models\NotificationCustom;
 use App\Models\Package;
 use App\Models\RelocationRequest;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\Wallet;
-use App\Models\WalletTransaction;
+use App\Services\Ledger\LedgerPoster;
 use App\Support\AppPermissions;
 use Database\Factories\Support\MyanmarFake;
-use Database\Seeders\AreaSeeder;
-use Database\Seeders\PackageSeeder;
-use Database\Seeders\ServiceSeeder;
-use Database\Seeders\WalletSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
 {
@@ -53,8 +51,9 @@ class DatabaseSeeder extends Seeder
         $admins = $this->seedAdmins();
         $areas = $this->seedAreas();
         $packages = $this->seedPackages();
+        app(LedgerPoster::class)->ensureSystemAccounts();
         $users = $this->seedCustomers($packages);
-        $this->seedAgents();
+        $this->seedOffices();
         $this->seedServiceRequests($users, $areas, $packages);
         $this->seedFailureReports();
         $this->seedBilling($users);
@@ -65,8 +64,10 @@ class DatabaseSeeder extends Seeder
         $this->seedAnnouncements();
         $this->seedTopUpCards();
         $this->seedWalletSystem();
+        $this->seedChatFlow();
         $this->seedChatConversations();
         $this->seedAppVersions();
+        $this->seedGeneralSetting();
 
         Setting::factory()->create([
             'key' => 'support_hotline',
@@ -123,6 +124,7 @@ class DatabaseSeeder extends Seeder
 
     private function seedWalletSystem(): void
     {
+        (new LedgerAccountSeeder())->run();
         (new WalletSeeder())->run();
     }
 
@@ -131,9 +133,14 @@ class DatabaseSeeder extends Seeder
         (new FailureReportSeeder())->run();
     }
 
-    private function seedAgents(): void
+    private function seedOffices(): void
     {
-        (new AgentSeeder())->run();
+        (new OfficeSeeder())->run();
+    }
+
+    private function seedChatFlow(): void
+    {
+        (new ChatFlowSeeder())->run();
     }
 
     private function seedChatConversations(): void
@@ -144,6 +151,11 @@ class DatabaseSeeder extends Seeder
     private function seedAppVersions(): void
     {
         (new AppVersionSeeder())->run();
+    }
+
+    private function seedGeneralSetting(): void
+    {
+        (new GeneralSettingSeeder())->run();
     }
 
     private function seedAnnouncements(): void
@@ -170,78 +182,180 @@ class DatabaseSeeder extends Seeder
      */
     private function seedCustomers($packages)
     {
-        $showcasePhones = [
-            ['phone' => MyanmarFake::phone('mm'), 'name' => 'Myanmar User'],
-            ['phone' => MyanmarFake::phone('th'), 'name' => 'Thailand User'],
-            ['phone' => MyanmarFake::phone('cn'), 'name' => 'China User'],
-        ];
+        $showcaseCustomers = $this->showcaseCustomers();
 
-        $users = collect($showcasePhones)
-            ->map(fn(array $row) => User::factory()->create($row))
-            ->concat(User::factory()->count(17)->create())
+        $users = collect($showcaseCustomers)
+            ->map(
+                fn(array $row) => User::factory()->create([
+                    'phone' => MyanmarFake::phone('mm'),
+                    'name' => $row['name'],
+                    'status' => $row['status'],
+                    'broadband_account_number' => $row['account_number'],
+                ]),
+            )
+            ->concat(User::factory()->count(10)->create())
             ->values();
 
-        return $users
-            ->each(function (User $user, int $index) use ($packages): void {
-                if ($index >= 3 && $index < 6) {
-                    $user->update(['status' => UserStatus::Suspended]);
-                }
-                $package = $packages->random();
-                $account = BroadbandAccount::factory()->create([
-                    'user_id' => $user->id,
-                    'customer_name' => $user->name,
-                    'current_package_id' => $package->id,
-                ]);
+        return $users->each(function (User $user, int $index) use ($packages, $showcaseCustomers): void {
+            if ($index === count($showcaseCustomers)) {
+                $this->syncCustomerPackageIdSequence();
+            }
 
-                CustomerPackage::factory()->create([
-                    'user_id' => $user->id,
-                    'broadband_account_id' => $account->id,
-                    'package_id' => $package->id,
-                    'start_date' => now()->subDays(10),
-                    'expiry_date' => now()->addDays($package->validity_days - 10),
-                    'status' => CustomerPackageStatus::Active,
-                ]);
+            if ($index >= 10 && $index < 13) {
+                $user->update(['status' => UserStatus::Suspended]);
+            }
+            $package = $packages->random();
+            $showcaseCustomer = $showcaseCustomers[$index] ?? null;
+            $accountNumber = $showcaseCustomer['account_number'] ?? 'CG' . fake()->unique()->numerify('########');
+            $user->update(['broadband_account_number' => $accountNumber]);
 
-                if ($index % 4 === 0) {
-                    CustomerPackage::factory()
-                        ->expired()
-                        ->create([
-                            'user_id' => $user->id,
-                            'broadband_account_id' => $account->id,
-                            'package_id' => $packages->random()->id,
-                        ]);
-                }
+            $customerPackage = CustomerPackage::factory()->make([
+                'user_id' => $user->id,
+                'package_id' => $package->id,
+                'starts_at' => now()->subDays(10),
+                'expires_at' => now()->addDays($package->validity_days - 10),
+                'status' => CustomerPackageStatus::Active,
+            ]);
+            if ($showcaseCustomer) {
+                $customerPackage->forceFill(['id' => $showcaseCustomer['customer_package_id']]);
+            }
+            $customerPackage->save();
 
-                $wallet = Wallet::factory()->create([
-                    'user_id' => $user->id,
-                    'balance' => fake()->randomElement([0, 5000, 15000, 42000]),
-                ]);
-
-                WalletTransaction::factory()
-                    ->count(3)
+            if ($index % 4 === 0) {
+                CustomerPackage::factory()
+                    ->expired()
                     ->create([
-                        'wallet_id' => $wallet->id,
-                        'type' => fake()->randomElement(WalletTransactionType::cases()),
+                        'user_id' => $user->id,
+                        'package_id' => $packages->random()->id,
                     ]);
+            }
 
-                CpeDevice::factory()->create([
-                    'broadband_account_id' => $account->id,
+            $wallet = Wallet::factory()->create([
+                'user_id' => $user->id,
+                'balance' => fake()->randomElement([0, 5000, 15000, 42000]),
+            ]);
+
+            app(LedgerPoster::class)->ensureCustomerLiabilityAccount($wallet);
+
+            // Seeded opening balances are represented as an adjustment credit so the ledger reconciles.
+            if ((int) $wallet->balance > 0) {
+                $opening = (int) $wallet->balance;
+                $wallet->update(['balance' => 0]);
+                app(LedgerPoster::class)->creditWallet(
+                    wallet: $wallet->fresh(),
+                    amount: $opening,
+                    contraAccount: LedgerAccountCode::AdjustmentExpense,
+                    type: LedgerTransactionType::Adjustment,
+                    status: LedgerTransactionStatus::Completed,
+                    idempotencyKey: 'seed-opening:' . $wallet->id,
+                    actorType: WalletActorType::System,
+                    actorId: $user->id,
+                );
+            }
+
+            LedgerTransaction::factory()
+                ->count(2)
+                ->create([
+                    'wallet_id' => $wallet->id,
+                    'type' => fake()->randomElement([
+                        LedgerTransactionType::Topup,
+                        LedgerTransactionType::FtthBill,
+                        LedgerTransactionType::Refund,
+                    ]),
+                    'status' => LedgerTransactionStatus::Pending,
+                    'amount' => fake()->numberBetween(1000, 5000),
                 ]);
 
-                $user
-                    ->forceFill([
-                        'created_at' => now()->subDays(fake()->numberBetween(0, 29)),
-                    ])
-                    ->save();
-            })
-            ->tap(function () use ($packages): void {
-                BroadbandAccount::factory()
-                    ->unbound()
-                    ->count(3)
-                    ->create([
-                        'current_package_id' => $packages->random()->id,
-                    ]);
-            });
+            CpeDevice::factory()->create([
+                'user_id' => $user->id,
+            ]);
+
+            $user
+                ->forceFill([
+                    'created_at' => now()->subDays(fake()->numberBetween(0, 29)),
+                ])
+                ->save();
+        });
+    }
+
+    private function syncCustomerPackageIdSequence(): void
+    {
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return;
+        }
+
+        DB::statement(
+            "SELECT setval(pg_get_serial_sequence('customer_packages', 'id'), COALESCE(MAX(id), 1), COUNT(*) > 0) FROM customer_packages",
+        );
+    }
+
+    /**
+     * @return list<array{account_number: string, name: string, status: UserStatus, customer_package_id: int}>
+     */
+    private function showcaseCustomers(): array
+    {
+        return [
+            [
+                'account_number' => 'CG0000001',
+                'name' => 'Robert Anderson',
+                'status' => UserStatus::Active,
+                'customer_package_id' => 78,
+            ],
+            [
+                'account_number' => 'CG0000002',
+                'name' => 'Patricia Martinez',
+                'status' => UserStatus::Active,
+                'customer_package_id' => 77,
+            ],
+            [
+                'account_number' => 'CG0000003',
+                'name' => 'Aung Aung',
+                'status' => UserStatus::Suspended,
+                'customer_package_id' => 4,
+            ],
+            [
+                'account_number' => 'CG0000004',
+                'name' => 'Su Su',
+                'status' => UserStatus::Suspended,
+                'customer_package_id' => 5,
+            ],
+            [
+                'account_number' => 'CG0000005',
+                'name' => 'Kyaw Kyaw',
+                'status' => UserStatus::Active,
+                'customer_package_id' => 7,
+            ],
+            [
+                'account_number' => 'CG0000006',
+                'name' => 'Hla Hla',
+                'status' => UserStatus::Active,
+                'customer_package_id' => 8,
+            ],
+            [
+                'account_number' => 'CG0000007',
+                'name' => 'Ko Ko',
+                'status' => UserStatus::Suspended,
+                'customer_package_id' => 9,
+            ],
+            [
+                'account_number' => 'CG0000008',
+                'name' => 'Su Mon',
+                'status' => UserStatus::Active,
+                'customer_package_id' => 10,
+            ],
+            [
+                'account_number' => 'CG0000009',
+                'name' => 'Min Min',
+                'status' => UserStatus::Suspended,
+                'customer_package_id' => 12,
+            ],
+            [
+                'account_number' => 'CG0000010',
+                'name' => 'Thiri',
+                'status' => UserStatus::Active,
+                'customer_package_id' => 13,
+            ],
+        ];
     }
 
     /**
@@ -253,38 +367,54 @@ class DatabaseSeeder extends Seeder
     {
         $sample = $users->take(8)->values();
         $admin = Admin::query()->first();
+        $areasByRegion = $areas->groupBy('region_id')->values();
+        $installationStatuses = [RequestStatus::UnderReview, RequestStatus::Approved, RequestStatus::Cancelled];
+        $today = now();
 
-        foreach ([RequestStatus::UnderReview, RequestStatus::Approved, RequestStatus::Cancelled] as $i => $status) {
-            $user = $sample[$i];
+        foreach (range(0, 29) as $index) {
+            $user = $sample[$index % $sample->count()];
+            $area = $areasByRegion[$index % $areasByRegion->count()]->random();
+            $createdAt = $today
+                ->copy()
+                ->subDays(29 - $index)
+                ->setTime(min(12, $today->hour), 0);
 
-            InstallationApplication::factory()->create([
+            $application = InstallationApplication::factory()->create([
                 'user_id' => $user->id,
-                'area_id' => $areas->random()->id,
+                'area_id' => $area->id,
                 'package_id' => $packages->random()->id,
-                'status' => $status,
+                'status' => $installationStatuses[$index % count($installationStatuses)],
             ]);
+
+            $application->forceFill([
+                'created_at' => $createdAt,
+                'updated_at' => $createdAt,
+            ])->save();
         }
 
         $relocUser = $sample[6];
         RelocationRequest::factory()->create([
             'user_id' => $relocUser->id,
-            'broadband_account_id' => $relocUser->broadbandAccounts()->first()->id,
+            'broadband_account_number' => $relocUser->broadband_account_number,
             'status' => RequestStatus::UnderReview,
         ]);
         RelocationRequest::factory()->create([
             'user_id' => $sample[7]->id,
-            'broadband_account_id' => $sample[7]->broadbandAccounts()->first()->id,
+            'broadband_account_number' => $sample[7]->broadband_account_number,
             'status' => RequestStatus::Approved,
         ]);
 
         foreach ($users->take(20)->values() as $index => $user) {
-            $account = $user->broadbandAccounts()->first();
+            $customerPackage = $user
+                ->customerPackages()
+                ->where('status', CustomerPackageStatus::Active->value)
+                ->first();
 
-            if (!$account) {
+            if (!$customerPackage) {
                 continue;
             }
 
-            $currentPackageId = $account->current_package_id;
+            $currentPackageId = $customerPackage->package_id;
             $currentPackage = Package::query()->with('speed')->find($currentPackageId);
 
             $condition = $index % 3;
@@ -331,7 +461,7 @@ class DatabaseSeeder extends Seeder
             ChangePlanRequest::query()->firstOrCreate(
                 [
                     'user_id' => $user->id,
-                    'broadband_account_id' => $account->id,
+                    'broadband_account_number' => $user->broadband_account_number,
                     'current_package_id' => $currentPackageId,
                     'new_package_id' => $newPackage->id,
                     'preferred_date' => now()
@@ -339,6 +469,7 @@ class DatabaseSeeder extends Seeder
                         ->toDateString(),
                 ],
                 [
+                    'broadband_account_number' => $user->broadband_account_number,
                     'contact_name' => $user->name,
                     'contact_phone' => $contactPhone,
                     'note' => 'Seeded change plan request.',
@@ -361,14 +492,12 @@ class DatabaseSeeder extends Seeder
             ->take(12)
             ->values()
             ->each(function (User $user, int $index): void {
-                $account = $user->broadbandAccounts()->first();
-
-                if (!$account) {
+                if (!$user->broadband_account_number) {
                     return;
                 }
 
                 $paidAt = now()->subDays($index * 2);
-                $amount = fake()->randomElement([15000, 25000, 35000, 45000]);
+                $amount = fake()->randomElement([50, 100, 250, 500]);
 
                 $wallet = $user->wallet()->firstOrCreate(
                     ['user_id' => $user->id],
@@ -379,29 +508,67 @@ class DatabaseSeeder extends Seeder
                     ],
                 );
 
-                $transaction = WalletTransaction::query()->create([
-                    'wallet_id' => $wallet->id,
-                    'transaction_no' => 'BILL-' . strtoupper(fake()->bothify('???-####')),
-                    'type' => WalletTransactionType::FtthBill,
-                    'status' => WalletTransactionStatus::Completed,
-                    'amount' => $amount,
-                    'idempotency_key' => fake()->unique()->uuid(),
-                    'actor_type' => WalletActorType::System->value,
-                    'actor_id' => $user->id,
-                    'ip_address' => fake()->ipv4(),
-                    'user_agent' => fake()->userAgent(),
-                ]);
+                app(LedgerPoster::class)->ensureCustomerLiabilityAccount($wallet);
 
-                BillPayment::query()->create([
-                    'wallet_transaction_id' => $transaction->id,
-                    'broadband_account_id' => $account->id,
+                $poster = app(LedgerPoster::class);
+                $wallet = $wallet->fresh();
+                $timestamp = $paidAt->toDateTimeString();
+
+                if ((int) $wallet->balance < $amount) {
+                    $topup = $poster->creditWallet(
+                        wallet: $wallet,
+                        amount: $amount - (int) $wallet->balance,
+                        contraAccount: LedgerAccountCode::CashTopup,
+                        type: LedgerTransactionType::Topup,
+                        status: LedgerTransactionStatus::Completed,
+                        idempotencyKey: 'seed-bill-topup:' . $user->id . ':' . $index,
+                        actorType: WalletActorType::System,
+                        actorId: $user->id,
+                    );
+                    $this->backdateLedgerTransaction($topup, $timestamp);
+                }
+
+                $transaction = $poster->debitWallet(
+                    wallet: $wallet->fresh(),
+                    amount: $amount,
+                    contraAccount: LedgerAccountCode::FtthClearing,
+                    type: LedgerTransactionType::FtthBill,
+                    status: LedgerTransactionStatus::Completed,
+                    idempotencyKey: 'seed-bill:' . $user->id . ':' . $index,
+                    actorType: WalletActorType::System,
+                    actorId: $user->id,
+                    transactionNo: 'BILL-' . strtoupper(fake()->bothify('???-####')),
+                );
+
+                $this->backdateLedgerTransaction($transaction, $timestamp);
+
+                $billPayment = BillPayment::query()->create([
+                    'ledger_transaction_id' => $transaction->id,
+                    'broadband_account_number' => $user->broadband_account_number,
                     'status' => BillPaymentStatus::Completed,
                     'external_bill_ref' => 'BILL-' . fake()->numerify('####'),
                     'external_payment_ref' => 'PAY-' . fake()->numerify('####'),
                     'external_response' => ['gateway' => 'kbzpay'],
                     'confirmed_at' => $paidAt,
                 ]);
+                DB::table('bill_payments')
+                    ->where('id', $billPayment->id)
+                    ->update(['created_at' => $timestamp]);
             });
+    }
+
+    private function backdateLedgerTransaction(LedgerTransaction $transaction, string $timestamp): void
+    {
+        DB::table('ledger_transactions')
+            ->where('id', $transaction->id)
+            ->update([
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+                'posted_at' => $timestamp,
+            ]);
+        DB::table('ledger_entries')
+            ->where('ledger_transaction_id', $transaction->id)
+            ->update(['created_at' => $timestamp]);
     }
 
     private function seedNotifications(): void

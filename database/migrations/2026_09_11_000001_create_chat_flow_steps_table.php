@@ -10,13 +10,11 @@ return new class extends Migration
     {
         Schema::create('chat_flow_steps', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('name', 50);
             $table->text('message_en');
             $table->text('message_my');
             $table->text('message_zh');
             $table->boolean('is_start')->default(false);
-            $table->unsignedInteger('sort_order')->default(0);
-            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }

@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import type { LucideIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -7,7 +8,7 @@ import { cn } from '@/lib/utils';
 export type StatItem = {
     key: string;
     title: string;
-    value: string;
+    value: ReactNode;
     icon: LucideIcon;
 };
 

@@ -10,17 +10,19 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable([
-    'user_id',
-    'broadband_account_id',
-    'current_address',
-    'new_address',
-    'preferred_date',
-    'phone',
-    'details',
-    'status',
-    'admin_id',
-])]
+#[
+    Fillable([
+        'user_id',
+        'broadband_account_number',
+        'current_address',
+        'new_address',
+        'preferred_date',
+        'phone',
+        'details',
+        'status',
+        'admin_id',
+    ]),
+]
 class RelocationRequest extends Model
 {
     /** @use HasFactory<RelocationRequestFactory> */
@@ -37,11 +39,6 @@ class RelocationRequest extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function broadbandAccount(): BelongsTo
-    {
-        return $this->belongsTo(BroadbandAccount::class);
     }
 
     public function admin(): BelongsTo

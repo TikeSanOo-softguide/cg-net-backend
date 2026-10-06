@@ -60,7 +60,7 @@ export type BannerFormValues = {
     image_url_en: File | null;
     image_url_zh: File | null;
     image_url_my: File | null;
-    sort_order: number;
+    sort_order: number | '';
     start_date: string;
     end_date: string;
     is_active: boolean;
@@ -219,6 +219,22 @@ export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrl
         }
     };
 
+    const handleNumberChange = (field: 'sort_order', value: string) => {
+        if (!/^\d*$/.test(value)) {
+            return;
+        }
+
+        const normalizedValue = value.replace(/^0+(?=\d)/, '');
+
+        setTouched((prev) => ({
+            ...prev,
+            [field]: true,
+        }));
+
+        form.setData(field, normalizedValue === '' ? '' : Number(normalizedValue));
+        form.clearErrors(field);
+    };
+
     const renderImageField = (
         field: ImageField,
         labelKey: string,
@@ -368,21 +384,14 @@ export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrl
                                 <Input
                                     id="sort_order"
                                     type="number"
-                                    value={form.data.sort_order}
+                                    value={String(form.data.sort_order ?? '')}
                                     className={cn('w-full', formControlStateClass(fieldState('sort_order')))}
                                     onKeyDown={(event) => {
                                         if (['e', 'E', '+', '-'].includes(event.key)) {
                                             event.preventDefault();
                                         }
                                     }}
-                                    onChange={(event) => {
-                                        const value = event.target.value;
-
-                                        if (value === '' || Number(value) >= 0) {
-                                            markTouched('sort_order');
-                                            setField('sort_order', Number(value));
-                                        }
-                                    }}
+                                    onChange={(event) => handleNumberChange('sort_order', event.target.value)}
                                 />
                             </FormField>
 

@@ -3,12 +3,14 @@
 namespace App\Http\Middleware;
 
 use App\Models\Admin;
+use App\Models\AdminNotification;
 use App\Models\NotificationCustom;
 use App\Support\AppPermissions;
 use App\Support\JsonTranslations;
-use App\Support\TopUpCardGenerationStatus;
+use App\Support\NavigationStack;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use Symfony\Component\HttpFoundation\Response;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -20,6 +22,14 @@ class HandleInertiaRequests extends Middleware
      * @var string
      */
     protected $rootView = 'app';
+
+    public function handle(Request $request, \Closure $next): Response
+    {
+        $response = parent::handle($request, $next);
+        NavigationStack::commit($request, $response);
+
+        return $response;
+    }
 
     /**
      * Determines the current asset version.
@@ -46,70 +56,89 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $user ? [
-                    'id' => $user->id,
-                    'username' => $user->username,
-                ] : null,
-                'permissions' => $user instanceof Admin
-                    ? $user->getAllPermissions()->pluck('name')->values()->all()
-                    : [],
-                'roles' => $user instanceof Admin
-                    ? $user->getRoleNames()->values()->all()
-                    : [],
+                'user' => $user
+                    ? [
+                        'id' => $user->id,
+                        'username' => $user->username,
+                    ]
+                    : null,
+                'permissions' => $user instanceof Admin ? $user->getAllPermissions()->pluck('name')->values()->all() : [],
+                'roles' => $user instanceof Admin ? $user->getRoleNames()->values()->all() : [],
                 'is_super_admin' => $user instanceof Admin && $user->hasRole(AppPermissions::SuperAdmin),
             ],
             'locale' => $locale,
             'translations' => $this->translationsFor($locale),
-            'unreadNotifications' => $user
-                ? NotificationCustom::query()->where('is_read', false)->count()
-                : 0,
-            'recentNotifications' => $user ? $this->recentNotifications() : [],
+            'unreadNotifications' =>
+                $user instanceof Admin
+                    ? ($user->can('notifications.view')
+                        ? AdminNotification::query()
+                            ->whereNull('read_at')
+                            ->count()
+                        : 0)
+                    : ($user
+                        ? NotificationCustom::query()
+                            ->where('user_id', $user->id)
+                            ->whereDate('created_at', today()->toDateString())
+                            ->where('is_read', false)
+                            ->count()
+                        : 0),
+            'recentNotifications' =>
+                $user instanceof Admin
+                    ? ($user->can('notifications.view')
+                        ? $this->recentAdminNotifications()
+                        : [])
+                    : ($user
+                        ? $this->recentNotifications($user->id)
+                        : []),
             'flash' => $this->flashPayload($request),
-            'topUpCardGeneration' => fn () => $this->topUpCardGeneration($request),
+            'return_to' => NavigationStack::preview($request),
         ];
     }
 
     /**
-     * @return array{token: string, status: string|null, total_cards: int}|null
+     * @return list<array{id: int, source: string, title: string, body: string, category: string, is_read: bool, time: string}>
      */
-    private function topUpCardGeneration(Request $request): ?array
-    {
-        $user = $request->user();
-
-        if (!$user instanceof Admin || !$user->can('top-up-cards.view')) {
-            return null;
-        }
-
-        $token = $request->session()->get('top_up_card_generation_token');
-
-        return TopUpCardGenerationStatus::forToken(is_string($token) ? $token : null);
-    }
-
-    /**
-     * @return list<array{id: int, title: string, body: string, category: string, is_read: bool, time: string}>
-     */
-    private function recentNotifications(): array
+    private function recentNotifications(int $userId): array
     {
         return NotificationCustom::query()
             ->select(['id', 'title', 'body', 'category', 'is_read', 'sent_at', 'created_at'])
+            ->where('user_id', $userId)
+            ->whereDate('created_at', today()->toDateString())
             ->latest('sent_at')
             ->latest('id')
             ->limit(5)
             ->get()
-            ->map(fn (NotificationCustom $notification): array => [
-                'id' => $notification->id,
-                'title' => $notification->title,
-                'body' => $notification->body,
-                'category' => $notification->category->value,
-                'is_read' => $notification->is_read,
-                'time' => ($notification->sent_at ?? $notification->created_at)->format('g:i A'),
-            ])
+            ->map(
+                fn (NotificationCustom $notification): array => [
+                    'id' => $notification->id,
+                    'source' => 'custom',
+                    'title' => $notification->title,
+                    'body' => $notification->body,
+                    'category' => $notification->category->value,
+                    'is_read' => $notification->is_read,
+                    'time' => ($notification->sent_at ?? $notification->created_at)->format('g:i A'),
+                ],
+            )
             ->values()
             ->all();
     }
 
     /**
-        * @return array{success: mixed, error: mixed, import_error: mixed, import_error_token: string|null, count: mixed, token: string|null}
+     * @return list<array<string, mixed>>
+     */
+    private function recentAdminNotifications(): array
+    {
+        return AdminNotification::query()
+            ->latest('created_at')
+            ->latest('id')
+            ->limit(5)
+            ->get()
+            ->map(fn (AdminNotification $notification): array => $notification->toDropdownArray())
+            ->all();
+    }
+
+    /**
+     * @return array{success: mixed, error: mixed, import_error: mixed, import_error_token: string|null, count: mixed, token: string|null}
      */
     private function flashPayload(Request $request): array
     {
@@ -125,7 +154,7 @@ class HandleInertiaRequests extends Middleware
             'import_error' => $importError,
             'import_error_token' => $importErrorToken,
             'count' => $count,
-            'token' => ($success !== null || $error !== null) ? (string) str()->uuid() : null,
+            'token' => $success !== null || $error !== null ? (string) str()->uuid() : null,
         ];
     }
 

@@ -228,11 +228,14 @@ export default function PackageIndex({
                                 direction: nextDirection,
                             });
                         }}
-                        onCreate={() =>
-                            setReferenceForm({
-                                kind: 'network',
-                                item: null,
-                            })
+                        onCreate={
+                            can('packages.create')
+                                ? () =>
+                                      setReferenceForm({
+                                          kind: 'network',
+                                          item: null,
+                                      })
+                                : undefined
                         }
                         createLabel={t('packages.networks.create')}
                         onBulkDelete={
@@ -241,7 +244,7 @@ export default function PackageIndex({
                         bulkDeleteTitle={t('packages.networks.bulk_delete_title')}
                         actions={(row) => (
                             <>
-                                {can('networks.update') ? (
+                                {can('packages.update') ? (
                                     <TableActionButton
                                         label={t('common.edit')}
                                         icon={SquarePenIcon}
@@ -275,7 +278,6 @@ export default function PackageIndex({
                                 header: t('packages.network'),
                                 className: 'font-medium',
                                 mobile: 'title',
-                                sortable: true,
                                 searchValue: (row) =>
                                     String(
                                         locale === 'en'
@@ -325,11 +327,14 @@ export default function PackageIndex({
                                 direction: nextDirection,
                             });
                         }}
-                        onCreate={() =>
-                            setReferenceForm({
-                                kind: 'speed',
-                                item: null,
-                            })
+                        onCreate={
+                            can('packages.create')
+                                ? () =>
+                                      setReferenceForm({
+                                          kind: 'speed',
+                                          item: null,
+                                      })
+                                : undefined
                         }
                         createLabel={t('packages.speeds.create')}
                         onBulkDelete={
@@ -338,7 +343,7 @@ export default function PackageIndex({
                         bulkDeleteTitle={t('packages.speeds.bulk_delete_title')}
                         actions={(row) => (
                             <>
-                                {can('speeds.update') ? (
+                                {can('packages.update') ? (
                                     <TableActionButton
                                         label={t('common.edit')}
                                         icon={SquarePenIcon}
@@ -372,7 +377,6 @@ export default function PackageIndex({
                                 header: t('packages.speed'),
                                 className: 'font-medium',
                                 mobile: 'title',
-                                sortable: true,
                                 searchValue: (row) => String((row as SpeedOption).mbps ?? ''),
                                 cell: (row) => (
                                     <span className="inline-flex items-center gap-1.5">
@@ -412,11 +416,14 @@ export default function PackageIndex({
                                 direction: nextDirection,
                             });
                         }}
-                        onCreate={() =>
-                            setReferenceForm({
-                                kind: 'term',
-                                item: null,
-                            })
+                        onCreate={
+                            can('packages.create')
+                                ? () =>
+                                      setReferenceForm({
+                                          kind: 'term',
+                                          item: null,
+                                      })
+                                : undefined
                         }
                         createLabel={t('packages.terms.create')}
                         onBulkDelete={
@@ -425,7 +432,7 @@ export default function PackageIndex({
                         bulkDeleteTitle={t('packages.terms.bulk_delete_title')}
                         actions={(row) => (
                             <>
-                                {can('terms.update') ? (
+                                {can('packages.update') ? (
                                     <TableActionButton
                                         label={t('common.edit')}
                                         icon={SquarePenIcon}
@@ -459,7 +466,6 @@ export default function PackageIndex({
                                 header: t('packages.term'),
                                 className: 'font-medium',
                                 mobile: 'title',
-                                sortable: true,
                                 searchValue: (row) => String((row as TermOption).months ?? ''),
                                 cell: (row) => (
                                     <span className="inline-flex items-center gap-1.5">
@@ -501,11 +507,14 @@ export default function PackageIndex({
                                 direction: nextDirection,
                             });
                         }}
-                        onCreate={() =>
-                            setReferenceForm({
-                                kind: 'addon',
-                                item: null,
-                            })
+                        onCreate={
+                            can('packages.create')
+                                ? () =>
+                                      setReferenceForm({
+                                          kind: 'addon',
+                                          item: null,
+                                      })
+                                : undefined
                         }
                         createLabel={t('packages.addons.create')}
                         onBulkDelete={
@@ -514,7 +523,7 @@ export default function PackageIndex({
                         bulkDeleteTitle={t('packages.addons.bulk_delete_title')}
                         actions={(row) => (
                             <>
-                                {can('addons.update') ? (
+                                {can('packages.update') ? (
                                     <TableActionButton
                                         label={t('common.edit')}
                                         icon={SquarePenIcon}
@@ -548,7 +557,6 @@ export default function PackageIndex({
                                 header: t('packages.addons.title'),
                                 className: 'font-medium',
                                 mobile: 'title',
-                                sortable: true,
                                 searchValue: (row) =>
                                     String(
                                         locale === 'en'
@@ -684,7 +692,6 @@ export default function PackageIndex({
                             id: 'speed',
                             header: t('packages.speed'),
                             mobile: 'meta',
-                            sortable: true,
                             cell: (row) => <span>{row.speed?.mbps ? `${row.speed.mbps} Mbps` : '—'}</span>,
                         },
 
@@ -692,7 +699,6 @@ export default function PackageIndex({
                             id: 'term',
                             header: t('packages.term'),
                             mobile: 'meta',
-                            sortable: true,
                             cell: (row) => (
                                 <span>{row.term?.months ? `${row.term.months} ${t('packages.months')} ` : '—'}</span>
                             ),
@@ -701,15 +707,13 @@ export default function PackageIndex({
                         {
                             id: 'price',
                             header: t('packages.price'),
-                            sortable: true,
-                            cell: (row) => <span>{row.price ?? '—'} Pts</span>,
+                            cell: (row) => <span>{row.price ?? '0'} Points</span>,
                         },
 
                         {
                             id: 'installation_fee',
                             header: t('packages.installation_fee'),
-                            sortable: true,
-                            cell: (row) => <span>{row.installation_fee ?? '—'} Pts</span>,
+                            cell: (row) => <span>{row.installation_fee ?? '0'} Points</span>,
                         },
                         {
                             id: 'recommended',

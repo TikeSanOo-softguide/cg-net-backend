@@ -1,22 +1,18 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import {
     BanknoteIcon,
     CalendarDaysIcon,
-    ChevronDownIcon,
-    CirclePlusIcon,
     MinusIcon,
     PlusIcon,
     TicketsIcon,
     TriangleAlertIcon,
-    UserRoundIcon,
+    Building2Icon,
 } from 'lucide-react';
 
 import { FormControl } from '@/components/ui/form-control';
 import { MultiSelect } from '@/components/MultiSelect';
 import { DatePicker } from '@/components/ui/date-picker';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 import {
@@ -43,22 +39,18 @@ function denominationCardClass(checked: boolean, dashed = false): string {
 }
 
 type GenerateFormProps = {
-    agents: { id: number; name: string }[];
-    selectedAgentIds: string[];
-    presets: number[];
+    offices: { id: number; name: string }[];
+    selectedOfficeIds: string[];
+    amounts: number[];
     maxCards?: number;
     selected: Record<string, number>;
-    customOpen: boolean;
-    customValue: string;
     expiresAt: string;
     processing: boolean;
     error?: string;
     onToggle: (amount: number) => void;
     onQuantity: (amount: number, quantity: number) => void;
-    onCustomOpen: (open: boolean) => void;
-    onCustomValue: (value: string) => void;
     onExpiresAt: (value: string) => void;
-    onAgentIds: (values: string[]) => void;
+    onOfficeIds: (values: string[]) => void;
 };
 
 function QuantityStepper({
@@ -149,61 +141,47 @@ function SectionLabel({ icon: Icon, children }: { icon: typeof BanknoteIcon; chi
 }
 
 export function TopUpCardGenerateForm({
-    agents,
-    selectedAgentIds,
-    presets,
+    offices,
+    selectedOfficeIds,
+    amounts,
     maxCards = DEFAULT_MAX_CARDS,
     selected,
-    customOpen,
-    customValue,
     expiresAt,
     processing,
     error,
     onToggle,
     onQuantity,
-    onCustomOpen,
-    onCustomValue,
     onExpiresAt,
-    onAgentIds,
+    onOfficeIds,
 }: GenerateFormProps) {
     const { t } = useTranslation();
-    const [menuOpen, setMenuOpen] = useState(false);
     const maxQuantity = Math.max(1, maxCards);
-    const agentMultiplier = Math.max(1, selectedAgentIds.length || agents.length);
+    const officeMultiplier = Math.max(1, selectedOfficeIds.length || offices.length);
     const entries = Object.entries(selected).filter(([, quantity]) => quantity > 0);
     const selectedCards = entries.reduce((sum, [, quantity]) => sum + quantity, 0);
-    const totalCards = selectedCards * agentMultiplier;
+    const totalCards = selectedCards * officeMultiplier;
     const totalValue =
-        entries.reduce((sum, [value, quantity]) => sum + Number(value) * quantity, 0) * agentMultiplier;
+        entries.reduce((sum, [value, quantity]) => sum + Number(value) * quantity, 0) * officeMultiplier;
     const overLimit = totalCards > maxQuantity;
-    const customAmount = Number(customValue);
-    const customActive = customOpen && customAmount >= 50;
-    const customQuantity = selected[String(customAmount)] ?? 1;
-
-    useEffect(() => {
-        if (!customOpen) {
-            setMenuOpen(false);
-        }
-    }, [customOpen]);
 
     return (
         <div className="flex flex-col gap-3">
             <div>
-                <SectionLabel icon={UserRoundIcon}>{t('top_up_cards.agent.title')}</SectionLabel>
-                <p className="mt-0.5 ps-5 text-[11px] text-muted-foreground">{t('top_up_cards.agent.description')}</p>
+                <SectionLabel icon={Building2Icon}>{t('top_up_cards.office.title')}</SectionLabel>
+                <p className="mt-0.5 ps-5 text-[11px] text-muted-foreground">{t('top_up_cards.office.description')}</p>
                 <div className="mt-2">
                     <MultiSelect
-                        id="top-up-card-agents"
-                        values={selectedAgentIds}
-                        options={agents.map((agent) => ({
-                            value: String(agent.id),
-                            label: agent.name,
-                            icon: UserRoundIcon,
+                        id="top-up-card-offices"
+                        values={selectedOfficeIds}
+                        options={offices.map((office) => ({
+                            value: String(office.id),
+                            label: office.name,
+                            icon: Building2Icon,
                         }))}
-                        onChange={onAgentIds}
-                        placeholder={t('top_up_cards.agent.all_agents')}
-                        heading={t('top_up_cards.agent.title')}
-                        icon={UserRoundIcon}
+                        onChange={onOfficeIds}
+                        placeholder={t('top_up_cards.office.all_offices')}
+                        heading={t('top_up_cards.office.title')}
+                        icon={Building2Icon}
                         disabled={processing}
                     />
                 </div>
@@ -212,7 +190,7 @@ export function TopUpCardGenerateForm({
                 <SectionLabel icon={BanknoteIcon}>{t('top_up_cards.denominations')}</SectionLabel>
                 <p className="mt-0.5 ps-5 text-[11px] text-muted-foreground">{t('top_up_cards.denominations_hint')}</p>
                 <div className="mt-2 grid grid-cols-2 gap-1 sm:grid-cols-4">
-                    {presets.map((amount) => {
+                    {amounts.map((amount) => {
                         const key = String(amount);
                         const quantity = selected[key] ?? 0;
                         const checked = quantity > 0;
@@ -241,81 +219,6 @@ export function TopUpCardGenerateForm({
                             </div>
                         );
                     })}
-                    <DropdownMenu
-                        modal={false}
-                        open={menuOpen}
-                        onOpenChange={(open) => {
-                            setMenuOpen(open);
-
-                            if (open) {
-                                onCustomOpen(true);
-                            } else if (customAmount < 50) {
-                                onCustomOpen(false);
-                            }
-                        }}
-                    >
-                        <div className={denominationCardClass(customActive, true)}>
-                            <DropdownMenuTrigger asChild>
-                                <button
-                                    type="button"
-                                    disabled={processing}
-                                    aria-label={t('top_up_cards.add_custom')}
-                                    className="flex w-full items-center justify-between gap-2 ps-1 text-left disabled:pointer-events-none disabled:opacity-60"
-                                >
-                                    {customActive ? (
-                                        <AmountLabel amount={customAmount} />
-                                    ) : (
-                                        <span className="flex min-w-0 items-center gap-2">
-                                            <CirclePlusIcon
-                                                className="size-3.5 shrink-0 text-muted-foreground"
-                                                strokeWidth={2}
-                                            />
-                                            <span className="truncate text-[12px] text-muted-foreground">
-                                                {t('top_up_cards.custom_amount')}
-                                            </span>
-                                        </span>
-                                    )}
-                                    <ChevronDownIcon
-                                        className={cn(
-                                            'size-3 shrink-0 text-muted-foreground',
-                                            menuOpen && 'rotate-180',
-                                        )}
-                                        strokeWidth={2}
-                                    />
-                                </button>
-                            </DropdownMenuTrigger>
-                            {customActive ? (
-                                <QuantityStepper
-                                    quantity={customQuantity}
-                                    maxQuantity={maxQuantity}
-                                    processing={processing}
-                                    decreaseLabel={t('top_up_cards.decrease')}
-                                    increaseLabel={t('top_up_cards.increase')}
-                                    onQuantity={(next) => onQuantity(customAmount, next)}
-                                />
-                            ) : null}
-                        </div>
-                        <DropdownMenuContent
-                            align="start"
-                            className="w-[200px] p-2"
-                            onCloseAutoFocus={(event) => event.preventDefault()}
-                        >
-                            <p className="mb-1.5 text-[11px] font-medium">{t('top_up_cards.custom_amount')}</p>
-                            <FormControl icon={BanknoteIcon} compact>
-                                <Input
-                                    id="custom-amount"
-                                    type="number"
-                                    min={50}
-                                    value={customValue}
-                                    disabled={processing}
-                                    placeholder="2500"
-                                    className="h-8 text-[13px]"
-                                    onChange={(event) => onCustomValue(event.target.value)}
-                                    onKeyDown={(event) => event.stopPropagation()}
-                                />
-                            </FormControl>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
                 </div>
             </div>
 
@@ -381,7 +284,7 @@ export function TopUpCardGenerateForm({
                         {entries.map(([value, quantity]) => (
                             <span key={value}>
                                 {formatTopUpNumber(value)} × {quantity}
-                                {agentMultiplier > 1 ? ` × ${agentMultiplier}` : ''}
+                                {officeMultiplier > 1 ? ` × ${officeMultiplier}` : ''}
                             </span>
                         ))}
                     </p>

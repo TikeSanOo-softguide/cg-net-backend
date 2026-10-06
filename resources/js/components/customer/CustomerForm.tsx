@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react';
 import type { InertiaFormProps } from '@inertiajs/react';
-import { CircleDotIcon, LockIcon, UserIcon } from 'lucide-react';
+import { CircleDotIcon, EyeIcon, EyeOffIcon, LockIcon, UserIcon } from 'lucide-react';
 
 import { FormActionBar } from '@/components/FormActionBar';
 import { PhoneField } from '@/components/customer/PhoneField';
@@ -52,6 +52,8 @@ export function CustomerForm({ form, onSubmit, mode = 'create', submitLabel, onC
     const passwordRequired = mode === 'create';
     const [touched, setTouched] = useState<TouchedFields>(untouched);
     const [submitted, setSubmitted] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
 
     const markTouched = (field: keyof CustomerFormValues) => {
         setTouched((current) => ({ ...current, [field]: true }));
@@ -171,6 +173,9 @@ export function CustomerForm({ form, onSubmit, mode = 'create', submitLabel, onC
                             <SelectContent>
                                 <SelectItem value="active">{t('status.active')}</SelectItem>
                                 <SelectItem value="suspended">{t('status.suspended')}</SelectItem>
+                                <SelectItem value="deactivated" disabled>
+                                    {t('status.deactivated')}
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </FormField>
@@ -181,18 +186,33 @@ export function CustomerForm({ form, onSubmit, mode = 'create', submitLabel, onC
                         icon={LockIcon}
                         required={passwordRequired}
                     >
-                        <Input
-                            id="password"
-                            type="password"
-                            value={form.data.password}
-                            required={passwordRequired}
-                            autoComplete="new-password"
-                            placeholder={passwordRequired ? undefined : t('customers.password_optional')}
-                            aria-invalid={fieldState('password') === 'error'}
-                            className={formControlStateClass(fieldState('password'))}
-                            onBlur={() => markTouched('password')}
-                            onChange={(event) => setField('password', event.target.value)}
-                        />
+                        <div className="relative">
+                            <Input
+                                id="password"
+                                type={showPassword ? 'text' : 'password'}
+                                value={form.data.password}
+                                required={passwordRequired}
+                                autoComplete="new-password"
+                                placeholder={
+                                    passwordRequired
+                                        ? t('customers.password_placeholder')
+                                        : t('customers.password_optional')
+                                }
+                                aria-invalid={fieldState('password') === 'error'}
+                                className={`${formControlStateClass(fieldState('password'))} pe-10`}
+                                onBlur={() => markTouched('password')}
+                                onChange={(event) => setField('password', event.target.value)}
+                            />
+                            <button
+                                type="button"
+                                className="absolute inset-y-0 right-1 inline-flex size-8 my-auto items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                onClick={() => setShowPassword((visible) => !visible)}
+                                aria-label={showPassword ? t('auth.hide_password') : t('auth.show_password')}
+                                aria-pressed={showPassword}
+                            >
+                                {showPassword ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
+                            </button>
+                        </div>
                     </FormField>
                     <FormField
                         label={t('customers.password_confirmation')}
@@ -201,17 +221,39 @@ export function CustomerForm({ form, onSubmit, mode = 'create', submitLabel, onC
                         icon={LockIcon}
                         required={passwordRequired}
                     >
-                        <Input
-                            id="password_confirmation"
-                            type="password"
-                            value={form.data.password_confirmation}
-                            required={passwordRequired || form.data.password.length > 0}
-                            autoComplete="new-password"
-                            aria-invalid={fieldState('password_confirmation') === 'error'}
-                            className={formControlStateClass(fieldState('password_confirmation'))}
-                            onBlur={() => markTouched('password_confirmation')}
-                            onChange={(event) => setField('password_confirmation', event.target.value)}
-                        />
+                        <div className="relative">
+                            <Input
+                                id="password_confirmation"
+                                type={showPasswordConfirmation ? 'text' : 'password'}
+                                value={form.data.password_confirmation}
+                                required={passwordRequired || form.data.password.length > 0}
+                                autoComplete="new-password"
+                                placeholder={
+                                    form.data.password.length > 0
+                                        ? t('customers.password_confirmation_placeholder')
+                                        : undefined
+                                }
+                                aria-invalid={fieldState('password_confirmation') === 'error'}
+                                className={`${formControlStateClass(fieldState('password_confirmation'))} pe-10`}
+                                onBlur={() => markTouched('password_confirmation')}
+                                onChange={(event) => setField('password_confirmation', event.target.value)}
+                            />
+                            <button
+                                type="button"
+                                className="absolute inset-y-0 right-1 inline-flex size-8 my-auto items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                onClick={() => setShowPasswordConfirmation((visible) => !visible)}
+                                aria-label={
+                                    showPasswordConfirmation ? t('auth.hide_password') : t('auth.show_password')
+                                }
+                                aria-pressed={showPasswordConfirmation}
+                            >
+                                {showPasswordConfirmation ? (
+                                    <EyeOffIcon className="size-4" />
+                                ) : (
+                                    <EyeIcon className="size-4" />
+                                )}
+                            </button>
+                        </div>
                     </FormField>
                 </div>
             </div>

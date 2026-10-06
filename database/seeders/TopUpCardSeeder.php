@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Enums\TopUpCardStatus;
 use App\Models\Batch;
+use App\Models\Office;
 use App\Models\TopUpCard;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -18,6 +19,12 @@ class TopUpCardSeeder extends Seeder
             return;
         }
 
+        $office = Office::query()->where('name', 'Yangon Central Office')->first();
+
+        if (!$office) {
+            return;
+        }
+
         echo "Top-up card seeder started\n";
 
         $batch = Batch::factory()->create([
@@ -29,6 +36,7 @@ class TopUpCardSeeder extends Seeder
             ->create([
                 'status' => TopUpCardStatus::Pending,
                 'batch_id' => $batch->id,
+                'office_id' => $office->id,
             ]);
 
         TopUpCard::factory()
@@ -36,6 +44,7 @@ class TopUpCardSeeder extends Seeder
             ->redeemed($lastUser)
             ->create([
                 'batch_id' => $batch->id,
+                'office_id' => $office->id,
             ]);
 
         TopUpCard::factory()
@@ -45,6 +54,7 @@ class TopUpCardSeeder extends Seeder
                 'batch_id' => $batch->id,
                 'redeemed_at' => null,
                 'redeemed_by' => null,
+                'office_id' => $office->id,
             ]);
 
         TopUpCard::factory()
@@ -55,6 +65,7 @@ class TopUpCardSeeder extends Seeder
                 'redeemed_at' => null,
                 'redeemed_by' => null,
                 'expires_at' => now()->subDays(5),
+                'office_id' => $office->id,
             ]);
 
         TopUpCard::factory()
@@ -62,6 +73,7 @@ class TopUpCardSeeder extends Seeder
             ->create([
                 'status' => TopUpCardStatus::Blocked,
                 'batch_id' => $batch->id,
+                'office_id' => $office->id,
                 'redeemed_at' => null,
                 'redeemed_by' => null,
             ]);

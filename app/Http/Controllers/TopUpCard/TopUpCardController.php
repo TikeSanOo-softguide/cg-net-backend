@@ -7,11 +7,11 @@ use App\Jobs\GenerateTopUpCardsJob;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TopUpCard\GenerateTopUpCardsRequest;
 use App\Models\Admin;
-use App\Models\Agent;
+use App\Models\Office;
 use App\Models\Batch;
 use App\Models\TopUpCard;
 use App\Support\GeneratesTopUpCards;
-use App\Support\TopUpCardAgents;
+use App\Support\TopUpCardOffices;
 use App\Support\TopUpCardGenerationStatus;
 use App\Http\Controllers\InOutManagement\CSV\TopUpCard as TopUpCardCsv;
 use Illuminate\Http\RedirectResponse;
@@ -28,11 +28,6 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TopUpCardController extends Controller
 {
-    /**
-     * @var list<int>
-     */
-    public const Presets = [50, 100, 250, 500];
-
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search'));
@@ -63,10 +58,10 @@ class TopUpCardController extends Controller
                 'redeemed_at',
                 'redeemed_by',
                 'batch_id',
-                'wallet_transaction_id',
+                'ledger_transaction_id',
                 'created_at',
             ])
-            ->with(['redeemedBy:id,name,phone', 'batch:id,batch_no,status', 'walletTransaction:id,transaction_no'])
+            ->with(['redeemedBy:id,name,phone', 'batch:id,batch_no,status', 'ledgerTransaction:id,transaction_no'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->whereLike('serial_no', '%' . $search . '%');
             })
@@ -100,8 +95,8 @@ class TopUpCardController extends Controller
             ],
         ];
 
-        if ($partialOnly === null || $this->wantsInertiaProp($partialOnly, 'agents')) {
-            $props['agents'] = $this->agentOptions();
+        if ($partialOnly === null || $this->wantsInertiaProp($partialOnly, 'offices')) {
+            $props['offices'] = $this->officeOptions();
         }
 
         if ($partialOnly === null || $this->wantsInertiaProp($partialOnly, 'generated')) {
@@ -115,11 +110,12 @@ class TopUpCardController extends Controller
                 'total_cards' => (int) ($generation['total_cards'] ?? 0),
                 'completed_chunks' => (int) ($generation['completed_chunks'] ?? 0),
                 'total_chunks' => (int) ($generation['total_chunks'] ?? 0),
+                'source' => $generation['source'] ?? null,
             ];
         }
 
         if ($partialOnly === null || $this->wantsInertiaProp($partialOnly, 'presets')) {
-            $props['presets'] = self::Presets;
+            $props['presets'] = $this->presetAmounts();
         }
 
         if ($partialOnly === null || $this->wantsInertiaProp($partialOnly, 'max_cards')) {
@@ -178,11 +174,11 @@ class TopUpCardController extends Controller
 
             $token = Str::random(64);
             $amounts = $request->validated('amounts');
-            $agentIds = array_values(array_unique(array_map('intval', $request->validated('agent_ids', []))));
-            $agentCodes = TopUpCardAgents::resolveCodes($agentIds);
+            $officeIds = array_values(array_unique(array_map('intval', $request->validated('office_ids', []))));
+            $officeCodes = TopUpCardOffices::resolveCodes($officeIds);
             $expiresAt = $request->date('expires_at')->toDateString();
             $chunkSize = max(1, (int) config('top_up_cards.chunk_size', 500));
-            $chunks = $this->buildGenerationPlan($agentCodes, $amounts, $chunkSize);
+            $chunks = $this->buildGenerationPlan($officeCodes, $amounts, $chunkSize);
 
             if ($previousToken !== null) {
                 $this->clearGenerationCache($previousToken);
@@ -196,13 +192,13 @@ class TopUpCardController extends Controller
             $amountBreakdown = [];
             $metadataItems = [];
 
-            foreach ($agentCodes as $agentCode) {
+            foreach ($officeCodes as $officeCode) {
                 foreach ($amounts as $tier) {
                     $amount = (int) $tier['value'];
                     $quantity = (int) $tier['quantity'];
 
                     $metadataItems[] = [
-                        'agent_cd' => (string) $agentCode,
+                        'office_cd' => (string) $officeCode,
                         'amount' => $amount,
                         'quantity' => $quantity,
                     ];
@@ -212,7 +208,7 @@ class TopUpCardController extends Controller
             foreach ($amounts as $tier) {
                 $amount = (int) $tier['value'];
                 $quantity = (int) $tier['quantity'];
-                $issuedCards = $quantity * count($agentCodes);
+                $issuedCards = $quantity * count($officeCodes);
                 $issuedValue = $amount * $issuedCards;
 
                 $totalCards += $issuedCards;
@@ -235,7 +231,7 @@ class TopUpCardController extends Controller
                     'total_chunks' => count($chunks),
                     'expires_at' => $expiresAt,
                     'amounts' => $amountBreakdown,
-                    'agent_codes' => $agentCodes,
+                    'office_codes' => $officeCodes,
                     'user_id' => $userId,
                 ],
                 now()->addDay(),
@@ -261,7 +257,7 @@ class TopUpCardController extends Controller
                     $userId,
                     $token,
                     $productionDate->toIso8601String(),
-                    $chunk['agent_code'],
+                    $chunk['office_code'],
                     $index,
                     count($chunks),
                     (int) $cardBatch->id,
@@ -332,7 +328,7 @@ class TopUpCardController extends Controller
                     'total_chunks' => count($chunks),
                     'expires_at' => $expiresAt,
                     'amounts' => $amountBreakdown,
-                    'agent_codes' => $agentCodes,
+                    'office_codes' => $officeCodes,
                     'batch_id' => $queueBatch->id,
                     'top_up_batch_id' => $cardBatch->id,
                     'top_up_batch_no' => $cardBatch->batch_no,
@@ -350,22 +346,22 @@ class TopUpCardController extends Controller
     }
 
     /**
-     * @param  list<string>  $agentCodes
+     * @param  list<string>  $officeCodes
      * @param  list<array{value: int|string, quantity: int}>  $amounts
-     * @return list<array{agent_code: string, amounts: list<array{value: int|string, quantity: int}>}>
+     * @return list<array{office_code: string, amounts: list<array{value: int|string, quantity: int}>}>
      */
-    private function buildGenerationPlan(array $agentCodes, array $amounts, int $chunkSize): array
+    private function buildGenerationPlan(array $officeCodes, array $amounts, int $chunkSize): array
     {
         $plan = [];
 
-        foreach ($agentCodes as $agentCode) {
+        foreach ($officeCodes as $officeCode) {
             foreach ($amounts as $tier) {
                 $remaining = (int) $tier['quantity'];
 
                 while ($remaining > 0) {
                     $quantity = min($remaining, $chunkSize);
                     $plan[] = [
-                        'agent_code' => (string) $agentCode,
+                        'office_code' => (string) $officeCode,
                         'amounts' => [
                             [
                                 'value' => $tier['value'],
@@ -510,37 +506,38 @@ class TopUpCardController extends Controller
     }
 
     /**
-     * @return list<array{id: int, name: string}>
+     * @return list<array{id: int, name: string, code: string}>
      */
-    private function agentOptions(): array
+    private function officeOptions(): array
     {
-        /** @var list<array{id: int, name: string}>|null $cached */
-        $cached = Cache::get('top_up_cards.agent_options');
+        /** @var list<array{id: int, name: string, code: string}>|null $cached */
+        $cached = Cache::get('top_up_cards.office_options');
 
-        if (is_array($cached) && $cached !== []) {
+        if (is_array($cached) && isset($cached[0]['code'])) {
             return $cached;
         }
 
-        $agents = Agent::query()
-            ->select(['id', 'name'])
+        $offices = Office::query()
+            ->select(['id', 'name', 'cd'])
             ->orderBy('name')
             ->get()
             ->map(
-                fn(Agent $agent): array => [
-                    'id' => (int) $agent->id,
-                    'name' => (string) $agent->name,
+                fn(Office $office): array => [
+                    'id' => (int) $office->id,
+                    'name' => (string) $office->name,
+                    'code' => (string) $office->cd,
                 ],
             )
             ->all();
 
-        // Do not cache an empty list — agents may be added right after the first visit.
-        if ($agents !== []) {
-            Cache::put('top_up_cards.agent_options', $agents, now()->addMinutes(5));
+        // Do not cache an empty list — offices may be added right after the first visit.
+        if ($offices !== []) {
+            Cache::put('top_up_cards.office_options', $offices, now()->addMinutes(5));
         } else {
-            Cache::forget('top_up_cards.agent_options');
+            Cache::forget('top_up_cards.office_options');
         }
 
-        return $agents;
+        return $offices;
     }
 
     private function generationToken(Request $request): ?string
@@ -754,6 +751,7 @@ class TopUpCardController extends Controller
         $search = trim($request->string('search')->toString());
         $status = $request->string('status')->toString();
         $amount = $request->string('amount')->toString();
+        $office = $request->string('office')->toString();
         $batch = $request->string('batch')->toString();
         $from = $request->string('from')->toString();
         $to = $request->string('to')->toString();
@@ -775,7 +773,12 @@ class TopUpCardController extends Controller
             ->get();
 
         $cards = TopUpCard::query()
-            ->with(['redeemedBy:id,name,phone', 'batch:id,batch_no,status', 'walletTransaction:id,transaction_no'])
+            ->with([
+                'redeemedBy:id,name,phone',
+                'batch:id,batch_no,status',
+                'office:id,name,cd',
+                'ledgerTransaction:id,transaction_no',
+            ])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->whereLike('serial_no', "%{$search}%");
             })
@@ -784,6 +787,9 @@ class TopUpCardController extends Controller
             })
             ->when($amount !== '' && is_numeric($amount), function ($query) use ($amount): void {
                 $query->where('amount', $amount);
+            })
+            ->when(ctype_digit($office), function ($query) use ($office): void {
+                $query->where('office_id', (int) $office);
             })
             ->when($batch !== '', function ($query) use ($batch): void {
                 if (ctype_digit($batch)) {
@@ -807,8 +813,9 @@ class TopUpCardController extends Controller
 
         return Inertia::render('TopUpCards/CardHistory', [
             'cards' => $cards,
-            'presets' => self::Presets,
+            'generated' => $request->session()->get('top_up_card_export_batch', []),
             'amounts' => $this->amountOptions(),
+            'offices' => $this->officeOptions(),
             'batches' => $batches,
             'stats' => $this->stats(),
             'filters' => [
@@ -816,6 +823,7 @@ class TopUpCardController extends Controller
                 'status' => $status,
                 'amount' => $amount,
                 'batch' => $batch,
+                'office' => $office,
                 'from' => $from,
                 'to' => $to,
                 'sort' => $sort,
@@ -847,8 +855,14 @@ class TopUpCardController extends Controller
             'redeemed_by_phone' => $card->redeemedBy?->phone,
             'batch_no' => $card->batch?->batch_no,
             'batch_status' => $card->batch?->status,
-            'transaction_id' => $card->walletTransaction?->id,
-            'transaction_no' => $card->walletTransaction?->transaction_no,
+            'office' => $card->office
+                ? [
+                    'name' => $card->office->name,
+                    'code' => (string) $card->office->cd,
+                ]
+                : null,
+            'transaction_id' => $card->ledgerTransaction?->id,
+            'transaction_no' => $card->ledgerTransaction?->transaction_no,
         ];
     }
 
@@ -871,28 +885,23 @@ class TopUpCardController extends Controller
         ];
     }
 
+    private function presetAmounts(): Collection
+    {
+        return collect([50, 100, 250, 500]);
+    }
+
     /**
      * @return list<string>
      */
     private function amountOptions(): array
     {
-        /** @var list<string> */
-        return Cache::remember('top_up_cards.amount_options', now()->addMinutes(5), function (): array {
-            $stored = TopUpCard::query()
-                ->select('amount')
-                ->distinct()
-                ->orderBy('amount')
-                ->pluck('amount')
-                ->map(fn($amount): string => (string) $amount);
-
-            return Collection::make(self::Presets)
-                ->map(fn(int $amount): string => (string) $amount)
-                ->merge($stored)
-                ->map(fn(string|int $amount): string => (string) (int) $amount)
-                ->unique()
-                ->values()
-                ->all();
-        });
+        return TopUpCard::query()
+            ->select('amount')
+            ->distinct()
+            ->orderBy('amount')
+            ->pluck('amount')
+            ->map(fn($amount): string => (string) $amount)
+            ->all();
     }
 
     private function stats(): array

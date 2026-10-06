@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Models\User;
-use App\Models\BroadbandAccount;
 use App\Models\ChangePasswordRequest;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -19,9 +18,11 @@ class ChangePasswordRequestFactory extends Factory
      */
     public function definition(): array
     {
+        $accountNumber = 'CG' . fake()->unique()->numerify('########');
+
         return [
-            'user_id' => User::factory(),
-            'broadband_account_id' => BroadbandAccount::factory(),
+            'user_id' => User::factory()->state(['broadband_account_number' => $accountNumber]),
+            'broadband_account_number' => $accountNumber,
             'contact_name' => fake()->name(),
             'contact_phone' => fake()->phoneNumber(),
             'new_wifi_name' => fake()->userName() . '_wifi',

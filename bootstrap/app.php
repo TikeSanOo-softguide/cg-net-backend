@@ -3,7 +3,6 @@
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetLocale;
 use App\Support\AdminHome;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -14,8 +13,10 @@ use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\HttpException;
+use App\Services\SecurityLog\SecurityLogService;
 
+use Illuminate\Auth\Access\AuthorizationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__ . '/../routes/web.php',
@@ -39,6 +40,37 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(fn(Request $request) => $request->is('api/*') || $request->expectsJson());
 
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {
+            $statusCode = $response->getStatusCode();
+
+            if ($statusCode === 429 && $request->is('api/redeem/check-serial-no')) {
+                $retryAfter = (int) $response->headers->get('Retry-After', 1800);
+
+                return response()->json(
+                    [
+                        'message' => 'Too many attempts. Please try again after 30 minutes.',
+                        'retry_after' => $retryAfter,
+                    ],
+                    429,
+                    $response->headers->all(),
+                );
+            }
+
+            $isStorageUrl = $request->is('storage/*') || str_contains($request->path(), 'storage/');
+
+            if (in_array($statusCode, [401, 403], true) && !$isStorageUrl) {
+                app(SecurityLogService::class)->record(
+                    event: 'unauthorized_access',
+                    actor: $request->user(),
+                    metadata: [
+                        'reason' => $statusCode === 401 ? 'Unauthenticated access attempt' : 'Forbidden action',
+                        'url' => $request->fullUrl(),
+                        'method' => $request->method(),
+                        'status_code' => $statusCode,
+                    ],
+                    request: $request,
+                );
+            }
+
             if ($response->getStatusCode() === 429 && $request->header('X-Inertia')) {
                 $retryAfter = (int) $response->headers->get('Retry-After', 60);
 

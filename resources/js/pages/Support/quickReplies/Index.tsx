@@ -1,44 +1,74 @@
+import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { useState } from 'react';
-import { MessageSquareTextIcon, PencilIcon, PlusIcon, Trash2Icon } from 'lucide-react';
+import { FolderTreeIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { CopyValueButton } from '@/components/CopyValueButton';
 import { DataTable } from '@/components/DataTable';
 import type { Paginated } from '@/components/Pagination';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
+import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
-import { visitBulkDelete } from '@/lib/bulk-delete';
+import { QuickReplyDetailDialog } from '@/components/support/quick-reply/QuickReplyDetailDialog';
 import { QuickReplyFormDialog, type QuickReplyItem } from '@/components/support/quick-reply/QuickReplyFormDialog';
+import type { QuickReplyCategoryOption } from '@/components/support/quick-reply/QuickReplyForm';
+import { FormControl } from '@/components/ui/form-control';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useCan } from '@/hooks/useCan';
+import { useTranslation } from '@/hooks/useTranslation';
+import { visitBulkDelete } from '@/lib/bulk-delete';
+import { formatDateTime, truncateText } from '@/lib/utils';
 
-type QuickRepliesProps = {
-    quickReplies: Paginated<QuickReplyItem>;
-    filters: {
-        search?: string;
-    };
+type Filters = {
+    search: string;
+    category: string;
 };
 
-export default function QuickRepliesIndex({ quickReplies, filters }: QuickRepliesProps) {
+type Props = {
+    items: Paginated<QuickReplyItem>;
+    existingKeywords: string[];
+    filters: Filters;
+    categories: QuickReplyCategoryOption[];
+};
+
+function responseForLocale(row: QuickReplyItem, locale: string): string {
+    if (locale === 'my') {
+        return row.response_my;
+    }
+
+    if (locale === 'zh') {
+        return row.response_zh;
+    }
+
+    return row.response_en;
+}
+
+export default function QuickRepliesIndex({ items, existingKeywords, filters, categories }: Props) {
+    const { t, locale } = useTranslation();
+    const can = useCan();
+    const [search, setSearch] = useState(filters.search);
     const [formOpen, setFormOpen] = useState(false);
     const [editingReply, setEditingReply] = useState<QuickReplyItem | null>(null);
-    const [pendingDelete, setPendingDelete] = useState<QuickReplyItem | null>(null);
-    const [deleteProcessing, setDeleteProcessing] = useState(false);
+    const [viewingReply, setViewingReply] = useState<QuickReplyItem | null>(null);
+    const [pendingIds, setPendingIds] = useState<number[]>([]);
+    const [processing, setProcessing] = useState(false);
+    const debounce = useRef<number>(0);
+    const canUpdate = can('support.update');
+    const canDelete = can('support.delete');
 
-    const openCreate = () => {
-        setEditingReply(null);
-        setFormOpen(true);
-    };
+    useEffect(() => {
+        setSearch(filters.search);
+    }, [filters.search]);
 
-    const openEdit = (reply: QuickReplyItem) => {
-        setEditingReply(reply);
-        setFormOpen(true);
-    };
+    useEffect(() => () => window.clearTimeout(debounce.current), []);
 
-    const visit = (search: string) => {
+    const visit = (next: Partial<Filters>) => {
         router.get(
             '/support/quick-replies',
-            { search: search || undefined },
+            {
+                search: (next.search ?? filters.search) || undefined,
+                category: (next.category ?? filters.category) || undefined,
+            },
             {
                 preserveState: true,
                 preserveScroll: true,
@@ -47,72 +77,137 @@ export default function QuickRepliesIndex({ quickReplies, filters }: QuickReplie
         );
     };
 
+    const openCreate = () => {
+        setViewingReply(null);
+        setEditingReply(null);
+        setFormOpen(true);
+    };
+
+    const openEdit = (reply: QuickReplyItem) => {
+        setViewingReply(null);
+        setEditingReply(reply);
+        setFormOpen(true);
+    };
+
     return (
         <>
-            <Head title="Quick Replies" />
+            <Head title={t('menu.quick_reply_templates')} />
             <PageContent>
                 <PageHeader />
                 <DataTable
-                    title="Saved quick replies"
-                    titleIcon={MessageSquareTextIcon}
-                    data={quickReplies.data}
+                    data={items.data}
                     getRowId={(row) => String(row.id)}
-                    pagination={quickReplies}
-                    search={filters.search ?? ''}
-                    onSearchChange={visit}
-                    searchPlaceholder="Search by keyword"
-                    onCreate={openCreate}
-                    createLabel="Add quick reply"
-                    onBulkDelete={(ids) => visitBulkDelete('/support/quick-replies/bulk-destroy', ids.map(Number))}
+                    search={search}
+                    onSearchChange={(value) => {
+                        setSearch(value);
+                        window.clearTimeout(debounce.current);
+                        debounce.current = window.setTimeout(() => visit({ search: value }), 300);
+                    }}
+                    searchPlaceholder={t('support.quick_replies.search_placeholder')}
+                    emptyLabel={t('support.quick_replies.empty')}
+                    pagination={items}
+                    filters={
+                        <>
+                            <FormControl icon={FolderTreeIcon} compact className="w-full shrink-0 sm:w-48">
+                                <Select
+                                    value={filters.category || 'all'}
+                                    onValueChange={(value) => visit({ category: value === 'all' ? '' : value })}
+                                >
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue placeholder={t('support.quick_replies.category')} />
+                                    </SelectTrigger>
+                                    <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                        <SelectItem value="all">{t('support.quick_replies.all_categories')}</SelectItem>
+                                        {categories.map((category) => (
+                                            <SelectItem key={category.value} value={category.value}>
+                                                {t(category.label_key)}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </FormControl>
+                        </>
+                    }
+                    onCreate={can('support.create') ? openCreate : undefined}
+                    createLabel={t('support.quick_replies.create')}
+                    onView={setViewingReply}
+                    onBulkDelete={
+                        canDelete
+                            ? (ids) => visitBulkDelete('/support/quick-replies/bulk-destroy', ids.map(Number))
+                            : undefined
+                    }
+                    bulkDeleteTitle={t('support.quick_replies.bulk_delete_title')}
+                    bulkDeleteDescription={t('support.quick_replies.bulk_delete_description')}
                     columns={[
                         {
                             id: 'keyword',
-                            header: 'Keyword',
-                            className: 'font-medium',
+                            header: t('support.quick_replies.keyword'),
                             mobile: 'title',
+                            className: 'font-medium',
                             cell: (row) => (
-                                <span className="block truncate text-[13px] font-medium">{row.keyword}</span>
+                                <span className="block max-w-[180px] truncate" title={row.keyword}>
+                                    {row.keyword}
+                                </span>
                             ),
                         },
                         {
-                            id: 'response_en',
-                            header: 'Response EN',
-                            className: 'max-w-[260px]',
+                            id: 'category',
+                            header: t('support.quick_replies.category'),
                             mobile: 'subtitle',
-                            cell: (row) => <ResponseCell label="EN" value={row.response_en} />,
+                            cell: (row) => t(`support.quick_replies.categories.${row.category}`),
                         },
                         {
-                            id: 'response_my',
-                            header: 'Response MY',
-                            className: 'max-w-[260px]',
-                            cell: (row) => <ResponseCell label="MY" value={row.response_my} />,
+                            id: 'response',
+                            header: t('support.quick_replies.response'),
+                            cell: (row) => {
+                                const response = responseForLocale(row, locale);
+
+                                return (
+                                    <span
+                                        className="block max-w-[280px] truncate text-muted-foreground"
+                                        title={response}
+                                    >
+                                        {truncateText(response, 80)}
+                                    </span>
+                                );
+                            },
                         },
                         {
-                            id: 'response_zh',
-                            header: 'Response ZH',
-                            className: 'max-w-[260px]',
-                            cell: (row) => <ResponseCell label="ZH" value={row.response_zh} />,
+                            id: 'created_at',
+                            header: t('common.created_at'),
+                            mobile: 'meta',
+                            className: 'text-muted-foreground',
+                            cell: (row) => formatDateTime(row.created_at),
+                        },
+                        {
+                            id: 'updated_at',
+                            header: t('common.updated_at'),
+                            className: 'text-muted-foreground',
+                            cell: (row) => formatDateTime(row.updated_at),
                         },
                     ]}
                     actions={(row) => (
                         <>
-                            <TableActionButton
-                                label="Edit quick reply"
-                                icon={PencilIcon}
-                                tone="edit"
-                                onClick={() => openEdit(row)}
-                            />
-                            <TableActionButton
-                                label="Delete quick reply"
-                                icon={Trash2Icon}
-                                tone="danger"
-                                onClick={() => setPendingDelete(row)}
-                            />
+                            {canUpdate ? (
+                                <TableActionButton
+                                    label={t('common.edit')}
+                                    icon={SquarePenIcon}
+                                    tone="edit"
+                                    onClick={() => openEdit(row)}
+                                />
+                            ) : null}
+                            {canDelete ? (
+                                <TableActionButton
+                                    label={t('common.delete')}
+                                    icon={Trash2Icon}
+                                    tone="danger"
+                                    onClick={() => setPendingIds([row.id])}
+                                />
+                            ) : null}
                         </>
                     )}
                 />
             </PageContent>
-
             <QuickReplyFormDialog
                 open={formOpen}
                 onOpenChange={(open) => {
@@ -122,47 +217,45 @@ export default function QuickRepliesIndex({ quickReplies, filters }: QuickReplie
                     }
                 }}
                 item={editingReply}
+                categories={categories}
+                existingKeywords={existingKeywords}
             />
-
-            <ConfirmDialog
-                open={pendingDelete !== null}
+            <QuickReplyDetailDialog
+                item={viewingReply}
                 onOpenChange={(open) => {
                     if (!open) {
-                        setPendingDelete(null);
+                        setViewingReply(null);
                     }
                 }}
-                title="Delete quick reply"
-                description="Are you sure you want to delete this quick reply?"
-                confirmLabel="Delete"
+                onEdit={canUpdate ? openEdit : undefined}
+            />
+            <ConfirmDialog
+                open={pendingIds.length === 1}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setPendingIds([]);
+                    }
+                }}
+                title={t('support.quick_replies.delete_title')}
+                description={t('support.quick_replies.delete_description')}
+                confirmLabel={t('common.delete')}
                 destructive
-                processing={deleteProcessing}
+                processing={processing}
                 onConfirm={() => {
-                    if (!pendingDelete) {
+                    if (pendingIds.length !== 1) {
                         return;
                     }
 
-                    router.delete(`/support/quick-replies/replies/${pendingDelete.id}`, {
+                    router.delete(`/support/quick-replies/replies/${pendingIds[0]}`, {
                         preserveScroll: true,
-                        onStart: () => setDeleteProcessing(true),
+                        onStart: () => setProcessing(true),
                         onFinish: () => {
-                            setDeleteProcessing(false);
-                            setPendingDelete(null);
+                            setProcessing(false);
+                            setPendingIds([]);
                         },
                     });
                 }}
             />
         </>
-    );
-}
-
-function ResponseCell({ label, value }: { label: string; value: string }) {
-    return (
-        <div className="flex min-w-0 items-center gap-1">
-            <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
-                {label}
-            </span>
-            <span className="min-w-0 flex-1 truncate text-[13px] text-muted-foreground">{value}</span>
-            <CopyValueButton value={value} label={`Copy ${label} response`} />
-        </div>
     );
 }

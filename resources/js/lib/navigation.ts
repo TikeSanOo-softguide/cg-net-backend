@@ -6,12 +6,16 @@ import {
     Banknote,
     Bell,
     Boxes,
+    Building2,
+    CalendarDays,
     ClipboardList,
     Contact,
     CreditCard,
     FileText,
+    FileUp,
     Files,
     FolderTree,
+    Gift,
     Headphones,
     History,
     Image,
@@ -20,12 +24,14 @@ import {
     Languages,
     LayoutDashboard,
     Link2,
+    MapPin,
     MapPinned,
     Megaphone,
     MessageSquare,
     Move,
     Newspaper,
     Package,
+    PackageCheck,
     PenLine,
     Plug,
     Receipt,
@@ -40,8 +46,8 @@ import {
     SlidersHorizontal,
     Smartphone,
     Sparkles,
-    Tags,
     Ticket,
+    UserCheck,
     UserCog,
     UserRound,
     Users,
@@ -153,6 +159,18 @@ export const navigation: NavGroup[] = [
                 href: '/billing/transactions',
                 icon: Receipt,
             },
+            {
+                labelKey: 'menu.package_orders',
+                descriptionKey: 'menu.package_orders_description',
+                href: '/billing/package-orders',
+                icon: PackageCheck,
+            },
+            {
+                labelKey: 'menu.bill_payment',
+                descriptionKey: 'menu.bill_payment_description',
+                href: '/billing/bill-payments',
+                icon: ScrollText,
+            },
         ],
     },
     {
@@ -161,10 +179,10 @@ export const navigation: NavGroup[] = [
         icon: Ticket,
         children: [
             {
-                labelKey: 'menu.top_up_card_agents',
-                descriptionKey: 'menu.top_up_card_agents_description',
-                href: '/top-up-cards/agents',
-                icon: UserRound,
+                labelKey: 'menu.top_up_card_offices',
+                descriptionKey: 'menu.top_up_card_offices_description',
+                href: '/top-up-cards/offices',
+                icon: Building2,
             },
             {
                 labelKey: 'menu.top_up_card_batch',
@@ -173,10 +191,10 @@ export const navigation: NavGroup[] = [
                 icon: Ticket,
             },
             {
-                labelKey: 'menu.top_up_card_agent_assign',
-                descriptionKey: 'menu.top_up_card_agent_assign_description',
-                href: '/top-up-cards/agent-assign',
-                icon: UserCog,
+                labelKey: 'menu.top_up_card_batch_import',
+                descriptionKey: 'menu.top_up_card_batch_import_description',
+                href: '/top-up-cards/card-import',
+                icon: FileUp,
             },
             {
                 labelKey: 'menu.card_history',
@@ -184,13 +202,6 @@ export const navigation: NavGroup[] = [
                 href: '/top-up-cards/card-history',
                 icon: CreditCard,
             },
-            {
-                labelKey: 'menu.redeem_history',
-                descriptionKey: 'menu.redeem_history_description',
-                href: '/top-up-cards/redeem-history',
-                icon: History,
-            },
-            
         ],
     },
     {
@@ -249,16 +260,16 @@ export const navigation: NavGroup[] = [
                 icon: Megaphone,
             },
             {
+                labelKey: 'menu.notification_promotions',
+                descriptionKey: 'menu.notification_promotions_description',
+                href: '/notifications/promotions',
+                icon: Gift,
+            },
+            {
                 labelKey: 'menu.push_composer',
                 descriptionKey: 'menu.push_composer_description',
                 href: '/notifications/compose',
                 icon: PenLine,
-            },
-            {
-                labelKey: 'menu.notification_categories',
-                descriptionKey: 'menu.notification_categories_description',
-                href: '/notifications/categories',
-                icon: Tags,
             },
         ],
     },
@@ -365,7 +376,7 @@ export const navigation: NavGroup[] = [
             {
                 labelKey: 'menu.admin_activity_logs',
                 descriptionKey: 'menu.admin_activity_logs_description',
-                href: '/activity-logs',
+                href: '/logs/activity',
                 icon: Activity,
             },
             {
@@ -592,3 +603,49 @@ export function resolvePageDescription(
 export function titleKeyForPath(current: string): string {
     return menuPageContextForPath(current)?.titleKey ?? 'menu.dashboard';
 }
+
+export const reports = [
+    {
+        labelKey: 'menu.customer_reports',
+        descriptionKey: 'menu.customer_reports_description',
+        href: '/reports/customers',
+        icon: Users,
+    },
+    {
+        labelKey: 'menu.billing_reports',
+        descriptionKey: 'menu.billing_reports_description',
+        href: '/reports/billing',
+        icon: Banknote,
+    },
+
+    {
+        labelKey: 'menu.top_up_reports',
+        descriptionKey: 'menu.top_up_reports_description',
+        href: '/reports/top-ups',
+        icon: CreditCard,
+    },
+    {
+        labelKey: 'menu.ledger_health',
+        descriptionKey: 'menu.ledger_health_description',
+        href: '/reports/ledger-health',
+        icon: Activity,
+    },
+    {
+        labelKey: 'menu.eod_reports',
+        descriptionKey: 'menu.eod_reports_description',
+        href: '/reports/eod',
+        icon: CalendarDays,
+    },
+    {
+        labelKey: 'menu.service_request_reports',
+        descriptionKey: 'menu.service_request_reports_description',
+        href: '/reports/service-requests',
+        icon: ClipboardList,
+    },
+    {
+        labelKey: 'menu.app_usage_reports',
+        descriptionKey: 'menu.app_usage_reports_description',
+        href: '/reports/app-usage',
+        icon: Smartphone,
+    },
+];

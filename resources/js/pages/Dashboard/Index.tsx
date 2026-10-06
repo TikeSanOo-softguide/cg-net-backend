@@ -1,8 +1,6 @@
-import { useState } from 'react';
-import { Head, router } from '@inertiajs/react';
-import { UsersIcon, WifiIcon, PackageIcon, BanknoteIcon, ClipboardListIcon, Trash2Icon } from 'lucide-react';
+import { Head } from '@inertiajs/react';
+import { UsersIcon, UserPlusIcon, PackageIcon, CoinsIcon, ClipboardListIcon } from 'lucide-react';
 
-import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DashboardRegionChart, type RegionChartSlice } from '@/components/dashboard/DashboardRegionChart';
 import { DashboardRequestLevels, type RequestTypeChart } from '@/components/dashboard/DashboardRequestLevels';
 import { DashboardTrendChart, type TrendPoint } from '@/components/dashboard/DashboardTrendChart';
@@ -11,11 +9,8 @@ import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { StatCard } from '@/components/StatCard';
 import { StatusBadge } from '@/components/StatusBadge';
-import { TableActionButton } from '@/components/TableActionButton';
-import { useCan } from '@/hooks/useCan';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTranslation } from '@/hooks/useTranslation';
-import { visitBulkDelete } from '@/lib/bulk-delete';
+import { formatDate } from '@/lib/utils';
 
 type RecentRequest = {
     id: string;
@@ -28,12 +23,13 @@ type RecentRequest = {
 type DashboardProps = {
     stats: {
         total_customers: number;
-        active_broadband_accounts: number;
+        monthly_signups: number;
         active_packages: number;
-        todays_revenue: string;
+        todays_topup_usage: number;
         pending_requests: number;
     };
     chart: TrendPoint[];
+    topupUsageChange: number | null;
     regionChart: RegionChartSlice[];
     requestTypeChart: RequestTypeChart;
     recentRequests: RecentRequest[];
@@ -42,16 +38,12 @@ type DashboardProps = {
 export default function DashboardIndex({
     stats,
     chart,
+    topupUsageChange,
     regionChart,
     requestTypeChart,
     recentRequests,
 }: DashboardProps) {
     const { t } = useTranslation();
-    const can = useCan();
-    const isMobile = useMediaQuery('(max-width: 639px)');
-    const [pendingIds, setPendingIds] = useState<string[]>([]);
-    const [processing, setProcessing] = useState(false);
-    const canDelete = can('service-requests.delete');
     const cards = [
         {
             key: 'dashboard.total_customers',
@@ -60,10 +52,10 @@ export default function DashboardIndex({
             icon: UsersIcon,
         },
         {
-            key: 'dashboard.active_broadband_accounts',
-            title: t('dashboard.active_broadband_accounts'),
-            value: stats.active_broadband_accounts.toLocaleString(),
-            icon: WifiIcon,
+            key: 'dashboard.new_signups_this_month',
+            title: t('dashboard.new_signups_this_month'),
+            value: stats.monthly_signups.toLocaleString(),
+            icon: UserPlusIcon,
         },
         {
             key: 'dashboard.active_packages',
@@ -72,10 +64,15 @@ export default function DashboardIndex({
             icon: PackageIcon,
         },
         {
-            key: 'dashboard.todays_revenue',
-            title: t('dashboard.todays_revenue'),
-            value: `${Number(stats.todays_revenue).toLocaleString()} MMK`,
-            icon: BanknoteIcon,
+            key: 'dashboard.todays_topup_usage',
+            title: t('dashboard.todays_topup_usage'),
+            value: (
+                <>
+                    {stats.todays_topup_usage.toLocaleString()}{' '}
+                    <span className="text-[18px] font-medium">{t('dashboard.points')}</span>
+                </>
+            ),
+            icon: CoinsIcon,
         },
         {
             key: 'dashboard.pending_requests',
@@ -93,8 +90,36 @@ export default function DashboardIndex({
 
                 <StatCard items={cards} />
 
-                <div className="grid grid-cols-1 items-stretch gap-3 xl:grid-cols-3">
-                    <DashboardTrendChart data={chart} isMobile={isMobile} />
+                <div className="grid grid-cols-1 items-stretch gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    <DashboardTrendChart
+                        data={chart}
+                        dataKey="topup_usage"
+                        labelKey="dashboard.top_up_usage"
+                        color="#4F46E5"
+                        unit={t('dashboard.points')}
+                        change={topupUsageChange}
+                    />
+                    <DashboardTrendChart
+                        data={chart}
+                        dataKey="ftth_bill_payments"
+                        labelKey="dashboard.ftth_bill_payments"
+                        color="#0891B2"
+                        unit={t('dashboard.points')}
+                    />
+                    <DashboardTrendChart
+                        data={chart}
+                        dataKey="wifi_package_orders"
+                        labelKey="dashboard.wifi_package_orders"
+                        color="#16A34A"
+                        unit={t('dashboard.points')}
+                    />
+                    <DashboardTrendChart
+                        data={chart}
+                        dataKey="signups"
+                        labelKey="dashboard.new_signups"
+                        color="#E11D48"
+                        unit={t('dashboard.users')}
+                    />
                     <DashboardRegionChart data={regionChart} />
                     <DashboardRequestLevels data={requestTypeChart} />
                 </div>
@@ -107,26 +132,6 @@ export default function DashboardIndex({
                     titleIcon={ClipboardListIcon}
                     data={recentRequests}
                     getRowId={(row) => row.id}
-                    directActions
-                    onBulkDelete={
-                        canDelete ? (ids) => visitBulkDelete('/dashboard/requests/bulk-destroy', ids) : undefined
-                    }
-                    bulkDeleteTitle={t('dashboard.bulk_delete_title')}
-                    actions={
-                        canDelete
-                            ? (row) => (
-                                  <TableActionButton
-                                      label={t('common.delete')}
-                                      icon={Trash2Icon}
-                                      tone="danger"
-                                      onClick={(event) => {
-                                          event.stopPropagation();
-                                          setPendingIds([row.id]);
-                                      }}
-                                  />
-                              )
-                            : undefined
-                    }
                     columns={[
                         {
                             id: 'customer',
@@ -153,42 +158,14 @@ export default function DashboardIndex({
                         {
                             id: 'date',
                             header: t('dashboard.date'),
-                            className: 'font-mono text-[11px] text-muted-foreground',
+                            className: 'text-[11px] text-muted-foreground',
                             mobile: 'meta',
                             searchValue: (row) => row.created_at ?? '',
-                            cell: (row) => row.created_at?.slice(0, 10),
+                            cell: (row) => formatDate(row.created_at),
                         },
                     ]}
                 />
             </PageContent>
-            <ConfirmDialog
-                open={pendingIds.length === 1}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        setPendingIds([]);
-                    }
-                }}
-                title={t('dashboard.delete_title')}
-                description={t('dashboard.delete_description')}
-                confirmLabel={t('common.delete')}
-                destructive
-                processing={processing}
-                onConfirm={() => {
-                    if (pendingIds.length !== 1) {
-                        return;
-                    }
-
-                    router.delete('/dashboard/requests/bulk-destroy', {
-                        data: { ids: pendingIds },
-                        preserveScroll: true,
-                        onStart: () => setProcessing(true),
-                        onFinish: () => {
-                            setProcessing(false);
-                            setPendingIds([]);
-                        },
-                    });
-                }}
-            />
         </>
     );
 }

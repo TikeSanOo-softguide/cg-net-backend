@@ -1,17 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import {
-    BookX,
-    CalendarIcon,
-    CircleCheckBig,
-    ClipboardList,
-    MapPinIcon,
-    PhoneIcon,
-    ScanEye,
-    WifiIcon,
-} from 'lucide-react';
+import { BookX, CalendarIcon, CircleCheckBig, ClipboardList, MapPinIcon, ScanEye, WifiIcon } from 'lucide-react';
 
-import { BroadbandApplicationDetailDialog } from '@/components/service-requests/BroadbandApplication/BroadbandApplicationDetailDialog';
+import { BroadbandApplicationDetailDialog } from '@/components/service-requests/broadband-application/BroadbandApplicationDetailDialog';
 import { DataTable } from '@/components/DataTable';
 import type { Paginated } from '@/components/Pagination';
 import { PageContent } from '@/components/PageContent';
@@ -23,6 +14,8 @@ import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatPhoneInternational } from '@/lib/phone';
+import { useOpenRequestFromQuery } from '@/hooks/useOpenRequestFromQuery';
 import { formatDate, truncateText } from '@/lib/utils';
 
 type BroadbandApplication = {
@@ -164,6 +157,8 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
     const [selectedRequest, setSelectedRequest] = useState<BroadbandApplication | null>(null);
     const debounce = useRef<number>(0);
 
+    const closeRequestDetails = useOpenRequestFromQuery(requests.data, setSelectedRequest);
+
     const cards = [
         {
             key: 'broadband.total_requests',
@@ -276,7 +271,9 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                                     </span>
 
                                     <p className="mt-1 truncate font-mono text-muted-foreground">
-                                        {request.user?.phone || request.id_number}
+                                        {request.user?.phone
+                                            ? formatPhoneInternational(request.user.phone)
+                                            : request.id_number}
                                     </p>
                                 </div>
                             ),
@@ -308,7 +305,7 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                                     </div>
 
                                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                        <span>({request.phone})</span>
+                                        <span>({formatPhoneInternational(request.phone)})</span>
                                     </div>
                                 </div>
                             ),
@@ -361,7 +358,7 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
 
             <BroadbandApplicationDetailDialog
                 open={selectedRequest !== null}
-                onOpenChange={(open) => !open && setSelectedRequest(null)}
+                onOpenChange={(open) => !open && closeRequestDetails()}
                 request={selectedRequest}
                 canUpdate={can('service-requests.update')}
                 statuses={statuses}

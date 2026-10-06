@@ -5,7 +5,9 @@ namespace App\Support;
 use App\Enums\BatchStatus;
 use App\Enums\TopUpCardStatus;
 use App\Models\Batch;
+use App\Models\TopUpCard;
 use Carbon\CarbonInterface;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -21,18 +23,18 @@ final class GeneratesTopUpCards
         mixed $actor,
         int $startingCounter = 1001,
         ?CarbonInterface $productionDate = null,
-        ?string $agentCode = null,
+        ?string $officeCode = null,
         ?int $batchId = null,
     ): array {
         $productionDate ??= now();
-        $agentCode ??= '88';
+        $officeCode ??= '88';
 
         $execute = function () use (
             $amounts,
             $expiresAt,
             $startingCounter,
             $productionDate,
-            $agentCode,
+            $officeCode,
             $batchId,
         ): array {
             $resolvedBatchId = $batchId;
@@ -48,7 +50,7 @@ final class GeneratesTopUpCards
                     $quantity += $tierQuantity;
                     $totalValue += $tierAmount * $tierQuantity;
                     $items[] = [
-                        'agent_cd' => $agentCode,
+                        'office_cd' => $officeCode,
                         'amount' => $tierAmount,
                         'quantity' => $tierQuantity,
                     ];
@@ -67,7 +69,7 @@ final class GeneratesTopUpCards
                 $expiresAt,
                 $startingCounter,
                 $productionDate,
-                $agentCode,
+                $officeCode,
                 $resolvedBatchId,
             );
 
@@ -95,7 +97,7 @@ final class GeneratesTopUpCards
         string $expiresAt,
         int $startingCounter,
         ?CarbonInterface $productionDate = null,
-        ?string $agentCode = null,
+        ?string $officeCode = null,
         ?int $batchId = null,
     ): array {
         if ($batchId === null || $batchId < 1) {
@@ -103,7 +105,7 @@ final class GeneratesTopUpCards
         }
 
         $productionDate ??= now();
-        $agentCode ??= '88';
+        $officeCode ??= '88';
         $dailyCounter = $startingCounter;
         $cards = [];
         $rows = [];
@@ -119,7 +121,7 @@ final class GeneratesTopUpCards
                 $batchId,
                 $productionDate,
                 $quantity,
-                $agentCode,
+                $officeCode,
             );
 
             $cards = [...$cards, ...$built['cards']];
@@ -144,6 +146,7 @@ final class GeneratesTopUpCards
     {
         $now = now();
         $rows = [];
+        $officeIdsBySerial = TopUpCardOffices::resolveIdsBySerialNumbers(array_column($cards, 'serial_no'));
 
         foreach ($cards as $card) {
             $pin = (string) ($card['pin'] ?? '');
@@ -159,7 +162,7 @@ final class GeneratesTopUpCards
                 'amount' => (string) ($card['amount'] ?? ''),
                 'expires_at' => $card['expires_at'] ?? null,
                 'status' => TopUpCardStatus::Pending->value,
-                'agent_id' => null,
+                'office_id' => $officeIdsBySerial[$serialNo] ?? null,
                 'batch_id' => $batchId,
                 'created_at' => $now,
                 'updated_at' => $now,
@@ -216,9 +219,10 @@ final class GeneratesTopUpCards
         int $batchId,
         CarbonInterface $productionDate,
         int $quantity,
-        string $agentCode = '88',
+        string $officeCode = '88',
     ): array {
         $rangeStart = $dailyCounter;
+        $officeId = TopUpCardOffices::resolveIdsByCodes([$officeCode])[$officeCode] ?? null;
 
         for ($attempt = 0; $attempt < 5; $attempt++) {
             $rows = [];
@@ -228,7 +232,7 @@ final class GeneratesTopUpCards
             $now = now();
 
             for ($index = 0; $index < $quantity; $index++) {
-                $serialNo = self::serialNo($amount, $counter, $productionDate, $agentCode);
+                $serialNo = self::serialNo($amount, $counter, $productionDate, $officeCode);
                 $pin = self::uniquePlainPin($usedPinHashes);
                 $pinHash = TopUpCardPin::hash($pin);
                 $usedPinHashes[$pinHash] = true;
@@ -239,7 +243,7 @@ final class GeneratesTopUpCards
                     'amount' => $amount,
                     'expires_at' => $expiresAt,
                     'status' => TopUpCardStatus::Pending->value,
-                    'agent_id' => null,
+                    'office_id' => $officeId,
                     'batch_id' => $batchId,
                     'created_at' => $now,
                     'updated_at' => $now,
@@ -298,7 +302,7 @@ final class GeneratesTopUpCards
     public static function allocateSerialRange(
         int $quantity,
         ?CarbonInterface $productionDate = null,
-        ?string $agentCode = null,
+        ?string $officeCode = null,
         ?string $batchCode = null,
     ): int {
         if ($quantity < 1) {
@@ -307,18 +311,18 @@ final class GeneratesTopUpCards
 
         $productionDate ??= now();
         $sequenceDate = $productionDate->toDateString();
-        $agentCode ??= '88';
+        $officeCode ??= '88';
         $batchCode ??= '1101';
 
         $execute = function () use (
             $quantity,
             $sequenceDate,
-            $agentCode,
+            $officeCode,
             $batchCode,
         ): int {
             DB::table('top_up_card_sequences')->insertOrIgnore([
                 'sequence_date' => $sequenceDate,
-                'agent_code' => $agentCode,
+                'office_code' => $officeCode,
                 'batch_code' => $batchCode,
                 'next_counter' => 1001,
                 'created_at' => now(),
@@ -327,7 +331,7 @@ final class GeneratesTopUpCards
 
             $sequence = DB::table('top_up_card_sequences')
                 ->where('sequence_date', $sequenceDate)
-                ->where('agent_code', $agentCode)
+                ->where('office_code', $officeCode)
                 ->where('batch_code', $batchCode)
                 ->lockForUpdate()
                 ->first();
@@ -345,7 +349,7 @@ final class GeneratesTopUpCards
 
             DB::table('top_up_card_sequences')
                 ->where('sequence_date', $sequenceDate)
-                ->where('agent_code', $agentCode)
+                ->where('office_code', $officeCode)
                 ->where('batch_code', $batchCode)
                 ->update([
                     'next_counter' => $endingCounter + 1,
@@ -361,17 +365,17 @@ final class GeneratesTopUpCards
     public static function reserveSerialRange(
         int $quantity,
         ?CarbonInterface $productionDate = null,
-        ?string $agentCode = null,
+        ?string $officeCode = null,
         ?string $batchCode = null,
     ): int {
-        return self::allocateSerialRange($quantity, $productionDate, $agentCode, $batchCode);
+        return self::allocateSerialRange($quantity, $productionDate, $officeCode, $batchCode);
     }
 
     public static function serialNo(
         string $amount = '500',
         ?int $dailyCounter = null,
         ?CarbonInterface $productionDate = null,
-        string $agentCode = '88',
+        string $officeCode = '88',
     ): string {
         $productionDate ??= now();
         $dailyCounter ??= random_int(1001, 9999);
@@ -381,7 +385,7 @@ final class GeneratesTopUpCards
             $productionDate->format('ym'),
             self::batchCodeForAmount($amount),
             (int) $productionDate->format('d'),
-            $agentCode,
+            $officeCode,
             $dailyCounter,
         );
     }
@@ -396,6 +400,23 @@ final class GeneratesTopUpCards
      *
      * @param  array<string, mixed>  $metadata
      */
+    public static function nextBatchNo(?CarbonInterface $date = null): string
+    {
+        $date ??= now('Asia/Yangon');
+        $prefix = $date->format('YmdHi');
+        $counter = 1001;
+
+        foreach (Batch::query()->where('batch_no', 'like', $prefix . '%')->pluck('batch_no') as $batchNo) {
+            $suffix = substr((string) $batchNo, strlen($prefix));
+
+            if (preg_match('/^\d+$/', $suffix) === 1) {
+                $counter = max($counter, (int) $suffix + 1);
+            }
+        }
+
+        return $prefix . str_pad((string) $counter, 4, '0', STR_PAD_LEFT);
+    }
+
     public static function createGenerationBatch(
         string $expiresAt,
         int $quantity,
@@ -408,7 +429,7 @@ final class GeneratesTopUpCards
         }
 
         return Batch::query()->create([
-            'batch_no' => now('Asia/Yangon')->format('YmdHisv'),
+            'batch_no' => self::nextBatchNo(),
             'total_value' => $totalValue,
             'quantity' => $quantity,
             'status' => BatchStatus::Active,
@@ -426,12 +447,6 @@ final class GeneratesTopUpCards
     {
         $normalized = (int) round((float) $amount);
 
-        return match ($normalized) {
-            50 => '1101',
-            100 => '1201',
-            250 => '1501',
-            500 => '1111',
-            default => str_pad((string) abs($normalized % 10000), 4, '0', STR_PAD_LEFT),
-        };
+        return str_pad((string) abs($normalized % 10000), 4, '0', STR_PAD_LEFT);
     }
 }

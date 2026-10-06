@@ -30,6 +30,8 @@ services:
                 condition: service_healthy
             redis:
                 condition: service_started
+            reverb:
+                condition: service_started
 
     horizon:
         build:
@@ -63,6 +65,35 @@ services:
             redis:
                 condition: service_started
 
+    scheduler:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: cg-net-scheduler
+        restart: unless-stopped
+        working_dir: /var/www/html
+        command: ['php', 'artisan', 'schedule:work']
+        volumes:
+            - .:/var/www/html
+        environment:
+            APP_URL: http://localhost:${NGINX_PORT:-8080}
+            DB_CONNECTION: pgsql
+            DB_HOST: pgsql
+            DB_PORT: 5432
+            DB_DATABASE: ${DB_DATABASE:-cg_net}
+            DB_USERNAME: ${DB_USERNAME:-cgnet}
+            DB_PASSWORD: ${DB_PASSWORD:-secret}
+            REDIS_HOST: redis
+            CACHE_STORE: redis
+            QUEUE_CONNECTION: redis
+        depends_on:
+            pgsql:
+                condition: service_healthy
+            redis:
+                condition: service_started
+            horizon:
+                condition: service_started
+
     nginx:
         image: nginx:1.27-alpine
         container_name: cg-net-nginx
@@ -87,7 +118,7 @@ services:
         environment:
             VITE_PORT: ${VITE_PORT:-5173}
             VITE_DEV_SERVER_URL: http://localhost:${VITE_PORT:-5173}
-            VITE_REVERB_ENABLED: ${VITE_REVERB_ENABLED:-false}
+            VITE_REVERB_ENABLED: ${VITE_REVERB_ENABLED:-true}
             VITE_REVERB_APP_KEY: ${REVERB_APP_KEY:-cgnet-reverb-key}
             VITE_REVERB_HOST: localhost
             VITE_REVERB_PORT: ${REVERB_PORT:-8081}
@@ -97,7 +128,6 @@ services:
         command: ['npm', 'run', 'dev']
 
     reverb:
-        profiles: ['reverb']
         build:
             context: .
             dockerfile: Dockerfile

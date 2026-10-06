@@ -8,11 +8,27 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use LogicException;
 
-#[Fillable(['user_id', 'package_id', 'wallet_transaction_id', 'status', 'snapshot', 'completed_at'])]
+#[Fillable([
+    'user_id',
+    'package_id',
+    'ledger_transaction_id',
+    'status',
+    'snapshot',
+    'external_response',
+    'completed_at',
+])]
 class PackageOrder extends Model
 {
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::deleting(static function (): never {
+            throw new LogicException('PackageOrder records cannot be deleted.');
+        });
+    }
 
     public $timestamps = false;
 
@@ -22,6 +38,7 @@ class PackageOrder extends Model
     {
         return [
             'snapshot' => 'array',
+            'external_response' => 'array',
             'completed_at' => 'datetime',
             'status' => PackageOrderStatus::class,
         ];
@@ -37,9 +54,9 @@ class PackageOrder extends Model
         return $this->belongsTo(Package::class);
     }
 
-    public function walletTransaction(): BelongsTo
+    public function ledgerTransaction(): BelongsTo
     {
-        return $this->belongsTo(WalletTransaction::class);
+        return $this->belongsTo(LedgerTransaction::class);
     }
 
     public function customerPackage(): HasOne

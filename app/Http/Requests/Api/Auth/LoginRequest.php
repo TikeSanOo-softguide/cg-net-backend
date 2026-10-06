@@ -2,21 +2,11 @@
 
 namespace App\Http\Requests\Api\Auth;
 
-use App\Support\PhoneNumber;
 use Illuminate\Foundation\Http\FormRequest;
-use InvalidArgumentException;
+use Illuminate\Validation\Rule;
 
 class LoginRequest extends FormRequest
 {
-    protected function prepareForValidation(): void
-    {
-        try {
-            $this->merge(['phone' => PhoneNumber::normalize((string) $this->input('phone'))]);
-        } catch (InvalidArgumentException) {
-            // The validation rule below returns the normal API validation response.
-        }
-    }
-
     public function authorize(): bool
     {
         return true;
@@ -25,8 +15,10 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'phone' => ['required', 'string', 'regex:/^[1-9][0-9]{7,14}$/'],
-            'password' => ['required', 'string'],
+            'verification_token' => ['required', 'string', 'size:64'],
+            'password' => ['required', 'string', 'regex:/^\d{6}$/'],
+            'device_token' => ['nullable', 'string', 'max:512'],
+            'platform' => ['nullable', 'string', Rule::in(['android', 'ios', 'web'])],
         ];
     }
 }

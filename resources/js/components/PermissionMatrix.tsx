@@ -1,4 +1,13 @@
-import { CheckIcon, EyeIcon, PlusIcon, ShieldIcon, SquarePenIcon, Trash2Icon, type LucideIcon } from 'lucide-react';
+import {
+    CheckIcon,
+    DownloadIcon,
+    EyeIcon,
+    PlusIcon,
+    ShieldIcon,
+    SquarePenIcon,
+    Trash2Icon,
+    type LucideIcon,
+} from 'lucide-react';
 
 import { navigation, viewPermissionForHref } from '@/lib/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -22,6 +31,7 @@ type PermissionMatrixProps = {
 };
 
 export const PERMISSION_ACTIONS = ['view', 'create', 'update', 'delete'] as const;
+export const SYSTEM_EXPORT_PERMISSION = 'system.export';
 
 export const PERMISSION_ACTION_META: Record<string, { icon: LucideIcon; danger?: boolean }> = {
     view: { icon: EyeIcon },
@@ -111,7 +121,7 @@ export function PermissionMatrix({ groups, value, onChange, locked = false }: Pe
         const allSelected = names.every((name) => value.includes(name));
 
         if (allSelected) {
-            onChange(value.filter((item) => ! names.includes(item)));
+            onChange(value.filter((item) => !names.includes(item)));
 
             return;
         }
@@ -137,7 +147,9 @@ export function PermissionMatrix({ groups, value, onChange, locked = false }: Pe
                                 <Icon className="size-4" strokeWidth={1.8} />
                             </span>
                             <div className="min-w-0 flex-1">
-                                <h3 className="min-w-0 text-[13px] font-semibold leading-[1.75] text-primary">{t(group.labelKey)}</h3>
+                                <h3 className="min-w-0 text-[13px] font-semibold leading-[1.75] text-primary">
+                                    {t(group.labelKey)}
+                                </h3>
                                 <p className="text-[10px] leading-3.5 text-muted-foreground">
                                     {selectedCount}/{names.length}
                                 </p>
@@ -217,6 +229,48 @@ export function PermissionMatrix({ groups, value, onChange, locked = false }: Pe
                     </section>
                 );
             })}
+            <section className="overflow-hidden rounded-[12px] border border-border/70 bg-[#f7f9fa] dark:bg-muted/20">
+                <div className="flex flex-col gap-2.5 px-2.5 py-2 sm:flex-row sm:items-center sm:px-3">
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-[8px] bg-primary/12 text-primary">
+                        <DownloadIcon className="size-4" strokeWidth={1.8} />
+                    </span>
+                    <h3 className="min-w-0 flex-1 text-[13px] font-semibold leading-[1.75] text-primary">
+                        {t('permissions.system_exports')}
+                    </h3>
+                    <button
+                        type="button"
+                        role="checkbox"
+                        aria-checked={value.includes(SYSTEM_EXPORT_PERMISSION)}
+                        aria-label={t('permissions.export_data')}
+                        disabled={locked}
+                        onClick={() => toggle(SYSTEM_EXPORT_PERMISSION)}
+                        className={cn(
+                            'flex items-center gap-1.5 rounded-[8px] border px-2 py-1.5 text-left transition-colors sm:min-w-36',
+                            value.includes(SYSTEM_EXPORT_PERMISSION)
+                                ? 'border-primary/45 bg-white shadow-[0_1px_2px_rgb(23_50_54/0.06)] dark:bg-card'
+                                : 'border-transparent bg-white/80 hover:border-primary/20 hover:bg-white dark:bg-card/70 dark:hover:bg-card',
+                            locked && 'cursor-not-allowed opacity-70',
+                        )}
+                    >
+                        <span
+                            className={cn(
+                                'flex size-[16px] shrink-0 items-center justify-center rounded-[4px] border transition-colors',
+                                value.includes(SYSTEM_EXPORT_PERMISSION)
+                                    ? 'border-primary bg-primary text-primary-foreground'
+                                    : 'border-input bg-white dark:bg-card',
+                            )}
+                        >
+                            {value.includes(SYSTEM_EXPORT_PERMISSION) ? (
+                                <CheckIcon className="size-2.5" strokeWidth={3} />
+                            ) : null}
+                        </span>
+                        <DownloadIcon className="size-3.5 shrink-0 text-primary" strokeWidth={1.9} />
+                        <span className="min-w-0 text-[11px] font-medium leading-[1.75] text-muted-foreground">
+                            {t('permissions.export_data')}
+                        </span>
+                    </button>
+                </div>
+            </section>
         </div>
     );
 }

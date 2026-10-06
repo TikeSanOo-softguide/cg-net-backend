@@ -17,7 +17,7 @@ class FailureReportResource extends JsonResource
         return [
             'id' => $this->id,
             'user_id' => $this->user_id,
-            'broadband_account_id' => $this->broadband_account_id,
+            'broadband_account_number' => $this->broadband_account_number,
             'failure_type' => $this->failure_type,
             'description' => $this->description,
             'contact_name' => $this->contact_name,

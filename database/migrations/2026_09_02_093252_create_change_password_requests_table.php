@@ -13,7 +13,7 @@ return new class extends Migration {
         Schema::create('change_password_requests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('broadband_account_id')->constrained()->cascadeOnDelete();
+            $table->string('broadband_account_number', 32)->nullable()->index();
             $table->string('contact_name');
             $table->string('contact_phone');
             $table->string('new_wifi_name')->nullable();

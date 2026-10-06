@@ -23,13 +23,11 @@ class CreateRelocationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'broadband_account_id' => [
+            'broadband_account_number' => [
                 'required',
-                'integer',
-                Rule::exists('broadband_accounts', 'id')
-                    ->where(function ($query) {
-                        $query->where('user_id', $this->user()->id);
-                    }),
+                'string',
+                'max:32',
+                Rule::exists('users', 'broadband_account_number')->where('id', $this->user()->id),
             ],
             'current_address' => ['required', 'string', 'max:5000'],
             'new_address' => ['required', 'string', 'max:5000'],

@@ -41,7 +41,7 @@ export function validateCustomerField(
             return undefined;
         }
         case 'status':
-            if (data.status !== 'active' && data.status !== 'suspended') {
+            if (!['active', 'suspended', 'deactivated'].includes(data.status)) {
                 return t('customers.validation.status_required');
             }
 
@@ -55,7 +55,7 @@ export function validateCustomerField(
                 return t('customers.validation.password_required');
             }
 
-            if (data.password.length < 8) {
+            if (!/^\d{6}$/.test(data.password)) {
                 return t('customers.validation.password_min');
             }
 

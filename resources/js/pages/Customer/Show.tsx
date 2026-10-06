@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import {
-    ArrowLeftIcon,
     BanIcon,
     HashIcon,
     HistoryIcon,
@@ -13,12 +12,18 @@ import {
     WalletIcon,
 } from 'lucide-react';
 
+import { BackButton } from '@/components/BackButton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { CustomerFormDialog } from '@/components/customer/CustomerFormDialog';
 import { CustomerProfileCard } from '@/components/customer/CustomerProfileCard';
 import { DetailSection } from '@/components/customer/DetailSection';
-import { TransactionsTable, type Filters as TransactionFilters, type TransactionRow } from '@/pages/Transactions/Index';
-import { formatPhoneLocal } from '@/lib/phone';
+import { WalletAdjustDialog } from '@/components/customer/WalletAdjustDialog';
+import {
+    TransactionsTable,
+    type Filters as TransactionFilters,
+    type TransactionRow,
+} from '@/pages/BillPayment/Transactions/Index';
+import { formatPhoneInternational } from '@/lib/phone';
 import { formatTopUpNumber, TOP_UP_CARD_CURRENCY } from '@/lib/top-up-cards';
 import { DataTable } from '@/components/DataTable';
 import { PageContent } from '@/components/PageContent';
@@ -31,6 +36,10 @@ import { Spinner } from '@/components/ui/spinner';
 import { FormControl } from '@/components/ui/form-control';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
+import { useCan } from '@/hooks/useCan';
+import { useReturnTo } from '@/hooks/useReturnTo';
+import { navigationPopHeaders } from '@/lib/navigation-stack';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn, formatDate, formatDateTime } from '@/lib/utils';
 
@@ -48,10 +57,8 @@ type LocalizedText = {
     zh: string | null;
 };
 
-type BroadbandAccountRow = {
-    id: number;
+type AccountBinding = {
     account_number: string;
-    customer_name: string;
     status: string;
     package_name: LocalizedText | null;
 };
@@ -62,7 +69,6 @@ type PackageRow = {
     account_number: string | null;
     start_date: string | null;
     expiry_date: string | null;
-    auto_renew: boolean;
     status: string;
 };
 
@@ -88,14 +94,20 @@ type TransactionSummary = {
     amount: string;
 };
 
-type TransactionOverview = Record<
-    'topup' | 'transfer_in' | 'transfer_out' | 'ftth_bill' | 'wifi_package' | 'refund' | 'adjustment',
-    TransactionSummary
->;
+type TransactionOverview = {
+    topup: TransactionSummary;
+    ftth_bill: TransactionSummary;
+    wifi_package: TransactionSummary;
+    refund: TransactionSummary;
+    adjustment: {
+        credit: TransactionSummary;
+        debit: TransactionSummary;
+    };
+};
 
 type CustomersShowProps = {
     customer: Customer;
-    broadbandAccounts: BroadbandAccountRow[];
+    accountBinding: AccountBinding | null;
     packageHistory: PackageRow[];
     wallet: {
         balance: string;
@@ -114,7 +126,7 @@ type CustomersShowProps = {
 
 export default function CustomersShow({
     customer,
-    broadbandAccounts,
+    accountBinding,
     packageHistory,
     wallet,
     topUpHistory,
@@ -123,18 +135,21 @@ export default function CustomersShow({
     transactionFilterOptions,
 }: CustomersShowProps) {
     const { t, locale } = useTranslation();
-    const page = usePage<{ return_to?: string; errors?: Record<string, string | undefined> }>();
+    const can = useCan();
+    const canUpdate = can('customers.update');
+    const page = usePage<{ errors?: Record<string, string | undefined> }>();
     const errors = page.props.errors ?? {};
+
     const [packageTab, setPackageTab] = useState<'active' | 'expired'>('active');
     const showAllTransactions = transactionPage !== null;
-    const returnTo = page.props.return_to ?? '/customers';
+    const returnTo = useReturnTo('/customers');
     const goBackToCustomerList = () => {
         if (showAllTransactions) {
             router.visit(`/customers/${customer.id}`);
             return;
         }
 
-        router.visit(returnTo);
+        router.visit(returnTo, { headers: navigationPopHeaders });
     };
 
     const localizePackageName = (value: LocalizedText | null | undefined): string => {
@@ -146,11 +161,37 @@ export default function CustomersShow({
     };
     const [statusOpen, setStatusOpen] = useState(false);
     const [formOpen, setFormOpen] = useState(false);
-    const [unbindAccount, setUnbindAccount] = useState<BroadbandAccountRow | null>(null);
+    const [adjustOpen, setAdjustOpen] = useState(false);
+    const [unbindAccount, setUnbindAccount] = useState(false);
     const [statusProcessing, setStatusProcessing] = useState(false);
     const [unbindProcessing, setUnbindProcessing] = useState(false);
+    const [bindTouched, setBindTouched] = useState(false);
 
     const bindForm = useForm({ account_number: '' });
+
+    const getBindValidationError = (value: string) => {
+        if (!value.trim()) {
+            return t('customers.account_number_required');
+        }
+
+        if (Array.from(value).length > 32) {
+            return t('customers.account_number_max');
+        }
+
+        return undefined;
+    };
+
+    const bindValidationError = bindTouched ? getBindValidationError(bindForm.data.account_number) : undefined;
+
+    const bindServerError = bindForm.errors.account_number ? t(bindForm.errors.account_number) : undefined;
+
+    const bindError = bindValidationError ?? bindServerError ?? (bindTouched ? undefined : errors.account_number);
+
+    const updateAccountNumber = (value: string) => {
+        bindForm.clearErrors('account_number');
+        bindForm.setData('account_number', value);
+        setBindTouched(true);
+    };
 
     const nextStatus = customer.status === 'active' ? 'suspended' : 'active';
     const filteredHistory = useMemo(
@@ -160,30 +201,49 @@ export default function CustomersShow({
 
     const bindFilters = (
         <form
-            className="hidden gap-1.5 sm:flex"
+            className="hidden items-start gap-1.5 sm:flex"
             onSubmit={(event) => {
                 event.preventDefault();
-                bindForm.post(`/customers/${customer.id}/accounts`, {
+                setBindTouched(true);
+
+                if (getBindValidationError(bindForm.data.account_number)) {
+                    return;
+                }
+
+                bindForm.post(`/customers/${customer.id}/account`, {
                     preserveScroll: true,
                     onSuccess: () => bindForm.reset(),
                 });
             }}
         >
-            <FormControl icon={HashIcon} compact className="max-w-44">
-                <Input
-                    value={bindForm.data.account_number}
-                    onChange={(event) => bindForm.setData('account_number', event.target.value)}
-                    placeholder={t('customers.account_number')}
-                    className="h-8 text-[12px] placeholder:text-[12px]"
-                    aria-invalid={Boolean(errors.account_number)}
-                />
-            </FormControl>
-            <Button type="submit" size="sm" className="h-8 gap-1 px-2.5 text-[11px]" disabled={bindForm.processing}>
+            <div className="flex flex-col">
+                <FormControl icon={HashIcon} compact className="w-80">
+                    <Input
+                        value={bindForm.data.account_number}
+                        onChange={(event) => updateAccountNumber(event.target.value)}
+                        placeholder={t('customers.account_number')}
+                        className="h-8 text-[12px] placeholder:text-[12px]"
+                        aria-invalid={Boolean(bindError)}
+                    />
+                </FormControl>
+
+                <p className={`mt-1 min-h-4 px-1 text-[11px] leading-4 ${bindError ? 'text-danger' : 'invisible'}`}>
+                    {bindError || '\u00A0'}
+                </p>
+            </div>
+
+            <Button
+                type="submit"
+                size="sm"
+                className="h-8 shrink-0 gap-1 px-2.5 text-[11px]"
+                disabled={bindForm.processing}
+            >
                 {bindForm.processing ? (
                     <Spinner size="xs" className="text-current" />
                 ) : (
                     <Link2Icon className="size-3.5" strokeWidth={1.85} />
                 )}
+
                 {t('customers.bind_account')}
             </Button>
         </form>
@@ -214,11 +274,8 @@ export default function CustomersShow({
             <Head title={customer.name} />
             <PageContent className="gap-4 pb-24 sm:pb-8">
                 <div className="flex items-center justify-between gap-3">
-                    <PageHeader title={customer.name} description={formatPhoneLocal(customer.phone)} />
-                    <Button type="button" size="sm" className="gap-1.5" onClick={goBackToCustomerList}>
-                        <ArrowLeftIcon className="size-3.5" strokeWidth={1.9} />
-                        {t('common.back')}
-                    </Button>
+                    <PageHeader title={customer.name} description={formatPhoneInternational(customer.phone)} />
+                    <BackButton onClick={goBackToCustomerList} fallback={returnTo} />
                 </div>
 
                 {!showAllTransactions ? (
@@ -226,14 +283,16 @@ export default function CustomersShow({
                         name={customer.name}
                         phone={customer.phone}
                         status={customer.status}
+                        canUpdate={canUpdate}
                         joined={customer.created_at}
                         walletBalance={wallet.balance}
                         transactionOverview={wallet.transaction_overview}
-                        onEdit={() => setFormOpen(true)}
+                        onEdit={can('customers.update') ? () => setFormOpen(true) : undefined}
                         onViewTransactions={() =>
                             router.get(`/customers/${customer.id}`, { transactions: 'all' }, { preserveScroll: true })
                         }
-                        onToggleStatus={() => setStatusOpen(true)}
+                        onToggleStatus={can('customers.update') ? () => setStatusOpen(true) : undefined}
+                        onAdjustWallet={can('customers.update') ? () => setAdjustOpen(true) : undefined}
                     />
                 ) : null}
 
@@ -243,25 +302,27 @@ export default function CustomersShow({
                             icon={WifiIcon}
                             title={t('customers.broadband_accounts')}
                             description={t('customers.broadband_hint')}
-                            actions={bindFilters}
+                            actions={can('customers.update') ? (!accountBinding ? bindFilters : undefined) : null}
                         >
                             <DataTable
-                                data={broadbandAccounts}
-                                getRowId={(row) => String(row.id)}
+                                data={accountBinding ? [accountBinding] : []}
+                                getRowId={(row) => row.account_number}
                                 emptyLabel={t('customers.no_accounts')}
                                 numbered={false}
                                 showSearch={false}
                                 directActions
                                 className="shadow-none"
-                                actions={(row) => (
-                                    <TableActionButton
-                                        label={t('customers.remove_account')}
-                                        icon={UnlinkIcon}
-                                        tone="danger"
-                                        size="sm"
-                                        onClick={() => setUnbindAccount(row)}
-                                    />
-                                )}
+                                actions={(row) =>
+                                    can('customers.update') ? (
+                                        <TableActionButton
+                                            label={t('customers.remove_account')}
+                                            icon={UnlinkIcon}
+                                            tone="danger"
+                                            size="sm"
+                                            onClick={() => setUnbindAccount(true)}
+                                        />
+                                    ) : null
+                                }
                                 columns={[
                                     {
                                         id: 'account_number',
@@ -276,11 +337,15 @@ export default function CustomersShow({
                                         header: t('customers.package'),
                                         mobile: 'subtitle',
                                         searchValue: (row) => localizePackageName(row.package_name),
-                                        cell: (row) => (
-                                            <span className={!row.package_name ? 'text-muted-foreground' : undefined}>
-                                                {localizePackageName(row.package_name)}
-                                            </span>
-                                        ),
+                                        cell: (row) => {
+                                            const packageName = localizePackageName(row.package_name);
+
+                                            return (
+                                                <span className={!packageName ? 'text-muted-foreground' : undefined}>
+                                                    {packageName || '-'}
+                                                </span>
+                                            );
+                                        },
                                     },
                                     {
                                         id: 'status',
@@ -291,9 +356,6 @@ export default function CustomersShow({
                                     },
                                 ]}
                             />
-                            {errors.account_number ? (
-                                <p className="mt-2 px-1 text-[11px] text-danger">{errors.account_number}</p>
-                            ) : null}
                         </DetailSection>
 
                         <DetailSection
@@ -419,7 +481,13 @@ export default function CustomersShow({
                             className="flex flex-col gap-2"
                             onSubmit={(event) => {
                                 event.preventDefault();
-                                bindForm.post(`/customers/${customer.id}/accounts`, {
+                                setBindTouched(true);
+
+                                if (getBindValidationError(bindForm.data.account_number)) {
+                                    return;
+                                }
+
+                                bindForm.post(`/customers/${customer.id}/account`, {
                                     preserveScroll: true,
                                     onSuccess: () => bindForm.reset(),
                                 });
@@ -433,9 +501,10 @@ export default function CustomersShow({
                                     <Input
                                         id="account_number"
                                         value={bindForm.data.account_number}
-                                        onChange={(event) => bindForm.setData('account_number', event.target.value)}
+                                        onChange={(event) => updateAccountNumber(event.target.value)}
                                         placeholder={t('customers.account_number')}
                                         className="h-8 text-[11px] placeholder:text-[11px]"
+                                        aria-invalid={Boolean(bindError)}
                                     />
                                 </FormControl>
                                 <Button type="submit" size="sm" className="shrink-0" disabled={bindForm.processing}>
@@ -447,15 +516,24 @@ export default function CustomersShow({
                                     {t('customers.bind_account')}
                                 </Button>
                             </div>
-                            <Button
-                                type="button"
-                                variant={customer.status === 'active' ? 'destructive' : 'primary'}
-                                className="w-full"
-                                onClick={() => setStatusOpen(true)}
+                            <p
+                                className={`min-h-4 px-1 text-[11px] leading-4 ${
+                                    bindError ? 'text-danger' : 'invisible'
+                                }`}
                             >
-                                {customer.status === 'active' ? <BanIcon /> : <UserCheckIcon />}
-                                {customer.status === 'active' ? t('customers.suspend') : t('customers.reactivate')}
-                            </Button>
+                                {bindError || '\u00A0'}
+                            </p>
+                            {canUpdate ? (
+                                <Button
+                                    type="button"
+                                    variant={customer.status === 'active' ? 'destructive' : 'primary'}
+                                    className="w-full"
+                                    onClick={() => setStatusOpen(true)}
+                                >
+                                    {customer.status === 'active' ? <BanIcon /> : <UserCheckIcon />}
+                                    {customer.status === 'active' ? t('customers.suspend') : t('customers.reactivate')}
+                                </Button>
+                            ) : null}
                         </form>
                     </div>
                 ) : null}
@@ -479,6 +557,13 @@ export default function CustomersShow({
             </PageContent>
 
             <CustomerFormDialog open={formOpen} onOpenChange={setFormOpen} customer={customer} />
+
+            <WalletAdjustDialog
+                open={adjustOpen}
+                onOpenChange={setAdjustOpen}
+                customerId={customer.id}
+                customerName={customer.name}
+            />
 
             <ConfirmDialog
                 open={statusOpen}
@@ -507,10 +592,10 @@ export default function CustomersShow({
             />
 
             <ConfirmDialog
-                open={unbindAccount !== null}
+                open={unbindAccount}
                 onOpenChange={(open) => {
                     if (!open) {
-                        setUnbindAccount(null);
+                        setUnbindAccount(false);
                     }
                 }}
                 title={t('customers.remove_account_title')}
@@ -523,11 +608,11 @@ export default function CustomersShow({
                         return;
                     }
 
-                    router.delete(`/customers/${customer.id}/accounts/${unbindAccount.id}`, {
+                    router.delete(`/customers/${customer.id}/accounts`, {
                         preserveScroll: true,
                         onStart: () => setUnbindProcessing(true),
                         onFinish: () => setUnbindProcessing(false),
-                        onSuccess: () => setUnbindAccount(null),
+                        onSuccess: () => setUnbindAccount(false),
                     });
                 }}
             />

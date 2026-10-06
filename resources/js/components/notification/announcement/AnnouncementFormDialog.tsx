@@ -3,12 +3,17 @@ import { useForm } from '@inertiajs/react';
 import { MegaphoneIcon, SquarePenIcon } from 'lucide-react';
 
 import { AnnouncementForm, type AnnouncementFormValues } from '@/components/notification/announcement/AnnouncementForm';
+import type { AnnouncementType } from '@/lib/announcement-validation';
 import { FormDialog } from '@/components/FormDialog';
 import { cmsModalVisit } from '@/lib/cms-modal';
 import { useTranslation } from '@/hooks/useTranslation';
 
 export type AnnouncementItem = {
     id: number;
+    type: AnnouncementType;
+    title_en: string;
+    title_zh: string;
+    title_my: string;
     content_en: string;
     content_zh: string;
     content_my: string;
@@ -27,6 +32,10 @@ type AnnouncementFormDialogProps = {
 
 function emptyAnnouncementForm(): AnnouncementFormValues {
     return {
+        type: 'announce',
+        title_en: '',
+        title_zh: '',
+        title_my: '',
         content_en: '',
         content_zh: '',
         content_my: '',
@@ -69,6 +78,10 @@ function AnnouncementFormDialogBody({ item, onClose }: { item: AnnouncementItem 
     const form = useForm<AnnouncementFormValues>(
         item
             ? {
+                  type: item.type ?? 'announce',
+                  title_en: item.title_en ?? '',
+                  title_zh: item.title_zh ?? '',
+                  title_my: item.title_my ?? '',
                   content_en: item.content_en ?? '',
                   content_zh: item.content_zh ?? '',
                   content_my: item.content_my ?? '',

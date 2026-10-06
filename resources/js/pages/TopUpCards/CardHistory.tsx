@@ -1,23 +1,27 @@
-import { FormEvent, useEffect, useRef, useState } from 'react';
-import { Head, router, useForm } from '@inertiajs/react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Head, router } from '@inertiajs/react';
 
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import type { Paginated } from '@/components/Pagination';
-import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
-import { CardHistoryFilters, defaultExpiryDate, type TopUpCardRow } from '@/lib/top-up-cards';
+import { CardHistoryFilters, type TopUpCardRow } from '@/lib/top-up-cards';
 import { Ban, CalendarX, ClipboardCheck, Clock3, CreditCard, TicketIcon } from 'lucide-react';
 import { StatCard } from '@/components/StatCard';
-import { TopUpCardListTable } from '@/components/top-up-cards/TopUpCardListTable';
+import { TopUpCardHistoryTable } from '@/components/top-up-cards/TopUpCardHistoryTable';
 
 type Props = {
     cards: Paginated<TopUpCardRow>;
-    presets: number[];
-    amounts: string[];
+    generated: TopUpCardRow[];
+    amounts: number[];
     batches: {
         id: number;
         batch_no: string;
+    }[];
+    offices: {
+        id: number;
+        name: string;
+        code: string;
     }[];
     filters: CardHistoryFilters;
     stats: {
@@ -38,6 +42,7 @@ function visitIndex(filters: CardHistoryFilters, onStart?: () => void, onFinish?
             status: filters.status || undefined,
             batch: filters.batch || undefined,
             amount: filters.amount || undefined,
+            office: filters.office || undefined,
             from: filters.from || undefined,
             to: filters.to || undefined,
             sort: filters.sort || 'created_at',
@@ -53,19 +58,11 @@ function visitIndex(filters: CardHistoryFilters, onStart?: () => void, onFinish?
     );
 }
 
-export default function CardHistory({ cards, batches, presets, amounts, stats, filters }: Props) {
+export default function CardHistory({ cards, batches, generated = [], amounts, offices, stats, filters }: Props) {
     const { t } = useTranslation();
-    const can = useCan();
     const [search, setSearch] = useState(filters.search);
-    const [selected, setSelected] = useState<Record<string, number>>({});
-    const [customOpen, setCustomOpen] = useState(false);
-    const [customValue, setCustomValue] = useState('');
     const [tableLoading, setTableLoading] = useState(false);
     const debounce = useRef<number>(0);
-    const form = useForm({
-        amounts: [] as { value: number; quantity: number }[],
-        expires_at: defaultExpiryDate(),
-    });
 
     useEffect(() => {
         setSearch(filters.search);
@@ -73,42 +70,10 @@ export default function CardHistory({ cards, batches, presets, amounts, stats, f
 
     useEffect(() => () => window.clearTimeout(debounce.current), []);
 
-    const applyCustom = (next: Record<string, number>, value: string, open: boolean) => {
-        const copy = { ...next };
-
-        Object.keys(copy).forEach((key) => {
-            if (!presets.includes(Number(key))) {
-                delete copy[key];
-            }
-        });
-
-        if (open && Number(value) >= 50) {
-            copy[String(Number(value))] = copy[String(Number(value))] ?? 1;
-        }
-
-        return copy;
-    };
-
-    const submit = (event: FormEvent) => {
-        event.preventDefault();
-
-        const amountsPayload = Object.entries(selected)
-            .filter(([, quantity]) => quantity > 0)
-            .map(([value, quantity]) => ({ value: Number(value), quantity }));
-
-        form.transform(() => ({
-            amounts: amountsPayload,
-            expires_at: form.data.expires_at,
-        }));
-        form.post('/top-up-cards/batch', {
-            preserveScroll: true,
-            onSuccess: () => {
-                setSelected({});
-                setCustomOpen(false);
-                setCustomValue('');
-            },
-        });
-    };
+    const generatedPins = useMemo(
+        () => Object.fromEntries(generated.filter((card) => card.pin).map((card) => [card.id, card.pin as string])),
+        [generated],
+    );
 
     const cardList = [
         {
@@ -157,8 +122,6 @@ export default function CardHistory({ cards, batches, presets, amounts, stats, f
         );
     };
 
-    const canGenerate = can('top-up-cards.create') && Object.values(selected).some((quantity) => quantity > 0);
-
     return (
         <>
             <Head title={t('menu.card_history')} />
@@ -166,10 +129,11 @@ export default function CardHistory({ cards, batches, presets, amounts, stats, f
                 <PageHeader />
                 <StatCard items={cardList} className="xl:grid-cols-6" />
                 <div className="print:hidden">
-                    <TopUpCardListTable
+                    <TopUpCardHistoryTable
                         cards={cards}
                         amounts={amounts}
                         batches={batches}
+                        offices={offices}
                         filters={filters}
                         search={search}
                         loading={tableLoading}

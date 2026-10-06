@@ -27,13 +27,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { EDGE_PAD } from '@/components/data-table/styles';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatPhoneInternational } from '@/lib/phone';
 import { cn, formatDate, truncateText } from '@/lib/utils';
 import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
 
 import { StatCard } from '@/components/StatCard';
 import { DataTable } from '@/components/DataTable';
 import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
-import { FailureReportDetailDialog } from '@/components/service-requests/FailureReport/FailureReportDetailDialog';
+import { FailureReportDetailDialog } from '@/components/service-requests/failure-report/FailureReportDetailDialog';
+import { useOpenRequestFromQuery } from '@/hooks/useOpenRequestFromQuery';
 
 type FailureReportPhoto = {
     id: number;
@@ -70,7 +72,7 @@ type FailureReportRow = {
     id: number;
     customer_name: string;
     customer_phone: string;
-    account_number: string;
+    broadband_account_number: string;
     account_customer: string;
     failure_type: string;
     contact_name: string;
@@ -123,6 +125,8 @@ export default function FailureReportsIndex({ reports, filters, statuses, stats 
     const [search, setSearch] = useState(filters.search);
     const debounce = useRef<number>(0);
     const [selectedRequest, setSelectedRequest] = useState<FailureReportRow | null>(null);
+
+    const closeRequestDetails = useOpenRequestFromQuery(reports.data, setSelectedRequest);
 
     useEffect(() => {
         setSearch(filters.search);
@@ -222,11 +226,11 @@ export default function FailureReportsIndex({ reports, filters, statuses, stats 
                                     </span>
 
                                     <p className="truncate font-mono mt-1 text-xs text-muted-foreground">
-                                        {request.account_number}
+                                        {request.broadband_account_number}
                                     </p>
                                 </div>
                             ),
-                            searchValue: (request) => `${request.customer_name} ${request.account_number}`,
+                            searchValue: (request) => `${request.customer_name} ${request.broadband_account_number}`,
                         },
                         {
                             id: 'failure_type',
@@ -261,7 +265,7 @@ export default function FailureReportsIndex({ reports, filters, statuses, stats 
                             cell: (request) => (
                                 <span className="inline-flex items-center gap-1.5">
                                     <PhoneIcon className="size-3.5" />
-                                    {request.contact_phone}
+                                    {formatPhoneInternational(request.contact_phone)}
                                 </span>
                             ),
                             searchValue: (request) => request.contact_phone,
@@ -301,7 +305,7 @@ export default function FailureReportsIndex({ reports, filters, statuses, stats 
 
             <FailureReportDetailDialog
                 open={selectedRequest !== null}
-                onOpenChange={(open) => !open && setSelectedRequest(null)}
+                onOpenChange={(open) => !open && closeRequestDetails()}
                 request={selectedRequest}
                 statuses={statuses}
                 canUpdate={can('service-requests.update')}

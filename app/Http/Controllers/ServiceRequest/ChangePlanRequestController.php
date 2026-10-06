@@ -19,32 +19,37 @@ class ChangePlanRequestController extends Controller
         $status = $request->has('status')
             ? $request->string('status')->toString()
             : ChangePlanStatus::UnderReview->value;
+        $openRequestId = $request->integer('open_request');
 
         $changePlanRequests = ChangePlanRequest::query()
             ->with([
                 'user:id,name,phone',
-                'broadbandAccount:id,account_number',
                 'currentPackage' => function ($query) {
-                    $query->select('id', 'price', 'network_id', 'speed_id', 'term_id')
+                    $query
+                        ->select('id', 'price', 'network_id', 'speed_id', 'term_id')
                         ->with(['network:id,name_en,name_zh,name_my', 'speed:id,mbps', 'term:id,months']);
                 },
                 'newPackage' => function ($query) {
-                    $query->select('id', 'price', 'network_id', 'speed_id', 'term_id')
+                    $query
+                        ->select('id', 'price', 'network_id', 'speed_id', 'term_id')
                         ->with(['network:id,name_en,name_zh,name_my', 'speed:id,mbps', 'term:id,months']);
                 },
                 'admin:id,username',
             ])
-            ->when($search !== '', function ($query) use ($search): void {
+            ->when($openRequestId < 1 && $search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
-                        ->whereHas('user', fn($query) => $query->whereLike('name', '%' . $search . '%'))
-                        ->orWhereHas('broadbandAccount', fn($query) => $query->whereLike('account_number', '%' . $search . '%'));
+                        ->whereHas('user', fn($user) => $user->whereLike('name', '%' . $search . '%'))
+                        ->orWhereLike('broadband_account_number', '%' . $search . '%');
                 });
             })
             ->when(
-                $status !== '' && in_array($status, array_column(ChangePlanStatus::cases(), 'value'), true),
+                $openRequestId < 1 &&
+                    $status !== '' &&
+                    in_array($status, array_column(ChangePlanStatus::cases(), 'value'), true),
                 fn($query) => $query->where('status', $status),
             )
+            ->when($openRequestId > 0, fn($query) => $query->whereKey($openRequestId))
             ->orderBy('preferred_date')
             ->latest('id')
             ->paginate(10)
@@ -82,7 +87,9 @@ class ChangePlanRequestController extends Controller
     {
         return [
             'total_requests' => ChangePlanRequest::query()->count(),
-            'under_reviews_requests' => ChangePlanRequest::query()->where('status', ChangePlanStatus::UnderReview)->count(),
+            'under_reviews_requests' => ChangePlanRequest::query()
+                ->where('status', ChangePlanStatus::UnderReview)
+                ->count(),
             'approved_requests' => ChangePlanRequest::query()->where('status', ChangePlanStatus::Approved)->count(),
             'cancelled_requests' => ChangePlanRequest::query()->where('status', ChangePlanStatus::Cancelled)->count(),
         ];

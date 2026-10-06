@@ -1,7 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
 import {
-    ArrowDownLeftIcon,
-    ArrowUpRightIcon,
     BanIcon,
     CalendarIcon,
     PhoneIcon,
@@ -80,38 +78,45 @@ type TransactionSummary = {
     amount: string;
 };
 
+type AdjustmentSummary = {
+    credit: TransactionSummary;
+    debit: TransactionSummary;
+};
+
 type TransactionOverview = {
     topup: TransactionSummary;
-    transfer_in: TransactionSummary;
-    transfer_out: TransactionSummary;
     ftth_bill: TransactionSummary;
     wifi_package: TransactionSummary;
     refund: TransactionSummary;
-    adjustment: TransactionSummary;
+    adjustment: AdjustmentSummary;
 };
 
 type CustomerProfileCardProps = {
     name: string;
     phone: string;
     status: string;
+    canUpdate: boolean;
     joined: string | null;
     walletBalance: string;
     transactionOverview: TransactionOverview;
-    onEdit: () => void;
+    onEdit?: () => void;
     onViewTransactions: () => void;
-    onToggleStatus: () => void;
+    onToggleStatus?: () => void;
+    onAdjustWallet?: () => void;
 };
 
 export function CustomerProfileCard({
     name,
     phone,
     status,
+    canUpdate,
     joined,
     walletBalance,
     transactionOverview,
     onEdit,
     onViewTransactions,
     onToggleStatus,
+    onAdjustWallet,
 }: CustomerProfileCardProps) {
     const { t } = useTranslation();
     const isActive = status === 'active';
@@ -147,37 +152,53 @@ export function CustomerProfileCard({
                         <ArrowLeftRight className="size-3.5" strokeWidth={1.85} />
                         {t('common.view_all_transactions')}
                     </Button>
-                    <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="h-8 gap-1 rounded-[6px] px-2.5 text-[11px]"
-                        onClick={onEdit}
-                    >
-                        <SquarePenIcon className="size-3.5" strokeWidth={1.85} />
-                        {t('common.edit')}
-                    </Button>
-                    <Button
-                        type="button"
-                        size="sm"
-                        variant={isActive ? 'destructive' : 'primary'}
-                        className="h-8 gap-1 rounded-[6px] px-2.5 text-[11px]"
-                        onClick={onToggleStatus}
-                    >
-                        {isActive ? (
-                            <BanIcon className="size-3.5" strokeWidth={1.85} />
-                        ) : (
-                            <UserCheckIcon className="size-3.5" strokeWidth={1.85} />
-                        )}
-                        {isActive ? t('customers.suspend') : t('customers.reactivate')}
-                    </Button>
+                    {onAdjustWallet ? (
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-8 gap-1 rounded-[6px] px-2.5 text-[11px]"
+                            onClick={onAdjustWallet}
+                        >
+                            <SlidersHorizontalIcon className="size-3.5" strokeWidth={1.85} />
+                            {t('customers.wallet_adjust.action')}
+                        </Button>
+                    ) : null}
+                    {onEdit ? (
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-8 gap-1 rounded-[6px] px-2.5 text-[11px]"
+                            onClick={onEdit}
+                        >
+                            <SquarePenIcon className="size-3.5" strokeWidth={1.85} />
+                            {t('common.edit')}
+                        </Button>
+                    ) : null}
+                    {onToggleStatus ? (
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant={isActive ? 'destructive' : 'primary'}
+                            className="h-8 gap-1 rounded-[6px] px-2.5 text-[11px]"
+                            onClick={onToggleStatus}
+                        >
+                            {isActive ? (
+                                <BanIcon className="size-3.5" strokeWidth={1.85} />
+                            ) : (
+                                <UserCheckIcon className="size-3.5" strokeWidth={1.85} />
+                            )}
+                            {isActive ? t('customers.suspend') : t('customers.reactivate')}
+                        </Button>
+                    ) : null}
                 </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2">
                 <Fact icon={PhoneIcon} label={t('customers.phone')}>
                     <div className="flex items-center gap-1.5">
                         <PhoneDisplay phone={phone} />
-                        <CopyValueButton value={phone} label={t('customers.phone')} />
+                        <CopyValueButton value={phone} label={t('customers.phone')} format="phone" />
                     </div>
                 </Fact>
                 <Fact icon={CalendarIcon} label={t('customers.joined')}>
@@ -201,12 +222,6 @@ export function CustomerProfileCard({
                 <Fact icon={BanknoteArrowUpIcon} label={t('wallet.topup')} iconClassName="text-emerald-600 size-4.5">
                     <TransactionValue summary={transactionOverview.topup} color="credit" t={t} />
                 </Fact>
-                <Fact icon={ArrowDownLeftIcon} label={t('wallet.transfer_in')} iconClassName="text-emerald-600">
-                    <TransactionValue summary={transactionOverview.transfer_in} color="credit" t={t} />
-                </Fact>
-                <Fact icon={ArrowUpRightIcon} label={t('wallet.transfer_out')} iconClassName="text-red-600">
-                    <TransactionValue summary={transactionOverview.transfer_out} color="debit" t={t} />
-                </Fact>
                 <Fact icon={ReceiptTextIcon} label={t('wallet.ftth_bill')} iconClassName="text-red-600">
                     <TransactionValue summary={transactionOverview.ftth_bill} color="debit" t={t} />
                 </Fact>
@@ -216,8 +231,19 @@ export function CustomerProfileCard({
                 <Fact icon={RotateCcwIcon} label={t('wallet.refund')} iconClassName="text-emerald-600">
                     <TransactionValue summary={transactionOverview.refund} color="credit" t={t} />
                 </Fact>
-                <Fact icon={SlidersHorizontalIcon} label={t('wallet.adjustment')} iconClassName="text-success">
-                    <TransactionValue summary={transactionOverview.adjustment} color="credit" t={t} />
+                <Fact
+                    icon={SlidersHorizontalIcon}
+                    label={`${t('wallet.adjustment')} (${t('transactions.credit')})`}
+                    iconClassName="text-success"
+                >
+                    <TransactionValue summary={transactionOverview.adjustment.credit} color="credit" t={t} />
+                </Fact>
+                <Fact
+                    icon={SlidersHorizontalIcon}
+                    label={`${t('wallet.adjustment')} (${t('transactions.debit')})`}
+                    iconClassName="text-danger"
+                >
+                    <TransactionValue summary={transactionOverview.adjustment.debit} color="debit" t={t} />
                 </Fact>
             </div>
         </section>

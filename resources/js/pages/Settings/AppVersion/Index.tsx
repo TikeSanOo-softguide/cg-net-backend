@@ -18,7 +18,7 @@ import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { visitBulkDelete } from '@/lib/bulk-delete';
 
-type AppVersionRow = AppVersionFormData & {s
+type AppVersionRow = AppVersionFormData & {
     created_at: string | null;
     updated_at: string | null;
 };
@@ -33,7 +33,7 @@ type Filters = {
 type Props = {
     items: Paginated<AppVersionRow>;
     filters: Filters;
-     versionOptions: string[];
+    versionOptions: string[];
 };
 
 function visitIndex(filters: Filters) {
@@ -53,7 +53,7 @@ function visitIndex(filters: Filters) {
     );
 }
 
-export default function AppVersionIndex({ items, filters ,versionOptions}: Props) {
+export default function AppVersionIndex({ items, filters, versionOptions }: Props) {
     const { t } = useTranslation();
     const can = useCan();
     const canDelete = can('settings.delete');
@@ -163,7 +163,7 @@ export default function AppVersionIndex({ items, filters ,versionOptions}: Props
                         getRowId={(row) => String(row.id)}
                         showSearch={false}
                         sort={filters.sort}
-                       onView={(row) => {
+                        onView={(row) => {
                             setViewingItem(toFormData(row));
                             setDetailOpen(true);
                         }}
@@ -262,6 +262,7 @@ export default function AppVersionIndex({ items, filters ,versionOptions}: Props
 
             <AppVersionDetailDialog
                 open={detailOpen}
+                canEdit={can('settings.update')}
                 onOpenChange={(open) => {
                     setDetailOpen(open);
                     if (!open) setViewingItem(null);

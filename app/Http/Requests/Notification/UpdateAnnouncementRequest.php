@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Notification;
 
+use App\Enums\AnnouncementType;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateAnnouncementRequest extends FormRequest
 {
@@ -14,6 +16,10 @@ class UpdateAnnouncementRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'type' => ['required', Rule::enum(AnnouncementType::class)],
+            'title_en' => ['required', 'string', 'max:120'],
+            'title_zh' => ['required', 'string', 'max:120'],
+            'title_my' => ['required', 'string', 'max:120'],
             'content_en' => ['required', 'string', 'max:5000'],
             'content_zh' => ['required', 'string', 'max:5000'],
             'content_my' => ['required', 'string', 'max:5000'],

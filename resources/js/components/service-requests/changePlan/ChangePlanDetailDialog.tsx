@@ -13,10 +13,12 @@ import {
 import { FormDialog } from '@/components/FormDialog';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
+import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
 import { cn, formatDate } from '@/lib/utils';
 import { CopyValueButton } from '@/components/CopyValueButton';
+import { formatPhoneInternational } from '@/lib/phone';
 
 export type RelationItem = {
     id: number;
@@ -41,7 +43,7 @@ export type ChangePlanRequestItem = {
     note: string | null;
     status: string;
     user: { id: number; name: string; phone: string };
-    broadband_account: { id: number; account_number: string };
+    broadband_account_number: string | null;
     current_package: Package;
     new_package: Package;
     admin: { id: number; username: string } | null;
@@ -71,6 +73,8 @@ export function ChangePlanDetailDialog({
     statuses = [CHANGE_PLAN_STATUS.UNDER_REVIEW, CHANGE_PLAN_STATUS.APPROVED],
 }: ChangePlanDetailDialogProps) {
     const { t } = useTranslation();
+    const can = useCan();
+    const canUpdate = can('service-requests.update');
 
     const nextStatus =
         request?.status === CHANGE_PLAN_STATUS.UNDER_REVIEW
@@ -140,12 +144,13 @@ export function ChangePlanDetailDialog({
                             <p className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <PhoneIcon className="size-3" />
                                 <span className={request.status === 'cancelled' ? 'select-none' : ''}>
-                                    {request.contact_phone}
+                                    {formatPhoneInternational(request.contact_phone)}
                                 </span>
                                 {request.status !== 'cancelled' && (
                                     <CopyValueButton
                                         value={request.contact_phone}
                                         label={t('change_password.copy_contact_phone')}
+                                        format="phone"
                                     />
                                 )}
                             </p>
@@ -157,18 +162,19 @@ export function ChangePlanDetailDialog({
                             </p>
                             <p className="flex items-center gap-1.5 font-mono text-sm font-semibold text-foreground">
                                 <WifiIcon className="size-3.5 text-muted-foreground/70" />
-                                {request.broadband_account.account_number}
+                                {request.broadband_account_number ?? '—'}
                             </p>
                             <p className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <UserIcon className="size-3" />
                                 <span className="font-mono">{request.user.name}</span>
                                 <span className={`font-mono ${request.status === 'cancelled' ? 'select-none' : ''}`}>
-                                    ({request.user?.phone})
+                                    ({formatPhoneInternational(request.user?.phone)})
                                 </span>
                                 {request.status !== 'cancelled' && (
                                     <CopyValueButton
                                         value={request.user?.phone}
                                         label={t('change_password.copy_account_phone')}
+                                        format="phone"
                                     />
                                 )}
                             </p>
@@ -242,7 +248,7 @@ export function ChangePlanDetailDialog({
                         </div>
 
                         <div className="flex items-center gap-2">
-                            {request?.status !== 'cancelled' && (
+                            {canUpdate && request?.status !== 'cancelled' && (
                                 <Button
                                     type="button"
                                     size="sm"

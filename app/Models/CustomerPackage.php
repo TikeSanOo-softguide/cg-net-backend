@@ -3,41 +3,48 @@
 namespace App\Models;
 
 use App\Enums\CustomerPackageStatus;
-use App\Models\PackageOrder;
 use Database\Factories\CustomerPackageFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use LogicException;
 
 #[
     Fillable([
         'user_id',
         'package_id',
         'package_order_id',
-        'broadband_account_id',
         'username',
         'password',
-        'start_date',
-        'expiry_date',
-        'expired_at',
-        'auto_renew',
+        'starts_at',
+        'expires_at',
         'status',
     ]),
 ]
+#[Hidden(['password'])]
 class CustomerPackage extends Model
 {
     /** @use HasFactory<CustomerPackageFactory> */
     use HasFactory, SoftDeletes;
 
+    protected static function booted(): void
+    {
+        static::deleting(static function (): never {
+            throw new LogicException('CustomerPackage records cannot be deleted.');
+        });
+        static::forceDeleting(static function (): never {
+            throw new LogicException('CustomerPackage records cannot be deleted.');
+        });
+    }
+
     protected function casts(): array
     {
         return [
-            'start_date' => 'date',
-            'expiry_date' => 'date',
-            'expired_at' => 'datetime',
-            'auto_renew' => 'boolean',
+            'starts_at' => 'datetime',
+            'expires_at' => 'datetime',
             'status' => CustomerPackageStatus::class,
         ];
     }
@@ -45,11 +52,6 @@ class CustomerPackage extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function broadbandAccount(): BelongsTo
-    {
-        return $this->belongsTo(BroadbandAccount::class);
     }
 
     public function package(): BelongsTo

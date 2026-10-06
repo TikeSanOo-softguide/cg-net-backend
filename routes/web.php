@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\ActivityLog\ActivityLogController;
+use App\Http\Controllers\AdminNotification\AdminNotificationController;
+use App\Http\Controllers\BillPayment\BillPaymentController;
+use App\Http\Controllers\BillPayment\TransactionController;
 use App\Http\Controllers\Cms\BannerController;
 use App\Http\Controllers\Cms\CategoryController;
 use App\Http\Controllers\Cms\ContactController;
@@ -11,38 +14,62 @@ use App\Http\Controllers\Cms\ServiceController;
 use App\Http\Controllers\Customer\CustomerController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Locale\LocaleController;
+use App\Http\Controllers\Log\SecurityLogController;
+use App\Http\Controllers\Log\UserLogController;
 use App\Http\Controllers\MenuPage\MenuPageController;
 use App\Http\Controllers\Notification\AnnouncementController;
+use App\Http\Controllers\Notification\PushNotificationController;
 use App\Http\Controllers\Package\AddonController;
 use App\Http\Controllers\Package\NetworkController;
 use App\Http\Controllers\Package\PackageController;
+use App\Http\Controllers\Package\PackageOrderController;
 use App\Http\Controllers\Package\SpeedController;
 use App\Http\Controllers\Package\TermController;
 use App\Http\Controllers\Region\RegionManagementController;
+use App\Http\Controllers\Reports\BillingReportController;
+use App\Http\Controllers\Reports\CustomerReportController;
+use App\Http\Controllers\Reports\EodReportController;
+use App\Http\Controllers\Reports\LedgerHealthReportController;
+use App\Http\Controllers\Reports\ReportController;
 use App\Http\Controllers\ServiceRequest\BroadbandApplicationRequestController;
 use App\Http\Controllers\ServiceRequest\ChangePasswordRequestController;
 use App\Http\Controllers\ServiceRequest\ChangePlanRequestController;
 use App\Http\Controllers\ServiceRequest\FailureReportController;
 use App\Http\Controllers\ServiceRequest\RelocationRequestController;
+use App\Http\Controllers\ServiceRequest\ServiceRequestController;
 use App\Http\Controllers\Settings\AppVersionController;
+use App\Http\Controllers\Settings\GeneralSettings\FaqController;
+use App\Http\Controllers\Settings\GeneralSettings\GeneralSettingsController;
+use App\Http\Controllers\Settings\GeneralSettings\SupportContactController;
+use App\Http\Controllers\Settings\GeneralSettings\TermAndConditionController;
 use App\Http\Controllers\Staff\RoleController;
 use App\Http\Controllers\Staff\StaffController;
 use App\Http\Controllers\Support\ChatConversations\ChatConversationsController;
 use App\Http\Controllers\Support\ChatFlows\ChatbotFlowsController;
-use App\Http\Controllers\TopUpCard\AgentController;
 use App\Http\Controllers\Support\QuickReplies\QuickRepliesController;
+use App\Http\Controllers\TopUpCard\OfficeController;
 use App\Http\Controllers\TopUpCard\TopUpCardController;
-use App\Http\Controllers\Transaction\TransactionController;
+use App\Http\Controllers\TopUpReport\TopUpReportController;
 use App\Support\AdminHome;
+use App\Support\AppPermissions;
 use App\Support\MenuPages;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::post('/locale/{lang}', LocaleController::class)->name('locale.update');
 
 Route::middleware(['auth:web', 'admin.active'])->group(function () {
-    Route::get('/', fn() => redirect()->to(AdminHome::path(auth()->user())))->name('home');
-    Route::get('/dashboard', DashboardController::class)->middleware('can:dashboard.view')->name('dashboard');
+    Route::get('/', fn(Request $request) => redirect()->to(AdminHome::path($request->user())))->name('home');
+    Route::prefix('dashboard')->group(function (): void {
+        Route::get('/', DashboardController::class)->middleware('can:dashboard.view')->name('dashboard');
+        Route::get('/notifications', [AdminNotificationController::class, 'index'])
+            ->middleware('can:notifications.view')
+            ->name('dashboard.notifications.index');
+        Route::put('/notifications/{notification}/read', [AdminNotificationController::class, 'markRead'])
+            ->middleware('can:notifications.view')
+            ->name('dashboard.notifications.read');
+    });
     Route::delete('/dashboard/requests/bulk-destroy', [DashboardController::class, 'bulkDestroy'])
         ->middleware('can:service-requests.delete')
         ->name('dashboard.requests.bulk-destroy');
@@ -68,28 +95,38 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
     Route::patch('/customers/{customer}/status', [CustomerController::class, 'updateStatus'])
         ->middleware('can:customers.update')
         ->name('customers.status');
-    Route::post('/customers/{customer}/accounts', [CustomerController::class, 'bindAccount'])
+    Route::post('/customers/{customer}/account', [CustomerController::class, 'bindAccount'])
         ->middleware('can:customers.update')
-        ->name('customers.accounts.bind');
-    Route::delete('/customers/{customer}/accounts/{account}', [CustomerController::class, 'unbindAccount'])
+        ->name('customers.account.bind');
+    Route::delete('/customers/{customer}/accounts', [CustomerController::class, 'unbindAccount'])
         ->middleware('can:customers.update')
         ->name('customers.accounts.unbind');
+    Route::post('/customers/{customer}/wallet/adjust', [CustomerController::class, 'adjustWallet'])->name(
+        'customers.wallet.adjust',
+    );
     Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])
         ->middleware('can:customers.delete')
         ->name('customers.destroy');
+    Route::get('/customers/{customer}/transactions/export', [TransactionController::class, 'exportCustomer'])
+        ->middleware(['can:customers.view', 'can:' . AppPermissions::SystemExport])
+        ->name('customers.transactions.export');
     Route::get('/customers/{customer}', [CustomerController::class, 'show'])
         ->middleware('can:customers.view')
         ->name('customers.show');
 
     Route::prefix('billing')
         ->name('billing.')
+        ->middleware('can:billing.view')
         ->group(function () {
-            Route::get('/transactions', [TransactionController::class, 'index'])
-                ->middleware('can:billing.view')
-                ->name('transactions');
+            Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions');
+            Route::get('/bill-payments', [BillPaymentController::class, 'index'])->name('bill-payments');
+            Route::get('/bill-payments/export', [BillPaymentController::class, 'export'])
+                ->middleware('can:' . AppPermissions::SystemExport)
+                ->name('bill-payments.export');
             Route::get('/transactions/export', [TransactionController::class, 'export'])
-                ->middleware('can:billing.view')
+                ->middleware('can:' . AppPermissions::SystemExport)
                 ->name('transactions.export');
+            Route::get('/package-orders', [PackageOrderController::class, 'index'])->name('package-orders.index');
         });
 
     Route::prefix('regions')
@@ -209,6 +246,45 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                         ->middleware('can:notifications.view')
                         ->name('show');
                 });
+
+            Route::prefix('promotions')
+                ->name('promotions.')
+                ->group(function () {
+                    Route::get('/', [PromotionController::class, 'index'])
+                        ->middleware('can:notifications.view')
+                        ->name('index');
+                    Route::get('/create', [PromotionController::class, 'create'])
+                        ->middleware('can:notifications.create')
+                        ->name('create');
+                    Route::post('/', [PromotionController::class, 'store'])
+                        ->middleware('can:notifications.create')
+                        ->name('store');
+                    Route::delete('/bulk-destroy', [PromotionController::class, 'bulkDestroy'])
+                        ->middleware('can:notifications.delete')
+                        ->name('bulk-destroy');
+                    Route::get('/{promotion}/edit', [PromotionController::class, 'edit'])
+                        ->middleware('can:notifications.update')
+                        ->name('edit');
+                    Route::put('/{promotion}', [PromotionController::class, 'update'])
+                        ->middleware('can:notifications.update')
+                        ->name('update');
+                    Route::delete('/{promotion}', [PromotionController::class, 'destroy'])
+                        ->middleware('can:notifications.delete')
+                        ->name('destroy');
+                });
+
+            Route::get('/compose', [PushNotificationController::class, 'index'])
+                ->middleware('can:notifications.view')
+                ->name('compose');
+            Route::post('/compose/push-now', [PushNotificationController::class, 'pushNow'])
+                ->middleware('can:notifications.create')
+                ->name('compose.push-now');
+            Route::post('/compose/schedule', [PushNotificationController::class, 'schedule'])
+                ->middleware('can:notifications.create')
+                ->name('compose.schedule');
+            Route::post('/compose/{schedule}/cancel', [PushNotificationController::class, 'cancel'])
+                ->middleware('can:notifications.update')
+                ->name('compose.cancel');
         });
 
     Route::prefix('support')
@@ -216,49 +292,50 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         ->group(function () {
             Route::prefix('conversations')
                 ->name('conversations.')
+                ->middleware('can:support.view')
                 ->group(function () {
-                    Route::get(
-                        '/',
-                        [ChatConversationsController::class, 'index']
-                    )->name('chat-conversations.index');
+                    Route::get('/', [ChatConversationsController::class, 'index'])->name('chat-conversations.index');
 
-                    Route::get(
-                        '/{conversation}',
-                        [ChatConversationsController::class, 'show']
-                    )->name('chat-conversations.show');
+                    Route::get('/{conversation}', [ChatConversationsController::class, 'show'])->name(
+                        'chat-conversations.show',
+                    );
 
-                    Route::post(
-                        '/{conversation}/messages',
-                        [ChatConversationsController::class, 'sendMessage']
-                    )->name('chat-conversations.messages.store');
+                    Route::post('/{conversation}/messages', [ChatConversationsController::class, 'sendMessage'])
+                        ->name('chat-conversations.messages.store')
+                        ->middleware('can:support.create');
 
-                    Route::put(
-                        '/{conversation}/status',
-                        [ChatConversationsController::class, 'updateStatus']
-                    )->name('chat-conversations.status');
+                    Route::put('/{conversation}/status', [ChatConversationsController::class, 'updateStatus'])
+                        ->name('chat-conversations.status')
+                        ->middleware('can:support.update');
 
-                    Route::post(
-                        '/{conversation}/quick-replies/{quickReply}',
-                        [ChatConversationsController::class, 'useQuickReply']
-                    )->name('chat-conversations.quick-reply');
+                    Route::post('/{conversation}/close', [ChatConversationsController::class, 'close'])
+                        ->name('chat-conversations.close')
+                        ->middleware('can:support.update');
+
+                    Route::post('/{conversation}/quick-replies/{quickReply}', [
+                        ChatConversationsController::class,
+                        'useQuickReply',
+                    ])
+                        ->middleware('can:support.create')
+                        ->name('chat-conversations.quick-reply');
                 });
             Route::prefix('quick-replies')
                 ->name('quick-replies.')
                 ->group(function () {
                     Route::get('/', [QuickRepliesController::class, 'index'])
-                        ->middleware('can:quick-replies.view')
+                        ->middleware('can:support.view')
                         ->name('index');
                     Route::post('/replies', [QuickRepliesController::class, 'store'])
-                        ->middleware('can:quick-replies.store')
+                        ->middleware('can:support.create')
                         ->name('store');
-                    Route::put('/replies/{reply}', [QuickRepliesController::class, 'update'])
-                        ->middleware('can:quick-replies.update')
+                    Route::put('/replies/{quickReply}', [QuickRepliesController::class, 'update'])
+                        ->middleware('can:support.update')
                         ->name('update');
                     Route::delete('/bulk-destroy', [QuickRepliesController::class, 'bulkDestroy'])
-                        ->middleware('can:quick-replies.delete')
+                        ->middleware('can:support.delete')
                         ->name('bulk-destroy');
-                    Route::delete('/replies/{reply}', [QuickRepliesController::class, 'destroy'])
-                        ->middleware('can:quick-replies.delete')
+                    Route::delete('/replies/{quickReply}', [QuickRepliesController::class, 'destroy'])
+                        ->middleware('can:support.delete')
                         ->name('destroy');
                 });
 
@@ -266,16 +343,21 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 ->name('chatbot-flows.')
                 ->controller(ChatbotFlowsController::class)
                 ->group(function () {
-                    Route::get('/', 'index')->name('index');
-                    Route::post('/steps', 'storeStep')->name('steps.store');
-                    Route::put('/steps/{step}', 'updateStep')->name('steps.update');
-                    Route::delete('/steps/{step}', 'destroyStep')->name('steps.destroy');
-                    Route::post('/steps/{step}/options', 'storeOption')->name('options.store');
-                    Route::put('/steps/{step}/options/{option}', 'updateOption')->name('options.update');
-                    Route::delete('/steps/{step}/options/{option}', 'destroyOption')->name('options.destroy');
-                    Route::post('/steps/{step}/options/create-step', 'createStepFromOption')->name(
-                        'options.create-step',
-                    );
+                    Route::get('/', 'index')->middleware('can:support.view')->name('index');
+                    Route::post('/steps', 'storeStep')->middleware('can:support.create')->name('steps.store');
+                    Route::put('/steps/{step}', 'updateStep')->middleware('can:support.update')->name('steps.update');
+                    Route::delete('/steps/{step}', 'destroyStep')
+                        ->middleware('can:support.delete')
+                        ->name('steps.destroy');
+                    Route::post('/steps/{step}/options', 'storeOption')
+                        ->middleware('can:support.create')
+                        ->name('options.store');
+                    Route::put('/steps/{step}/options/{option}', 'updateOption')
+                        ->middleware('can:support.update')
+                        ->name('options.update');
+                    Route::delete('/steps/{step}/options/{option}', 'destroyOption')
+                        ->middleware('can:support.delete')
+                        ->name('options.destroy');
                 });
         });
 
@@ -291,30 +373,33 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::get('/generation-status', [TopUpCardController::class, 'generationStatus'])
                 ->middleware('can:top-up-cards.view')
                 ->name('generation-status');
-            Route::get('/agents', [AgentController::class, 'index'])
+            Route::get('/offices', [OfficeController::class, 'index'])
                 ->middleware('can:top-up-cards.view')
-                ->name('agents');
-            Route::get('/agent-assign', [AgentController::class, 'agentAssign'])
+                ->name('offices');
+            Route::get('/card-import', [OfficeController::class, 'cardImport'])
                 ->middleware('can:top-up-cards.view')
-                ->name('agent-assign');
-            Route::post('/agents', [AgentController::class, 'store'])
+                ->name('card-import');
+            Route::post('/offices', [OfficeController::class, 'store'])
                 ->middleware('can:top-up-cards.create')
-                ->name('agents.store');
-            Route::put('/agents/{agent}', [AgentController::class, 'update'])
+                ->name('offices.store');
+            Route::put('/offices/{office}', [OfficeController::class, 'update'])
                 ->middleware('can:top-up-cards.update')
-                ->name('agents.update');
-            Route::delete('/agents/{agent}', [AgentController::class, 'destroy'])
+                ->name('offices.update');
+            Route::delete('/offices/{office}', [OfficeController::class, 'destroy'])
                 ->middleware('can:top-up-cards.delete')
-                ->name('agents.destroy');
-            Route::post('/agents/import', [AgentController::class, 'import'])
+                ->name('offices.destroy');
+            Route::post('/cards/import', [OfficeController::class, 'import'])
+                ->middleware('can:top-up-cards.create')
+                ->name('cards.import');
+            Route::patch('/batches/{batch}/void', [OfficeController::class, 'voidBatch'])
                 ->middleware('can:top-up-cards.update')
-                ->name('agents.import');
-            Route::patch('/assign-agent', [AgentController::class, 'assignAgent'])
-                ->middleware('can:top-up-cards.update')
-                ->name('assign-cards-agent');
+                ->name('batches.void');
             Route::get('/export', [TopUpCardController::class, 'export'])
-                ->middleware('can:top-up-cards.view')
+                ->middleware(['can:top-up-cards.view', 'can:' . AppPermissions::SystemExport])
                 ->name('export');
+            Route::post('/offices/validate-import', [OfficeController::class, 'validateImport'])
+                ->middleware('can:top-up-cards.create')
+                ->name('offices.validate-import');
             Route::get('/card-history', [TopUpCardController::class, 'cardHistory'])
                 ->middleware('can:top-up-cards.view')
                 ->name('card-history');
@@ -545,6 +630,28 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 ->name('destroy');
         });
 
+    Route::prefix('reports')
+        ->name('reports.')
+        ->middleware('can:reports.view')
+        ->group(function () {
+            Route::get('/', [ReportController::class, 'index'])->name('index');
+            Route::get('/customers', [CustomerReportController::class, 'index'])->name('customers');
+            Route::get('/billing', [BillingReportController::class, 'index'])->name('reports.billing');
+            Route::get('/top-ups', [TopUpReportController::class, 'index'])->name('top-ups');
+            Route::get('/eod', [EodReportController::class, 'index'])->name('eod');
+            Route::prefix('ledger-health')
+                ->name('ledger-health.')
+                ->controller(LedgerHealthReportController::class)
+                ->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::post('/check', 'check')->name('check');
+                    Route::post('/daily-scan', 'updateDailyScan')->name('daily-scan');
+                });
+            Route::get('/service-requests', [ServiceRequestController::class, 'index'])->name(
+                'reports.service-requests',
+            );
+        });
+
     Route::prefix('settings')
         ->name('settings.')
         ->group(function () {
@@ -563,13 +670,78 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::delete('/app-version/{appVersion}', [AppVersionController::class, 'destroy'])
                 ->middleware('can:settings.delete')
                 ->name('app-version.destroy');
+            Route::prefix('general')
+                ->name('general.')
+                ->group(function () {
+                    Route::get('/', [GeneralSettingsController::class, 'index'])
+                        ->middleware('can:settings.view')
+                        ->name('index');
+
+                    Route::post('/terms-and-conditions', [TermAndConditionController::class, 'store'])
+                        ->middleware('can:settings.create')
+                        ->name('terms-and-conditions.store');
+
+                    Route::put('/terms-and-conditions/{termAndCondition}', [
+                        TermAndConditionController::class,
+                        'update',
+                    ])
+                        ->middleware('can:settings.update')
+                        ->name('terms-and-conditions.update');
+
+                    Route::delete('/terms-and-conditions/{termAndCondition}', [
+                        TermAndConditionController::class,
+                        'destroy',
+                    ])
+                        ->middleware('can:settings.delete')
+                        ->name('terms-and-conditions.destroy');
+
+                    Route::post('/faqs', [FaqController::class, 'store'])
+                        ->middleware('can:settings.create')
+                        ->name('faqs.store');
+
+                    Route::put('/faqs/{faq}', [FaqController::class, 'update'])
+                        ->middleware('can:settings.update')
+                        ->name('faqs.update');
+
+                    Route::delete('/faqs/{faq}', [FaqController::class, 'destroy'])
+                        ->middleware('can:settings.delete')
+                        ->name('faqs.destroy');
+
+                    Route::post('/support-contacts', [SupportContactController::class, 'store'])
+                        ->middleware('can:settings.create')
+                        ->name('support-contacts.store');
+
+                    Route::put('/support-contacts/{supportContact}', [SupportContactController::class, 'update'])
+                        ->middleware('can:settings.update')
+                        ->name('support-contacts.update');
+
+                    Route::delete('/support-contacts/{supportContact}', [SupportContactController::class, 'destroy'])
+                        ->middleware('can:settings.delete')
+                        ->name('support-contacts.destroy');
+                });
         });
-    Route::get('/activity-logs', [ActivityLogController::class, 'index'])
-        ->middleware('can:activity.view')
-        ->name('activity-logs.index');
-    Route::get('/activity-logs/export', [ActivityLogController::class, 'export'])
-        ->middleware('can:activity.view')
-        ->name('activity-logs.export');
+    Route::prefix('logs')
+        ->name('logs.')
+        ->group(function () {
+            Route::get('/activity', [ActivityLogController::class, 'index'])
+                ->middleware('can:activity.view')
+                ->name('activity.index');
+            Route::get('/activity/export', [ActivityLogController::class, 'export'])
+                ->middleware(['can:activity.view', 'can:' . AppPermissions::SystemExport])
+                ->name('activity.export');
+            Route::get('/security/export', [SecurityLogController::class, 'export'])
+                ->middleware(['can:activity.view', 'can:' . AppPermissions::SystemExport])
+                ->name('security.export');
+            Route::get('/security', [SecurityLogController::class, 'index'])
+                ->middleware('can:activity.view')
+                ->name('security');
+            Route::get('/users', [UserLogController::class, 'index'])
+                ->middleware('can:activity.view')
+                ->name('users.index');
+            Route::get('/users/export', [UserLogController::class, 'export'])
+                ->middleware(['can:activity.view', 'can:' . AppPermissions::SystemExport])
+                ->name('users.export');
+        });
 });
 
 Route::fallback(function () {

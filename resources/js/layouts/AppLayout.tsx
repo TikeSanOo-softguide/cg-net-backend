@@ -7,7 +7,6 @@ import {
     writeSidebarExpanded,
 } from '@/components/layout/SidebarNav';
 import { FlashToast } from '@/components/FlashToast';
-import { TopUpCardGenerationAlert } from '@/components/TopUpCardGenerationAlert';
 import { FloatingThemeSettingsButton } from '@/components/theme/FloatingThemeSettingsButton';
 import { SidebarToggle } from '@/components/layout/SidebarToggle';
 import { TopBar } from '@/components/layout/TopBar';
@@ -57,7 +56,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     }, [expanded, isDesktop]);
 
     useEffect(() => {
-        if (isDesktop || ! expanded) {
+        if (isDesktop || !expanded) {
             return;
         }
 
@@ -73,7 +72,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     }, [expanded, isDesktop]);
 
     useEffect(() => {
-        if (isDesktop || ! expanded) {
+        if (isDesktop || !expanded) {
             return;
         }
 
@@ -103,7 +102,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
     const toggleSidebar = () => {
         setExpanded((current) => {
-            const next = ! current;
+            const next = !current;
 
             if (isDesktop) {
                 writeSidebarExpanded(next);
@@ -114,7 +113,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     };
 
     const closeMobileSidebar = () => {
-        if (! isDesktop) {
+        if (!isDesktop) {
             setExpanded(false);
         }
     };
@@ -131,7 +130,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     aria-hidden
                 />
 
-                {! isDesktop && expanded ? (
+                {!isDesktop && expanded ? (
                     <button
                         type="button"
                         aria-label={t('common.close')}
@@ -158,11 +157,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                             <SidebarNav expanded={expanded} onNavigate={closeMobileSidebar} groups={groups} />
                         </div>
                     </aside>
-                    <SidebarToggle
-                        expanded={expanded}
-                        onToggle={toggleSidebar}
-                        label={t('common.toggle_sidebar')}
-                    />
+                    <SidebarToggle expanded={expanded} onToggle={toggleSidebar} label={t('common.toggle_sidebar')} />
                 </div>
 
                 <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -174,7 +169,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <FloatingThemeSettingsButton />
                 <Toaster />
                 <FlashToast />
-                <TopUpCardGenerationAlert />
                 <VisitSpinner />
             </div>
         </TooltipProvider>

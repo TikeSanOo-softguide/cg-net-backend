@@ -22,6 +22,7 @@ class BroadbandApplicationRequestController extends Controller
                 ? ''
                 : $request->string('status')->toString())
             : RequestStatus::UnderReview->value;
+        $openRequestId = $request->integer('open_request');
 
         $broadbandApplication = InstallationApplication::query()
             ->with([
@@ -36,7 +37,7 @@ class BroadbandApplicationRequestController extends Controller
                 'package.term:id,months',
                 'photos:id,installation_application_id,image_url',
             ])
-            ->when($search !== '', function ($query) use ($search): void {
+            ->when($openRequestId < 1 && $search !== '', function ($query) use ($search): void {
                 $search = "%{$search}%";
 
                 $query->where(function ($query) use ($search): void {
@@ -47,14 +48,12 @@ class BroadbandApplicationRequestController extends Controller
                 });
             })
             ->when(
-                $status !== ''
-                    && in_array(
-                        $status,
-                        array_column(RequestStatus::cases(), 'value'),
-                        true
-                    ),
+                $openRequestId < 1 &&
+                    $status !== '' &&
+                    in_array($status, array_column(RequestStatus::cases(), 'value'), true),
                 fn($query) => $query->where('status', $status),
             )
+            ->when($openRequestId > 0, fn($query) => $query->whereKey($openRequestId))
             ->orderBy('created_at')
             ->latest('id')
             ->paginate(10)
@@ -80,10 +79,8 @@ class BroadbandApplicationRequestController extends Controller
         ]);
     }
 
-    public function updateStatus(
-        Request $request,
-        InstallationApplication $installationApplication
-    ): RedirectResponse {
+    public function updateStatus(Request $request, InstallationApplication $installationApplication): RedirectResponse
+    {
         $validated = $request->validate([
             'status' => ['required', new Enum(RequestStatus::class)],
         ]);
@@ -100,9 +97,13 @@ class BroadbandApplicationRequestController extends Controller
     {
         return [
             'total_requests' => InstallationApplication::query()->count(),
-            'under_reviews_requests' => InstallationApplication::query()->where('status', RequestStatus::UnderReview)->count(),
+            'under_reviews_requests' => InstallationApplication::query()
+                ->where('status', RequestStatus::UnderReview)
+                ->count(),
             'approved_requests' => InstallationApplication::query()->where('status', RequestStatus::Approved)->count(),
-            'cancelled_requests' => InstallationApplication::query()->where('status', RequestStatus::Cancelled)->count(),
+            'cancelled_requests' => InstallationApplication::query()
+                ->where('status', RequestStatus::Cancelled)
+                ->count(),
         ];
     }
 }

@@ -3,21 +3,24 @@
 namespace Tests\Feature;
 
 use App\Enums\BillPaymentStatus;
+use App\Enums\LedgerTransactionStatus;
+use App\Enums\LedgerTransactionType;
+use App\Enums\PackageOrderStatus;
 use App\Enums\RequestStatus;
+use App\Enums\WalletActorType;
 use App\Models\Admin;
 use App\Models\Area;
 use App\Models\BillPayment;
-use App\Models\BroadbandAccount;
 use App\Models\FailureReport;
 use App\Models\InstallationApplication;
+use App\Models\LedgerTransaction;
+use App\Models\Network;
 use App\Models\NotificationCustom;
+use App\Models\Package;
+use App\Models\PackageOrder;
 use App\Models\Region;
 use App\Models\RelocationRequest;
 use App\Models\User;
-use App\Models\WalletTransaction;
-use App\Enums\WalletActorType;
-use App\Enums\WalletTransactionStatus;
-use App\Enums\WalletTransactionType;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -36,20 +39,36 @@ class DashboardTest extends TestCase
     public function test_authenticated_admins_see_dashboard_overview_props(): void
     {
         $admin = Admin::factory()->create();
-        User::factory()->count(3)->create();
-        $walletTransaction = WalletTransaction::factory()->create([
-            'type' => WalletTransactionType::FtthBill,
-            'status' => WalletTransactionStatus::Completed,
+        User::factory()->count(2)->create();
+        User::factory()->create(['broadband_account_number' => 'CG12345678']);
+        $walletTransaction = LedgerTransaction::factory()->create([
+            'type' => LedgerTransactionType::FtthBill,
+            'status' => LedgerTransactionStatus::Completed,
             'amount' => 15000,
             'actor_type' => WalletActorType::System,
             'actor_id' => User::query()->value('id'),
         ]);
 
         BillPayment::query()->create([
-            'wallet_transaction_id' => $walletTransaction->id,
-            'broadband_account_id' => BroadbandAccount::factory()->create()->id,
+            'ledger_transaction_id' => $walletTransaction->id,
+            'broadband_account_number' => 'CG12345678',
             'status' => BillPaymentStatus::Completed,
             'confirmed_at' => now(),
+        ]);
+        $network = Network::factory()->create();
+        $package = Package::factory()->create(['network_id' => $network->id]);
+        $wifiTransaction = LedgerTransaction::factory()->create([
+            'type' => LedgerTransactionType::WifiPackage,
+            'status' => LedgerTransactionStatus::Completed,
+            'amount' => 25000,
+            'actor_type' => WalletActorType::System,
+            'actor_id' => User::query()->value('id'),
+        ]);
+        PackageOrder::query()->create([
+            'user_id' => User::query()->value('id'),
+            'package_id' => $package->id,
+            'ledger_transaction_id' => $wifiTransaction->id,
+            'status' => PackageOrderStatus::Completed,
         ]);
         InstallationApplication::factory()->create([
             'status' => RequestStatus::UnderReview,
@@ -63,10 +82,13 @@ class DashboardTest extends TestCase
                     ->component('Dashboard/Index')
                     ->has('stats.total_customers')
                     ->has('stats.active_broadband_accounts')
+                    ->where('stats.active_broadband_accounts', 1)
                     ->has('stats.active_packages')
                     ->where('stats.todays_revenue', '15000.00')
                     ->where('stats.pending_requests', fn($count) => $count >= 1)
                     ->has('chart', 30)
+                    ->where('chart.29.ftth_bill_payments', 15000)
+                    ->where('chart.29.wifi_package_orders', 25000)
                     ->has('regionChart')
                     ->has('requestTypeChart')
                     ->has('recentRequests')

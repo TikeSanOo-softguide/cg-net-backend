@@ -10,6 +10,7 @@ function dotClass(status: string): string {
         case 'active':
         case 'valid':
         case 'completed':
+        case 'sent':
             return 'bg-emerald-500';
         case 'under_review':
         case 'draft':
@@ -26,6 +27,8 @@ function dotClass(status: string): string {
         case 'archived':
         case 'invalid':
         case 'blocked':
+        case 'cancelled':
+        case 'deactivated':
             return 'bg-red-500';
         case 'suspended':
         case 'slow':

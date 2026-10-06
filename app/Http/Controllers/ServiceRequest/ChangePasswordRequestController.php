@@ -26,24 +26,26 @@ class ChangePasswordRequestController extends Controller
             ChangePasswordStatus::Approved->value,
             ChangePasswordStatus::Cancelled->value,
         ];
+        $openRequestId = $request->integer('open_request');
 
         $requests = ChangePasswordRequest::query()
-            ->with(['user:id,name,phone', 'broadbandAccount:id,account_number'])
-            ->when($search !== '', function ($query) use ($search): void {
+            ->with(['user:id,name,phone'])
+            ->when($openRequestId < 1 && $search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
                         ->whereLike('contact_name', '%' . $search . '%')
                         ->orWhereLike('contact_phone', '%' . $search . '%')
                         ->orWhereLike('new_wifi_name', '%' . $search . '%')
                         ->orWhereHas('user', fn($query) => $query->whereLike('name', '%' . $search . '%'))
-                        ->orWhereHas(
-                            'broadbandAccount',
-                            fn($query) => $query->whereLike('account_number', '%' . $search . '%'),
-                        );
+                        ->orWhereLike('broadband_account_number', '%' . $search . '%');
                 });
             })
             ->whereIn('status', $statuses)
-            ->when($status !== '' && in_array($status, $statuses, true), fn($query) => $query->where('status', $status))
+            ->when(
+                $openRequestId < 1 && $status !== '' && in_array($status, $statuses, true),
+                fn($query) => $query->where('status', $status),
+            )
+            ->when($openRequestId > 0, fn($query) => $query->whereKey($openRequestId))
             ->orderBy('created_at')
             ->orderBy('id')
             ->paginate(15)

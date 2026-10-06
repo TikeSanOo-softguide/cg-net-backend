@@ -26,7 +26,7 @@ import { cn } from '@/lib/utils';
 
 type TopUpCardRedeemTableProps = {
     cards: Paginated<TopUpCardRow>;
-    amounts: string[];
+    amounts: number[];
     filters: RedeemHistoryFilters;
     search: string;
     loading?: boolean;
@@ -109,7 +109,7 @@ export function TopUpCardRedeemTable({
                                         <SelectContent>
                                             <SelectItem value="all">{t('common.all')}</SelectItem>
                                             {amounts.map((amount) => (
-                                                <SelectItem key={amount} value={amount}>
+                                                <SelectItem key={amount} value={String(amount)}>
                                                     {formatTopUpAmount(amount)}
                                                 </SelectItem>
                                             ))}

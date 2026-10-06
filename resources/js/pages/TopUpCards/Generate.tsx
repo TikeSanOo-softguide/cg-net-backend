@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Spinner, SpinnerOverlay } from '@/components/ui/spinner';
 import type { Paginated } from '@/components/Pagination';
 import { useCan } from '@/hooks/useCan';
+import { toast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { defaultExpiryDate, type TopUpCardFilters, type TopUpCardRow } from '@/lib/top-up-cards';
 
@@ -20,16 +21,16 @@ type GenerationState = {
     total_cards?: number;
     completed_chunks?: number;
     total_chunks?: number;
+    source?: string | null;
 };
 
 type GenerateProps = {
     cards: Paginated<TopUpCardRow>;
     generated: TopUpCardRow[];
     generation?: GenerationState;
-    presets: number[];
     max_cards?: number;
-    agents: { id: number; name: string }[];
-    amounts: string[];
+    offices: { id: number; name: string }[];
+    amounts: number[];
     filters: TopUpCardFilters;
 };
 
@@ -62,9 +63,8 @@ export default function TopUpCardsGenerate({
     cards,
     generated = [],
     generation,
-    presets,
     max_cards = 100000,
-    agents = [],
+    offices = [],
     amounts,
     filters,
 }: GenerateProps) {
@@ -72,15 +72,14 @@ export default function TopUpCardsGenerate({
     const can = useCan();
     const [search, setSearch] = useState(filters.search);
     const [selected, setSelected] = useState<Record<string, number>>({});
-    const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
-    const [customOpen, setCustomOpen] = useState(false);
-    const [customValue, setCustomValue] = useState('');
+    const [selectedOfficeIds, setSelectedOfficeIds] = useState<string[]>([]);
     const [tableLoading, setTableLoading] = useState(false);
     const debounce = useRef<number>(0);
     const pollInFlight = useRef(false);
+    const generationWasProcessing = useRef(false);
     const form = useForm({
         amounts: [] as { value: number; quantity: number }[],
-        agent_ids: [] as number[],
+        office_ids: [] as number[],
         expires_at: defaultExpiryDate(),
     });
 
@@ -92,6 +91,38 @@ export default function TopUpCardsGenerate({
     }, [filters.search]);
 
     useEffect(() => () => window.clearTimeout(debounce.current), []);
+
+    useEffect(() => {
+        if (generationStatus === 'processing') {
+            generationWasProcessing.current = true;
+
+            return;
+        }
+
+        if (!generationWasProcessing.current || (generationStatus !== 'completed' && generationStatus !== 'failed')) {
+            return;
+        }
+
+        generationWasProcessing.current = false;
+
+        if (generationStatus === 'completed') {
+            toast({
+                variant: 'success',
+                title: t('toast.success'),
+                description: t(
+                    generation?.source === 'csv_import' ? 'top_up_cards.imported' : 'top_up_cards.generated',
+                ).replace(':count', String(generation?.total_cards ?? 0)),
+            });
+
+            return;
+        }
+
+        toast({
+            variant: 'error',
+            title: t('toast.error'),
+            description: t('top_up_cards.generation_failed'),
+        });
+    }, [generationStatus, generation?.source, generation?.total_cards, t]);
 
     useEffect(() => {
         if (generationStatus !== 'processing') {
@@ -127,22 +158,6 @@ export default function TopUpCardsGenerate({
         [generated],
     );
 
-    const applyCustom = (next: Record<string, number>, value: string, open: boolean) => {
-        const copy = { ...next };
-
-        Object.keys(copy).forEach((key) => {
-            if (!presets.includes(Number(key))) {
-                delete copy[key];
-            }
-        });
-
-        if (open && Number(value) >= 50) {
-            copy[String(Number(value))] = copy[String(Number(value))] ?? 1;
-        }
-
-        return copy;
-    };
-
     const submit = (event: FormEvent) => {
         event.preventDefault();
 
@@ -152,16 +167,14 @@ export default function TopUpCardsGenerate({
 
         form.transform(() => ({
             amounts: amountsPayload,
-            agent_ids: selectedAgentIds.map((id) => Number(id)).filter((id) => Number.isFinite(id) && id > 0),
+            office_ids: selectedOfficeIds.map((id) => Number(id)).filter((id) => Number.isFinite(id) && id > 0),
             expires_at: form.data.expires_at,
         }));
         form.post('/top-up-cards/batch', {
             preserveScroll: true,
             onSuccess: () => {
                 setSelected({});
-                setSelectedAgentIds([]);
-                setCustomOpen(false);
-                setCustomValue('');
+                setSelectedOfficeIds([]);
             },
         });
     };
@@ -184,10 +197,10 @@ export default function TopUpCardsGenerate({
     );
 
     const selectedCards = Object.values(selected).reduce((sum, quantity) => sum + quantity, 0);
-    const agentMultiplier = Math.max(1, selectedAgentIds.length || agents.length);
-    const totalCards = selectedCards * agentMultiplier;
-    const canGenerate =
-        can('top-up-cards.create') && selectedCards > 0 && totalCards <= max_cards && !isGenerating;
+    const officeMultiplier = Math.max(1, selectedOfficeIds.length || offices.length);
+    const canCreate = can('top-up-cards.create');
+    const totalCards = selectedCards * officeMultiplier;
+    const canGenerate = canCreate && selectedCards > 0 && totalCards <= max_cards && !isGenerating;
 
     const handleExport = useCallback(() => {
         window.location.href = '/top-up-cards/export';
@@ -195,101 +208,100 @@ export default function TopUpCardsGenerate({
 
     const batchDescription =
         generationStatus === 'processing'
-            ? t('top_up_cards.generating')
+            ? t(
+                  generation?.source === 'csv_import'
+                      ? 'top_up_cards.import_csv.importing_csv'
+                      : 'top_up_cards.generating',
+              )
             : t('top_up_cards.batch_description');
+    const batchProgress =
+        generationStatus === 'processing' && (generation?.total_chunks ?? 0) > 0
+            ? ` ${generation?.completed_chunks ?? 0}/${generation?.total_chunks}`
+            : '';
 
     return (
         <>
             <Head title={t('menu.top_up_card_batch')} />
             <PageContent>
                 <PageHeader />
-                <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 print:block">
-                    <Card className="flex h-[520px] flex-col gap-3 py-4 print:hidden">
-                        <CardHeader>
-                            <CardTitle className="text-sm">{t('top_up_cards.generate_title')}</CardTitle>
-                            <CardDescription className="text-[12px] leading-4">
-                                {t('top_up_cards.generate_description')}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="min-h-0 flex-1 overflow-y-auto">
-                            <form onSubmit={submit} className="flex flex-col gap-3">
-                                <TopUpCardGenerateForm
-                                    agents={agents}
-                                    selectedAgentIds={selectedAgentIds}
-                                    presets={presets}
-                                    maxCards={max_cards}
-                                    selected={selected}
-                                    customOpen={customOpen}
-                                    customValue={customValue}
-                                    expiresAt={form.data.expires_at}
-                                    processing={isGenerating}
-                                    error={form.errors.amounts ?? form.errors.agent_ids ?? form.errors.expires_at}
-                                    onToggle={(amount) => {
-                                        setSelected((current) => {
-                                            const key = String(amount);
+                {canCreate ? (
+                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 print:block">
+                        <Card className="flex h-[520px] flex-col gap-3 py-4 print:hidden">
+                            <CardHeader>
+                                <CardTitle className="text-sm">{t('top_up_cards.generate_title')}</CardTitle>
+                                <CardDescription className="text-[12px] leading-4">
+                                    {t('top_up_cards.generate_description')}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="min-h-0 flex-1 overflow-y-auto">
+                                <form onSubmit={submit} className="flex flex-col gap-3">
+                                    <TopUpCardGenerateForm
+                                        offices={offices}
+                                        selectedOfficeIds={selectedOfficeIds}
+                                        amounts={amounts}
+                                        maxCards={max_cards}
+                                        selected={selected}
+                                        expiresAt={form.data.expires_at}
+                                        processing={isGenerating}
+                                        error={form.errors.amounts ?? form.errors.office_ids ?? form.errors.expires_at}
+                                        onToggle={(amount) => {
+                                            setSelected((current) => {
+                                                const key = String(amount);
 
-                                            if (current[key]) {
-                                                const next = { ...current };
-                                                delete next[key];
+                                                if (current[key]) {
+                                                    const next = { ...current };
+                                                    delete next[key];
 
-                                                return next;
-                                            }
+                                                    return next;
+                                                }
 
-                                            return { ...current, [key]: 1 };
-                                        });
-                                    }}
-                                    onQuantity={(amount, quantity) => {
-                                        setSelected((current) => ({ ...current, [String(amount)]: quantity }));
-                                    }}
-                                    onCustomOpen={(open) => {
-                                        setCustomOpen(open);
-                                        setSelected((current) => applyCustom(current, customValue, open));
-                                    }}
-                                    onCustomValue={(value) => {
-                                        setCustomValue(value);
-                                        setSelected((current) => applyCustom(current, value, customOpen));
-                                    }}
-                                    onExpiresAt={(value) => form.setData('expires_at', value)}
-                                    onAgentIds={setSelectedAgentIds}
-                                />
-                                <Button
-                                    type="submit"
-                                    variant="primary"
-                                    size="sm"
-                                    disabled={!canGenerate || form.processing}
-                                    className="h-8 w-full"
-                                >
-                                    {isGenerating ? <Spinner size="xs" className="text-current" /> : null}
-                                    {isGenerating ? t('top_up_cards.generating') : t('top_up_cards.generate')}
-                                </Button>
-                            </form>
-                        </CardContent>
-                    </Card>
-                    <Card className="flex h-[520px] flex-col gap-3 py-4 print:h-auto print:overflow-visible print:border-0 print:shadow-none">
-                        <CardHeader className="print:px-0">
-                            <CardTitle className="text-sm">{t('top_up_cards.batch_title')}</CardTitle>
-                            <CardDescription className="text-[12px] leading-4">{batchDescription}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="relative min-h-0 flex-1 overflow-hidden print:overflow-visible print:px-0">
-                            {isGenerating && generated.length === 0 ? (
-                                <SpinnerOverlay
-                                    className="relative inset-auto min-h-[160px]"
-                                    label={t('top_up_cards.generating')}
-                                />
-                            ) : (
-                                <>
-                                    {isGenerating ? (
-                                        <SpinnerOverlay
-                                            className="pointer-events-none"
-                                            label={t('top_up_cards.generating')}
-                                        />
-                                    ) : null}
-                                    <TopUpCardGeneratedBatch cards={generated} onExport={handleExport} />
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
+                                                return { ...current, [key]: 1 };
+                                            });
+                                        }}
+                                        onQuantity={(amount, quantity) => {
+                                            setSelected((current) => ({ ...current, [String(amount)]: quantity }));
+                                        }}
+                                        onExpiresAt={(value) => form.setData('expires_at', value)}
+                                        onOfficeIds={setSelectedOfficeIds}
+                                    />
+                                    <Button
+                                        type="submit"
+                                        variant="primary"
+                                        size="sm"
+                                        disabled={!canGenerate || form.processing}
+                                        className="h-8 w-full"
+                                    >
+                                        {isGenerating ? <Spinner size="xs" className="text-current" /> : null}
+                                        {isGenerating ? t('top_up_cards.generating') : t('top_up_cards.generate')}
+                                    </Button>
+                                </form>
+                            </CardContent>
+                        </Card>
+                        <Card className="flex h-[520px] flex-col gap-3 py-4 print:h-auto print:overflow-visible print:border-0 print:shadow-none">
+                            <CardHeader className="print:px-0">
+                                <CardTitle className="text-sm">{t('top_up_cards.batch_title')}</CardTitle>
+                                <CardDescription className="flex items-center gap-1.5 text-[12px] leading-4">
+                                    {generationStatus === 'processing' ? <Spinner size="xs" /> : null}
+                                    {batchDescription}
+                                    {batchProgress}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="relative min-h-0 flex-1 overflow-hidden print:overflow-visible print:px-0">
+                                {isGenerating && generated.length === 0 ? (
+                                    <SpinnerOverlay
+                                        className="relative inset-auto min-h-[160px]"
+                                        label={t('top_up_cards.generating')}
+                                    />
+                                ) : (
+                                    <TopUpCardGeneratedBatch
+                                        cards={generated}
+                                        onExport={can('system.export') ? handleExport : undefined}
+                                    />
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
+                ) : null}
                 <div className="print:hidden">
                     <TopUpCardTable
                         cards={cards}

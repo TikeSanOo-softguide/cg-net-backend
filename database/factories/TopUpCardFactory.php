@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Support\GeneratesTopUpCards;
 use App\Support\TopUpCardPin;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use RuntimeException;
 
 /**
  * @extends Factory<TopUpCard>
@@ -17,7 +18,7 @@ class TopUpCardFactory extends Factory
     public function definition(): array
     {
         $amount = (string) fake()->randomElement([50, 100, 250, 500]);
-        $serialNo = GeneratesTopUpCards::serialNo($amount);
+        $serialNo = self::uniqueSerialNo($amount);
         $pin = GeneratesTopUpCards::pin();
 
         return [
@@ -32,19 +33,42 @@ class TopUpCardFactory extends Factory
         ];
     }
 
+    private static function uniqueSerialNo(string $amount): string
+    {
+        static $issuedSerialNumbers = [];
+
+        for ($attempt = 0; $attempt < 100; $attempt++) {
+            $serialNo = GeneratesTopUpCards::serialNo($amount);
+
+            if (isset($issuedSerialNumbers[$serialNo]) || TopUpCard::query()->where('serial_no', $serialNo)->exists()) {
+                continue;
+            }
+
+            $issuedSerialNumbers[$serialNo] = true;
+
+            return $serialNo;
+        }
+
+        throw new RuntimeException('Unable to generate a unique top-up card serial number.');
+    }
+
     public function redeemed(?User $user = null): static
     {
-        return $this->state(fn() => [
-            'status' => TopUpCardStatus::Used,
-            'redeemed_by' => $user?->id ?? User::factory(),
-            'redeemed_at' => now()->subDays(fake()->numberBetween(1, 20)),
-        ]);
+        return $this->state(
+            fn() => [
+                'status' => TopUpCardStatus::Used,
+                'redeemed_by' => $user?->id ?? User::factory(),
+                'redeemed_at' => now()->subDays(fake()->numberBetween(1, 20)),
+            ],
+        );
     }
 
     public function invalid(): static
     {
-        return $this->state(fn() => [
-            'status' => TopUpCardStatus::Blocked,
-        ]);
+        return $this->state(
+            fn() => [
+                'status' => TopUpCardStatus::Blocked,
+            ],
+        );
     }
 }

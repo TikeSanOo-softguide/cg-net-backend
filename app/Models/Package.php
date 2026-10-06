@@ -61,11 +61,6 @@ class Package extends Model
         return $this->belongsToMany(Addon::class, 'addon_package')->withTimestamps();
     }
 
-    public function broadbandAccounts(): HasMany
-    {
-        return $this->hasMany(BroadbandAccount::class, 'current_package_id');
-    }
-
     public function customerPackages(): HasMany
     {
         return $this->hasMany(CustomerPackage::class, 'package_id');

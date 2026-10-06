@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ServiceRequest\CreateFailureReport;
 use App\Http\Requests\ServiceRequest\UpdateFailureReport;
 use App\Http\Resources\FailureReport\FailureReportResource;
+use App\Events\ServiceRequestSubmitted;
 use App\Models\FailureReport;
 use App\Support\StoresPublicImage;
 use Illuminate\Http\Request;
@@ -19,9 +20,7 @@ class FailureReportController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
-        $failureReports = FailureReport::query()->with('photos')
-            ->where('user_id', $request->user()->id)
-            ->get();
+        $failureReports = FailureReport::query()->with('photos')->where('user_id', $request->user()->id)->get();
         return FailureReportResource::collection($failureReports);
     }
 
@@ -38,40 +37,40 @@ class FailureReportController extends Controller
 
             $failureReport = FailureReport::query()->create([
                 'user_id' => $request->user()->id,
-                'broadband_account_id' => $validated['broadband_account_id'],
+                'broadband_account_number' => $validated['broadband_account_number'],
                 'failure_type' => $validated['failure_type'],
                 'description' => $validated['description'],
                 'contact_name' => $validated['contact_name'],
                 'contact_phone' => $validated['contact_phone'],
                 'status' => 'under_review',
             ]);
+            ServiceRequestSubmitted::dispatch('failure_report', $failureReport->id);
 
             foreach ($request->file('photos') as $photo) {
-                $imageUrl = StoresPublicImage::store(
-                    $photo,
-                    'service-request/failure-reports'
-                );
+                $imageUrl = StoresPublicImage::store($photo, 'service-request/failure-reports');
 
                 $failureReport->photos()->create([
                     'image_url' => $imageUrl,
                 ]);
             }
 
-            return new FailureReportResource(
-                $failureReport->load('photos')
-            );
+            $this->logActivity($request, 'create_failure_report', [
+                'failure_report_id' => $failureReport->id,
+                'failure_type' => $failureReport->failure_type,
+            ]);
+
+            return new FailureReportResource($failureReport->load('photos'));
         });
     }
 
-    public function update(
-        UpdateFailureReport $request,
-        FailureReport $failureReport
-    ): FailureReportResource {
+    public function update(UpdateFailureReport $request, FailureReport $failureReport): FailureReportResource
+    {
         $this->ensureOwner($request, $failureReport);
         return DB::transaction(function () use ($request, $failureReport) {
             $validated = $request->validated();
             $failureReport->update([
-                'broadband_account_id' => $validated['broadband_account_id'],
+                'broadband_account_number' =>
+                    $validated['broadband_account_number'] ?? $failureReport->broadband_account_number,
                 'failure_type' => $validated['failure_type'],
                 'description' => $validated['description'],
                 'contact_name' => $validated['contact_name'],
@@ -86,7 +85,7 @@ class FailureReportController extends Controller
                     $imageUrl = StoresPublicImage::store(
                         $photo,
                         'service-request/failure-reports',
-                        $existingPhoto?->image_url
+                        $existingPhoto?->image_url,
                     );
                     if ($existingPhoto) {
                         $existingPhoto->update([
@@ -99,9 +98,11 @@ class FailureReportController extends Controller
                     }
                 }
             }
-            return new FailureReportResource(
-                $failureReport->load('photos')
-            );
+
+            $this->logActivity($request, 'update_failure_report', [
+                'failure_report_id' => $failureReport->id,
+            ]);
+            return new FailureReportResource($failureReport->load('photos'));
         });
     }
 
@@ -110,6 +111,10 @@ class FailureReportController extends Controller
         $this->ensureOwner($request, $failureReport);
         $failureReport->update([
             'status' => RequestStatus::Cancelled,
+        ]);
+
+        $this->logActivity($request, 'cancel_failure_report', [
+            'failure_report_id' => $failureReport->id,
         ]);
 
         return new FailureReportResource($failureReport->refresh());
@@ -125,6 +130,10 @@ class FailureReportController extends Controller
             }
             $failureReport->delete();
         });
+
+        $this->logActivity($request, 'delete_failure_report', [
+            'failure_report_id' => $failureReport->id,
+        ]);
         return response()->noContent();
     }
 

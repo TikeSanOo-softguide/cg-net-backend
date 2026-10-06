@@ -19,20 +19,34 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <env name="PACKAGE_ACTIVATION_DRIVER" value="unconfigured" force="true"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
-        <env name="CACHE_STORE" value="array"/>
+        <env name="CACHE_STORE" value="array" force="true"/>
         <env name="OTP_CACHE_STORE" value="array"/>
         <env name="OTP_MOCK_EXPOSE_CODE" value="true"/>
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
-        <env name="DB_URL" value=""/>
+        <env name="DB_CONNECTION" value="sqlite" force="true"/>
+        <env name="DB_DATABASE" value=":memory:" force="true"/>
+        <env name="DB_URL" value="" force="true"/>
         <env name="MAIL_MAILER" value="array"/>
-        <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="QUEUE_CONNECTION" value="sync" force="true"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="BILLING_SERVER_URL" value="https://billing-server.test" force="true"/>
+        <env name="BILLING_PROCESSING_GRACE_SECONDS" value="120" force="true"/>
+        <env name="BILLING_PROCESSING_RETRY_SECONDS" value="300" force="true"/>
+        <env name="BILLING_PROCESSING_MAX_AGE_SECONDS" value="3600" force="true"/>
+        <server name="BILLING_SERVER_URL" value="https://billing-server.test"/>
+        <server name="BILLING_PROCESSING_GRACE_SECONDS" value="120"/>
+        <server name="BILLING_PROCESSING_RETRY_SECONDS" value="300"/>
+        <server name="BILLING_PROCESSING_MAX_AGE_SECONDS" value="3600"/>
+        <server name="CACHE_STORE" value="array"/>
+        <server name="DB_CONNECTION" value="sqlite"/>
+        <server name="DB_DATABASE" value=":memory:"/>
+        <server name="DB_URL" value=""/>
+        <server name="QUEUE_CONNECTION" value="sync"/>
     </php>
 </phpunit>

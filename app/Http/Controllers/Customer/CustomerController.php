@@ -2,19 +2,24 @@
 
 namespace App\Http\Controllers\Customer;
 
+use App\Enums\CustomerPackageStatus;
+use App\Enums\LedgerTransactionStatus;
+use App\Enums\LedgerTransactionType;
 use App\Enums\UserStatus;
-use App\Enums\WalletTransactionStatus;
-use App\Enums\WalletTransactionType;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Customer\BindBroadbandAccountRequest;
+use App\Http\Requests\Customer\AdjustCustomerWalletRequest;
+use App\Http\Requests\Customer\BindAccountNumberRequest;
 use App\Http\Requests\Customer\CustomerData;
 use App\Http\Requests\Customer\StoreCustomerRequest;
 use App\Http\Requests\Customer\UpdateCustomerRequest;
 use App\Http\Requests\Customer\UpdateCustomerStatusRequest;
-use App\Models\BroadbandAccount;
 use App\Models\User;
-use App\Services\TransactionService;
+use App\Services\BroarbandAccount\BroadbandAccountService;
+use App\Services\Customer\WalletAdjustmentService;
+use App\Services\Ledger\LedgerPoster;
+use App\Services\Transaction\TransactionService;
 use App\Support\PackageLabel;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -37,22 +42,25 @@ class CustomerController extends Controller
         }
 
         $customers = User::query()
-            ->when($sort === 'wallet', fn($query) => $query
-                ->select('users.*')
-                ->leftJoin('wallets', 'wallets.user_id', '=', 'users.id'))
+            ->when(
+                $sort === 'wallet',
+                fn($query) => $query->select('users.*')->leftJoin('wallets', 'wallets.user_id', '=', 'users.id'),
+            )
             ->with([
                 'wallet:id,user_id,balance',
-                'broadbandAccounts:id,user_id,current_package_id',
-                'broadbandAccounts.currentPackage.network:id,name_en,name_zh,name_my',
-                'broadbandAccounts.currentPackage.speed:id,mbps',
-                'broadbandAccounts.currentPackage.term:id,months',
+                'customerPackages' => fn($query) => $query
+                    ->where('status', CustomerPackageStatus::Active->value)
+                    ->with(
+                        'package.network:id,name_en,name_zh,name_my',
+                        'package.speed:id,mbps',
+                        'package.term:id,months',
+                    ),
             ])
-            ->withCount('broadbandAccounts')
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
                         ->whereLike('users.name', '%' . $search . '%')
-                        ->orWhereLike('users.phone', '%' . $search . '%');
+                        ->orWhereLike('users.phone', '%' . ltrim($search, '+') . '%');
                 });
             })
             ->when($status !== '' && in_array($status, array_column(UserStatus::cases(), 'value'), true), function (
@@ -68,10 +76,7 @@ class CustomerController extends Controller
             ->paginate(15)
             ->withQueryString()
             ->through(function (User $customer) {
-                $currentPackage = $customer->broadbandAccounts
-                    ->map(fn(BroadbandAccount $account) => $account->currentPackage)
-                    ->filter()
-                    ->first();
+                $currentPackage = $customer->customerPackages->first()?->package;
 
                 return [
                     'id' => $customer->id,
@@ -79,18 +84,10 @@ class CustomerController extends Controller
                     'phone' => $customer->phone,
                     'status' => $customer->status->value,
                     'wallet_balance' => number_format((float) ($customer->wallet?->balance ?? 0), 0, '.', ''),
-                    'broadband_connected' => $customer->broadband_accounts_count > 0,
-                    'broadband_count' => $customer->broadband_accounts_count,
-                    'current_package' => [
-                        'en' => PackageLabel::make($currentPackage, 'en'),
-                        'my' => PackageLabel::make($currentPackage, 'my'),
-                        'zh' => PackageLabel::make($currentPackage, 'zh'),
-                    ],
+                    'broadband_connected' => $customer->broadband_account_number !== null,
                     'created_at' => $customer->created_at?->toDateString(),
                 ];
             });
-
-        session()->put('customer.return_to', $request->fullUrl());
 
         return Inertia::render('Customer/Index', [
             'customers' => $customers,
@@ -114,7 +111,8 @@ class CustomerController extends Controller
 
         $customer = DB::transaction(function () use ($payload) {
             $customer = User::query()->create($payload);
-            $customer->wallet()->create(['balance' => 0]);
+            $wallet = $customer->wallet()->create(['balance' => 0]);
+            app(LedgerPoster::class)->ensureCustomerLiabilityAccount($wallet);
 
             return $customer;
         });
@@ -133,18 +131,18 @@ class CustomerController extends Controller
         return redirect()->route('customers.show', $customer)->with('success', 'customers.created');
     }
 
-    public function show(Request $request, User $customer, TransactionService $transactions): Response
-    {
+    public function show(
+        Request $request,
+        User $customer,
+        TransactionService $transactions,
+        BroadbandAccountService $broadbandAccountService,
+    ): Response {
         $locale = app()->getLocale();
 
         $customer->load([
-            'broadbandAccounts.currentPackage.network:id,name_en,name_zh,name_my',
-            'broadbandAccounts.currentPackage.speed:id,mbps',
-            'broadbandAccounts.currentPackage.term:id,months',
             'customerPackages.package.network:id,name_en,name_zh,name_my',
             'customerPackages.package.speed:id,mbps',
             'customerPackages.package.term:id,months',
-            'customerPackages.broadbandAccount:id,account_number',
             'wallet',
             'wallet.transactions' => fn($query) => $query->latest()->limit(10),
         ]);
@@ -164,44 +162,67 @@ class CustomerController extends Controller
             );
 
         $walletId = $customer->wallet?->id;
-        $walletTransactions = $customer->wallet?->transactions()->with('walletTransfer')->get() ?? collect();
+        $walletTransactionSummaries = collect();
+
+        if ($walletId) {
+            $walletEntryTotals = DB::table('ledger_entries')
+                ->select('ledger_transaction_id')
+                ->selectRaw('SUM(credit) as credit_amount')
+                ->selectRaw('SUM(debit) as debit_amount')
+                ->selectRaw('MAX(CASE WHEN credit > 0 THEN 1 ELSE 0 END) as has_credit')
+                ->selectRaw('MAX(CASE WHEN debit > 0 THEN 1 ELSE 0 END) as has_debit')
+                ->where('wallet_id', $walletId)
+                ->groupBy('ledger_transaction_id');
+
+            $walletTransactionSummaries = DB::table('ledger_transactions as transactions')
+                ->leftJoinSub(
+                    $walletEntryTotals,
+                    'wallet_entry_totals',
+                    'wallet_entry_totals.ledger_transaction_id',
+                    '=',
+                    'transactions.id',
+                )
+                ->where('transactions.wallet_id', $walletId)
+                ->select('transactions.type')
+                ->selectRaw('COUNT(*) as count')
+                ->selectRaw('SUM(transactions.amount) as amount')
+                ->selectRaw('SUM(COALESCE(wallet_entry_totals.credit_amount, 0)) as credit_amount')
+                ->selectRaw('SUM(COALESCE(wallet_entry_totals.debit_amount, 0)) as debit_amount')
+                ->selectRaw('SUM(COALESCE(wallet_entry_totals.has_credit, 0)) as credit_count')
+                ->selectRaw('SUM(COALESCE(wallet_entry_totals.has_debit, 0)) as debit_count')
+                ->groupBy('transactions.type')
+                ->get()
+                ->keyBy('type');
+        }
+
+        $formatAmount = fn($amount) => number_format((float) $amount, 0, '.', '');
+        $adjustmentSummary = $walletTransactionSummaries->get(LedgerTransactionType::Adjustment->value);
         $transactionOverview = collect([
-            ['key' => 'topup', 'type' => WalletTransactionType::Topup, 'direction' => 'credit'],
-            ['key' => 'transfer_in', 'type' => WalletTransactionType::Transfer, 'direction' => 'credit'],
-            ['key' => 'transfer_out', 'type' => WalletTransactionType::Transfer, 'direction' => 'debit'],
-            ['key' => 'ftth_bill', 'type' => WalletTransactionType::FtthBill, 'direction' => 'debit'],
-            ['key' => 'wifi_package', 'type' => WalletTransactionType::WifiPackage, 'direction' => 'debit'],
-            ['key' => 'refund', 'type' => WalletTransactionType::Refund, 'direction' => 'credit'],
-            ['key' => 'adjustment', 'type' => WalletTransactionType::Adjustment, 'direction' => 'credit'],
+            ['key' => 'topup', 'type' => LedgerTransactionType::Topup],
+            ['key' => 'ftth_bill', 'type' => LedgerTransactionType::FtthBill],
+            ['key' => 'wifi_package', 'type' => LedgerTransactionType::WifiPackage],
+            ['key' => 'refund', 'type' => LedgerTransactionType::Refund],
         ])
-            ->map(function (array $type) use ($walletId, $walletTransactions) {
-                $filtered = $walletTransactions->filter(function ($transaction) use ($type, $walletId) {
-                    if ($transaction->type !== $type['type']) {
-                        return false;
-                    }
-
-                    if ($transaction->type !== WalletTransactionType::Transfer) {
-                        return true;
-                    }
-
-                    return $transaction->walletTransfer?->from_wallet_id === $walletId
-                        ? $type['direction'] === 'debit'
-                        : $transaction->walletTransfer?->to_wallet_id === $walletId && $type['direction'] === 'credit';
-                });
+            ->mapWithKeys(function (array $type) use ($walletTransactionSummaries, $formatAmount) {
+                $summary = $walletTransactionSummaries->get($type['type']->value);
 
                 return [
                     $type['key'] => [
-                        'count' => $filtered->count(),
-                        'amount' => number_format(
-                            (float) $filtered->sum(fn($transaction) => (float) $transaction->amount),
-                            0,
-                            '.',
-                            '',
-                        ),
+                        'count' => (int) ($summary->count ?? 0),
+                        'amount' => $formatAmount($summary->amount ?? 0),
                     ],
                 ];
             })
-            ->collapse();
+            ->put('adjustment', [
+                'credit' => [
+                    'count' => (int) ($adjustmentSummary->credit_count ?? 0),
+                    'amount' => $formatAmount($adjustmentSummary->credit_amount ?? 0),
+                ],
+                'debit' => [
+                    'count' => (int) ($adjustmentSummary->debit_count ?? 0),
+                    'amount' => $formatAmount($adjustmentSummary->debit_amount ?? 0),
+                ],
+            ]);
 
         $transactionFilters = [...$transactions->filters($request), 'customer_id' => $customer->id];
         $transactionStatus = $transactionFilters['status'];
@@ -222,31 +243,58 @@ class CustomerController extends Controller
                     'my' => PackageLabel::make($row->package, 'my'),
                     'zh' => PackageLabel::make($row->package, 'zh'),
                 ],
-                'account_number' => $row->broadbandAccount?->account_number,
-                'start_date' => $row->start_date,
-                'expiry_date' => $row->expiry_date,
-                'auto_renew' => $row->auto_renew,
+                'account_number' => $customer->broadband_account_number,
+                'start_date' => $row->starts_at,
+                'expiry_date' => $row->expires_at,
                 'status' => $row->status->value,
             ],
         );
 
-        $returnTo = session('customer.return_to', route('customers.index'));
+        $accountBinding = null;
+        $broadbandPackage = null;
+
+        if ($customer->broadband_account_number !== null) {
+            try {
+                $accountBinding = $broadbandAccountService->findByAccountNumber($customer->broadband_account_number);
+            } catch (ConnectionException) {
+                $accountBinding = [
+                    'account_number' => $customer->broadband_account_number,
+                    'status' => 'unknown',
+                ];
+            }
+
+            if ($accountBinding) {
+                $currentCustomerPackageId = (int) ($accountBinding['current_customer_package_id'] ?? 0);
+
+                $customerPackage = $customer
+                    ->customerPackages()
+                    ->with('package')
+                    ->where('status', 'active')
+                    ->where('starts_at', '<=', now())
+                    ->where(function ($query) {
+                        $query->whereNull('expires_at')->orWhere('expires_at', '>=', now());
+                    })
+                    ->latest('starts_at')
+                    ->first();
+
+                $broadbandPackage = $customerPackage?->package;
+            }
+        }
 
         return Inertia::render('Customer/Show', [
             'customer' => $this->customerPayload($customer),
-            'broadbandAccounts' => $customer->broadbandAccounts->map(
-                fn(BroadbandAccount $account) => [
-                    'id' => $account->id,
-                    'account_number' => $account->account_number,
-                    'customer_name' => $account->customer_name,
-                    'status' => $account->status->value,
+            'accountBinding' => $accountBinding
+                ? [
+                    'account_number' => $accountBinding['account_number'] ?? null,
+                    'customer_name' => $accountBinding['customer_name'] ?? null,
+                    'status' => $accountBinding['status'] ?? null,
                     'package_name' => [
-                        'en' => PackageLabel::make($account->currentPackage, 'en'),
-                        'my' => PackageLabel::make($account->currentPackage, 'my'),
-                        'zh' => PackageLabel::make($account->currentPackage, 'zh'),
+                        'en' => PackageLabel::make($broadbandPackage, 'en'),
+                        'my' => PackageLabel::make($broadbandPackage, 'my'),
+                        'zh' => PackageLabel::make($broadbandPackage, 'zh'),
                     ],
-                ],
-            ),
+                ]
+                : null,
             'packageHistory' => $packageRows->values(),
             'wallet' => [
                 'balance' => number_format((float) ($customer->wallet?->balance ?? 0), 0, '.', ''),
@@ -278,11 +326,10 @@ class CustomerController extends Controller
             ],
             'transactionFilterOptions' => [
                 'actor_types' => [],
-                'types' => array_column(WalletTransactionType::cases(), 'value'),
-                'statuses' => array_column(WalletTransactionStatus::cases(), 'value'),
+                'types' => array_column(LedgerTransactionType::cases(), 'value'),
+                'statuses' => array_column(LedgerTransactionStatus::cases(), 'value'),
             ],
             'topUpHistory' => $topUpHistory,
-            'return_to' => $returnTo,
         ]);
     }
 
@@ -300,7 +347,10 @@ class CustomerController extends Controller
             ->causedBy($request->user())
             ->performedOn($customer)
             ->event('updated')
-            ->withProperties(Arr::except($payload, ['password']))
+            ->withProperties([
+                ...Arr::except($payload, ['password']),
+                ...isset($payload['password']) ? ['password_reset' => true] : [],
+            ])
             ->log('customer_updated');
 
         if ($request->headers->has('X-Modal')) {
@@ -312,44 +362,12 @@ class CustomerController extends Controller
 
     public function destroy(Request $request, User $customer): RedirectResponse
     {
-        $customer->delete();
-
-        activity('customers')
-            ->causedBy($request->user())
-            ->performedOn($customer)
-            ->event('deleted')
-            ->log('customer_deleted');
-
-        return redirect()->route('customers.index')->with('success', 'customers.deleted');
+        abort(403, 'Customer accounts cannot be deleted. Suspend the account instead.');
     }
 
     public function bulkDestroy(Request $request): RedirectResponse
     {
-        $ids = $request->validate([
-            'ids' => ['required', 'array', 'min:1'],
-            'ids.*' => ['integer', 'distinct', 'exists:users,id'],
-        ])['ids'];
-
-        $deleted = 0;
-
-        foreach (User::query()->whereIn('id', $ids)->get() as $customer) {
-            $customer->delete();
-            activity('customers')
-                ->causedBy($request->user())
-                ->performedOn($customer)
-                ->event('deleted')
-                ->log('customer_deleted');
-            $deleted++;
-        }
-
-        if ($deleted === 0) {
-            return back()->withErrors(['delete' => 'common.bulk_delete_failed']);
-        }
-
-        return redirect()
-            ->route('customers.index')
-            ->with('success', 'common.bulk_deleted')
-            ->with('deleted_count', $deleted);
+        abort(403, 'Customer accounts cannot be deleted. Suspend the account instead.');
     }
 
     public function updateStatus(UpdateCustomerStatusRequest $request, User $customer): RedirectResponse
@@ -379,26 +397,39 @@ class CustomerController extends Controller
         );
     }
 
-    public function bindAccount(BindBroadbandAccountRequest $request, User $customer): RedirectResponse
-    {
+    public function bindAccount(
+        BroadbandAccountService $broadbandAccountService,
+        BindAccountNumberRequest $request,
+        User $customer,
+    ): RedirectResponse {
         $accountNumber = trim($request->validated('account_number'));
-        $account = BroadbandAccount::query()->where('account_number', $accountNumber)->first();
+
+        try {
+            $account = $broadbandAccountService->findByAccountNumber($accountNumber);
+        } catch (ConnectionException $e) {
+            return back()->withErrors([
+                'account_number' => 'customers.account_service_unavailable',
+            ]);
+        }
 
         if (!$account) {
-            return back()->withErrors(['account_number' => __('customers.account_not_found')]);
+            return back()->withErrors([
+                'account_number' => 'customers.account_not_found',
+            ]);
         }
 
-        if ($account->user_id === $customer->id) {
-            return back()->withErrors(['account_number' => __('customers.account_already_bound')]);
+        if ($customer->broadband_account_number === $accountNumber) {
+            return back()->with('success', 'customers.account_already_bound');
         }
 
-        if ($account->user_id !== null) {
-            return back()->withErrors(['account_number' => __('customers.account_bound_elsewhere')]);
+        if ($customer->broadband_account_number !== null) {
+            return back()->withErrors([
+                'account_number' => 'customers.account_bounded',
+            ]);
         }
 
-        $account->update([
-            'user_id' => $customer->id,
-            'customer_name' => $customer->name,
+        $customer->update([
+            'broadband_account_number' => $accountNumber,
         ]);
 
         activity('customers')
@@ -406,35 +437,67 @@ class CustomerController extends Controller
             ->performedOn($customer)
             ->event('account_bound')
             ->withProperties([
-                'broadband_account_id' => $account->id,
-                'account_number' => $account->account_number,
+                'account_number' => $accountNumber,
             ])
             ->log('broadband_account_bound');
 
         return back()->with('success', 'customers.account_bound');
     }
 
-    public function unbindAccount(Request $request, User $customer, BroadbandAccount $account): RedirectResponse
+    public function unbindAccount(Request $request, User $customer): RedirectResponse
     {
-        if ($account->user_id !== $customer->id) {
+        $accountNumber = $customer->broadband_account_number;
+
+        if ($accountNumber === null) {
             abort(404);
         }
 
-        $accountNumber = $account->account_number;
-
-        $account->update(['user_id' => null]);
+        $customer->update(['broadband_account_number' => null]);
 
         activity('customers')
             ->causedBy($request->user())
             ->performedOn($customer)
             ->event('account_unbound')
             ->withProperties([
-                'broadband_account_id' => $account->id,
                 'account_number' => $accountNumber,
             ])
             ->log('broadband_account_unbound');
 
         return back()->with('success', 'customers.account_unbound');
+    }
+
+    public function adjustWallet(
+        AdjustCustomerWalletRequest $request,
+        User $customer,
+        WalletAdjustmentService $adjustments,
+    ): RedirectResponse {
+        $transaction = $adjustments->adjust(
+            customer: $customer,
+            direction: $request->string('direction')->toString(),
+            amount: $request->integer('amount'),
+            note: $request->string('note')->toString(),
+            adminId: (int) $request->user()->getAuthIdentifier(),
+            ipAddress: $request->ip(),
+            userAgent: $request->userAgent(),
+            relatedTransactionId: $request->filled('related_transaction_id')
+                ? $request->integer('related_transaction_id')
+                : null,
+        );
+
+        activity('customers')
+            ->causedBy($request->user())
+            ->performedOn($customer)
+            ->event('wallet_adjusted')
+            ->withProperties([
+                'transaction_no' => $transaction->transaction_no,
+                'direction' => $request->string('direction')->toString(),
+                'amount' => $transaction->amount,
+                'note' => $transaction->note,
+                'related_transaction_id' => $transaction->related_transaction_id,
+            ])
+            ->log('wallet_adjusted');
+
+        return back()->with('success', 'customers.wallet_adjust.success');
     }
 
     /**

@@ -22,18 +22,16 @@ class FailureReportSeeder extends Seeder
             return;
         }
 
-        $users = DB::table('users')->select('id')->get();
+        $users = DB::table('users')->select('id', 'broadband_account_number')->get();
 
         if ($users->isEmpty()) {
             return;
         }
 
-        $accounts = DB::table('broadband_accounts')->select('id', 'user_id')->get()->keyBy('user_id');
-
         $seedRows = [
             [
                 'user_id' => $users[0]->id,
-                'broadband_account_id' => $accounts[$users[0]->id]->id ?? null,
+                'broadband_account_number' => $users[0]->broadband_account_number,
                 'failure_type' => FailureType::NoInternet,
                 'description' => 'Customer reports no internet connection after 8:00 PM in the area.',
                 'contact_name' => 'Aye Aye',
@@ -43,7 +41,8 @@ class FailureReportSeeder extends Seeder
             ],
             [
                 'user_id' => $users[1]->id ?? $users[0]->id,
-                'broadband_account_id' => $accounts[$users[1]->id ?? $users[0]->id]->id ?? null,
+                'broadband_account_number' =>
+                    $users[1]->broadband_account_number ?? $users[0]->broadband_account_number,
                 'failure_type' => FailureType::Slow,
                 'description' => 'Line speed is slower than expected during evening hours.',
                 'contact_name' => 'Moe Moe',
@@ -53,7 +52,8 @@ class FailureReportSeeder extends Seeder
             ],
             [
                 'user_id' => $users[2]->id ?? $users[0]->id,
-                'broadband_account_id' => $accounts[$users[2]->id ?? $users[0]->id]->id ?? null,
+                'broadband_account_number' =>
+                    $users[2]->broadband_account_number ?? $users[0]->broadband_account_number,
                 'failure_type' => FailureType::Unstable,
                 'description' => 'Customer reports router and modem power issue at the home connection.',
                 'contact_name' => 'Hla Hla',
@@ -64,12 +64,6 @@ class FailureReportSeeder extends Seeder
         ];
 
         foreach ($seedRows as $row) {
-            $accountId = $row['broadband_account_id'];
-
-            if ($accountId === null) {
-                continue;
-            }
-
             $report = DB::table('failure_reports')
                 ->where('user_id', $row['user_id'])
                 ->where('contact_phone', $row['contact_phone'])
@@ -79,7 +73,7 @@ class FailureReportSeeder extends Seeder
                 DB::table('failure_reports')
                     ->where('id', $report->id)
                     ->update([
-                        'broadband_account_id' => $accountId,
+                        'broadband_account_number' => $row['broadband_account_number'],
                         'failure_type' => $row['failure_type'],
                         'description' => $row['description'],
                         'contact_name' => $row['contact_name'],
@@ -93,7 +87,7 @@ class FailureReportSeeder extends Seeder
             } else {
                 $reportId = DB::table('failure_reports')->insertGetId([
                     'user_id' => $row['user_id'],
-                    'broadband_account_id' => $accountId,
+                    'broadband_account_number' => $row['broadband_account_number'],
                     'failure_type' => $row['failure_type'],
                     'description' => $row['description'],
                     'contact_name' => $row['contact_name'],

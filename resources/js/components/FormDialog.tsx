@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { XIcon } from 'lucide-react';
 
 import {
@@ -47,11 +47,52 @@ export function FormDialog({
     size = 'md',
 }: FormDialogProps) {
     const { t } = useTranslation();
+    type DialogContentSnapshot = {
+        children: ReactNode;
+        title: string;
+        description?: string;
+        icon: LucideIcon;
+    };
+    const currentContent: DialogContentSnapshot = { children, title, description, icon: Icon };
+    const [closingContent, setClosingContent] = useState<DialogContentSnapshot | null>(null);
+    const lastOpenContent = useRef(currentContent);
+    const wasOpen = useRef(open);
+
+    if (open) {
+        lastOpenContent.current = currentContent;
+    }
+
+    useLayoutEffect(() => {
+        if (open) {
+            wasOpen.current = true;
+            setClosingContent(null);
+        } else if (wasOpen.current) {
+            wasOpen.current = false;
+            setClosingContent(lastOpenContent.current);
+        }
+    }, [open]);
+
+    const content = !open && closingContent ? closingContent : currentContent;
+
+    const handleOpenChange = (nextOpen: boolean) => {
+        if (nextOpen) {
+            setClosingContent(null);
+        } else {
+            setClosingContent(lastOpenContent.current);
+        }
+
+        onOpenChange(nextOpen);
+    };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent
                 overlayClassName="z-[80]"
+                onAnimationEnd={(event) => {
+                    if (!open && event.target === event.currentTarget) {
+                        setClosingContent(null);
+                    }
+                }}
                 className={cn(
                     'flex flex-col gap-0 overflow-hidden border-border/80 bg-[#f3f6f7] p-0 shadow-[0_8px_24px_rgb(23_50_54/0.08),0_20px_48px_rgb(23_50_54/0.12)] dark:bg-[#152628] dark:shadow-[0_8px_24px_rgb(0_0_0/0.28),0_20px_48px_rgb(0_0_0/0.32)] [&>button.absolute]:hidden',
                     'z-[81] inset-0 top-0 left-0 h-dvh max-h-dvh w-full max-w-none translate-x-0 translate-y-0 rounded-none',
@@ -63,12 +104,16 @@ export function FormDialog({
                 <div className="flex h-full min-h-0 flex-col">
                     <div className="flex shrink-0 items-start gap-3 border-b border-border/70 bg-[#eef3f4] px-4 py-4 sm:px-5 dark:bg-[#1a2e31]">
                         <div className="flex size-9 shrink-0 items-center justify-center rounded-[8px] bg-primary/10 text-primary">
-                            <Icon className="size-[18px]" strokeWidth={1.85} />
+                            <content.icon className="size-[18px]" strokeWidth={1.85} />
                         </div>
                         <DialogHeader className="min-w-0 flex-1 gap-1 text-left">
-                            <DialogTitle className="text-[15px] leading-snug font-semibold">{title}</DialogTitle>
-                            {description ? (
-                                <DialogDescription className="text-left text-[13px] leading-5">{description}</DialogDescription>
+                            <DialogTitle className="text-[15px] leading-snug font-semibold">
+                                {content.title}
+                            </DialogTitle>
+                            {content.description ? (
+                                <DialogDescription className="text-left text-[13px] leading-5">
+                                    {content.description}
+                                </DialogDescription>
                             ) : null}
                         </DialogHeader>
                         <DialogClose
@@ -78,7 +123,7 @@ export function FormDialog({
                             <XIcon className="size-4" strokeWidth={1.85} />
                         </DialogClose>
                     </div>
-                    <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+                    <div className="flex min-h-0 flex-1 flex-col">{content.children}</div>
                 </div>
             </DialogContent>
         </Dialog>

@@ -24,11 +24,12 @@ class UpdateChangePasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id' => ['required', 'integer', Rule::exists('users', 'id')],
-            'broadband_account_id' => [
+            'user_id' => ['required', 'integer', Rule::exists('users', 'id')->where('id', $this->user()->id)],
+            'broadband_account_number' => [
                 'required',
-                'integer',
-                Rule::exists('broadband_accounts', 'id')->where('user_id', $this->user_id),
+                'string',
+                'max:32',
+                Rule::exists('users', 'broadband_account_number')->where('id', $this->user()->id),
             ],
             'new_wifi_name' => ['nullable', 'string', 'required_without:new_password'],
             'new_password' => ['nullable', 'string', 'required_without:new_wifi_name'],

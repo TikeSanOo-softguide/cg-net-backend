@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Admin;
+use App\Models\SecurityLog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -39,11 +40,25 @@ class LoginTest extends TestCase
         ])->assertUnprocessable();
     }
 
-    public function test_invalid_credentials_are_shown_on_the_login_form(): void
+    public function test_admin_login_failure_is_logged_once_on_the_fifth_attempt(): void
     {
-        Admin::factory()->create([
+        $admin = Admin::factory()->create([
             'username' => 'admin',
         ]);
+
+        foreach (range(1, 4) as $_) {
+            $this->from('/login')
+                ->post('/login', [
+                    'username' => 'admin',
+                    'password' => 'wrong-password',
+                ])
+                ->assertRedirect('/login')
+                ->assertSessionHasErrors([
+                    'username' => 'These credentials do not match our records.',
+                ]);
+        }
+
+        $this->assertDatabaseCount('security_logs', 0);
 
         $this->from('/login')
             ->post('/login', [
@@ -54,6 +69,20 @@ class LoginTest extends TestCase
             ->assertSessionHasErrors([
                 'username' => 'These credentials do not match our records.',
             ]);
+
+        $this->assertDatabaseCount('security_logs', 1);
+        $this->assertDatabaseHas('security_logs', [
+            'actor_type' => Admin::class,
+            'actor_id' => $admin->id,
+            'event' => 'login_failed',
+        ]);
+        $this->assertSame(5, SecurityLog::query()->firstOrFail()->metadata['failed_attempts']);
+
+        $this->post('/login', [
+            'username' => 'admin',
+            'password' => 'wrong-password',
+        ])->assertTooManyRequests();
+        $this->assertDatabaseCount('security_logs', 1);
     }
 
     public function test_inactive_admins_cannot_authenticate(): void
@@ -73,6 +102,12 @@ class LoginTest extends TestCase
             ->assertSessionHasErrors([
                 'username' => 'This account is inactive and cannot sign in.',
             ]);
+
+        $this->assertDatabaseHas('security_logs', [
+            'actor_type' => Admin::class,
+            'actor_id' => Admin::where('username', 'admin')->value('id'),
+            'event' => 'login_blocked',
+        ]);
 
         $this->assertGuest('web');
     }

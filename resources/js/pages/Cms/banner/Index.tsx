@@ -122,14 +122,14 @@ export default function BannersIndex({ items, filters, bannerTypes }: Props) {
                                       : row.image_url_my;
 
                             return (
-                                <span className="block w-[200px] p-1">
+                                <span className="block w-[220px] p-1">
                                     {imageUrl ? (
                                         <img
                                             src={imageUrl}
                                             alt=""
-                                            width={200}
-                                            height={50}
-                                            className="h-[50px] w-[200px] rounded object-cover"
+                                            width={220}
+                                            style={{ aspectRatio: '925 / 390' }}
+                                            className="h-auto w-[220px] rounded object-cover"
                                         />
                                     ) : null}
                                 </span>

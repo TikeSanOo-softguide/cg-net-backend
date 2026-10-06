@@ -9,12 +9,12 @@ return new class extends Migration {
     {
         Schema::create('top_up_card_sequences', function (Blueprint $table): void {
             $table->date('sequence_date');
-            $table->char('agent_code', 2)->default('88');
+            $table->char('office_code', 2)->default('88');
             $table->char('batch_code', 4)->default('1101');
             $table->unsignedInteger('next_counter')->default(1001);
             $table->timestamps();
 
-            $table->primary(['sequence_date', 'agent_code', 'batch_code']);
+            $table->primary(['sequence_date', 'office_code', 'batch_code']);
         });
     }
 

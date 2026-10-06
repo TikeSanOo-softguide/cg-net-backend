@@ -68,11 +68,15 @@ function RoleFormDialogBody({
     onClose: () => void;
 }) {
     const isEdit = role !== null;
+    const selectablePermissions = new Set([
+        ...matrix.flatMap((group) => group.permissions.map((permission) => permission.name)),
+        'system.export',
+    ]);
     const form = useForm<RoleFormValues>(
         role
             ? {
                   name: role.name,
-                  permissions: role.permissions,
+                  permissions: role.permissions.filter((permission) => selectablePermissions.has(permission)),
               }
             : emptyRoleForm(),
     );

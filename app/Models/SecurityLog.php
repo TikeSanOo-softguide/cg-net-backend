@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Model;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
-#[Fillable(['user_id', 'event', 'ip_address', 'user_agent', 'metadata'])]
+#[Fillable(['actor_type', 'actor_id', 'event', 'ip_address', 'user_agent', 'metadata'])]
 class SecurityLog extends Model
 {
     use HasFactory;

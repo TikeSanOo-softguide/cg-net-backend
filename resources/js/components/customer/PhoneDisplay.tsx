@@ -1,7 +1,7 @@
 import { PhoneIcon } from 'lucide-react';
 
 import { CountryFlag } from '@/components/customer/CountryFlag';
-import { parsePhone } from '@/lib/phone';
+import { formatPhoneInternational, parsePhone } from '@/lib/phone';
 import { cn } from '@/lib/utils';
 
 type PhoneDisplayProps = {
@@ -10,7 +10,8 @@ type PhoneDisplayProps = {
 };
 
 export function PhoneDisplay({ phone, className }: PhoneDisplayProps) {
-    const parsed = parsePhone(phone);
+    const formattedPhone = formatPhoneInternational(phone);
+    const parsed = parsePhone(formattedPhone);
 
     return (
         <span className={cn('flex min-w-0 items-center gap-2', className)}>
@@ -24,7 +25,7 @@ export function PhoneDisplay({ phone, className }: PhoneDisplayProps) {
                     <PhoneIcon className="size-2.5 text-muted-foreground" strokeWidth={2} />
                 </span>
             )}
-            <span className="truncate font-medium tabular-nums text-card-foreground">{parsed.local || '—'}</span>
+            <span className="truncate font-medium tabular-nums text-card-foreground">{formattedPhone}</span>
         </span>
     );
 }

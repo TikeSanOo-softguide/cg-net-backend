@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use LogicException;
 
 #[
     Fillable([
@@ -20,9 +21,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
         'redeemed_at',
         'redeemed_by',
         'status',
-        'agent_id',
+        'office_id',
         'batch_id',
-        'wallet_transaction_id',
+        'ledger_transaction_id',
     ]),
 ]
 #[Hidden(['pin'])]
@@ -33,10 +34,19 @@ class TopUpCard extends Model
 
     protected $table = 'top_up_card';
 
+    protected static function booted(): void
+    {
+        static::deleting(static function (): never {
+            throw new LogicException('TopUpCard records cannot be deleted.');
+        });
+        static::forceDeleting(static function (): never {
+            throw new LogicException('TopUpCard records cannot be deleted.');
+        });
+    }
+
     protected function casts(): array
     {
         return [
-            'amount' => 'integer',
             'expires_at' => 'date',
             'redeemed_at' => 'datetime',
             'status' => TopUpCardStatus::class,
@@ -48,9 +58,9 @@ class TopUpCard extends Model
         return $this->belongsTo(Batch::class);
     }
 
-    public function agent(): BelongsTo
+    public function office(): BelongsTo
     {
-        return $this->belongsTo(Agent::class);
+        return $this->belongsTo(Office::class);
     }
 
     public function redeemedBy(): BelongsTo
@@ -58,8 +68,8 @@ class TopUpCard extends Model
         return $this->belongsTo(User::class, 'redeemed_by');
     }
 
-    public function walletTransaction(): BelongsTo
+    public function ledgerTransaction(): BelongsTo
     {
-        return $this->belongsTo(WalletTransaction::class, 'wallet_transaction_id');
+        return $this->belongsTo(LedgerTransaction::class, 'ledger_transaction_id');
     }
 }

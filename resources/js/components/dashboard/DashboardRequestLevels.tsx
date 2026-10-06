@@ -52,14 +52,16 @@ export function DashboardRequestLevels({ data }: DashboardRequestLevelsProps) {
                     {total.toLocaleString()}
                 </span>
             </CardHeader>
-            <CardContent className="flex h-40 flex-col justify-center gap-2.5 px-4 pb-3.5 pt-0 sm:h-44 sm:px-5">
+            <CardContent className="flex h-40 flex-col justify-center mt-3 gap-2.5 px-4 pb-3.5 pt-0 sm:h-44 sm:px-5">
                 {data.items.length === 0 ? (
                     <p className="text-center text-[12px] text-muted-foreground">{t('dashboard.no_request_data')}</p>
                 ) : (
                     data.items.map((item, index) => (
                         <div key={item.type} className="flex flex-col gap-1">
                             <div className="flex items-center justify-between gap-2 text-[11px]">
-                                <span className="min-w-0 truncate font-medium text-foreground">{t(`type.${item.type}`)}</span>
+                                <span className="min-w-0 truncate font-medium text-foreground">
+                                    {t(`type.${item.type}`)}
+                                </span>
                                 <span
                                     className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-[5px] px-1.5 text-[10px] font-bold tabular-nums text-white"
                                     style={{ background: barColor(index) }}
@@ -67,7 +69,10 @@ export function DashboardRequestLevels({ data }: DashboardRequestLevelsProps) {
                                     {item.value.toLocaleString()}
                                 </span>
                             </div>
-                            <div className="h-1.5 overflow-hidden rounded-full" style={{ background: trackColor(index) }}>
+                            <div
+                                className="h-1.5 overflow-hidden rounded-full"
+                                style={{ background: trackColor(index) }}
+                            >
                                 <div
                                     className="h-full rounded-full transition-[width] duration-500"
                                     style={{ width: `${Math.min(item.percent, 100)}%`, background: barColor(index) }}

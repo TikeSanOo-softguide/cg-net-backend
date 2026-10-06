@@ -23,11 +23,13 @@ import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatPhoneInternational } from '@/lib/phone';
 import { cn, formatDate, truncateText } from '@/lib/utils';
 import { StatCard } from '@/components/StatCard';
 import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
 import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
-import { RelocationRequestDetailDialog } from '@/components/service-requests/RelocationRequest/RelocationRequestDetailDialog';
+import { RelocationRequestDetailDialog } from '@/components/service-requests/relocation-request/RelocationRequestDetailDialog';
+import { useOpenRequestFromQuery } from '@/hooks/useOpenRequestFromQuery';
 
 type RelocationRequest = {
     id: number;
@@ -37,15 +39,11 @@ type RelocationRequest = {
     phone: string;
     details: string | null;
     status: string;
+    broadband_account_number: string | null;
     user: {
         id: number;
         name: string;
         phone: string;
-    };
-    broadband_account: {
-        id: number;
-        account_number: string;
-        customer_name: string;
     };
     admin: {
         id: number;
@@ -76,6 +74,8 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
     const [search, setSearch] = useState(filters.search);
     const [selectedRequest, setSelectedRequest] = useState<RelocationRequest | null>(null);
     const debounce = useRef<number>(0);
+
+    const closeRequestDetails = useOpenRequestFromQuery(requests.data, setSelectedRequest);
 
     const cards = [
         {
@@ -194,12 +194,12 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                                     </span>
 
                                     <p className="truncate font-mono mt-1 text-xs text-muted-foreground">
-                                        {request.broadband_account.account_number}
+                                        {request.broadband_account_number ?? '—'}
                                     </p>
                                 </div>
                             ),
                             searchValue: (request) =>
-                                `${request.user.name} ${request.broadband_account.account_number} ${request.phone}`,
+                                `${request.user.name} ${request.broadband_account_number ?? ''} ${request.phone}`,
                         },
                         {
                             id: 'current_address',
@@ -235,7 +235,7 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                             cell: (request) => (
                                 <span className="inline-flex items-center gap-1.5 text-xs">
                                     <PhoneIcon className="size-3.5" />
-                                    {request.phone}
+                                    {formatPhoneInternational(request.phone)}
                                 </span>
                             ),
                             searchValue: (request) => request.phone,
@@ -275,7 +275,7 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
 
             <RelocationRequestDetailDialog
                 open={selectedRequest !== null}
-                onOpenChange={(open) => !open && setSelectedRequest(null)}
+                onOpenChange={(open) => !open && closeRequestDetails()}
                 request={selectedRequest}
                 statuses={statuses}
                 canUpdate={can('service-requests.update')}

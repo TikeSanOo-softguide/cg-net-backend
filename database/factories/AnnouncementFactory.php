@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\AnnouncementType;
 use App\Models\Announcement;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -16,6 +17,10 @@ class AnnouncementFactory extends Factory
         $endDate = (clone $startDate)->modify('+' . fake()->numberBetween(1, 30) . ' days');
 
         return [
+            'type' => fake()->randomElement(AnnouncementType::cases()),
+            'title_en' => fake()->sentence(4),
+            'title_zh' => fake()->sentence(4),
+            'title_my' => fake()->sentence(4),
             'content_en' => fake()->paragraph(),
             'content_zh' => fake()->paragraph(),
             'content_my' => fake()->paragraph(),

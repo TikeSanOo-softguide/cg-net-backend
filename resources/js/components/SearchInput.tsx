@@ -10,11 +10,12 @@ type SearchInputProps = {
     value: string;
     onChange: (value: string) => void;
     placeholder?: string;
+    ariaLabel?: string;
     className?: string;
     size?: 'sm' | 'md';
 };
 
-export function SearchInput({ value, onChange, placeholder, className, size = 'md' }: SearchInputProps) {
+export function SearchInput({ value, onChange, placeholder, ariaLabel, className, size = 'md' }: SearchInputProps) {
     const { t } = useTranslation();
     const compact = size === 'sm';
     const hasValue = value.length > 0;
@@ -44,6 +45,7 @@ export function SearchInput({ value, onChange, placeholder, className, size = 'm
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
                 placeholder={placeholder}
+                aria-label={ariaLabel}
                 className={cn(toolbarInputClass, ! compact && 'h-10 text-sm placeholder:text-sm')}
             />
         </FormControl>

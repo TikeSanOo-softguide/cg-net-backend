@@ -2,8 +2,7 @@
 
 namespace App\Exports;
 
-use App\Enums\WalletTransactionType;
-use App\Models\WalletTransaction;
+use App\Models\LedgerTransaction;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -24,6 +23,8 @@ class TransactionExport implements FromQuery, ShouldAutoSize, WithHeadings, With
         return [
             'Transaction No.',
             'Reversal Of',
+            'Actor Type',
+            'Actor ID',
             'Customer',
             'Customer Phone',
             'Wallet ID',
@@ -32,37 +33,30 @@ class TransactionExport implements FromQuery, ShouldAutoSize, WithHeadings, With
             'Amount',
             'Status',
             'Idempotency Key',
-            'Actor Type',
-            'Actor ID',
-            'IP Address',
-            'Device',
             'Balance Before',
             'Balance After',
-            'Transfer From Wallet',
-            'Transfer To Wallet',
-            'Transfer Note',
             'Bill Payment ID',
             'Package Order ID',
             'Top Up Card Serial No.',
+            'IP Address',
+            'Device',
             'Created At',
         ];
     }
 
     public function map(mixed $transaction): array
     {
-        /** @var WalletTransaction $transaction */
-        $direction =
-            $transaction->type === WalletTransactionType::Transfer
-                ? match (true) {
-                    $transaction->walletTransfer?->from_wallet_id === $transaction->wallet_id => 'debit',
-                    $transaction->walletTransfer?->to_wallet_id === $transaction->wallet_id => 'credit',
-                    default => '',
-                }
-                : $transaction->walletEntry?->type?->value ?? '';
+        /** @var LedgerTransaction $transaction */
+        $liabilityEntry = $transaction->walletLiabilityEntry();
+        $direction = $liabilityEntry
+            ? ($liabilityEntry->isCredit() ? 'credit' : 'debit')
+            : '';
 
         return [
             $transaction->transaction_no,
             $transaction->reversalOf?->transaction_no ?? '',
+            $transaction->actor_type?->value ?? '',
+            $transaction->actor_id ?? '',
             $transaction->wallet?->user?->name ?? '',
             $transaction->wallet?->user?->phone ?? '',
             $transaction->wallet_id,
@@ -71,18 +65,13 @@ class TransactionExport implements FromQuery, ShouldAutoSize, WithHeadings, With
             $transaction->amount,
             $transaction->status->value,
             $transaction->idempotency_key ?? '',
-            $transaction->actor_type?->value ?? '',
-            $transaction->actor_id ?? '',
-            $transaction->ip_address ?? '',
-            $transaction->user_agent ?? '',
-            $transaction->walletEntry?->balance_before ?? '',
-            $transaction->walletEntry?->balance_after ?? '',
-            $transaction->walletTransfer?->from_wallet_id ?? '',
-            $transaction->walletTransfer?->to_wallet_id ?? '',
-            $transaction->walletTransfer?->note ?? '',
+            $liabilityEntry?->balance_before ?? '',
+            $liabilityEntry?->balance_after ?? '',
             $transaction->billPayment?->id ?? '',
             $transaction->packageOrder?->id ?? '',
             $transaction->topUpCard?->serial_no ?? '',
+            $transaction->ip_address ?? '',
+            $transaction->user_agent ?? '',
             $transaction->created_at?->toDateTimeString() ?? '',
         ];
     }

@@ -3,7 +3,7 @@
 namespace App\Http\Requests\Api\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\Rule;
 
 class CompleteRegistrationRequest extends FormRequest
 {
@@ -17,7 +17,9 @@ class CompleteRegistrationRequest extends FormRequest
         return [
             'verification_token' => ['required', 'string', 'size:64'],
             'name' => ['required', 'string', 'max:255'],
-            'password' => ['required', 'confirmed', Password::defaults()],
+            'password' => ['required', 'string', 'regex:/^\d{6}$/', 'confirmed'],
+            'device_token' => ['nullable', 'string', 'max:512'],
+            'platform' => ['nullable', 'string', Rule::in(['android', 'ios', 'web'])],
         ];
     }
 }

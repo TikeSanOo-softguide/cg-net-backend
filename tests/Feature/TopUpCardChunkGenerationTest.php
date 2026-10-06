@@ -6,11 +6,12 @@ use App\Jobs\GenerateTopUpCardsJob;
 use App\Http\Controllers\TopUpCard\TopUpCardController;
 use App\Http\Requests\TopUpCard\GenerateTopUpCardsRequest;
 use App\Models\Admin;
-use App\Models\Agent;
+use App\Models\Office;
 use App\Models\Batch;
 use App\Models\TopUpCard;
 use App\Support\AppPermissions;
 use App\Support\GeneratesTopUpCards;
+use App\Support\TopUpCardOffices;
 use Illuminate\Bus\Batch as QueueBatch;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
@@ -38,7 +39,7 @@ class TopUpCardChunkGenerationTest extends TestCase
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
 
-        Agent::query()->create([
+        $office = Office::query()->create([
             'name' => 'Default Office',
             'address' => 'Main Street',
             'cd' => 88,
@@ -76,6 +77,10 @@ class TopUpCardChunkGenerationTest extends TestCase
 
         $this->assertDatabaseCount('top_up_card', 2500);
         $this->assertSame(
+            [$office->id],
+            TopUpCard::query()->distinct()->pluck('office_id')->all(),
+        );
+        $this->assertSame(
             range(1001, 3500),
             TopUpCard::query()
                 ->orderBy('id')
@@ -85,22 +90,22 @@ class TopUpCardChunkGenerationTest extends TestCase
         );
     }
 
-    public function test_empty_agent_selection_generates_for_all_agent_codes(): void
+    public function test_empty_office_selection_generates_for_all_office_codes(): void
     {
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
 
-        Agent::query()->create([
+        Office::query()->create([
             'name' => 'Alpha Office',
             'address' => 'Main Street',
             'cd' => 11,
         ]);
-        Agent::query()->create([
+        Office::query()->create([
             'name' => 'Beta Office',
             'address' => 'Second Street',
             'cd' => 22,
         ]);
-        Agent::query()->create([
+        Office::query()->create([
             'name' => 'Deleted Office',
             'address' => 'Gone Street',
             'cd' => 33,
@@ -120,19 +125,19 @@ class TopUpCardChunkGenerationTest extends TestCase
 
         Queue::assertPushed(GenerateTopUpCardsJob::class, 2);
 
-        $agentCodes = array_map(
-            fn(array $payload): string => (string) $payload['job']->agentCode,
+        $officeCodes = array_map(
+            fn(array $payload): string => (string) $payload['job']->officeCode,
             Queue::pushedJobs()[GenerateTopUpCardsJob::class],
         );
-        $this->assertSame(['11', '22'], $agentCodes);
+        $this->assertSame(['11', '22'], $officeCodes);
     }
 
-    public function test_generation_rejects_soft_deleted_agents(): void
+    public function test_generation_rejects_soft_deleted_offices(): void
     {
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
 
-        $agent = Agent::query()->create([
+        $agent = Office::query()->create([
             'name' => 'Deleted Office',
             'address' => 'Gone Street',
             'cd' => 33,
@@ -145,13 +150,13 @@ class TopUpCardChunkGenerationTest extends TestCase
             [
                 'amounts' => [['value' => 500, 'quantity' => 1]],
                 'expires_at' => now()->addDays(30)->toDateString(),
-                'agent_ids' => [$agent->id],
+                'office_ids' => [$agent->id],
             ],
             (new GenerateTopUpCardsRequest())->rules(),
         );
 
         $this->assertTrue($validator->fails());
-        $this->assertArrayHasKey('agent_ids.0', $validator->errors()->toArray());
+        $this->assertArrayHasKey('office_ids.0', $validator->errors()->toArray());
     }
 
     public function test_generation_rejects_when_quantity_times_agents_exceeds_max_cards(): void
@@ -161,14 +166,14 @@ class TopUpCardChunkGenerationTest extends TestCase
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
 
-        $first = Agent::query()->create([
+        $first = Office::query()->create([
             'name' => 'Alpha Office',
             'address' => 'Main Street',
             'cd' => 11,
             'phone' => '09123456789',
             'status' => 'active',
         ]);
-        $second = Agent::query()->create([
+        $second = Office::query()->create([
             'name' => 'Beta Office',
             'address' => 'Second Street',
             'cd' => 22,
@@ -180,23 +185,23 @@ class TopUpCardChunkGenerationTest extends TestCase
             ->post('/top-up-cards/batch', [
                 'amounts' => [['value' => 500, 'quantity' => 60]],
                 'expires_at' => now()->addDays(30)->toDateString(),
-                'agent_ids' => [$first->id, $second->id],
+                'office_ids' => [$first->id, $second->id],
             ])
             ->assertSessionHasErrors('amounts');
     }
 
-    public function test_agent_specific_generation_is_grouped_by_agent_code_and_amount(): void
+    public function test_office_specific_generation_is_grouped_by_office_code_and_amount(): void
     {
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
 
-        Agent::query()->create([
+        Office::query()->create([
             'name' => 'Alpha Office',
             'address' => 'Main Street',
             'cd' => 88,
         ]);
 
-        Agent::query()->create([
+        Office::query()->create([
             'name' => 'Beta Office',
             'address' => 'Second Street',
             'cd' => 99,
@@ -214,7 +219,7 @@ class TopUpCardChunkGenerationTest extends TestCase
                     ['value' => 500, 'quantity' => 10],
                 ],
                 'expires_at' => now()->addDays(30)->toDateString(),
-                'agent_ids' => Agent::query()->orderBy('id')->pluck('id')->all(),
+                'office_ids' => Office::query()->orderBy('id')->pluck('id')->all(),
             ])
             ->assertSessionHasNoErrors()
             ->assertSessionMissing('error')
@@ -222,11 +227,11 @@ class TopUpCardChunkGenerationTest extends TestCase
 
         Queue::assertPushed(GenerateTopUpCardsJob::class, 8);
 
-        $agentCodes = array_map(
-            fn(array $payload): string => (string) $payload['job']->agentCode,
+        $officeCodes = array_map(
+            fn(array $payload): string => (string) $payload['job']->officeCode,
             Queue::pushedJobs()[GenerateTopUpCardsJob::class],
         );
-        $this->assertSame(['88', '88', '88', '88', '99', '99', '99', '99'], $agentCodes);
+        $this->assertSame(['88', '88', '88', '88', '99', '99', '99', '99'], $officeCodes);
     }
 
     public function test_serial_reservation_uses_sequence_table_not_existing_cards(): void
@@ -255,6 +260,11 @@ class TopUpCardChunkGenerationTest extends TestCase
         $this->assertTrue(str_contains($serials[1], '24'));
     }
 
+    public function test_office_code_is_parsed_with_a_five_digit_daily_counter(): void
+    {
+        $this->assertSame('31', TopUpCardOffices::officeCodeFromSerialNo('26091501283110000'));
+    }
+
     public function test_disjoint_serial_ranges_are_allocated_from_sequence_counter(): void
     {
         $this->assertSame(1001, GeneratesTopUpCards::allocateSerialRange(1000, now()));
@@ -280,7 +290,7 @@ class TopUpCardChunkGenerationTest extends TestCase
         $other = Admin::factory()->create();
         $other->assignRole(AppPermissions::SuperAdmin);
 
-        Agent::query()->create([
+        Office::query()->create([
             'name' => 'Default Office',
             'address' => 'Main Street',
             'cd' => 88,
@@ -311,7 +321,7 @@ class TopUpCardChunkGenerationTest extends TestCase
         $expiresAt = now()->addDays(30)->toDateString();
         $cardBatch = GeneratesTopUpCards::createGenerationBatch($expiresAt, 5, 2500, [
             'items' => [
-                ['agent_cd' => '88', 'amount' => 500, 'quantity' => 5],
+                ['office_cd' => '88', 'amount' => 500, 'quantity' => 5],
             ],
         ], $token);
 
@@ -363,7 +373,7 @@ class TopUpCardChunkGenerationTest extends TestCase
         $token = (string) Str::uuid();
         $cardBatch = GeneratesTopUpCards::createGenerationBatch($expiresAt, 7, 3500, [
             'items' => [
-                ['agent_cd' => '88', 'amount' => 500, 'quantity' => 7],
+                ['office_cd' => '88', 'amount' => 500, 'quantity' => 7],
             ],
         ], $token);
 
@@ -410,7 +420,7 @@ class TopUpCardChunkGenerationTest extends TestCase
             2500,
             [
                 'items' => [
-                    ['agent_cd' => '88', 'amount' => 500, 'quantity' => 5],
+                    ['office_cd' => '88', 'amount' => 500, 'quantity' => 5],
                 ],
             ],
             $token,
@@ -457,7 +467,7 @@ class TopUpCardChunkGenerationTest extends TestCase
         $this->assertSame(5, $activity->properties['quantity']);
         $this->assertSame($cardBatch->id, $activity->properties['batch_id']);
         $this->assertEquals(
-            [['agent_cd' => '88', 'amount' => 500, 'quantity' => 5]],
+            [['office_cd' => '88', 'amount' => 500, 'quantity' => 5]],
             collect($activity->properties['items'])->all(),
         );
 
@@ -468,7 +478,7 @@ class TopUpCardChunkGenerationTest extends TestCase
             2500,
             [
                 'items' => [
-                    ['agent_cd' => '88', 'amount' => 500, 'quantity' => 5],
+                    ['office_cd' => '88', 'amount' => 500, 'quantity' => 5],
                 ],
             ],
             $failedToken,
@@ -508,7 +518,7 @@ class TopUpCardChunkGenerationTest extends TestCase
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
 
-        Agent::query()->create([
+        Office::query()->create([
             'name' => 'Default Office',
             'address' => 'Main Street',
             'cd' => 88,

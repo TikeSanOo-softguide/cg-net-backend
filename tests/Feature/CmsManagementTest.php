@@ -4,15 +4,20 @@ namespace Tests\Feature;
 
 use App\Enums\NewsStatus;
 use App\Models\Admin;
+use App\Models\Announcement;
 use App\Models\Banner;
 use App\Models\Category;
 use App\Models\Contact;
 use App\Models\News;
 use App\Models\Promotion;
 use App\Models\Service;
+use App\Models\User;
+use App\Notifications\AdminPushNotification;
+use App\Services\Notification\PushNotificationService;
 use App\Support\CmsPermissions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
@@ -271,5 +276,114 @@ class CmsManagementTest extends TestCase
 
         $this->assertDatabaseHas('categories', ['id' => $inUse->id, 'deleted_at' => null]);
         $this->assertSoftDeleted($unused);
+    }
+
+    public function test_active_announcement_and_promotion_titles_are_pushed_once(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create();
+        $user->deviceTokens()->create(['token' => 'fcm-title-push']);
+
+        $announcement = Announcement::factory()->create([
+            'title_en' => 'Announce EN',
+            'title_zh' => 'Announce ZH',
+            'title_my' => 'Announce MY',
+            'is_active' => true,
+            'start_date' => now()->subHour(),
+            'end_date' => now()->addHour(),
+        ]);
+        Announcement::factory()->inactive()->create([
+            'start_date' => now()->subHour(),
+            'end_date' => now()->addHour(),
+        ]);
+        Announcement::factory()->upcoming()->create();
+        Announcement::factory()->expired()->create();
+        Announcement::factory()->create([
+            'is_active' => true,
+            'start_date' => null,
+            'end_date' => null,
+        ]);
+
+        $promotion = Promotion::factory()->create([
+            'title_en' => 'Promo EN',
+            'title_zh' => 'Promo ZH',
+            'title_my' => 'Promo MY',
+            'is_active' => true,
+            'start_date' => now()->toDateString(),
+            'end_date' => now()->toDateString(),
+        ]);
+        $cmsPromotion = Promotion::factory()->create([
+            'title_en' => 'CMS Promo EN',
+            'title_zh' => 'CMS Promo ZH',
+            'title_my' => 'CMS Promo MY',
+            'is_active' => true,
+            'start_date' => now()->toDateString(),
+            'end_date' => now()->toDateString(),
+        ]);
+        Promotion::factory()->create([
+            'is_active' => false,
+            'start_date' => now()->toDateString(),
+            'end_date' => now()->toDateString(),
+        ]);
+        Promotion::factory()->create([
+            'is_active' => true,
+            'start_date' => now()->addDay()->toDateString(),
+            'end_date' => now()->addDays(2)->toDateString(),
+        ]);
+        Promotion::factory()->create([
+            'is_active' => true,
+            'start_date' => now()->subDays(3)->toDateString(),
+            'end_date' => now()->subDay()->toDateString(),
+        ]);
+
+        $service = app(PushNotificationService::class);
+
+        $this->assertSame(3, $service->processDueTitles());
+        $this->assertSame(0, $service->processDueTitles());
+
+        Notification::assertSentTo(
+            $user,
+            AdminPushNotification::class,
+            fn (AdminPushNotification $notification): bool => $notification->titleEn === 'Announce EN'
+                && $notification->titleZh === 'Announce ZH'
+                && $notification->titleMy === 'Announce MY',
+        );
+        Notification::assertSentTo(
+            $user,
+            AdminPushNotification::class,
+            fn (AdminPushNotification $notification): bool => $notification->titleEn === 'Promo EN'
+                && $notification->titleZh === 'Promo ZH'
+                && $notification->titleMy === 'Promo MY',
+        );
+        Notification::assertSentTo(
+            $user,
+            AdminPushNotification::class,
+            fn (AdminPushNotification $notification): bool => $notification->titleEn === 'CMS Promo EN'
+                && $notification->titleZh === 'CMS Promo ZH'
+                && $notification->titleMy === 'CMS Promo MY',
+        );
+        Notification::assertSentTimes(AdminPushNotification::class, 3);
+
+        $this->assertNotNull($announcement->fresh()->push_sent_at);
+        $this->assertNotNull($promotion->fresh()->push_sent_at);
+        $this->assertNotNull($cmsPromotion->fresh()->push_sent_at);
+        $this->assertSame(4, Announcement::query()->whereNull('push_sent_at')->count());
+        $this->assertSame(3, Promotion::query()->whereNull('push_sent_at')->count());
+    }
+
+    public function test_title_push_is_not_marked_sent_when_no_device_is_registered(): void
+    {
+        Notification::fake();
+
+        $announcement = Announcement::factory()->create([
+            'is_active' => true,
+            'start_date' => now()->subHour(),
+            'end_date' => now()->addHour(),
+        ]);
+
+        $this->assertSame(0, app(PushNotificationService::class)->processDueTitles());
+        $this->assertNull($announcement->fresh()->push_sent_at);
+        Notification::assertNothingSent();
     }
 }

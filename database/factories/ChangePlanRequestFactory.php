@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Enums\ChangePlanStatus;
-use App\Models\BroadbandAccount;
 use App\Models\ChangePlanRequest;
 use App\Models\Package;
 use App\Models\User;
@@ -17,13 +16,16 @@ class ChangePlanRequestFactory extends Factory
 {
     public function definition(): array
     {
+        $accountNumber = 'CG' . fake()->unique()->numerify('########');
+
         return [
-            'user_id' => User::factory(),
-            'broadband_account_id' => BroadbandAccount::factory(),
+            'user_id' => User::factory()->state(['broadband_account_number' => $accountNumber]),
+            'broadband_account_number' => $accountNumber,
             'current_package_id' => Package::factory(),
             'new_package_id' => Package::factory(),
             'preferred_date' => fake()->dateTimeBetween('now', '+20 days'),
-            'phone' => MyanmarFake::phone(),
+            'contact_name' => MyanmarFake::name(),
+            'contact_phone' => MyanmarFake::phone(),
             'note' => fake()->optional()->sentence(),
             'status' => fake()->randomElement(ChangePlanStatus::cases()),
         ];

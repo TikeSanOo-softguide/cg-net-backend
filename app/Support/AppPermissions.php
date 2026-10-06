@@ -10,6 +10,8 @@ final class AppPermissions
 
     public const SupportAgent = 'Support Agent';
 
+    public const SystemExport = 'system.export';
+
     /**
      * Permission groups matching sidebar modules.
      *
@@ -43,7 +45,7 @@ final class AppPermissions
             [
                 'module' => 'service-requests',
                 'labelKey' => 'menu.service_requests',
-                'actions' => ['view', 'create', 'update', 'delete'],
+                'actions' => ['view', 'update'],
             ],
             [
                 'module' => 'regions',
@@ -90,6 +92,10 @@ final class AppPermissions
                 $names[] = self::name($group['module'], $action);
             }
         }
+
+        $names[] = self::name('service-requests', 'create');
+        $names[] = self::name('service-requests', 'delete');
+        $names[] = self::SystemExport;
 
         return $names;
     }

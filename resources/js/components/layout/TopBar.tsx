@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import { CheckIcon, LogOutIcon, MoonIcon, MoreHorizontalIcon, SunIcon, UserRoundIcon } from 'lucide-react';
 
@@ -40,7 +41,34 @@ export function TopBar({ sidebarOpen = false }: TopBarProps) {
     const user = auth?.user;
     const title = resolvePageTitle(t, page.url.split('?')[0]);
     const unread = unreadNotifications ?? 0;
+    const canViewNotifications = auth?.permissions?.includes('notifications.view') ?? false;
+    const isAdminNotificationsPage = page.url.split('?')[0] === '/dashboard/notifications';
 
+    useEffect(() => {
+        const echo = window.Echo;
+
+        if (!echo || !canViewNotifications) {
+            return;
+        }
+
+        const channel = echo.private('admin.notifications');
+        const eventName = '.admin.notification.created';
+
+        channel.listen(eventName, () => {
+            const only = ['unreadNotifications', 'recentNotifications'];
+
+            if (isAdminNotificationsPage) {
+                only.push('notifications');
+            }
+
+            router.reload({ only });
+        });
+
+        return () => {
+            channel.stopListening(eventName);
+            echo.leave('admin.notifications');
+        };
+    }, [canViewNotifications, isAdminNotificationsPage]);
     const logout = () => {
         router.post('/logout');
     };
@@ -80,11 +108,17 @@ export function TopBar({ sidebarOpen = false }: TopBarProps) {
                         <ThemeToggle />
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className={cn('group h-10 gap-2 px-2', navbarActionClass)}>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className={cn('group h-10 gap-2 px-2', navbarActionClass)}
+                                >
                                     <span className="flex size-7 items-center justify-center rounded-full bg-primary/15 text-primary transition-transform duration-200 ease-out group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100 dark:bg-muted dark:text-foreground">
                                         <UserRoundIcon className="size-4" strokeWidth={1.9} />
                                     </span>
-                                    <span className="hidden max-w-40 truncate text-sm font-medium lg:inline">{user?.username ?? 'Staff'}</span>
+                                    <span className="hidden max-w-40 truncate text-sm font-medium lg:inline">
+                                        {user?.username ?? 'Staff'}
+                                    </span>
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" side="bottom" className="w-64">
@@ -94,7 +128,9 @@ export function TopBar({ sidebarOpen = false }: TopBarProps) {
                                             <UserRoundIcon className="size-4.5" strokeWidth={1.9} />
                                         </span>
                                         <div className="flex min-w-0 flex-col gap-0.5">
-                                            <span className="truncate text-sm font-semibold">{user?.username ?? 'Staff'}</span>
+                                            <span className="truncate text-sm font-semibold">
+                                                {user?.username ?? 'Staff'}
+                                            </span>
                                         </div>
                                     </div>
                                 </DropdownMenuLabel>
@@ -113,7 +149,13 @@ export function TopBar({ sidebarOpen = false }: TopBarProps) {
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button type="button" variant="ghost" size="icon" className="size-10 text-foreground sm:hidden" aria-label={t('menu.more')}>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="size-10 text-foreground sm:hidden"
+                                aria-label={t('menu.more')}
+                            >
                                 <MoreHorizontalIcon className="size-5" strokeWidth={1.9} />
                             </Button>
                         </DropdownMenuTrigger>

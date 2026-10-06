@@ -13,18 +13,6 @@ final class MenuPages
     {
         return [
             [
-                'path' => '/logs/security',
-                'titleKey' => 'menu.security_logs',
-                'name' => 'logs.security',
-                'permission' => 'activity.view',
-            ],
-            [
-                'path' => '/logs/users',
-                'titleKey' => 'menu.user_logs',
-                'name' => 'logs.users',
-                'permission' => 'activity.view',
-            ],
-            [
                 'path' => '/cpe/inventory',
                 'titleKey' => 'menu.cpe_inventory',
                 'name' => 'cpe.inventory',
@@ -49,45 +37,15 @@ final class MenuPages
                 'permission' => 'packages.view',
             ],
             [
-                'path' => '/billing/invoices',
-                'titleKey' => 'menu.invoices',
-                'name' => 'billing.invoices',
-                'permission' => 'billing.view',
-            ],
-            [
                 'path' => '/billing/gateway-logs',
                 'titleKey' => 'menu.payment_gateway_logs',
                 'name' => 'billing.gateway-logs',
                 'permission' => 'billing.view',
             ],
             [
-                'path' => '/notifications/compose',
-                'titleKey' => 'menu.push_composer',
-                'name' => 'notifications.compose',
-                'permission' => 'notifications.view',
-            ],
-            [
-                'path' => '/notifications/categories',
-                'titleKey' => 'menu.notification_categories',
-                'name' => 'notifications.categories',
-                'permission' => 'notifications.view',
-            ],
-            [
-                'path' => '/reports',
-                'titleKey' => 'menu.reports',
-                'name' => 'reports.index',
-                'permission' => 'reports.view',
-            ],
-            [
                 'path' => '/settings/languages',
                 'titleKey' => 'menu.language_management',
                 'name' => 'settings.languages',
-                'permission' => 'settings.view',
-            ],
-            [
-                'path' => '/settings/general',
-                'titleKey' => 'menu.general_settings',
-                'name' => 'settings.general',
                 'permission' => 'settings.view',
             ],
         ];

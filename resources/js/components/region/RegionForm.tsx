@@ -1,5 +1,5 @@
 import { FormEvent, useMemo, useState } from 'react';
-import { useForm } from '@inertiajs/react';
+import type { InertiaFormProps } from '@inertiajs/react';
 import { MapIcon, MapPinIcon, TagIcon } from 'lucide-react';
 
 import { CmsFormShell } from '@/components/cms/shared/CmsFormShell';
@@ -24,16 +24,28 @@ export type RegionFormValues = {
 };
 
 type RegionFormProps = {
+    form: InertiaFormProps<RegionFormValues>;
+    onSubmit: (event: FormEvent) => void;
     type: RegionType;
     item: StateRow | RegionRow | AreaRow | null;
     states: StateRow[];
     regions: RegionRow[];
     areas?: AreaRow[];
-    initialValues: RegionFormValues;
     onClose: () => void;
+    mode?: 'create' | 'edit';
 };
 
-export function RegionForm({ type, item, states, regions, areas = [], initialValues, onClose }: RegionFormProps) {
+export function RegionForm({
+    form,
+    onSubmit,
+    type,
+    item,
+    states,
+    regions,
+    areas = [],
+    onClose,
+    mode = 'create',
+}: RegionFormProps) {
     const { t, locale } = useTranslation();
 
     const [submitted, setSubmitted] = useState(false);
@@ -46,8 +58,6 @@ export function RegionForm({ type, item, states, regions, areas = [], initialVal
         state_id: false,
         region_id: false,
     });
-
-    const form = useForm<RegionFormValues>(initialValues);
 
     const existingRecords = useMemo<ExistingRegion[]>(() => {
         switch (type) {
@@ -98,16 +108,17 @@ export function RegionForm({ type, item, states, regions, areas = [], initialVal
         form.clearErrors(field);
     };
 
-    const getValidationError = (field: keyof RegionFormValues) => {
-        return validateRegionField(field, form.data, t, type, existingRecords, item?.id);
-    };
+    const validationError = (field: keyof RegionFormValues) =>
+        form.processing || form.wasSuccessful
+            ? undefined
+            : validateRegionField(field, form.data, t, type, existingRecords, item?.id);
 
     const fieldState = (field: keyof RegionFormValues): 'idle' | 'error' | 'success' => {
         if (!touched[field] && !submitted) {
             return 'idle';
         }
 
-        return form.errors[field] || getValidationError(field) ? 'error' : 'success';
+        return form.errors[field] || validationError(field) ? 'error' : 'success';
     };
 
     const fieldError = (field: keyof RegionFormValues): string | undefined => {
@@ -115,18 +126,7 @@ export function RegionForm({ type, item, states, regions, areas = [], initialVal
             return undefined;
         }
 
-        return form.errors[field] || getValidationError(field);
-    };
-
-    const validate = () => {
-        const errors = validateRegion(form.data, t, type, existingRecords, item?.id);
-
-        if (Object.keys(errors).length > 0) {
-            form.setError(errors);
-            return false;
-        }
-
-        return true;
+        return form.errors[field] || validationError(field);
     };
 
     const submit = (event: FormEvent) => {
@@ -142,84 +142,15 @@ export function RegionForm({ type, item, states, regions, areas = [], initialVal
             region_id: true,
         });
 
-        if (!validate()) {
+        const errors = validateRegion(form.data, t, type, existingRecords, item?.id);
+
+        if (Object.keys(errors).length > 0) {
+            form.setError(errors);
             return;
         }
 
-        form.clearErrors('name_en', 'name_my', 'name_zh', 'latitude', 'longitude', 'state_id', 'region_id');
-
-        if (type === 'state') {
-            if (item) {
-                form.transform((data) => ({
-                    ...data,
-                    _method: 'put',
-                }));
-
-                form.post(`/regions/states/${item.id}`, {
-                    preserveScroll: true,
-                    onSuccess: onClose,
-                });
-
-                return;
-            }
-
-            form.post('/regions/states', {
-                preserveScroll: true,
-                onSuccess: onClose,
-            });
-
-            return;
-        }
-
-        if (type === 'region') {
-            if (item) {
-                form.transform((data) => ({
-                    ...data,
-                    _method: 'put',
-                }));
-
-                form.post(`/regions/regions/${item.id}`, {
-                    preserveScroll: true,
-                    onSuccess: onClose,
-                });
-
-                return;
-            }
-
-            form.post('/regions/regions', {
-                preserveScroll: true,
-                onSuccess: onClose,
-            });
-
-            return;
-        }
-
-        if (item) {
-            form.transform((data) => ({
-                ...data,
-                _method: 'put',
-            }));
-
-            form.post(`/regions/areas/${item.id}`, {
-                preserveScroll: true,
-                onSuccess: onClose,
-            });
-
-            return;
-        }
-
-        form.post('/regions/areas', {
-            preserveScroll: true,
-            onSuccess: onClose,
-        });
-    };
-
-    const handleNameChange = (field: 'name_en' | 'name_my' | 'name_zh', value: string) => {
-        form.setData(field, value);
-
-        if (value.trim()) {
-            form.clearErrors(field);
-        }
+        form.clearErrors();
+        onSubmit(event);
     };
 
     const handleStateChange = (value: string) => {
@@ -252,7 +183,7 @@ export function RegionForm({ type, item, states, regions, areas = [], initialVal
     };
 
     return (
-        <CmsFormShell onSubmit={submit} onCancel={onClose} processing={form.processing} mode={item ? 'edit' : 'create'}>
+        <CmsFormShell onSubmit={submit} onCancel={onClose} processing={form.processing} mode={mode}>
             <FormField
                 label={t('regions.name_en')}
                 htmlFor="name_en"
@@ -268,7 +199,9 @@ export function RegionForm({ type, item, states, regions, areas = [], initialVal
                     aria-invalid={fieldState('name_en') === 'error'}
                     className={formControlStateClass(fieldState('name_en'))}
                     onBlur={() => markTouched('name_en')}
-                    onChange={(event) => handleNameChange('name_en', event.target.value)}
+                    onChange={(event) => {
+                        setField('name_en', event.target.value);
+                    }}
                     disabled={form.processing}
                 />
             </FormField>
@@ -288,7 +221,9 @@ export function RegionForm({ type, item, states, regions, areas = [], initialVal
                     aria-invalid={fieldState('name_my') === 'error'}
                     className={formControlStateClass(fieldState('name_my'))}
                     onBlur={() => markTouched('name_my')}
-                    onChange={(event) => handleNameChange('name_my', event.target.value)}
+                    onChange={(event) => {
+                        setField('name_my', event.target.value);
+                    }}
                     disabled={form.processing}
                 />
             </FormField>
@@ -303,12 +238,13 @@ export function RegionForm({ type, item, states, regions, areas = [], initialVal
             >
                 <Input
                     id="name_zh"
-                    name="name_zh"
                     value={form.data.name_zh}
                     aria-invalid={fieldState('name_zh') === 'error'}
                     className={formControlStateClass(fieldState('name_zh'))}
                     onBlur={() => markTouched('name_zh')}
-                    onChange={(event) => handleNameChange('name_zh', event.target.value)}
+                    onChange={(event) => {
+                        setField('name_zh', event.target.value);
+                    }}
                     disabled={form.processing}
                 />
             </FormField>
@@ -331,6 +267,11 @@ export function RegionForm({ type, item, states, regions, areas = [], initialVal
                     value={form.data.latitude ?? ''}
                     aria-invalid={fieldState('latitude') === 'error'}
                     className={formControlStateClass(fieldState('latitude'))}
+                    onKeyDown={(event) => {
+                        if (['e', 'E'].includes(event.key)) {
+                            event.preventDefault();
+                        }
+                    }}
                     onBlur={() => markTouched('latitude')}
                     onChange={(event) => handleCoordinateChange('latitude', event.target.value)}
                     disabled={form.processing}
@@ -355,6 +296,11 @@ export function RegionForm({ type, item, states, regions, areas = [], initialVal
                     value={form.data.longitude ?? ''}
                     aria-invalid={fieldState('longitude') === 'error'}
                     className={formControlStateClass(fieldState('longitude'))}
+                    onKeyDown={(event) => {
+                        if (['e', 'E'].includes(event.key)) {
+                            event.preventDefault();
+                        }
+                    }}
                     onBlur={() => markTouched('longitude')}
                     onChange={(event) => handleCoordinateChange('longitude', event.target.value)}
                     disabled={form.processing}

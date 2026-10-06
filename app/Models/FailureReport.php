@@ -12,16 +12,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable([
-    'user_id',
-    'broadband_account_id',
-    'failure_type',
-    'description',
-    'contact_name',
-    'contact_phone',
-    'status',
-    'admin_id',
-])]
+#[
+    Fillable([
+        'user_id',
+        'broadband_account_number',
+        'failure_type',
+        'description',
+        'contact_name',
+        'contact_phone',
+        'status',
+        'admin_id',
+    ]),
+]
 class FailureReport extends Model
 {
     /** @use HasFactory<FailureReportFactory> */
@@ -38,11 +40,6 @@ class FailureReport extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function broadbandAccount(): BelongsTo
-    {
-        return $this->belongsTo(BroadbandAccount::class);
     }
 
     public function admin(): BelongsTo

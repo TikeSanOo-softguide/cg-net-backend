@@ -23,7 +23,10 @@ import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FormDialog } from '@/components/FormDialog';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useCan } from '@/hooks/useCan';
 import { StatCard } from '@/components/StatCard';
+import { useOpenRequestFromQuery } from '@/hooks/useOpenRequestFromQuery';
+import { formatPhoneInternational } from '@/lib/phone';
 
 type RequestItem = {
     id: number;
@@ -32,8 +35,8 @@ type RequestItem = {
     new_wifi_name: string | null;
     new_password: string | null;
     status: string;
+    broadband_account_number: string | null;
     user: { id: number; name: string; phone: string } | null;
-    broadband_account: { id: number; account_number: string } | null;
     admin: { id: number; username: string } | null;
 };
 
@@ -64,9 +67,11 @@ function visit(filters: Filters) {
 
 export default function ChangePasswordIndex({ requests, filters, statuses, stats }: Props) {
     const { t } = useTranslation();
+    const can = useCan();
     const [search, setSearch] = useState(filters.search);
     const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
     const debounce = useRef<number>(0);
+    const closeRequestDetails = useOpenRequestFromQuery(requests.data, setSelectedRequest);
 
     const cards = [
         {
@@ -154,13 +159,12 @@ export default function ChangePasswordIndex({ requests, filters, statuses, stats
                                         </div>
                                         <span className="min-w-0 truncate font-medium">{request.user?.name || ''}</span>
                                         <p className="truncate font-mono text-xs text-muted-foreground">
-                                            {request.broadband_account?.account_number}
+                                            {request.broadband_account_number ?? '—'}
                                         </p>
                                     </div>
                                 </span>
                             ),
-                            searchValue: (request) =>
-                                `${request.broadband_account?.account_number ?? ''} ${request.user?.name ?? ''}`,
+                            searchValue: (request) => `${request.broadband_account_number} ${request.user?.name ?? ''}`,
                         },
                         {
                             id: 'contact',
@@ -169,7 +173,7 @@ export default function ChangePasswordIndex({ requests, filters, statuses, stats
                             cell: (request) => (
                                 <div className="min-w-0 text-xs text-muted-foreground">
                                     <p className="truncate font-medium text-foreground">{request.contact_name}</p>
-                                    <p className="truncate">{request.contact_phone}</p>
+                                    <p className="truncate">{formatPhoneInternational(request.contact_phone)}</p>
                                 </div>
                             ),
                             searchValue: (request) => `${request.contact_name ?? ''} ${request.contact_phone ?? ''}`,
@@ -200,7 +204,8 @@ export default function ChangePasswordIndex({ requests, filters, statuses, stats
             <ChangePasswordDetailDialog
                 request={selectedRequest}
                 open={selectedRequest !== null}
-                onOpenChange={(open) => !open && setSelectedRequest(null)}
+                canUpdate={can('service-requests.update')}
+                onOpenChange={(open) => !open && closeRequestDetails()}
             />
         </>
     );
@@ -209,10 +214,12 @@ export default function ChangePasswordIndex({ requests, filters, statuses, stats
 function ChangePasswordDetailDialog({
     request,
     open,
+    canUpdate,
     onOpenChange,
 }: {
     request: RequestItem | null;
     open: boolean;
+    canUpdate: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
     const { t } = useTranslation();
@@ -239,7 +246,7 @@ function ChangePasswordDetailDialog({
             open={open}
             onOpenChange={onOpenChange}
             title={t('change_password.request_title')}
-            description={request.broadband_account?.account_number ?? ''}
+            description={request.broadband_account_number ?? ''}
             icon={KeyRoundIcon}
             size="lg"
         >
@@ -257,12 +264,13 @@ function ChangePasswordDetailDialog({
                         <p className="flex items-center gap-1 text-xs text-muted-foreground">
                             <PhoneIcon className="size-3" />
                             <span className={request.status === 'cancelled' ? 'select-none' : ''}>
-                                {request.contact_phone}
+                                {formatPhoneInternational(request.contact_phone)}
                             </span>
                             {request.status !== 'cancelled' && (
                                 <CopyValueButton
                                     value={request.contact_phone}
                                     label={t('change_password.copy_contact_phone')}
+                                    format="phone"
                                 />
                             )}
                         </p>
@@ -274,18 +282,19 @@ function ChangePasswordDetailDialog({
                         </p>
                         <p className="flex items-center gap-1.5 font-mono text-sm font-semibold text-foreground">
                             <WifiIcon className="size-3.5 text-muted-foreground/70" />
-                            {request.broadband_account?.account_number}
+                            {request.broadband_account_number ?? '—'}
                         </p>
                         <p className="flex items-center gap-1 text-xs text-muted-foreground">
                             <UserIcon className="size-3" />
                             <span className="font-mono">{request.user?.name}</span>
                             <span className={`font-mono ${request.status === 'cancelled' ? 'select-none' : ''}`}>
-                                ({request.user?.phone})
+                                ({formatPhoneInternational(request.user?.phone)})
                             </span>
                             {request.status !== 'cancelled' && (
                                 <CopyValueButton
                                     value={request.user?.phone}
                                     label={t('change_password.copy_account_phone')}
+                                    format="phone"
                                 />
                             )}
                         </p>
@@ -307,7 +316,7 @@ function ChangePasswordDetailDialog({
                 </div>
                 <div className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/10 p-3">
                     <StatusBadge status={request.status} />
-                    {request?.status !== 'cancelled' && (
+                    {canUpdate && request?.status !== 'cancelled' && (
                         <Button type="button" size="sm" disabled={processing} onClick={updateStatus}>
                             {t(`status.${nextButton}`)}
                         </Button>

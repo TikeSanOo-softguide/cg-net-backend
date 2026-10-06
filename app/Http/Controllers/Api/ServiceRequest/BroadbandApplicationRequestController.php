@@ -7,8 +7,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ServiceRequest\CreateBroadbandApplicationRequest;
 use App\Http\Requests\ServiceRequest\UpdateBroadbandApplicationRequest;
 use App\Http\Resources\BroadbandApplication\BroadbandApplicationResource;
+use App\Events\ServiceRequestSubmitted;
 use App\Models\InstallationApplication;
-use App\Services\TelegramService;
+use App\Services\Telegram\TelegramService;
 use App\Support\StoresPublicImage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -49,12 +50,18 @@ class BroadbandApplicationRequestController extends Controller
                 'user_id' => $request->user()->id,
                 'status' => RequestStatus::UnderReview->value,
             ]);
+            ServiceRequestSubmitted::dispatch('installation_application', $application->id);
 
             foreach ($request->file('photos', []) as $photo) {
                 $application->photos()->create([
                     'image_url' => StoresPublicImage::store($photo, 'service-request/broadband-applications'),
                 ]);
             }
+
+            $this->logActivity($request, 'create_broadband_application', [
+                'broadband_application_id' => $application->id,
+                'status' => $application->status->value,
+            ]);
 
             return $application;
         });
@@ -83,7 +90,7 @@ class BroadbandApplicationRequestController extends Controller
             "📅 Term: {$application->package->term->months} months\n" .
             "📋 Status: {$application->status->value}";
 
-        $this->telegram->sendMessage($message);
+        $this->telegram->broadbandApplicaiton($message);
         $application->load(['package.network', 'package.speed', 'package.term', 'area.region.state', 'photos']);
 
         return new BroadbandApplicationResource($application);
@@ -119,6 +126,10 @@ class BroadbandApplicationRequestController extends Controller
                 }
             }
 
+            $this->logActivity($request, 'update_broadband_application', [
+                'broadband_application_id' => $installationApplication->id,
+            ]);
+
             return new BroadbandApplicationResource(
                 $installationApplication
                     ->refresh()
@@ -138,6 +149,10 @@ class BroadbandApplicationRequestController extends Controller
             $installationApplication->delete();
         });
 
+        $this->logActivity($request, 'delete_broadband_application', [
+            'broadband_application_id' => $installationApplication->id,
+        ]);
+
         return response()->noContent();
     }
 
@@ -148,6 +163,10 @@ class BroadbandApplicationRequestController extends Controller
         $this->ensureOwner($request, $installationApplication);
         $installationApplication->update([
             'status' => RequestStatus::Cancelled,
+        ]);
+
+        $this->logActivity($request, 'cancel_broadband_application', [
+            'broadband_application_id' => $installationApplication->id,
         ]);
 
         return new BroadbandApplicationResource($installationApplication->refresh());
