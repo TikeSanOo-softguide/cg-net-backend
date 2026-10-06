@@ -27,47 +27,46 @@ class ChatConversationSeeder extends Seeder
             $adminId = $admin->id;
         }
 
-
         $customers = [
             [
                 'name' => 'Sarah Miller',
-                'phone' => MyanmarFake::phone('mm')
+                'phone' => MyanmarFake::phone('mm'),
             ],
             [
                 'name' => 'James Wilson',
-                'phone' => MyanmarFake::phone('mm')
+                'phone' => MyanmarFake::phone('mm'),
             ],
             [
                 'name' => 'Emily Davis',
-                'phone' => MyanmarFake::phone('mm')
+                'phone' => MyanmarFake::phone('mm'),
             ],
             [
                 'name' => 'Michael Brown',
-                'phone' => MyanmarFake::phone('mm')
+                'phone' => MyanmarFake::phone('mm'),
             ],
             [
                 'name' => 'Jessica Taylor',
-                'phone' => MyanmarFake::phone('mm')
+                'phone' => MyanmarFake::phone('mm'),
             ],
             [
                 'name' => 'David Thomas',
-                'phone' => MyanmarFake::phone('mm')
+                'phone' => MyanmarFake::phone('mm'),
             ],
             [
                 'name' => 'Laura Wilson',
-                'phone' => MyanmarFake::phone('mm')
+                'phone' => MyanmarFake::phone('mm'),
             ],
             [
                 'name' => 'Robert Anderson',
-                'phone' => MyanmarFake::phone('mm')
+                'phone' => MyanmarFake::phone('mm'),
             ],
             [
                 'name' => 'Patricia Martinez',
-                'phone' => MyanmarFake::phone('mm')
+                'phone' => MyanmarFake::phone('mm'),
             ],
             [
                 'name' => 'Daniel Jackson',
-                'phone' => MyanmarFake::phone('mm')
+                'phone' => MyanmarFake::phone('mm'),
             ],
         ];
 
@@ -230,6 +229,13 @@ class ChatConversationSeeder extends Seeder
 
         $quickReplies = [
             [
+                'keyword' => 'Welcome',
+                'category' => 'welcome',
+                'response_en' => 'Hello! Welcome to CG-Net. How may I assist you?',
+                'response_my' => 'မင်္ဂလာပါ။ CG-Net မှ ကြိုဆိုပါတယ်။ ဘယ်များ ကူညီဆောင်ရွက်ပေးရမလဲ။',
+                'response_zh' => '您好，欢迎来到 CG-Net。请问有什么我可以帮您的吗？',
+            ],
+            [
                 'keyword' => 'No Internet',
                 'category' => 'internet',
                 'response_en' => "We're sorry to hear you're not getting internet. Let's troubleshoot this together. First, please try restarting your modem and router.",
@@ -264,6 +270,13 @@ class ChatConversationSeeder extends Seeder
                 'response_my' => 'Router ကို ဖြုတ်ပြီး စက္ကန့် ၃၀ ခန့်စောင့်ပြီး ပြန်တပ်ပေးပါ။ Connection ပြဿနာများကို ဖြေရှင်းနိုင်ပါတယ်။',
                 'response_zh' => '请拔掉路由器电源，等待30秒，然后重新插入。这可以帮助解决许多连接问题。',
             ],
+            [
+                'keyword' => 'Conversation Closed',
+                'category' => 'closing',
+                'response_en' => 'Thank you for contacting CG-NET Support. This conversation is now closed. If you need more help, please start a new chat.',
+                'response_my' => 'CG-NET Support သို့ ဆက်သွယ်ပေးသည့်အတွက် ကျေးဇူးတင်ပါသည်။ ဤစကားပြောဆိုမှုကို ပိတ်လိုက်ပါပြီ။ အကူအညီထပ်မံလိုအပ်ပါက စကားပြောခန်းအသစ် စတင်နိုင်ပါသည်။',
+                'response_zh' => '感谢您联系 CG-NET 客服。本次对话现已结束。如需进一步帮助，请开始新的聊天。',
+            ],
         ];
 
         foreach ($quickReplies as $reply) {
@@ -272,6 +285,7 @@ class ChatConversationSeeder extends Seeder
                 array_merge($reply, [
                     'created_at' => now(),
                     'updated_at' => now(),
+                    'deleted_at' => null,
                 ])
             );
         }

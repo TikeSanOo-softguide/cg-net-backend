@@ -302,6 +302,10 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                         ->name('chat-conversations.status')
                         ->middleware('can:support.update');
 
+                    Route::post('/{conversation}/close', [ChatConversationsController::class, 'close'])
+                        ->name('chat-conversations.close')
+                        ->middleware('can:support.update');
+
                     Route::post('/{conversation}/quick-replies/{quickReply}', [
                         ChatConversationsController::class,
                         'useQuickReply',

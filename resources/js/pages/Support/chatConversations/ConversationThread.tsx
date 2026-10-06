@@ -1,27 +1,72 @@
 import { useForm } from '@inertiajs/react';
-import { PaperclipIcon, SendIcon, SmileIcon } from 'lucide-react';
+import { LockKeyholeIcon, PaperclipIcon, RotateCcwIcon, SendIcon, SmileIcon } from 'lucide-react';
 import type { FormEvent } from 'react';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 
 import { Avatar, formatDateTime } from './ConversationList';
-import type { Conversation } from './types';
+import type { Conversation, QuickReply } from './types';
 
-type ConversationThreadProps = { conversation: Conversation | null; insertedMessage?: string; canReply: boolean };
+type ReplyLanguage = 'en' | 'my' | 'zh';
 
-export function ConversationThread({ conversation, insertedMessage, canReply }: ConversationThreadProps) {
-    const { t } = useTranslation();
+type ConversationThreadProps = {
+    conversation: Conversation | null;
+    insertedMessage?: string;
+    canReply: boolean;
+    canManage: boolean;
+    quickReplies: QuickReply[];
+};
+
+function localizedReply(reply: QuickReply, language: ReplyLanguage): string {
+    if (language === 'my') return reply.response_my;
+    if (language === 'zh') return reply.response_zh;
+
+    return reply.response_en;
+}
+
+export function ConversationThread({
+    conversation,
+    insertedMessage,
+    canReply,
+    canManage,
+    quickReplies,
+}: ConversationThreadProps) {
+    const { t, locale } = useTranslation();
     const form = useForm({ message: '' });
+    const closeForm = useForm({ message: '', conversation: '' });
+    const reopenForm = useForm({ status: 'open' });
     const messagesContainerRef = useRef<HTMLDivElement | null>(null);
     const previousConversationIdRef = useRef<number | null>(null);
     const previousLastMessageIdRef = useRef<number | undefined>(undefined);
     const wasNearBottomRef = useRef(true);
     const pendingAgentSendRef = useRef(false);
     const [sendFailed, setSendFailed] = useState(false);
+    const [closeDialogOpen, setCloseDialogOpen] = useState(false);
+    const [closingLanguage, setClosingLanguage] = useState<ReplyLanguage>(
+        conversation?.language === 'my' || conversation?.language === 'zh'
+            ? conversation.language
+            : locale === 'my' || locale === 'zh'
+              ? locale
+              : 'en',
+    );
+    const closingReplies = useMemo(() => quickReplies.filter((reply) => reply.category === 'closing'), [quickReplies]);
+    const [selectedClosingReplyId, setSelectedClosingReplyId] = useState<number | undefined>(closingReplies[0]?.id);
+    const selectedClosingReply = closingReplies.find((reply) => reply.id === selectedClosingReplyId);
     const lastMessageId = conversation?.messages.at(-1)?.id;
     const messageCount = conversation?.messages.length ?? 0;
 
@@ -78,6 +123,55 @@ export function ConversationThread({ conversation, insertedMessage, canReply }: 
         sendMessage();
     };
 
+    const closeConversation = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        if (!conversation || !closeForm.data.message.trim()) return;
+
+        closeForm.transform((data) => ({ message: data.message.trim() }));
+        closeForm.post(`/support/conversations/${conversation.id}/close`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setCloseDialogOpen(false);
+                closeForm.reset();
+            },
+        });
+    };
+
+    const reopenConversation = () => {
+        if (!conversation) return;
+
+        reopenForm.put(`/support/conversations/${conversation.id}/status`, {
+            preserveScroll: true,
+        });
+    };
+
+    const openCloseDialog = () => {
+        closeForm.setData('message', selectedClosingReply ? localizedReply(selectedClosingReply, closingLanguage) : '');
+        closeForm.clearErrors();
+        setCloseDialogOpen(true);
+    };
+
+    const selectClosingReply = (value: string) => {
+        const replyId = Number(value);
+        const reply = closingReplies.find((item) => item.id === replyId);
+
+        setSelectedClosingReplyId(replyId);
+        if (reply) {
+            closeForm.setData('message', localizedReply(reply, closingLanguage));
+            closeForm.clearErrors();
+        }
+    };
+
+    const selectClosingLanguage = (value: string) => {
+        if (value !== 'en' && value !== 'my' && value !== 'zh') return;
+
+        setClosingLanguage(value);
+        if (selectedClosingReply) {
+            closeForm.setData('message', localizedReply(selectedClosingReply, value));
+            closeForm.clearErrors();
+        }
+    };
+
     return (
         <main className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-background">
             <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
@@ -88,11 +182,42 @@ export function ConversationThread({ conversation, insertedMessage, canReply }: 
                             {conversation.user?.name ?? t('support.chat_conversations.guest')}
                         </h2>
                         <p className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                            #{conversation.id} <span className="size-1.5 rounded-full bg-emerald-400" />{' '}
+                            #{conversation.id}{' '}
                             {conversation.agent?.username ?? t('support.chat_conversations.unassigned')}
+                            <span
+                                className={cn(
+                                    'rounded-full px-2 py-0.5 font-medium',
+                                    conversation.status === 'closed'
+                                        ? 'bg-muted text-muted-foreground'
+                                        : conversation.status === 'waiting_agent'
+                                          ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                                          : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+                                )}
+                            >
+                                {t(
+                                    `support.chat_conversations.${conversation.status === 'waiting_agent' ? 'pending' : conversation.status}`,
+                                )}
+                            </span>
                         </p>
                     </div>
                 </div>
+                {canManage && conversation.status === 'closed' ? (
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={reopenForm.processing}
+                        onClick={reopenConversation}
+                    >
+                        <RotateCcwIcon />
+                        {t('support.chat_conversations.reopen')}
+                    </Button>
+                ) : canManage && canReply ? (
+                    <Button type="button" size="sm" variant="outline" onClick={openCloseDialog}>
+                        <LockKeyholeIcon />
+                        {t('support.chat_conversations.close')}
+                    </Button>
+                ) : null}
             </header>
             <div
                 ref={messagesContainerRef}
@@ -132,7 +257,7 @@ export function ConversationThread({ conversation, insertedMessage, canReply }: 
                     );
                 })}
             </div>
-            {canReply ? (
+            {canReply && conversation.status !== 'closed' ? (
                 <form onSubmit={submit} className="border-t border-border p-3 sm:p-4">
                     <div className="flex items-end gap-2 rounded-lg border border-border bg-background p-2 focus-within:ring-2 focus-within:ring-ring/30">
                         <Button type="button" variant="ghost" size="icon" className="size-8 min-h-8">
@@ -174,7 +299,76 @@ export function ConversationThread({ conversation, insertedMessage, canReply }: 
                     ) : null}
                     <p className="mt-1 text-right text-[10px] text-muted-foreground">{form.data.message.length}/2000</p>
                 </form>
+            ) : conversation.status === 'closed' ? (
+                <p className="border-t border-border bg-muted/30 px-4 py-3 text-center text-xs text-muted-foreground">
+                    {t('support.chat_conversations.closed_read_only')}
+                </p>
             ) : null}
+            <Dialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('support.chat_conversations.close_title')}</DialogTitle>
+                        <DialogDescription>
+                            {t('support.chat_conversations.close_description').replace(':id', String(conversation.id))}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={closeConversation} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="closing-language">{t('support.quick_replies.language')}</Label>
+                            <Select value={closingLanguage} onValueChange={selectClosingLanguage}>
+                                <SelectTrigger id="closing-language">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="en">{t('support.quick_replies.english')}</SelectItem>
+                                    <SelectItem value="my">{t('support.quick_replies.myanmar')}</SelectItem>
+                                    <SelectItem value="zh">{t('support.quick_replies.chinese')}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="closing-message">{t('support.chat_conversations.final_message')}</Label>
+                            <Textarea
+                                id="closing-message"
+                                value={closeForm.data.message}
+                                maxLength={2000}
+                                onChange={(event) => {
+                                    closeForm.setData('message', event.target.value);
+                                    closeForm.clearErrors('message');
+                                }}
+                                aria-invalid={Boolean(closeForm.errors.message)}
+                                required
+                            />
+                            {closeForm.errors.message ? (
+                                <p className="text-xs text-danger" role="alert">
+                                    {closeForm.errors.message}
+                                </p>
+                            ) : null}
+                            {closeForm.errors.conversation ? (
+                                <p className="text-xs text-danger" role="alert">
+                                    {closeForm.errors.conversation}
+                                </p>
+                            ) : null}
+                        </div>
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={closeForm.processing}
+                                onClick={() => setCloseDialogOpen(false)}
+                            >
+                                {t('support.chat_conversations.cancel')}
+                            </Button>
+                            <Button type="submit" disabled={closeForm.processing || !closeForm.data.message.trim()}>
+                                <LockKeyholeIcon />
+                                {closeForm.processing
+                                    ? t('support.chat_conversations.closing')
+                                    : t('support.chat_conversations.send_and_close')}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </main>
     );
 }

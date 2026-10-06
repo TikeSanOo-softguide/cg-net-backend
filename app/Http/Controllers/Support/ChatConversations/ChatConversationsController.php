@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers\Support\ChatConversations;
 
+use App\Enums\ChatConversationStatus;
+use App\Enums\ChatSenderType;
 use App\Enums\QuickReplyCategory;
 use App\Http\Controllers\Controller;
 use App\Models\ChatConversation;
 use App\Models\QuickReply;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class ChatConversationsController extends Controller
@@ -42,8 +46,8 @@ class ChatConversationsController extends Controller
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query
-                        ->whereHas('user', fn($userQuery) => $userQuery->whereLike('name', "%{$search}%"))
-                        ->orWhereHas('messages', fn($messageQuery) => $messageQuery->whereLike('message', "%{$search}%"));
+                        ->whereHas('user', fn ($userQuery) => $userQuery->whereLike('name', "%{$search}%"))
+                        ->orWhereHas('messages', fn ($messageQuery) => $messageQuery->whereLike('message', "%{$search}%"));
                 });
             })
             ->when($status, function ($query) use ($status) {
@@ -102,7 +106,7 @@ class ChatConversationsController extends Controller
                 'selectedConversation' => $selectedConversation,
                 'quickReplies' => $quickReplies,
                 'quickReplyCategories' => array_map(
-                    fn(QuickReplyCategory $category) => $category->value,
+                    fn (QuickReplyCategory $category) => $category->value,
                     QuickReplyCategory::cases(),
                 ),
                 'filters' => [
@@ -121,13 +125,25 @@ class ChatConversationsController extends Controller
             'message' => ['required', 'string', 'max:2000'],
         ]);
 
-        $conversation->messages()->create([
-            'sender_type' => 'agent',
-            'message' => $validated['message'],
-            'is_read' => true,
-        ]);
+        DB::transaction(function () use ($conversation, $validated) {
+            $conversation = ChatConversation::query()
+                ->lockForUpdate()
+                ->findOrFail($conversation->id);
 
-        $conversation->touch();
+            if ($conversation->status === ChatConversationStatus::Closed) {
+                throw ValidationException::withMessages([
+                    'conversation' => 'Reopen this conversation before sending a message.',
+                ]);
+            }
+
+            $conversation->messages()->create([
+                'sender_type' => ChatSenderType::Agent,
+                'message' => $validated['message'],
+                'is_read' => true,
+            ]);
+
+            $conversation->touch();
+        });
 
         return back();
     }
@@ -137,12 +153,43 @@ class ChatConversationsController extends Controller
         ChatConversation $conversation
     ) {
         $validated = $request->validate([
-            'status' => ['required', 'in:open,waiting_agent,closed'],
+            'status' => ['required', 'in:open,waiting_agent'],
         ]);
 
         $conversation->update([
             'status' => $validated['status'],
         ]);
+
+        return back();
+    }
+
+    public function close(Request $request, ChatConversation $conversation)
+    {
+        $validated = $request->validate([
+            'message' => ['required', 'string', 'max:2000'],
+        ]);
+
+        DB::transaction(function () use ($conversation, $validated) {
+            $conversation = ChatConversation::query()
+                ->lockForUpdate()
+                ->findOrFail($conversation->id);
+
+            if ($conversation->status === ChatConversationStatus::Closed) {
+                throw ValidationException::withMessages([
+                    'conversation' => 'This conversation is already closed.',
+                ]);
+            }
+
+            $conversation->messages()->create([
+                'sender_type' => ChatSenderType::Agent,
+                'message' => $validated['message'],
+                'is_read' => true,
+            ]);
+
+            $conversation->update([
+                'status' => ChatConversationStatus::Closed,
+            ]);
+        });
 
         return back();
     }

@@ -1788,7 +1788,16 @@
             "no_messages_yet": "No messages yet",
             "sending": "Sending",
             "failed_to_send": "Failed to send",
-            "retry": "Retry"
+            "retry": "Retry",
+            "close": "Close conversation",
+            "reopen": "Reopen conversation",
+            "close_title": "Close conversation",
+            "close_description": "Send a final message before closing conversation #:id.",
+            "final_message": "Final message to customer",
+            "closed_read_only": "This conversation is closed. Reopen it to send another message.",
+            "cancel": "Cancel",
+            "closing": "Closing...",
+            "send_and_close": "Send message & close"
         },
         "quick_replies": {
             "create": "Add Quick Reply",
@@ -1827,11 +1836,13 @@
             "deleted": "Quick Reply deleted successfully.",
             "bulk_deleted": "Selected Quick Replies deleted successfully.",
             "categories": {
+                "welcome": "Welcome",
                 "internet": "Internet",
                 "payment": "Payment",
                 "package": "Package",
                 "technical": "Technical",
-                "account": "Account"
+                "account": "Account",
+                "closing": "Closing"
             },
             "validation": {
                 "keyword_required": "Please enter a keyword.",

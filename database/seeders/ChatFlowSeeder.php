@@ -213,6 +213,14 @@ class ChatFlowSeeder extends Seeder
                 'action' => ChatFlowOptionAction::TransferAgent->value,
                 'sort_order' => 1,
             ],
+            [
+                'step' => 'Welcome',
+                'option_en' => 'Chat with Staff',
+                'option_my' => 'Admin နှင့် စကားပြောရန်',
+                'option_zh' => '与管理员交谈',
+                'action' => ChatFlowOptionAction::TransferAgent->value,
+                'sort_order' => 2,
+            ],
         ];
     }
 }

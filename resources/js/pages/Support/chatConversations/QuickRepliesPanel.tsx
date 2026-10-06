@@ -208,7 +208,7 @@ export function QuickRepliesPanel({ quickReplies, categories, conversation, onUs
                                         variant="outline"
                                         size="sm"
                                         className="mt-2 h-7 text-[11px]"
-                                        disabled={!conversation}
+                                        disabled={!conversation || conversation.status === 'closed'}
                                         onClick={() => onUse(response)}
                                     >
                                         {t('support.quick_replies.use')}

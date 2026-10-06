@@ -101,6 +101,24 @@ class QuickReplyManagementTest extends TestCase
             ->assertSessionHas('success', 'support.quick_replies.created');
     }
 
+    public function test_admin_can_create_a_closing_quick_reply(): void
+    {
+        $admin = Admin::factory()->create();
+
+        $this->actingAs($admin, 'web')
+            ->post('/support/quick-replies/replies', $this->payload([
+                'keyword' => 'Conversation closed',
+                'category' => 'closing',
+            ]))
+            ->assertRedirect(route('support.quick-replies.index'))
+            ->assertSessionHas('success', 'support.quick_replies.created');
+
+        $this->assertDatabaseHas('quick_replies', [
+            'keyword' => 'Conversation closed',
+            'category' => 'closing',
+        ]);
+    }
+
     public function test_admin_can_bulk_delete_quick_replies(): void
     {
         $admin = Admin::factory()->create();
@@ -133,7 +151,7 @@ class QuickReplyManagementTest extends TestCase
                 fn(Assert $page) => $page
                     ->has('quickReplies', 1)
                     ->where('quickReplies.0.keyword', 'Visible')
-                    ->where('quickReplyCategories', ['internet', 'payment', 'package', 'technical', 'account']),
+                    ->where('quickReplyCategories', ['welcome', 'internet', 'payment', 'package', 'technical', 'account', 'closing']),
             );
 
         $this->actingAs($admin, 'web')
@@ -148,6 +166,54 @@ class QuickReplyManagementTest extends TestCase
                 'language' => 'zh',
             ])
             ->assertNotFound();
+    }
+
+    public function test_admin_can_send_closing_quick_reply_and_close_conversation_atomically(): void
+    {
+        $admin = Admin::factory()->create();
+        $conversation = ChatConversation::query()->create([
+            'status' => ChatConversationStatus::WaitingAgent,
+        ]);
+
+        $this->actingAs($admin, 'web')
+            ->from('/support/conversations')
+            ->post("/support/conversations/{$conversation->id}/close", [
+                'message' => 'Thank you for contacting support.',
+            ])
+            ->assertRedirect('/support/conversations');
+
+        $this->assertDatabaseHas('chat_conversations', [
+            'id' => $conversation->id,
+            'status' => ChatConversationStatus::Closed->value,
+        ]);
+        $this->assertDatabaseHas('chat_messages', [
+            'conversation_id' => $conversation->id,
+            'sender_type' => 'agent',
+            'message' => 'Thank you for contacting support.',
+            'is_read' => true,
+        ]);
+    }
+
+    public function test_admin_cannot_close_conversation_without_a_final_message(): void
+    {
+        $admin = Admin::factory()->create();
+        $conversation = ChatConversation::query()->create([
+            'status' => ChatConversationStatus::Open,
+        ]);
+
+        $this->actingAs($admin, 'web')
+            ->from('/support/conversations')
+            ->post("/support/conversations/{$conversation->id}/close", ['message' => ''])
+            ->assertRedirect('/support/conversations')
+            ->assertSessionHasErrors('message');
+
+        $this->assertDatabaseHas('chat_conversations', [
+            'id' => $conversation->id,
+            'status' => ChatConversationStatus::Open->value,
+        ]);
+        $this->assertDatabaseMissing('chat_messages', [
+            'conversation_id' => $conversation->id,
+        ]);
     }
 
     /**

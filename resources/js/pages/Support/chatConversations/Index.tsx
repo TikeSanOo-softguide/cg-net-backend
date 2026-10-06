@@ -28,6 +28,8 @@ export default function Index({
     const { t } = useTranslation();
     const can = useCan();
     const canReply = can('support.create');
+    const canManage = can('support.update');
+    const showQuickReplies = canReply && selectedConversation?.status !== 'closed';
     const [message, setMessage] = useState('');
 
     useEffect(() => {
@@ -65,7 +67,7 @@ export default function Index({
                 <div
                     className={cn(
                         'grid min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-background shadow-sm lg:grid-rows-none',
-                        canReply
+                        showQuickReplies
                             ? 'grid-rows-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1fr)] lg:grid-cols-[minmax(12rem,0.8fr)_minmax(0,2fr)_minmax(14rem,1fr)]'
                             : 'grid-rows-[minmax(0,1fr)_minmax(0,1.5fr)] lg:grid-cols-[minmax(12rem,0.8fr)_minmax(0,2fr)]',
                     )}
@@ -79,8 +81,10 @@ export default function Index({
                         conversation={selectedConversation}
                         insertedMessage={message}
                         canReply={canReply}
+                        canManage={canManage}
+                        quickReplies={quickReplies}
                     />
-                    {canReply ? (
+                    {showQuickReplies ? (
                         <QuickRepliesPanel
                             quickReplies={quickReplies}
                             categories={quickReplyCategories}

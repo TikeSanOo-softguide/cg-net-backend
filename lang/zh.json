@@ -1796,7 +1796,16 @@
             "no_messages_yet": "暂无消息",
             "sending": "发送中",
             "failed_to_send": "发送失败",
-            "retry": "重试"
+            "retry": "重试",
+            "close": "关闭对话",
+            "reopen": "重新打开对话",
+            "close_title": "关闭对话",
+            "close_description": "关闭对话 #:id 前，请先发送一条最终消息。",
+            "final_message": "发送给客户的最终消息",
+            "closed_read_only": "此对话已关闭。重新打开后才能发送消息。",
+            "cancel": "取消",
+            "closing": "正在关闭...",
+            "send_and_close": "发送消息并关闭"
         },
         "quick_replies": {
             "create": "添加快捷回复",
@@ -1835,11 +1844,13 @@
             "deleted": "快速回复删除成功。",
             "bulk_deleted": "选定的快速回复已成功删除。",
             "categories": {
+                "welcome": "欢迎",
                 "internet": "网络",
                 "payment": "付款",
                 "package": "套餐",
                 "technical": "技术",
-                "account": "账户"
+                "account": "账户",
+                "closing": "关闭回复"
             },
             "validation": {
                 "keyword_required": "请输入关键词。",
