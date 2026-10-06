@@ -181,9 +181,15 @@
             "phone": "Phone number",
             "english": "English",
             "chinese": "Chinese",
-            "burmese": "Burmese",
+            "myanmar": "Myanmar",
             "content_form_description": "Enter the title and description in all supported languages.",
             "contact_form_description": "Enter a customer support phone number.",
+            "validation": {
+                "required": "This field is required.",
+                "title_max": "The title must not exceed 120 characters.",
+                "phone_required": "Please enter a phone number.",
+                "phone_max": "The phone number must not exceed 20 characters."
+            },
             "delete_title": "Delete this item?",
             "delete_description": "This item will be permanently deleted.",
             "terms_created": "Terms and conditions created successfully.",

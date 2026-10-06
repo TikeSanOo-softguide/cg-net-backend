@@ -62,10 +62,8 @@ function getDeleteRoute(kind: DeleteTarget['kind'], id: number): string {
     switch (kind) {
         case 'termsAndConditions':
             return `/settings/general/terms-and-conditions/${id}`;
-
         case 'faqs':
             return `/settings/general/faqs/${id}`;
-
         case 'supportContacts':
             return `/settings/general/support-contacts/${id}`;
     }
@@ -74,23 +72,14 @@ function getDeleteRoute(kind: DeleteTarget['kind'], id: number): string {
 export default function GenSettingsIndex({ termsAndConditions, faqs, supportContacts }: Props) {
     const { t } = useTranslation();
     const can = useCan();
-
     const canCreate = can('settings.create');
     const canUpdate = can('settings.update');
     const canDelete = can('settings.delete');
-
-    // FAQ is selected by default.
     const [selectedSection, setSelectedSection] = useState<SelectedSection>('faqs');
-
     const [activeForm, setActiveForm] = useState<ActiveForm | null>(null);
-
     const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
-
     const [deleteProcessing, setDeleteProcessing] = useState(false);
 
-    /*
-     * Create
-     */
     const openCreate = (kind: SelectedSection) => {
         setActiveForm({
             kind,
@@ -98,9 +87,6 @@ export default function GenSettingsIndex({ termsAndConditions, faqs, supportCont
         } as ActiveForm);
     };
 
-    /*
-     * Edit
-     */
     const openFaqEdit = (item: FaqItem) => {
         setActiveForm({
             kind: 'faqs',
@@ -122,9 +108,6 @@ export default function GenSettingsIndex({ termsAndConditions, faqs, supportCont
         });
     };
 
-    /*
-     * Delete
-     */
     const openFaqDelete = (item: FaqItem) => {
         setDeleteTarget({
             kind: 'faqs',
@@ -146,9 +129,6 @@ export default function GenSettingsIndex({ termsAndConditions, faqs, supportCont
         });
     };
 
-    /*
-     * Confirm Delete
-     */
     const confirmDelete = () => {
         if (!deleteTarget) {
             return;
@@ -178,10 +158,8 @@ export default function GenSettingsIndex({ termsAndConditions, faqs, supportCont
             <PageContent>
                 <PageHeader />
 
-                {/* Section Selector */}
                 <section className="rounded-xl border bg-card p-4 shadow-sm">
                     <div className="flex flex-wrap items-center justify-center gap-6">
-                        {/* Terms and Conditions */}
                         <label className="mr-6 flex cursor-pointer items-center gap-2">
                             <input
                                 type="radio"
@@ -197,7 +175,6 @@ export default function GenSettingsIndex({ termsAndConditions, faqs, supportCont
                             </span>
                         </label>
 
-                        {/* FAQ */}
                         <label className="mr-6 flex cursor-pointer items-center gap-2">
                             <input
                                 type="radio"
@@ -211,7 +188,6 @@ export default function GenSettingsIndex({ termsAndConditions, faqs, supportCont
                             <span className="text-sm font-medium">{t('settings.general_settings.faq')}</span>
                         </label>
 
-                        {/* Support Contact */}
                         <label className="mr-6 flex cursor-pointer items-center gap-2">
                             <input
                                 type="radio"
@@ -229,7 +205,6 @@ export default function GenSettingsIndex({ termsAndConditions, faqs, supportCont
                     </div>
                 </section>
 
-                {/* FAQ Table */}
                 {selectedSection === 'faqs' ? (
                     <FaqTable
                         items={faqs}
@@ -242,7 +217,6 @@ export default function GenSettingsIndex({ termsAndConditions, faqs, supportCont
                     />
                 ) : null}
 
-                {/* Terms and Conditions Table */}
                 {selectedSection === 'termsAndConditions' ? (
                     <TermAndConditionTable
                         items={termsAndConditions}
@@ -255,7 +229,6 @@ export default function GenSettingsIndex({ termsAndConditions, faqs, supportCont
                     />
                 ) : null}
 
-                {/* Support Contact Table */}
                 {selectedSection === 'supportContacts' ? (
                     <SupportContactTable
                         items={supportContacts}
@@ -269,7 +242,6 @@ export default function GenSettingsIndex({ termsAndConditions, faqs, supportCont
                 ) : null}
             </PageContent>
 
-            {/* FAQ Form Dialog */}
             {activeForm?.kind === 'faqs' ? (
                 <FaqFormDialog
                     open
@@ -282,7 +254,6 @@ export default function GenSettingsIndex({ termsAndConditions, faqs, supportCont
                 />
             ) : null}
 
-            {/* Terms and Conditions Form Dialog */}
             {activeForm?.kind === 'termsAndConditions' ? (
                 <TermAndConditionFormDialog
                     open
@@ -295,7 +266,6 @@ export default function GenSettingsIndex({ termsAndConditions, faqs, supportCont
                 />
             ) : null}
 
-            {/* Support Contact Form Dialog */}
             {activeForm?.kind === 'supportContacts' ? (
                 <SupportContactFormDialog
                     open
@@ -308,7 +278,6 @@ export default function GenSettingsIndex({ termsAndConditions, faqs, supportCont
                 />
             ) : null}
 
-            {/* Delete Confirmation */}
             <ConfirmDialog
                 open={deleteTarget !== null}
                 onOpenChange={(open) => {

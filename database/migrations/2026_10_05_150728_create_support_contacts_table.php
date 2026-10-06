@@ -13,7 +13,11 @@ return new class extends Migration {
         Schema::create('support_contacts', function (Blueprint $table) {
             $table->id();
             $table->string('phone', 20);
+            $table->foreignId('created_by')->nullable()->constrained('admins')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('admins')->nullOnDelete();
+            $table->foreignId('deleted_by')->nullable()->constrained('admins')->nullOnDelete();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

@@ -5,6 +5,7 @@ import { TableActionButton } from '@/components/TableActionButton';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { SupportedLocale } from '@/types';
+import { truncateText } from '@/lib/utils';
 
 type Props = {
     items: TermAndConditionItem[];
@@ -28,7 +29,7 @@ export function TermAndConditionTable({ items, canCreate, canUpdate, canDelete, 
             <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
                 <h2 className="text-sm font-semibold">{t('settings.general_settings.terms_and_conditions')}</h2>
 
-                {canCreate ? (
+                {canCreate && items.length < 1 ? (
                     <Button type="button" size="sm" variant="outline" onClick={onCreate}>
                         <PlusIcon className="size-4" />
                         {t('common.create')}
@@ -41,10 +42,12 @@ export function TermAndConditionTable({ items, canCreate, canUpdate, canDelete, 
                     {items.map((item) => (
                         <article key={item.id} className="flex items-start justify-between gap-4 px-5 py-4">
                             <div className="min-w-0 space-y-1">
-                                <h3 className="text-sm font-medium">{localizedValue(item, 'title', locale)}</h3>
+                                <h3 className="text-sm font-medium">
+                                    {truncateText(localizedValue(item, 'title', locale), 20)}
+                                </h3>
 
                                 <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                                    {localizedValue(item, 'description', locale)}
+                                    {truncateText(localizedValue(item, 'description', locale), 100)}
                                 </p>
                             </div>
 

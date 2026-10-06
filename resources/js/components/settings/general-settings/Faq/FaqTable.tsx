@@ -5,6 +5,7 @@ import { TableActionButton } from '@/components/TableActionButton';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { SupportedLocale } from '@/types';
+import { truncateText } from '@/lib/utils';
 
 type Props = {
     items: FaqItem[];
@@ -41,10 +42,12 @@ export function FaqTable({ items, canCreate, canUpdate, canDelete, onCreate, onE
                     {items.map((item) => (
                         <article key={item.id} className="flex items-start justify-between gap-4 px-5 py-4">
                             <div className="min-w-0 space-y-1">
-                                <h3 className="text-sm font-medium">{localizedValue(item, 'title', locale)}</h3>
+                                <h3 className="text-sm font-medium">
+                                    {truncateText(localizedValue(item, 'title', locale), 20)}
+                                </h3>
 
                                 <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                                    {localizedValue(item, 'description', locale)}
+                                    {truncateText(localizedValue(item, 'description', locale), 100)}
                                 </p>
                             </div>
 

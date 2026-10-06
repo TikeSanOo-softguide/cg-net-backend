@@ -3,15 +3,17 @@
 namespace App\Http\Controllers\Settings\GeneralSettings;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Settings\GeneralSettings\StoreSupportContactRequest;
+use App\Http\Requests\Settings\GeneralSettings\UpdateSupportContactRequest;
 use App\Models\SupportContact;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class SupportContactController extends Controller
 {
-    public function store(Request $request): RedirectResponse
+    public function store(StoreSupportContactRequest $request): RedirectResponse
     {
-        $supportContact = SupportContact::query()->create($request->validate($this->rules()));
+        $supportContact = SupportContact::query()->create($request->validated());
 
         activity('settings')
             ->causedBy($request->user())
@@ -24,9 +26,9 @@ class SupportContactController extends Controller
             ->with('success', 'settings.general_settings.support_contact_created');
     }
 
-    public function update(Request $request, SupportContact $supportContact): RedirectResponse
+    public function update(UpdateSupportContactRequest $request, SupportContact $supportContact): RedirectResponse
     {
-        $supportContact->update($request->validate($this->rules()));
+        $supportContact->update($request->validated());
 
         activity('settings')
             ->causedBy($request->user())
@@ -41,26 +43,16 @@ class SupportContactController extends Controller
 
     public function destroy(Request $request, SupportContact $supportContact): RedirectResponse
     {
-        $supportContact->delete();
-
         activity('settings')
             ->causedBy($request->user())
             ->performedOn($supportContact)
             ->event('deleted')
             ->log('support_contact_deleted');
 
+        $supportContact->forceDelete();
+
         return redirect()
             ->route('settings.general.index')
             ->with('success', 'settings.general_settings.support_contact_deleted');
-    }
-
-    /**
-     * @return array<string, array<int, string>>
-     */
-    private function rules(): array
-    {
-        return [
-            'phone' => ['required', 'string', 'max:20'],
-        ];
     }
 }

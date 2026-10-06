@@ -174,9 +174,15 @@
             "phone": "电话号码",
             "english": "英语",
             "chinese": "中文",
-            "burmese": "缅甸语",
+            "myanmar": "缅甸语",
             "content_form_description": "请使用所有支持的语言填写标题和描述。",
             "contact_form_description": "请输入客户支持电话号码。",
+            "validation": {
+                "required": "此字段为必填项。",
+                "title_max": "标题不能超过 120 个字符。",
+                "phone_required": "请输入电话号码。",
+                "phone_max": "电话号码不能超过 20 个字符。"
+            },
             "delete_title": "删除此项目？",
             "delete_description": "此项目将被永久删除。",
             "terms_created": "条款与条件创建成功。",

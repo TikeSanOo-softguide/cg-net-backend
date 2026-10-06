@@ -18,7 +18,11 @@ return new class extends Migration {
             $table->text('description_en');
             $table->text('description_zh');
             $table->text('description_my');
+            $table->foreignId('created_by')->nullable()->constrained('admins')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('admins')->nullOnDelete();
+            $table->foreignId('deleted_by')->nullable()->constrained('admins')->nullOnDelete();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
