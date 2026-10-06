@@ -9,8 +9,8 @@ import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { StatCard } from '@/components/StatCard';
 import { StatusBadge } from '@/components/StatusBadge';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatDate } from '@/lib/utils';
 
 type RecentRequest = {
     id: string;
@@ -44,7 +44,6 @@ export default function DashboardIndex({
     recentRequests,
 }: DashboardProps) {
     const { t } = useTranslation();
-    const isMobile = useMediaQuery('(max-width: 639px)');
     const cards = [
         {
             key: 'dashboard.total_customers',
@@ -91,8 +90,36 @@ export default function DashboardIndex({
 
                 <StatCard items={cards} />
 
-                <div className="grid grid-cols-1 items-stretch gap-3 xl:grid-cols-3">
-                    <DashboardTrendChart data={chart} isMobile={isMobile} change={topupUsageChange} />
+                <div className="grid grid-cols-1 items-stretch gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    <DashboardTrendChart
+                        data={chart}
+                        dataKey="topup_usage"
+                        labelKey="dashboard.top_up_usage"
+                        color="#4F46E5"
+                        unit={t('dashboard.points')}
+                        change={topupUsageChange}
+                    />
+                    <DashboardTrendChart
+                        data={chart}
+                        dataKey="ftth_bill_payments"
+                        labelKey="dashboard.ftth_bill_payments"
+                        color="#0891B2"
+                        unit={t('dashboard.points')}
+                    />
+                    <DashboardTrendChart
+                        data={chart}
+                        dataKey="wifi_package_orders"
+                        labelKey="dashboard.wifi_package_orders"
+                        color="#16A34A"
+                        unit={t('dashboard.points')}
+                    />
+                    <DashboardTrendChart
+                        data={chart}
+                        dataKey="signups"
+                        labelKey="dashboard.new_signups"
+                        color="#E11D48"
+                        unit={t('dashboard.users')}
+                    />
                     <DashboardRegionChart data={regionChart} />
                     <DashboardRequestLevels data={requestTypeChart} />
                 </div>
@@ -131,10 +158,10 @@ export default function DashboardIndex({
                         {
                             id: 'date',
                             header: t('dashboard.date'),
-                            className: 'font-mono text-[11px] text-muted-foreground',
+                            className: 'text-[11px] text-muted-foreground',
                             mobile: 'meta',
                             searchValue: (row) => row.created_at ?? '',
-                            cell: (row) => row.created_at?.slice(0, 10),
+                            cell: (row) => formatDate(row.created_at),
                         },
                     ]}
                 />

@@ -20,6 +20,7 @@ use App\Models\Wallet;
 use App\Services\Ledger\LedgerPoster;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class WalletSeeder extends Seeder
@@ -62,6 +63,8 @@ class WalletSeeder extends Seeder
 
     private function seedWalletTransactions(Wallet $wallet, User $user, int $count): void
     {
+        $lastTransactionId = (int) LedgerTransaction::query()->where('wallet_id', $wallet->id)->max('id');
+
         foreach ([500, 500, 250] as $seedAmount) {
             $this->createTopup($wallet, $user, $seedAmount, LedgerTransactionStatus::Completed);
         }
@@ -100,6 +103,61 @@ class WalletSeeder extends Seeder
                 LedgerTransactionType::Adjustment => $this->handleAdjustment($wallet, $user, $amount),
                 default => null,
             };
+        }
+
+        $this->spreadTransactionDates($wallet, $lastTransactionId);
+    }
+
+    private function spreadTransactionDates(Wallet $wallet, int $lastTransactionId): void
+    {
+        $transactions = LedgerTransaction::query()
+            ->where('wallet_id', $wallet->id)
+            ->where('id', '>', $lastTransactionId)
+            ->orderBy('id')
+            ->get(['id', 'posted_at']);
+
+        if ($transactions->isEmpty()) {
+            return;
+        }
+
+        $windowStart = now()->subDays(29)->startOfDay();
+        $windowEnd = now();
+        $windowSeconds = (int) $windowStart->diffInSeconds($windowEnd);
+        $lastIndex = max($transactions->count() - 1, 1);
+
+        foreach ($transactions as $index => $transaction) {
+            $timestamp = $windowStart
+                ->copy()
+                ->addSeconds((int) round(($windowSeconds * $index) / $lastIndex))
+                ->toDateTimeString();
+
+            DB::table('ledger_transactions')
+                ->where('id', $transaction->id)
+                ->update([
+                    'created_at' => $timestamp,
+                    'updated_at' => $timestamp,
+                    'posted_at' => $transaction->posted_at === null ? null : $timestamp,
+                ]);
+
+            DB::table('ledger_entries')
+                ->where('ledger_transaction_id', $transaction->id)
+                ->update(['created_at' => $timestamp]);
+
+            DB::table('bill_payments')->where('ledger_transaction_id', $transaction->id)->update([
+                'created_at' => $timestamp,
+            ]);
+            DB::table('bill_payments')
+                ->where('ledger_transaction_id', $transaction->id)
+                ->whereNotNull('confirmed_at')
+                ->update(['confirmed_at' => $timestamp]);
+
+            DB::table('package_orders')->where('ledger_transaction_id', $transaction->id)->update([
+                'created_at' => $timestamp,
+            ]);
+            DB::table('package_orders')
+                ->where('ledger_transaction_id', $transaction->id)
+                ->whereNotNull('completed_at')
+                ->update(['completed_at' => $timestamp]);
         }
     }
 

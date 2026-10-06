@@ -367,16 +367,29 @@ class DatabaseSeeder extends Seeder
     {
         $sample = $users->take(8)->values();
         $admin = Admin::query()->first();
+        $areasByRegion = $areas->groupBy('region_id')->values();
+        $installationStatuses = [RequestStatus::UnderReview, RequestStatus::Approved, RequestStatus::Cancelled];
+        $today = now();
 
-        foreach ([RequestStatus::UnderReview, RequestStatus::Approved, RequestStatus::Cancelled] as $i => $status) {
-            $user = $sample[$i];
+        foreach (range(0, 29) as $index) {
+            $user = $sample[$index % $sample->count()];
+            $area = $areasByRegion[$index % $areasByRegion->count()]->random();
+            $createdAt = $today
+                ->copy()
+                ->subDays(29 - $index)
+                ->setTime(min(12, $today->hour), 0);
 
-            InstallationApplication::factory()->create([
+            $application = InstallationApplication::factory()->create([
                 'user_id' => $user->id,
-                'area_id' => $areas->random()->id,
+                'area_id' => $area->id,
                 'package_id' => $packages->random()->id,
-                'status' => $status,
+                'status' => $installationStatuses[$index % count($installationStatuses)],
             ]);
+
+            $application->forceFill([
+                'created_at' => $createdAt,
+                'updated_at' => $createdAt,
+            ])->save();
         }
 
         $relocUser = $sample[6];
@@ -499,9 +512,10 @@ class DatabaseSeeder extends Seeder
 
                 $poster = app(LedgerPoster::class);
                 $wallet = $wallet->fresh();
+                $timestamp = $paidAt->toDateTimeString();
 
                 if ((int) $wallet->balance < $amount) {
-                    $poster->creditWallet(
+                    $topup = $poster->creditWallet(
                         wallet: $wallet,
                         amount: $amount - (int) $wallet->balance,
                         contraAccount: LedgerAccountCode::CashTopup,
@@ -511,6 +525,7 @@ class DatabaseSeeder extends Seeder
                         actorType: WalletActorType::System,
                         actorId: $user->id,
                     );
+                    $this->backdateLedgerTransaction($topup, $timestamp);
                 }
 
                 $transaction = $poster->debitWallet(
@@ -525,7 +540,9 @@ class DatabaseSeeder extends Seeder
                     transactionNo: 'BILL-' . strtoupper(fake()->bothify('???-####')),
                 );
 
-                BillPayment::query()->create([
+                $this->backdateLedgerTransaction($transaction, $timestamp);
+
+                $billPayment = BillPayment::query()->create([
                     'ledger_transaction_id' => $transaction->id,
                     'broadband_account_number' => $user->broadband_account_number,
                     'status' => BillPaymentStatus::Completed,
@@ -534,7 +551,24 @@ class DatabaseSeeder extends Seeder
                     'external_response' => ['gateway' => 'kbzpay'],
                     'confirmed_at' => $paidAt,
                 ]);
+                DB::table('bill_payments')
+                    ->where('id', $billPayment->id)
+                    ->update(['created_at' => $timestamp]);
             });
+    }
+
+    private function backdateLedgerTransaction(LedgerTransaction $transaction, string $timestamp): void
+    {
+        DB::table('ledger_transactions')
+            ->where('id', $transaction->id)
+            ->update([
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+                'posted_at' => $timestamp,
+            ]);
+        DB::table('ledger_entries')
+            ->where('ledger_transaction_id', $transaction->id)
+            ->update(['created_at' => $timestamp]);
     }
 
     private function seedNotifications(): void

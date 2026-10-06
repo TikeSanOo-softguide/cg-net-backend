@@ -130,17 +130,13 @@ class DashboardController extends Controller
     }
 
     /**
-     * @return list<array{date: string, topup_usage: int, signups: int}>
+     * @return list<array{date: string, topup_usage: int, signups: int, ftth_bill_payments: int, wifi_package_orders: int}>
      */
     private function chartSeries(Carbon $start, Carbon $end): array
     {
-        $topupUsage = LedgerTransaction::query()
-            ->where('type', LedgerTransactionType::Topup)
-            ->where('status', LedgerTransactionStatus::Completed)
-            ->whereBetween('created_at', [$start, $end])
-            ->selectRaw('DATE(created_at) as date, SUM(amount) as points')
-            ->groupByRaw('DATE(created_at)')
-            ->pluck('points', 'date');
+        $topupUsage = $this->transactionVolumeByDay(LedgerTransactionType::Topup, $start, $end);
+        $ftthBillPayments = $this->transactionVolumeByDay(LedgerTransactionType::FtthBill, $start, $end);
+        $wifiPackageOrders = $this->transactionVolumeByDay(LedgerTransactionType::WifiPackage, $start, $end);
 
         $signups = User::query()
             ->whereBetween('created_at', [$start, $end])
@@ -149,17 +145,30 @@ class DashboardController extends Controller
             ->map(fn(Collection $rows) => $rows->count());
 
         return collect(CarbonPeriod::create($start, $end))
-            ->map(function (Carbon $day) use ($topupUsage, $signups) {
+            ->map(function (Carbon $day) use ($topupUsage, $signups, $ftthBillPayments, $wifiPackageOrders) {
                 $key = $day->toDateString();
 
                 return [
                     'date' => $key,
                     'topup_usage' => (int) ($topupUsage[$key] ?? 0),
                     'signups' => (int) ($signups[$key] ?? 0),
+                    'ftth_bill_payments' => (int) ($ftthBillPayments[$key] ?? 0),
+                    'wifi_package_orders' => (int) ($wifiPackageOrders[$key] ?? 0),
                 ];
             })
             ->values()
             ->all();
+    }
+
+    private function transactionVolumeByDay(LedgerTransactionType $type, Carbon $start, Carbon $end): Collection
+    {
+        return LedgerTransaction::query()
+            ->where('type', $type)
+            ->where('status', LedgerTransactionStatus::Completed)
+            ->whereBetween('created_at', [$start, $end])
+            ->selectRaw('DATE(created_at) as date, SUM(amount) as points')
+            ->groupByRaw('DATE(created_at)')
+            ->pluck('points', 'date');
     }
 
     private function topupUsageChange(Carbon $start, Carbon $end): ?float
