@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactElement } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { CalendarIcon, CircleDotIcon, EyeIcon, ReceiptIcon } from 'lucide-react';
 
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
@@ -48,6 +48,12 @@ type Props = {
     statuses: string[];
 };
 
+function transactionHref(transactionNo: string): string {
+    const query = new URLSearchParams({ search: transactionNo, open_transaction: transactionNo });
+
+    return `/billing/transactions?${query.toString()}`;
+}
+
 export default function BillPaymentIndex({ payments, filters, statuses }: Props) {
     const { t } = useTranslation();
     const can = useCan();
@@ -83,6 +89,21 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
 
     const columns: DataTableColumn<BillPaymentRow>[] = [
         {
+            id: 'transaction_no',
+            header: t('transactions.number'),
+            cell: (payment) =>
+                payment.transaction_no ? (
+                    <Link
+                        href={transactionHref(payment.transaction_no)}
+                        className="text-primary underline-offset-4 hover:underline"
+                    >
+                        {payment.transaction_no}
+                    </Link>
+                ) : (
+                    '—'
+                ),
+        },
+        {
             id: 'external_bill_ref',
             header: t('bill_payments.external_bill_ref'),
             cell: (payment) => payment.external_bill_ref || '—',
@@ -92,11 +113,7 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
             header: t('bill_payments.external_payment_ref'),
             cell: (payment) => payment.external_payment_ref || '—',
         },
-        {
-            id: 'ledger_transaction_id',
-            header: t('bill_payments.ledger_transaction_id'),
-            cell: (payment) => payment.ledger_transaction_id,
-        },
+
         {
             id: 'account',
             header: t('bill_payments.account_number'),
@@ -247,6 +264,11 @@ function BillPaymentDetailDialog({
                 <div className="grid gap-3 sm:grid-cols-2">
                     <PaymentInfo label={t('bill_payments.bill_payment_id')} value={payment.id} />
                     <PaymentInfo
+                        label={t('transactions.number')}
+                        value={payment.transaction_no}
+                        href={payment.transaction_no ? transactionHref(payment.transaction_no) : undefined}
+                    />
+                    <PaymentInfo
                         label={t('bill_payments.ledger_transaction_id')}
                         value={payment.ledger_transaction_id}
                     />
@@ -321,11 +343,27 @@ function ExternalResponseRow({ label, value }: { label: string; value: unknown }
     );
 }
 
-function PaymentInfo({ label, value }: { label: string; value: string | number | null | undefined }) {
+function PaymentInfo({
+    label,
+    value,
+    href,
+}: {
+    label: string;
+    value: string | number | null | undefined;
+    href?: string;
+}) {
     return (
         <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
             <p className="text-xs font-medium text-muted-foreground">{label}</p>
-            <p className="mt-1 break-words text-sm font-semibold text-foreground">{value ?? '—'}</p>
+            <p className="mt-1 break-words text-sm font-semibold text-foreground">
+                {href && value !== null && value !== undefined ? (
+                    <Link href={href} className="text-primary underline-offset-4 hover:underline">
+                        {value}
+                    </Link>
+                ) : (
+                    (value ?? '—')
+                )}
+            </p>
         </div>
     );
 }

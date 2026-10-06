@@ -161,7 +161,7 @@ export const navigation: NavGroup[] = [
                 labelKey: 'menu.bill_payment',
                 descriptionKey: 'menu.bill_payment_description',
                 href: '/billing/bill-payments',
-                icon: Banknote,
+                icon: ScrollText,
             },
         ],
     },

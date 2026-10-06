@@ -790,8 +790,8 @@
     "bill_payments": {
         "bill_payment_id": "账单支付 ID",
         "ledger_transaction_id": "账本交易 ID",
-        "external_bill_ref": "外部账单参考号",
-        "external_payment_ref": "外部支付参考号",
+        "external_bill_ref": "账单参考号",
+        "external_payment_ref": "支付参考号",
         "external_response": "服务商响应",
         "account_number": "宽带账户",
         "payment_reference": "支付参考号",
