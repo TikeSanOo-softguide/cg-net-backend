@@ -47,7 +47,7 @@
         "connection_status": "连接监控",
         "package_management": "套餐与计划",
         "packages": "套餐",
-        "package_orders": "客户套餐订单",
+        "package_orders": "套餐订单",
         "billing": "账单与付款",
         "invoices": "发票",
         "transactions": "交易记录",

@@ -54,7 +54,7 @@
         "connection_status": "Connection Monitoring",
         "package_management": "Plans & Packages",
         "packages": "Packages",
-        "package_orders": "Customer Package Orders",
+        "package_orders": "Package Orders",
         "billing": "Billing & Payments",
         "invoices": "Invoices",
         "transactions": "Transactions",
