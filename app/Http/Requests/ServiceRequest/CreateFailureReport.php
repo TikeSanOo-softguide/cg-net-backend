@@ -3,11 +3,16 @@
 namespace App\Http\Requests\ServiceRequest;
 
 use App\Enums\FailureType;
-use Illuminate\Foundation\Http\FormRequest;
+use App\Models\FailureReport;
 use Illuminate\Validation\Rule;
 
-class CreateFailureReport extends FormRequest
+class CreateFailureReport extends CreateServiceRequest
 {
+    protected function requestModel(): string
+    {
+        return FailureReport::class;
+    }
+
     /**
      * Determine if the user is authorized to make this request.
      */

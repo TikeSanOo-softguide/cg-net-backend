@@ -2,11 +2,21 @@
 
 namespace App\Http\Requests\ServiceRequest;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Models\InstallationApplication;
 use Illuminate\Validation\Rule;
 
-class CreateBroadbandApplicationRequest extends FormRequest
+class CreateBroadbandApplicationRequest extends CreateServiceRequest
 {
+    protected function requestModel(): string
+    {
+        return InstallationApplication::class;
+    }
+
+    protected function pendingRequestColumn(): string
+    {
+        return 'user_id';
+    }
+
     public function authorize(): bool
     {
         return true;

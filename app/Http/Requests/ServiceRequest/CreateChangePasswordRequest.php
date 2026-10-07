@@ -2,12 +2,16 @@
 
 namespace App\Http\Requests\ServiceRequest;
 
-use App\Enums\ReviewStatus;
-use Illuminate\Foundation\Http\FormRequest;
+use App\Models\ChangePasswordRequest;
 use Illuminate\Validation\Rule;
 
-class CreateChangePasswordRequest extends FormRequest
+class CreateChangePasswordRequest extends CreateServiceRequest
 {
+    protected function requestModel(): string
+    {
+        return ChangePasswordRequest::class;
+    }
+
     /**
      * Determine if the user is authorized to make this request.
      */

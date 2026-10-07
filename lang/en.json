@@ -21,6 +21,9 @@
         "not_found_description": "This page does not exist or may have been moved. Check the address or go back.",
         "back_home": "Back to dashboard"
     },
+    "service_request": {
+        "pending_request_exists": "A request of this type for this broadband account is already under review."
+    },
     "csv": {
         "import_errors": {
             "invalid_headers": "The CSV headers are invalid.",

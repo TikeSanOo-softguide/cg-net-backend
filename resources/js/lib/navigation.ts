@@ -268,13 +268,6 @@ export const navigation: NavGroup[] = [
         ],
     },
     {
-        id: 'reports',
-        labelKey: 'menu.reports',
-        descriptionKey: 'menu.reports_description',
-        href: '/reports',
-        icon: ChartColumn,
-    },
-    {
         id: 'packages',
         labelKey: 'menu.packages',
         descriptionKey: 'menu.packages_description',
@@ -288,7 +281,13 @@ export const navigation: NavGroup[] = [
         href: '/regions',
         icon: MapPinned,
     },
-
+    {
+        id: 'reports',
+        labelKey: 'menu.reports',
+        descriptionKey: 'menu.reports_description',
+        href: '/reports',
+        icon: ChartColumn,
+    },
     {
         id: 'cms',
         labelKey: 'menu.cms',
