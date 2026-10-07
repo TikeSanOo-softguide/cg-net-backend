@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\ChangePlanStatus;
+use App\Enums\RequestStatus;
 use Database\Factories\ChangePlanRequestFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -33,7 +33,7 @@ class ChangePlanRequest extends Model
     {
         return [
             'preferred_date' => 'date',
-            'status' => ChangePlanStatus::class,
+            'status' => RequestStatus::class,
         ];
     }
 

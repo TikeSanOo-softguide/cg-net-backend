@@ -458,7 +458,7 @@ export default function LedgerHealthReportIndex({
                             searchPlaceholder={t('ledger_health_report.search_snapshot')}
                             noResultsMessage={t('ledger_health_report.no_snapshot_matches')}
                             className="w-full shrink-0 sm:w-[280px]"
-                            triggerClassName="h-10"
+                            triggerClassName="h-10 text-xs"
                             onValueChange={(value) =>
                                 router.get(
                                     '/reports/ledger-health',
@@ -474,7 +474,7 @@ export default function LedgerHealthReportIndex({
                             searchPlaceholder={t('ledger_health_report.search_scan_type')}
                             noResultsMessage={t('ledger_health_report.no_scan_type_matches')}
                             className="w-full shrink-0 sm:w-[220px]"
-                            triggerClassName="h-10"
+                            triggerClassName="h-10 text-xs"
                             onValueChange={(value) =>
                                 router.get(
                                     '/reports/ledger-health',

@@ -52,6 +52,12 @@ const requestTypes = [
     'relocation_request',
 ] as const;
 
+const ledgerHealthReferenceTypes = new Set([
+    'ledger_health_snapshot_full',
+    'ledger_health_snapshot_daily',
+    'ledger_health_snapshot_manual',
+]);
+
 export default function AdminNotificationsIndex({ notifications, categories, filters }: Props) {
     const { t } = useTranslation();
     const [search, setSearch] = useState(filters.search);
@@ -104,6 +110,18 @@ export default function AdminNotificationsIndex({ notifications, categories, fil
             : translated;
     };
 
+    const referenceTypeLabel = (referenceType: string | null): string => {
+        if (!referenceType) {
+            return '—';
+        }
+
+        const translationKey = ledgerHealthReferenceTypes.has(referenceType)
+            ? `admin_notifications.${referenceType}`
+            : `admin_notifications.request_types.${referenceType}`;
+
+        return t(translationKey);
+    };
+
     const columns: DataTableColumn<NotificationRow>[] = [
         {
             id: 'customer_name',
@@ -128,8 +146,8 @@ export default function AdminNotificationsIndex({ notifications, categories, fil
         },
         {
             id: 'request_type',
-            header: t('admin_notifications.request_type'),
-            cell: (row) => (row.reference_type ? t(`admin_notifications.request_types.${row.reference_type}`) : '—'),
+            header: t('admin_notifications.reference_type'),
+            cell: (row) => referenceTypeLabel(row.reference_type),
         },
         {
             id: 'request_status',

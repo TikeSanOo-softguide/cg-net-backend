@@ -25,7 +25,7 @@ export function FaqTable({ items, canCreate, canUpdate, canDelete, onCreate, onE
     const { t, locale } = useTranslation();
 
     return (
-        <section className="rounded-xl border bg-card shadow-sm">
+        <section className="rounded-xl border bg-card">
             <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
                 <h2 className="text-sm font-semibold">{t('settings.general_settings.faq')}</h2>
 

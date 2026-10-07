@@ -532,7 +532,7 @@ export function TransactionsTable({
                 title={selected?.transaction_no ?? t('transactions.detail')}
                 description={t('transactions.detail_description')}
                 icon={ArrowLeftRightIcon}
-                size="lg"
+                size="xl"
             >
                 {selected ? (
                     <div className="flex min-h-0 flex-1 flex-col">

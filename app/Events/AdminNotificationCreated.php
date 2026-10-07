@@ -24,7 +24,7 @@ class AdminNotificationCreated implements ShouldBroadcastNow
     }
 
     /**
-     * @return array{id: int, type: string, title: string, message: string, reference_type: string|null, reference_id: int|null, read_at: string|null, created_at: string, category: string, href: string|null}
+     * @return array{id: int, type: string, title: string, message: string, severity: string, reference_type: string|null, reference_id: int|null, read_at: string|null, created_at: string, category: string, href: string|null}
      */
     public function broadcastWith(): array
     {

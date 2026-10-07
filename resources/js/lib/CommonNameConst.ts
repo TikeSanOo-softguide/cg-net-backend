@@ -1,7 +1,7 @@
-// Change Plan
-export const CHANGE_PLAN_STATUS = {
+// Service request status
+export const REQUEST_STATUS = {
     UNDER_REVIEW: 'under_review',
     APPROVED: 'approved',
 } as const;
 
-export type ChangePlanStatus = (typeof CHANGE_PLAN_STATUS)[keyof typeof CHANGE_PLAN_STATUS];
+export type RequestStatus = (typeof REQUEST_STATUS)[keyof typeof REQUEST_STATUS];

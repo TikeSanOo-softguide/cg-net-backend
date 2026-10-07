@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\ServiceRequest;
 
-use App\Enums\ChangePasswordStatus;
-use App\Enums\ChangePlanStatus;
 use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\ChangePasswordRequest;
@@ -39,12 +37,12 @@ class ServiceRequestController extends Controller
         'change_plan' => [
             'label' => 'Change Plan',
             'model' => ChangePlanRequest::class,
-            'status_enum' => ChangePlanStatus::class,
+            'status_enum' => RequestStatus::class,
         ],
         'change_password' => [
             'label' => 'Change Password',
             'model' => ChangePasswordRequest::class,
-            'status_enum' => ChangePasswordStatus::class,
+            'status_enum' => RequestStatus::class,
         ],
     ];
 

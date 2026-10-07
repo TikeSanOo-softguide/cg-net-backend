@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\ServiceRequest;
 
-use App\Enums\ChangePasswordStatus;
+use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\ChangePasswordRequest;
 use Illuminate\Http\RedirectResponse;
@@ -20,11 +20,11 @@ class ChangePasswordRequestController extends Controller
             ? ($request->string('status')->toString() === 'all'
                 ? ''
                 : $request->string('status')->toString())
-            : ChangePasswordStatus::UnderReview->value;
+            : RequestStatus::UnderReview->value;
         $statuses = [
-            ChangePasswordStatus::UnderReview->value,
-            ChangePasswordStatus::Approved->value,
-            ChangePasswordStatus::Cancelled->value,
+            RequestStatus::UnderReview->value,
+            RequestStatus::Approved->value,
+            RequestStatus::Cancelled->value,
         ];
         $openRequestId = $request->integer('open_request');
 
@@ -61,7 +61,7 @@ class ChangePasswordRequestController extends Controller
 
     public function updateStatus(Request $request, ChangePasswordRequest $changePasswordRequest): RedirectResponse
     {
-        $validated = $request->validate(['status' => ['required', new Enum(ChangePasswordStatus::class)]]);
+        $validated = $request->validate(['status' => ['required', new Enum(RequestStatus::class)]]);
 
         activity('change_password_request')
             ->causedBy($request->user())
@@ -82,13 +82,13 @@ class ChangePasswordRequestController extends Controller
         return [
             'total_requests' => ChangePasswordRequest::query()->count(),
             'under_reviews_requests' => ChangePasswordRequest::query()
-                ->where('status', ChangePasswordStatus::UnderReview)
+                ->where('status', RequestStatus::UnderReview)
                 ->count(),
             'approved_requests' => ChangePasswordRequest::query()
-                ->where('status', ChangePasswordStatus::Approved)
+                ->where('status', RequestStatus::Approved)
                 ->count(),
             'cancelled_requests' => ChangePasswordRequest::query()
-                ->where('status', ChangePasswordStatus::Cancelled)
+                ->where('status', RequestStatus::Cancelled)
                 ->count(),
         ];
     }

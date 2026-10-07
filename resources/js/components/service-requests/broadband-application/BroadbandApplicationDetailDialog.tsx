@@ -27,7 +27,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
 import { CopyValueButton } from '@/components/CopyValueButton';
-import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
+import { REQUEST_STATUS } from '@/lib/CommonNameConst';
 import { formatPhoneInternational } from '@/lib/phone';
 
 export type BroadbandApplicationDetail = {
@@ -105,11 +105,11 @@ export function BroadbandApplicationDetailDialog({
 }) {
     const { t, locale } = useTranslation();
     const nextStatus =
-        request?.status === CHANGE_PLAN_STATUS.UNDER_REVIEW
-            ? CHANGE_PLAN_STATUS.APPROVED
-            : CHANGE_PLAN_STATUS.UNDER_REVIEW;
+        request?.status === REQUEST_STATUS.UNDER_REVIEW
+            ? REQUEST_STATUS.APPROVED
+            : REQUEST_STATUS.UNDER_REVIEW;
     const { data, setData, patch } = useForm({ status: nextStatus });
-    const nextButton = request?.status === CHANGE_PLAN_STATUS.UNDER_REVIEW ? 'approve' : 'review';
+    const nextButton = request?.status === REQUEST_STATUS.UNDER_REVIEW ? 'approve' : 'review';
 
     useEffect(() => {
         if (request) {

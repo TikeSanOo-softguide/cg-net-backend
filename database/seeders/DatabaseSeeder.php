@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Enums\BillPaymentStatus;
-use App\Enums\ChangePlanStatus;
 use App\Enums\CustomerPackageStatus;
 use App\Enums\LedgerAccountCode;
 use App\Enums\LedgerTransactionStatus;
@@ -420,10 +419,10 @@ class DatabaseSeeder extends Seeder
             $condition = $index % 3;
             $status =
                 $index < 10
-                    ? ChangePlanStatus::UnderReview
+                    ? RequestStatus::UnderReview
                     : ($index < 17
-                        ? ChangePlanStatus::Approved
-                        : ChangePlanStatus::Cancelled);
+                        ? RequestStatus::Approved
+                        : RequestStatus::Cancelled);
 
             $newPackage = match ($condition) {
                 0 => $currentPackage?->speed
@@ -453,7 +452,7 @@ class DatabaseSeeder extends Seeder
                 continue;
             }
 
-            $adminId = $status === ChangePlanStatus::Approved ? $admin?->id : null;
+            $adminId = $status === RequestStatus::Approved ? $admin?->id : null;
             do {
                 $contactPhone = MyanmarFake::phone();
             } while ($contactPhone === $user->phone);

@@ -6,8 +6,10 @@ use App\Enums\LedgerAccountCode;
 use App\Enums\LedgerHealthScanType;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
+use App\Events\AdminNotificationCreated;
 use App\Jobs\GenerateLedgerHealthSnapshot;
 use App\Models\Admin;
+use App\Models\AdminNotification;
 use App\Models\LedgerHealthSnapshot;
 use App\Models\Wallet;
 use App\Services\Ledger\LedgerPoster;
@@ -16,6 +18,7 @@ use App\Support\AppSetting;
 use App\Support\LedgerHealthWindow;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -32,7 +35,7 @@ class LedgerHealthScanTypeTest extends TestCase
             ->get('/reports/ledger-health')
             ->assertOk()
             ->assertInertia(
-                fn(Assert $page) => $page->component('Reports/LedgerHealth/Index')->where('scanType', 'daily'),
+                fn (Assert $page) => $page->component('Reports/LedgerHealth/Index')->where('scanType', 'daily'),
             );
     }
 
@@ -111,7 +114,7 @@ class LedgerHealthScanTypeTest extends TestCase
             ->get('/reports/ledger-health?type=full')
             ->assertOk()
             ->assertInertia(
-                fn(Assert $page) => $page
+                fn (Assert $page) => $page
                     ->component('Reports/LedgerHealth/Index')
                     ->where('scanType', 'full')
                     ->where('dailyScanEnabled', true)
@@ -125,7 +128,7 @@ class LedgerHealthScanTypeTest extends TestCase
             ->get('/reports/ledger-health?type=daily')
             ->assertOk()
             ->assertInertia(
-                fn(Assert $page) => $page
+                fn (Assert $page) => $page
                     ->component('Reports/LedgerHealth/Index')
                     ->where('scanType', 'daily')
                     ->where('snapshotId', $daily->id)
@@ -138,7 +141,7 @@ class LedgerHealthScanTypeTest extends TestCase
             ->get('/reports/ledger-health?type=manual')
             ->assertOk()
             ->assertInertia(
-                fn(Assert $page) => $page
+                fn (Assert $page) => $page
                     ->component('Reports/LedgerHealth/Index')
                     ->where('scanType', 'manual')
                     ->where('snapshotId', $manual->id)
@@ -171,8 +174,99 @@ class LedgerHealthScanTypeTest extends TestCase
 
         Queue::assertPushed(
             GenerateLedgerHealthSnapshot::class,
-            fn(GenerateLedgerHealthSnapshot $job): bool => $job->snapshotId === $snapshot->id,
+            fn (GenerateLedgerHealthSnapshot $job): bool => $job->snapshotId === $snapshot->id,
         );
+    }
+
+    public function test_completed_scan_notifies_admin_and_links_to_its_report(): void
+    {
+        Event::fake([AdminNotificationCreated::class]);
+        $snapshot = LedgerHealthSnapshot::query()->create([
+            'type' => LedgerHealthScanType::Daily,
+            'status' => 'queued',
+        ]);
+        $report = \Mockery::mock(LedgerHealthReportService::class);
+        $report->shouldReceive('generate')->once()->andReturn([]);
+
+        (new GenerateLedgerHealthSnapshot($snapshot->id))->handle($report);
+
+        $snapshot->refresh();
+        $this->assertSame('completed', $snapshot->status);
+
+        $notification = AdminNotification::query()->sole();
+        $this->assertSame('Ledger Health Check Completed', $notification->title);
+        $this->assertSame('The Daily ledger health check completed successfully.', $notification->body);
+        $this->assertSame('normal', $notification->severity);
+        $this->assertSame('ledger_health_snapshot_daily', $notification->reference_type);
+        $this->assertSame($snapshot->id, $notification->reference_id);
+        $this->assertSame(
+            '/reports/ledger-health?type=daily&snapshot='.$snapshot->id,
+            $notification->toDropdownArray()['href'],
+        );
+        Event::assertDispatched(AdminNotificationCreated::class);
+    }
+
+    public function test_completed_scan_with_discrepancies_marks_admin_notification_as_alert(): void
+    {
+        Event::fake([AdminNotificationCreated::class]);
+        $snapshot = LedgerHealthSnapshot::query()->create([
+            'type' => LedgerHealthScanType::Full,
+            'status' => 'queued',
+        ]);
+        $report = \Mockery::mock(LedgerHealthReportService::class);
+        $report->shouldReceive('generate')->once()->andReturn([
+            'health' => [
+                'balance_mismatches' => 1,
+                'completed_without_entry' => 0,
+                'unbalanced_transactions' => 0,
+                'duplicate_entry_transactions' => 0,
+                'source_mismatches' => 0,
+            ],
+        ]);
+
+        (new GenerateLedgerHealthSnapshot($snapshot->id))->handle($report);
+
+        $notification = AdminNotification::query()->sole();
+        $this->assertSame('Ledger Health Check Completed', $notification->title);
+        $this->assertSame('The Full ledger health check completed with discrepancies.', $notification->body);
+        $this->assertSame('alert', $notification->severity);
+        Event::assertDispatched(AdminNotificationCreated::class);
+    }
+
+    public function test_failed_scan_notifies_admin_immediately_without_duplicate_on_failed_callback(): void
+    {
+        Event::fake([AdminNotificationCreated::class]);
+        $snapshot = LedgerHealthSnapshot::query()->create([
+            'type' => LedgerHealthScanType::Manual,
+            'status' => 'queued',
+        ]);
+        $report = \Mockery::mock(LedgerHealthReportService::class);
+        $report->shouldReceive('generate')->once()->andThrow(new \RuntimeException('Scan failed.'));
+        $job = new GenerateLedgerHealthSnapshot($snapshot->id);
+
+        try {
+            $job->handle($report);
+            $this->fail('Expected scan failure to be rethrown.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame('Scan failed.', $exception->getMessage());
+        }
+
+        $snapshot->refresh();
+        $this->assertSame('failed', $snapshot->status);
+
+        $notification = AdminNotification::query()->sole();
+        $this->assertSame('Ledger Health Check Failed', $notification->title);
+        $this->assertSame('alert', $notification->severity);
+        $this->assertSame(
+            'The Manual ledger health check failed. Please review the scan logs for details.',
+            $notification->body,
+        );
+        $this->assertNull($notification->reference_type);
+        $this->assertNull($notification->reference_id);
+        $job->failed(new \RuntimeException('Scan failed.'));
+
+        $this->assertSame(1, AdminNotification::query()->count());
+        Event::assertDispatched(AdminNotificationCreated::class);
     }
 
     public function test_manual_range_check_queues_windowed_scan(): void
@@ -278,7 +372,7 @@ class LedgerHealthScanTypeTest extends TestCase
         $this->actingAs($admin, 'web')
             ->get('/reports/ledger-health?type=daily')
             ->assertOk()
-            ->assertInertia(fn(Assert $page) => $page->where('dailyScanEnabled', false));
+            ->assertInertia(fn (Assert $page) => $page->where('dailyScanEnabled', false));
 
         $this->actingAs($admin, 'web')
             ->post('/reports/ledger-health/daily-scan', ['enabled' => true])
@@ -325,12 +419,12 @@ class LedgerHealthScanTypeTest extends TestCase
         $this->assertSame(1, $report['health']['completed_without_entry']);
         $this->assertTrue(
             collect($report['missingEntries'])->contains(
-                fn(array $row): bool => $row['transaction_no'] === $inside->transaction_no,
+                fn (array $row): bool => $row['transaction_no'] === $inside->transaction_no,
             ),
         );
         $this->assertFalse(
             collect($report['missingEntries'])->contains(
-                fn(array $row): bool => $row['transaction_no'] === $outside->transaction_no,
+                fn (array $row): bool => $row['transaction_no'] === $outside->transaction_no,
             ),
         );
         $this->assertNotNull($report['window']);

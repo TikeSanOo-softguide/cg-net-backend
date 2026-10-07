@@ -2,31 +2,46 @@
 
 namespace App\Services\Telegram;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
-use RuntimeException;
+use Illuminate\Support\Facades\Log;
 
 class TelegramService
 {
-    public function broadbandApplicaiton(string $message, ?string $chatId = null): Response
+    public function broadbandApplicaiton(string $message, ?string $chatId = null): ?Response
     {
         $chatId ??= config('services.telegram.chat_id');
+        $botToken = config('services.telegram.bot_token');
 
-        return $this->sendMessage($chatId, $message);
-    }
+        if (! is_string($chatId) || trim($chatId) === '' || ! is_string($botToken) || trim($botToken) === '') {
+            Log::info('Telegram notification skipped because bot credentials are not configured.');
 
-    private function sendMessage(string $chatId, string $message): Response
-    {
-        $response = Http::post(
-            'https://api.telegram.org/bot' . config('services.telegram.bot_token') . '/sendMessage',
-            [
-                'chat_id' => $chatId,
-                'text' => $message,
-            ],
-        );
+            return null;
+        }
+
+        try {
+            $response = Http::timeout(5)->post(
+                'https://api.telegram.org/bot'.$botToken.'/sendMessage',
+                [
+                    'chat_id' => trim($chatId),
+                    'text' => $message,
+                ],
+            );
+        } catch (ConnectionException $exception) {
+            Log::warning('Telegram notification could not be delivered.', [
+                'exception' => $exception->getMessage(),
+            ]);
+
+            return null;
+        }
 
         if ($response->failed()) {
-            throw new RuntimeException('Telegram notification failed: ' . $response->body());
+            Log::warning('Telegram notification was rejected.', [
+                'status' => $response->status(),
+            ]);
+
+            return null;
         }
 
         return $response;

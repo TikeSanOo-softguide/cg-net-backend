@@ -56,6 +56,10 @@ services:
             REDIS_HOST: redis
             CACHE_STORE: redis
             QUEUE_CONNECTION: redis
+            BROADCAST_CONNECTION: reverb
+            REVERB_HOST: reverb
+            REVERB_PORT: 8081
+            REVERB_SCHEME: http
             HORIZON_TOPUP_PROCESSES: ${HORIZON_TOPUP_PROCESSES:-1}
             HORIZON_TOPUP_TIMEOUT: ${HORIZON_TOPUP_TIMEOUT:-180}
             HORIZON_TOPUP_MEMORY: ${HORIZON_TOPUP_MEMORY:-200}

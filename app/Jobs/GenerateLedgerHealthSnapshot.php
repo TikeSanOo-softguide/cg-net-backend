@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\LedgerHealthScanFinished;
 use App\Models\LedgerHealthSnapshot;
 use App\Services\Reports\LedgerHealthReportService;
 use Illuminate\Bus\Queueable;
@@ -39,13 +40,15 @@ class GenerateLedgerHealthSnapshot implements ShouldQueue
             $usesWindow = $snapshot->type->usesWindow();
             $windowStart = $usesWindow ? $snapshot->window_start : null;
             $windowEnd = $usesWindow ? $snapshot->window_end : null;
+            $results = $report->generate($windowStart, $windowEnd);
 
             $snapshot->update([
                 'status' => 'completed',
-                'results' => $report->generate($windowStart, $windowEnd),
+                'results' => $results,
                 'error' => null,
                 'checked_at' => now(),
             ]);
+            $this->notifyAdmins($snapshot, $this->hasDiscrepancies($results));
         } catch (Throwable $exception) {
             $snapshot->update([
                 'status' => 'failed',
@@ -57,17 +60,67 @@ class GenerateLedgerHealthSnapshot implements ShouldQueue
                 'exception' => $exception->getMessage(),
             ]);
 
+            $this->notifyAdmins($snapshot, hasDiscrepancies: false);
+
             throw $exception;
         }
     }
 
     public function failed(?Throwable $exception): void
     {
-        LedgerHealthSnapshot::query()
+        $updated = LedgerHealthSnapshot::query()
             ->whereKey($this->snapshotId)
+            ->where('status', '!=', 'failed')
             ->update([
                 'status' => 'failed',
                 'error' => $exception?->getMessage(),
             ]);
+
+        if ($updated > 0) {
+            $snapshot = LedgerHealthSnapshot::query()->find($this->snapshotId);
+            if ($snapshot) {
+                $this->notifyAdmins($snapshot, hasDiscrepancies: false);
+            }
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $results
+     */
+    private function hasDiscrepancies(array $results): bool
+    {
+        $health = $results['health'] ?? [];
+
+        foreach ([
+            'balance_mismatches',
+            'completed_without_entry',
+            'unbalanced_transactions',
+            'duplicate_entry_transactions',
+            'source_mismatches',
+        ] as $counter) {
+            if (($health[$counter] ?? 0) > 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function notifyAdmins(LedgerHealthSnapshot $snapshot, bool $hasDiscrepancies): void
+    {
+        try {
+            LedgerHealthScanFinished::dispatch(
+                $snapshot->id,
+                $snapshot->type,
+                $snapshot->status === 'completed',
+                $hasDiscrepancies,
+            );
+        } catch (Throwable $exception) {
+            Log::error('Failed to notify admins about a ledger health scan.', [
+                'snapshot_id' => $snapshot->id,
+                'status' => $snapshot->status,
+                'exception' => $exception->getMessage(),
+            ]);
+        }
     }
 }

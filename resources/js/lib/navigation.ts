@@ -2,18 +2,19 @@ import type { LucideIcon } from 'lucide-react';
 import {
     Activity,
     AlertTriangle,
+    AppWindow,
     ArrowRightLeft,
     Banknote,
     Bell,
     Boxes,
     Building2,
     CalendarDays,
+    ChartColumn,
     ClipboardList,
     Contact,
     CreditCard,
     FileText,
     FileUp,
-    Files,
     FolderTree,
     Gift,
     Headphones,
@@ -21,7 +22,6 @@ import {
     Image,
     Images,
     KeyRound,
-    Languages,
     LayoutDashboard,
     Link2,
     MapPin,
@@ -38,6 +38,7 @@ import {
     RefreshCw,
     Reply,
     Router,
+    Rss,
     ScrollText,
     Settings,
     Shield,
@@ -87,16 +88,10 @@ export const navigation: NavGroup[] = [
     },
     {
         id: 'customers',
-        labelKey: 'menu.customer_management',
-        icon: Users,
-        children: [
-            {
-                labelKey: 'menu.customers_list',
-                descriptionKey: 'menu.customers_list_description',
-                href: '/customers',
-                icon: UserRound,
-            },
-        ],
+        labelKey: 'menu.customers_list',
+        descriptionKey: 'menu.customers_list_description',
+        href: '/customers',
+        icon: UserRound,
     },
     {
         id: 'cpe',
@@ -124,19 +119,6 @@ export const navigation: NavGroup[] = [
         ],
     },
     {
-        id: 'packages',
-        labelKey: 'menu.package_management',
-        icon: Package,
-        children: [
-            {
-                labelKey: 'menu.packages',
-                descriptionKey: 'menu.packages_description',
-                href: '/packages',
-                icon: Package,
-            },
-        ],
-    },
-    {
         id: 'billing',
         labelKey: 'menu.billing',
         icon: CreditCard,
@@ -146,12 +128,6 @@ export const navigation: NavGroup[] = [
                 descriptionKey: 'menu.invoices_description',
                 href: '/billing/invoices',
                 icon: FileText,
-            },
-            {
-                labelKey: 'menu.payment_gateway_logs',
-                descriptionKey: 'menu.payment_gateway_logs_description',
-                href: '/billing/gateway-logs',
-                icon: ScrollText,
             },
             {
                 labelKey: 'menu.transactions',
@@ -170,37 +146,6 @@ export const navigation: NavGroup[] = [
                 descriptionKey: 'menu.bill_payment_description',
                 href: '/billing/bill-payments',
                 icon: ScrollText,
-            },
-        ],
-    },
-    {
-        id: 'top-up-cards',
-        labelKey: 'menu.top_up_card_management',
-        icon: Ticket,
-        children: [
-            {
-                labelKey: 'menu.top_up_card_offices',
-                descriptionKey: 'menu.top_up_card_offices_description',
-                href: '/top-up-cards/offices',
-                icon: Building2,
-            },
-            {
-                labelKey: 'menu.top_up_card_batch',
-                descriptionKey: 'menu.top_up_card_batch_description',
-                href: '/top-up-cards/batch',
-                icon: Ticket,
-            },
-            {
-                labelKey: 'menu.top_up_card_batch_import',
-                descriptionKey: 'menu.top_up_card_batch_import_description',
-                href: '/top-up-cards/card-import',
-                icon: FileUp,
-            },
-            {
-                labelKey: 'menu.card_history',
-                descriptionKey: 'menu.card_history_description',
-                href: '/top-up-cards/card-history',
-                icon: CreditCard,
             },
         ],
     },
@@ -242,11 +187,35 @@ export const navigation: NavGroup[] = [
         ],
     },
     {
-        id: 'regions',
-        labelKey: 'menu.region_management',
-        descriptionKey: 'menu.region_management_description',
-        href: '/regions',
-        icon: MapPinned,
+        id: 'top-up-cards',
+        labelKey: 'menu.top_up_card_management',
+        icon: Ticket,
+        children: [
+            {
+                labelKey: 'menu.top_up_card_offices',
+                descriptionKey: 'menu.top_up_card_offices_description',
+                href: '/top-up-cards/offices',
+                icon: Building2,
+            },
+            {
+                labelKey: 'menu.top_up_card_batch',
+                descriptionKey: 'menu.top_up_card_batch_description',
+                href: '/top-up-cards/batch',
+                icon: Ticket,
+            },
+            {
+                labelKey: 'menu.top_up_card_batch_import',
+                descriptionKey: 'menu.top_up_card_batch_import_description',
+                href: '/top-up-cards/card-import',
+                icon: FileUp,
+            },
+            {
+                labelKey: 'menu.card_history',
+                descriptionKey: 'menu.card_history_description',
+                href: '/top-up-cards/card-history',
+                icon: CreditCard,
+            },
+        ],
     },
     {
         id: 'notifications',
@@ -299,9 +268,31 @@ export const navigation: NavGroup[] = [
         ],
     },
     {
+        id: 'reports',
+        labelKey: 'menu.reports',
+        descriptionKey: 'menu.reports_description',
+        href: '/reports',
+        icon: ChartColumn,
+    },
+    {
+        id: 'packages',
+        labelKey: 'menu.packages',
+        descriptionKey: 'menu.packages_description',
+        href: '/packages',
+        icon: Package,
+    },
+    {
+        id: 'regions',
+        labelKey: 'menu.region_management',
+        descriptionKey: 'menu.region_management_description',
+        href: '/regions',
+        icon: MapPinned,
+    },
+
+    {
         id: 'cms',
         labelKey: 'menu.cms',
-        icon: Files,
+        icon: Rss,
         children: [
             {
                 labelKey: 'menu.cms_promotions',
@@ -388,13 +379,6 @@ export const navigation: NavGroup[] = [
         ],
     },
     {
-        id: 'reports',
-        labelKey: 'menu.reports',
-        descriptionKey: 'menu.reports_description',
-        href: '/reports',
-        icon: Banknote,
-    },
-    {
         id: 'settings',
         labelKey: 'menu.settings',
         icon: Settings,
@@ -404,12 +388,6 @@ export const navigation: NavGroup[] = [
                 descriptionKey: 'menu.app_version_description',
                 href: '/settings/app-version',
                 icon: Smartphone,
-            },
-            {
-                labelKey: 'menu.language_management',
-                descriptionKey: 'menu.language_management_description',
-                href: '/settings/languages',
-                icon: Languages,
             },
             {
                 labelKey: 'menu.general_settings',

@@ -14,12 +14,16 @@ export type AdminNotification = {
     type: 'request' | 'security' | 'other';
     title: string;
     message: string;
+    severity: 'normal' | 'alert';
     reference_type:
         | 'installation_application'
         | 'change_password_request'
         | 'change_plan_request'
         | 'failure_report'
         | 'relocation_request'
+        | 'ledger_health_snapshot_full'
+        | 'ledger_health_snapshot_daily'
+        | 'ledger_health_snapshot_manual'
         | null;
     reference_id: number | null;
     read_at: string | null;
@@ -39,6 +43,12 @@ export type CustomNotification = {
 };
 
 export type RecentNotification = AdminNotification | CustomNotification;
+
+declare global {
+    interface WindowEventMap {
+        'admin-notification-created': CustomEvent<AdminNotification>;
+    }
+}
 
 export type PageProps<T extends Record<string, unknown> = Record<string, unknown>> = T & {
     auth: {
