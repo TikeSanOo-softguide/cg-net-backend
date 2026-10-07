@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import { CalendarIcon, CircleDotIcon, EyeIcon, ReceiptIcon } from 'lucide-react';
 
@@ -13,6 +13,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCan } from '@/hooks/useCan';
@@ -302,6 +303,14 @@ function BillPaymentDetailDialog({
 
     if (!payment) return null;
 
+    const orderSnapshot = {
+        transaction_no: payment.transaction_no,
+        broadband_account_number: payment.broadband_account_number,
+        customer_name: payment.customer_name,
+        customer_phone: payment.customer_phone,
+        amount: payment.amount,
+    };
+
     return (
         <FormDialog
             open={open}
@@ -309,7 +318,7 @@ function BillPaymentDetailDialog({
             title={t('bill_payments.details')}
             description={payment.transaction_no || t('bill_payments.details_description')}
             icon={ReceiptIcon}
-            size="lg"
+            size="2xl"
         >
             <div className="space-y-3 overflow-y-auto p-4 sm:p-5">
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -346,52 +355,30 @@ function BillPaymentDetailDialog({
                         value={payment.confirmed_at ? formatDateTime(payment.confirmed_at) : null}
                     />
                 </div>
-                {payment.external_response ? (
-                    <div className="overflow-hidden rounded-xl border border-border/60 bg-muted/10">
-                        <div className="border-b border-border/60 bg-muted/20 px-3 py-2 text-xs font-semibold text-muted-foreground sm:px-4">
-                            {t('bill_payments.external_response')}
-                        </div>
-                        <div className="divide-y divide-border/50">
-                            {renderExternalResponseRows(payment.external_response)}
-                        </div>
-                    </div>
-                ) : null}
+                <div className="mt-5 grid gap-4 xl:grid-cols-2">
+                    <JsonDetails title={t('package_orders.snapshot')} value={orderSnapshot} />
+                    <JsonDetails
+                        title={t('bill_payments.external_response')}
+                        value={payment.external_response}
+                    />
+                </div>
             </div>
         </FormDialog>
     );
 }
 
-function renderExternalResponseRows(value: unknown): ReactElement[] {
-    if (Array.isArray(value)) {
-        return value.map((item, index) => (
-            <ExternalResponseRow key={`response-${index}`} label={`[${index}]`} value={item} />
-        ));
-    }
-
-    if (value !== null && typeof value === 'object') {
-        const entries = Object.entries(value as Record<string, unknown>);
-
-        return entries.length > 0
-            ? entries.map(([key, child]) => <ExternalResponseRow key={key} label={key} value={child} />)
-            : [<ExternalResponseRow key="response-empty" label="-" value={null} />];
-    }
-
-    return [<ExternalResponseRow key="response-value" label="-" value={value} />];
-}
-
-function ExternalResponseRow({ label, value }: { label: string; value: unknown }) {
-    const displayValue =
-        value === null || value === undefined || value === ''
-            ? '—'
-            : typeof value === 'object'
-              ? JSON.stringify(value)
-              : String(value);
-
+function JsonDetails({ title, value }: { title: string; value: unknown }) {
     return (
-        <div className="grid grid-cols-[minmax(120px,0.8fr)_minmax(0,1fr)] gap-3 px-3 py-3 text-xs sm:px-4">
-            <span className="font-medium text-foreground">{label}</span>
-            <span className="min-w-0 break-words text-foreground">{displayValue}</span>
-        </div>
+        <Card>
+            <CardHeader>
+                <CardTitle className="text-sm">{title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <pre className="max-h-56 overflow-auto rounded-md bg-muted p-3 text-xs">
+                    {value ? JSON.stringify(value, null, 2) : '—'}
+                </pre>
+            </CardContent>
+        </Card>
     );
 }
 
