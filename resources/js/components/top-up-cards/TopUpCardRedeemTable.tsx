@@ -10,7 +10,6 @@ import { PhoneDisplay } from '@/components/customer/PhoneDisplay';
 import { FormControl } from '@/components/ui/form-control';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { SpinnerOverlay } from '@/components/ui/spinner';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
@@ -55,154 +54,158 @@ export function TopUpCardRedeemTable({
 
     return (
         <>
-            <div className="relative">
-                {loading ? <SpinnerOverlay className="rounded-[12px]" /> : null}
-                <DataTable
-                    data={cards.data}
-                    getRowId={(row) => String(row.id)}
-                    search={search}
-                    onSearchChange={onSearchChange}
-                    searchPlaceholder={t('top_up_cards.history_search_placeholder')}
-                    emptyLabel={t('top_up_cards.history_empty_filtered')}
-                    sort={filters.sort}
-                    direction={filters.direction}
-                    pagination={cards}
-                    onSort={(column) => {
-                        const nextDirection = filters.sort === column && filters.direction === 'asc' ? 'desc' : 'asc';
-                        onFilter({ ...filters, sort: column, direction: nextDirection });
-                    }}
-                    filters={
-                        <div className="flex w-full flex-col gap-2">
-                            <div className="flex flex-wrap gap-1.5">
-                                {RANGE_PRESETS.map((preset) => {
-                                    const from = preset.from();
-                                    const to = preset.to();
-                                    const active = filters.from === from && filters.to === to;
+            <DataTable
+                data={cards.data}
+                getRowId={(row) => String(row.id)}
+                loading={loading}
+                search={search}
+                onSearchChange={onSearchChange}
+                searchPlaceholder={t('top_up_cards.history_search_placeholder')}
+                emptyLabel={t('top_up_cards.history_empty_filtered')}
+                sort={filters.sort}
+                direction={filters.direction}
+                pagination={cards}
+                onSort={(column) => {
+                    const nextDirection = filters.sort === column && filters.direction === 'asc' ? 'desc' : 'asc';
+                    onFilter({ ...filters, sort: column, direction: nextDirection });
+                }}
+                filters={
+                    <div className="flex w-full flex-col gap-2">
+                        <div className="flex flex-wrap gap-1.5">
+                            {RANGE_PRESETS.map((preset) => {
+                                const from = preset.from();
+                                const to = preset.to();
+                                const active = filters.from === from && filters.to === to;
 
-                                    return (
-                                        <button
-                                            key={preset.id}
-                                            type="button"
-                                            aria-pressed={active}
-                                            onClick={() => onFilter({ ...filters, from, to })}
-                                            className={cn(
-                                                'inline-flex h-6 items-center rounded-full border px-2.5 text-[11px] font-medium transition-colors',
-                                                active
-                                                    ? 'border-primary bg-primary/10 text-primary'
-                                                    : 'border-border/80 text-muted-foreground hover:border-primary/40 hover:text-primary',
-                                            )}
-                                        >
-                                            {t(preset.labelKey)}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                            <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
-                                <FormControl compact className="w-full shrink-0 sm:w-40">
-                                    <Select
-                                        value={filters.amount || 'all'}
-                                        onValueChange={(value) => onFilter({ ...filters, amount: value === 'all' ? '' : value })}
+                                return (
+                                    <button
+                                        key={preset.id}
+                                        type="button"
+                                        aria-pressed={active}
+                                        onClick={() => onFilter({ ...filters, from, to })}
+                                        className={cn(
+                                            'inline-flex h-6 items-center rounded-full border px-2.5 text-[11px] font-medium transition-colors',
+                                            active
+                                                ? 'border-primary bg-primary/10 text-primary'
+                                                : 'border-border/80 text-muted-foreground hover:border-primary/40 hover:text-primary',
+                                        )}
                                     >
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder={t('top_up_cards.amount')} />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">{t('common.all')}</SelectItem>
-                                            {amounts.map((amount) => (
-                                                <SelectItem key={amount} value={String(amount)}>
-                                                    {formatTopUpAmount(amount)}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </FormControl>
-                                <FormControl icon={CalendarIcon} compact className="w-full shrink-0 sm:w-40">
-                                    <DatePicker
-                                        value={filters.from}
-                                        onChange={(value) => onFilter({ ...filters, from: value })}
-                                    />
-                                </FormControl>
-                                <FormControl icon={CalendarIcon} compact className="w-full shrink-0 sm:w-40">
-                                    <DatePicker
-                                        value={filters.to}
-                                        min={filters.from || undefined}
-                                        onChange={(value) => onFilter({ ...filters, to: value })}
-                                    />
-                                </FormControl>
-                            </div>
+                                        {t(preset.labelKey)}
+                                    </button>
+                                );
+                            })}
                         </div>
-                    }
-                    columns={[
-                        {
-                            id: 'serial_no',
-                            header: t('top_up_cards.serial_no'),
-                            sortable: true,
-                            mobile: 'title',
-                            className: 'font-mono text-[12px]',
-                            cell: (row) => row.serial_no,
-                        },
-                        {
-                            id: 'amount',
-                            header: t('top_up_cards.amount'),
-                            sortable: true,
-                            mobile: 'meta',
-                            cell: (row) => (
-                                <span className="font-semibold tabular-nums text-primary">{formatTopUpAmount(row.amount)}</span>
-                            ),
-                        },
-                        {
-                            id: 'redeemed_by',
-                            header: t('top_up_cards.customer'),
-                            mobile: 'subtitle',
-                            cell: (row) => (
-                                <div className="min-w-0">
-                                    <p className="truncate text-[13px] font-medium">{row.redeemed_by ?? t('top_up_cards.no_customer')}</p>
-                                    {row.redeemed_by_phone ? (
-                                        <PhoneDisplay phone={row.redeemed_by_phone} className="mt-0.5" />
-                                    ) : null}
-                                </div>
-                            ),
-                        },
-                        {
-                            id: 'redeemed_at',
-                            header: t('top_up_cards.redeemed_at'),
-                            sortable: true,
-                            className: 'text-muted-foreground',
-                            cell: (row) => formatTopUpDateTime(row.redeemed_at),
-                        },
-                        {
-                            id: 'status',
-                            header: t('common.status'),
-                            mobile: 'badge',
-                            cell: (row) => <StatusBadge status={row.status} />,
-                        },
-                    ]}
-                    actions={(row) => (
-                        <>
-                            <TableActionButton
-                                label={t('top_up_cards.redemption')}
-                                icon={EyeIcon}
-                                onClick={(event) => {
-                                    event.stopPropagation();
-                                    setViewing(row);
-                                }}
-                            />
-                            {can('customers.view') && row.redeemed_by_id ? (
-                                <TableActionButton
-                                    label={t('top_up_cards.view_customer')}
-                                    icon={UserRoundIcon}
-                                    tone="neutral"
-                                    href={`/customers/${row.redeemed_by_id}`}
+                        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
+                            <FormControl compact className="w-full shrink-0 sm:w-40">
+                                <Select
+                                    value={filters.amount || 'all'}
+                                    onValueChange={(value) =>
+                                        onFilter({ ...filters, amount: value === 'all' ? '' : value })
+                                    }
+                                >
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue placeholder={t('top_up_cards.amount')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">{t('common.all')}</SelectItem>
+                                        {amounts.map((amount) => (
+                                            <SelectItem key={amount} value={String(amount)}>
+                                                {formatTopUpAmount(amount)}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </FormControl>
+                            <FormControl icon={CalendarIcon} compact className="w-full shrink-0 sm:w-40">
+                                <DatePicker
+                                    value={filters.from}
+                                    onChange={(value) => onFilter({ ...filters, from: value })}
                                 />
-                            ) : null}
-                        </>
-                    )}
-                />
-            </div>
+                            </FormControl>
+                            <FormControl icon={CalendarIcon} compact className="w-full shrink-0 sm:w-40">
+                                <DatePicker
+                                    value={filters.to}
+                                    min={filters.from || undefined}
+                                    onChange={(value) => onFilter({ ...filters, to: value })}
+                                />
+                            </FormControl>
+                        </div>
+                    </div>
+                }
+                columns={[
+                    {
+                        id: 'serial_no',
+                        header: t('top_up_cards.serial_no'),
+                        sortable: true,
+                        mobile: 'title',
+                        className: 'font-mono text-[12px]',
+                        cell: (row) => row.serial_no,
+                    },
+                    {
+                        id: 'amount',
+                        header: t('top_up_cards.amount'),
+                        sortable: true,
+                        mobile: 'meta',
+                        cell: (row) => (
+                            <span className="font-semibold tabular-nums text-primary">
+                                {formatTopUpAmount(row.amount)}
+                            </span>
+                        ),
+                    },
+                    {
+                        id: 'redeemed_by',
+                        header: t('top_up_cards.customer'),
+                        mobile: 'subtitle',
+                        cell: (row) => (
+                            <div className="min-w-0">
+                                <p className="truncate text-[13px] font-medium">
+                                    {row.redeemed_by ?? t('top_up_cards.no_customer')}
+                                </p>
+                                {row.redeemed_by_phone ? (
+                                    <PhoneDisplay phone={row.redeemed_by_phone} className="mt-0.5" />
+                                ) : null}
+                            </div>
+                        ),
+                    },
+                    {
+                        id: 'redeemed_at',
+                        header: t('top_up_cards.redeemed_at'),
+                        sortable: true,
+                        className: 'text-muted-foreground',
+                        cell: (row) => formatTopUpDateTime(row.redeemed_at),
+                    },
+                    {
+                        id: 'status',
+                        header: t('common.status'),
+                        mobile: 'badge',
+                        cell: (row) => <StatusBadge status={row.status} />,
+                    },
+                ]}
+                actions={(row) => (
+                    <>
+                        <TableActionButton
+                            label={t('top_up_cards.redemption')}
+                            icon={EyeIcon}
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                setViewing(row);
+                            }}
+                        />
+                        {can('customers.view') && row.redeemed_by_id ? (
+                            <TableActionButton
+                                label={t('top_up_cards.view_customer')}
+                                icon={UserRoundIcon}
+                                tone="neutral"
+                                href={`/customers/${row.redeemed_by_id}`}
+                            />
+                        ) : null}
+                    </>
+                )}
+            />
             <FormDialog
                 open={viewing !== null}
                 onOpenChange={(open) => {
-                    if (! open) {
+                    if (!open) {
                         setViewing(null);
                     }
                 }}
@@ -224,20 +227,28 @@ export function TopUpCardRedeemTable({
                                 </div>
                                 <div>
                                     <dt className="text-[11px] text-muted-foreground">{t('common.status')}</dt>
-                                    <dd className="mt-1"><StatusBadge status={viewing.status} /></dd>
+                                    <dd className="mt-1">
+                                        <StatusBadge status={viewing.status} />
+                                    </dd>
                                 </div>
                                 <div>
                                     <dt className="text-[11px] text-muted-foreground">{t('top_up_cards.customer')}</dt>
-                                    <dd className="font-medium">{viewing.redeemed_by ?? t('top_up_cards.no_customer')}</dd>
+                                    <dd className="font-medium">
+                                        {viewing.redeemed_by ?? t('top_up_cards.no_customer')}
+                                    </dd>
                                 </div>
                                 <div>
-                                    <dt className="text-[11px] text-muted-foreground">{t('top_up_cards.customer_phone')}</dt>
+                                    <dt className="text-[11px] text-muted-foreground">
+                                        {t('top_up_cards.customer_phone')}
+                                    </dt>
                                     <dd className="mt-1">
                                         <PhoneDisplay phone={viewing.redeemed_by_phone} />
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt className="text-[11px] text-muted-foreground">{t('top_up_cards.redeemed_at')}</dt>
+                                    <dt className="text-[11px] text-muted-foreground">
+                                        {t('top_up_cards.redeemed_at')}
+                                    </dt>
                                     <dd>{formatTopUpDateTime(viewing.redeemed_at)}</dd>
                                 </div>
                             </dl>

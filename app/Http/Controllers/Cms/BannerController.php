@@ -169,7 +169,8 @@ class BannerController extends Controller
             'is_active' => $banner->is_active,
             'start_date' => $banner->start_date?->toDateString(),
             'end_date' => $banner->end_date?->toDateString(),
-            'created_at' => $banner->created_at?->toDateString(),
+            'created_at' => $banner->created_at?->toDateTimeString(),
+            'updated_at' => $banner->updated_at?->toDateTimeString(),
         ];
     }
 }

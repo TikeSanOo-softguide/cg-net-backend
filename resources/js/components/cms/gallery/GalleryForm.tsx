@@ -23,6 +23,8 @@ type GalleryFormProps = {
     onCancel?: () => void;
     mode?: 'create' | 'edit';
     imageUrl?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
 };
 
 type TouchedFields = Record<keyof GalleryFormValues, boolean>;
@@ -34,7 +36,15 @@ const untouched: TouchedFields = {
     image: false,
 };
 
-export function GalleryForm({ form, onSubmit, onCancel, mode = 'create', imageUrl }: GalleryFormProps) {
+export function GalleryForm({
+    form,
+    onSubmit,
+    onCancel,
+    mode = 'create',
+    imageUrl,
+    createdAt,
+    updatedAt,
+}: GalleryFormProps) {
     const { t } = useTranslation();
 
     const [dashedImage, setDashedImage] = useState<File | null>(null);
@@ -160,7 +170,14 @@ export function GalleryForm({ form, onSubmit, onCancel, mode = 'create', imageUr
     };
 
     return (
-        <CmsFormShell onSubmit={submit} onCancel={onCancel} processing={form.processing} mode={mode}>
+        <CmsFormShell
+            onSubmit={submit}
+            onCancel={onCancel}
+            processing={form.processing}
+            mode={mode}
+            createdAt={createdAt}
+            updatedAt={updatedAt}
+        >
             <FormField
                 label={t('cms.gallery.label_en')}
                 htmlFor="label_en"

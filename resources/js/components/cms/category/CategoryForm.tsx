@@ -30,9 +30,11 @@ type CategoryFormProps = {
     onSubmit: (event: FormEvent) => void;
     onCancel?: () => void;
     mode?: 'create' | 'edit';
+    createdAt?: string | null;
+    updatedAt?: string | null;
 };
 
-export function CategoryForm({ form, onSubmit, onCancel, mode = 'create' }: CategoryFormProps) {
+export function CategoryForm({ form, onSubmit, onCancel, mode = 'create', createdAt, updatedAt }: CategoryFormProps) {
     const { t } = useTranslation();
     const [slugTouched, setSlugTouched] = useState(form.data.slug !== '');
     const [touched, setTouched] = useState<Record<keyof CategoryFormValues, boolean>>({
@@ -86,7 +88,14 @@ export function CategoryForm({ form, onSubmit, onCancel, mode = 'create' }: Cate
     };
 
     return (
-        <CmsFormShell onSubmit={submit} onCancel={onCancel} processing={form.processing} mode={mode}>
+        <CmsFormShell
+            onSubmit={submit}
+            onCancel={onCancel}
+            processing={form.processing}
+            mode={mode}
+            createdAt={createdAt}
+            updatedAt={updatedAt}
+        >
             <FormField
                 label={t('cms.category.name_en')}
                 htmlFor="name_en"

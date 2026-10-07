@@ -17,6 +17,8 @@ export type BannerItem = {
     start_date: string | null;
     end_date: string | null;
     is_active: boolean;
+    created_at: string | null;
+    updated_at: string | null;
 };
 
 type BannerFormDialogProps = {
@@ -115,6 +117,8 @@ function BannerFormDialogBody({ item, onClose }: { item: BannerItem | null; onCl
                 zh: item?.image_url_zh,
                 my: item?.image_url_my,
             }}
+            createdAt={item?.created_at}
+            updatedAt={item?.updated_at}
         />
     );
 }

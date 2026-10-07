@@ -47,7 +47,7 @@ export function imageUploadBoxStyle(
 }
 
 export const browseButtonClass =
-    'inline-flex h-7 items-center justify-center rounded-[4px] bg-primary px-2.5 text-[11px] font-medium text-primary-foreground shadow-sm';
+    'inline-flex h-7 shrink-0 items-center justify-center rounded-[4px] bg-primary px-2.5 text-[11px] font-medium text-primary-foreground shadow-sm';
 
 export function takeImageFile(files: FileList | null): File | null {
     const file = files?.[0];

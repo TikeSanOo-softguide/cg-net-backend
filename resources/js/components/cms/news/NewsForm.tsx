@@ -49,6 +49,8 @@ type NewsFormProps = {
     mode?: 'create' | 'edit';
     categories: NewsOption[];
     imageUrl?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
 };
 
 export function NewsForm({
@@ -59,6 +61,8 @@ export function NewsForm({
     mode = 'create',
     categories,
     imageUrl,
+    createdAt,
+    updatedAt,
 }: NewsFormProps) {
     const { t } = useTranslation();
     const [slugTouched, setSlugTouched] = useState(form.data.slug !== '');
@@ -140,7 +144,14 @@ export function NewsForm({
     };
 
     return (
-        <CmsFormShell onSubmit={submit} onCancel={onCancel} processing={form.processing} mode={mode}>
+        <CmsFormShell
+            onSubmit={submit}
+            onCancel={onCancel}
+            processing={form.processing}
+            mode={mode}
+            createdAt={createdAt}
+            updatedAt={updatedAt}
+        >
             <div>
                 <FormField
                     label={t('cms.news.title_en')}

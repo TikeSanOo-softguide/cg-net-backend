@@ -6,10 +6,10 @@ import { GalleryFormDialog, type GalleryItem } from '@/components/cms/gallery/Ga
 import { NoImage } from '@/components/ui/no-image';
 import type { Paginated } from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatDateTime, truncateText } from '@/lib/utils';
+import { truncateText } from '@/lib/utils';
 
 type Props = {
-    items: Paginated<GalleryItem & { created_at: string | null }>;
+    items: Paginated<GalleryItem>;
     filters: CmsFilters;
 };
 
@@ -53,6 +53,8 @@ export default function GalleryIndex({ items, filters }: Props) {
                         label_my: row.label_my,
                         label_zh: row.label_zh,
                         image_url: row.image_url,
+                        created_at: row.created_at,
+                        updated_at: row.updated_at,
                     });
 
                     setFormOpen(true);
@@ -101,17 +103,10 @@ export default function GalleryIndex({ items, filters }: Props) {
 
                             return (
                                 <span className="block max-w-full truncate leading-[1.7]">
-                                    {label?.trim() ? truncateText(label, 50) : '—'}
+                                    {label?.trim() ? truncateText(label, 100) : '—'}
                                 </span>
                             );
                         },
-                    },
-                    {
-                        id: 'created_at',
-                        header: t('common.created_at'),
-                        mobile: 'meta',
-                        className: 'text-muted-foreground',
-                        cell: (row) => formatDateTime(row.created_at),
                     },
                 ]}
             />

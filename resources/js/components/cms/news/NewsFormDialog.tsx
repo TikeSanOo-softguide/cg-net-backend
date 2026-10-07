@@ -132,6 +132,8 @@ function NewsFormDialogBody({
             mode={isEdit ? 'edit' : 'create'}
             categories={categories}
             imageUrl={item?.image_url}
+            createdAt={item?.created_at}
+            updatedAt={item?.updated_at}
         />
     );
 }

@@ -5,7 +5,7 @@ import { CategoryFormDialog, type CategoryItem } from '@/components/cms/category
 import { CmsIndexPage, type CmsFilters } from '@/components/cms/shared/CmsIndexPage';
 import type { Paginated } from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatDateTime, truncateText } from '@/lib/utils';
+import { truncateText } from '@/lib/utils';
 
 type Props = {
     items: Paginated<CategoryItem & { news_count: number; created_at: string | null }>;
@@ -97,20 +97,6 @@ export default function CategoriesIndex({ items, filters }: Props) {
                         header: t('cms.category.news_count'),
                         mobile: 'meta',
                         cell: (row) => row.news_count,
-                    },
-                    {
-                        id: 'created_at',
-                        header: t('common.created_at'),
-                        mobile: 'meta',
-                        className: 'text-muted-foreground',
-                        cell: (row) => formatDateTime(row.created_at),
-                    },
-                    {
-                        id: 'updated_at',
-                        header: t('common.updated_at'),
-                        mobile: 'meta',
-                        className: 'text-muted-foreground',
-                        cell: (row) => formatDateTime(row.updated_at),
                     },
                 ]}
             />

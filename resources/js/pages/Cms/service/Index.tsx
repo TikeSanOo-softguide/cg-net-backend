@@ -7,7 +7,7 @@ import { NoImage } from '@/components/ui/no-image';
 import type { Paginated } from '@/components/Pagination';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatDateTime, truncateText } from '@/lib/utils';
+import { truncateText } from '@/lib/utils';
 
 type Props = {
     items: Paginated<
@@ -101,7 +101,7 @@ export default function ServiceIndex({ items, filters }: Props) {
                                         : locale === 'my'
                                           ? row.title_my || row.title_en
                                           : row.title_en,
-                                displayTitle = truncateText(title, 65);
+                                displayTitle = truncateText(title, 100);
 
                             return (
                                 <span className="block max-w-full truncate leading-[1.7]" title={title}>
@@ -115,20 +115,6 @@ export default function ServiceIndex({ items, filters }: Props) {
                         header: t('common.status'),
                         mobile: 'badge',
                         cell: (row) => <StatusBadge status={row.status} />,
-                    },
-                    {
-                        id: 'created_at',
-                        header: t('common.created_at'),
-                        mobile: 'meta',
-                        className: 'text-muted-foreground',
-                        cell: (row) => formatDateTime(row.created_at),
-                    },
-                    {
-                        id: 'updated_at',
-                        header: t('common.updated_at'),
-                        mobile: 'meta',
-                        className: 'text-muted-foreground',
-                        cell: (row) => formatDateTime(row.updated_at),
                     },
                 ]}
             />

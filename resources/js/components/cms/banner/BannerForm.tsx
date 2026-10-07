@@ -71,6 +71,8 @@ type BannerFormProps = {
     onSubmit: (event: FormEvent) => void;
     onCancel?: () => void;
     mode?: 'create' | 'edit';
+    createdAt?: string | null;
+    updatedAt?: string | null;
     imageUrls?: {
         en?: string | null;
         zh?: string | null;
@@ -85,7 +87,15 @@ interface PreviewModalState {
     title: string;
 }
 
-export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrls }: BannerFormProps) {
+export function BannerForm({
+    form,
+    onSubmit,
+    onCancel,
+    mode = 'create',
+    createdAt,
+    updatedAt,
+    imageUrls,
+}: BannerFormProps) {
     const { t } = useTranslation();
 
     const [imageEn, setImageEn] = useState<File | null>(null);
@@ -289,9 +299,16 @@ export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrl
     };
 
     return (
-        <CmsFormShell onSubmit={submit} onCancel={onCancel} processing={form.processing} mode={mode}>
+        <CmsFormShell
+            onSubmit={submit}
+            onCancel={onCancel}
+            processing={form.processing}
+            mode={mode}
+            createdAt={createdAt}
+            updatedAt={updatedAt}
+        >
             <div className="col-span-full w-full space-y-6 sm:space-y-8">
-                <section className="w-full rounded-xl border border-border/50 bg-card p-4 shadow-sm sm:p-6">
+                <section className="w-full rounded-xl border border-border/50 bg-card p-4 sm:p-6">
                     <FormField
                         label={t('cms.banner.type')}
                         htmlFor="banner-type-web-background"
@@ -351,7 +368,7 @@ export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrl
                     </FormField>
                 </section>
 
-                <section className="w-full rounded-xl border border-border/50 bg-card p-4 shadow-sm sm:p-6">
+                <section className="w-full rounded-xl border border-border/50 bg-card p-4 sm:p-6">
                     <div className="mb-4 flex items-center justify-between border-b border-border/40 pb-3">
                         <div className="flex items-center gap-2">
                             <ImageIcon className="size-4 text-muted-foreground" />
@@ -369,7 +386,7 @@ export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrl
                 </section>
 
                 <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-2">
-                    <section className="w-full rounded-xl border border-border/50 bg-card p-4 shadow-sm sm:p-6">
+                    <section className="w-full rounded-xl border border-border/50 bg-card p-4 sm:p-6">
                         <div className="mb-4 flex items-center gap-2 border-b border-border/40 pb-3">
                             <Settings2Icon className="size-4 text-muted-foreground" />
                             <h3 className="text-sm font-semibold text-foreground">{t('menu.settings')}</h3>
@@ -424,7 +441,7 @@ export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrl
                         </div>
                     </section>
 
-                    <section className="w-full rounded-xl border border-border/50 bg-card p-4 shadow-sm sm:p-6">
+                    <section className="w-full rounded-xl border border-border/50 bg-card p-4 sm:p-6">
                         <div className="mb-4 flex items-center gap-2 border-b border-border/40 pb-3">
                             <CalendarIcon className="size-4 text-muted-foreground" />
                             <h3 className="text-sm font-semibold text-foreground">{t('cms.banner.schedule')}</h3>

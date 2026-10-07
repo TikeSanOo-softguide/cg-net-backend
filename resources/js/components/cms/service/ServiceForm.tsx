@@ -41,9 +41,20 @@ type ServiceFormProps = {
     onImageClear: () => void;
     mode?: 'create' | 'edit';
     imageUrl?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
 };
 
-export function ServiceForm({ form, onSubmit, onCancel, onImageClear, mode = 'create', imageUrl }: ServiceFormProps) {
+export function ServiceForm({
+    form,
+    onSubmit,
+    onCancel,
+    onImageClear,
+    mode = 'create',
+    imageUrl,
+    createdAt,
+    updatedAt,
+}: ServiceFormProps) {
     const { t } = useTranslation();
     const [slugTouched, setSlugTouched] = useState(form.data.slug !== '');
     const [image, setImage] = useState<File | null>(null);
@@ -120,7 +131,14 @@ export function ServiceForm({ form, onSubmit, onCancel, onImageClear, mode = 'cr
     };
 
     return (
-        <CmsFormShell onSubmit={submit} onCancel={onCancel} processing={form.processing} mode={mode}>
+        <CmsFormShell
+            onSubmit={submit}
+            onCancel={onCancel}
+            processing={form.processing}
+            mode={mode}
+            createdAt={createdAt}
+            updatedAt={updatedAt}
+        >
             <div>
                 <FormField
                     label={t('cms.service.title_en')}

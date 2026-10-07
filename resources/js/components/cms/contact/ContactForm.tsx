@@ -15,9 +15,11 @@ type ContactFormProps = {
     onSubmit: (event: FormEvent) => void;
     onCancel?: () => void;
     mode?: 'create' | 'edit';
+    createdAt?: string | null;
+    updatedAt?: string | null;
 };
 
-export function ContactForm({ form, onSubmit, onCancel, mode = 'create' }: ContactFormProps) {
+export function ContactForm({ form, onSubmit, onCancel, mode = 'create', createdAt, updatedAt }: ContactFormProps) {
     const { t } = useTranslation();
     const [submitted, setSubmitted] = useState(false);
     const [touched, setTouched] = useState<Record<keyof ContactFormValues, boolean>>({
@@ -54,7 +56,14 @@ export function ContactForm({ form, onSubmit, onCancel, mode = 'create' }: Conta
             : form.errors.contact_point;
 
     return (
-        <CmsFormShell onSubmit={handleSubmit} onCancel={onCancel} processing={form.processing} mode={mode}>
+        <CmsFormShell
+            onSubmit={handleSubmit}
+            onCancel={onCancel}
+            processing={form.processing}
+            mode={mode}
+            createdAt={createdAt}
+            updatedAt={updatedAt}
+        >
             <FormField
                 label={t('cms.contact_point')}
                 htmlFor="contact_point"

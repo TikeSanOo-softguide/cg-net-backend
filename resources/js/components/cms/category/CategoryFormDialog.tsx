@@ -60,11 +60,11 @@ function CategoryFormDialogBody({ item, onClose }: { item: CategoryItem | null; 
     const form = useForm<CategoryFormValues>(
         item
             ? {
-                name_en: item.name_en,
-                name_zh: item.name_zh,
-                name_my: item.name_my,
-                slug: item.slug,
-            }
+                  name_en: item.name_en,
+                  name_zh: item.name_zh,
+                  name_my: item.name_my,
+                  slug: item.slug,
+              }
             : emptyCategoryForm(),
     );
 
@@ -91,6 +91,8 @@ function CategoryFormDialogBody({ item, onClose }: { item: CategoryItem | null; 
             onSubmit={submit}
             onCancel={onClose}
             mode={isEdit ? 'edit' : 'create'}
+            createdAt={item?.created_at}
+            updatedAt={item?.updated_at}
         />
     );
 }

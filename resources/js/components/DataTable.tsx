@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from '@inertiajs/react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -25,9 +25,11 @@ import { buildWindowedPaginationLinks, Pagination, type Paginated } from '@/comp
 import { SearchInput } from '@/components/SearchInput';
 import { TableActionButton } from '@/components/TableActionButton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { SpinnerOverlay } from '@/components/ui/spinner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TableCheckbox } from '@/components/ui/table-checkbox';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { markDataTableVisitInitiator, useDataTableVisitLoading } from '@/hooks/useDataTableVisitLoading';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 
@@ -51,6 +53,7 @@ type DataTableProps<T> = {
     emptyLabel?: string;
     emptyStateClassName?: string;
     className?: string;
+    loading?: boolean;
     search?: string;
     onSearchChange?: (value: string) => void;
     filters?: ReactNode;
@@ -95,6 +98,7 @@ export function DataTable<T>({
     emptyLabel,
     emptyStateClassName,
     className,
+    loading = false,
     search,
     onSearchChange,
     filters,
@@ -128,6 +132,8 @@ export function DataTable<T>({
     showSearch = true,
 }: DataTableProps<T>) {
     const { t } = useTranslation();
+    const tableId = useId();
+    const visitLoading = useDataTableVisitLoading(tableId);
     const [query, setQuery] = useState('');
     const [clientPage, setClientPage] = useState(1);
     const [internalSelectedIds, setInternalSelectedIds] = useState<string[]>([]);
@@ -370,8 +376,10 @@ export function DataTable<T>({
     return (
         <TooltipProvider>
             <Card
+                onPointerDownCapture={() => markDataTableVisitInitiator(tableId)}
+                onFocusCapture={() => markDataTableVisitInitiator(tableId)}
                 className={cn(
-                    'flex h-full min-h-0 flex-col gap-0 overflow-hidden border-0 py-0 shadow-[0_4px_16px_rgb(23_50_54/0.06)] dark:shadow-[0_4px_16px_rgb(0_0_0/0.22)]',
+                    'relative flex h-full min-h-0 flex-col gap-0 overflow-hidden border-0 py-0 shadow-[0_4px_16px_rgb(23_50_54/0.06)] dark:shadow-[0_4px_16px_rgb(0_0_0/0.22)]',
                     className,
                 )}
             >
@@ -690,6 +698,7 @@ export function DataTable<T>({
                         />
                     ) : null}
                 </CardContent>
+                {loading || visitLoading ? <SpinnerOverlay className="rounded-[12px]" /> : null}
             </Card>
             {shouldConfirmBulkDelete ? (
                 <ConfirmDialog

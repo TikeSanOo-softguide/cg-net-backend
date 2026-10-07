@@ -10,7 +10,6 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
 import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { SpinnerOverlay } from '@/components/ui/spinner';
 import { toast } from '@/hooks/use-toast';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -86,208 +85,206 @@ export function TopUpCardHistoryTable({
 
     return (
         <>
-            <div className="relative">
-                {loading ? <SpinnerOverlay className="rounded-[12px]" /> : null}
-                <DataTable
-                    data={cards.data}
-                    getRowId={(row) => String(row.id)}
-                    search={search}
-                    onSearchChange={onSearchChange}
-                    searchPlaceholder={t('top_up_cards.search_placeholder')}
-                    emptyLabel={t('top_up_cards.empty_table')}
-                    sort={filters.sort}
-                    direction={filters.direction}
-                    pagination={cards}
-                    onSort={(column) => {
-                        const nextDirection = filters.sort === column && filters.direction === 'asc' ? 'desc' : 'asc';
-                        onFilter({ ...filters, sort: column, direction: nextDirection });
-                    }}
-                    filters={
-                        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
-                            <FormField
-                                label={t('common.status')}
-                                htmlFor="status"
-                                className="w-full shrink-0 sm:w-40"
-                                labelClassName="text-[13px]"
+            <DataTable
+                data={cards.data}
+                getRowId={(row) => String(row.id)}
+                loading={loading}
+                search={search}
+                onSearchChange={onSearchChange}
+                searchPlaceholder={t('top_up_cards.search_placeholder')}
+                emptyLabel={t('top_up_cards.empty_table')}
+                sort={filters.sort}
+                direction={filters.direction}
+                pagination={cards}
+                onSort={(column) => {
+                    const nextDirection = filters.sort === column && filters.direction === 'asc' ? 'desc' : 'asc';
+                    onFilter({ ...filters, sort: column, direction: nextDirection });
+                }}
+                filters={
+                    <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
+                        <FormField
+                            label={t('common.status')}
+                            htmlFor="status"
+                            className="w-full shrink-0 sm:w-40"
+                            labelClassName="text-[13px]"
+                        >
+                            <Select
+                                value={filters.status || 'all'}
+                                onValueChange={(value) =>
+                                    onFilter({ ...filters, status: value === 'all' ? '' : value })
+                                }
                             >
-                                <Select
-                                    value={filters.status || 'all'}
-                                    onValueChange={(value) =>
-                                        onFilter({ ...filters, status: value === 'all' ? '' : value })
-                                    }
-                                >
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder={t('common.status')} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">{t('common.all')}</SelectItem>
-                                        <SelectItem value="pending">{t('status.pending')}</SelectItem>
-                                        <SelectItem value="active">{t('status.active')}</SelectItem>
-                                        <SelectItem value="used">{t('status.used')}</SelectItem>
-                                        <SelectItem value="blocked">{t('status.blocked')}</SelectItem>
-                                        <SelectItem value="expired">{t('status.expired')}</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </FormField>
-                            <FormField
-                                label={t('top_up_cards.amount')}
-                                htmlFor="amount"
-                                className="w-full shrink-0 sm:w-40"
-                                labelClassName="text-[13px]"
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder={t('common.status')} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">{t('common.all')}</SelectItem>
+                                    <SelectItem value="pending">{t('status.pending')}</SelectItem>
+                                    <SelectItem value="active">{t('status.active')}</SelectItem>
+                                    <SelectItem value="used">{t('status.used')}</SelectItem>
+                                    <SelectItem value="blocked">{t('status.blocked')}</SelectItem>
+                                    <SelectItem value="expired">{t('status.expired')}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </FormField>
+                        <FormField
+                            label={t('top_up_cards.amount')}
+                            htmlFor="amount"
+                            className="w-full shrink-0 sm:w-40"
+                            labelClassName="text-[13px]"
+                        >
+                            <Select
+                                value={filters.amount || 'all'}
+                                onValueChange={(value) =>
+                                    onFilter({ ...filters, amount: value === 'all' ? '' : value })
+                                }
                             >
-                                <Select
-                                    value={filters.amount || 'all'}
-                                    onValueChange={(value) =>
-                                        onFilter({ ...filters, amount: value === 'all' ? '' : value })
-                                    }
-                                >
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder={t('top_up_cards.amount')} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">{t('common.all')}</SelectItem>
-                                        {amounts.map((amount) => (
-                                            <SelectItem key={amount} value={String(amount)}>
-                                                {formatTopUpAmount(amount)}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </FormField>
-                            <FormField
-                                label={t('top_up_cards.batch_no')}
-                                htmlFor="batch"
-                                className="w-full shrink-0 sm:w-50"
-                                labelClassName="text-[13px]"
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder={t('top_up_cards.amount')} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">{t('common.all')}</SelectItem>
+                                    {amounts.map((amount) => (
+                                        <SelectItem key={amount} value={String(amount)}>
+                                            {formatTopUpAmount(amount)}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </FormField>
+                        <FormField
+                            label={t('top_up_cards.batch_no')}
+                            htmlFor="batch"
+                            className="w-full shrink-0 sm:w-50"
+                            labelClassName="text-[13px]"
+                        >
+                            <SearchableSelect
+                                value={String(filters.batch ?? '')}
+                                onValueChange={handleSelect}
+                                options={batchOptions}
+                                placeholder={t('common.all')}
+                                searchPlaceholder={t('top_up_cards.batch_no') as string}
+                                className="w-full"
+                            />
+                        </FormField>
+                        <FormField
+                            label={t('top_up_cards.office.title')}
+                            htmlFor="office"
+                            className="w-full shrink-0 sm:w-50"
+                            labelClassName="text-[13px]"
+                        >
+                            <Select
+                                value={filters.office || 'all'}
+                                onValueChange={(value) =>
+                                    onFilter({
+                                        ...filters,
+                                        office: value === 'all' ? '' : value,
+                                    })
+                                }
                             >
-                                <SearchableSelect
-                                    value={String(filters.batch ?? '')}
-                                    onValueChange={handleSelect}
-                                    options={batchOptions}
-                                    placeholder={t('common.all')}
-                                    searchPlaceholder={t('top_up_cards.batch_no') as string}
-                                    className="w-full"
-                                />
-                            </FormField>
-                            <FormField
-                                label={t('top_up_cards.office.title')}
-                                htmlFor="office"
-                                className="w-full shrink-0 sm:w-50"
-                                labelClassName="text-[13px]"
-                            >
-                                <Select
-                                    value={filters.office || 'all'}
-                                    onValueChange={(value) =>
-                                        onFilter({
-                                            ...filters,
-                                            office: value === 'all' ? '' : value,
-                                        })
-                                    }
-                                >
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder={t('common.all')} />
-                                    </SelectTrigger>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder={t('common.all')} />
+                                </SelectTrigger>
 
-                                    <SelectContent>
-                                        <SelectItem value="all">{t('common.all')}</SelectItem>
+                                <SelectContent>
+                                    <SelectItem value="all">{t('common.all')}</SelectItem>
 
-                                        {offices.map((office) => (
-                                            <SelectItem key={office.id} value={String(office.id)}>
-                                                {office.name}:{office.code}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </FormField>
-                            <FormField
-                                label={t('top_up_cards.from_date')}
-                                htmlFor="from"
-                                icon={CalendarIcon}
-                                className="w-full shrink-0 sm:w-40"
-                                labelClassName="text-[13px]"
-                            >
-                                <DatePicker
-                                    value={filters.from}
-                                    onChange={(value) => onFilter({ ...filters, from: value })}
-                                />
-                            </FormField>
-                            <FormField
-                                label={t('top_up_cards.to_date')}
-                                htmlFor="to"
-                                icon={CalendarIcon}
-                                className="w-full shrink-0 sm:w-40"
-                                labelClassName="text-[13px]"
-                            >
-                                <DatePicker
-                                    value={filters.to}
-                                    min={filters.from || undefined}
-                                    onChange={(value) => onFilter({ ...filters, to: value })}
-                                />
-                            </FormField>
-                        </div>
-                    }
-                    columns={[
-                        {
-                            id: 'serial_no',
-                            header: t('top_up_cards.serial_no'),
-                            mobile: 'title',
-                            className: 'font-mono text-[12px]',
-                            cell: (row) => row.serial_no,
-                        },
-                        {
-                            id: 'amount',
-                            header: t('top_up_cards.amount'),
-                            mobile: 'meta',
-                            cell: (row) => formatTopUpAmount(row.amount),
-                        },
-                        {
-                            id: 'batch_no',
-                            header: t('top_up_cards.batch_no'),
-                            cell: (row) => row.batch_no ?? '—',
-                        },
-                        {
-                            id: 'office',
-                            header: t('top_up_cards.office.title'),
-                            cell: (row) => `${row.office?.name || '—'}`,
-                        },
-                        {
-                            id: 'status',
-                            header: t('common.status'),
-                            mobile: 'badge',
-                            cell: (row) => <StatusBadge status={row.status} />,
-                        },
-                        {
-                            id: 'expires_at',
-                            header: t('top_up_cards.expires_at'),
-                            className: 'text-muted-foreground',
-                            cell: (row) => formatDate(row.expires_at) ?? '—',
-                        },
-                    ]}
-                    actions={(row) => (
-                        <>
+                                    {offices.map((office) => (
+                                        <SelectItem key={office.id} value={String(office.id)}>
+                                            {office.code} : {office.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </FormField>
+                        <FormField
+                            label={t('top_up_cards.from_date')}
+                            htmlFor="from"
+                            icon={CalendarIcon}
+                            className="w-full shrink-0 sm:w-40"
+                            labelClassName="text-[13px]"
+                        >
+                            <DatePicker
+                                value={filters.from}
+                                onChange={(value) => onFilter({ ...filters, from: value })}
+                            />
+                        </FormField>
+                        <FormField
+                            label={t('top_up_cards.to_date')}
+                            htmlFor="to"
+                            icon={CalendarIcon}
+                            className="w-full shrink-0 sm:w-40"
+                            labelClassName="text-[13px]"
+                        >
+                            <DatePicker
+                                value={filters.to}
+                                min={filters.from || undefined}
+                                onChange={(value) => onFilter({ ...filters, to: value })}
+                            />
+                        </FormField>
+                    </div>
+                }
+                columns={[
+                    {
+                        id: 'serial_no',
+                        header: t('top_up_cards.serial_no'),
+                        mobile: 'title',
+                        className: 'font-mono text-[12px]',
+                        cell: (row) => row.serial_no,
+                    },
+                    {
+                        id: 'amount',
+                        header: t('top_up_cards.amount'),
+                        mobile: 'meta',
+                        cell: (row) => formatTopUpAmount(row.amount),
+                    },
+                    {
+                        id: 'batch_no',
+                        header: t('top_up_cards.batch_no'),
+                        cell: (row) => row.batch_no ?? '—',
+                    },
+                    {
+                        id: 'office',
+                        header: t('top_up_cards.office.title'),
+                        cell: (row) => `${row.office?.name || '—'}`,
+                    },
+                    {
+                        id: 'status',
+                        header: t('common.status'),
+                        mobile: 'badge',
+                        cell: (row) => <StatusBadge status={row.status} />,
+                    },
+                    {
+                        id: 'expires_at',
+                        header: t('top_up_cards.expires_at'),
+                        className: 'text-muted-foreground',
+                        cell: (row) => formatDate(row.expires_at) ?? '—',
+                    },
+                ]}
+                actions={(row) => (
+                    <>
+                        <TableActionButton
+                            label={t('top_up_cards.redemption')}
+                            icon={EyeIcon}
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                setViewing(row);
+                            }}
+                        />
+                        {can('top-up-cards.update') && row.status === 'active' ? (
                             <TableActionButton
-                                label={t('top_up_cards.redemption')}
-                                icon={EyeIcon}
+                                label={t('top_up_cards.void')}
+                                icon={BanIcon}
+                                tone="danger"
                                 onClick={(event) => {
                                     event.stopPropagation();
-                                    setViewing(row);
+                                    setVoiding(row);
                                 }}
                             />
-                            {can('top-up-cards.update') && row.status === 'active' ? (
-                                <TableActionButton
-                                    label={t('top_up_cards.void')}
-                                    icon={BanIcon}
-                                    tone="danger"
-                                    onClick={(event) => {
-                                        event.stopPropagation();
-                                        setVoiding(row);
-                                    }}
-                                />
-                            ) : null}
-                        </>
-                    )}
-                />
-            </div>
+                        ) : null}
+                    </>
+                )}
+            />
             <ConfirmDialog
                 open={voiding !== null}
                 onOpenChange={(open) => {

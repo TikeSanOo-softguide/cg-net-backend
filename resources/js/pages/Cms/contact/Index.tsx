@@ -5,7 +5,7 @@ import { CmsIndexPage, type CmsFilters } from '@/components/cms/shared/CmsIndexP
 import { ContactFormDialog, type ContactItem } from '@/components/cms/contact/ContactFormDialog';
 import type { Paginated } from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatDateTime, truncateText } from '@/lib/utils';
+import { truncateText } from '@/lib/utils';
 
 type Props = {
     items: Paginated<ContactItem & { created_at: string | null; updated_at: string | null }>;
@@ -35,6 +35,8 @@ export default function ContactsIndex({ items, filters }: Props) {
                     setEditingItem({
                         id: row.id,
                         contact_point: row.contact_point,
+                        created_at: row.created_at,
+                        updated_at: row.updated_at,
                     });
                     setFormOpen(true);
                 }}
@@ -57,23 +59,7 @@ export default function ContactsIndex({ items, filters }: Props) {
                         header: t('cms.contact_point'),
                         mobile: 'title',
                         className: 'font-medium',
-                        cell: (row) => truncateText(row.contact_point, 30),
-                    },
-                    {
-                        id: 'created_at',
-                        header: t('common.created_at'),
-                        sortable: true,
-                        mobile: 'meta',
-                        className: 'text-muted-foreground',
-                        cell: (row) => formatDateTime(row.created_at),
-                    },
-                    {
-                        id: 'updated_at',
-                        header: t('common.updated_at'),
-                        sortable: true,
-                        mobile: 'meta',
-                        className: 'text-muted-foreground',
-                        cell: (row) => formatDateTime(row.updated_at),
+                        cell: (row) => truncateText(row.contact_point, 60),
                     },
                 ]}
             />
