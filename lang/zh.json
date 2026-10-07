@@ -850,7 +850,7 @@
         "confirmed_at": "确认时间",
         "details": "账单支付详情",
         "details_description": "只读账单支付详情。",
-        "search_placeholder": "搜索交易、客户或账户",
+        "search_placeholder": "搜索交易编号、账单参考号、支付参考号或宽带账户",
         "empty": "没有账单支付记录。"
     },
     "customers": {

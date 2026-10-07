@@ -5,6 +5,7 @@ import { CalendarIcon, CircleDotIcon, EyeIcon, ReceiptIcon } from 'lucide-react'
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import { BackButton } from '@/components/BackButton';
 import { FormDialog } from '@/components/FormDialog';
+import { SearchInput } from '@/components/SearchInput';
 import type { Paginated } from '@/components/Pagination';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
@@ -93,6 +94,12 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
             },
             { preserveState: true, preserveScroll: true, replace: true },
         );
+    };
+
+    const updateSearch = (value: string) => {
+        setSearch(value);
+        window.clearTimeout(debounce.current);
+        debounce.current = window.setTimeout(() => visit({ search: value }), 300);
     };
 
     const exportPayments = () => {
@@ -198,6 +205,21 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                     )}
                     filters={
                         <div className="flex w-full flex-wrap items-start gap-2">
+                            <FormField
+                                label={t('common.search')}
+                                htmlFor="bill-payment-search"
+                                className="w-full shrink-0 sm:w-60"
+                                labelClassName="text-[11px]"
+                            >
+                                <SearchInput
+                                    id="bill-payment-search"
+                                    value={search}
+                                    onChange={updateSearch}
+                                    placeholder={t('bill_payments.search_placeholder')}
+                                    ariaLabel={t('common.search')}
+                                    size="sm"
+                                />
+                            </FormField>
                             <FormField
                                 label={t('common.status')}
                                 htmlFor="bill-payment-status"

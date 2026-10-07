@@ -7,6 +7,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 
 type SearchInputProps = {
+    id?: string;
     value: string;
     onChange: (value: string) => void;
     placeholder?: string;
@@ -15,7 +16,7 @@ type SearchInputProps = {
     size?: 'sm' | 'md';
 };
 
-export function SearchInput({ value, onChange, placeholder, ariaLabel, className, size = 'md' }: SearchInputProps) {
+export function SearchInput({ id, value, onChange, placeholder, ariaLabel, className, size = 'md' }: SearchInputProps) {
     const { t } = useTranslation();
     const compact = size === 'sm';
     const hasValue = value.length > 0;
@@ -39,6 +40,7 @@ export function SearchInput({ value, onChange, placeholder, ariaLabel, className
             }
         >
             <Input
+                id={id}
                 type="text"
                 inputMode="search"
                 autoComplete="off"

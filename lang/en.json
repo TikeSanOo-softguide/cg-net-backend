@@ -838,7 +838,7 @@
         "confirmed_at": "Confirmed at",
         "details": "Bill Payment Details",
         "details_description": "Read-only bill payment details.",
-        "search_placeholder": "Search transaction, customer, or account",
+        "search_placeholder": "Search transaction no., bill reference, payment reference, or broadband account",
         "empty": "No bill payments found."
     },
     "customers": {
