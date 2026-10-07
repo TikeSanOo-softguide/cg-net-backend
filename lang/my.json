@@ -832,7 +832,7 @@
         "ledger_transaction_id": "စာရင်းငွေလွှဲ ID",
         "external_bill_ref": "ဘေလ် ကိုးကားနံပါတ်",
         "external_payment_ref": "ငွေပေးချေမှု ကိုးကားနံပါတ်",
-        "external_response": "ဝန်ဆောင်မှုပေးသူ၏ တုံ့ပြန်ချက်",
+        "external_response": "ပြင်ပဝန်ဆောင်မှု တုံ့ပြန်ချက်",
         "account_number": "ဘရော့ဒ်ဘန်းအကောင့်",
         "payment_reference": "ငွေပေးချေမှု ကိုးကားချက်",
         "confirmed_at": "အတည်ပြုချိန်",

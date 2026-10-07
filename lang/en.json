@@ -832,7 +832,7 @@
         "ledger_transaction_id": "Ledger Transaction ID",
         "external_bill_ref": "Bill Reference",
         "external_payment_ref": "Payment Reference",
-        "external_response": "Provider Response",
+        "external_response": "External response",
         "account_number": "Broadband account",
         "payment_reference": "Payment reference",
         "confirmed_at": "Confirmed at",

@@ -844,7 +844,7 @@
         "ledger_transaction_id": "账本交易 ID",
         "external_bill_ref": "账单参考号",
         "external_payment_ref": "支付参考号",
-        "external_response": "服务商响应",
+        "external_response": "外部响应",
         "account_number": "宽带账户",
         "payment_reference": "支付参考号",
         "confirmed_at": "确认时间",

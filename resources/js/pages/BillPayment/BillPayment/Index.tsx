@@ -303,14 +303,6 @@ function BillPaymentDetailDialog({
 
     if (!payment) return null;
 
-    const orderSnapshot = {
-        transaction_no: payment.transaction_no,
-        broadband_account_number: payment.broadband_account_number,
-        customer_name: payment.customer_name,
-        customer_phone: payment.customer_phone,
-        amount: payment.amount,
-    };
-
     return (
         <FormDialog
             open={open}
@@ -318,7 +310,7 @@ function BillPaymentDetailDialog({
             title={t('bill_payments.details')}
             description={payment.transaction_no || t('bill_payments.details_description')}
             icon={ReceiptIcon}
-            size="2xl"
+            size="xl"
         >
             <div className="space-y-3 overflow-y-auto p-4 sm:p-5">
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -355,12 +347,8 @@ function BillPaymentDetailDialog({
                         value={payment.confirmed_at ? formatDateTime(payment.confirmed_at) : null}
                     />
                 </div>
-                <div className="mt-5 grid gap-4 xl:grid-cols-2">
-                    <JsonDetails title={t('package_orders.snapshot')} value={orderSnapshot} />
-                    <JsonDetails
-                        title={t('bill_payments.external_response')}
-                        value={payment.external_response}
-                    />
+                <div className="mt-5">
+                    <JsonDetails title={t('bill_payments.external_response')} value={payment.external_response} />
                 </div>
             </div>
         </FormDialog>
