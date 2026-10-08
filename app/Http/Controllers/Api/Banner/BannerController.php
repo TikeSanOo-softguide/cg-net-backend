@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\Banner;
 
-use App\Enums\BannerType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Banner\BannerResource;
 use App\Models\Banner;
@@ -12,12 +11,6 @@ class BannerController extends Controller
     public function show()
     {
         $banners = Banner::where('is_active', true)
-            ->whereIn('type', [
-                BannerType::WebBackground->value,
-                BannerType::WebPopUp->value,
-                BannerType::AppEntry->value,
-                BannerType::AppPopUp->value,
-            ])
             ->where(function ($query) {
                 $query->whereNull('start_date')->orWhere('start_date', '<=', now());
             })
