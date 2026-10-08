@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\ServiceRequest\ChangePlanRequestController;
 use App\Http\Controllers\Api\ServiceRequest\FailureReportController;
 use App\Http\Controllers\Api\ServiceRequest\RelocationRequestController;
 use App\Http\Controllers\Api\Settings\AppVersionController;
+use App\Http\Controllers\Api\Settings\GeneralSettingController;
 use App\Http\Controllers\Api\Transaction\TransactionHistoryController;
 use App\Http\Controllers\ChangePassword\ChangePasswordController;
 use Illuminate\Http\Request;
@@ -80,6 +81,12 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::get('/app-version', [AppVersionController::class, 'index']);
 });
 
+Route::prefix('general-settings')->group(function () {
+    Route::get('/term-and-condition', [GeneralSettingController::class, 'termAndCondition']);
+    Route::get('/faq', [GeneralSettingController::class, 'faq']);
+    Route::get('/support-contact', [GeneralSettingController::class, 'supportContact']);
+});
+
 Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('/auth/logout', [LoginController::class, 'logout']);
 
@@ -93,7 +100,8 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::delete('/device-tokens', [DeviceTokenController::class, 'destroy']);
 
     Route::prefix('broadband-account')->group(function () {
-        Route::post('/connect', [BroadbandAccountController::class, 'connect']);
+        Route::post('/bind', [BroadbandAccountController::class, 'bindAccount']);
+        Route::post('/unbind', [BroadbandAccountController::class, 'unbindAccount']);
     });
 
     Route::prefix('redeem')->group(function () {
