@@ -80,6 +80,8 @@
         "announcement": "Announcements",
         "notification_promotions": "Promotions",
         "push_composer": "Push Notification",
+        "notification_templates": "Notification Templates",
+        "notification_templates_description": "Edit reusable multilingual notification content.",
         "support": "Live Chat / Support",
         "chat_conversations": "Chat Conversations",
         "quick_reply_templates": "Quick Reply Templates",
@@ -1353,6 +1355,39 @@
                 "schedule_time_required": "Please select a schedule time.",
                 "schedule_time_invalid": "Please enter a valid schedule time.",
                 "scheduled_at_future": "Schedule date and time must be in the future."
+            }
+        },
+        "template": {
+            "types": {
+                "bill_alert": "FTTH bill due alert",
+                "ftth_bill_payment_processing": "FTTH payment processing",
+                "ftth_bill_payment_completed": "FTTH payment successful",
+                "ftth_bill_payment_refunded": "FTTH payment refunded"
+            },
+            "description": "This template is used for customer inbox and push notifications.",
+            "title_en": "Title (English)",
+            "title_my": "Title (Myanmar)",
+            "title_zh": "Title (Chinese)",
+            "description_en": "Description (English)",
+            "description_my": "Description (Myanmar)",
+            "description_zh": "Description (Chinese)",
+            "placeholders": {
+                "bill_alert": "Available placeholders: {account_number}, {due_date}.",
+                "ftth_bill_payment_processing": "Available placeholders: {amount}, {account_number}, {transaction_no}.",
+                "ftth_bill_payment_completed": "Available placeholders: {amount}, {account_number}, {transaction_no}.",
+                "ftth_bill_payment_refunded": "Available placeholders: {amount}, {account_number}, {transaction_no}, {refund_transaction_no}."
+            },
+            "updated": "Notification template updated.",
+            "validation_error": "Please correct the highlighted fields.",
+            "validation": {
+                "title_en_required": "Please enter an English title.",
+                "title_my_required": "Please enter a Myanmar title.",
+                "title_zh_required": "Please enter a Chinese title.",
+                "description_en_required": "Please enter an English description.",
+                "description_my_required": "Please enter a Myanmar description.",
+                "description_zh_required": "Please enter a Chinese description.",
+                "title_max": "The title must not exceed 120 characters.",
+                "description_max": "The description must not exceed 5,000 characters."
             }
         },
         "announcement": {

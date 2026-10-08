@@ -14,6 +14,8 @@ class GeneralSettingSeeder extends Seeder
      */
     public function run(): void
     {
+        echo "General setting seeder started\n";
+
         TermAndCondition::query()->updateOrCreate(
             ['id' => 1],
             [

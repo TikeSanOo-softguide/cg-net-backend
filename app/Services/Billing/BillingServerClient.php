@@ -9,6 +9,50 @@ use RuntimeException;
 class BillingServerClient
 {
     /**
+     * @return list<array<string, mixed>>
+     *
+     * @throws RuntimeException when due bills cannot be retrieved
+     */
+    public function lookupBillsDueBetween(string $fromDate, string $toDate): array
+    {
+        $url = $this->url(config('services.billing.due_bills_endpoint', '/due-bills'));
+
+        $response = Http::acceptJson()
+            ->withHeaders($this->headers())
+            ->timeout(30)
+            ->connectTimeout(5)
+            ->retry(2, 100, throw: false)
+            ->get($url, [
+                'due_date_from' => $fromDate,
+                'due_date_to' => $toDate,
+            ]);
+
+        if (!$response->successful()) {
+            throw new RuntimeException('Unable to retrieve due FTTH bills from the billing server.');
+        }
+
+        $payload = $response->json();
+
+        if (!is_array($payload)) {
+            throw new RuntimeException('The billing server returned an invalid due bill list.');
+        }
+
+        $bills = $payload['bills'] ?? ($payload['data'] ?? null);
+
+        if (!is_array($bills) || !array_is_list($bills)) {
+            throw new RuntimeException('The billing server did not return a valid due bill list.');
+        }
+
+        foreach ($bills as $bill) {
+            if (!is_array($bill)) {
+                throw new RuntimeException('The billing server returned an invalid due bill record.');
+            }
+        }
+
+        return $bills;
+    }
+
+    /**
      * @throws RuntimeException when the amount cannot be resolved
      */
     public function lookupBillAmount(string $accountNumber): int

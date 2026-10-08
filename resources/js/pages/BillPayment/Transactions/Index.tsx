@@ -279,34 +279,6 @@ export function TransactionsTable({
                 )}
                 filters={
                     <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
-                        {scope === 'global' ? (
-                            <>
-                                <FormField
-                                    label={t('transactions.actor_type')}
-                                    htmlFor="transaction-actor"
-                                    icon={UserIcon}
-                                    className="w-full shrink-0 sm:w-40 mr-3"
-                                    labelClassName="text-[13px]"
-                                >
-                                    <Select
-                                        value={filters.actor_type || 'all'}
-                                        onValueChange={(value) => updateFilter('actor_type', value)}
-                                    >
-                                        <SelectTrigger id="transaction-actor" className={formControlStateClass('idle')}>
-                                            <SelectValue placeholder={t('common.all')} />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">{t('common.all')}</SelectItem>
-                                            {filterOptions.actor_types.map((value) => (
-                                                <SelectItem key={value} value={value}>
-                                                    {actorLabel(value, t)}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </FormField>
-                            </>
-                        ) : null}
                         <FormField
                             label={t('transactions.search')}
                             htmlFor="transaction-search"
@@ -337,6 +309,34 @@ export function TransactionsTable({
                                 className={toolbarInputClass}
                             />
                         </FormField>
+                        {scope === 'global' ? (
+                            <>
+                                <FormField
+                                    label={t('transactions.actor_type')}
+                                    htmlFor="transaction-actor"
+                                    icon={UserIcon}
+                                    className="w-full shrink-0 sm:w-40 mr-3"
+                                    labelClassName="text-[13px]"
+                                >
+                                    <Select
+                                        value={filters.actor_type || 'all'}
+                                        onValueChange={(value) => updateFilter('actor_type', value)}
+                                    >
+                                        <SelectTrigger id="transaction-actor" className={formControlStateClass('idle')}>
+                                            <SelectValue placeholder={t('common.all')} />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">{t('common.all')}</SelectItem>
+                                            {filterOptions.actor_types.map((value) => (
+                                                <SelectItem key={value} value={value}>
+                                                    {actorLabel(value, t)}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </FormField>
+                            </>
+                        ) : null}
                         <FormField
                             label={t('transactions.type')}
                             htmlFor="transaction-type"

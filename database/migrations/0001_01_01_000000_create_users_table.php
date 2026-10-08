@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('phone', 16)->unique();
             $table->string('name');
             $table->string('password');
+            $table->string('lang', 5)->default('en');
             $table->string('broadband_account_number', 32)->nullable()->unique();
             $table->string('status', 16)->default('active')->index();
             $table->timestamps();

@@ -192,7 +192,14 @@
     });
 
     navigator.serviceWorker?.addEventListener('message', (event) => {
-        if (event.data?.source === 'fcm-sw') log('Background message', event.data.payload);
+        if (event.data?.source !== 'fcm-sw') return;
+
+        if (event.data.type === 'notification-click') {
+            log('Notification clicked', event.data.data);
+            return;
+        }
+
+        if (event.data.type === 'message') log('Background message', event.data.payload);
     });
 </script>
 </body>

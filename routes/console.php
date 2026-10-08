@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\ProcessDuePushSchedulesJob;
+use App\Jobs\ScanDueFtthBillsJob;
 use App\Console\Commands\RunDailyLedgerHealthScan;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -11,6 +12,8 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::job(new ProcessDuePushSchedulesJob())->everyMinute();
+
+Schedule::job(new ScanDueFtthBillsJob())->dailyAt('16:50')->withoutOverlapping()->onOneServer();
 
 Schedule::command('sanctum:prune-expired --hours=24')->daily();
 

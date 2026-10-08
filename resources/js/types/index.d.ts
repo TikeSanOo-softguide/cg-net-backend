@@ -37,7 +37,7 @@ export type CustomNotification = {
     source: 'custom';
     title: string;
     body: string;
-    category: 'service_update' | 'account' | 'promotion';
+    category: 'service_update' | 'account' | 'promotion' | 'bill_alert';
     is_read: boolean;
     time: string;
 };

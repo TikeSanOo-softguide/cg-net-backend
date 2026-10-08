@@ -17,7 +17,7 @@ use Laravel\Sanctum\HasApiTokens;
 use Laravel\Sanctum\PersonalAccessToken;
 use LogicException;
 
-#[Fillable(['phone', 'name', 'password', 'status', 'broadband_account_number'])]
+#[Fillable(['phone', 'name', 'password', 'status', 'broadband_account_number', 'lang'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -137,9 +137,9 @@ class User extends Authenticatable
         return $this->hasMany(ChangePlanRequest::class);
     }
 
-    public function customNotifications(): HasMany
+    public function appNotifications(): HasMany
     {
-        return $this->hasMany(NotificationCustom::class);
+        return $this->hasMany(Notification::class);
     }
 
     public function chatConversations(): HasMany

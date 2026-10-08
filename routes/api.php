@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\Gallery\GalleryController;
 use App\Http\Controllers\Api\News\NewsController;
 use App\Http\Controllers\Api\Notification\AnnouncementController;
 use App\Http\Controllers\Api\Notification\InboxController;
+use App\Http\Controllers\Api\Notification\NotificationController;
 use App\Http\Controllers\Api\Package\AddonController;
 use App\Http\Controllers\Api\Package\BuyPackageController;
 use App\Http\Controllers\Api\Package\NetworkController;
@@ -92,12 +93,19 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
     Route::prefix('customer')->group(function () {
         Route::get('/profile', [ProfileController::class, 'show']);
+        Route::patch('/language', [ProfileController::class, 'updateLanguage']);
         Route::post('/deactivate', [ProfileController::class, 'deactivate']);
         Route::get('/transactions', TransactionHistoryController::class);
     });
 
     Route::post('/device-tokens', [DeviceTokenController::class, 'store']);
     Route::delete('/device-tokens', [DeviceTokenController::class, 'destroy']);
+
+    Route::prefix('notifications')->group(function (): void {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::patch('/{notificationId}/read', [NotificationController::class, 'markAsRead'])
+            ->whereNumber('notificationId');
+    });
 
     Route::prefix('broadband-account')->group(function () {
         Route::post('/bind', [BroadbandAccountController::class, 'bindAccount']);

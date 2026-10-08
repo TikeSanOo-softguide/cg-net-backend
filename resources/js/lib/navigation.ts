@@ -2,14 +2,13 @@ import type { LucideIcon } from 'lucide-react';
 import {
     Activity,
     AlertTriangle,
-    AppWindow,
     ArrowRightLeft,
     Banknote,
     Bell,
     Boxes,
     Building2,
     CalendarDays,
-    ChartColumn,
+    ChartSpline,
     ClipboardList,
     Contact,
     CreditCard,
@@ -18,13 +17,11 @@ import {
     FolderTree,
     Gift,
     Headphones,
-    History,
     Image,
     Images,
     KeyRound,
     LayoutDashboard,
     Link2,
-    MapPin,
     MapPinned,
     Megaphone,
     MessageSquare,
@@ -35,7 +32,6 @@ import {
     PenLine,
     Plug,
     Receipt,
-    RefreshCw,
     Reply,
     Router,
     Rss,
@@ -46,10 +42,7 @@ import {
     Signal,
     SlidersHorizontal,
     Smartphone,
-    Sparkles,
     Ticket,
-    UserCheck,
-    UserCog,
     UserRound,
     Users,
     Wallet,
@@ -240,6 +233,12 @@ export const navigation: NavGroup[] = [
                 href: '/notifications/compose',
                 icon: PenLine,
             },
+            {
+                labelKey: 'menu.notification_templates',
+                descriptionKey: 'menu.notification_templates_description',
+                href: '/notifications/templates',
+                icon: FileText,
+            },
         ],
     },
     {
@@ -286,7 +285,7 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.reports',
         descriptionKey: 'menu.reports_description',
         href: '/reports',
-        icon: ChartColumn,
+        icon: ChartSpline,
     },
     {
         id: 'cms',
@@ -518,7 +517,6 @@ export function filterNavigation(groups: NavGroup[], can: (permission: string) =
         if (group.children?.length) {
             const children = group.children.filter((child) => {
                 const permission = viewPermissionForHref(child.href);
-
                 return !permission || can(permission);
             });
 
@@ -526,7 +524,6 @@ export function filterNavigation(groups: NavGroup[], can: (permission: string) =
         }
 
         const permission = group.href ? viewPermissionForHref(group.href) : undefined;
-
         return !permission || can(permission) ? [group] : [];
     });
 }

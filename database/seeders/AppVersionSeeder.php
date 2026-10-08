@@ -12,6 +12,8 @@ class AppVersionSeeder extends Seeder
      */
     public function run(): void
     {
+        echo "App version seeder started\n";
+
         $releaseNotesEn = implode("\n", [
             '• Manage your CG Net internet network',
             '• Redeem the balance for yourself or a friend',

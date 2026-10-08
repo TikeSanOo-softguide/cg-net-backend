@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Dev;
 
+use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Carbon;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
@@ -40,8 +42,42 @@ class FakeBillingController extends Controller
             'amount' => str_starts_with($account, 'BIG') ? 999_999_999 : self::DEFAULT_AMOUNT,
             'bill_month' => $billMonth,
             'bill_month_label' => Carbon::createFromFormat('!Y-m', $billMonth)->format('F Y'),
+            'due_date' => now()->addDays(3)->toDateString(),
             'paid_slips' => Cache::get($this->paidSlipsCacheKey($account), []),
         ]);
+    }
+
+    public function dueBills(Request $request): JsonResponse
+    {
+        $filters = $request->validate([
+            'due_date_from' => ['required', 'date_format:Y-m-d'],
+            'due_date_to' => ['required', 'date_format:Y-m-d', 'after_or_equal:due_date_from'],
+        ]);
+        $dueDate = now()->addDays(3)->toDateString();
+
+        if ($dueDate < $filters['due_date_from'] || $dueDate > $filters['due_date_to']) {
+            return response()->json(['data' => []]);
+        }
+
+        $accounts = User::query()
+            ->where('status', UserStatus::Active)
+            ->whereNotNull('broadband_account_number')
+            ->where('broadband_account_number', '!=', '')
+            ->distinct()
+            ->pluck('broadband_account_number');
+
+        $bills = $accounts
+            ->reject(fn (string $account): bool => str_starts_with(strtoupper($account), 'NOBILL'))
+            ->map(fn (string $account): array => [
+                'account_number' => $account,
+                'bill_id' => $account.':'.$this->nextBillMonth($account),
+                'bill_month' => $this->nextBillMonth($account),
+                'due_date' => $dueDate,
+                'amount' => str_starts_with(strtoupper($account), 'BIG') ? 999_999_999 : self::DEFAULT_AMOUNT,
+            ])
+            ->values();
+
+        return response()->json(['data' => $bills]);
     }
 
     public function extendPlan(Request $request): JsonResponse

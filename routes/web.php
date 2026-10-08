@@ -18,6 +18,7 @@ use App\Http\Controllers\Log\SecurityLogController;
 use App\Http\Controllers\Log\UserLogController;
 use App\Http\Controllers\MenuPage\MenuPageController;
 use App\Http\Controllers\Notification\AnnouncementController;
+use App\Http\Controllers\Notification\NotificationTemplateController;
 use App\Http\Controllers\Notification\PushNotificationController;
 use App\Http\Controllers\Package\AddonController;
 use App\Http\Controllers\Package\NetworkController;
@@ -218,6 +219,16 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
     Route::prefix('notifications')
         ->name('notifications.')
         ->group(function () {
+            Route::prefix('templates')
+                ->name('templates.')
+                ->group(function (): void {
+                    Route::get('/', [NotificationTemplateController::class, 'index'])
+                        ->name('index');
+                    Route::put('/{notificationTemplate}', [NotificationTemplateController::class, 'update'])
+                        ->middleware('can:notifications.update')
+                        ->name('update');
+                });
+
             Route::prefix('announcement')
                 ->name('announcement.')
                 ->group(function () {

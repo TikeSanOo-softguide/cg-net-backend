@@ -73,6 +73,8 @@
         "announcement": "公告",
         "notification_promotions": "促销",
         "push_composer": "推送通知",
+        "notification_templates": "通知模板",
+        "notification_templates_description": "编辑可重复使用的多语言通知内容。",
         "support": "在线客服 / 支持",
         "chat_conversations": "聊天对话",
         "quick_reply_templates": "快捷回复模板",
@@ -1366,6 +1368,39 @@
                 "schedule_time_required": "请选择安排时间。",
                 "schedule_time_invalid": "请输入有效的安排时间。",
                 "scheduled_at_future": "安排日期和时间必须在未来。"
+            }
+        },
+        "template": {
+            "types": {
+                "bill_alert": "FTTH 账单到期提醒",
+                "ftth_bill_payment_processing": "FTTH 账单支付处理中",
+                "ftth_bill_payment_completed": "FTTH 账单支付成功",
+                "ftth_bill_payment_refunded": "FTTH 账单支付已退款"
+            },
+            "description": "此模板用于客户收件箱和推送通知。",
+            "title_en": "标题（英文）",
+            "title_my": "标题（缅甸文）",
+            "title_zh": "标题（中文）",
+            "description_en": "描述（英文）",
+            "description_my": "描述（缅甸文）",
+            "description_zh": "描述（中文）",
+            "placeholders": {
+                "bill_alert": "可用占位符：{account_number}、{due_date}。",
+                "ftth_bill_payment_processing": "可用占位符：{amount}、{account_number}、{transaction_no}。",
+                "ftth_bill_payment_completed": "可用占位符：{amount}、{account_number}、{transaction_no}。",
+                "ftth_bill_payment_refunded": "可用占位符：{amount}、{account_number}、{transaction_no}、{refund_transaction_no}。"
+            },
+            "updated": "通知模板已更新。",
+            "validation_error": "请修正标记的字段。",
+            "validation": {
+                "title_en_required": "请输入英文标题。",
+                "title_my_required": "请输入缅甸文标题。",
+                "title_zh_required": "请输入中文标题。",
+                "description_en_required": "请输入英文描述。",
+                "description_my_required": "请输入缅甸文描述。",
+                "description_zh_required": "请输入中文描述。",
+                "title_max": "标题不得超过 120 个字符。",
+                "description_max": "描述不得超过 5,000 个字符。"
             }
         },
         "announcement": {

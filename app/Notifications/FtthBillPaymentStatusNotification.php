@@ -3,6 +3,8 @@
 namespace App\Notifications;
 
 use App\Enums\BillPaymentNotificationEvent;
+use App\Enums\NotificationTemplateType;
+use App\Models\NotificationTemplate;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -38,7 +40,9 @@ class FtthBillPaymentStatusNotification extends Notification implements ShouldQu
 
     public function toFcm(User $notifiable): FcmMessage
     {
-        return (new FcmMessage(notification: new FcmNotification(title: $this->title(), body: $this->body())))
+        $content = $this->content($notifiable);
+
+        return (new FcmMessage(notification: new FcmNotification(title: $content['title'], body: $content['description'])))
             ->data(
                 array_filter(
                     [
@@ -52,30 +56,46 @@ class FtthBillPaymentStatusNotification extends Notification implements ShouldQu
                     fn($value) => $value !== null,
                 ),
             )
+            ->custom([
+                'webpush' => [
+                    'headers' => ['Urgency' => 'high'],
+                    'notification' => [
+                        'title' => $content['title'],
+                        'body' => $content['description'],
+                        'data' => array_filter(
+                            [
+                                'type' => 'ftth_bill_payment',
+                                'event' => $this->event->value,
+                                'transaction_no' => $this->transactionNo,
+                                'amount' => (string) $this->amount,
+                                'broadband_account_number' => $this->accountNumber,
+                                'refund_transaction_no' => $this->refundTransactionNo,
+                            ],
+                            fn($value) => $value !== null,
+                        ),
+                    ],
+                ],
+            ])
             ->android(['priority' => 'high'])
             ->ios(['payload' => ['aps' => ['sound' => 'default']]]);
     }
 
-    public function title(): string
+    /**
+     * @return array{title: string, description: string}
+     */
+    public function content(User $notifiable): array
     {
-        return match ($this->event) {
-            BillPaymentNotificationEvent::Processing => 'Bill payment processing',
-            BillPaymentNotificationEvent::Completed => 'Bill payment successful',
-            BillPaymentNotificationEvent::Refunded => 'Bill payment failed',
-        };
+        $templateType = NotificationTemplateType::forBillPaymentEvent($this->event);
+        $template = NotificationTemplate::query()
+            ->where('type', $templateType->value)
+            ->firstOrFail();
+
+        return $template->render($notifiable->lang, [
+            'amount' => number_format($this->amount).' Points',
+            'account_number' => $this->accountNumber,
+            'transaction_no' => $this->transactionNo,
+            'refund_transaction_no' => $this->refundTransactionNo ?? '',
+        ]);
     }
 
-    public function body(): string
-    {
-        $amount = number_format($this->amount) . ' Points';
-
-        return match ($this->event) {
-            BillPaymentNotificationEvent::Processing
-                => "Your {$amount} payment for account {$this->accountNumber} is being processed.",
-            BillPaymentNotificationEvent::Completed
-                => "Your {$amount} payment for account {$this->accountNumber} was successful.",
-            BillPaymentNotificationEvent::Refunded
-                => "Your {$amount} payment for account {$this->accountNumber} could not be completed. The amount has been refunded to your wallet.",
-        };
-    }
 }

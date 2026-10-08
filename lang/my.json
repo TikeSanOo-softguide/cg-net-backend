@@ -154,6 +154,8 @@
         "announcement": "ကြေညာချက်များ",
         "notification_promotions": "ပရိုမိုးရှင်းများ",
         "push_composer": "Push အကြောင်းကြားစာ",
+        "notification_templates": "အကြောင်းကြားစာ ပုံစံများ",
+        "notification_templates_description": "ဘာသာစကားမျိုးစုံ အကြောင်းကြားစာစာသားများကို ပြင်ဆင်ပါ။",
         "support": "တိုက်ရိုက် ချက်တင် / အကူအညီ",
         "chat_conversations": "စကားပြောဆိုမှုများ",
         "quick_reply_templates": "အမြန်ပြန်စာ ပုံစံများ",
@@ -1353,6 +1355,39 @@
                 "schedule_time_required": "အချိန် ရွေးပါ။",
                 "schedule_time_invalid": "မှန်ကန်သော အချိန် ထည့်ပါ။",
                 "scheduled_at_future": "ရက်စွဲနှင့် အချိန်သည် အနာဂတ်တွင် ရှိရမည်။"
+            }
+        },
+        "template": {
+            "types": {
+                "bill_alert": "FTTH ဘေလ်ပေးချေရန် သတိပေးချက်",
+                "ftth_bill_payment_processing": "FTTH ဘေလ်ပေးချေမှု လုပ်ဆောင်နေဆဲ",
+                "ftth_bill_payment_completed": "FTTH ဘေလ်ပေးချေမှု အောင်မြင်",
+                "ftth_bill_payment_refunded": "FTTH ဘေလ်ပေးချေမှု ပြန်အမ်းပြီး"
+            },
+            "description": "ဤပုံစံကို ဖောက်သည် Inbox နှင့် Push အကြောင်းကြားစာများတွင် အသုံးပြုသည်။",
+            "title_en": "ခေါင်းစဉ် (အင်္ဂလိပ်)",
+            "title_my": "ခေါင်းစဉ် (မြန်မာ)",
+            "title_zh": "ခေါင်းစဉ် (တရုတ်)",
+            "description_en": "ဖော်ပြချက် (အင်္ဂလိပ်)",
+            "description_my": "ဖော်ပြချက် (မြန်မာ)",
+            "description_zh": "ဖော်ပြချက် (တရုတ်)",
+            "placeholders": {
+                "bill_alert": "အသုံးပြုနိုင်သော စာသားအစားထိုးများ: {account_number}, {due_date}။",
+                "ftth_bill_payment_processing": "အသုံးပြုနိုင်သော စာသားအစားထိုးများ: {amount}, {account_number}, {transaction_no}။",
+                "ftth_bill_payment_completed": "အသုံးပြုနိုင်သော စာသားအစားထိုးများ: {amount}, {account_number}, {transaction_no}။",
+                "ftth_bill_payment_refunded": "အသုံးပြုနိုင်သော စာသားအစားထိုးများ: {amount}, {account_number}, {transaction_no}, {refund_transaction_no}။"
+            },
+            "updated": "အကြောင်းကြားစာ ပုံစံကို ပြင်ဆင်ပြီးပါပြီ။",
+            "validation_error": "အမှားပြထားသော အကွက်များကို ပြင်ဆင်ပါ။",
+            "validation": {
+                "title_en_required": "အင်္ဂလိပ် ခေါင်းစဉ်ကို ထည့်သွင်းပါ။",
+                "title_my_required": "မြန်မာ ခေါင်းစဉ်ကို ထည့်သွင်းပါ။",
+                "title_zh_required": "တရုတ် ခေါင်းစဉ်ကို ထည့်သွင်းပါ။",
+                "description_en_required": "အင်္ဂလိပ် ဖော်ပြချက်ကို ထည့်သွင်းပါ။",
+                "description_my_required": "မြန်မာ ဖော်ပြချက်ကို ထည့်သွင်းပါ။",
+                "description_zh_required": "တရုတ် ဖော်ပြချက်ကို ထည့်သွင်းပါ။",
+                "title_max": "ခေါင်းစဉ်သည် စာလုံး ၁၂၀ ထက် မကျော်ရပါ။",
+                "description_max": "ဖော်ပြချက်သည် စာလုံး ၅,၀၀၀ ထက် မကျော်ရပါ။"
             }
         },
         "announcement": {

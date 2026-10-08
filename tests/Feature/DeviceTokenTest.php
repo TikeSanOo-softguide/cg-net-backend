@@ -7,6 +7,7 @@ use App\Listeners\PruneInvalidFcmTokens;
 use App\Models\DeviceToken;
 use App\Models\User;
 use App\Notifications\FtthBillPaymentStatusNotification;
+use App\Notifications\FtthBillDueNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\Events\NotificationFailed;
 use Kreait\Firebase\Exception\Messaging\NotFound;
@@ -33,6 +34,33 @@ class DeviceTokenTest extends TestCase
             'platform' => 'android',
         ]);
         $this->assertSame(['fcm-token-1'], $user->routeNotificationForFcm());
+    }
+
+    public function test_web_fcm_token_is_registered_and_receives_due_bill_notification_payload(): void
+    {
+        $user = User::factory()->create();
+
+        $this->withToken($user->createToken('web-test')->plainTextToken, 'Bearer')
+            ->postJson('/api/device-tokens', ['token' => 'web-fcm-token', 'platform' => 'web'])
+            ->assertOk();
+
+        $this->assertDatabaseHas('device_tokens', [
+            'user_id' => $user->id,
+            'token' => 'web-fcm-token',
+            'platform' => 'web',
+        ]);
+
+        $notification = new FtthBillDueNotification(
+            title: 'မကြာမီ FTTH ဘေလ်ကျသင့်မည်',
+            body: 'အသေးစိတ်ကြည့်ရန် နှိပ်ပါ။',
+            actionId: 'bill-123',
+        );
+
+        $this->assertSame([FcmChannel::class], $notification->via($user));
+        $this->assertSame(['web-fcm-token'], $user->routeNotificationForFcm());
+        $message = $notification->toFcm($user)->toArray();
+        $this->assertSame('bill-123', $message['data']['action_id']);
+        $this->assertSame('မကြာမီ FTTH ဘေလ်ကျသင့်မည်', $message['webpush']['notification']['title']);
     }
 
     public function test_registering_existing_token_moves_it_to_current_user(): void
@@ -111,6 +139,8 @@ class DeviceTokenTest extends TestCase
             'broadband_account_number' => 'CG12345678',
             'refund_transaction_no' => 'REFUND-1',
         ], $message['data']);
+        $this->assertSame($message['notification']['title'], $message['webpush']['notification']['title']);
+        $this->assertSame($message['data'], $message['webpush']['notification']['data']);
     }
 
     public function test_unknown_fcm_tokens_are_pruned(): void

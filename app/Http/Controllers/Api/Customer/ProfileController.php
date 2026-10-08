@@ -6,6 +6,7 @@ use App\Enums\CustomerPackageStatus;
 use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Customer\DeactivateAccountRequest;
+use App\Http\Requests\Api\Customer\UpdateLanguageRequest;
 use App\Http\Resources\Customer\ProfileResource;
 use App\Models\CustomerPackage;
 use App\Models\User;
@@ -47,6 +48,19 @@ class ProfileController extends Controller
         $user->update(['status' => UserStatus::Deactivated]);
 
         return response()->json(['message' => 'Account deactivated successfully.']);
+    }
+
+    public function updateLanguage(UpdateLanguageRequest $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $user->update(['lang' => $request->validated('lang')]);
+
+        return response()->json([
+            'data' => [
+                'lang' => $user->lang,
+            ],
+        ]);
     }
 
     /** @return Collection<int, CustomerPackage> */

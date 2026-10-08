@@ -41,6 +41,7 @@ return [
     'billing' => [
         'base_url' => env('BILLING_SERVER_URL', 'https://billing-server.test'),
         'api_token' => env('BILLING_SERVER_API_TOKEN'),
+        'due_bills_endpoint' => env('BILLING_SERVER_DUE_BILLS_ENDPOINT', '/due-bills'),
         'amount_lookup_endpoint' => env('BILLING_SERVER_AMOUNT_LOOKUP_ENDPOINT', '/bill-details'),
         'extend_plan_endpoint' => env('BILLING_SERVER_EXTEND_PLAN_ENDPOINT', '/extend-plan'),
         'payment_status_endpoint' => env('BILLING_SERVER_PAYMENT_STATUS_ENDPOINT', '/payment-status'),

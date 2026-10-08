@@ -45,6 +45,21 @@ class AdminPushNotification extends Notification implements ShouldQueue
                 'title_zh' => $this->titleZh,
                 'title_my' => $this->titleMy,
             ])
+            ->custom([
+                'webpush' => [
+                    'headers' => ['Urgency' => 'high'],
+                    'notification' => [
+                        'title' => $this->titleEn,
+                        'body' => $this->titleEn,
+                        'data' => [
+                            'type' => 'admin_push',
+                            'title_en' => $this->titleEn,
+                            'title_zh' => $this->titleZh,
+                            'title_my' => $this->titleMy,
+                        ],
+                    ],
+                ],
+            ])
             ->android(['priority' => 'high'])
             ->ios(['payload' => ['aps' => ['sound' => 'default']]]);
     }

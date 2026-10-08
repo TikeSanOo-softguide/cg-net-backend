@@ -9,13 +9,13 @@ use App\Enums\PackageOrderStatus;
 use App\Enums\RequestStatus;
 use App\Enums\WalletActorType;
 use App\Models\Admin;
+use App\Models\AdminNotification;
 use App\Models\Area;
 use App\Models\BillPayment;
 use App\Models\FailureReport;
 use App\Models\InstallationApplication;
 use App\Models\LedgerTransaction;
 use App\Models\Network;
-use App\Models\NotificationCustom;
 use App\Models\Package;
 use App\Models\PackageOrder;
 use App\Models\Region;
@@ -179,9 +179,11 @@ class DashboardTest extends TestCase
     public function test_authenticated_admins_receive_recent_notifications(): void
     {
         $admin = Admin::factory()->create();
-        NotificationCustom::factory()->create([
+        AdminNotification::query()->create([
+            'type' => 'event',
             'title' => 'Event Today',
             'body' => 'Just a reminder that you have an event today.',
+            'severity' => 'normal',
             'is_read' => false,
             'sent_at' => now()->setTime(9, 15),
         ]);
@@ -194,7 +196,7 @@ class DashboardTest extends TestCase
                     ->where('unreadNotifications', 1)
                     ->has('recentNotifications', 1)
                     ->where('recentNotifications.0.title', 'Event Today')
-                    ->where('recentNotifications.0.time', '9:15 AM'),
+                    ->where('recentNotifications.0.message', 'Just a reminder that you have an event today.'),
             );
     }
 

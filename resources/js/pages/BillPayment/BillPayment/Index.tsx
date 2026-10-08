@@ -11,6 +11,7 @@ import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
+import { CopyValueButton } from '@/components/CopyValueButton';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -210,7 +211,7 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                                 label={t('common.search')}
                                 htmlFor="bill-payment-search"
                                 className="w-full shrink-0 sm:w-60"
-                                labelClassName="text-[11px]"
+                                labelClassName="text-[13px]"
                             >
                                 <SearchInput
                                     id="bill-payment-search"
@@ -226,7 +227,7 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                                 htmlFor="bill-payment-status"
                                 icon={CircleDotIcon}
                                 className="w-full shrink-0 sm:w-40"
-                                labelClassName="text-[11px]"
+                                labelClassName="text-[13px]"
                             >
                                 <Select
                                     value={filters.status || 'all'}
@@ -250,7 +251,7 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                                 htmlFor="bill-payment-from"
                                 icon={CalendarIcon}
                                 className="w-full shrink-0 sm:w-40"
-                                labelClassName="text-[11px]"
+                                labelClassName="text-[13px]"
                             >
                                 <DatePicker
                                     id="bill-payment-from"
@@ -265,7 +266,7 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                                 htmlFor="bill-payment-to"
                                 icon={CalendarIcon}
                                 className="w-full shrink-0 sm:w-40"
-                                labelClassName="text-[11px]"
+                                labelClassName="text-[13px]"
                             >
                                 <DatePicker
                                     id="bill-payment-to"
@@ -319,6 +320,7 @@ function BillPaymentDetailDialog({
                         label={t('transactions.number')}
                         value={payment.transaction_no}
                         href={payment.transaction_no ? transactionHref(payment.transaction_no) : undefined}
+                        copyable
                     />
                     <PaymentInfo label={t('bill_payments.external_bill_ref')} value={payment.external_bill_ref} />
                     <PaymentInfo label={t('bill_payments.external_payment_ref')} value={payment.external_payment_ref} />
@@ -329,10 +331,7 @@ function BillPaymentDetailDialog({
 
                     <PaymentInfo label={t('bill_payments.account_number')} value={payment.broadband_account_number} />
                     <PaymentInfo label={t('transactions.customer')} value={payment.customer_name} />
-                    <PaymentInfo
-                        label={t('customers.phone')}
-                        value={formatPhoneInternational(payment.customer_phone)}
-                    />
+                    <PaymentInfo label={t('customers.phone')} value={payment.customer_phone} format="phone" copyable />
                     <PaymentInfo
                         label={t('transactions.amount')}
                         value={payment.amount === null ? null : formatTopUpAmount(payment.amount)}
@@ -374,22 +373,30 @@ function PaymentInfo({
     label,
     value,
     href,
+    copyable = false,
+    format,
 }: {
     label: string;
     value: string | number | null | undefined;
     href?: string;
+    copyable?: boolean;
+    format?: 'phone';
 }) {
+    const hasValue = value !== null && value !== undefined && value !== '';
+    const displayValue = format === 'phone' && hasValue ? formatPhoneInternational(String(value)) : value;
+
     return (
         <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
             <p className="text-xs font-medium text-muted-foreground">{label}</p>
-            <p className="mt-1 break-words text-sm font-semibold text-foreground">
-                {href && value !== null && value !== undefined ? (
-                    <Link href={href} className="text-primary underline-offset-4 hover:underline">
-                        {value}
+            <p className="mt-1 flex items-center gap-1.5 break-words text-sm font-semibold text-foreground">
+                {href && hasValue ? (
+                    <Link href={href} className="min-w-0 text-primary underline-offset-4 hover:underline">
+                        {displayValue}
                     </Link>
                 ) : (
-                    (value ?? '—')
+                    <span className="min-w-0 break-words">{hasValue ? displayValue : '—'}</span>
                 )}
+                {copyable && hasValue ? <CopyValueButton value={String(value)} label={label} format={format} /> : null}
             </p>
         </div>
     );

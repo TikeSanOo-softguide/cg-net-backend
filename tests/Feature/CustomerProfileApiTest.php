@@ -20,6 +20,39 @@ class CustomerProfileApiTest extends TestCase
         $this->getJson('/api/customer/profile')->assertUnauthorized();
     }
 
+    public function test_customer_can_switch_and_retrieve_their_saved_language(): void
+    {
+        $user = User::factory()->create(['lang' => 'en']);
+        $token = $user->createToken('language')->plainTextToken;
+
+        $this->withToken($token)
+            ->patchJson('/api/customer/language', ['lang' => 'my'])
+            ->assertOk()
+            ->assertJsonPath('data.lang', 'my');
+
+        $this->assertSame('my', $user->fresh()->lang);
+
+        $this->withToken($token)
+            ->getJson('/api/customer/profile')
+            ->assertOk()
+            ->assertJsonPath('data.user.lang', 'my');
+    }
+
+    public function test_customer_language_switch_requires_authentication_and_supported_language(): void
+    {
+        $this->patchJson('/api/customer/language', ['lang' => 'zh'])->assertUnauthorized();
+
+        $user = User::factory()->create(['lang' => 'en']);
+        $token = $user->createToken('language')->plainTextToken;
+
+        $this->withToken($token)
+            ->patchJson('/api/customer/language', ['lang' => 'fr'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('lang');
+
+        $this->assertSame('en', $user->fresh()->lang);
+    }
+
     public function test_customer_can_get_only_their_profile_balance_broadband_and_package_credentials(): void
     {
         $user = User::factory()->create([

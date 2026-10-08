@@ -12,6 +12,8 @@ class OfficeSeeder extends Seeder
      */
     public function run(): void
     {
+        echo "Office seeder started\n";
+
         $offices = [
             [
                 'name' => 'Yangon Central Office',
