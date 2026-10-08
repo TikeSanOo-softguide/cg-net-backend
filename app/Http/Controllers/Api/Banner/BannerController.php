@@ -15,14 +15,14 @@ class BannerController extends Controller
             ->whereIn('type', [
                 BannerType::WebBackground->value,
                 BannerType::WebPopUp->value,
+                BannerType::AppEntry->value,
+                BannerType::AppPopUp->value,
             ])
             ->where(function ($query) {
-                $query->whereNull('start_date')
-                    ->orWhere('start_date', '<=', now());
+                $query->whereNull('start_date')->orWhere('start_date', '<=', now());
             })
             ->where(function ($query) {
-                $query->whereNull('end_date')
-                    ->orWhere('end_date', '>=', now());
+                $query->whereNull('end_date')->orWhere('end_date', '>=', now());
             })
             ->get();
         return BannerResource::collection($banners);
