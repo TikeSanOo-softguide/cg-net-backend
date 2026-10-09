@@ -25,7 +25,9 @@ class DueFtthBillNotificationTest extends TestCase
         $firstUser = User::factory()->create(['broadband_account_number' => 'DUE-ACCOUNT']);
         $sharedAccountUser = User::factory()->create(['broadband_account_number' => 'DUE-ACCOUNT']);
         $outsideWindowUser = User::factory()->create(['broadband_account_number' => 'LATE-ACCOUNT']);
-        User::factory()->suspended()->create(['broadband_account_number' => 'DUE-ACCOUNT']);
+        User::factory()
+            ->suspended()
+            ->create(['broadband_account_number' => 'DUE-ACCOUNT']);
 
         Http::fake([
             'billing-server.test/due-bills*' => Http::response([
@@ -53,21 +55,21 @@ class DueFtthBillNotificationTest extends TestCase
         Queue::assertPushed(SendFtthBillDueNotificationJob::class, 2);
         Queue::assertPushed(
             SendFtthBillDueNotificationJob::class,
-            fn (SendFtthBillDueNotificationJob $job): bool => $job->userId === $firstUser->id,
+            fn(SendFtthBillDueNotificationJob $job): bool => $job->userId === $firstUser->id,
         );
         Queue::assertPushed(
             SendFtthBillDueNotificationJob::class,
-            fn (SendFtthBillDueNotificationJob $job): bool => $job->userId === $sharedAccountUser->id,
+            fn(SendFtthBillDueNotificationJob $job): bool => $job->userId === $sharedAccountUser->id,
         );
         Queue::assertNotPushed(
             SendFtthBillDueNotificationJob::class,
-            fn (SendFtthBillDueNotificationJob $job): bool => $job->userId === $outsideWindowUser->id,
+            fn(SendFtthBillDueNotificationJob $job): bool => $job->userId === $outsideWindowUser->id,
         );
         $this->assertCount(1, Http::recorded());
         Http::assertSent(function (Request $request): bool {
-            return str_ends_with(parse_url($request->url(), PHP_URL_PATH), '/due-bills')
-                && $request['due_date_from'] === now()->toDateString()
-                && $request['due_date_to'] === now()->addDays(7)->toDateString();
+            return str_ends_with(parse_url($request->url(), PHP_URL_PATH), '/due-bills') &&
+                $request['due_date_from'] === now()->toDateString() &&
+                $request['due_date_to'] === now()->addDays(7)->toDateString();
         });
     }
 
@@ -89,7 +91,7 @@ class DueFtthBillNotificationTest extends TestCase
 
         $this->assertDatabaseHas('notifications', [
             'user_id' => $user->id,
-            'category' => NotificationCategory::BillAlert->value,
+            'category' => NotificationCategory::Announcement->value,
             'action_type' => 'ftth_bill',
             'action_id' => 'bill-123',
             'is_read' => false,
@@ -102,8 +104,8 @@ class DueFtthBillNotificationTest extends TestCase
         NotificationFacade::assertSentTo(
             $user,
             FtthBillDueNotification::class,
-            fn (FtthBillDueNotification $sent): bool => $sent->title === 'FTTH 账单即将到期'
-                && str_contains($sent->body, 'CG12345678'),
+            fn(FtthBillDueNotification $sent): bool => $sent->title === 'FTTH 账单即将到期' &&
+                str_contains($sent->body, 'CG12345678'),
         );
     }
 
@@ -124,9 +126,7 @@ class DueFtthBillNotificationTest extends TestCase
             'action_type' => 'ftth_bill',
             'action_id' => 'bill-without-device',
         ]);
-        $this->assertNull(
-            Notification::query()->where('action_id', 'bill-without-device')->value('sent_at'),
-        );
+        $this->assertNull(Notification::query()->where('action_id', 'bill-without-device')->value('sent_at'));
         NotificationFacade::assertNothingSent();
     }
 
@@ -145,9 +145,7 @@ class DueFtthBillNotificationTest extends TestCase
         DeviceToken::query()->create(['user_id' => $user->id, 'token' => 'registered-later']);
         $job->handle();
 
-        $this->assertNotNull(
-            Notification::query()->where('action_id', 'bill-token-added-later')->value('sent_at'),
-        );
+        $this->assertNotNull(Notification::query()->where('action_id', 'bill-token-added-later')->value('sent_at'));
         NotificationFacade::assertSentTo($user, FtthBillDueNotification::class, 1);
     }
 
@@ -157,7 +155,7 @@ class DueFtthBillNotificationTest extends TestCase
         $otherUser = User::factory()->create();
         $notification = Notification::factory()->create([
             'user_id' => $user->id,
-            'category' => NotificationCategory::BillAlert,
+            'category' => NotificationCategory::Announcement,
             'action_type' => 'ftth_bill',
             'action_id' => 'bill-123',
             'is_read' => false,
@@ -171,13 +169,17 @@ class DueFtthBillNotificationTest extends TestCase
             ->getJson('/api/notifications')
             ->assertOk()
             ->assertJsonPath('unread_count', 1)
-            ->assertJsonPath('data.0.category', 'bill_alert')
+            ->assertJsonPath('data.0.category', 'announcement')
             ->assertJsonPath('data.0.action_type', 'ftth_bill')
             ->assertJsonPath('data.0.action_id', 'bill-123')
             ->assertJsonPath('data.0.title', 'FTTH bill due soon')
             ->assertJsonPath(
                 'data.0.body',
-                'Your bill for account '.$notification->template_data['account_number'].' is due on '.$notification->template_data['due_date'].'. Tap to view details.',
+                'Your bill for account ' .
+                    $notification->template_data['account_number'] .
+                    ' is due on ' .
+                    $notification->template_data['due_date'] .
+                    '. Tap to view details.',
             )
             ->assertJsonPath('data.0.is_read', false);
 

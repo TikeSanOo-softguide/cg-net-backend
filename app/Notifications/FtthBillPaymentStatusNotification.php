@@ -3,6 +3,8 @@
 namespace App\Notifications;
 
 use App\Enums\BillPaymentNotificationEvent;
+use App\Enums\NotificationActionType;
+use App\Enums\NotificationCategory;
 use App\Enums\NotificationTemplateType;
 use App\Models\NotificationTemplate;
 use App\Models\User;
@@ -41,38 +43,32 @@ class FtthBillPaymentStatusNotification extends Notification implements ShouldQu
     public function toFcm(User $notifiable): FcmMessage
     {
         $content = $this->content($notifiable);
+        $data = array_filter(
+            [
+                'type' => 'ftth_bill_payment',
+                'category' => NotificationCategory::Announcement->value,
+                'action_type' => NotificationActionType::FtthBillPayment->value,
+                'action_id' => $this->transactionNo,
+                'event' => $this->event->value,
+                'transaction_no' => $this->transactionNo,
+                'amount' => (string) $this->amount,
+                'broadband_account_number' => $this->accountNumber,
+                'refund_transaction_no' => $this->refundTransactionNo,
+            ],
+            fn($value) => $value !== null,
+        );
 
-        return (new FcmMessage(notification: new FcmNotification(title: $content['title'], body: $content['description'])))
-            ->data(
-                array_filter(
-                    [
-                        'type' => 'ftth_bill_payment',
-                        'event' => $this->event->value,
-                        'transaction_no' => $this->transactionNo,
-                        'amount' => (string) $this->amount,
-                        'broadband_account_number' => $this->accountNumber,
-                        'refund_transaction_no' => $this->refundTransactionNo,
-                    ],
-                    fn($value) => $value !== null,
-                ),
-            )
+        return (new FcmMessage(
+            notification: new FcmNotification(title: $content['title'], body: $content['description']),
+        ))
+            ->data($data)
             ->custom([
                 'webpush' => [
                     'headers' => ['Urgency' => 'high'],
                     'notification' => [
                         'title' => $content['title'],
                         'body' => $content['description'],
-                        'data' => array_filter(
-                            [
-                                'type' => 'ftth_bill_payment',
-                                'event' => $this->event->value,
-                                'transaction_no' => $this->transactionNo,
-                                'amount' => (string) $this->amount,
-                                'broadband_account_number' => $this->accountNumber,
-                                'refund_transaction_no' => $this->refundTransactionNo,
-                            ],
-                            fn($value) => $value !== null,
-                        ),
+                        'data' => $data,
                     ],
                 ],
             ])
@@ -86,16 +82,13 @@ class FtthBillPaymentStatusNotification extends Notification implements ShouldQu
     public function content(User $notifiable): array
     {
         $templateType = NotificationTemplateType::forBillPaymentEvent($this->event);
-        $template = NotificationTemplate::query()
-            ->where('type', $templateType->value)
-            ->firstOrFail();
+        $template = NotificationTemplate::query()->where('type', $templateType->value)->firstOrFail();
 
         return $template->render($notifiable->lang, [
-            'amount' => number_format($this->amount).' Points',
+            'amount' => number_format($this->amount) . ' Points',
             'account_number' => $this->accountNumber,
             'transaction_no' => $this->transactionNo,
             'refund_transaction_no' => $this->refundTransactionNo ?? '',
         ]);
     }
-
 }

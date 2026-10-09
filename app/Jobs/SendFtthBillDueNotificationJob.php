@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\NotificationActionType;
 use App\Enums\NotificationCategory;
 use App\Enums\NotificationTemplateType;
 use App\Models\Notification;
@@ -47,6 +48,7 @@ class SendFtthBillDueNotificationJob implements ShouldBeUnique, ShouldQueue
         $template = NotificationTemplate::query()
             ->where('type', NotificationTemplateType::BillAlert->value)
             ->firstOrFail();
+
         $templateData = [
             'account_number' => $this->accountNumber,
             'due_date' => $this->dueDate,
@@ -55,18 +57,18 @@ class SendFtthBillDueNotificationJob implements ShouldBeUnique, ShouldQueue
         $notification = Notification::query()->firstOrCreate(
             [
                 'user_id' => $user->id,
-                'action_type' => 'ftth_bill',
+                'action_type' => NotificationActionType::FtthBill->value,
                 'action_id' => $this->actionId,
             ],
             [
-                'category' => NotificationCategory::BillAlert,
+                'category' => NotificationCategory::Announcement,
                 'templateable_type' => NotificationTemplate::class,
                 'templateable_id' => $template->id,
                 'template_data' => $templateData,
             ],
         );
 
-        if ($notification->sent_at !== null || ! $user->deviceTokens()->exists()) {
+        if ($notification->sent_at !== null || !$user->deviceTokens()->exists()) {
             return;
         }
 

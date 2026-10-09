@@ -154,6 +154,8 @@
         "announcement": "ကြေညာချက်များ",
         "notification_promotions": "ပရိုမိုးရှင်းများ",
         "push_composer": "Push အကြောင်းကြားစာ",
+        "bill_due_alerts": "ဘေလ်သက်တမ်းကုန် အကြောင်းကြားစာများ",
+        "bill_due_alerts_description": "FTTH ဘေလ်သက်တမ်းကုန် အကြောင်းကြားစာများကို စစ်ဆေးပြီး ပြန်ပို့ပါ။",
         "notification_templates": "အကြောင်းကြားစာ ပုံစံများ",
         "notification_templates_description": "ဘာသာစကားမျိုးစုံ အကြောင်းကြားစာစာသားများကို ပြင်ဆင်ပါ။",
         "support": "တိုက်ရိုက် ချက်တင် / အကူအညီ",
@@ -1389,6 +1391,32 @@
                 "title_max": "ခေါင်းစဉ်သည် စာလုံး ၁၂၀ ထက် မကျော်ရပါ။",
                 "description_max": "ဖော်ပြချက်သည် စာလုံး ၅,၀၀၀ ထက် မကျော်ရပါ။"
             }
+        },
+        "bill_due_alerts": {
+            "description": "Billing server မှ ဘေလ်စာရင်းနှင့် notification record များကို နှိုင်းယှဉ်ပြီး မရှိသေးသော သို့မဟုတ် မပို့ရသေးသော သတိပေးချက်များကို တန်းစီပါ။",
+            "lookup_title": "အကောင့်ဖြင့် စစ်ထုတ်ရန်",
+            "lookup_description": "ပုံမှန်ရက်စွဲသည် ယနေ့မှ ၇ ရက်အကြာ ဖြစ်သည်။ အခြားရက်ရွေးပါက ထိုနေ့တွင် သက်တမ်းကုန်မည့် ဘေလ်များကို ရှာမည်။",
+            "search_placeholder": "ဖောက်သည် သို့မဟုတ် အကောင့်ကို ရှာရန်",
+            "account_placeholder": "ဘရော့ဒ်ဘန်းအကောင့်နံပါတ်",
+            "account_number": "အကောင့်နံပါတ်",
+            "customer": "ဖောက်သည်",
+            "due_date": "ပေးချေရမည့်ရက်",
+            "results_title": "လက်ရှိပေးချေရမည့် ဘေလ်များနှင့် notification record များ",
+            "results_description": "Record မရှိပါက scheduled job သည် ဤဖောက်သည်နှင့် ဘေလ်အတွက် notification မဖန်တီးရသေးပါ။",
+            "record_status": "Notification record",
+            "states": {
+                "not_recorded": "Record မရှိပါ",
+                "unsent": "Record ရှိပြီး၊ မပို့ရသေးပါ",
+                "queued": "ပို့ရန်တန်းစီထားသည်",
+                "sent": "ပို့ပြီးပါပြီ"
+            },
+            "device": "Push စက်",
+            "device_available": "အသုံးပြုနိုင်သည်",
+            "no_device": "စက် မှတ်ပုံမတင်ထားပါ",
+            "send": "ပို့ရန်တန်းစီပါ",
+            "retry": "ပြန်ကြိုးစားပါ",
+            "no_due_bills": "ဤအကောင့်အတွက် အသုံးပြုနေသော ဖောက်သည် သို့မဟုတ် ပေးချေရမည့် ဘေလ် မတွေ့ပါ။",
+            "queued": "ဘေလ်သက်တမ်းကုန် အကြောင်းကြားစာကို ပို့ရန်တန်းစီပြီးပါပြီ။"
         },
         "announcement": {
             "type": "အမျိုးအစား",

@@ -73,6 +73,8 @@
         "announcement": "公告",
         "notification_promotions": "促销",
         "push_composer": "推送通知",
+        "bill_due_alerts": "账单到期提醒",
+        "bill_due_alerts_description": "查看并重试 FTTH 账单到期通知。",
         "notification_templates": "通知模板",
         "notification_templates_description": "编辑可重复使用的多语言通知内容。",
         "support": "在线客服 / 支持",
@@ -1402,6 +1404,32 @@
                 "title_max": "标题不得超过 120 个字符。",
                 "description_max": "描述不得超过 5,000 个字符。"
             }
+        },
+        "bill_due_alerts": {
+            "description": "将账单服务器返回的账单与通知记录进行比较，并为缺失或未发送的提醒排队。",
+            "lookup_title": "按账户筛选",
+            "lookup_description": "默认日期为今天之后的第七天。选择其他日期可查询当天到期的账单。",
+            "search_placeholder": "搜索客户或账户",
+            "account_placeholder": "宽带账户号",
+            "account_number": "账户号",
+            "customer": "客户",
+            "due_date": "到期日",
+            "results_title": "当前到期账单和通知记录",
+            "results_description": "缺少记录表示定时任务尚未为此客户和账单创建通知。",
+            "record_status": "通知记录",
+            "states": {
+                "not_recorded": "无记录",
+                "unsent": "已记录，未发送",
+                "queued": "已排队",
+                "sent": "已发送"
+            },
+            "device": "推送设备",
+            "device_available": "已注册",
+            "no_device": "未注册设备",
+            "send": "排队发送",
+            "retry": "重试",
+            "no_due_bills": "未找到此账户的活跃客户或到期账单。",
+            "queued": "账单到期提醒已加入发送队列。"
         },
         "announcement": {
             "type": "类型",

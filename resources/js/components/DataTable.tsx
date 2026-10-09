@@ -38,6 +38,8 @@ export type DataTableColumn<T> = {
     header: string;
     cell: (row: T) => ReactNode;
     className?: string;
+    headerClassName?: string;
+    headerLabelClassName?: string;
     mobile?: 'image' | 'title' | 'subtitle' | 'meta' | 'badge' | false;
     searchValue?: (row: T) => string;
     sortable?: boolean;
@@ -496,12 +498,21 @@ export function DataTable<T>({
                                                 </TableHead>
                                             ) : null}
                                             {columns.map((column) => {
-                                                const label = <ColumnHeaderLabel label={column.header} />;
+                                                const label = (
+                                                    <ColumnHeaderLabel
+                                                        label={column.header}
+                                                        className={column.headerLabelClassName}
+                                                    />
+                                                );
 
                                                 return (
                                                     <TableHead
                                                         key={column.id}
-                                                        className={cn(headerCellClass, EDGE_CELL)}
+                                                        className={cn(
+                                                            headerCellClass,
+                                                            EDGE_CELL,
+                                                            column.headerClassName,
+                                                        )}
                                                     >
                                                         {column.sortable && onSort ? (
                                                             <button
@@ -521,7 +532,10 @@ export function DataTable<T>({
                                                                 )}
                                                             </button>
                                                         ) : (
-                                                            label
+                                                            <ColumnHeaderLabel
+                                                                label={column.header}
+                                                                className={column.headerLabelClassName}
+                                                            />
                                                         )}
                                                     </TableHead>
                                                 );

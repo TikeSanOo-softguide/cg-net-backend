@@ -80,6 +80,8 @@
         "announcement": "Announcements",
         "notification_promotions": "Promotions",
         "push_composer": "Push Notification",
+        "bill_due_alerts": "Bill Due Alerts",
+        "bill_due_alerts_description": "Review and retry FTTH bill due notifications.",
         "notification_templates": "Notification Templates",
         "notification_templates_description": "Edit reusable multilingual notification content.",
         "support": "Live Chat / Support",
@@ -1389,6 +1391,32 @@
                 "title_max": "The title must not exceed 120 characters.",
                 "description_max": "The description must not exceed 5,000 characters."
             }
+        },
+        "bill_due_alerts": {
+            "description": "Compare bills from the billing server with notification records and queue missing or unsent alerts.",
+            "lookup_title": "Filter by account",
+            "lookup_description": "The date defaults to seven days from today. Choose another date to query bills due that day.",
+            "search_placeholder": "Search customer or account",
+            "account_placeholder": "Broadband account number",
+            "account_number": "Account number",
+            "customer": "Customer",
+            "due_date": "Due date",
+            "results_title": "Current due bills and notification records",
+            "results_description": "A missing record means the scheduled job has not created one for this customer and bill.",
+            "record_status": "Notification record",
+            "states": {
+                "not_recorded": "No record",
+                "unsent": "Recorded, not sent",
+                "queued": "Queued",
+                "sent": "Sent"
+            },
+            "device": "Push device",
+            "device_available": "Available",
+            "no_device": "No registered device",
+            "send": "Queue alert",
+            "retry": "Retry",
+            "no_due_bills": "No active customer or due bill was found for this account.",
+            "queued": "Bill due alert queued for delivery."
         },
         "announcement": {
             "type": "Type",

@@ -18,6 +18,7 @@ use App\Http\Controllers\Log\SecurityLogController;
 use App\Http\Controllers\Log\UserLogController;
 use App\Http\Controllers\MenuPage\MenuPageController;
 use App\Http\Controllers\Notification\AnnouncementController;
+use App\Http\Controllers\Notification\BillDueAlertController;
 use App\Http\Controllers\Notification\NotificationTemplateController;
 use App\Http\Controllers\Notification\PushNotificationController;
 use App\Http\Controllers\Package\AddonController;
@@ -219,16 +220,6 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
     Route::prefix('notifications')
         ->name('notifications.')
         ->group(function () {
-            Route::prefix('templates')
-                ->name('templates.')
-                ->group(function (): void {
-                    Route::get('/', [NotificationTemplateController::class, 'index'])
-                        ->name('index');
-                    Route::put('/{notificationTemplate}', [NotificationTemplateController::class, 'update'])
-                        ->middleware('can:notifications.update')
-                        ->name('update');
-                });
-
             Route::prefix('announcement')
                 ->name('announcement.')
                 ->group(function () {
@@ -284,18 +275,41 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                         ->name('destroy');
                 });
 
-            Route::get('/compose', [PushNotificationController::class, 'index'])
-                ->middleware('can:notifications.view')
-                ->name('compose');
-            Route::post('/compose/push-now', [PushNotificationController::class, 'pushNow'])
-                ->middleware('can:notifications.create')
-                ->name('compose.push-now');
-            Route::post('/compose/schedule', [PushNotificationController::class, 'schedule'])
-                ->middleware('can:notifications.create')
-                ->name('compose.schedule');
-            Route::post('/compose/{schedule}/cancel', [PushNotificationController::class, 'cancel'])
-                ->middleware('can:notifications.update')
-                ->name('compose.cancel');
+            Route::prefix('bill-due-alerts')
+                ->name('bill-due-alerts.')
+                ->group(function (): void {
+                    Route::get('/', [BillDueAlertController::class, 'index'])
+                        ->middleware('can:notifications.view')
+                        ->name('index');
+                    Route::post('/send', [BillDueAlertController::class, 'send'])
+                        ->middleware('can:notifications.create')
+                        ->name('send');
+                });
+
+            Route::prefix('compose')
+                ->group(function (): void {
+                    Route::get('/', [PushNotificationController::class, 'index'])
+                        ->middleware('can:notifications.view')
+                        ->name('compose');
+                    Route::post('/push-now', [PushNotificationController::class, 'pushNow'])
+                        ->middleware('can:notifications.create')
+                        ->name('compose.push-now');
+                    Route::post('/schedule', [PushNotificationController::class, 'schedule'])
+                        ->middleware('can:notifications.create')
+                        ->name('compose.schedule');
+                    Route::post('/{schedule}/cancel', [PushNotificationController::class, 'cancel'])
+                        ->middleware('can:notifications.update')
+                        ->name('compose.cancel');
+                });
+
+            Route::prefix('templates')
+                ->name('templates.')
+                ->group(function (): void {
+                    Route::get('/', [NotificationTemplateController::class, 'index'])->name('index');
+                    Route::put('/{notificationTemplate}', [NotificationTemplateController::class, 'update'])
+                        ->middleware('can:notifications.update')
+                        ->name('update');
+                });
         });
 
     Route::prefix('support')

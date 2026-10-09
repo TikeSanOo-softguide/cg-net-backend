@@ -131,14 +131,20 @@ class DeviceTokenTest extends TestCase
         $this->assertSame('Bill payment failed', $message['notification']['title']);
         $this->assertStringContainsString('1,500 MMK', $message['notification']['body']);
         $this->assertStringContainsString('refunded', $message['notification']['body']);
-        $this->assertSame([
-            'type' => 'ftth_bill_payment',
-            'event' => 'refunded',
-            'transaction_no' => 'FTTH-1',
-            'amount' => '1500',
-            'broadband_account_number' => 'CG12345678',
-            'refund_transaction_no' => 'REFUND-1',
-        ], $message['data']);
+        $this->assertSame(
+            [
+                'type' => 'ftth_bill_payment',
+                'category' => 'announcement',
+                'action_type' => 'ftth_bill_payment',
+                'action_id' => 'FTTH-1',
+                'event' => 'refunded',
+                'transaction_no' => 'FTTH-1',
+                'amount' => '1500',
+                'broadband_account_number' => 'CG12345678',
+                'refund_transaction_no' => 'REFUND-1',
+            ],
+            $message['data'],
+        );
         $this->assertSame($message['notification']['title'], $message['webpush']['notification']['title']);
         $this->assertSame($message['data'], $message['webpush']['notification']['data']);
     }
@@ -154,12 +160,14 @@ class DeviceTokenTest extends TestCase
             new NotFound('Requested entity was not found.'),
         );
 
-        (new PruneInvalidFcmTokens)->handle(new NotificationFailed(
-            $user,
-            $this->makeNotification(BillPaymentNotificationEvent::Completed),
-            FcmChannel::class,
-            ['report' => $report],
-        ));
+        (new PruneInvalidFcmTokens())->handle(
+            new NotificationFailed(
+                $user,
+                $this->makeNotification(BillPaymentNotificationEvent::Completed),
+                FcmChannel::class,
+                ['report' => $report],
+            ),
+        );
 
         $this->assertDatabaseMissing('device_tokens', ['token' => 'dead-token']);
         $this->assertDatabaseHas('device_tokens', ['token' => 'live-token']);

@@ -14,33 +14,40 @@ class NotificationController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $notifications = $user->appNotifications()
-            ->with('templateable')
-            ->latest('id')
-            ->paginate(30);
+        $notifications = $user->appNotifications()->with('templateable')->latest('id')->paginate(30);
         $locale = $user->lang;
 
         return response()->json([
-            'data' => $notifications->getCollection()->map(function (Notification $notification) use ($locale): array {
-                $template = $notification->templateable;
+            'data' => $notifications
+                ->getCollection()
+                ->map(function (Notification $notification) use ($locale): array {
+                    $template = $notification->templateable;
+                    $templateData = $notification->template_data ?? [];
 
-                if (! $template instanceof NotificationTemplate) {
-                    throw new LogicException("Notification {$notification->id} has no valid content template.");
-                }
+                    if (isset($templateData['title_en'], $templateData['body_en'])) {
+                        $language = in_array($locale, ['en', 'my', 'zh'], true) ? $locale : 'en';
+                        $content = [
+                            'title' => $templateData["title_{$language}"] ?? $templateData['title_en'],
+                            'description' => $templateData["body_{$language}"] ?? $templateData['body_en'],
+                        ];
+                    } elseif ($template instanceof NotificationTemplate) {
+                        $content = $template->render($locale, $templateData);
+                    } else {
+                        throw new LogicException("Notification {$notification->id} has no valid content template.");
+                    }
 
-                $content = $template->render($locale, $notification->template_data ?? []);
-
-                return [
-                    'id' => $notification->id,
-                    'title' => $content['title'],
-                    'body' => $content['description'],
-                    'category' => $notification->category->value,
-                    'is_read' => $notification->is_read,
-                    'action_type' => $notification->action_type,
-                    'action_id' => $notification->action_id,
-                    'created_at' => $notification->created_at?->toIso8601String(),
-                ];
-            })->values(),
+                    return [
+                        'id' => $notification->id,
+                        'title' => $content['title'],
+                        'body' => $content['description'],
+                        'category' => $notification->category->value,
+                        'is_read' => $notification->is_read,
+                        'action_type' => $notification->action_type,
+                        'action_id' => $notification->action_id,
+                        'created_at' => $notification->created_at?->toIso8601String(),
+                    ];
+                })
+                ->values(),
             'unread_count' => $user->appNotifications()->where('is_read', false)->count(),
             'current_page' => $notifications->currentPage(),
             'last_page' => $notifications->lastPage(),
