@@ -97,6 +97,18 @@ npm run build
 
 Vite HMR is already running via the `vite` service when you use Compose.
 
+### Reverb for LAN / Android clients
+
+When the app connects from a physical Android device over Wi‑Fi, `localhost` is not a valid target. Reverb must bind to `0.0.0.0` inside Docker, but the client-facing host must be set to the Windows machine's LAN IP, for example `192.168.10.176`.
+
+```env
+REVERB_SERVER_HOST=0.0.0.0
+REVERB_HOST=192.168.10.176
+VITE_REVERB_HOST=192.168.10.176
+```
+
+Keep the published port at `8081` and confirm the Windows host is forwarding that port correctly before testing the mobile app.
+
 ### 6. Open the app
 
 [http://localhost:8080](http://localhost:8080)

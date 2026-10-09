@@ -124,7 +124,7 @@ services:
             VITE_DEV_SERVER_URL: http://localhost:${VITE_PORT:-5173}
             VITE_REVERB_ENABLED: ${VITE_REVERB_ENABLED:-true}
             VITE_REVERB_APP_KEY: ${REVERB_APP_KEY:-cgnet-reverb-key}
-            VITE_REVERB_HOST: localhost
+            VITE_REVERB_HOST: ${VITE_REVERB_HOST:-localhost}
             VITE_REVERB_PORT: ${REVERB_PORT:-8081}
             VITE_REVERB_SCHEME: ${REVERB_SCHEME:-http}
             CHOKIDAR_USEPOLLING: 'true'
@@ -148,11 +148,11 @@ services:
         environment:
             APP_URL: http://localhost:${NGINX_PORT:-8080}
             REDIS_HOST: redis
-            REVERB_SERVER_HOST: 0.0.0.0
-            REVERB_SERVER_PORT: 8081
-            REVERB_HOST: localhost
-            REVERB_PORT: 8081
-            REVERB_SCHEME: http
+            REVERB_SERVER_HOST: ${REVERB_SERVER_HOST:-0.0.0.0}
+            REVERB_SERVER_PORT: ${REVERB_SERVER_PORT:-8081}
+            REVERB_HOST: ${REVERB_HOST:-localhost}
+            REVERB_PORT: ${REVERB_PORT:-8081}
+            REVERB_SCHEME: ${REVERB_SCHEME:-http}
         depends_on:
             redis:
                 condition: service_started

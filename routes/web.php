@@ -329,6 +329,10 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                         ->name('chat-conversations.messages.store')
                         ->middleware('can:support.create');
 
+                    Route::post('/{conversation}/accept', [ChatConversationsController::class, 'accept'])
+                        ->name('chat-conversations.accept')
+                        ->middleware('can:support.create');
+
                     Route::put('/{conversation}/status', [ChatConversationsController::class, 'updateStatus'])
                         ->name('chat-conversations.status')
                         ->middleware('can:support.update');

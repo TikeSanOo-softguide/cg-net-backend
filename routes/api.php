@@ -36,6 +36,7 @@ use App\Http\Controllers\Api\Settings\GeneralSettingController;
 use App\Http\Controllers\Api\Transaction\TransactionHistoryController;
 use App\Http\Controllers\ChangePassword\ChangePasswordController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')
@@ -180,8 +181,11 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::post('/start', [ChatFlowController::class, 'start']);
         Route::get('/current', [ChatFlowController::class, 'current']);
         Route::post('/select-option', [ChatFlowController::class, 'selectOption']);
+        Route::post('/messages', [ChatFlowController::class, 'sendMessage']);
     });
 });
+
+Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
 if (app()->isLocal()) {
     require __DIR__ . '/dev.php';
