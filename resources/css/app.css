@@ -37,6 +37,53 @@
     }
 }
 
+@keyframes chart-bar-grow {
+    from {
+        transform: scaleX(0);
+    }
+    to {
+        transform: scaleX(1);
+    }
+}
+
+@keyframes chart-bar-rise {
+    from {
+        transform: scaleY(0);
+    }
+    to {
+        transform: scaleY(1);
+    }
+}
+
+.chart-bar-grow {
+    transform-origin: left;
+    animation: chart-bar-grow 500ms ease-out both;
+}
+
+.chart-bar-grow-vertical {
+    transform-origin: bottom;
+    animation: chart-bar-rise 500ms ease-out both;
+}
+
+.chart-bar-grow-fast {
+    transform-origin: left;
+    animation: chart-bar-grow 300ms ease-out both;
+}
+
+.chart-bar-grow-vertical-fast {
+    transform-origin: bottom;
+    animation: chart-bar-rise 300ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chart-bar-grow,
+    .chart-bar-grow-vertical,
+    .chart-bar-grow-fast,
+    .chart-bar-grow-vertical-fast {
+        animation: none;
+    }
+}
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../views';

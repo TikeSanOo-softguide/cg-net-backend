@@ -1,6 +1,18 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
-import { CalendarClockIcon, CircleAlert, CircleCheck, LoaderCircle, RefreshCw } from 'lucide-react';
+import {
+    ArrowLeftRight,
+    BookOpen,
+    CalendarClockIcon,
+    CircleAlert,
+    CircleCheck,
+    Copy,
+    Database,
+    LoaderCircle,
+    RefreshCw,
+    Scale,
+    Wallet,
+} from 'lucide-react';
 
 import { BackButton } from '@/components/BackButton';
 import { PageContent } from '@/components/PageContent';
@@ -199,28 +211,37 @@ export default function LedgerHealthReportIndex({
     }, [run?.id, run?.status, t]);
 
     const metrics = [
-        { label: t('ledger_health_report.wallets'), value: health?.wallets, isIssue: false },
-        { label: t('ledger_health_report.entries'), value: health?.entries, isIssue: false },
-        { label: t('ledger_health_report.balance_mismatches'), value: health?.balance_mismatches, isIssue: true },
+        { label: t('ledger_health_report.wallets'), value: health?.wallets, isIssue: false, icon: Wallet },
+        { label: t('ledger_health_report.entries'), value: health?.entries, isIssue: false, icon: BookOpen },
+        {
+            label: t('ledger_health_report.balance_mismatches'),
+            value: health?.balance_mismatches,
+            isIssue: true,
+            icon: Scale,
+        },
         {
             label: t('ledger_health_report.completed_without_entry'),
             value: health?.completed_without_entry,
             isIssue: true,
+            icon: CircleAlert,
         },
         {
             label: t('ledger_health_report.unbalanced_transactions'),
             value: health == null ? undefined : (health.unbalanced_transactions ?? 0),
             isIssue: true,
+            icon: ArrowLeftRight,
         },
         {
             label: t('ledger_health_report.duplicate_entry_transactions'),
             value: health?.duplicate_entry_transactions,
             isIssue: true,
+            icon: Copy,
         },
         {
             label: t('ledger_health_report.source_mismatches'),
             value: health == null ? undefined : (health.source_mismatches ?? 0),
             isIssue: true,
+            icon: Database,
         },
     ];
     const snapshotOptions = snapshots.map((item) => ({
@@ -605,17 +626,23 @@ export default function LedgerHealthReportIndex({
                 ) : null}
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {metrics.map((metric) => (
-                        <Card key={metric.label} className="gap-2 py-4">
-                            <CardContent>
-                                <p className="text-xs text-muted-foreground">{metric.label}</p>
-                                <p
-                                    className={`mt-2 font-heading text-2xl font-semibold tabular-nums ${
-                                        metric.isIssue && (metric.value ?? 0) > 0 ? 'text-danger' : ''
-                                    }`}
-                                >
-                                    {metric.value === undefined ? '—' : numberFormat.format(metric.value)}
-                                </p>
+                    {metrics.map(({ label, value, isIssue, icon: Icon }) => (
+                        <Card key={label} className="gap-2 py-4">
+                            <CardContent className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                    <p className="text-xs text-muted-foreground">{label}</p>
+                                    <p
+                                        className={`mt-2 break-words font-heading text-xl font-semibold tabular-nums ${
+                                            isIssue && (value ?? 0) > 0 ? 'text-danger' : ''
+                                        }`}
+                                    >
+                                        {value === undefined ? '—' : numberFormat.format(value)}
+                                    </p>
+                                </div>
+                                <Icon
+                                    className={`size-4 shrink-0 ${isIssue && (value ?? 0) > 0 ? 'text-danger' : 'text-primary'}`}
+                                    aria-hidden="true"
+                                />
                             </CardContent>
                         </Card>
                     ))}

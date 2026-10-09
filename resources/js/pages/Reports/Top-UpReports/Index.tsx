@@ -4,25 +4,14 @@ import {
     ArrowLeftIcon,
     CalendarDays,
     CreditCard,
+    PieChartIcon,
     RotateCcw,
     SlidersHorizontal,
     TicketCheck,
     TicketPlus,
+    TrendingUpIcon,
 } from 'lucide-react';
-import {
-    Cell,
-    Legend,
-    Line,
-    LineChart,
-    Pie,
-    PieChart,
-    CartesianGrid,
-    ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis,
-} from 'recharts';
-
+import { DonutChart, TrendChart } from '@/components/ui/charts';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -54,14 +43,7 @@ type Props = {
 };
 
 const numberFormat = new Intl.NumberFormat();
-const chartColors = [
-    'var(--primary)',
-    'var(--success)',
-    'var(--warning)',
-    'var(--info)',
-    'var(--destructive)',
-    'var(--chart-1)',
-];
+const chartColors = ['#EC4899', '#3B82F6', '#F97316', '#22C55E', '#8B5CF6', '#06B6D4'];
 
 export default function TopUpReportsIndex({
     filters: reportFilters,
@@ -73,7 +55,7 @@ export default function TopUpReportsIndex({
     offices,
     amounts,
 }: Props) {
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
     const [filters, setFilters] = useState(reportFilters);
     const [dateError, setDateError] = useState<string>();
     const [isLoading, setIsLoading] = useState(false);
@@ -151,22 +133,23 @@ export default function TopUpReportsIndex({
 
                 <form onSubmit={applyFilters}>
                     <Card>
-                        <CardContent className="pt-5">
+                        <CardContent>
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 xl:items-end">
                                 <FormField
                                     label={t('top_up_report.reporting_period')}
                                     htmlFor="top-up-mode"
                                     className="min-w-0"
+                                    labelClassName="text-[13px]"
                                 >
                                     <FormControl icon={CalendarDays}>
                                         <Select
                                             value={filters.mode}
                                             onValueChange={(mode: Filters['mode']) => setFilters({ ...filters, mode })}
                                         >
-                                            <SelectTrigger id="top-up-mode" className="w-full text-[11px]">
+                                            <SelectTrigger id="top-up-mode" className="h-10 w-full text-xs">
                                                 <SelectValue />
                                             </SelectTrigger>
-                                            <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                            <SelectContent className="[&_[data-slot=select-item]]:text-xs">
                                                 <SelectItem value="yearly">{t('top_up_report.yearly')}</SelectItem>
                                                 <SelectItem value="date_range">
                                                     {t('top_up_report.date_range')}
@@ -181,15 +164,16 @@ export default function TopUpReportsIndex({
                                         label={t('top_up_report.year')}
                                         htmlFor="top-up-year"
                                         className="min-w-0"
+                                        labelClassName="text-[13px]"
                                     >
                                         <Select
                                             value={filters.year}
                                             onValueChange={(year) => setFilters({ ...filters, year })}
                                         >
-                                            <SelectTrigger id="top-up-year" className="w-full text-[11px]">
+                                            <SelectTrigger id="top-up-year" className="h-10 w-full text-xs">
                                                 <SelectValue placeholder={t('top_up_report.select_year')} />
                                             </SelectTrigger>
-                                            <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                            <SelectContent className="[&_[data-slot=select-item]]:text-xs">
                                                 {years.map((year) => (
                                                     <SelectItem key={year.value} value={year.value}>
                                                         {year.label}
@@ -203,13 +187,16 @@ export default function TopUpReportsIndex({
                                         <FormField
                                             label={t('common.start_date')}
                                             htmlFor="top-up-from"
+                                            icon={CalendarDays}
                                             error={dateError}
                                             className="min-w-0"
+                                            labelClassName="text-[13px]"
                                         >
                                             <DatePicker
                                                 id="top-up-from"
                                                 value={filters.from}
                                                 max={filters.to || undefined}
+                                                className="text-xs"
                                                 onChange={(from) => {
                                                     setDateError(undefined);
                                                     setFilters({ ...filters, from });
@@ -219,13 +206,16 @@ export default function TopUpReportsIndex({
                                         <FormField
                                             label={t('common.end_date')}
                                             htmlFor="top-up-to"
+                                            icon={CalendarDays}
                                             error={dateError}
                                             className="min-w-0"
+                                            labelClassName="text-[13px]"
                                         >
                                             <DatePicker
                                                 id="top-up-to"
                                                 value={filters.to}
                                                 min={filters.from || undefined}
+                                                className="text-xs"
                                                 onChange={(to) => {
                                                     setDateError(undefined);
                                                     setFilters({ ...filters, to });
@@ -239,15 +229,16 @@ export default function TopUpReportsIndex({
                                     label={t('top_up_report.office')}
                                     htmlFor="top-up-office"
                                     className="min-w-0"
+                                    labelClassName="text-[13px]"
                                 >
                                     <Select
                                         value={filters.office}
                                         onValueChange={(office) => setFilters({ ...filters, office })}
                                     >
-                                        <SelectTrigger id="top-up-office" className="w-full text-[11px]">
+                                        <SelectTrigger id="top-up-office" className="h-10 w-full text-xs">
                                             <SelectValue placeholder={t('top_up_report.office')} />
                                         </SelectTrigger>
-                                        <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                        <SelectContent className="[&_[data-slot=select-item]]:text-xs">
                                             <SelectItem value="all">{t('top_up_report.all_offices')}</SelectItem>
                                             {offices.map((office) => (
                                                 <SelectItem key={office.value} value={office.value}>
@@ -263,15 +254,16 @@ export default function TopUpReportsIndex({
                                     label={t('top_up_report.denomination')}
                                     htmlFor="top-up-amount"
                                     className="min-w-0"
+                                    labelClassName="text-[13px]"
                                 >
                                     <Select
                                         value={filters.amount}
                                         onValueChange={(amount) => setFilters({ ...filters, amount })}
                                     >
-                                        <SelectTrigger id="top-up-amount" className="w-full text-[11px]">
+                                        <SelectTrigger id="top-up-amount" className="h-10 w-full text-xs">
                                             <SelectValue placeholder={t('top_up_report.denomination')} />
                                         </SelectTrigger>
-                                        <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                        <SelectContent className="[&_[data-slot=select-item]]:text-xs">
                                             <SelectItem value="all">{t('top_up_report.all_denominations')}</SelectItem>
                                             {amounts.map((amount) => (
                                                 <SelectItem key={amount} value={amount}>
@@ -282,32 +274,33 @@ export default function TopUpReportsIndex({
                                     </Select>
                                 </FormField>
 
-                                <FormField label={'\u00a0'} htmlFor="top-up-report-actions" className="w-full min-w-0">
+                                <FormField
+                                    label={'\u00a0'}
+                                    htmlFor="top-up-report-actions"
+                                    className="w-full min-w-0"
+                                    labelClassName="text-[13px]"
+                                >
                                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                         <Button
                                             type="button"
                                             variant="ghost"
-                                            className="w-full gap-2"
+                                            size="sm"
+                                            className="h-10 min-h-10 w-full gap-2"
                                             onClick={resetFilters}
                                             disabled={isLoading}
                                         >
                                             <RotateCcw className="size-4" />
-                                            <span className={locale === 'my' ? 'text-[11px]' : 'text-sm'}>
-                                                {t('top_up_report.reset')}
-                                            </span>
+                                            {t('top_up_report.reset')}
                                         </Button>
                                         <Button
                                             type="submit"
                                             id="top-up-report-actions"
-                                            className="w-full gap-2"
+                                            size="sm"
+                                            className="h-10 min-h-10 w-full gap-2"
                                             disabled={isLoading}
                                         >
                                             <SlidersHorizontal className="size-4" />
-                                            <span className={locale === 'my' ? 'text-[11px]' : 'text-sm'}>
-                                                {isLoading
-                                                    ? t('top_up_report.loading')
-                                                    : t('top_up_report.apply_filters')}
-                                            </span>
+                                            {isLoading ? t('top_up_report.loading') : t('top_up_report.apply_filters')}
                                         </Button>
                                     </div>
                                 </FormField>
@@ -318,134 +311,57 @@ export default function TopUpReportsIndex({
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {summaryCards.map(({ label, value, icon: Icon }) => (
-                        <Card key={label} className="min-h-28 justify-center py-4">
+                        <Card key={label} className="gap-2 py-4">
                             <CardContent className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                    <p className="text-[12px] text-muted-foreground">{label}</p>
-                                    <p className="mt-2 font-heading text-xl font-semibold">
+                                    <p className="text-xs text-muted-foreground">{label}</p>
+                                    <p className="mt-2 break-words font-heading text-xl font-semibold tabular-nums">
                                         {isLoading ? '—' : numberFormat.format(value)}
                                     </p>
                                 </div>
-                                <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-                                    <Icon className="size-4.5" aria-hidden="true" />
-                                </span>
+                                <Icon className="size-4 shrink-0 text-primary" aria-hidden="true" />
                             </CardContent>
                         </Card>
                     ))}
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.45fr_1fr]">
-                    <Card className="min-h-[340px]">
-                        <CardHeader>
-                            <CardTitle>{t('top_up_report.activity_title')}</CardTitle>
-                            <CardDescription>{t('top_up_report.activity_description')}</CardDescription>
-                        </CardHeader>
-                        {isLoading ? (
-                            <div className="h-64 animate-pulse bg-muted/50" role="status" />
-                        ) : hasCards ? (
-                            <CardContent>
-                                <div className="h-64 w-full">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <LineChart data={trend} margin={{ top: 12, right: 12, bottom: 4, left: 0 }}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                            <XAxis dataKey="label" tick={{ fontSize: 11 }} minTickGap={12} />
-                                            <YAxis allowDecimals={false} width={42} />
-                                            <Tooltip
-                                                formatter={(value, name) => [
-                                                    numberFormat.format(Number(value ?? 0)),
-                                                    name === 'generated'
-                                                        ? t('top_up_report.generated')
-                                                        : t('top_up_report.redeemed'),
-                                                ]}
-                                            />
-                                            <Legend
-                                                formatter={(value) =>
-                                                    value === 'generated'
-                                                        ? t('top_up_report.generated')
-                                                        : t('top_up_report.redeemed')
-                                                }
-                                            />
-                                            <Line
-                                                type="monotone"
-                                                dataKey="generated"
-                                                name="generated"
-                                                stroke="var(--primary)"
-                                                strokeWidth={2}
-                                                dot={false}
-                                                activeDot={{ r: 4 }}
-                                            />
-                                            <Line
-                                                type="monotone"
-                                                dataKey="redeemed"
-                                                name="redeemed"
-                                                stroke="var(--success)"
-                                                strokeWidth={2}
-                                                dot={false}
-                                                activeDot={{ r: 4 }}
-                                            />
-                                        </LineChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </CardContent>
-                        ) : (
-                            <div
-                                className="flex h-64 items-center justify-center px-5 text-center text-sm text-muted-foreground"
-                                role="status"
-                            >
-                                {t('top_up_report.no_data')}
-                            </div>
-                        )}
-                    </Card>
+                    <TrendChart
+                        data={trend.map((point) => ({
+                            date: point.label,
+                            generated: point.generated,
+                            redeemed: point.redeemed,
+                        }))}
+                        title={t('top_up_report.activity_title')}
+                        description={t('top_up_report.activity_description')}
+                        icon={<TrendingUpIcon className="size-3.5" strokeWidth={1.85} />}
+                        showLegend
+                        series={[
+                            {
+                                dataKey: 'generated',
+                                label: t('top_up_report.generated'),
+                                color: '#4F46E5',
+                            },
+                            {
+                                dataKey: 'redeemed',
+                                label: t('top_up_report.redeemed'),
+                                color: '#14B8A6',
+                            },
+                        ]}
+                    />
 
-                    <Card className="min-h-[340px]">
-                        <CardHeader>
-                            <CardTitle>{t('top_up_report.office_distribution')}</CardTitle>
-                            <CardDescription>{t('top_up_report.office_distribution_description')}</CardDescription>
-                        </CardHeader>
-                        {isLoading ? (
-                            <div className="h-64 animate-pulse bg-muted/50" role="status" />
-                        ) : hasCards ? (
-                            <CardContent>
-                                <div className="h-64 w-full">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie
-                                                data={pieData}
-                                                dataKey="cards"
-                                                nameKey="name"
-                                                cx="50%"
-                                                cy="46%"
-                                                innerRadius={58}
-                                                outerRadius={92}
-                                                paddingAngle={2}
-                                            >
-                                                {pieData.map((office, index) => (
-                                                    <Cell
-                                                        key={`${office.name}-${index}`}
-                                                        fill={chartColors[index % chartColors.length]}
-                                                    />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip
-                                                formatter={(value, _name, item) => [
-                                                    `${numberFormat.format(Number(value ?? 0))} · ${item.payload.percentage}%`,
-                                                    t('top_up_report.cards'),
-                                                ]}
-                                            />
-                                            <Legend verticalAlign="bottom" height={36} />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </CardContent>
-                        ) : (
-                            <div
-                                className="flex h-64 items-center justify-center px-5 text-center text-sm text-muted-foreground"
-                                role="status"
-                            >
-                                {t('top_up_report.no_data')}
-                            </div>
-                        )}
-                    </Card>
+                    <DonutChart
+                        data={pieData.map((office, index) => ({
+                            name: office.name ?? t('top_up_report.unassigned'),
+                            value: office.cards,
+                            color: chartColors[index % chartColors.length],
+                        }))}
+                        title={t('top_up_report.office_distribution')}
+                        description={t('top_up_report.office_distribution_description')}
+                        icon={<PieChartIcon className="size-3.5" strokeWidth={1.85} />}
+                        total={summary.total_cards}
+                        totalLabel={t('top_up_report.total_cards')}
+                    />
                 </div>
             </PageContent>
         </>

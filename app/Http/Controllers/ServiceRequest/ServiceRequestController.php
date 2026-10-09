@@ -81,12 +81,11 @@ class ServiceRequestController extends Controller
                 ::query()
                 ->whereBetween('created_at', [$start, $end])
                 ->when($filters['status'] ?? null, fn($query, string $status) => $query->where('status', $status))
-                ->get(['created_at', 'updated_at', 'status'])
+                ->get(['created_at', 'status'])
                 ->map(function ($row) use ($type): array {
                     return [
                         'type' => $type,
                         'created_at' => $row->created_at,
-                        'updated_at' => $row->updated_at,
                         'status' => $row->status->value,
                     ];
                 });
@@ -121,19 +120,6 @@ class ServiceRequestController extends Controller
             )
             ->values();
 
-        // Each type's resolution average excludes under_review rows and uses its own finalized created/updated interval.
-        $resolutionAnalysis = collect(self::REQUEST_TYPES)
-            ->map(function (array $definition, string $type) use ($requests): array {
-                $typeRequests = $requests->where('type', $type);
-
-                return [
-                    'type' => $type,
-                    'label' => $definition['label'],
-                    'total' => $typeRequests->count(),
-                ];
-            })
-            ->values();
-
         return Inertia::render('Reports/ServiceRequestReports/Index', [
             'filters' => [
                 'mode' => $mode,
@@ -158,7 +144,6 @@ class ServiceRequestController extends Controller
             'request_volume' => $this->requestVolume($requests, $start, $end, $mode),
             'request_types' => $requestTypes,
             'request_statuses' => $requestStatuses,
-            'resolution_analysis' => $resolutionAnalysis,
         ]);
     }
 

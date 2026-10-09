@@ -8,6 +8,7 @@ import { FormField } from '@/components/ui/form-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useReturnTo } from '@/hooks/useReturnTo';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatDate } from '@/lib/utils';
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import {
@@ -65,7 +66,7 @@ export default function BillingReportsIndex({
     paymentMethods,
     packages,
 }: Props) {
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
     const returnTo = useReturnTo('/reports');
     const [dateError, setDateError] = useState<string>();
     const [isLoading, setIsLoading] = useState(false);
@@ -117,7 +118,7 @@ export default function BillingReportsIndex({
 
     const resetFilters = () => router.get('/reports/billing', {}, { preserveState: false, replace: true });
 
-    const rangeLabel = `${reportFilters.from} – ${reportFilters.to}`;
+    const rangeLabel = `${formatDate(reportFilters.from)} ~ ${formatDate(reportFilters.to)}`;
 
     const summaryCards = [
         {
@@ -147,7 +148,7 @@ export default function BillingReportsIndex({
         },
     ];
 
-    const methodColors = ['bg-primary', 'bg-success', 'bg-warning', 'bg-info'];
+    const methodColors = ['#4F46E5', '#E11D48', '#0EA5E9', '#14B8A6'];
     const trendStatusLabels: Record<string, string> = {
         successful: t('billing_report.successful_payment_points'),
         pending: t('billing_report.pending_payment_points'),
@@ -183,10 +184,10 @@ export default function BillingReportsIndex({
                                                 setFilters({ ...filters, mode });
                                             }}
                                         >
-                                            <SelectTrigger id="billing-mode" className="w-full text-[11px]">
+                                            <SelectTrigger id="billing-mode" className="h-10 w-full text-xs">
                                                 <SelectValue />
                                             </SelectTrigger>
-                                            <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                            <SelectContent className="[&_[data-slot=select-item]]:text-xs">
                                                 <SelectItem value="yearly">{t('billing_report.yearly')}</SelectItem>
                                                 <SelectItem value="date_range">
                                                     {t('billing_report.date_range')}
@@ -207,10 +208,10 @@ export default function BillingReportsIndex({
                                             value={filters.year}
                                             onValueChange={(year) => setFilters({ ...filters, year })}
                                         >
-                                            <SelectTrigger id="billing-year" className="w-full text-[11px]">
+                                            <SelectTrigger id="billing-year" className="h-10 w-full text-xs">
                                                 <SelectValue placeholder={t('billing_report.select_year')} />
                                             </SelectTrigger>
-                                            <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                            <SelectContent className="[&_[data-slot=select-item]]:text-xs">
                                                 {years.map((year) => (
                                                     <SelectItem key={year.value} value={year.value}>
                                                         {year.label}
@@ -233,6 +234,7 @@ export default function BillingReportsIndex({
                                                 id="billing-from"
                                                 value={filters.from}
                                                 max={filters.to || undefined}
+                                                className="text-xs"
                                                 onChange={(from) => {
                                                     setDateError(undefined);
                                                     setFilters({ ...filters, from });
@@ -252,6 +254,7 @@ export default function BillingReportsIndex({
                                                 id="billing-to"
                                                 value={filters.to}
                                                 min={filters.from || undefined}
+                                                className="text-xs"
                                                 onChange={(to) => {
                                                     setDateError(undefined);
                                                     setFilters({ ...filters, to });
@@ -272,11 +275,11 @@ export default function BillingReportsIndex({
                                             value={filters.method}
                                             onValueChange={(method) => setFilters({ ...filters, method })}
                                         >
-                                            <SelectTrigger className="w-full text-[11px]">
+                                            <SelectTrigger className="h-10 w-full text-xs">
                                                 <SelectValue placeholder={t('billing_report.payment_method')} />
                                             </SelectTrigger>
 
-                                            <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                            <SelectContent className="[&_[data-slot=select-item]]:text-xs">
                                                 <SelectItem value="all">{t('common.all')}</SelectItem>
 
                                                 {paymentMethods.map((method) => (
@@ -300,11 +303,11 @@ export default function BillingReportsIndex({
                                             value={filters.package}
                                             onValueChange={(value) => setFilters({ ...filters, package: value })}
                                         >
-                                            <SelectTrigger className="w-full text-[11px]">
+                                            <SelectTrigger className="h-10 w-full text-xs">
                                                 <SelectValue placeholder={t('billing_report.package')} />
                                             </SelectTrigger>
 
-                                            <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                            <SelectContent className="[&_[data-slot=select-item]]:text-xs">
                                                 <SelectItem value="all">{t('common.all')}</SelectItem>
 
                                                 {packages.map((item) => (
@@ -327,28 +330,26 @@ export default function BillingReportsIndex({
                                         <Button
                                             type="button"
                                             variant="ghost"
-                                            className="w-full gap-2"
+                                            size="sm"
+                                            className="h-10 min-h-10 w-full gap-2"
                                             onClick={resetFilters}
                                             disabled={isLoading}
                                         >
                                             <RotateCcw className="size-4" />
-                                            <span className={locale === 'my' ? 'text-[11px]' : 'text-sm'}>
-                                                {t('billing_report.reset')}
-                                            </span>
+                                            {t('billing_report.reset')}
                                         </Button>
 
                                         <Button
                                             type="submit"
                                             id="billing-actions"
-                                            className="w-full gap-2"
+                                            size="sm"
+                                            className="h-10 min-h-10 w-full gap-2"
                                             disabled={isLoading}
                                         >
                                             <SlidersHorizontal className="size-4" />
-                                            <span className={locale === 'my' ? 'text-[11px]' : 'text-sm'}>
-                                                {isLoading
-                                                    ? t('billing_report.loading')
-                                                    : t('billing_report.apply_filters')}
-                                            </span>
+                                            {isLoading
+                                                ? t('billing_report.loading')
+                                                : t('billing_report.apply_filters')}
                                         </Button>
                                     </div>
                                 </FormField>
@@ -359,18 +360,16 @@ export default function BillingReportsIndex({
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
                     {summaryCards.map(({ label, value, icon: Icon }) => (
-                        <Card key={label} className="gap-3 py-4">
-                            <CardContent className="flex items-start justify-between">
-                                <div>
-                                    <p className="text-[12px] text-muted-foreground">{label}</p>
-                                    <p className="mt-2 font-heading text-xl font-semibold tracking-tight">{value}</p>
-                                    <span className="mt-2 inline-flex text-[12px] text-muted-foreground">
-                                        {rangeLabel}
-                                    </span>
+                        <Card key={label} className="gap-2 py-4">
+                            <CardContent className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                    <p className="text-xs text-muted-foreground">{label}</p>
+                                    <p className="mt-2 break-words font-heading text-xl font-semibold tabular-nums">
+                                        {value}
+                                    </p>
+                                    <span className="mt-1 inline-flex text-xs text-muted-foreground">{rangeLabel}</span>
                                 </div>
-                                <span className="flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
-                                    <Icon className="size-4.5" />
-                                </span>
+                                <Icon className="size-4 shrink-0 text-primary" aria-hidden="true" />
                             </CardContent>
                         </Card>
                     ))}
@@ -388,7 +387,10 @@ export default function BillingReportsIndex({
                         <CardContent>
                             {trendHasData ? (
                                 <div className="overflow-x-auto">
-                                    <div className="flex h-56 min-w-max items-end gap-3 border-b border-border px-2">
+                                    <div
+                                        key={JSON.stringify(trend)}
+                                        className="flex h-56 min-w-max items-end gap-3 border-b border-border px-2"
+                                    >
                                         {trend.map((item, index) => (
                                             <div
                                                 key={`${item.label}-${index}`}
@@ -400,8 +402,11 @@ export default function BillingReportsIndex({
                                                 </span>
                                                 <div className="flex h-36 w-full items-end justify-center rounded-t-md bg-primary/15">
                                                     <div
-                                                        className="w-full max-w-17 rounded-t-md bg-primary transition-all hover:bg-primary/80"
-                                                        style={{ height: `${item.percentage}%` }}
+                                                        className="chart-bar-grow-vertical-fast w-full max-w-17 rounded-t-md bg-primary transition-all hover:bg-primary/80"
+                                                        style={{
+                                                            height: `${item.percentage}%`,
+                                                            animationDelay: `${index * 25}ms`,
+                                                        }}
                                                     />
                                                 </div>
                                                 <span className="max-w-full whitespace-normal break-words pb-2 text-center text-[11px] text-muted-foreground">
@@ -427,7 +432,7 @@ export default function BillingReportsIndex({
                             <CardTitle>{t('billing_report.payment_methods')}</CardTitle>
                             <CardDescription>{t('billing_report.payment_methods_description')}</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent key={JSON.stringify(methods)} className="space-y-4">
                             {methods.map((method, index) => (
                                 <div key={method.name}>
                                     <div className="mb-1.5 flex items-center justify-between gap-3 text-[12px]">
@@ -439,8 +444,12 @@ export default function BillingReportsIndex({
                                     </div>
                                     <div className="h-2 overflow-hidden rounded-full bg-muted">
                                         <div
-                                            className={`h-full rounded-full ${methodColors[index % methodColors.length]}`}
-                                            style={{ width: `${method.percentage}%` }}
+                                            className="chart-bar-grow-fast h-full rounded-full"
+                                            style={{
+                                                width: `${method.percentage}%`,
+                                                animationDelay: `${index * 25}ms`,
+                                                backgroundColor: methodColors[index % methodColors.length],
+                                            }}
                                         />
                                     </div>
                                 </div>
