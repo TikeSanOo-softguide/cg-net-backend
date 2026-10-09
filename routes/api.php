@@ -94,6 +94,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::prefix('customer')->group(function () {
         Route::get('/profile', [ProfileController::class, 'show']);
         Route::patch('/language', [ProfileController::class, 'updateLanguage']);
+        Route::patch('/profile', [ProfileController::class, 'update']);
         Route::post('/deactivate', [ProfileController::class, 'deactivate']);
         Route::get('/transactions', TransactionHistoryController::class);
     });
@@ -103,8 +104,9 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
     Route::prefix('notifications')->group(function (): void {
         Route::get('/', [NotificationController::class, 'index']);
-        Route::patch('/{notificationId}/read', [NotificationController::class, 'markAsRead'])
-            ->whereNumber('notificationId');
+        Route::patch('/{notificationId}/read', [NotificationController::class, 'markAsRead'])->whereNumber(
+            'notificationId',
+        );
     });
 
     Route::prefix('broadband-account')->group(function () {
