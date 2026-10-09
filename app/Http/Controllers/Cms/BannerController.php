@@ -46,6 +46,10 @@ class BannerController extends Controller
                     ],
                 )
                 ->values(),
+            'bannerTypeCounts' => Banner::query()
+                ->selectRaw('type, COUNT(*) as aggregate')
+                ->groupBy('type')
+                ->pluck('aggregate', 'type'),
         ]);
     }
 

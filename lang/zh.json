@@ -1300,7 +1300,8 @@
                 "image_my_required": "请选择缅甸文图片。",
                 "type_required": "请选择横幅类型。",
                 "sort_order_max": "排序顺序不能超过2位数字。"
-            }
+            },
+            "maximum_limit_reached": "已达到数量上限 (:current/:limit)"
         },
         "contact": {
             "create": "新建联系方式",

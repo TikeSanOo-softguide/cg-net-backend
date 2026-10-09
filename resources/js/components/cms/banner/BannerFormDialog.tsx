@@ -25,6 +25,7 @@ type BannerFormDialogProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     item: BannerItem | null;
+    bannerTypeCounts: Partial<Record<BannerType, number>>;
 };
 
 function emptyBannerForm(): BannerFormValues {
@@ -40,7 +41,7 @@ function emptyBannerForm(): BannerFormValues {
     };
 }
 
-export function BannerFormDialog({ open, onOpenChange, item }: BannerFormDialogProps) {
+export function BannerFormDialog({ open, onOpenChange, item, bannerTypeCounts }: BannerFormDialogProps) {
     const { t } = useTranslation();
     const isEdit = item !== null;
 
@@ -57,6 +58,7 @@ export function BannerFormDialog({ open, onOpenChange, item }: BannerFormDialogP
                 <BannerFormDialogBody
                     key={item ? `edit-${item.id}` : 'create'}
                     item={item}
+                    bannerTypeCounts={bannerTypeCounts}
                     onClose={() => onOpenChange(false)}
                 />
             ) : null}
@@ -64,7 +66,15 @@ export function BannerFormDialog({ open, onOpenChange, item }: BannerFormDialogP
     );
 }
 
-function BannerFormDialogBody({ item, onClose }: { item: BannerItem | null; onClose: () => void }) {
+function BannerFormDialogBody({
+    item,
+    bannerTypeCounts,
+    onClose,
+}: {
+    item: BannerItem | null;
+    bannerTypeCounts: Partial<Record<BannerType, number>>;
+    onClose: () => void;
+}) {
     const isEdit = item !== null;
     const formatDateForInput = (date: string | null) => {
         if (!date) return '';
@@ -112,6 +122,7 @@ function BannerFormDialogBody({ item, onClose }: { item: BannerItem | null; onCl
             onSubmit={submit}
             onCancel={onClose}
             mode={isEdit ? 'edit' : 'create'}
+            bannerTypeCounts={bannerTypeCounts}
             imageUrls={{
                 en: item?.image_url_en,
                 zh: item?.image_url_zh,

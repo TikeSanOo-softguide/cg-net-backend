@@ -25,7 +25,14 @@ import { cn } from '@/lib/utils';
 
 export type BannerType = 'web_background' | 'web_popup' | 'app_entry' | 'app_popup';
 
-const bannerTypes = [
+const bannerTypes: {
+    value: BannerType;
+    labelKey: string;
+    width: number;
+    height: number;
+    size: string;
+    limit?: number;
+}[] = [
     {
         value: 'web_background',
         labelKey: 'cms.banner.types.web_background',
@@ -46,6 +53,7 @@ const bannerTypes = [
         width: 270,
         height: 360,
         size: '270 x 360',
+        limit: 1,
     },
     {
         value: 'app_popup',
@@ -53,6 +61,7 @@ const bannerTypes = [
         width: 200,
         height: 250,
         size: '200 x 250',
+        limit: 2,
     },
 ];
 export type BannerFormValues = {
@@ -73,6 +82,7 @@ type BannerFormProps = {
     mode?: 'create' | 'edit';
     createdAt?: string | null;
     updatedAt?: string | null;
+    bannerTypeCounts: Partial<Record<BannerType, number>>;
     imageUrls?: {
         en?: string | null;
         zh?: string | null;
@@ -95,6 +105,7 @@ export function BannerForm({
     createdAt,
     updatedAt,
     imageUrls,
+    bannerTypeCounts,
 }: BannerFormProps) {
     const { t } = useTranslation();
 
@@ -318,11 +329,17 @@ export function BannerForm({
                         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                             {bannerTypes.map((bannerType) => {
                                 const isSelected = form.data.type === bannerType.value;
+                                const isLimited =
+                                    mode === 'create' &&
+                                    bannerType.limit !== undefined &&
+                                    (bannerTypeCounts[bannerType.value] ?? 0) >= bannerType.limit;
+                                const limitDescriptionId = `banner-type-${bannerType.value}-limit`;
                                 return (
                                     <label
                                         key={bannerType.value}
                                         className={cn(
                                             'relative flex cursor-pointer flex-col justify-between rounded-xl border p-4 transition-all duration-200 select-none',
+                                            isLimited && 'cursor-not-allowed opacity-50',
                                             isSelected
                                                 ? 'border-primary/80 bg-primary/5 shadow-md shadow-primary/5 ring-2 ring-primary/20'
                                                 : 'border-border/60 bg-background/50 hover:border-border hover:bg-accent/40',
@@ -338,6 +355,9 @@ export function BannerForm({
                                                 name="banner_type"
                                                 value={bannerType.value}
                                                 checked={isSelected}
+                                                disabled={isLimited}
+                                                aria-disabled={isLimited}
+                                                aria-describedby={isLimited ? limitDescriptionId : undefined}
                                                 onChange={() => {
                                                     markTouched('type');
                                                     setField('type', bannerType.value as BannerType);
@@ -361,6 +381,16 @@ export function BannerForm({
                                                 {bannerType.size} px
                                             </span>
                                         </div>
+                                        {isLimited && (
+                                            <p
+                                                id={limitDescriptionId}
+                                                className="mt-2 text-xs font-medium text-muted-foreground"
+                                            >
+                                                {t('cms.banner.maximum_limit_reached')
+                                                    .replace(':current', String(bannerType.limit))
+                                                    .replace(':limit', String(bannerType.limit))}
+                                            </p>
+                                        )}
                                     </label>
                                 );
                             })}

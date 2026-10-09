@@ -18,9 +18,10 @@ type Props = {
         value: string;
         label: string;
     }[];
+    bannerTypeCounts: Partial<Record<'web_background' | 'web_popup' | 'app_entry' | 'app_popup', number>>;
 };
 
-export default function BannersIndex({ items, filters, bannerTypes }: Props) {
+export default function BannersIndex({ items, filters, bannerTypes, bannerTypeCounts }: Props) {
     const { t, locale } = useTranslation();
     const [formOpen, setFormOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<BannerItem | null>(null);
@@ -106,6 +107,7 @@ export default function BannersIndex({ items, filters, bannerTypes }: Props) {
                             }
                         }}
                         item={editingItem}
+                        bannerTypeCounts={bannerTypeCounts}
                     />
                 }
                 columns={[
