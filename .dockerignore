@@ -1,5 +1,6 @@
 .git
 .env
+.env.*
 node_modules
 vendor
 storage/logs/*
@@ -9,6 +10,8 @@ storage/framework/views/*
 public/hot
 public/storage
 public/build
+bootstrap/cache/*.php
+.phpunit.result.cache
 .idea
 .vscode
 *.md
