@@ -16,6 +16,7 @@ use App\Services\Ledger\LedgerPoster;
 use App\Services\Reports\LedgerHealthReportService;
 use App\Support\AppSetting;
 use App\Support\LedgerHealthWindow;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
@@ -180,6 +181,7 @@ class LedgerHealthScanTypeTest extends TestCase
 
     public function test_completed_scan_notifies_admin_and_links_to_its_report(): void
     {
+        $this->createReportAdmin();
         Event::fake([AdminNotificationCreated::class]);
         $snapshot = LedgerHealthSnapshot::query()->create([
             'type' => LedgerHealthScanType::Daily,
@@ -208,6 +210,7 @@ class LedgerHealthScanTypeTest extends TestCase
 
     public function test_completed_scan_with_discrepancies_marks_admin_notification_as_alert(): void
     {
+        $this->createReportAdmin();
         Event::fake([AdminNotificationCreated::class]);
         $snapshot = LedgerHealthSnapshot::query()->create([
             'type' => LedgerHealthScanType::Full,
@@ -235,6 +238,7 @@ class LedgerHealthScanTypeTest extends TestCase
 
     public function test_failed_scan_notifies_admin_immediately_without_duplicate_on_failed_callback(): void
     {
+        $this->createReportAdmin();
         Event::fake([AdminNotificationCreated::class]);
         $snapshot = LedgerHealthSnapshot::query()->create([
             'type' => LedgerHealthScanType::Manual,
@@ -428,5 +432,15 @@ class LedgerHealthScanTypeTest extends TestCase
             ),
         );
         $this->assertNotNull($report['window']);
+    }
+
+    private function createReportAdmin(): Admin
+    {
+        RolePermissionSeeder::sync();
+
+        $admin = Admin::factory()->create();
+        $admin->givePermissionTo(['notifications.view', 'reports.view']);
+
+        return $admin;
     }
 }

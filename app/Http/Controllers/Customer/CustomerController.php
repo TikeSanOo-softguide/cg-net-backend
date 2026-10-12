@@ -14,6 +14,7 @@ use App\Http\Requests\Customer\StoreCustomerRequest;
 use App\Http\Requests\Customer\UpdateCustomerRequest;
 use App\Http\Requests\Customer\UpdateCustomerStatusRequest;
 use App\Models\User;
+use App\Models\UserLog;
 use App\Services\BroarbandAccount\BroadbandAccountService;
 use App\Services\Customer\WalletAdjustmentService;
 use App\Services\Ledger\LedgerPoster;
@@ -138,6 +139,15 @@ class CustomerController extends Controller
         BroadbandAccountService $broadbandAccountService,
     ): Response {
         $locale = app()->getLocale();
+        $activeToken = $customer->tokens()
+            ->where(fn($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+            ->latest('created_at')
+            ->first();
+        $latestLogin = UserLog::query()
+            ->where('user_id', $customer->id)
+            ->where('event', 'login_success')
+            ->latest('created_at')
+            ->first();
 
         $customer->load([
             'customerPackages.package.network:id,name_en,name_zh,name_my',
@@ -283,6 +293,17 @@ class CustomerController extends Controller
 
         return Inertia::render('Customer/Show', [
             'customer' => $this->customerPayload($customer),
+            'activeSession' => $activeToken !== null,
+            'sessionInfo' => $activeToken
+                ? [
+                    'ip_address' => $latestLogin?->ip_address,
+                    'user_agent' => $latestLogin?->user_agent,
+                    'token_id' => $activeToken->getKey(),
+                    'token_name' => $activeToken->name,
+                    'last_used_at' => $activeToken->last_used_at,
+                    'expires_at' => $activeToken->expires_at,
+                ]
+                : null,
             'accountBinding' => $accountBinding
                 ? [
                     'account_number' => $accountBinding['account_number'] ?? null,
@@ -395,6 +416,25 @@ class CustomerController extends Controller
             'success',
             $status === UserStatus::Suspended ? 'customers.suspended' : 'customers.reactivated',
         );
+    }
+
+    public function revokeSession(Request $request, User $customer): RedirectResponse
+    {
+        $hasActiveSession = $customer->tokens()
+            ->where(fn($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+            ->exists();
+
+        $customer->revokeSessions();
+
+        if ($hasActiveSession) {
+            activity('customers')
+                ->causedBy($request->user())
+                ->performedOn($customer)
+                ->event('session_revoked')
+                ->log('customer_session_revoked');
+        }
+
+        return back()->with('success', 'customers.session_removed');
     }
 
     public function bindAccount(

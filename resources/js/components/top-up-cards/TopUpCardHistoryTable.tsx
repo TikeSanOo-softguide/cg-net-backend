@@ -69,6 +69,14 @@ export function TopUpCardHistoryTable({
         [batches],
     );
 
+    const sortedOffices = React.useMemo(
+        () =>
+            [...offices].sort(
+                (left, right) => Number(left.code) - Number(right.code) || left.name.localeCompare(right.name),
+            ),
+        [offices],
+    );
+
     const handleSelect = (value: string) => {
         router.get(
             '/top-up-cards/card-history',
@@ -189,7 +197,7 @@ export function TopUpCardHistoryTable({
                                 <SelectContent>
                                     <SelectItem value="all">{t('common.all')}</SelectItem>
 
-                                    {offices.map((office) => (
+                                    {sortedOffices.map((office) => (
                                         <SelectItem key={office.id} value={String(office.id)}>
                                             {office.code} : {office.name}
                                         </SelectItem>

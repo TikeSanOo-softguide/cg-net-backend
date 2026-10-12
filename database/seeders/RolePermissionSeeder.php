@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Services\AdminNotification\AdminNotificationDelivery;
 use App\Support\AppPermissions;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
@@ -60,5 +61,6 @@ class RolePermissionSeeder extends Seeder
         );
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+        app(AdminNotificationDelivery::class)->forgetCachedRecipients();
     }
 }

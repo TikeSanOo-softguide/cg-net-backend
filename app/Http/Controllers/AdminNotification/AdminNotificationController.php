@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\AdminNotification;
 
 use App\Http\Controllers\Controller;
+use App\Models\Admin;
 use App\Models\AdminNotification;
 use App\Models\ChangePasswordRequest;
 use App\Models\ChangePlanRequest;
@@ -11,9 +12,11 @@ use App\Models\InstallationApplication;
 use App\Models\RelocationRequest;
 use BackedEnum;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -47,34 +50,44 @@ class AdminNotificationController extends Controller
 
     public function index(Request $request): JsonResponse|Response
     {
+        $admin = $this->adminUser($request);
+
         if (! $request->expectsJson()) {
-            return $this->page($request);
+            return $this->page($request, $admin);
         }
 
         $limit = $request->integer('limit', 5);
         abort_if($limit < 1 || $limit > 20, 422, 'The notification limit must be between 1 and 20.');
 
-        $notifications = AdminNotification::query()
+        $adminNotifications = AdminNotification::query()
+            ->whereHas('admins', fn (Builder $query) => $query->whereKey($admin->getKey()));
+
+        $notifications = (clone $adminNotifications)
+            ->with(['admins' => fn (BelongsToMany $query) => $query->whereKey($admin->getKey())])
             ->latest('created_at')
             ->latest('id')
             ->limit($limit)
             ->get()
-            ->map(fn (AdminNotification $notification): array => $notification->toDropdownArray())
+            ->map(fn (AdminNotification $notification): array => $notification->toDropdownArray($notification->readAtFor($admin)))
             ->values();
 
         return response()->json([
             'data' => $notifications,
-            'total_count' => AdminNotification::query()->count(),
-            'unread_count' => AdminNotification::query()
-                ->whereNull('read_at')
+            'total_count' => (clone $adminNotifications)->count(),
+            'unread_count' => (clone $adminNotifications)
+                ->whereHas('admins', fn (Builder $query) => $query
+                    ->whereKey($admin->getKey())
+                    ->where('admin_notification_recipients.is_read', false))
                 ->count(),
         ]);
     }
 
-    private function page(Request $request): Response
+    private function page(Request $request, Admin $admin): Response
     {
         // Categories are read from stored notifications, so new notification types appear automatically.
-        $categories = AdminNotification::query()
+        $adminNotifications = AdminNotification::query()
+            ->whereHas('admins', fn (Builder $query) => $query->whereKey($admin->getKey()));
+        $categories = (clone $adminNotifications)
             ->select('type')
             ->distinct()
             ->orderBy('type')
@@ -90,7 +103,8 @@ class AdminNotificationController extends Controller
             'to' => ['nullable', 'date', 'after_or_equal:from'],
         ]);
         $filters['search'] = trim($filters['search'] ?? '');
-        $notifications = AdminNotification::query()
+        $notifications = $adminNotifications
+            ->with(['admins' => fn (BelongsToMany $query) => $query->whereKey($admin->getKey())])
             ->when($filters['search'] ?? null, function (Builder $query, string $search): void {
                 $term = '%'.$search.'%';
                 $query->where(function (Builder $query) use ($term): void {
@@ -122,11 +136,15 @@ class AdminNotificationController extends Controller
             )
             ->when(
                 ($filters['status'] ?? null) === 'read',
-                fn (Builder $query) => $query->whereNotNull('read_at'),
+                fn (Builder $query) => $query->whereHas('admins', fn (Builder $query) => $query
+                    ->whereKey($admin->getKey())
+                    ->where('admin_notification_recipients.is_read', true)),
             )
             ->when(
                 ($filters['status'] ?? null) === 'unread',
-                fn (Builder $query) => $query->whereNull('read_at'),
+                fn (Builder $query) => $query->whereHas('admins', fn (Builder $query) => $query
+                    ->whereKey($admin->getKey())
+                    ->where('admin_notification_recipients.is_read', false)),
             )
             ->when($filters['from'] ?? null, fn (Builder $query, string $date) => $query->whereDate('created_at', '>=', $date))
             ->when($filters['to'] ?? null, fn (Builder $query, string $date) => $query->whereDate('created_at', '<=', $date))
@@ -136,9 +154,9 @@ class AdminNotificationController extends Controller
             ->withQueryString();
 
         $requestData = $this->requestData($notifications->getCollection());
-        $notifications->getCollection()->transform(function (AdminNotification $notification) use ($requestData): array {
+        $notifications->getCollection()->transform(function (AdminNotification $notification) use ($requestData, $admin): array {
             $record = $requestData[$notification->reference_type][$notification->reference_id] ?? null;
-            $dropdown = $notification->toDropdownArray();
+            $dropdown = $notification->toDropdownArray($notification->readAtFor($admin));
 
             return [
                 ...$dropdown,
@@ -200,15 +218,35 @@ class AdminNotificationController extends Controller
 
     public function markRead(Request $request, AdminNotification $notification): JsonResponse|RedirectResponse
     {
-        if ($notification->read_at === null) {
-            $notification->update([
-                'read_at' => now(),
+        $admin = $this->adminUser($request);
+        abort_unless($notification->admins()->whereKey($admin->getKey())->exists(), 404);
+
+        $readAt = $notification->admins()
+            ->whereKey($admin->getKey())
+            ->firstOrFail()
+            ->pivot
+            ->read_at;
+
+        if ($readAt === null) {
+            $readAt = now();
+            $notification->admins()->updateExistingPivot($admin->getKey(), [
+                'read_at' => $readAt,
                 'is_read' => true,
             ]);
         }
 
         return $request->expectsJson()
-            ? response()->json(['data' => $notification->refresh()->toDropdownArray()])
+            ? response()->json([
+                'data' => $notification->toDropdownArray($readAt instanceof Carbon ? $readAt : Carbon::parse($readAt)),
+            ])
             : back();
+    }
+
+    private function adminUser(Request $request): Admin
+    {
+        $admin = $request->user();
+        abort_unless($admin instanceof Admin, 403);
+
+        return $admin;
     }
 }

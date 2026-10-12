@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
+import { BackButton } from '@/components/BackButton';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import type { Paginated } from '@/components/Pagination';
@@ -21,6 +22,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useReturnTo } from '@/hooks/useReturnTo';
 import { formatDateTime } from '@/lib/utils';
 import type { AdminNotification } from '@/types';
 
@@ -60,6 +62,7 @@ const ledgerHealthReferenceTypes = new Set([
 
 export default function AdminNotificationsIndex({ notifications, categories, filters }: Props) {
     const { t } = useTranslation();
+    const returnTo = useReturnTo('/');
     const [search, setSearch] = useState(filters.search);
     const debounce = useRef<number>(0);
 
@@ -171,7 +174,10 @@ export default function AdminNotificationsIndex({ notifications, categories, fil
         <>
             <Head title={t('common.notifications')} />
             <PageContent>
-                <PageHeader title={t('common.notifications')} description={t('admin_notifications.description')} />
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <PageHeader title={t('common.notifications')} description={t('admin_notifications.description')} />
+                    <BackButton href={returnTo} />
+                </div>
                 <DataTable
                     data={notifications.data}
                     columns={columns}

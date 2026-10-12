@@ -36,9 +36,21 @@ const categoryLook: Partial<Record<RecentNotification['category'], { icon: Lucid
         icon: SettingsIcon,
         className: 'bg-orange-100 text-orange-500 dark:bg-orange-500/15 dark:text-orange-300',
     },
+    announcement: {
+        icon: CalendarIcon,
+        className: 'bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300',
+    },
+    system: {
+        icon: SettingsIcon,
+        className: 'bg-orange-100 text-orange-500 dark:bg-orange-500/15 dark:text-orange-300',
+    },
     promotion: {
         icon: LayoutGridIcon,
         className: 'bg-teal-100 text-teal-600 dark:bg-teal-500/15 dark:text-teal-300',
+    },
+    bill_alert: {
+        icon: BellIcon,
+        className: 'bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-300',
     },
 };
 
@@ -91,14 +103,14 @@ type NotificationDropdownProps = {
 
 export function NotificationDropdown({ unread }: NotificationDropdownProps) {
     const { t } = useTranslation();
-    const { auth, recentNotifications = [] } = usePage().props;
+    const { auth, recentNotifications = [], totalAdminNotifications = 0 } = usePage().props;
     const canViewNotifications = auth?.permissions?.includes('notifications.view') ?? false;
     const rootRef = useRef<HTMLDivElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
     const [notifications, setNotifications] = useState(recentNotifications);
     const [unreadCount, setUnreadCount] = useState(unread);
-    const [notificationTotal, setNotificationTotal] = useState<number | null>(null);
+    const [notificationTotal, setNotificationTotal] = useState(totalAdminNotifications);
     const [pos, setPos] = useState({ top: 0, left: 0, width: 400 });
 
     useEffect(() => {
@@ -107,8 +119,11 @@ export function NotificationDropdown({ unread }: NotificationDropdownProps) {
     }, [recentNotifications, unread]);
 
     useEffect(() => {
+        setNotificationTotal(totalAdminNotifications);
+    }, [totalAdminNotifications]);
+
+    useEffect(() => {
         if (!open || !canViewNotifications) {
-            setNotificationTotal(null);
             return;
         }
 

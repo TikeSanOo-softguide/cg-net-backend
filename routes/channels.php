@@ -9,8 +9,10 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return $user instanceof User && (int) $user->id === (int) $id;
 });
 
-Broadcast::channel('admin.notifications', function ($admin) {
-    return $admin instanceof Admin && $admin->can('notifications.view');
+Broadcast::channel('admin.notifications.{adminId}', function ($admin, $adminId) {
+    return $admin instanceof Admin
+        && (int) $admin->getKey() === (int) $adminId
+        && $admin->can('notifications.view');
 });
 
 Broadcast::channel('chat.conversation.{conversation}', function ($user, ChatConversation $conversation) {

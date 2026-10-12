@@ -179,14 +179,14 @@ class DashboardTest extends TestCase
     public function test_authenticated_admins_receive_recent_notifications(): void
     {
         $admin = Admin::factory()->create();
-        AdminNotification::query()->create([
+        $notification = AdminNotification::query()->create([
             'type' => 'event',
             'title' => 'Event Today',
             'body' => 'Just a reminder that you have an event today.',
             'severity' => 'normal',
-            'is_read' => false,
             'sent_at' => now()->setTime(9, 15),
         ]);
+        $notification->admins()->attach($admin->id, ['is_read' => false]);
 
         $this->actingAs($admin, 'web')
             ->get('/dashboard')

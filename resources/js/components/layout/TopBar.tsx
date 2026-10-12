@@ -47,15 +47,16 @@ export function TopBar({ sidebarOpen = false }: TopBarProps) {
     useEffect(() => {
         const echo = window.Echo;
 
-        if (!echo || !canViewNotifications) {
+        if (!echo || !canViewNotifications || !user?.id) {
             return;
         }
 
-        const channel = echo.private('admin.notifications');
+        const channelName = `admin.notifications.${user.id}`;
+        const channel = echo.private(channelName);
         const eventName = '.admin.notification.created';
 
         channel.listen(eventName, () => {
-            const only = ['unreadNotifications', 'recentNotifications'];
+            const only = ['unreadNotifications', 'totalAdminNotifications', 'recentNotifications'];
 
             if (isAdminNotificationsPage) {
                 only.push('notifications');
@@ -66,9 +67,10 @@ export function TopBar({ sidebarOpen = false }: TopBarProps) {
 
         return () => {
             channel.stopListening(eventName);
-            echo.leave('admin.notifications');
+            echo.leave(channelName);
         };
-    }, [canViewNotifications, isAdminNotificationsPage]);
+    }, [canViewNotifications, isAdminNotificationsPage, user?.id]);
+
     const logout = () => {
         router.post('/logout');
     };

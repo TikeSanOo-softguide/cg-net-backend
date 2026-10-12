@@ -5,6 +5,8 @@ import {
     HashIcon,
     HistoryIcon,
     Link2Icon,
+    LogOutIcon,
+    SmartphoneIcon,
     TicketIcon,
     UnlinkIcon,
     UserCheckIcon,
@@ -63,6 +65,15 @@ type AccountBinding = {
     package_name: LocalizedText | null;
 };
 
+type SessionInfo = {
+    ip_address: string | null;
+    user_agent: string | null;
+    token_id: number;
+    token_name: string;
+    last_used_at: string | null;
+    expires_at: string | null;
+};
+
 type PackageRow = {
     id: number;
     package_name: LocalizedText | null;
@@ -107,6 +118,8 @@ type TransactionOverview = {
 
 type CustomersShowProps = {
     customer: Customer;
+    activeSession: boolean;
+    sessionInfo: SessionInfo | null;
     accountBinding: AccountBinding | null;
     packageHistory: PackageRow[];
     wallet: {
@@ -126,6 +139,8 @@ type CustomersShowProps = {
 
 export default function CustomersShow({
     customer,
+    activeSession,
+    sessionInfo,
     accountBinding,
     packageHistory,
     wallet,
@@ -163,8 +178,10 @@ export default function CustomersShow({
     const [formOpen, setFormOpen] = useState(false);
     const [adjustOpen, setAdjustOpen] = useState(false);
     const [unbindAccount, setUnbindAccount] = useState(false);
+    const [sessionOpen, setSessionOpen] = useState(false);
     const [statusProcessing, setStatusProcessing] = useState(false);
     const [unbindProcessing, setUnbindProcessing] = useState(false);
+    const [sessionProcessing, setSessionProcessing] = useState(false);
     const [bindTouched, setBindTouched] = useState(false);
 
     const bindForm = useForm({ account_number: '' });
@@ -298,6 +315,78 @@ export default function CustomersShow({
 
                 {!showAllTransactions ? (
                     <>
+                        <DetailSection
+                            icon={SmartphoneIcon}
+                            title={t('customers.active_session')}
+                            description={t('customers.active_session_hint')}
+                            actions={
+                                canUpdate && activeSession ? (
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="destructive"
+                                        className="h-8 gap-1.5 text-[11px]"
+                                        onClick={() => setSessionOpen(true)}
+                                    >
+                                        <LogOutIcon className="size-3.5" strokeWidth={1.85} />
+                                        {t('customers.remove_session')}
+                                    </Button>
+                                ) : null
+                            }
+                        >
+                            <div className="px-1 py-1">
+                                <p className="text-[12px] text-muted-foreground">
+                                    {t(activeSession ? 'customers.session_active' : 'customers.no_active_session')}
+                                </p>
+                            </div>
+                            {sessionInfo ? (
+                                <dl className="grid gap-1 border-t border-border/60 px-1 pt-3 sm:grid-cols-3">
+                                    <div className="m-1 min-w-0 rounded-[8px] border border-border/60 bg-muted/25 px-3 py-2.5">
+                                        <dt className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                                            {t('customers.session_ip')}
+                                        </dt>
+                                        <dd className="break-all font-heading text-sm tabular-nums">
+                                            {sessionInfo.ip_address || '—'}
+                                        </dd>
+                                    </div>
+                                    <div className="m-1 min-w-0 rounded-[8px] border border-border/60 bg-muted/25 px-3 py-2.5 sm:col-span-2">
+                                        <dt className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                                            {t('customers.session_device')}
+                                        </dt>
+                                        <dd className="break-all font-heading text-sm leading-snug">
+                                            {sessionInfo.user_agent || '—'}
+                                        </dd>
+                                    </div>
+                                    <div className="m-1 min-w-0 rounded-[8px] border border-border/60 bg-muted/25 px-3 py-2.5">
+                                        <dt className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                                            {t('customers.session_token')}
+                                        </dt>
+                                        <dd className="break-all font-heading text-sm tabular-nums">
+                                            #{sessionInfo.token_id} ({sessionInfo.token_name})
+                                        </dd>
+                                    </div>
+                                    <div className="m-1 min-w-0 rounded-[8px] border border-border/60 bg-muted/25 px-3 py-2.5">
+                                        <dt className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                                            {t('customers.session_last_used')}
+                                        </dt>
+                                        <dd className="font-heading text-sm tabular-nums">
+                                            {formatDateTime(sessionInfo.last_used_at)}
+                                        </dd>
+                                    </div>
+                                    <div className="m-1 min-w-0 rounded-[8px] border border-border/60 bg-muted/25 px-3 py-2.5">
+                                        <dt className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                                            {t('customers.session_expires')}
+                                        </dt>
+                                        <dd className="font-heading text-sm tabular-nums">
+                                            {sessionInfo.expires_at
+                                                ? formatDateTime(sessionInfo.expires_at)
+                                                : t('customers.session_never_expires')}
+                                        </dd>
+                                    </div>
+                                </dl>
+                            ) : null}
+                        </DetailSection>
+
                         <DetailSection
                             icon={WifiIcon}
                             title={t('customers.broadband_accounts')}
@@ -588,6 +677,24 @@ export default function CustomersShow({
                             onSuccess: () => setStatusOpen(false),
                         },
                     );
+                }}
+            />
+
+            <ConfirmDialog
+                open={sessionOpen}
+                onOpenChange={setSessionOpen}
+                title={t('customers.remove_session_title')}
+                description={t('customers.remove_session_description')}
+                confirmLabel={t('customers.remove_session')}
+                destructive
+                processing={sessionProcessing}
+                onConfirm={() => {
+                    router.delete(`/customers/${customer.id}/session`, {
+                        preserveScroll: true,
+                        onStart: () => setSessionProcessing(true),
+                        onFinish: () => setSessionProcessing(false),
+                        onSuccess: () => setSessionOpen(false),
+                    });
                 }}
             />
 

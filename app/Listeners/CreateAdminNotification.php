@@ -2,13 +2,15 @@
 
 namespace App\Listeners;
 
-use App\Events\AdminNotificationCreated;
 use App\Events\ServiceRequestSubmitted;
 use App\Models\AdminNotification;
+use App\Services\AdminNotification\AdminNotificationDelivery;
 use InvalidArgumentException;
 
 class CreateAdminNotification
 {
+    public function __construct(private readonly AdminNotificationDelivery $delivery) {}
+
     // Keys are ServiceRequestSubmitted types; add the title/message for every supported request type.
     /**
      * @var array<string, array{title: string, message: string}>
@@ -51,6 +53,6 @@ class CreateAdminNotification
             'reference_id' => $event->requestId,
         ]);
 
-        AdminNotificationCreated::dispatch($notification);
+        $this->delivery->deliver($notification, 'service-requests.view');
     }
 }

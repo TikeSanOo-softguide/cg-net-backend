@@ -4,10 +4,8 @@ namespace App\Http\Controllers\Api\Notification;
 
 use App\Http\Controllers\Controller;
 use App\Models\Notification;
-use App\Models\NotificationTemplate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use LogicException;
 
 class NotificationController extends Controller
 {
@@ -21,20 +19,7 @@ class NotificationController extends Controller
             'data' => $notifications
                 ->getCollection()
                 ->map(function (Notification $notification) use ($locale): array {
-                    $template = $notification->templateable;
-                    $templateData = $notification->template_data ?? [];
-
-                    if (isset($templateData['title_en'], $templateData['body_en'])) {
-                        $language = in_array($locale, ['en', 'my', 'zh'], true) ? $locale : 'en';
-                        $content = [
-                            'title' => $templateData["title_{$language}"] ?? $templateData['title_en'],
-                            'description' => $templateData["body_{$language}"] ?? $templateData['body_en'],
-                        ];
-                    } elseif ($template instanceof NotificationTemplate) {
-                        $content = $template->render($locale, $templateData);
-                    } else {
-                        throw new LogicException("Notification {$notification->id} has no valid content template.");
-                    }
+                    $content = $notification->renderedContent($locale);
 
                     return [
                         'id' => $notification->id,

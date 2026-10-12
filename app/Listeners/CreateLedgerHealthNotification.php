@@ -2,12 +2,14 @@
 
 namespace App\Listeners;
 
-use App\Events\AdminNotificationCreated;
 use App\Events\LedgerHealthScanFinished;
 use App\Models\AdminNotification;
+use App\Services\AdminNotification\AdminNotificationDelivery;
 
 class CreateLedgerHealthNotification
 {
+    public function __construct(private readonly AdminNotificationDelivery $delivery) {}
+
     public function handle(LedgerHealthScanFinished $event): void
     {
         $scanType = ucfirst($event->type->value);
@@ -24,6 +26,6 @@ class CreateLedgerHealthNotification
             'reference_id' => $event->completed ? $event->snapshotId : null,
         ]);
 
-        AdminNotificationCreated::dispatch($notification);
+        $this->delivery->deliver($notification, 'reports.view');
     }
 }

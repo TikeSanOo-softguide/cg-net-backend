@@ -4,24 +4,40 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Carbon;
 
-#[Fillable(['type', 'title', 'body', 'severity', 'reference_type', 'reference_id', 'is_read', 'read_at', 'sent_at'])]
+#[Fillable(['type', 'title', 'body', 'severity', 'reference_type', 'reference_id', 'sent_at'])]
 class AdminNotification extends Model
 {
     protected function casts(): array
     {
         return [
-            'is_read' => 'boolean',
             'reference_id' => 'integer',
-            'read_at' => 'datetime',
             'sent_at' => 'datetime',
         ];
+    }
+
+    public function admins(): BelongsToMany
+    {
+        return $this->belongsToMany(Admin::class, 'admin_notification_recipients')
+            ->using(AdminNotificationRecipient::class)
+            ->withPivot(['is_read', 'read_at'])
+            ->withTimestamps();
+    }
+
+    public function readAtFor(Admin $admin): ?Carbon
+    {
+        $recipient = $this->admins->firstWhere('id', $admin->getKey());
+        $readAt = $recipient?->pivot?->read_at;
+
+        return $readAt ? Carbon::parse($readAt) : null;
     }
 
     /**
      * @return array{id: int, type: string, title: string, message: string, severity: string, reference_type: string|null, reference_id: int|null, read_at: string|null, created_at: string, category: string, href: string|null}
      */
-    public function toDropdownArray(): array
+    public function toDropdownArray(?Carbon $readAt = null): array
     {
         // Keep this shared payload in sync for API, page, and broadcast consumers.
         // Add source-request links here when introducing a new reference_type.
@@ -33,7 +49,7 @@ class AdminNotification extends Model
             'severity' => $this->severity ?? 'normal',
             'reference_type' => $this->reference_type,
             'reference_id' => $this->reference_id,
-            'read_at' => $this->read_at?->toISOString(),
+            'read_at' => $readAt?->toISOString(),
             'created_at' => $this->created_at->toISOString(),
             'category' => $this->type,
             'href' => match ($this->reference_type) {

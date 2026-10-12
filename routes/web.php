@@ -97,6 +97,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
     Route::patch('/customers/{customer}/status', [CustomerController::class, 'updateStatus'])
         ->middleware('can:customers.update')
         ->name('customers.status');
+    Route::delete('/customers/{customer}/session', [CustomerController::class, 'revokeSession'])
+        ->middleware('can:customers.update')
+        ->name('customers.session.revoke');
     Route::post('/customers/{customer}/account', [CustomerController::class, 'bindAccount'])
         ->middleware('can:customers.update')
         ->name('customers.account.bind');

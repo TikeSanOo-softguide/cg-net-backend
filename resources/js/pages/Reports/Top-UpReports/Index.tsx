@@ -242,8 +242,7 @@ export default function TopUpReportsIndex({
                                             <SelectItem value="all">{t('top_up_report.all_offices')}</SelectItem>
                                             {offices.map((office) => (
                                                 <SelectItem key={office.value} value={office.value}>
-                                                    {office.label}
-                                                    {office.code ? ` (${office.code})` : ''}
+                                                    {office.code} : {office.label}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>

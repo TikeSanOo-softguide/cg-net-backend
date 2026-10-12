@@ -185,7 +185,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     });
 });
 
-Broadcast::routes(['middleware' => ['auth:sanctum']]);
+Broadcast::routes(['middleware' => ['auth:web,sanctum']]);
 
 if (app()->isLocal()) {
     require __DIR__ . '/dev.php';

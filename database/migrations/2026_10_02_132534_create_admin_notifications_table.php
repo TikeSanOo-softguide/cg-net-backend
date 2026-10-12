@@ -21,8 +21,6 @@ return new class extends Migration {
             // Points to the source record independently of the broad notification category above.
             $table->string('reference_type', 50)->nullable()->index();
             $table->unsignedBigInteger('reference_id')->nullable()->index();
-            $table->boolean('is_read')->default(false)->index();
-            $table->timestamp('read_at')->nullable();
             $table->timestamp('sent_at')->nullable()->index();
             $table->timestamps();
         });

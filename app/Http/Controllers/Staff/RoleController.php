@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Staff;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\StoreRoleRequest;
 use App\Http\Requests\Staff\UpdateRoleRequest;
+use App\Services\AdminNotification\AdminNotificationDelivery;
 use App\Support\AppPermissions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -48,6 +49,7 @@ class RoleController extends Controller
         ]);
         $role->syncPermissions($request->validated('permissions', []));
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+        app(AdminNotificationDelivery::class)->forgetCachedRecipients();
 
         activity('staff')->causedBy($request->user())->performedOn($role)->event('created')->log('role_created');
 
@@ -76,6 +78,7 @@ class RoleController extends Controller
         }
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+        app(AdminNotificationDelivery::class)->forgetCachedRecipients();
 
         activity('staff')->causedBy($request->user())->performedOn($role)->event('updated')->log('role_updated');
 
@@ -94,6 +97,7 @@ class RoleController extends Controller
 
         $role->delete();
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+        app(AdminNotificationDelivery::class)->forgetCachedRecipients();
 
         activity('staff')->causedBy($request->user())->performedOn($role)->event('deleted')->log('role_deleted');
 
@@ -125,6 +129,7 @@ class RoleController extends Controller
         }
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+        app(AdminNotificationDelivery::class)->forgetCachedRecipients();
 
         if ($deleted === 0) {
             return back()->withErrors(['delete' => $skippedReason ?? 'common.bulk_delete_failed']);
