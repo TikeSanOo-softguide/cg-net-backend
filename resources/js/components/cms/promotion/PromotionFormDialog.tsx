@@ -20,6 +20,8 @@ export type PromotionItem = {
     slug: string | null;
     is_active: boolean;
     image_url: string | null;
+    created_at: string | null;
+    updated_at: string | null;
 };
 
 type PromotionFormDialogProps = {
@@ -46,7 +48,12 @@ function emptyPromotionForm(): PromotionFormValues {
     };
 }
 
-export function PromotionFormDialog({ open, onOpenChange, item, basePath = '/cms/promotions' }: PromotionFormDialogProps) {
+export function PromotionFormDialog({
+    open,
+    onOpenChange,
+    item,
+    basePath = '/cms/promotions',
+}: PromotionFormDialogProps) {
     const { t } = useTranslation();
     const isEdit = item !== null;
 
@@ -126,6 +133,8 @@ function PromotionFormDialogBody({
             onCancel={onClose}
             mode={isEdit ? 'edit' : 'create'}
             imageUrl={item?.image_url}
+            createdAt={item?.created_at}
+            updatedAt={item?.updated_at}
         />
     );
 }

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Package;
 
+use App\Enums\PackageOrderStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Package;
 use App\Models\PackageOrder;
 use App\Support\NavigationStack;
 use App\Support\PackageLabel;
@@ -17,6 +19,8 @@ class PackageOrderController extends Controller
     {
         $search = trim((string) $request->query('search', ''));
         $openOrderId = $request->integer('open_package_order') ?: null;
+        $packageId = $request->integer('package_id') ?: null;
+        $status = PackageOrderStatus::tryFrom((string) $request->query('status', ''));
         $returnTo = $request->query('return_to');
 
         $orders = PackageOrder::query()
@@ -29,6 +33,8 @@ class PackageOrderController extends Controller
                 'customerPackage:id,package_order_id,status,starts_at,expires_at',
             ])
             ->when($openOrderId, fn(Builder $query) => $query->whereKey($openOrderId))
+            ->when(!$openOrderId && $packageId, fn(Builder $query) => $query->where('package_id', $packageId))
+            ->when(!$openOrderId && $status, fn(Builder $query) => $query->where('status', $status->value))
             ->when(!$openOrderId && $search !== '', function (Builder $query) use ($search): void {
                 $query->where(function (Builder $searchQuery) use ($search): void {
                     $searchQuery
@@ -82,9 +88,34 @@ class PackageOrderController extends Controller
                 ],
             );
 
+        $packages = Package::withTrashed()
+            ->whereHas('packageOrders')
+            ->with(['network', 'speed', 'term'])
+            ->orderBy('id')
+            ->get()
+            ->map(
+                fn(Package $package): array => [
+                    'id' => $package->id,
+                    'label' =>
+                        PackageLabel::make($package, app()->getLocale()) ?? __('menu.packages') . ' #' . $package->id,
+                ],
+            )
+            ->values();
+
         return Inertia::render('PackageOrders/Index', [
             'orders' => $orders,
             'search' => $search,
+            'filters' => [
+                'package_id' => $packageId,
+                'status' => $status?->value ?? '',
+            ],
+            'filter_options' => [
+                'packages' => $packages,
+                'statuses' => array_map(
+                    fn(PackageOrderStatus $status): string => $status->value,
+                    PackageOrderStatus::cases(),
+                ),
+            ],
             'open_order_id' => $openOrderId,
             'return_to' => is_string($returnTo) ? NavigationStack::sanitize($returnTo) : null,
         ]);

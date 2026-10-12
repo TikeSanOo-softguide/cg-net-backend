@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\Gallery\GalleryController;
 use App\Http\Controllers\Api\News\NewsController;
 use App\Http\Controllers\Api\Notification\AnnouncementController;
 use App\Http\Controllers\Api\Notification\InboxController;
+use App\Http\Controllers\Api\Notification\NotificationController;
 use App\Http\Controllers\Api\Package\AddonController;
 use App\Http\Controllers\Api\Package\BuyPackageController;
 use App\Http\Controllers\Api\Package\NetworkController;
@@ -31,9 +32,11 @@ use App\Http\Controllers\Api\ServiceRequest\ChangePlanRequestController;
 use App\Http\Controllers\Api\ServiceRequest\FailureReportController;
 use App\Http\Controllers\Api\ServiceRequest\RelocationRequestController;
 use App\Http\Controllers\Api\Settings\AppVersionController;
+use App\Http\Controllers\Api\Settings\GeneralSettingController;
 use App\Http\Controllers\Api\Transaction\TransactionHistoryController;
 use App\Http\Controllers\ChangePassword\ChangePasswordController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')
@@ -80,11 +83,19 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::get('/app-version', [AppVersionController::class, 'index']);
 });
 
+Route::prefix('general-settings')->group(function () {
+    Route::get('/term-and-condition', [GeneralSettingController::class, 'termAndCondition']);
+    Route::get('/faq', [GeneralSettingController::class, 'faq']);
+    Route::get('/support-contact', [GeneralSettingController::class, 'supportContact']);
+});
+
 Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('/auth/logout', [LoginController::class, 'logout']);
 
     Route::prefix('customer')->group(function () {
         Route::get('/profile', [ProfileController::class, 'show']);
+        Route::patch('/language', [ProfileController::class, 'updateLanguage']);
+        Route::patch('/profile', [ProfileController::class, 'update']);
         Route::post('/deactivate', [ProfileController::class, 'deactivate']);
         Route::get('/transactions', TransactionHistoryController::class);
     });
@@ -92,8 +103,16 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('/device-tokens', [DeviceTokenController::class, 'store']);
     Route::delete('/device-tokens', [DeviceTokenController::class, 'destroy']);
 
+    Route::prefix('notifications')->group(function (): void {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::patch('/{notificationId}/read', [NotificationController::class, 'markAsRead'])->whereNumber(
+            'notificationId',
+        );
+    });
+
     Route::prefix('broadband-account')->group(function () {
-        Route::post('/connect', [BroadbandAccountController::class, 'connect']);
+        Route::post('/bind', [BroadbandAccountController::class, 'bindAccount']);
+        Route::post('/unbind', [BroadbandAccountController::class, 'unbindAccount']);
     });
 
     Route::prefix('redeem')->group(function () {
@@ -162,8 +181,11 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::post('/start', [ChatFlowController::class, 'start']);
         Route::get('/current', [ChatFlowController::class, 'current']);
         Route::post('/select-option', [ChatFlowController::class, 'selectOption']);
+        Route::post('/messages', [ChatFlowController::class, 'sendMessage']);
     });
 });
+
+Broadcast::routes(['middleware' => ['auth:web,sanctum']]);
 
 if (app()->isLocal()) {
     require __DIR__ . '/dev.php';

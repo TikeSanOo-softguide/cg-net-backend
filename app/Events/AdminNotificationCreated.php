@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Models\Admin;
 use App\Models\AdminNotification;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
@@ -11,11 +12,14 @@ class AdminNotificationCreated implements ShouldBroadcastNow
 {
     use Dispatchable;
 
-    public function __construct(public readonly AdminNotification $notification) {}
+    public function __construct(
+        public readonly AdminNotification $notification,
+        public readonly Admin $admin,
+    ) {}
 
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('admin.notifications')];
+        return [new PrivateChannel('admin.notifications.'.$this->admin->getKey())];
     }
 
     public function broadcastAs(): string
@@ -24,7 +28,7 @@ class AdminNotificationCreated implements ShouldBroadcastNow
     }
 
     /**
-     * @return array{id: int, type: string, title: string, message: string, reference_type: string|null, reference_id: int|null, read_at: string|null, created_at: string, category: string, href: string|null}
+     * @return array{id: int, type: string, title: string, message: string, severity: string, reference_type: string|null, reference_id: int|null, read_at: string|null, created_at: string, category: string, href: string|null}
      */
     public function broadcastWith(): array
     {

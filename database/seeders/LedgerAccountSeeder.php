@@ -10,6 +10,8 @@ class LedgerAccountSeeder extends Seeder
 {
     public function run(): void
     {
+        echo "Ledger account seeder started\n";
+
         $ledger = app(LedgerPoster::class);
         $ledger->ensureSystemAccounts();
 

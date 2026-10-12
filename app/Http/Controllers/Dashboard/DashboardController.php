@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers\Dashboard;
 
-use App\Enums\ChangePasswordStatus;
-use App\Enums\ChangePlanStatus;
 use App\Enums\CustomerPackageStatus;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
 use App\Enums\ReviewStatus;
+use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\ChangePasswordRequest;
 use App\Models\ChangePlanRequest;
@@ -111,8 +110,8 @@ class DashboardController extends Controller
             InstallationApplication::query()->where('status', ReviewStatus::UnderReview)->count() +
             FailureReport::query()->where('status', ReviewStatus::UnderReview)->count() +
             RelocationRequest::query()->where('status', ReviewStatus::UnderReview)->count() +
-            ChangePlanRequest::query()->where('status', ChangePlanStatus::UnderReview)->count() +
-            ChangePasswordRequest::query()->where('status', ChangePasswordStatus::UnderReview)->count();
+            ChangePlanRequest::query()->where('status', RequestStatus::UnderReview)->count() +
+            ChangePasswordRequest::query()->where('status', RequestStatus::UnderReview)->count();
 
         return [
             'total_customers' => User::query()->count(),

@@ -4,7 +4,8 @@ namespace App\Http\Middleware;
 
 use App\Models\Admin;
 use App\Models\AdminNotification;
-use App\Models\NotificationCustom;
+use App\Models\Notification;
+use App\Models\User;
 use App\Support\AppPermissions;
 use App\Support\JsonTranslations;
 use App\Support\NavigationStack;
@@ -72,23 +73,30 @@ class HandleInertiaRequests extends Middleware
                 $user instanceof Admin
                     ? ($user->can('notifications.view')
                         ? AdminNotification::query()
-                            ->whereNull('read_at')
+                            ->whereHas('admins', fn ($query) => $query
+                                ->whereKey($user->getKey())
+                                ->where('admin_notification_recipients.is_read', false))
                             ->count()
                         : 0)
                     : ($user
-                        ? NotificationCustom::query()
-                            ->where('user_id', $user->id)
+                        ? $user->appNotifications()
                             ->whereDate('created_at', today()->toDateString())
                             ->where('is_read', false)
                             ->count()
                         : 0),
+            'totalAdminNotifications' =>
+                $user instanceof Admin && $user->can('notifications.view')
+                    ? AdminNotification::query()
+                        ->whereHas('admins', fn ($query) => $query->whereKey($user->getKey()))
+                        ->count()
+                    : 0,
             'recentNotifications' =>
                 $user instanceof Admin
                     ? ($user->can('notifications.view')
-                        ? $this->recentAdminNotifications()
+                        ? $this->recentAdminNotifications($user)
                         : [])
                     : ($user
-                        ? $this->recentNotifications($user->id)
+                        ? ($user instanceof User ? $this->recentNotifications($user) : [])
                         : []),
             'flash' => $this->flashPayload($request),
             'return_to' => NavigationStack::preview($request),
@@ -98,27 +106,28 @@ class HandleInertiaRequests extends Middleware
     /**
      * @return list<array{id: int, source: string, title: string, body: string, category: string, is_read: bool, time: string}>
      */
-    private function recentNotifications(int $userId): array
+    private function recentNotifications(User $user): array
     {
-        return NotificationCustom::query()
-            ->select(['id', 'title', 'body', 'category', 'is_read', 'sent_at', 'created_at'])
-            ->where('user_id', $userId)
+        return $user->appNotifications()
+            ->with('templateable')
             ->whereDate('created_at', today()->toDateString())
             ->latest('sent_at')
             ->latest('id')
             ->limit(5)
             ->get()
-            ->map(
-                fn (NotificationCustom $notification): array => [
+            ->map(function (Notification $notification) use ($user): array {
+                $content = $notification->renderedContent($user->lang);
+
+                return [
                     'id' => $notification->id,
                     'source' => 'custom',
-                    'title' => $notification->title,
-                    'body' => $notification->body,
+                    'title' => $content['title'],
+                    'body' => $content['description'],
                     'category' => $notification->category->value,
                     'is_read' => $notification->is_read,
                     'time' => ($notification->sent_at ?? $notification->created_at)->format('g:i A'),
-                ],
-            )
+                ];
+            })
             ->values()
             ->all();
     }
@@ -126,14 +135,16 @@ class HandleInertiaRequests extends Middleware
     /**
      * @return list<array<string, mixed>>
      */
-    private function recentAdminNotifications(): array
+    private function recentAdminNotifications(Admin $admin): array
     {
         return AdminNotification::query()
+            ->whereHas('admins', fn ($query) => $query->whereKey($admin->getKey()))
+            ->with(['admins' => fn ($query) => $query->whereKey($admin->getKey())])
             ->latest('created_at')
             ->latest('id')
             ->limit(5)
             ->get()
-            ->map(fn (AdminNotification $notification): array => $notification->toDropdownArray())
+            ->map(fn (AdminNotification $notification): array => $notification->toDropdownArray($notification->readAtFor($admin)))
             ->all();
     }
 

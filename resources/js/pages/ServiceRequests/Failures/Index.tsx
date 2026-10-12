@@ -29,7 +29,7 @@ import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatPhoneInternational } from '@/lib/phone';
 import { cn, formatDate, truncateText } from '@/lib/utils';
-import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
+import { REQUEST_STATUS } from '@/lib/CommonNameConst';
 
 import { StatCard } from '@/components/StatCard';
 import { DataTable } from '@/components/DataTable';
@@ -290,7 +290,7 @@ export default function FailureReportsIndex({ reports, filters, statuses, stats 
                             cell: (request) => (
                                 <div className="flex flex-col items-start gap-1">
                                     <StatusBadge status={request.status} />
-                                    {request.status === CHANGE_PLAN_STATUS.APPROVED && request.admin_name && (
+                                    {request.status === REQUEST_STATUS.APPROVED && request.admin_name && (
                                         <span className="text-[11px] text-muted-foreground">
                                             {t('requests.approved_by')}: {request.admin_name}
                                         </span>

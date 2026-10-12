@@ -106,7 +106,8 @@ class GalleryController extends Controller
             'label_my' => $gallery->label_my,
             'label_zh' => $gallery->label_zh,
             'image_url' => StoresPublicImage::url($gallery->image_url),
-            'created_at' => $gallery->created_at?->toDateString(),
+            'created_at' => $gallery->created_at?->toDateTimeString(),
+            'updated_at' => $gallery->updated_at?->toDateTimeString(),
         ];
     }
 }

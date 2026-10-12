@@ -13,6 +13,8 @@ class TopUpCardSeeder extends Seeder
 {
     public function run(): void
     {
+        echo "Top-up card seeder started\n";
+
         $lastUser = User::query()->latest('id')->first();
 
         if (!$lastUser) {
@@ -24,8 +26,6 @@ class TopUpCardSeeder extends Seeder
         if (!$office) {
             return;
         }
-
-        echo "Top-up card seeder started\n";
 
         $batch = Batch::factory()->create([
             'quantity' => 55,

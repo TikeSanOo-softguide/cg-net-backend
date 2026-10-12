@@ -11,6 +11,8 @@ class ChatFlowSeeder extends Seeder
 {
     public function run(): void
     {
+        echo "Chat flow seeder started\n";
+
         ChatFlowStep::query()->where('is_start', true)->update(['is_start' => false]);
 
         $steps = [];

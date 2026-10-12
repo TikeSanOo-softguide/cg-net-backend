@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\ServiceRequest;
 
-use App\Enums\ChangePlanStatus;
+use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\ChangePlanRequest;
 use Illuminate\Http\RedirectResponse;
@@ -18,7 +18,7 @@ class ChangePlanRequestController extends Controller
         $search = trim((string) $request->string('search'));
         $status = $request->has('status')
             ? $request->string('status')->toString()
-            : ChangePlanStatus::UnderReview->value;
+            : RequestStatus::UnderReview->value;
         $openRequestId = $request->integer('open_request');
 
         $changePlanRequests = ChangePlanRequest::query()
@@ -46,7 +46,7 @@ class ChangePlanRequestController extends Controller
             ->when(
                 $openRequestId < 1 &&
                     $status !== '' &&
-                    in_array($status, array_column(ChangePlanStatus::cases(), 'value'), true),
+                    in_array($status, array_column(RequestStatus::cases(), 'value'), true),
                 fn($query) => $query->where('status', $status),
             )
             ->when($openRequestId > 0, fn($query) => $query->whereKey($openRequestId))
@@ -61,7 +61,7 @@ class ChangePlanRequestController extends Controller
                 'search' => $search,
                 'status' => $status,
             ],
-            'statuses' => array_column(ChangePlanStatus::cases(), 'value'),
+            'statuses' => array_column(RequestStatus::cases(), 'value'),
             'stats' => $this->stats(),
         ]);
     }
@@ -69,7 +69,7 @@ class ChangePlanRequestController extends Controller
     public function updateStatus(Request $request, ChangePlanRequest $changePlanRequest): RedirectResponse
     {
         $validated = $request->validate([
-            'status' => ['required', new Enum(ChangePlanStatus::class)],
+            'status' => ['required', new Enum(RequestStatus::class)],
         ]);
 
         $changePlanRequest->update([
@@ -88,10 +88,10 @@ class ChangePlanRequestController extends Controller
         return [
             'total_requests' => ChangePlanRequest::query()->count(),
             'under_reviews_requests' => ChangePlanRequest::query()
-                ->where('status', ChangePlanStatus::UnderReview)
+                ->where('status', RequestStatus::UnderReview)
                 ->count(),
-            'approved_requests' => ChangePlanRequest::query()->where('status', ChangePlanStatus::Approved)->count(),
-            'cancelled_requests' => ChangePlanRequest::query()->where('status', ChangePlanStatus::Cancelled)->count(),
+            'approved_requests' => ChangePlanRequest::query()->where('status', RequestStatus::Approved)->count(),
+            'cancelled_requests' => ChangePlanRequest::query()->where('status', RequestStatus::Cancelled)->count(),
         ];
     }
 }

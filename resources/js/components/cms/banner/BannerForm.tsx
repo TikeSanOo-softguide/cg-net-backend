@@ -25,7 +25,14 @@ import { cn } from '@/lib/utils';
 
 export type BannerType = 'web_background' | 'web_popup' | 'app_entry' | 'app_popup';
 
-const bannerTypes = [
+const bannerTypes: {
+    value: BannerType;
+    labelKey: string;
+    width: number;
+    height: number;
+    size: string;
+    limit?: number;
+}[] = [
     {
         value: 'web_background',
         labelKey: 'cms.banner.types.web_background',
@@ -46,6 +53,7 @@ const bannerTypes = [
         width: 270,
         height: 360,
         size: '270 x 360',
+        limit: 1,
     },
     {
         value: 'app_popup',
@@ -53,6 +61,7 @@ const bannerTypes = [
         width: 200,
         height: 250,
         size: '200 x 250',
+        limit: 2,
     },
 ];
 export type BannerFormValues = {
@@ -71,6 +80,9 @@ type BannerFormProps = {
     onSubmit: (event: FormEvent) => void;
     onCancel?: () => void;
     mode?: 'create' | 'edit';
+    createdAt?: string | null;
+    updatedAt?: string | null;
+    bannerTypeCounts: Partial<Record<BannerType, number>>;
     imageUrls?: {
         en?: string | null;
         zh?: string | null;
@@ -85,7 +97,16 @@ interface PreviewModalState {
     title: string;
 }
 
-export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrls }: BannerFormProps) {
+export function BannerForm({
+    form,
+    onSubmit,
+    onCancel,
+    mode = 'create',
+    createdAt,
+    updatedAt,
+    imageUrls,
+    bannerTypeCounts,
+}: BannerFormProps) {
     const { t } = useTranslation();
 
     const [imageEn, setImageEn] = useState<File | null>(null);
@@ -289,9 +310,16 @@ export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrl
     };
 
     return (
-        <CmsFormShell onSubmit={submit} onCancel={onCancel} processing={form.processing} mode={mode}>
+        <CmsFormShell
+            onSubmit={submit}
+            onCancel={onCancel}
+            processing={form.processing}
+            mode={mode}
+            createdAt={createdAt}
+            updatedAt={updatedAt}
+        >
             <div className="col-span-full w-full space-y-6 sm:space-y-8">
-                <section className="w-full rounded-xl border border-border/50 bg-card p-4 shadow-sm sm:p-6">
+                <section className="w-full rounded-xl border border-border/50 bg-card p-4 sm:p-6">
                     <FormField
                         label={t('cms.banner.type')}
                         htmlFor="banner-type-web-background"
@@ -301,11 +329,17 @@ export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrl
                         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                             {bannerTypes.map((bannerType) => {
                                 const isSelected = form.data.type === bannerType.value;
+                                const isLimited =
+                                    mode === 'create' &&
+                                    bannerType.limit !== undefined &&
+                                    (bannerTypeCounts[bannerType.value] ?? 0) >= bannerType.limit;
+                                const limitDescriptionId = `banner-type-${bannerType.value}-limit`;
                                 return (
                                     <label
                                         key={bannerType.value}
                                         className={cn(
                                             'relative flex cursor-pointer flex-col justify-between rounded-xl border p-4 transition-all duration-200 select-none',
+                                            isLimited && 'cursor-not-allowed opacity-50',
                                             isSelected
                                                 ? 'border-primary/80 bg-primary/5 shadow-md shadow-primary/5 ring-2 ring-primary/20'
                                                 : 'border-border/60 bg-background/50 hover:border-border hover:bg-accent/40',
@@ -321,6 +355,9 @@ export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrl
                                                 name="banner_type"
                                                 value={bannerType.value}
                                                 checked={isSelected}
+                                                disabled={isLimited}
+                                                aria-disabled={isLimited}
+                                                aria-describedby={isLimited ? limitDescriptionId : undefined}
                                                 onChange={() => {
                                                     markTouched('type');
                                                     setField('type', bannerType.value as BannerType);
@@ -344,6 +381,16 @@ export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrl
                                                 {bannerType.size} px
                                             </span>
                                         </div>
+                                        {isLimited && (
+                                            <p
+                                                id={limitDescriptionId}
+                                                className="mt-2 text-xs font-medium text-muted-foreground"
+                                            >
+                                                {t('cms.banner.maximum_limit_reached')
+                                                    .replace(':current', String(bannerType.limit))
+                                                    .replace(':limit', String(bannerType.limit))}
+                                            </p>
+                                        )}
                                     </label>
                                 );
                             })}
@@ -351,7 +398,7 @@ export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrl
                     </FormField>
                 </section>
 
-                <section className="w-full rounded-xl border border-border/50 bg-card p-4 shadow-sm sm:p-6">
+                <section className="w-full rounded-xl border border-border/50 bg-card p-4 sm:p-6">
                     <div className="mb-4 flex items-center justify-between border-b border-border/40 pb-3">
                         <div className="flex items-center gap-2">
                             <ImageIcon className="size-4 text-muted-foreground" />
@@ -369,7 +416,7 @@ export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrl
                 </section>
 
                 <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-2">
-                    <section className="w-full rounded-xl border border-border/50 bg-card p-4 shadow-sm sm:p-6">
+                    <section className="w-full rounded-xl border border-border/50 bg-card p-4 sm:p-6">
                         <div className="mb-4 flex items-center gap-2 border-b border-border/40 pb-3">
                             <Settings2Icon className="size-4 text-muted-foreground" />
                             <h3 className="text-sm font-semibold text-foreground">{t('menu.settings')}</h3>
@@ -424,7 +471,7 @@ export function BannerForm({ form, onSubmit, onCancel, mode = 'create', imageUrl
                         </div>
                     </section>
 
-                    <section className="w-full rounded-xl border border-border/50 bg-card p-4 shadow-sm sm:p-6">
+                    <section className="w-full rounded-xl border border-border/50 bg-card p-4 sm:p-6">
                         <div className="mb-4 flex items-center gap-2 border-b border-border/40 pb-3">
                             <CalendarIcon className="size-4 text-muted-foreground" />
                             <h3 className="text-sm font-semibold text-foreground">{t('cms.banner.schedule')}</h3>

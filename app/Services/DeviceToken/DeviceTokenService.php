@@ -7,8 +7,11 @@ use App\Models\User;
 
 class DeviceTokenService
 {
-    public static function register(User $user, ?string $token, ?string $platform = null): void
-    {
+    public static function register(
+        User $user,
+        ?string $token,
+        ?string $platform = null,
+    ): void {
         if ($token === null || trim($token) === '') {
             return;
         }

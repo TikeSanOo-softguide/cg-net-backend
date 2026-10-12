@@ -30,24 +30,6 @@ final class MenuPages
                 'name' => 'cpe.status',
                 'permission' => 'cpe.view',
             ],
-            [
-                'path' => '/packages',
-                'titleKey' => 'menu.packages',
-                'name' => 'packages.index',
-                'permission' => 'packages.view',
-            ],
-            [
-                'path' => '/billing/gateway-logs',
-                'titleKey' => 'menu.payment_gateway_logs',
-                'name' => 'billing.gateway-logs',
-                'permission' => 'billing.view',
-            ],
-            [
-                'path' => '/settings/languages',
-                'titleKey' => 'menu.language_management',
-                'name' => 'settings.languages',
-                'permission' => 'settings.view',
-            ],
         ];
     }
 }

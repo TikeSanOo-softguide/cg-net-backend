@@ -1,5 +1,5 @@
 import { useForm } from '@inertiajs/react';
-import { LockKeyholeIcon, PaperclipIcon, RotateCcwIcon, SendIcon, SmileIcon } from 'lucide-react';
+import { LockKeyholeIcon, PaperclipIcon, SendIcon, SmileIcon, UserCheckIcon } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
@@ -49,7 +49,7 @@ export function ConversationThread({
     const { t, locale } = useTranslation();
     const form = useForm({ message: '' });
     const closeForm = useForm({ message: '', conversation: '' });
-    const reopenForm = useForm({ status: 'open' });
+    const acceptForm = useForm({ conversation: '' });
     const messagesContainerRef = useRef<HTMLDivElement | null>(null);
     const previousConversationIdRef = useRef<number | null>(null);
     const previousLastMessageIdRef = useRef<number | undefined>(undefined);
@@ -137,10 +137,10 @@ export function ConversationThread({
         });
     };
 
-    const reopenConversation = () => {
-        if (!conversation) return;
+    const isLive = conversation.status === 'open' || conversation.status === 'with_agent';
 
-        reopenForm.put(`/support/conversations/${conversation.id}/status`, {
+    const acceptConversation = () => {
+        acceptForm.post(`/support/conversations/${conversation.id}/accept`, {
             preserveScroll: true,
         });
     };
@@ -195,29 +195,26 @@ export function ConversationThread({
                                 )}
                             >
                                 {t(
-                                    `support.chat_conversations.${conversation.status === 'waiting_agent' ? 'pending' : conversation.status}`,
+                                    `support.chat_conversations.${conversation.status === 'waiting_agent' ? 'pending' : conversation.status === 'with_agent' ? 'open' : conversation.status}`,
                                 )}
                             </span>
                         </p>
                     </div>
                 </div>
-                {canManage && conversation.status === 'closed' ? (
-                    <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        disabled={reopenForm.processing}
-                        onClick={reopenConversation}
-                    >
-                        <RotateCcwIcon />
-                        {t('support.chat_conversations.reopen')}
-                    </Button>
-                ) : canManage && canReply ? (
-                    <Button type="button" size="sm" variant="outline" onClick={openCloseDialog}>
-                        <LockKeyholeIcon />
-                        {t('support.chat_conversations.close')}
-                    </Button>
-                ) : null}
+                <div className="flex items-center gap-2">
+                    {canReply && conversation.status === 'waiting_agent' ? (
+                        <Button type="button" size="sm" disabled={acceptForm.processing} onClick={acceptConversation}>
+                            <UserCheckIcon />
+                            {t('support.chat_conversations.accept')}
+                        </Button>
+                    ) : null}
+                    {canManage && canReply && conversation.status === 'open' ? (
+                        <Button type="button" size="sm" variant="outline" onClick={openCloseDialog}>
+                            <LockKeyholeIcon />
+                            {t('support.chat_conversations.close')}
+                        </Button>
+                    ) : null}
+                </div>
             </header>
             <div
                 ref={messagesContainerRef}
@@ -257,7 +254,12 @@ export function ConversationThread({
                     );
                 })}
             </div>
-            {canReply && conversation.status !== 'closed' ? (
+            {acceptForm.errors.conversation ? (
+                <p className="border-t border-border px-4 py-2 text-xs text-danger" role="alert">
+                    {acceptForm.errors.conversation}
+                </p>
+            ) : null}
+            {canReply && isLive ? (
                 <form onSubmit={submit} className="border-t border-border p-3 sm:p-4">
                     <div className="flex items-end gap-2 rounded-lg border border-border bg-background p-2 focus-within:ring-2 focus-within:ring-ring/30">
                         <Button type="button" variant="ghost" size="icon" className="size-8 min-h-8">
@@ -303,11 +305,19 @@ export function ConversationThread({
                 <p className="border-t border-border bg-muted/30 px-4 py-3 text-center text-xs text-muted-foreground">
                     {t('support.chat_conversations.closed_read_only')}
                 </p>
+            ) : !isLive ? (
+                <p className="border-t border-border bg-muted/30 px-4 py-3 text-center text-xs text-muted-foreground">
+                    {t(
+                        conversation.status === 'waiting_agent'
+                            ? 'support.chat_conversations.accept_to_reply'
+                            : 'support.chat_conversations.in_chat_flow',
+                    )}
+                </p>
             ) : null}
             <Dialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{t('support.chat_conversations.close_title')}</DialogTitle>
+                        <DialogTitle>{t('support.chat_conversations.close')}</DialogTitle>
                         <DialogDescription>
                             {t('support.chat_conversations.close_description').replace(':id', String(conversation.id))}
                         </DialogDescription>

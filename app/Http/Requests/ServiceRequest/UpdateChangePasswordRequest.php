@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\ServiceRequest;
 
-use App\Enums\ChangePasswordStatus;
+use App\Enums\RequestStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -35,7 +35,7 @@ class UpdateChangePasswordRequest extends FormRequest
             'new_password' => ['nullable', 'string', 'required_without:new_wifi_name'],
             'contact_name' => ['required', 'string', 'max:255'],
             'contact_phone' => ['required', 'string', 'max:255'],
-            'status' => ['required', 'string', 'max:16', Rule::enum(ChangePasswordStatus::class)],
+            'status' => ['required', 'string', 'max:16', Rule::enum(RequestStatus::class)],
         ];
     }
 }

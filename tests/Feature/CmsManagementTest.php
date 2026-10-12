@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AnnouncementType;
+use App\Enums\NotificationCategory;
 use App\Enums\NewsStatus;
 use App\Models\Admin;
 use App\Models\Announcement;
@@ -9,10 +11,11 @@ use App\Models\Banner;
 use App\Models\Category;
 use App\Models\Contact;
 use App\Models\News;
+use App\Models\Notification as UserNotification;
 use App\Models\Promotion;
 use App\Models\Service;
 use App\Models\User;
-use App\Notifications\AdminPushNotification;
+use App\Notifications\CampaignNotification;
 use App\Services\Notification\PushNotificationService;
 use App\Support\CmsPermissions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -293,13 +296,24 @@ class CmsManagementTest extends TestCase
             'start_date' => now()->subHour(),
             'end_date' => now()->addHour(),
         ]);
-        Announcement::factory()->inactive()->create([
+        $systemAnnouncement = Announcement::factory()->create([
+            'type' => AnnouncementType::System,
+            'title_en' => 'System EN',
+            'title_zh' => 'System ZH',
+            'title_my' => 'System MY',
+            'is_active' => true,
             'start_date' => now()->subHour(),
             'end_date' => now()->addHour(),
         ]);
+        Announcement::factory()
+            ->inactive()
+            ->create([
+                'start_date' => now()->subHour(),
+                'end_date' => now()->addHour(),
+            ]);
         Announcement::factory()->upcoming()->create();
         Announcement::factory()->expired()->create();
-        Announcement::factory()->create([
+        $undatedAnnouncement = Announcement::factory()->create([
             'is_active' => true,
             'start_date' => null,
             'end_date' => null,
@@ -339,36 +353,103 @@ class CmsManagementTest extends TestCase
 
         $service = app(PushNotificationService::class);
 
-        $this->assertSame(3, $service->processDueTitles());
+        $this->assertSame(5, $service->processDueTitles());
         $this->assertSame(0, $service->processDueTitles());
 
         Notification::assertSentTo(
             $user,
-            AdminPushNotification::class,
-            fn (AdminPushNotification $notification): bool => $notification->titleEn === 'Announce EN'
-                && $notification->titleZh === 'Announce ZH'
-                && $notification->titleMy === 'Announce MY',
+            CampaignNotification::class,
+            fn(CampaignNotification $notification): bool => $notification->title === 'Announce EN' &&
+                $notification->body === $announcement->content_en &&
+                $notification->category === 'announcement',
         );
         Notification::assertSentTo(
             $user,
-            AdminPushNotification::class,
-            fn (AdminPushNotification $notification): bool => $notification->titleEn === 'Promo EN'
-                && $notification->titleZh === 'Promo ZH'
-                && $notification->titleMy === 'Promo MY',
+            CampaignNotification::class,
+            fn(CampaignNotification $notification): bool => $notification->title === 'System EN' &&
+                $notification->body === $systemAnnouncement->content_en &&
+                $notification->category === 'system',
         );
         Notification::assertSentTo(
             $user,
-            AdminPushNotification::class,
-            fn (AdminPushNotification $notification): bool => $notification->titleEn === 'CMS Promo EN'
-                && $notification->titleZh === 'CMS Promo ZH'
-                && $notification->titleMy === 'CMS Promo MY',
+            CampaignNotification::class,
+            fn(CampaignNotification $notification): bool => $notification->title === $undatedAnnouncement->title_en &&
+                $notification->body === $undatedAnnouncement->content_en &&
+                $notification->category === 'announcement',
         );
-        Notification::assertSentTimes(AdminPushNotification::class, 3);
+        Notification::assertSentTo(
+            $user,
+            CampaignNotification::class,
+            fn(CampaignNotification $notification): bool => $notification->title === 'Promo EN' &&
+                $notification->body === $promotion->description_en &&
+                $notification->category === 'promotion',
+        );
+        Notification::assertSentTo(
+            $user,
+            CampaignNotification::class,
+            fn(CampaignNotification $notification): bool => $notification->title === 'CMS Promo EN' &&
+                $notification->body === $cmsPromotion->description_en &&
+                $notification->category === 'promotion',
+        );
+        Notification::assertSentTimes(CampaignNotification::class, 5);
 
         $this->assertNotNull($announcement->fresh()->push_sent_at);
+        $this->assertNotNull($systemAnnouncement->fresh()->push_sent_at);
         $this->assertNotNull($promotion->fresh()->push_sent_at);
         $this->assertNotNull($cmsPromotion->fresh()->push_sent_at);
-        $this->assertSame(4, Announcement::query()->whereNull('push_sent_at')->count());
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $user->id,
+            'category' => NotificationCategory::Announcement->value,
+            'action_type' => 'announcement',
+            'action_id' => (string) $announcement->id,
+        ]);
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $user->id,
+            'category' => NotificationCategory::System->value,
+            'action_type' => 'announcement',
+            'action_id' => (string) $systemAnnouncement->id,
+        ]);
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $user->id,
+            'category' => NotificationCategory::Announcement->value,
+            'action_type' => 'announcement',
+            'action_id' => (string) $undatedAnnouncement->id,
+        ]);
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $user->id,
+            'category' => NotificationCategory::Promotion->value,
+            'action_type' => 'promotion',
+            'action_id' => (string) $promotion->id,
+        ]);
+        $token = $user->createToken('campaign-notifications-test')->plainTextToken;
+        $this->withToken($token, 'Bearer')
+            ->getJson('/api/notifications')
+            ->assertOk()
+            ->assertJsonFragment([
+                'title' => 'Announce EN',
+                'body' => $announcement->content_en,
+                'category' => 'announcement',
+                'action_type' => 'announcement',
+                'action_id' => (string) $announcement->id,
+                'is_read' => false,
+            ])
+            ->assertJsonFragment([
+                'title' => 'System EN',
+                'body' => $systemAnnouncement->content_en,
+                'category' => 'system',
+                'action_type' => 'announcement',
+                'action_id' => (string) $systemAnnouncement->id,
+                'is_read' => false,
+            ])
+            ->assertJsonFragment([
+                'title' => 'Promo EN',
+                'body' => $promotion->description_en,
+                'category' => 'promotion',
+                'action_type' => 'promotion',
+                'action_id' => (string) $promotion->id,
+                'is_read' => false,
+            ]);
+        $this->assertSame(3, Announcement::query()->whereNull('push_sent_at')->count());
         $this->assertSame(3, Promotion::query()->whereNull('push_sent_at')->count());
     }
 
@@ -384,6 +465,13 @@ class CmsManagementTest extends TestCase
 
         $this->assertSame(0, app(PushNotificationService::class)->processDueTitles());
         $this->assertNull($announcement->fresh()->push_sent_at);
+        $this->assertSame(
+            1,
+            UserNotification::query()
+                ->where('action_type', 'announcement')
+                ->where('action_id', (string) $announcement->id)
+                ->count(),
+        );
         Notification::assertNothingSent();
     }
 }

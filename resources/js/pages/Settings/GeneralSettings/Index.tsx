@@ -158,7 +158,7 @@ export default function GenSettingsIndex({ termsAndConditions, faqs, supportCont
             <PageContent>
                 <PageHeader />
 
-                <section className="rounded-xl border bg-card p-4 shadow-sm">
+                <section className="rounded-xl border bg-card p-4">
                     <div className="flex flex-wrap items-center justify-center gap-6">
                         <label className="mr-6 flex cursor-pointer items-center gap-2">
                             <input

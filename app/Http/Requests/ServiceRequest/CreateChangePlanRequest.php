@@ -2,11 +2,16 @@
 
 namespace App\Http\Requests\ServiceRequest;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Models\ChangePlanRequest;
 use Illuminate\Validation\Rule;
 
-class CreateChangePlanRequest extends FormRequest
+class CreateChangePlanRequest extends CreateServiceRequest
 {
+    protected function requestModel(): string
+    {
+        return ChangePlanRequest::class;
+    }
+
     public function authorize(): bool
     {
         return true;

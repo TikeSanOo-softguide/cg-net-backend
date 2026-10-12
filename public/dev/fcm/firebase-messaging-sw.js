@@ -9,14 +9,39 @@ if (config.apiKey) {
     firebase.initializeApp(config);
     const messaging = firebase.messaging();
 
-    messaging.onBackgroundMessage((payload) => {
-        const clients = self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    messaging.onBackgroundMessage(async (payload) => {
+        const notification = payload.notification || {};
+        const data = payload.data || {};
 
-        clients.then((list) => list.forEach((client) => client.postMessage({ source: 'fcm-sw', payload })));
+        if (notification.title) {
+            await self.registration.showNotification(notification.title, {
+                body: notification.body || '',
+                icon: '/images/cg-net-logo.png',
+                data,
+            });
+        }
+
+        const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        clients.forEach((client) => client.postMessage({ source: 'fcm-sw', type: 'message', payload }));
     });
 }
 
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    event.waitUntil(self.clients.openWindow('/dev/fcm/index.html'));
+    const data = event.notification.data || {};
+
+    event.waitUntil((async () => {
+        const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        const testPage = clients.find((client) => client.url.includes('/dev/fcm/'));
+
+        if (testPage) {
+            await testPage.focus();
+            testPage.postMessage({ source: 'fcm-sw', type: 'notification-click', data });
+            return;
+        }
+
+        const url = new URL('/dev/fcm/index.html', self.location.origin);
+        Object.entries(data).forEach(([key, value]) => url.searchParams.set(key, String(value)));
+        await self.clients.openWindow(url.toString());
+    })());
 });

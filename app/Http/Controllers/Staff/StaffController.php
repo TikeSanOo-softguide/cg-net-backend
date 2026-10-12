@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\StoreStaffRequest;
 use App\Http\Requests\Staff\UpdateStaffRequest;
 use App\Models\Admin;
+use App\Services\AdminNotification\AdminNotificationDelivery;
 use App\Support\AppPermissions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -68,6 +69,7 @@ class StaffController extends Controller
 
         $admin = Admin::query()->create($data);
         $admin->syncRoles($this->allowedRoles($request->user(), $request->validated('role_ids', [])));
+        app(AdminNotificationDelivery::class)->forgetCachedRecipients();
 
         activity('staff')->causedBy($request->user())->performedOn($admin)->event('created')->log('staff_created');
 
@@ -99,6 +101,7 @@ class StaffController extends Controller
 
         $admin->update($data);
         $admin->syncRoles($this->allowedRoles($request->user(), $request->validated('role_ids', []), $admin));
+        app(AdminNotificationDelivery::class)->forgetCachedRecipients();
 
         activity('staff')->causedBy($request->user())->performedOn($admin)->event('updated')->log('staff_updated');
 
@@ -118,6 +121,7 @@ class StaffController extends Controller
         }
 
         $admin->delete();
+        app(AdminNotificationDelivery::class)->forgetCachedRecipients();
 
         activity('staff')->causedBy($request->user())->performedOn($admin)->event('deleted')->log('staff_deleted');
 
@@ -146,6 +150,10 @@ class StaffController extends Controller
             $admin->delete();
             activity('staff')->causedBy($request->user())->performedOn($admin)->event('deleted')->log('staff_deleted');
             $deleted++;
+        }
+
+        if ($deleted > 0) {
+            app(AdminNotificationDelivery::class)->forgetCachedRecipients();
         }
 
         if ($deleted === 0) {

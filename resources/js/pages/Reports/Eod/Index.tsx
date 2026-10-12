@@ -309,6 +309,7 @@ export default function EodReportIndex({ date, summary, breakdown, entries }: Pr
                         htmlFor="eod-date"
                         icon={CalendarDays}
                         className="w-full sm:w-64 [&>div:last-child]:hidden"
+                        labelClassName="text-[13px]"
                     >
                         <DatePicker
                             id="eod-date"

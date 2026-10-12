@@ -50,7 +50,11 @@ class PromotionController extends Controller
 
         $promotion = Promotion::query()->create($data);
 
-        activity('cms')->causedBy($request->user())->performedOn($promotion)->event('created')->log('promotion_created');
+        activity('cms')
+            ->causedBy($request->user())
+            ->performedOn($promotion)
+            ->event('created')
+            ->log('promotion_created');
 
         return redirect()->route($this->promotionsIndexRoute())->with('success', 'cms.promotions.created');
     }
@@ -65,7 +69,11 @@ class PromotionController extends Controller
         $data = $request->safe()->except('image');
 
         if ($request->hasFile('image')) {
-            $data['image_url'] = StoresPublicImage::store($request->file('image'), 'cms/promotions', $promotion->image_url);
+            $data['image_url'] = StoresPublicImage::store(
+                $request->file('image'),
+                'cms/promotions',
+                $promotion->image_url,
+            );
         } elseif (array_key_exists('image_url', $data) && !isset($data['image_url'])) {
             $data['image_url'] = null;
             StoresPublicImage::delete($promotion->image_url);
@@ -75,7 +83,11 @@ class PromotionController extends Controller
 
         $promotion->update($data);
 
-        activity('cms')->causedBy($request->user())->performedOn($promotion)->event('updated')->log('promotion_updated');
+        activity('cms')
+            ->causedBy($request->user())
+            ->performedOn($promotion)
+            ->event('updated')
+            ->log('promotion_updated');
 
         return redirect()->route($this->promotionsIndexRoute())->with('success', 'cms.promotions.updated');
     }
@@ -85,7 +97,11 @@ class PromotionController extends Controller
         StoresPublicImage::delete($promotion->image_url);
         $promotion->delete();
 
-        activity('cms')->causedBy($request->user())->performedOn($promotion)->event('deleted')->log('promotion_deleted');
+        activity('cms')
+            ->causedBy($request->user())
+            ->performedOn($promotion)
+            ->event('deleted')
+            ->log('promotion_deleted');
 
         return redirect()->route($this->promotionsIndexRoute())->with('success', 'cms.promotions.deleted');
     }
@@ -110,9 +126,7 @@ class PromotionController extends Controller
 
     private function promotionsBasePath(): string
     {
-        return request()->routeIs('notifications.promotions.*')
-            ? '/notifications/promotions'
-            : '/cms/promotions';
+        return request()->routeIs('notifications.promotions.*') ? '/notifications/promotions' : '/cms/promotions';
     }
 
     /**
@@ -133,7 +147,8 @@ class PromotionController extends Controller
             'is_active' => $promotion->is_active,
             'slug' => $promotion->slug,
             'image_url' => StoresPublicImage::url($promotion->image_url),
-            'created_at' => $promotion->created_at?->toDateString(),
+            'created_at' => $promotion->created_at?->toDateTimeString(),
+            'updated_at' => $promotion->updated_at?->toDateTimeString(),
         ];
     }
 }

@@ -11,8 +11,9 @@ type ConversationListProps = { conversations: ConversationSummary[]; filters: Ch
 
 const statusFilters = [
     { value: '', key: 'all' },
-    { value: 'open', key: 'open' },
+    { value: 'bot', key: 'bot' },
     { value: 'waiting_agent', key: 'pending' },
+    { value: 'open', key: 'open' },
     { value: 'closed', key: 'closed' },
 ];
 

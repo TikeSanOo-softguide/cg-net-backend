@@ -17,6 +17,7 @@ use App\Models\PackageOrder;
 use App\Models\Payment;
 use App\Models\TopUpCard;
 use App\Models\User;
+use App\Models\UserLog;
 use App\Models\Wallet;
 use App\Services\Ledger\LedgerPoster;
 use App\Support\AppPermissions;
@@ -90,6 +91,13 @@ class CustomerManagementTest extends TestCase
 
         $admin = Admin::factory()->create();
         $customer = User::factory()->create(['broadband_account_number' => 'CG12345678']);
+        $token = $customer->createToken('flutter');
+        UserLog::query()->create([
+            'user_id' => $customer->id,
+            'event' => 'login_success',
+            'ip_address' => '203.0.113.42',
+            'user_agent' => 'Flutter/3.24 (Android 15; Pixel 8)',
+        ]);
         CustomerPackage::factory()->create([
             'user_id' => $customer->id,
         ]);
@@ -104,11 +112,66 @@ class CustomerManagementTest extends TestCase
                     ->component('Customer/Show')
                     ->where('customer.id', $customer->id)
                     ->where('customer.name', $customer->name)
+                    ->where('activeSession', true)
+                    ->where('sessionInfo.ip_address', '203.0.113.42')
+                    ->where('sessionInfo.user_agent', 'Flutter/3.24 (Android 15; Pixel 8)')
+                    ->where('sessionInfo.token_id', $token->accessToken->getKey())
+                    ->where('sessionInfo.token_name', 'flutter')
+                    ->where('sessionInfo.last_used_at', null)
+                    ->where('sessionInfo.expires_at', fn($expiresAt) => $expiresAt !== null)
                     ->where('accountBinding.account_number', 'CG12345678')
                     ->has('packageHistory', 1)
                     ->where('wallet.balance', '15000')
                     ->has('wallet.transactions', 1),
             );
+    }
+
+    public function test_admin_can_revoke_a_customers_active_session(): void
+    {
+        $admin = Admin::factory()->create();
+        $customer = User::factory()->create();
+        $customer->createToken('phone');
+        $customer->createToken('tablet');
+        $customer->deviceTokens()->create(['token' => 'device-token', 'platform' => 'android']);
+
+        $this->actingAs($admin, 'web')
+            ->from('/customers/' . $customer->id)
+            ->delete('/customers/' . $customer->id . '/session')
+            ->assertRedirect('/customers/' . $customer->id)
+            ->assertSessionHas('success', 'customers.session_removed');
+
+        $this->assertDatabaseMissing('personal_access_tokens', [
+            'tokenable_id' => $customer->id,
+            'tokenable_type' => User::class,
+        ]);
+        $this->assertDatabaseMissing('device_tokens', ['user_id' => $customer->id]);
+        $this->assertDatabaseHas('activity_log', [
+            'description' => 'customer_session_revoked',
+            'subject_id' => $customer->id,
+            'causer_id' => $admin->id,
+        ]);
+    }
+
+    public function test_customer_view_permission_cannot_revoke_an_active_session(): void
+    {
+        $this->autoGrantPermissions = false;
+        RolePermissionSeeder::sync();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $admin = Admin::factory()->create();
+        $admin->givePermissionTo('customers.view');
+        $customer = User::factory()->create();
+        $customer->createToken('phone');
+
+        $this->actingAs($admin, 'web')
+            ->withHeader('Accept', 'application/json')
+            ->delete('/customers/' . $customer->id . '/session')
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('personal_access_tokens', [
+            'tokenable_id' => $customer->id,
+            'tokenable_type' => User::class,
+        ]);
     }
 
     public function test_customer_detail_remains_available_when_broadband_service_cannot_be_reached(): void

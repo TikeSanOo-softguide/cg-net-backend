@@ -1,0 +1,156 @@
+name: cg-net-production
+
+x-logging: &default-logging
+    driver: json-file
+    options:
+        max-size: '10m'
+        max-file: '3'
+
+x-php-service: &php-service
+    image: cg-net-app:${APP_TAG:?Set APP_TAG in the server .env}
+    build:
+        context: .
+        dockerfile: Dockerfile.prod
+        target: runtime
+        args:
+            VITE_APP_NAME: ${VITE_APP_NAME:-YNO Admin}
+            VITE_REVERB_ENABLED: ${VITE_REVERB_ENABLED:-false}
+            VITE_REVERB_APP_KEY: ${VITE_REVERB_APP_KEY:-}
+            VITE_REVERB_HOST: ${VITE_REVERB_HOST:-}
+            VITE_REVERB_PORT: ${VITE_REVERB_PORT:-443}
+            VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME:-https}
+    env_file:
+        - .env
+    init: true
+    restart: unless-stopped
+    cap_drop:
+        - ALL
+    security_opt:
+        - no-new-privileges:true
+    depends_on:
+        redis:
+            condition: service_healthy
+    logging: *default-logging
+
+services:
+    app:
+        <<: *php-service
+        command: ['php-fpm', '-F']
+        healthcheck:
+            test:
+                [
+                    'CMD',
+                    'php',
+                    '-r',
+                    '$$socket = @fsockopen("127.0.0.1", 9000); exit($$socket ? 0 : 1);',
+                ]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 20s
+
+    horizon:
+        <<: *php-service
+        command: ['php', 'artisan', 'horizon']
+        stop_signal: SIGTERM
+        stop_grace_period: 2m
+        healthcheck:
+            test: ['CMD-SHELL', 'php artisan horizon:status >/dev/null 2>&1']
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 30s
+
+    scheduler:
+        <<: *php-service
+        command: ['php', 'artisan', 'schedule:work']
+        stop_grace_period: 30s
+
+    reverb:
+        <<: *php-service
+        command: ['php', 'artisan', 'reverb:start', '--host=0.0.0.0', '--port=8080']
+        healthcheck:
+            test:
+                [
+                    'CMD',
+                    'php',
+                    '-r',
+                    '$$socket = @fsockopen("127.0.0.1", 8080); exit($$socket ? 0 : 1);',
+                ]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 20s
+
+    nginx:
+        image: cg-net-nginx:${APP_TAG:?Set APP_TAG in the server .env}
+        build:
+            context: .
+            dockerfile: Dockerfile.prod
+            target: nginx
+        init: true
+        restart: unless-stopped
+        depends_on:
+            app:
+                condition: service_healthy
+            reverb:
+                condition: service_healthy
+        ports:
+            - '${NGINX_PORT:-127.0.0.1:8080}:8080'
+        read_only: true
+        tmpfs:
+            - /tmp:rw,noexec,nosuid,size=16m,uid=101,gid=101,mode=1770
+        cap_drop:
+            - ALL
+        security_opt:
+            - no-new-privileges:true
+        logging: *default-logging
+        healthcheck:
+            test: ['CMD-SHELL', 'wget -q -O /dev/null http://127.0.0.1:8080/up']
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 10s
+
+    redis:
+        image: cg-net-redis:${APP_TAG:?Set APP_TAG in the server .env}
+        build:
+            context: .
+            dockerfile: Dockerfile.prod
+            target: redis
+        init: true
+        restart: unless-stopped
+        environment:
+            REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in the server .env}
+            REDIS_MAXMEMORY: ${REDIS_MAXMEMORY:-512mb}
+        command:
+            - sh
+            - -ec
+            - |
+                exec redis-server \
+                  --appendonly yes \
+                  --maxmemory "$${REDIS_MAXMEMORY}" \
+                  --maxmemory-policy noeviction \
+                  --requirepass "$${REDIS_PASSWORD}"
+        volumes:
+            - redis_data:/data
+        read_only: true
+        mem_limit: 640m
+        cap_drop:
+            - ALL
+        security_opt:
+            - no-new-privileges:true
+        logging: *default-logging
+        healthcheck:
+            test:
+                [
+                    'CMD-SHELL',
+                    'REDISCLI_AUTH="$${REDIS_PASSWORD}" redis-cli ping | grep -q PONG',
+                ]
+            interval: 10s
+            timeout: 3s
+            retries: 5
+            start_period: 10s
+
+volumes:
+    redis_data:

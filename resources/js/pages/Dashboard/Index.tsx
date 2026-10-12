@@ -93,32 +93,56 @@ export default function DashboardIndex({
                 <div className="grid grid-cols-1 items-stretch gap-3 md:grid-cols-2 xl:grid-cols-3">
                     <DashboardTrendChart
                         data={chart}
-                        dataKey="topup_usage"
-                        labelKey="dashboard.top_up_usage"
-                        color="#4F46E5"
-                        unit={t('dashboard.points')}
-                        change={topupUsageChange}
+                        titleKey="dashboard.top_up_usage"
+                        showLegend={false}
+                        series={[
+                            {
+                                dataKey: 'topup_usage',
+                                labelKey: 'dashboard.top_up_usage',
+                                color: '#4F46E5',
+                                unit: t('dashboard.points'),
+                                change: topupUsageChange,
+                            },
+                        ]}
                     />
                     <DashboardTrendChart
                         data={chart}
-                        dataKey="ftth_bill_payments"
-                        labelKey="dashboard.ftth_bill_payments"
-                        color="#0891B2"
-                        unit={t('dashboard.points')}
+                        titleKey="dashboard.ftth_bill_payments"
+                        showLegend={false}
+                        series={[
+                            {
+                                dataKey: 'ftth_bill_payments',
+                                labelKey: 'dashboard.ftth_bill_payments',
+                                color: '#0891B2',
+                                unit: t('dashboard.points'),
+                            },
+                        ]}
                     />
                     <DashboardTrendChart
                         data={chart}
-                        dataKey="wifi_package_orders"
-                        labelKey="dashboard.wifi_package_orders"
-                        color="#16A34A"
-                        unit={t('dashboard.points')}
+                        titleKey="dashboard.wifi_package_orders"
+                        showLegend={false}
+                        series={[
+                            {
+                                dataKey: 'wifi_package_orders',
+                                labelKey: 'dashboard.wifi_package_orders',
+                                color: '#16A34A',
+                                unit: t('dashboard.points'),
+                            },
+                        ]}
                     />
                     <DashboardTrendChart
                         data={chart}
-                        dataKey="signups"
-                        labelKey="dashboard.new_signups"
-                        color="#E11D48"
-                        unit={t('dashboard.users')}
+                        titleKey="dashboard.new_signups"
+                        showLegend={false}
+                        series={[
+                            {
+                                dataKey: 'signups',
+                                labelKey: 'dashboard.new_signups',
+                                color: '#E11D48',
+                                unit: t('dashboard.users'),
+                            },
+                        ]}
                     />
                     <DashboardRegionChart data={regionChart} />
                     <DashboardRequestLevels data={requestTypeChart} />

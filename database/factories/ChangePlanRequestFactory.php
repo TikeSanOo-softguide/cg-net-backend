@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Enums\ChangePlanStatus;
+use App\Enums\RequestStatus;
 use App\Models\ChangePlanRequest;
 use App\Models\Package;
 use App\Models\User;
@@ -27,7 +27,7 @@ class ChangePlanRequestFactory extends Factory
             'contact_name' => MyanmarFake::name(),
             'contact_phone' => MyanmarFake::phone(),
             'note' => fake()->optional()->sentence(),
-            'status' => fake()->randomElement(ChangePlanStatus::cases()),
+            'status' => fake()->randomElement(RequestStatus::cases()),
         ];
     }
 }

@@ -20,6 +20,78 @@ class CustomerProfileApiTest extends TestCase
         $this->getJson('/api/customer/profile')->assertUnauthorized();
     }
 
+    public function test_customer_can_switch_and_retrieve_their_saved_language(): void
+    {
+        $user = User::factory()->create(['lang' => 'en']);
+        $token = $user->createToken('language')->plainTextToken;
+
+        $this->withToken($token)
+            ->patchJson('/api/customer/language', ['lang' => 'my'])
+            ->assertOk()
+            ->assertJsonPath('data.lang', 'my');
+
+        $this->assertSame('my', $user->fresh()->lang);
+
+        $this->withToken($token)->getJson('/api/customer/profile')->assertOk()->assertJsonPath('data.user.lang', 'my');
+    }
+
+    public function test_customer_language_switch_requires_authentication_and_supported_language(): void
+    {
+        $this->patchJson('/api/customer/language', ['lang' => 'zh'])->assertUnauthorized();
+
+        $user = User::factory()->create(['lang' => 'en']);
+        $token = $user->createToken('language')->plainTextToken;
+
+        $this->withToken($token)
+            ->patchJson('/api/customer/language', ['lang' => 'fr'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('lang');
+
+        $this->assertSame('en', $user->fresh()->lang);
+    }
+    public function test_customer_can_update_only_their_name_from_the_profile_api(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'Old Name',
+            'phone' => '95912345678',
+        ]);
+        $token = $user->createToken('profile')->plainTextToken;
+
+        $this->withToken($token)
+            ->patchJson('/api/customer/profile', [
+                'name' => '  Updated   Name  ',
+                'phone' => '95987654321',
+                'status' => 'suspended',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.user.id', $user->id)
+            ->assertJsonPath('data.user.name', 'Updated Name')
+            ->assertJsonPath('data.user.phone', '95912345678')
+            ->assertJsonPath('data.user.status', 'active');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'name' => 'Updated Name',
+            'phone' => '95912345678',
+            'status' => 'active',
+        ]);
+    }
+
+    public function test_customer_profile_name_update_requires_a_valid_name(): void
+    {
+        $user = User::factory()->create(['name' => 'Original Name']);
+
+        $this->withToken($user->createToken('profile')->plainTextToken)
+            ->patchJson('/api/customer/profile', ['name' => '  '])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('name');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'name' => 'Original Name',
+        ]);
+    }
+
     public function test_customer_can_get_only_their_profile_balance_broadband_and_package_credentials(): void
     {
         $user = User::factory()->create([
@@ -44,10 +116,12 @@ class CustomerProfileApiTest extends TestCase
             'starts_at' => now()->subDay(),
             'expires_at' => now()->addMonths(2),
         ]);
-        CustomerPackage::factory()->expired()->create([
-            'user_id' => $user->id,
-            'package_id' => $package->id,
-        ]);
+        CustomerPackage::factory()
+            ->expired()
+            ->create([
+                'user_id' => $user->id,
+                'package_id' => $package->id,
+            ]);
 
         Http::fake();
 

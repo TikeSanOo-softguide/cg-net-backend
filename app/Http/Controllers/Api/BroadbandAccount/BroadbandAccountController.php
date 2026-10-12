@@ -11,7 +11,7 @@ class BroadbandAccountController extends Controller
 {
     public function __construct(private BroadbandAccountService $broadbandAccountService) {}
 
-    public function connect(Request $request)
+    public function bindAccount(Request $request)
     {
         $request->validate([
             'account_number' => ['required', 'string'],
@@ -23,7 +23,7 @@ class BroadbandAccountController extends Controller
         if (!$account) {
             return response()->json(
                 [
-                    'message' => 'Account number and customer name do not match.',
+                    'message' => 'broadband_account_not_match',
                 ],
                 404,
             );
@@ -34,16 +34,16 @@ class BroadbandAccountController extends Controller
         if ($user->broadband_account_number === $request->account_number) {
             return response()->json(
                 [
-                    'message' => 'Already connected to your account.',
+                    'message' => 'broadband_already_connected',
                 ],
                 200,
             );
         }
 
-        if ($user->broadband_account_number !== null) {
+        if (isset($user->broadband_account_number) && $user->broadband_account_number !== $request->account_number) {
             return response()->json(
                 [
-                    'message' => 'Your account is already connected to a broadband account.',
+                    'message' => 'broadband_different_account',
                 ],
                 409,
             );
@@ -56,7 +56,7 @@ class BroadbandAccountController extends Controller
         if ($alreadyUsed) {
             return response()->json(
                 [
-                    'message' => 'This broadband account is already connected to another user.',
+                    'message' => 'broadband_account_in_use',
                 ],
                 409,
             );
@@ -70,6 +70,28 @@ class BroadbandAccountController extends Controller
             [
                 'success' => true,
                 'message' => 'Successfully connected',
+            ],
+            200,
+        );
+    }
+
+    public function unbindAccount(Request $request)
+    {
+        $user = $request->user();
+        $accountNumber = $request->account_number;
+
+        if ($accountNumber === null) {
+            abort(404);
+        }
+
+        $user->update([
+            'broadband_account_number' => null,
+        ]);
+
+        return response()->json(
+            [
+                'success' => true,
+                'message' => 'Successfully disconnected',
             ],
             200,
         );

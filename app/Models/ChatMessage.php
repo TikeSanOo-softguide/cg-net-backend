@@ -13,8 +13,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'conversation_id',
     'sender_type',
     'message',
+    'language',
     'attachment_path',
     'option_id',
+    'step_id',
     'is_read',
 ])]
 class ChatMessage extends Model
@@ -33,6 +35,11 @@ class ChatMessage extends Model
     public function conversation(): BelongsTo
     {
         return $this->belongsTo(ChatConversation::class, 'conversation_id');
+    }
+
+    public function step(): BelongsTo
+    {
+        return $this->belongsTo(ChatFlowStep::class, 'step_id');
     }
 
     public function option(): BelongsTo

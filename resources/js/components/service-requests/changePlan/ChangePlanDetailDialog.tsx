@@ -15,7 +15,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
-import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
+import { REQUEST_STATUS } from '@/lib/CommonNameConst';
 import { cn, formatDate } from '@/lib/utils';
 import { CopyValueButton } from '@/components/CopyValueButton';
 import { formatPhoneInternational } from '@/lib/phone';
@@ -70,16 +70,16 @@ export function ChangePlanDetailDialog({
     open,
     onOpenChange,
     request,
-    statuses = [CHANGE_PLAN_STATUS.UNDER_REVIEW, CHANGE_PLAN_STATUS.APPROVED],
+    statuses = [REQUEST_STATUS.UNDER_REVIEW, REQUEST_STATUS.APPROVED],
 }: ChangePlanDetailDialogProps) {
     const { t } = useTranslation();
     const can = useCan();
     const canUpdate = can('service-requests.update');
 
     const nextStatus =
-        request?.status === CHANGE_PLAN_STATUS.UNDER_REVIEW
-            ? CHANGE_PLAN_STATUS.APPROVED
-            : CHANGE_PLAN_STATUS.UNDER_REVIEW;
+        request?.status === REQUEST_STATUS.UNDER_REVIEW
+            ? REQUEST_STATUS.APPROVED
+            : REQUEST_STATUS.UNDER_REVIEW;
 
     const { data, setData, patch } = useForm({ status: nextStatus });
 
@@ -99,11 +99,11 @@ export function ChangePlanDetailDialog({
     };
 
     const isExpired =
-        request?.status === CHANGE_PLAN_STATUS.UNDER_REVIEW &&
+        request?.status === REQUEST_STATUS.UNDER_REVIEW &&
         request?.preferred_date &&
         new Date(request.preferred_date) < new Date();
 
-    const nextButton = request?.status === CHANGE_PLAN_STATUS.UNDER_REVIEW ? 'approve' : 'review';
+    const nextButton = request?.status === REQUEST_STATUS.UNDER_REVIEW ? 'approve' : 'review';
 
     return (
         <FormDialog

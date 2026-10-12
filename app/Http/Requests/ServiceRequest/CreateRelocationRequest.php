@@ -2,11 +2,16 @@
 
 namespace App\Http\Requests\ServiceRequest;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Models\RelocationRequest;
 use Illuminate\Validation\Rule;
 
-class CreateRelocationRequest extends FormRequest
+class CreateRelocationRequest extends CreateServiceRequest
 {
+    protected function requestModel(): string
+    {
+        return RelocationRequest::class;
+    }
+
     /**
      * Determine if the user is authorized to make this request.
      */

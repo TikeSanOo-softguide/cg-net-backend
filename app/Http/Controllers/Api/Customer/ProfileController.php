@@ -6,9 +6,12 @@ use App\Enums\CustomerPackageStatus;
 use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Customer\DeactivateAccountRequest;
+use App\Http\Requests\Api\Customer\UpdateLanguageRequest;
+use App\Http\Requests\Api\Customer\UpdateProfileRequest;
 use App\Http\Resources\Customer\ProfileResource;
 use App\Models\CustomerPackage;
 use App\Models\User;
+use App\Services\BroarbandAccount\BroadbandAccountService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,14 +19,19 @@ use Illuminate\Support\Facades\Hash;
 
 class ProfileController extends Controller
 {
-    public function show(Request $request): JsonResponse
+    public function show(Request $request, BroadbandAccountService $broadbandAccounts): JsonResponse
     {
         /** @var User $user */
         $user = $request->user()->loadMissing('wallet');
         $customerPackages = $this->activePackages($user);
+        $broadbandAccount =
+            $user->broadband_account_number !== null
+                ? $broadbandAccounts->findByAccountNumber($user->broadband_account_number)
+                : null;
 
         return (new ProfileResource([
             'user' => $user,
+            'broadband_account' => $broadbandAccount,
             'wallet' => $user->wallet,
             'packages' => $customerPackages,
         ]))
@@ -32,21 +40,46 @@ class ProfileController extends Controller
             ->header('Pragma', 'no-cache');
     }
 
+    public function update(UpdateProfileRequest $request, BroadbandAccountService $broadbandAccounts): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $user->update(['name' => $request->validated('name')]);
+
+        return $this->show($request, $broadbandAccounts);
+    }
+
     public function deactivate(DeactivateAccountRequest $request): JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
 
         if (!Hash::check($request->validated('password'), $user->getAuthPassword())) {
-            return response()->json([
-                'message' => 'The provided password is incorrect.',
-                'errors' => ['password' => ['The provided password is incorrect.']],
-            ], 422);
+            return response()->json(
+                [
+                    'message' => 'The provided password is incorrect.',
+                    'errors' => ['password' => ['The provided password is incorrect.']],
+                ],
+                422,
+            );
         }
 
         $user->update(['status' => UserStatus::Deactivated]);
 
         return response()->json(['message' => 'Account deactivated successfully.']);
+    }
+
+    public function updateLanguage(UpdateLanguageRequest $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $user->update(['lang' => $request->validated('lang')]);
+
+        return response()->json([
+            'data' => [
+                'lang' => $user->lang,
+            ],
+        ]);
     }
 
     /** @return Collection<int, CustomerPackage> */

@@ -14,12 +14,16 @@ export type AdminNotification = {
     type: 'request' | 'security' | 'other';
     title: string;
     message: string;
+    severity: 'normal' | 'alert';
     reference_type:
         | 'installation_application'
         | 'change_password_request'
         | 'change_plan_request'
         | 'failure_report'
         | 'relocation_request'
+        | 'ledger_health_snapshot_full'
+        | 'ledger_health_snapshot_daily'
+        | 'ledger_health_snapshot_manual'
         | null;
     reference_id: number | null;
     read_at: string | null;
@@ -33,12 +37,18 @@ export type CustomNotification = {
     source: 'custom';
     title: string;
     body: string;
-    category: 'service_update' | 'account' | 'promotion';
+    category: 'service_update' | 'account' | 'announcement' | 'system' | 'promotion' | 'bill_alert';
     is_read: boolean;
     time: string;
 };
 
 export type RecentNotification = AdminNotification | CustomNotification;
+
+declare global {
+    interface WindowEventMap {
+        'admin-notification-created': CustomEvent<AdminNotification>;
+    }
+}
 
 export type PageProps<T extends Record<string, unknown> = Record<string, unknown>> = T & {
     auth: {
@@ -50,6 +60,7 @@ export type PageProps<T extends Record<string, unknown> = Record<string, unknown
     locale: SupportedLocale;
     translations: TranslationTree;
     unreadNotifications: number;
+    totalAdminNotifications: number;
     recentNotifications: RecentNotification[];
     flash: {
         success: string | null;
@@ -71,6 +82,7 @@ declare module '@inertiajs/core' {
             locale: SupportedLocale;
             translations: TranslationTree;
             unreadNotifications: number;
+            totalAdminNotifications: number;
             recentNotifications: RecentNotification[];
             flash: {
                 success: string | null;

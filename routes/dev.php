@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('dev/fake-billing')->group(function () {
+    Route::get('/due-bills', [FakeBillingController::class, 'dueBills']);
     Route::get('/bill-details', [FakeBillingController::class, 'billDetails']);
     Route::post('/extend-plan', [FakeBillingController::class, 'extendPlan']);
     Route::get('/payment-status', [FakeBillingController::class, 'paymentStatus']);

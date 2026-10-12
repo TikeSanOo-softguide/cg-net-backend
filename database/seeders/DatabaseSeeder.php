@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Enums\BillPaymentStatus;
-use App\Enums\ChangePlanStatus;
 use App\Enums\CustomerPackageStatus;
 use App\Enums\LedgerAccountCode;
 use App\Enums\LedgerTransactionStatus;
@@ -26,7 +25,7 @@ use App\Models\CustomerPackage;
 use App\Models\Gallery;
 use App\Models\InstallationApplication;
 use App\Models\LedgerTransaction;
-use App\Models\NotificationCustom;
+use App\Models\Notification;
 use App\Models\Package;
 use App\Models\RelocationRequest;
 use App\Models\Setting;
@@ -57,6 +56,7 @@ class DatabaseSeeder extends Seeder
         $this->seedServiceRequests($users, $areas, $packages);
         $this->seedFailureReports();
         $this->seedBilling($users);
+        $this->call(NotificationTemplateSeeder::class);
         $this->seedNotifications();
         $this->seedBanners();
         $this->seedCms();
@@ -420,10 +420,10 @@ class DatabaseSeeder extends Seeder
             $condition = $index % 3;
             $status =
                 $index < 10
-                    ? ChangePlanStatus::UnderReview
+                    ? RequestStatus::UnderReview
                     : ($index < 17
-                        ? ChangePlanStatus::Approved
-                        : ChangePlanStatus::Cancelled);
+                        ? RequestStatus::Approved
+                        : RequestStatus::Cancelled);
 
             $newPackage = match ($condition) {
                 0 => $currentPackage?->speed
@@ -453,7 +453,7 @@ class DatabaseSeeder extends Seeder
                 continue;
             }
 
-            $adminId = $status === ChangePlanStatus::Approved ? $admin?->id : null;
+            $adminId = $status === RequestStatus::Approved ? $admin?->id : null;
             do {
                 $contactPhone = MyanmarFake::phone();
             } while ($contactPhone === $user->phone);
@@ -573,10 +573,10 @@ class DatabaseSeeder extends Seeder
 
     private function seedNotifications(): void
     {
-        NotificationCustom::factory()
+        Notification::factory()
             ->count(4)
             ->create(['is_read' => false, 'user_id' => null]);
-        NotificationCustom::factory()
+        Notification::factory()
             ->count(2)
             ->create(['is_read' => true, 'user_id' => null]);
     }

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
+import { BackButton } from '@/components/BackButton';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import type { Paginated } from '@/components/Pagination';
@@ -21,6 +22,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useReturnTo } from '@/hooks/useReturnTo';
 import { formatDateTime } from '@/lib/utils';
 import type { AdminNotification } from '@/types';
 
@@ -52,8 +54,15 @@ const requestTypes = [
     'relocation_request',
 ] as const;
 
+const ledgerHealthReferenceTypes = new Set([
+    'ledger_health_snapshot_full',
+    'ledger_health_snapshot_daily',
+    'ledger_health_snapshot_manual',
+]);
+
 export default function AdminNotificationsIndex({ notifications, categories, filters }: Props) {
     const { t } = useTranslation();
+    const returnTo = useReturnTo('/');
     const [search, setSearch] = useState(filters.search);
     const debounce = useRef<number>(0);
 
@@ -104,6 +113,18 @@ export default function AdminNotificationsIndex({ notifications, categories, fil
             : translated;
     };
 
+    const referenceTypeLabel = (referenceType: string | null): string => {
+        if (!referenceType) {
+            return '—';
+        }
+
+        const translationKey = ledgerHealthReferenceTypes.has(referenceType)
+            ? `admin_notifications.${referenceType}`
+            : `admin_notifications.request_types.${referenceType}`;
+
+        return t(translationKey);
+    };
+
     const columns: DataTableColumn<NotificationRow>[] = [
         {
             id: 'customer_name',
@@ -128,8 +149,8 @@ export default function AdminNotificationsIndex({ notifications, categories, fil
         },
         {
             id: 'request_type',
-            header: t('admin_notifications.request_type'),
-            cell: (row) => (row.reference_type ? t(`admin_notifications.request_types.${row.reference_type}`) : '—'),
+            header: t('admin_notifications.reference_type'),
+            cell: (row) => referenceTypeLabel(row.reference_type),
         },
         {
             id: 'request_status',
@@ -153,7 +174,10 @@ export default function AdminNotificationsIndex({ notifications, categories, fil
         <>
             <Head title={t('common.notifications')} />
             <PageContent>
-                <PageHeader title={t('common.notifications')} description={t('admin_notifications.description')} />
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <PageHeader title={t('common.notifications')} description={t('admin_notifications.description')} />
+                    <BackButton href={returnTo} />
+                </div>
                 <DataTable
                     data={notifications.data}
                     columns={columns}

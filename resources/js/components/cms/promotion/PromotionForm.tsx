@@ -35,6 +35,8 @@ type PromotionFormProps = {
     onCancel?: () => void;
     mode?: 'create' | 'edit';
     imageUrl?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
 };
 
 type TouchedFields = Record<keyof PromotionFormValues, boolean>;
@@ -62,7 +64,15 @@ function toSlug(value: string): string {
         .replace(/^-+|-+$/g, '');
 }
 
-export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', imageUrl }: PromotionFormProps) {
+export function PromotionForm({
+    form,
+    onSubmit,
+    onCancel,
+    mode = 'create',
+    imageUrl,
+    createdAt,
+    updatedAt,
+}: PromotionFormProps) {
     const { t } = useTranslation();
 
     const [touched, setTouched] = useState<TouchedFields>(untouched);
@@ -180,7 +190,14 @@ export function PromotionForm({ form, onSubmit, onCancel, mode = 'create', image
     };
 
     return (
-        <CmsFormShell onSubmit={submit} onCancel={onCancel} processing={form.processing} mode={mode}>
+        <CmsFormShell
+            onSubmit={submit}
+            onCancel={onCancel}
+            processing={form.processing}
+            mode={mode}
+            createdAt={createdAt}
+            updatedAt={updatedAt}
+        >
             <div>
                 <FormField
                     label={t('cms.news.title_en')}

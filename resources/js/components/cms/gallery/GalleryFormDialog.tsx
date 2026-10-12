@@ -13,6 +13,8 @@ export type GalleryItem = {
     label_my: string | null;
     label_zh: string | null;
     image_url: string | null;
+    created_at: string | null;
+    updated_at: string | null;
 };
 
 type GalleryFormDialogProps = {
@@ -77,6 +79,8 @@ function GalleryFormDialogBody({ item, onClose }: { item: GalleryItem | null; on
             onCancel={onClose}
             mode={isEdit ? 'edit' : 'create'}
             imageUrl={item?.image_url}
+            createdAt={item?.created_at}
+            updatedAt={item?.updated_at}
         />
     );
 }

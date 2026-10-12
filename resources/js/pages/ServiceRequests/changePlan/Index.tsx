@@ -25,7 +25,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { Badge } from '@/components/ui/badge';
 import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
+import { REQUEST_STATUS } from '@/lib/CommonNameConst';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn, formatDate } from '@/lib/utils';
 import { StatCard } from '@/components/StatCard';
@@ -250,7 +250,7 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                             cell: (request) => (
                                 <div className="flex flex-col items-start gap-1">
                                     <StatusBadge status={request.status} />
-                                    {request.status === CHANGE_PLAN_STATUS.APPROVED && request.admin && (
+                                    {request.status === REQUEST_STATUS.APPROVED && request.admin && (
                                         <span className="text-[11px] text-muted-foreground">
                                             {t('change_plan.approved_by')}: {request.admin.username}
                                         </span>

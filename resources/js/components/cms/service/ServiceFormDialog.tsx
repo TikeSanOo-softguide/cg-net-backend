@@ -118,6 +118,8 @@ function ServiceFormDialogBody({ item, onClose }: { item: ServiceItem | null; on
             onImageClear={onImageClear}
             mode={isEdit ? 'edit' : 'create'}
             imageUrl={item?.image_url}
+            createdAt={item?.created_at}
+            updatedAt={item?.updated_at}
         />
     );
 }

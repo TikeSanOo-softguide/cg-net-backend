@@ -14,7 +14,13 @@ return new class extends Migration
             $table->foreignId('conversation_id')->constrained('chat_conversations')->cascadeOnDelete();
             $table->enum('sender_type', array_column(ChatSenderType::cases(), 'value'));
             $table->text('message')->nullable();
+            $table->string('language', 2)->default('en');
             $table->string('attachment_path')->nullable();
+            $table->foreignId('step_id')
+                ->nullable()
+                ->after('option_id')
+                ->constrained('chat_flow_steps')
+                ->nullOnDelete();
             $table->foreignId('option_id')
                 ->nullable()
                 ->constrained('chat_flow_options')

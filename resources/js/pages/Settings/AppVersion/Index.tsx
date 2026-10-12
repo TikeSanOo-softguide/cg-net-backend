@@ -156,7 +156,7 @@ export default function AppVersionIndex({ items, filters, versionOptions }: Prop
             <PageContent>
                 <PageHeader />
 
-                <div className="rounded-xl border bg-card shadow-sm">
+                <div className="rounded-xl bg-card">
                     <DataTable
                         data={items.data}
                         columns={columns}

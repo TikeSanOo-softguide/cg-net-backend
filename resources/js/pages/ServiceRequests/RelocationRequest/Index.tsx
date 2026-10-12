@@ -27,7 +27,7 @@ import { formatPhoneInternational } from '@/lib/phone';
 import { cn, formatDate, truncateText } from '@/lib/utils';
 import { StatCard } from '@/components/StatCard';
 import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
-import { CHANGE_PLAN_STATUS } from '@/lib/CommonNameConst';
+import { REQUEST_STATUS } from '@/lib/CommonNameConst';
 import { RelocationRequestDetailDialog } from '@/components/service-requests/relocation-request/RelocationRequestDetailDialog';
 import { useOpenRequestFromQuery } from '@/hooks/useOpenRequestFromQuery';
 
@@ -260,7 +260,7 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                             cell: (request) => (
                                 <div className="flex flex-col items-start gap-1">
                                     <StatusBadge status={request.status} />
-                                    {request.status === CHANGE_PLAN_STATUS.APPROVED && request.admin && (
+                                    {request.status === REQUEST_STATUS.APPROVED && request.admin && (
                                         <span className="text-[11px] text-muted-foreground">
                                             {t('requests.approved_by')}: {request.admin.username}
                                         </span>

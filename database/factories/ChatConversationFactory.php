@@ -19,7 +19,7 @@ class ChatConversationFactory extends Factory
 
         return [
             'user_id' => User::factory(),
-            'agent_id' => $status === ChatConversationStatus::Bot ? null : Admin::factory(),
+            'agent_id' => $status->isChatFlow() || $status->isWaiting() ? null : Admin::factory(),
             'status' => $status,
         ];
     }

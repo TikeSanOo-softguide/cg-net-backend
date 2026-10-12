@@ -18,6 +18,8 @@ use App\Http\Controllers\Log\SecurityLogController;
 use App\Http\Controllers\Log\UserLogController;
 use App\Http\Controllers\MenuPage\MenuPageController;
 use App\Http\Controllers\Notification\AnnouncementController;
+use App\Http\Controllers\Notification\BillDueAlertController;
+use App\Http\Controllers\Notification\NotificationTemplateController;
 use App\Http\Controllers\Notification\PushNotificationController;
 use App\Http\Controllers\Package\AddonController;
 use App\Http\Controllers\Package\NetworkController;
@@ -95,6 +97,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
     Route::patch('/customers/{customer}/status', [CustomerController::class, 'updateStatus'])
         ->middleware('can:customers.update')
         ->name('customers.status');
+    Route::delete('/customers/{customer}/session', [CustomerController::class, 'revokeSession'])
+        ->middleware('can:customers.update')
+        ->name('customers.session.revoke');
     Route::post('/customers/{customer}/account', [CustomerController::class, 'bindAccount'])
         ->middleware('can:customers.update')
         ->name('customers.account.bind');
@@ -273,18 +278,41 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                         ->name('destroy');
                 });
 
-            Route::get('/compose', [PushNotificationController::class, 'index'])
-                ->middleware('can:notifications.view')
-                ->name('compose');
-            Route::post('/compose/push-now', [PushNotificationController::class, 'pushNow'])
-                ->middleware('can:notifications.create')
-                ->name('compose.push-now');
-            Route::post('/compose/schedule', [PushNotificationController::class, 'schedule'])
-                ->middleware('can:notifications.create')
-                ->name('compose.schedule');
-            Route::post('/compose/{schedule}/cancel', [PushNotificationController::class, 'cancel'])
-                ->middleware('can:notifications.update')
-                ->name('compose.cancel');
+            Route::prefix('bill-due-alerts')
+                ->name('bill-due-alerts.')
+                ->group(function (): void {
+                    Route::get('/', [BillDueAlertController::class, 'index'])
+                        ->middleware('can:notifications.view')
+                        ->name('index');
+                    Route::post('/send', [BillDueAlertController::class, 'send'])
+                        ->middleware('can:notifications.create')
+                        ->name('send');
+                });
+
+            Route::prefix('compose')
+                ->group(function (): void {
+                    Route::get('/', [PushNotificationController::class, 'index'])
+                        ->middleware('can:notifications.view')
+                        ->name('compose');
+                    Route::post('/push-now', [PushNotificationController::class, 'pushNow'])
+                        ->middleware('can:notifications.create')
+                        ->name('compose.push-now');
+                    Route::post('/schedule', [PushNotificationController::class, 'schedule'])
+                        ->middleware('can:notifications.create')
+                        ->name('compose.schedule');
+                    Route::post('/{schedule}/cancel', [PushNotificationController::class, 'cancel'])
+                        ->middleware('can:notifications.update')
+                        ->name('compose.cancel');
+                });
+
+            Route::prefix('templates')
+                ->name('templates.')
+                ->group(function (): void {
+                    Route::get('/', [NotificationTemplateController::class, 'index'])->name('index');
+                    Route::put('/{notificationTemplate}', [NotificationTemplateController::class, 'update'])
+                        ->middleware('can:notifications.update')
+                        ->name('update');
+                });
         });
 
     Route::prefix('support')
@@ -302,6 +330,10 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
 
                     Route::post('/{conversation}/messages', [ChatConversationsController::class, 'sendMessage'])
                         ->name('chat-conversations.messages.store')
+                        ->middleware('can:support.create');
+
+                    Route::post('/{conversation}/accept', [ChatConversationsController::class, 'accept'])
+                        ->name('chat-conversations.accept')
                         ->middleware('can:support.create');
 
                     Route::put('/{conversation}/status', [ChatConversationsController::class, 'updateStatus'])

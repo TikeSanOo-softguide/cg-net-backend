@@ -1,18 +1,17 @@
-import { FormEvent } from "react";
-import { useForm } from "@inertiajs/react";
-import { ContactIcon, SquarePenIcon } from "lucide-react";
+import { FormEvent } from 'react';
+import { useForm } from '@inertiajs/react';
+import { ContactIcon, SquarePenIcon } from 'lucide-react';
 
-import {
-    ContactForm,
-    type ContactFormValues,
-} from "@/components/cms/contact/ContactForm";
-import { FormDialog } from "@/components/FormDialog";
-import { cmsModalVisit } from "@/lib/cms-modal";
-import { useTranslation } from "@/hooks/useTranslation";
+import { ContactForm, type ContactFormValues } from '@/components/cms/contact/ContactForm';
+import { FormDialog } from '@/components/FormDialog';
+import { cmsModalVisit } from '@/lib/cms-modal';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export type ContactItem = {
     id: number;
     contact_point: string;
+    created_at?: string | null;
+    updated_at?: string | null;
 };
 
 type ContactFormDialogProps = {
@@ -21,11 +20,7 @@ type ContactFormDialogProps = {
     item: ContactItem | null;
 };
 
-export function ContactFormDialog({
-    open,
-    onOpenChange,
-    item,
-}: ContactFormDialogProps) {
+export function ContactFormDialog({ open, onOpenChange, item }: ContactFormDialogProps) {
     const { t } = useTranslation();
     const isEdit = item !== null;
 
@@ -33,17 +28,13 @@ export function ContactFormDialog({
         <FormDialog
             open={open}
             onOpenChange={onOpenChange}
-            title={isEdit ? t("cms.contact.edit") : t("cms.contact.create")}
-            description={
-                isEdit
-                    ? t("cms.contact.edit_description")
-                    : t("cms.contact.create_description")
-            }
+            title={isEdit ? t('cms.contact.edit') : t('cms.contact.create')}
+            description={isEdit ? t('cms.contact.edit_description') : t('cms.contact.create_description')}
             icon={isEdit ? SquarePenIcon : ContactIcon}
         >
             {open ? (
                 <ContactFormDialogBody
-                    key={item ? `edit-${item.id}` : "create"}
+                    key={item ? `edit-${item.id}` : 'create'}
                     item={item}
                     onClose={() => onOpenChange(false)}
                 />
@@ -52,17 +43,9 @@ export function ContactFormDialog({
     );
 }
 
-function ContactFormDialogBody({
-    item,
-    onClose,
-}: {
-    item: ContactItem | null;
-    onClose: () => void;
-}) {
+function ContactFormDialogBody({ item, onClose }: { item: ContactItem | null; onClose: () => void }) {
     const isEdit = item !== null;
-    const form = useForm<ContactFormValues>(
-        item ? { contact_point: item.contact_point } : { contact_point: "" },
-    );
+    const form = useForm<ContactFormValues>(item ? { contact_point: item.contact_point } : { contact_point: '' });
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
@@ -78,7 +61,7 @@ function ContactFormDialogBody({
             return;
         }
 
-        form.post("/cms/contacts", options);
+        form.post('/cms/contacts', options);
     };
 
     return (
@@ -86,7 +69,9 @@ function ContactFormDialogBody({
             form={form}
             onSubmit={submit}
             onCancel={onClose}
-            mode={isEdit ? "edit" : "create"}
+            mode={isEdit ? 'edit' : 'create'}
+            createdAt={item?.created_at}
+            updatedAt={item?.updated_at}
         />
     );
 }

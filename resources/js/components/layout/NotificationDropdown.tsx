@@ -5,6 +5,7 @@ import { BellIcon, CalendarIcon, CommandIcon, LayoutGridIcon, SettingsIcon, type
 
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
+import { navigation, reports } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 import type { AdminNotification, RecentNotification } from '@/types';
 
@@ -35,9 +36,21 @@ const categoryLook: Partial<Record<RecentNotification['category'], { icon: Lucid
         icon: SettingsIcon,
         className: 'bg-orange-100 text-orange-500 dark:bg-orange-500/15 dark:text-orange-300',
     },
+    announcement: {
+        icon: CalendarIcon,
+        className: 'bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300',
+    },
+    system: {
+        icon: SettingsIcon,
+        className: 'bg-orange-100 text-orange-500 dark:bg-orange-500/15 dark:text-orange-300',
+    },
     promotion: {
         icon: LayoutGridIcon,
         className: 'bg-teal-100 text-teal-600 dark:bg-teal-500/15 dark:text-teal-300',
+    },
+    bill_alert: {
+        icon: BellIcon,
+        className: 'bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-300',
     },
 };
 
@@ -46,21 +59,59 @@ const fallbackLook = {
     className: 'bg-muted text-muted-foreground',
 };
 
+const requestHrefByType = {
+    installation_application: '/service-requests/installations',
+    change_password_request: '/service-requests/change-password',
+    change_plan_request: '/service-requests/change-plan',
+    failure_report: '/service-requests/failures',
+    relocation_request: '/service-requests/relocations',
+} satisfies Record<
+    Exclude<AdminNotification['reference_type'], null | `ledger_health_snapshot_${'full' | 'daily' | 'manual'}`>,
+    string
+>;
+
+function isServiceRequestReference(
+    referenceType: AdminNotification['reference_type'],
+): referenceType is keyof typeof requestHrefByType {
+    return referenceType !== null && Object.hasOwn(requestHrefByType, referenceType);
+}
+
+const serviceRequestNavigationItems = navigation.flatMap((group) => group.children ?? []);
+const ledgerHealthReportIcon =
+    reports.find((report) => report.href === '/reports/ledger-health')?.icon ?? fallbackLook.icon;
+
+function isLedgerHealthNotification(item: AdminNotification | RecentNotification): item is AdminNotification {
+    return 'reference_type' in item && item.reference_type?.startsWith('ledger_health_snapshot_') === true;
+}
+
+function notificationIcon(item: AdminNotification | RecentNotification): LucideIcon {
+    if ('reference_type' in item && isServiceRequestReference(item.reference_type)) {
+        const href = requestHrefByType[item.reference_type];
+        return serviceRequestNavigationItems.find((navItem) => navItem.href === href)?.icon ?? fallbackLook.icon;
+    }
+
+    if (isLedgerHealthNotification(item)) {
+        return ledgerHealthReportIcon;
+    }
+
+    return categoryLook[item.category]?.icon ?? fallbackLook.icon;
+}
+
 type NotificationDropdownProps = {
     unread: number;
 };
 
 export function NotificationDropdown({ unread }: NotificationDropdownProps) {
     const { t } = useTranslation();
-    const { auth, recentNotifications = [] } = usePage().props;
+    const { auth, recentNotifications = [], totalAdminNotifications = 0 } = usePage().props;
     const canViewNotifications = auth?.permissions?.includes('notifications.view') ?? false;
     const rootRef = useRef<HTMLDivElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
     const [notifications, setNotifications] = useState(recentNotifications);
     const [unreadCount, setUnreadCount] = useState(unread);
-    const [notificationTotal, setNotificationTotal] = useState<number | null>(null);
-    const [pos, setPos] = useState({ top: 0, left: 0, width: 280 });
+    const [notificationTotal, setNotificationTotal] = useState(totalAdminNotifications);
+    const [pos, setPos] = useState({ top: 0, left: 0, width: 400 });
 
     useEffect(() => {
         setNotifications(recentNotifications);
@@ -68,8 +119,11 @@ export function NotificationDropdown({ unread }: NotificationDropdownProps) {
     }, [recentNotifications, unread]);
 
     useEffect(() => {
+        setNotificationTotal(totalAdminNotifications);
+    }, [totalAdminNotifications]);
+
+    useEffect(() => {
         if (!open || !canViewNotifications) {
-            setNotificationTotal(null);
             return;
         }
 
@@ -101,7 +155,7 @@ export function NotificationDropdown({ unread }: NotificationDropdownProps) {
         }
 
         const rect = rootRef.current.getBoundingClientRect();
-        const width = Math.min(280, window.innerWidth - 16);
+        const width = Math.min(400, window.innerWidth - 16);
         const left = Math.min(Math.max(8, rect.right - width), window.innerWidth - width - 8);
         const top = Math.min(rect.bottom + 8, window.innerHeight - 16);
 
@@ -204,7 +258,11 @@ export function NotificationDropdown({ unread }: NotificationDropdownProps) {
                                   <ul>
                                       {notifications.map((item) => {
                                           const look = categoryLook[item.category] ?? fallbackLook;
-                                          const Icon = look.icon;
+                                          const Icon = notificationIcon(item);
+                                          const iconLook =
+                                              isLedgerHealthNotification(item) && item.severity === 'alert'
+                                                  ? 'bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-300'
+                                                  : look.className;
                                           const isAdminNotification = 'reference_type' in item;
                                           const message = isAdminNotification ? item.message : item.body;
                                           const time = isAdminNotification
@@ -219,7 +277,7 @@ export function NotificationDropdown({ unread }: NotificationDropdownProps) {
                                                   <span
                                                       className={cn(
                                                           'relative mt-px flex size-7 shrink-0 items-center justify-center rounded-full',
-                                                          look.className,
+                                                          iconLook,
                                                       )}
                                                   >
                                                       <Icon className="size-3.5" strokeWidth={1.75} />
@@ -258,9 +316,10 @@ export function NotificationDropdown({ unread }: NotificationDropdownProps) {
                                                           onClick={() => {
                                                               setOpen(false);
                                                               const href =
-                                                                  item.reference_id === null
-                                                                      ? item.href!
-                                                                      : `${item.href}?status=all&open_request=${item.reference_id}`;
+                                                                  item.reference_id !== null &&
+                                                                  isServiceRequestReference(item.reference_type)
+                                                                      ? `${item.href}?status=all&open_request=${item.reference_id}`
+                                                                      : item.href!;
 
                                                               if (item.read_at === null) {
                                                                   router.put(
