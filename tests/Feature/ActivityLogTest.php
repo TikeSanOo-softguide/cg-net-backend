@@ -22,15 +22,15 @@ class ActivityLogTest extends TestCase
         activity('customers')->causedBy($admin)->performedOn($user)->event('updated')->log('customer_updated');
 
         $this->actingAs($admin, 'web')
-            ->get('/activity-logs')
+            ->get('/logs/activity')
             ->assertOk()
             ->assertInertia(
                 fn(Assert $page) => $page
-                    ->component('ActivityLog/Index')
+                    ->component('Logs/ActivityLog/Index')
                     ->has('filterOptions.event', 2)
-                    ->has('filterOptions.log', 2)
+                    ->has('filterOptions.log', 1)
                     ->where('filterOptions.event.0', 'created')
-                    ->where('filterOptions.log.0', 'customer_created'),
+                    ->where('filterOptions.log.0', 'customers'),
             );
     }
 
@@ -44,13 +44,14 @@ class ActivityLogTest extends TestCase
         activity('customers')->causedBy($admin)->performedOn($user)->event('updated')->log('customer_updated');
 
         $this->actingAs($admin, 'web')
-            ->get('/activity-logs?event=created&log=customer_created')
+            ->get('/logs/activity?event=created&log=customers')
             ->assertOk()
             ->assertInertia(
                 fn(Assert $page) => $page
                     ->has('logs.data', 1)
                     ->where('logs.data.0.event', 'created')
-                    ->where('logs.data.0.log_name', 'customer_created'),
+                    ->where('logs.data.0.log_name', 'customers')
+                    ->where('logs.data.0.description', 'customer_created'),
             );
     }
 
@@ -70,15 +71,13 @@ class ActivityLogTest extends TestCase
             ->log('customer_created');
 
         $this->actingAs($admin, 'web')
-            ->get('/activity-logs?event=created&log=customer_created')
+            ->get('/logs/activity?event=created&log=customers')
             ->assertOk()
             ->assertInertia(
                 fn(Assert $page) => $page
                     ->has('logs.data', 1)
-                    ->where('logs.data.0.changes.0.field', 'name')
-                    ->where('logs.data.0.changes.0.new', 'Alice')
-                    ->where('logs.data.0.changes.1.field', 'status')
-                    ->where('logs.data.0.changes.1.new', 'active'),
+                    ->where('logs.data.0.meta_data.name', 'Alice')
+                    ->where('logs.data.0.meta_data.status', 'active'),
             );
     }
 }

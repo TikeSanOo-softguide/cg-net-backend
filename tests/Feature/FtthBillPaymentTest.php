@@ -242,8 +242,8 @@ class FtthBillPaymentTest extends TestCase
                 'customer_name' => 'Broadband Account Holder',
                 'payment_method' => 'CTO',
                 'slip' => [
-                    'account_number' => $user->broadband_account_number,
                     'amount' => 250,
+                    'account_number' => $user->broadband_account_number,
                 ],
             ],
             [
@@ -252,8 +252,8 @@ class FtthBillPaymentTest extends TestCase
                 'customer_name' => 'Broadband Account Holder',
                 'payment_method' => 'CTO',
                 'slip' => [
-                    'account_number' => $user->broadband_account_number,
                     'amount' => 250,
+                    'account_number' => $user->broadband_account_number,
                 ],
             ],
         ];
@@ -710,9 +710,17 @@ class FtthBillPaymentTest extends TestCase
     private function broadbandAccountFake(): array
     {
         return [
-            '*broadband_accounts*' => Http::response([
-                ['customer_name' => 'Broadband Account Holder'],
-            ], 200),
+            '*broadband_accounts*' => function ($request) {
+                parse_str(parse_url($request->url(), PHP_URL_QUERY) ?: '', $query);
+                $accountNumber = $query['account_number'] ?? ($request['account_number'] ?? 'CG00000000');
+
+                return Http::response([
+                    [
+                        'account_number' => $accountNumber,
+                        'customer_name' => 'Broadband Account Holder',
+                    ],
+                ], 200);
+            },
         ];
     }
 }

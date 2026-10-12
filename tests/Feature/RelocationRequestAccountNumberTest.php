@@ -23,7 +23,7 @@ class RelocationRequestAccountNumberTest extends TestCase
                 'new_address' => 'New address',
                 'phone' => '+95912345678',
             ])
-            ->assertOk()
+            ->assertCreated()
             ->assertJsonPath('data.broadband_account_number', 'CG12345678');
 
         $this->assertDatabaseHas('relocation_requests', [
@@ -88,7 +88,7 @@ class RelocationRequestAccountNumberTest extends TestCase
                 'new_address' => 'New address',
                 'phone' => '+95912345678',
             ])
-            ->assertOk();
+            ->assertCreated();
 
         $this->assertSame(1, RelocationRequest::query()->count());
     }
@@ -109,7 +109,7 @@ class RelocationRequestAccountNumberTest extends TestCase
                 'new_address' => 'New address',
                 'phone' => '+95912345678',
             ])
-            ->assertOk();
+            ->assertCreated();
 
         $this->assertSame(2, RelocationRequest::query()->count());
     }

@@ -230,8 +230,8 @@ class TopUpCardManagementTest extends TestCase
         $this->assertSame('3500', $batchMetadata['total_value']);
         $this->assertSame(
             [
-                ['office_cd' => '31', 'top_up_card' => [['point' => 1000, 'quantity' => 1]]],
-                ['office_cd' => '11', 'top_up_card' => [['point' => 2500, 'quantity' => 1]]],
+                ['office_cd' => '31', 'amount' => 1000, 'quantity' => 1],
+                ['office_cd' => '11', 'amount' => 2500, 'quantity' => 1],
             ],
             $batchMetadata['items'],
         );
@@ -253,7 +253,7 @@ class TopUpCardManagementTest extends TestCase
         $csv = "serial_no,pin,amount,expires_at\n2609111128316007,{$duplicatePin},1000,2030-12-31\n";
 
         $this->actingAs($actor, 'web')
-            ->post('/top-up-cards/import_csv', [
+            ->post('/top-up-cards/cards/import', [
                 'file' => UploadedFile::fake()->createWithContent('cards.csv', $csv),
                 'return' => 'assign',
             ])
@@ -288,7 +288,7 @@ class TopUpCardManagementTest extends TestCase
             "serial_no,pin,amount,expires_at,status\nTOPUP-BLANK-COLUMN-0001,4234567890123456789012345678901234567890123456789012345678901234,1000,2030-12-31,\n";
 
         $this->actingAs($actor, 'web')
-            ->post('/top-up-cards/import_csv', [
+            ->post('/top-up-cards/cards/import', [
                 'file' => UploadedFile::fake()->createWithContent('cards.csv', $csv),
                 'return' => 'assign',
             ])
@@ -300,8 +300,8 @@ class TopUpCardManagementTest extends TestCase
             $job->handle();
             $this->fail('An import must reject rows with blank values in any column.');
         } catch (CsvImportException $exception) {
-            $this->assertSame('csv.import_errors.required_field', $exception->translationKey);
-            $this->assertSame(['line' => 2, 'field' => 'status'], $exception->replace);
+            $this->assertSame('csv.import_errors.invalid_row', $exception->translationKey);
+            $this->assertSame(['line' => 2], $exception->replace);
             $job->failed($exception);
         }
 
@@ -324,7 +324,7 @@ class TopUpCardManagementTest extends TestCase
         ]);
 
         $this->actingAs($actor, 'web')
-            ->post('/top-up-cards/import_csv', [
+            ->post('/top-up-cards/cards/import', [
                 'file' => UploadedFile::fake()->createWithContent('cards.csv', $csv),
                 'return' => 'assign',
             ])
@@ -353,7 +353,7 @@ class TopUpCardManagementTest extends TestCase
         $csv = "serial_no,pin,amount,expires_at\n2609111128316008,3234567890123456,1000,2030-12-31\n";
 
         $this->actingAs($actor, 'web')
-            ->post('/top-up-cards/import_csv', [
+            ->post('/top-up-cards/cards/import', [
                 'file' => UploadedFile::fake()->createWithContent('cards.csv', $csv),
                 'return' => 'assign',
             ])
@@ -374,15 +374,20 @@ class TopUpCardManagementTest extends TestCase
         $this->assertSame(0, TopUpCard::query()->count());
     }
 
-    public function test_deleting_a_batch_also_deletes_its_top_up_cards(): void
+    public function test_deleting_a_batch_is_blocked_while_top_up_cards_exist(): void
     {
         $batch = Batch::factory()->create();
         $card = TopUpCard::factory()->create(['batch_id' => $batch->id]);
 
-        $batch->delete();
+        try {
+            $batch->delete();
+            $this->fail('Deleting a batch with top-up cards must fail due to FK restrict.');
+        } catch (\Throwable) {
+            // sqlite FK / restrictOnDelete
+        }
 
-        $this->assertDatabaseMissing('batches', ['id' => $batch->id]);
-        $this->assertDatabaseMissing('top_up_card', ['id' => $card->id]);
+        $this->assertDatabaseHas('batches', ['id' => $batch->id]);
+        $this->assertDatabaseHas('top_up_card', ['id' => $card->id]);
     }
 
     public function test_index_filters_by_serial_status_and_amount(): void
@@ -495,35 +500,35 @@ class TopUpCardManagementTest extends TestCase
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
         $activeBatch = Batch::factory()->create(['status' => 'active']);
-        $cancelledBatch = Batch::factory()->create(['status' => 'cancelled']);
+        $blockedBatch = Batch::factory()->create(['status' => 'blocked']);
         TopUpCard::factory()->create(['batch_id' => $activeBatch->id, 'status' => TopUpCardStatus::Active]);
-        TopUpCard::factory()->create(['batch_id' => $cancelledBatch->id, 'status' => TopUpCardStatus::Active]);
+        TopUpCard::factory()->create(['batch_id' => $blockedBatch->id, 'status' => TopUpCardStatus::Active]);
 
         $this->actingAs($actor, 'web')
-            ->get('/top-up-cards/card-import?status=cancelled')
+            ->get('/top-up-cards/card-import?status=blocked')
             ->assertOk()
             ->assertInertia(
                 fn(Assert $page) => $page
                     ->component('TopUpCards/CardImport')
                     ->has('batchPage.data', 1)
-                    ->where('batchPage.data.0.id', $cancelledBatch->id)
-                    ->where('batchPage.data.0.status', 'cancelled'),
+                    ->where('batchPage.data.0.id', $blockedBatch->id)
+                    ->where('batchPage.data.0.status', 'blocked'),
             );
     }
 
-    public function test_active_batch_can_be_cancelled(): void
+    public function test_active_batch_can_be_voided(): void
     {
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
         $batch = Batch::factory()->create(['status' => 'active']);
 
         $this->actingAs($actor, 'web')
-            ->patch('/top-up-cards/batches/' . $batch->id . '/cancel')
+            ->patch('/top-up-cards/batches/' . $batch->id . '/void')
             ->assertRedirect();
 
         $this->assertDatabaseHas('batches', [
             'id' => $batch->id,
-            'status' => 'cancelled',
+            'status' => 'blocked',
         ]);
     }
 

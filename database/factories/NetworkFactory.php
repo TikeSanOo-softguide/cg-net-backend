@@ -12,9 +12,7 @@ class NetworkFactory extends Factory
 {
     public function definition(): array
     {
-        $name = fake()
-            ->unique()
-            ->randomElement(['FTTH', 'Wireless', 'Fiber', '5G']);
+        $name = fake()->unique()->bothify('Network-????-##');
 
         return [
             'name_en' => $name,

@@ -2,6 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Enums\NotificationTemplateType;
+use App\Models\NotificationTemplate;
+use Database\Seeders\NotificationTemplateSeeder;
+
 use App\Enums\BillPaymentNotificationEvent;
 use App\Listeners\PruneInvalidFcmTokens;
 use App\Models\DeviceToken;
@@ -19,6 +23,12 @@ use Tests\TestCase;
 class DeviceTokenTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(NotificationTemplateSeeder::class);
+    }
 
     public function test_user_can_register_device_token(): void
     {
@@ -129,7 +139,7 @@ class DeviceTokenTest extends TestCase
         $message = $notification->toFcm($user)->toArray();
 
         $this->assertSame('Bill payment failed', $message['notification']['title']);
-        $this->assertStringContainsString('1,500 MMK', $message['notification']['body']);
+        $this->assertStringContainsString('1,500 Points', $message['notification']['body']);
         $this->assertStringContainsString('refunded', $message['notification']['body']);
         $this->assertSame(
             [

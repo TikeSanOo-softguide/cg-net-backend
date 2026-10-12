@@ -17,6 +17,8 @@ class AreaFactory extends Factory
             'name_en' => fake()->city(),
             'name_zh' => fake()->city(),
             'name_my' => fake()->city(),
+            'latitude' => fake()->latitude(),
+            'longitude' => fake()->longitude(),
             'region_id' => Region::factory(),
         ];
     }

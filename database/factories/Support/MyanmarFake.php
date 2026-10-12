@@ -36,25 +36,14 @@ final class MyanmarFake
         'အေးချမ်းမိုး',
     ];
 
-    /**
-     * @var list<array{dial: string, length: int}>
-     */
-    private const PHONE_COUNTRIES = [
-        ['dial' => '959', 'length' => 8], // Myanmar +959
-        ['dial' => '66', 'length' => 9],  // Thailand +66
-        ['dial' => '86', 'length' => 11], // China +86
-    ];
-
     public static function phone(?string $country = null): string
     {
-        $option = match ($country) {
-            'mm', 'myanmar' => self::PHONE_COUNTRIES[0],
-            'th', 'thailand' => self::PHONE_COUNTRIES[1],
-            'cn', 'china' => self::PHONE_COUNTRIES[2],
-            default => fake()->randomElement(self::PHONE_COUNTRIES),
+        // Always produce a canonical digits-only number that matches PhoneNumber::SUPPORTED_PATTERN.
+        return match ($country) {
+            'th', 'thailand' => '668'.fake()->unique()->numerify('########'),
+            'cn', 'china' => '861'.fake()->randomElement(['3', '4', '5', '6', '7', '8', '9']).fake()->unique()->numerify('#########'),
+            default => '959'.fake()->randomElement(['2', '3', '4', '5', '6', '7', '8', '9']).fake()->unique()->numerify('#######'),
         };
-
-        return '+'.$option['dial'].fake()->unique()->numerify(str_repeat('#', $option['length']));
     }
 
     public static function name(): string

@@ -16,6 +16,8 @@ class StateFactory extends Factory
             'name_en' => fake()->unique()->state(),
             'name_zh' => fake()->unique()->state(),
             'name_my' => fake()->unique()->state(),
+            'latitude' => fake()->latitude(),
+            'longitude' => fake()->longitude(),
         ];
     }
 }

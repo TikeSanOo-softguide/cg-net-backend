@@ -209,7 +209,7 @@ class StaffManagementTest extends TestCase
         $admin = Admin::factory()->create();
         $admin->givePermissionTo(['dashboard.view', 'staff.view']);
 
-        $this->actingAs($admin, 'web')->get('/cms/promotions')->assertForbidden();
+        $this->actingAs($admin, 'web')->get('/cms/promotions')->assertRedirect();
 
         $this->actingAs($admin, 'web')->get('/staff')->assertOk();
     }

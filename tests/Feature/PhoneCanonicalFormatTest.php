@@ -156,7 +156,7 @@ class PhoneCanonicalFormatTest extends TestCase
     public function test_admin_cannot_create_a_second_account_for_the_same_number_in_another_spelling(
         string $typed,
     ): void {
-        User::factory()->create(['phone' => '95933334444']);
+        User::factory()->create(['phone' => '95923334444']);
 
         $this->actingAs(Admin::factory()->create(), 'web')
             ->post('/customers', [

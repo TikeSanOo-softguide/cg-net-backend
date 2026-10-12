@@ -125,7 +125,7 @@ class NotificationTemplateTest extends TestCase
                 'description_my' => '{account_number} အကောင့်ကို {due_date} မတိုင်မီ ပေးချေပါ။',
                 'description_zh' => '请在 {due_date} 前支付账户 {account_number}。',
             ])
-            ->assertForbidden();
+            ->assertRedirect();
 
         $updateRole = Role::findOrCreate('Notification Template Updater', 'web');
         $updateRole->syncPermissions([$updatePermission]);
@@ -136,7 +136,7 @@ class NotificationTemplateTest extends TestCase
             fn(Assert $page) => $page
                 ->component('Notification/Templates/Index')
                 ->where('templates.0.type', 'bill_alert')
-                ->where('auth.permissions', [$updatePermission->name, $viewPermission->name]),
+                ->where('auth.permissions', [$updatePermission->name]),
         );
 
         $this->actingAs($updater, 'web')

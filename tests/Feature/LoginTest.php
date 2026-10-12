@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\Admin;
 use App\Models\SecurityLog;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\PermissionRegistrar;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -14,9 +16,13 @@ class LoginTest extends TestCase
 
     public function test_admins_can_authenticate_and_are_redirected_to_dashboard(): void
     {
+        RolePermissionSeeder::sync();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
         $admin = Admin::factory()->create([
             'username' => 'admin',
         ]);
+        $admin->givePermissionTo('dashboard.view');
 
         $response = $this->post('/login', [
             'username' => $admin->username,

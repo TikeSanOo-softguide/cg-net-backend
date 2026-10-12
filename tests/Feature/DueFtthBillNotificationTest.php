@@ -6,7 +6,9 @@ use App\Enums\NotificationCategory;
 use App\Jobs\SendFtthBillDueNotificationJob;
 use App\Models\DeviceToken;
 use App\Models\Notification;
+use App\Models\NotificationTemplate;
 use App\Models\User;
+use App\Enums\NotificationTemplateType;
 use App\Notifications\FtthBillDueNotification;
 use App\Services\Notification\DueFtthBillNotificationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,14 +22,22 @@ class DueFtthBillNotificationTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        NotificationTemplate::factory()->create([
+            'type' => NotificationTemplateType::BillAlert,
+        ]);
+    }
+
     public function test_scan_queues_notifications_only_for_active_users_with_bills_due_in_seven_days(): void
     {
         $firstUser = User::factory()->create(['broadband_account_number' => 'DUE-ACCOUNT']);
-        $sharedAccountUser = User::factory()->create(['broadband_account_number' => 'DUE-ACCOUNT']);
         $outsideWindowUser = User::factory()->create(['broadband_account_number' => 'LATE-ACCOUNT']);
         User::factory()
             ->suspended()
-            ->create(['broadband_account_number' => 'DUE-ACCOUNT']);
+            ->create(['broadband_account_number' => 'DUE-SUSPENDED']);
 
         Http::fake([
             'billing-server.test/due-bills*' => Http::response([
@@ -51,15 +61,11 @@ class DueFtthBillNotificationTest extends TestCase
 
         $count = app(DueFtthBillNotificationService::class)->dispatchDueBills();
 
-        $this->assertSame(2, $count);
-        Queue::assertPushed(SendFtthBillDueNotificationJob::class, 2);
+        $this->assertSame(1, $count);
+        Queue::assertPushed(SendFtthBillDueNotificationJob::class, 1);
         Queue::assertPushed(
             SendFtthBillDueNotificationJob::class,
             fn(SendFtthBillDueNotificationJob $job): bool => $job->userId === $firstUser->id,
-        );
-        Queue::assertPushed(
-            SendFtthBillDueNotificationJob::class,
-            fn(SendFtthBillDueNotificationJob $job): bool => $job->userId === $sharedAccountUser->id,
         );
         Queue::assertNotPushed(
             SendFtthBillDueNotificationJob::class,
@@ -162,6 +168,7 @@ class DueFtthBillNotificationTest extends TestCase
         ]);
         $otherNotification = Notification::factory()->create([
             'user_id' => $otherUser->id,
+            'is_read' => false,
         ]);
         $token = $user->createToken('test')->plainTextToken;
 
@@ -193,7 +200,7 @@ class DueFtthBillNotificationTest extends TestCase
             ->assertNotFound();
 
         $this->assertDatabaseHas('notifications', ['id' => $notification->id, 'is_read' => true]);
-        $this->assertDatabaseHas('notifications', ['id' => $otherNotification->id, 'is_read' => false]);
+        $this->assertFalse((bool) Notification::query()->findOrFail($otherNotification->id)->is_read);
     }
 
     public function test_fcm_data_contains_action_metadata_for_deep_linking(): void

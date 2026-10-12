@@ -84,7 +84,7 @@ class FtthBillPaymentStatusNotification extends Notification implements ShouldQu
         $templateType = NotificationTemplateType::forBillPaymentEvent($this->event);
         $template = NotificationTemplate::query()->where('type', $templateType->value)->firstOrFail();
 
-        return $template->render($notifiable->lang, [
+        return $template->render($notifiable->lang ?? 'en', [
             'amount' => number_format($this->amount) . ' Points',
             'account_number' => $this->accountNumber,
             'transaction_no' => $this->transactionNo,

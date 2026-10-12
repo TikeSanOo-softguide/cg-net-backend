@@ -21,7 +21,11 @@ return [
 
     'allowed_origins' => array_filter(explode(',', env('CORS_ALLOWED_ORIGINS', ''))),
 
-    'allowed_origins_patterns' => [],
+    // Flutter web uses a random localhost port. Without this, the browser
+    // blocks OTP calls and the app reports them as no internet.
+    'allowed_origins_patterns' => env('APP_ENV') === 'local'
+        ? ['#^https?://(localhost|127\\.0\\.0\\.1)(:\\d+)?$#']
+        : [],
 
     'allowed_headers' => ['*'],
 
