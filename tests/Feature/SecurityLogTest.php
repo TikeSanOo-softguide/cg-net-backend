@@ -25,7 +25,7 @@ class SecurityLogTest extends TestCase
             ->assertOk()
             ->assertInertia(
                 fn(Assert $page) => $page
-                    ->component('SecurityLog/index')
+                    ->component('Logs/SecurityLog/index')
                     ->has('filterOptions.event', 2)
                     ->where('filterOptions.event.0', 'login_failed')
                     ->has('logs.data', 1)

@@ -28,7 +28,7 @@ class UserLogTest extends TestCase
             ->assertOk()
             ->assertInertia(
                 fn(Assert $page) => $page
-                    ->component('UserLog/index')
+                    ->component('Logs/UserLog/index')
                     ->has('logs.data', 1)
                     ->has('filterOptions.event', 1)
                     ->where('filterOptions.event.0', 'login_success')

@@ -42,7 +42,7 @@ class TopUpCardChunkGenerationTest extends TestCase
         $office = Office::query()->create([
             'name' => 'Default Office',
             'address' => 'Main Street',
-            'cd' => 88,
+            'cd' => '88',
         ]);
 
         Queue::fake();
@@ -198,7 +198,7 @@ class TopUpCardChunkGenerationTest extends TestCase
         Office::query()->create([
             'name' => 'Alpha Office',
             'address' => 'Main Street',
-            'cd' => 88,
+            'cd' => '88',
         ]);
 
         Office::query()->create([
@@ -236,6 +236,14 @@ class TopUpCardChunkGenerationTest extends TestCase
 
     public function test_serial_reservation_uses_sequence_table_not_existing_cards(): void
     {
+        if (!Office::query()->where('cd', '88')->exists()) {
+            Office::query()->create([
+                'name' => 'Default Office',
+                'address' => 'Main Street',
+                'cd' => '88',
+            ]);
+        }
+
         TopUpCard::factory()->create([
             'serial_no' => GeneratesTopUpCards::serialNo('500', 2500),
         ]);
@@ -267,6 +275,14 @@ class TopUpCardChunkGenerationTest extends TestCase
 
     public function test_disjoint_serial_ranges_are_allocated_from_sequence_counter(): void
     {
+        if (!Office::query()->where('cd', '88')->exists()) {
+            Office::query()->create([
+                'name' => 'Default Office',
+                'address' => 'Main Street',
+                'cd' => '88',
+            ]);
+        }
+
         $this->assertSame(1001, GeneratesTopUpCards::allocateSerialRange(1000, now()));
         TopUpCard::factory()->create([
             'serial_no' => GeneratesTopUpCards::serialNo('500', 1001),
@@ -293,7 +309,7 @@ class TopUpCardChunkGenerationTest extends TestCase
         Office::query()->create([
             'name' => 'Default Office',
             'address' => 'Main Street',
-            'cd' => 88,
+            'cd' => '88',
         ]);
 
         $token = 'processing-generation-token';
@@ -316,6 +332,14 @@ class TopUpCardChunkGenerationTest extends TestCase
 
     public function test_job_retry_after_successful_insert_is_idempotent(): void
     {
+        if (!Office::query()->where('cd', '88')->exists()) {
+            Office::query()->create([
+                'name' => 'Default Office',
+                'address' => 'Main Street',
+                'cd' => '88',
+            ]);
+        }
+
         $actor = Admin::factory()->create();
         $token = (string) Str::uuid();
         $expiresAt = now()->addDays(30)->toDateString();
@@ -368,6 +392,14 @@ class TopUpCardChunkGenerationTest extends TestCase
 
     public function test_generation_uses_one_batch_for_all_chunks(): void
     {
+        if (!Office::query()->where('cd', '88')->exists()) {
+            Office::query()->create([
+                'name' => 'Default Office',
+                'address' => 'Main Street',
+                'cd' => '88',
+            ]);
+        }
+
         $actor = Admin::factory()->create();
         $expiresAt = now()->addDays(30)->toDateString();
         $token = (string) Str::uuid();
@@ -411,6 +443,14 @@ class TopUpCardChunkGenerationTest extends TestCase
 
     public function test_activity_is_logged_with_succeeded_or_failed_status(): void
     {
+        if (!Office::query()->where('cd', '88')->exists()) {
+            Office::query()->create([
+                'name' => 'Default Office',
+                'address' => 'Main Street',
+                'cd' => '88',
+            ]);
+        }
+
         $actor = Admin::factory()->create();
         $token = (string) Str::uuid();
         $expiresAt = now()->addDays(30)->toDateString();
@@ -521,7 +561,7 @@ class TopUpCardChunkGenerationTest extends TestCase
         Office::query()->create([
             'name' => 'Default Office',
             'address' => 'Main Street',
-            'cd' => 88,
+            'cd' => '88',
         ]);
 
         $oldToken = 'old-generation-token';

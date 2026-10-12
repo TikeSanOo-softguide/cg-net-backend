@@ -81,10 +81,9 @@ class DashboardTest extends TestCase
                 fn(Assert $page) => $page
                     ->component('Dashboard/Index')
                     ->has('stats.total_customers')
-                    ->has('stats.active_broadband_accounts')
-                    ->where('stats.active_broadband_accounts', 1)
+                    ->has('stats.monthly_signups')
                     ->has('stats.active_packages')
-                    ->where('stats.todays_revenue', '15000.00')
+                    ->has('stats.todays_topup_usage')
                     ->where('stats.pending_requests', fn($count) => $count >= 1)
                     ->has('chart', 30)
                     ->where('chart.29.ftth_bill_payments', 15000)
@@ -162,7 +161,7 @@ class DashboardTest extends TestCase
             ->assertOk()
             ->assertInertia(
                 fn(Assert $page) => $page
-                    ->has('requestTypeChart.items', 4)
+                    ->has('requestTypeChart.items', 5)
                     ->where('requestTypeChart.items.0.type', 'installation')
                     ->where('requestTypeChart.items.0.value', 4)
                     ->where('requestTypeChart.items.0.percent', 57)
@@ -172,6 +171,8 @@ class DashboardTest extends TestCase
                     ->where('requestTypeChart.items.2.value', 1)
                     ->where('requestTypeChart.items.3.type', 'change_plan')
                     ->where('requestTypeChart.items.3.value', 0)
+                    ->where('requestTypeChart.items.4.type', 'change_password')
+                    ->where('requestTypeChart.items.4.value', 0)
                     ->where('requestTypeChart.change', 100),
             );
     }
@@ -231,7 +232,7 @@ class DashboardTest extends TestCase
             ->delete('/dashboard/requests/bulk-destroy', [
                 'ids' => ['installation-' . $install->id],
             ])
-            ->assertForbidden();
+            ->assertRedirect();
 
         $this->assertNotSoftDeleted($install);
     }

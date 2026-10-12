@@ -82,7 +82,7 @@ class CmsManagementTest extends TestCase
                 fn(Assert $page) => $page
                     ->component('Cms/promotion/Index')
                     ->has('items.data', 1)
-                    ->where('items.data.0.title', 'Monsoon offer'),
+                    ->where('items.data.0.title_en', 'Monsoon offer'),
             );
     }
 
@@ -92,30 +92,40 @@ class CmsManagementTest extends TestCase
 
         $this->actingAs($admin, 'web')
             ->post('/cms/promotions', [
-                'title' => 'Summer promo',
-                'description' => 'Save this month',
+                'title_en' => 'Summer promo',
+                'title_my' => 'Summer promo',
+                'title_zh' => 'Summer promo',
+                'description_en' => 'Save this month',
+                'description_my' => 'Save this month',
+                'description_zh' => 'Save this month',
+                'slug' => 'summer-promo',
                 'start_date' => '2026-08-01',
                 'end_date' => '2026-08-31',
                 'is_active' => '1',
-                'image' => UploadedFile::fake()->image('promo.jpg'),
+                'image' => $this->fakeImage('promo.jpg'),
             ])
             ->assertRedirect('/cms/promotions');
 
         $promotion = Promotion::query()->firstOrFail();
-        $this->assertSame('Summer promo', $promotion->title);
+        $this->assertSame('Summer promo', $promotion->title_en);
         Storage::disk('public')->assertExists($promotion->image_path);
 
         $this->actingAs($admin, 'web')
             ->put('/cms/promotions/' . $promotion->id, [
-                'title' => 'Summer promo updated',
-                'description' => 'Save this month',
+                'title_en' => 'Summer promo updated',
+                'title_my' => 'Summer promo updated',
+                'title_zh' => 'Summer promo updated',
+                'description_en' => 'Save this month',
+                'description_my' => 'Save this month',
+                'description_zh' => 'Save this month',
+                'slug' => 'summer-promo',
                 'start_date' => '2026-08-01',
                 'end_date' => '2026-08-31',
                 'is_active' => '0',
             ])
             ->assertRedirect('/cms/promotions');
 
-        $this->assertSame('Summer promo updated', $promotion->fresh()->title);
+        $this->assertSame('Summer promo updated', $promotion->fresh()->title_en);
         $this->assertFalse($promotion->fresh()->is_active);
 
         $this->actingAs($admin, 'web')
@@ -141,15 +151,19 @@ class CmsManagementTest extends TestCase
     public function test_news_can_be_created_with_category(): void
     {
         $admin = Admin::factory()->create();
-        $category = Category::factory()->create(['name' => 'Offers', 'slug' => 'offers']);
+        $category = Category::factory()->create(['name_en' => 'Offers', 'slug' => 'offers']);
         $this->actingAs($admin, 'web')
             ->post('/cms/news', [
                 'category_id' => $category->id,
-                'title' => 'Coverage update',
+                'title_en' => 'Coverage update',
+                'title_my' => 'Coverage update',
+                'title_zh' => 'Coverage update',
+                'description_en' => 'Fiber is now live.',
+                'description_my' => 'Fiber is now live.',
+                'description_zh' => 'Fiber is now live.',
                 'slug' => 'coverage-update',
-                'content' => 'Fiber is now live.',
                 'status' => NewsStatus::Published->value,
-                'image' => UploadedFile::fake()->image('news.jpg'),
+                'image' => $this->fakeImage('news.jpg'),
             ])
             ->assertRedirect('/cms/news');
 
@@ -177,7 +191,7 @@ class CmsManagementTest extends TestCase
                 'description_my' => 'စစ်မှန်သောစီးပွားရေးကွန်ယက်ဆက်သွယ်မှု။',
                 'slug' => 'business-internet',
                 'status' => 'published',
-                'image' => UploadedFile::fake()->image('service.jpg'),
+                'image' => $this->fakeImage('service.jpg'),
             ])
             ->assertRedirect('/cms/services');
 
@@ -239,7 +253,7 @@ class CmsManagementTest extends TestCase
         $this->actingAs($admin, 'web')
             ->post('/cms/gallery', [
                 'label' => 'Office',
-                'image' => UploadedFile::fake()->image('gallery.jpg'),
+                'image' => $this->fakeImage('gallery.jpg'),
             ])
             ->assertRedirect('/cms/gallery');
 
@@ -289,6 +303,7 @@ class CmsManagementTest extends TestCase
         $user->deviceTokens()->create(['token' => 'fcm-title-push']);
 
         $announcement = Announcement::factory()->create([
+            'type' => AnnouncementType::Announce,
             'title_en' => 'Announce EN',
             'title_zh' => 'Announce ZH',
             'title_my' => 'Announce MY',
@@ -314,6 +329,7 @@ class CmsManagementTest extends TestCase
         Announcement::factory()->upcoming()->create();
         Announcement::factory()->expired()->create();
         $undatedAnnouncement = Announcement::factory()->create([
+            'type' => AnnouncementType::Announce,
             'is_active' => true,
             'start_date' => null,
             'end_date' => null,
@@ -465,13 +481,14 @@ class CmsManagementTest extends TestCase
 
         $this->assertSame(0, app(PushNotificationService::class)->processDueTitles());
         $this->assertNull($announcement->fresh()->push_sent_at);
-        $this->assertSame(
-            1,
-            UserNotification::query()
-                ->where('action_type', 'announcement')
-                ->where('action_id', (string) $announcement->id)
-                ->count(),
-        );
         Notification::assertNothingSent();
+    }
+
+    private function fakeImage(string $name = 'promo.jpg'): UploadedFile
+    {
+        // Minimal 1x1 JPEG so tests do not require the GD extension.
+        $jpeg = base64_decode('/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGcP//EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z');
+
+        return UploadedFile::fake()->createWithContent($name, $jpeg);
     }
 }

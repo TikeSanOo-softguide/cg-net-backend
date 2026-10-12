@@ -17,6 +17,8 @@ class BannerController extends Controller
             ->where(function ($query) {
                 $query->whereNull('end_date')->orWhere('end_date', '>=', now());
             })
+            ->orderBy('sort_order')
+            ->orderBy('created_at', 'desc')
             ->get();
         return BannerResource::collection($banners);
     }

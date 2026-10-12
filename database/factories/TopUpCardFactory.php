@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\TopUpCardStatus;
+use App\Models\Office;
 use App\Models\TopUpCard;
 use App\Models\User;
 use App\Support\GeneratesTopUpCards;
@@ -29,6 +30,7 @@ class TopUpCardFactory extends Factory
             'redeemed_at' => null,
             'redeemed_by' => null,
             'status' => TopUpCardStatus::Active,
+            'office_id' => Office::factory(),
             'batch_id' => \App\Models\Batch::factory(),
         ];
     }

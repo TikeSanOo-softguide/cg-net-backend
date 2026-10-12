@@ -9,7 +9,7 @@ use App\Models\TopUpCard;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Services\Ledger\LedgerPoster;
-use App\Services\SecurityLogService;
+use App\Services\SecurityLog\SecurityLogService;
 use App\Services\TopUpCard\TopUpCardRedemptionService;
 use App\Support\TopUpCardPin;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -20,6 +20,12 @@ use Tests\TestCase;
 class TopUpCardRedeemConcurrencyTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        \Illuminate\Support\Facades\RateLimiter::clear('top-up-card-pin-failure:ip:' . hash('sha256', '127.0.0.1'));
+    }
 
     public function test_one_hundred_requests_for_the_same_card_succeed_exactly_once(): void
     {

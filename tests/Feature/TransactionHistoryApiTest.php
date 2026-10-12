@@ -29,7 +29,7 @@ class TransactionHistoryApiTest extends TestCase
 
         $token = $user->createToken('test')->plainTextToken;
         $response = $this->withToken($token, 'Bearer')
-            ->getJson('/api/transactions?per_page=2')
+            ->getJson('/api/customer/transactions?per_page=2')
             ->assertOk()
             ->assertJsonPath('meta.per_page', 2)
             ->assertJsonCount(2, 'data');
@@ -43,7 +43,7 @@ class TransactionHistoryApiTest extends TestCase
 
         $secondPageIds = collect(
             $this->withToken($token, 'Bearer')
-                ->getJson('/api/transactions?'.http_build_query($nextPageQuery))
+                ->getJson('/api/customer/transactions?'.http_build_query($nextPageQuery))
                 ->assertOk()
                 ->assertJsonCount(1, 'data')
                 ->json('data'),
@@ -55,7 +55,7 @@ class TransactionHistoryApiTest extends TestCase
 
     public function test_transaction_history_requires_authentication(): void
     {
-        $this->getJson('/api/transactions')->assertUnauthorized();
+        $this->getJson('/api/customer/transactions')->assertUnauthorized();
     }
 
     public function test_transaction_history_validates_page_size(): void
@@ -63,7 +63,7 @@ class TransactionHistoryApiTest extends TestCase
         $user = User::factory()->create();
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->getJson('/api/transactions?per_page=101')
+            ->getJson('/api/customer/transactions?per_page=101')
             ->assertUnprocessable()
             ->assertJsonValidationErrors('per_page');
     }

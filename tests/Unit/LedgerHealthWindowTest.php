@@ -8,6 +8,12 @@ use Tests\TestCase;
 
 class LedgerHealthWindowTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['app.timezone' => 'Asia/Yangon']);
+    }
+
     public function test_close_date_window_is_previous_day_4pm_to_close_day_4pm_yangon(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-10-01 20:00:00', 'UTC'));

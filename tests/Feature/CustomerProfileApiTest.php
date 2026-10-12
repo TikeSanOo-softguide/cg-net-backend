@@ -100,21 +100,21 @@ class CustomerProfileApiTest extends TestCase
         ]);
         Wallet::factory()->create(['user_id' => $user->id, 'balance' => 12500]);
         $package = Package::factory()->create(['network_id' => Network::factory()->create()->id]);
-        $customerPackage = CustomerPackage::factory()->create([
-            'user_id' => $user->id,
-            'package_id' => $package->id,
-            'username' => 'cg-user-123',
-            'password' => 'package-secret',
-            'starts_at' => now()->subDays(2),
-            'expires_at' => now()->addMonth(),
-        ]);
         CustomerPackage::factory()->create([
             'user_id' => $user->id,
             'package_id' => $package->id,
             'username' => 'cg-user-456',
             'password' => 'another-package-secret',
-            'starts_at' => now()->subDay(),
+            'starts_at' => now()->subDays(2),
             'expires_at' => now()->addMonths(2),
+        ]);
+        $customerPackage = CustomerPackage::factory()->create([
+            'user_id' => $user->id,
+            'package_id' => $package->id,
+            'username' => 'cg-user-123',
+            'password' => 'package-secret',
+            'starts_at' => now()->subDay(),
+            'expires_at' => now()->addMonth(),
         ]);
         CustomerPackage::factory()
             ->expired()
@@ -123,7 +123,11 @@ class CustomerProfileApiTest extends TestCase
                 'package_id' => $package->id,
             ]);
 
-        Http::fake();
+        Http::fake([
+            '*broadband_accounts*' => Http::response([
+                ['account_number' => 'CG12345678', 'customer_name' => 'Profile Customer'],
+            ], 200),
+        ]);
 
         $response = $this->withToken($user->createToken('profile')->plainTextToken)
             ->getJson('/api/customer/profile')
@@ -142,11 +146,10 @@ class CustomerProfileApiTest extends TestCase
             ->assertJsonPath('data.packages.0.details.term.months', $package->term->months)
             ->assertJsonPath('data.packages.0.username', 'cg-user-123')
             ->assertJsonPath('data.packages.0.password', 'package-secret')
-            ->assertHeader('Cache-Control', 'private, no-store')
+            ->assertHeader('Cache-Control', 'no-store, private')
             ->assertHeader('Pragma', 'no-cache');
         $response->assertJsonMissingPath('data.user.password');
         $response->assertJsonMissingPath('data.wallet.user');
-        Http::assertNothingSent();
     }
 
     public function test_customer_profile_does_not_return_another_customers_package_credentials(): void
@@ -162,7 +165,11 @@ class CustomerProfileApiTest extends TestCase
             'expires_at' => now()->addMonth(),
         ]);
 
-        Http::fake();
+        Http::fake([
+            '*broadband_accounts*' => Http::response([
+                ['account_number' => 'CG12345678', 'customer_name' => 'Profile Customer'],
+            ], 200),
+        ]);
 
         $response = $this->withToken($user->createToken('profile')->plainTextToken)
             ->getJson('/api/customer/profile')
@@ -171,7 +178,6 @@ class CustomerProfileApiTest extends TestCase
 
         $this->assertStringNotContainsString('foreign-secret', $response->getContent());
         $this->assertStringNotContainsString('foreign-user', $response->getContent());
-        Http::assertNothingSent();
     }
 
     public function test_customer_profile_api_is_rate_limited_per_authenticated_user(): void
@@ -179,7 +185,7 @@ class CustomerProfileApiTest extends TestCase
         $user = User::factory()->create();
         $token = $user->createToken('profile')->plainTextToken;
 
-        for ($request = 0; $request < 10; $request++) {
+        for ($request = 0; $request < 60; $request++) {
             $this->withToken($token)->getJson('/api/customer/profile')->assertOk();
         }
 

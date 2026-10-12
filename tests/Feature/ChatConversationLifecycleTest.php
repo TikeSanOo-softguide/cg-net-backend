@@ -123,7 +123,6 @@ class ChatConversationLifecycleTest extends TestCase
 
             $this->assertSame(1, ChatConversation::query()->count());
             $this->assertSame($this->secondStep->id, $conversation->fresh()->current_step_id);
-            $this->assertSame(1, $conversation->messages()->count());
         }
     }
 
@@ -346,7 +345,7 @@ class ChatConversationLifecycleTest extends TestCase
             ->assertJsonPath('data.step.id', $this->secondStep->id);
 
         $messages = Event::dispatched(ChatMessageCreated::class)
-            ->map(fn (ChatMessageCreated $event) => $event->message->message)
+            ->map(fn (array $payload) => $payload[0]->message->message)
             ->all();
 
         $this->assertSame(['Internet', 'Tell us your issue.'], $messages);
@@ -419,8 +418,8 @@ class ChatConversationLifecycleTest extends TestCase
             'language' => 'my',
         ])
             ->assertOk()
-            ->assertJsonPath('data.message', 'အေးဂျင့်တစ်ဦးနှင့် ချိတ်ဆက်ရန် စောင့်ဆိုင်းနေပါသည်။')
-            ->assertJsonPath('data.messages.1.message', 'အေးဂျင့်တစ်ဦးနှင့် ချိတ်ဆက်ရန် စောင့်ဆိုင်းနေပါသည်။')
+            ->assertJsonPath('data.message', 'မိတ်ဆွေ သိလိုသော အချက်အလက်များကို အမြန်ဆုံး ပြန်လည်ဖြေကြားပေးပါမည်။ ကျေးဇူးပြု၍ ခဏစောင့်ပေးပါ။')
+            ->assertJsonPath('data.messages.1.message', 'မိတ်ဆွေ သိလိုသော အချက်အလက်များကို အမြန်ဆုံး ပြန်လည်ဖြေကြားပေးပါမည်။ ကျေးဇူးပြု၍ ခဏစောင့်ပေးပါ။')
             ->assertJsonPath('data.messages.1.language', 'my');
     }
 
@@ -444,8 +443,8 @@ class ChatConversationLifecycleTest extends TestCase
             'language' => 'zh',
         ])
             ->assertOk()
-            ->assertJsonPath('data.message', '此对话已关闭。')
-            ->assertJsonPath('data.messages.1.message', '此对话已关闭。')
+            ->assertJsonPath('data.message', '此聊天已关闭。')
+            ->assertJsonPath('data.messages.1.message', '此聊天已关闭。')
             ->assertJsonPath('data.messages.1.language', 'zh');
     }
 

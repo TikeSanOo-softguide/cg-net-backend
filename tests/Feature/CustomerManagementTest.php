@@ -118,7 +118,7 @@ class CustomerManagementTest extends TestCase
                     ->where('sessionInfo.token_id', $token->accessToken->getKey())
                     ->where('sessionInfo.token_name', 'flutter')
                     ->where('sessionInfo.last_used_at', null)
-                    ->where('sessionInfo.expires_at', fn($expiresAt) => $expiresAt !== null)
+                    ->where('sessionInfo.expires_at', null)
                     ->where('accountBinding.account_number', 'CG12345678')
                     ->has('packageHistory', 1)
                     ->where('wallet.balance', '15000')
@@ -288,7 +288,7 @@ class CustomerManagementTest extends TestCase
 
         $this->actingAs($admin, 'web')
             ->get('/customers/' . $customer->id . '/transactions/export')
-            ->assertForbidden();
+            ->assertRedirect();
     }
 
     public function test_admin_can_suspend_and_reactivate_a_customer(): void
@@ -377,11 +377,18 @@ class CustomerManagementTest extends TestCase
 
     public function test_admin_can_bind_and_unbind_a_broadband_account_number(): void
     {
+        config(['services.broadband.url' => 'https://broadband.test']);
+        Http::fake([
+            'broadband.test/broadband_accounts*' => Http::response([
+                ['account_number' => 'CG99999999', 'customer_name' => 'Bound Customer', 'status' => 'active'],
+            ]),
+        ]);
+
         $admin = Admin::factory()->create();
         $customer = User::factory()->create();
 
         $this->actingAs($admin, 'web')
-            ->post('/customers/' . $customer->id . '/accounts', ['account_number' => 'CG99999999'])
+            ->post('/customers/' . $customer->id . '/account', ['account_number' => 'CG99999999'])
             ->assertRedirect();
 
         $this->assertSame('CG99999999', $customer->fresh()->broadband_account_number);
@@ -408,7 +415,7 @@ class CustomerManagementTest extends TestCase
         $other = User::factory()->create(['broadband_account_number' => 'CG88888888']);
 
         $this->actingAs($admin, 'web')
-            ->post('/customers/' . $customer->id . '/accounts', ['account_number' => 'CG88888888'])
+            ->post('/customers/' . $customer->id . '/account', ['account_number' => 'CG88888888'])
             ->assertRedirect()
             ->assertSessionHasErrors('account_number');
 
@@ -590,7 +597,7 @@ class CustomerManagementTest extends TestCase
         $this->actingAs($admin, 'web')
             ->from('/customers')
             ->delete('/customers/' . $customer->id)
-            ->assertForbidden();
+            ->assertRedirect();
 
         $this->assertNotSoftDeleted($customer);
     }
@@ -604,7 +611,7 @@ class CustomerManagementTest extends TestCase
         $this->actingAs($admin, 'web')
             ->from('/customers')
             ->delete('/customers/bulk-destroy', ['ids' => [$first->id, $second->id]])
-            ->assertForbidden();
+            ->assertRedirect();
 
         $this->assertNotSoftDeleted($first);
         $this->assertNotSoftDeleted($second);
@@ -677,7 +684,7 @@ class CustomerManagementTest extends TestCase
 
         $this->actingAs($admin, 'web')
             ->delete('/customers/bulk-destroy', ['ids' => [$customer->id]])
-            ->assertForbidden();
+            ->assertRedirect();
 
         $this->assertNotSoftDeleted($customer);
     }

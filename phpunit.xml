@@ -19,13 +19,20 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <env name="APP_TIMEZONE" value="UTC" force="true"/>
+        <env name="BROADBAND_API_URL" value="https://broadband.test" force="true"/>
         <env name="PACKAGE_ACTIVATION_DRIVER" value="unconfigured" force="true"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array" force="true"/>
         <env name="OTP_CACHE_STORE" value="array"/>
-        <env name="OTP_MOCK_EXPOSE_CODE" value="true"/>
+        <env name="OTP_PROVIDER" value="mock" force="true"/>
+        <env name="OTP_MOCK_EXPOSE_CODE" value="true" force="true"/>
+        <env name="TOPUP_REDEEM_FAILED_PIN_USER_MAX_ATTEMPTS" value="10" force="true"/>
+        <env name="TOPUP_REDEEM_FAILED_PIN_IP_MAX_ATTEMPTS" value="20" force="true"/>
+        <env name="TOPUP_REDEEM_FAILED_PIN_USER_DECAY_SECONDS" value="1800" force="true"/>
+        <env name="TOPUP_REDEEM_FAILED_PIN_IP_DECAY_SECONDS" value="3600" force="true"/>
         <env name="DB_CONNECTION" value="sqlite" force="true"/>
         <env name="DB_DATABASE" value=":memory:" force="true"/>
         <env name="DB_URL" value="" force="true"/>

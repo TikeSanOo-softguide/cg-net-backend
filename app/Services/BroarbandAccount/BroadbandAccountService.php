@@ -47,7 +47,7 @@ class BroadbandAccountService
         } catch (ConnectionException $e) {
             Log::error('Broadband API connection failed: '.$e->getMessage());
 
-            return null;
+            throw $e;
         }
     }
 
@@ -83,7 +83,7 @@ class BroadbandAccountService
         } catch (ConnectionException $e) {
             Log::error('Broadband API connection failed: '.$e->getMessage());
 
-            return null;
+            throw $e;
         }
     }
 

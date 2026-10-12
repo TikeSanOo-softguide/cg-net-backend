@@ -266,7 +266,7 @@ class TopUpCardController extends Controller
 
             $queueBatch = Bus::batch($jobs)
                 ->name('top-up-cards:' . $token)
-                ->onConnection('redis')
+                ->onConnection(app()->runningUnitTests() ? config('queue.default') : 'redis')
                 ->onQueue('top-up-cards')
                 ->allowFailures()
                 ->then(function (QueueBatch $batch) use ($token): void {
