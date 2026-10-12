@@ -211,20 +211,33 @@ Password for all seeded admins: `password`
 
 ---
 
-## Production (EC2 + DB) — short checklist
+## Production (Docker + external PostgreSQL)
 
-1. Clone **`production`** (or deploy branch) to `/var/www/cg-net-backend`
-2. Copy `.env.production.example` → `.env`
-3. Set `APP_URL`, `DB_*` (Postgres host), Redis, `APP_DEBUG=false`
-4. `composer install --no-dev --optimize-autoloader`
-5. `php artisan key:generate` (once)
-6. `php artisan migrate --force`  ← **no seed**
-7. `npm ci && npm run build`
-8. `php artisan storage:link`
-9. `php artisan config:cache && route:cache && view:cache`
-10. Nginx → `public/`, Supervisor `queue:work redis`, cron `schedule:run`
+Production uses `Dockerfile.prod` and `docker-compose.prod.yml`; leave the development
+`docker-compose.yml` unchanged. PostgreSQL runs on a separate private server. Redis,
+PHP-FPM, Horizon, the scheduler, Reverb, and Nginx run in the production Compose stack.
 
-Domain example: `https://yno-admin.chocobot.site`
+1. Put `.env` on the production server only, copied from `.env.production.example`;
+   replace every placeholder and run `chmod 600 .env`.
+2. Use unique production secrets and set `DB_HOST` to the private PostgreSQL address
+   with `DB_SSLMODE=require`. Set a unique immutable `APP_TAG` for the release.
+3. Configure the HTTPS ingress in front of Nginx and forward WebSocket upgrades for
+   `/app`; the Compose Nginx port defaults to loopback only.
+4. Build and deploy explicitly with `-f docker-compose.prod.yml`:
+
+   ```sh
+   docker compose -f docker-compose.prod.yml build --pull app nginx redis
+   docker compose -f docker-compose.prod.yml run --rm app php artisan migrate --force
+   docker compose -f docker-compose.prod.yml up -d --remove-orphans
+   ```
+
+   Run migrations once per deployment and do not seed production.
+5. Vite `VITE_*` configuration is embedded in the image during the build. Rebuild
+   after changing any browser-side Vite setting.
+
+For server-side plain `docker compose` commands, keep
+`COMPOSE_FILE=docker-compose.prod.yml` in the server's `.env`. Continue to pass
+`-f docker-compose.prod.yml` in deployment scripts to make the intended stack explicit.
 
 ---
 
