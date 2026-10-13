@@ -29,7 +29,7 @@ class TopUpCardRedeemApiTest extends TestCase
         \Illuminate\Support\Facades\Cache::flush();
     }
 
-    public function test_serial_check_does_not_leak_card_lifecycle_details(): void
+    public function test_serial_check_returns_distinct_card_statuses(): void
     {
         $user = User::factory()->create();
         $token = $user->createToken('serial-check')->plainTextToken;
@@ -42,13 +42,33 @@ class TopUpCardRedeemApiTest extends TestCase
         $this->withToken($token)
             ->postJson('/api/redeem/check-serial-no', ['serial_no' => $activeCard->serial_no])
             ->assertOk()
-            ->assertExactJson(['message' => 'This top-up card is valid.']);
+            ->assertExactJson([
+                'result' => 'valid',
+                'message' => 'This top-up card is valid.',
+            ]);
 
-        foreach ([$usedCard, $expiredCard, $blockedCard, $pendingCard] as $card) {
+        $this->postJson('/api/redeem/check-serial-no', ['serial_no' => $usedCard->serial_no])
+            ->assertStatus(400)
+            ->assertExactJson([
+            'result' => 'already_used',
+                'message' => 'This top-up card has already been used.',
+            ]);
+
+        foreach ([$expiredCard, $blockedCard, $pendingCard] as $card) {
             $this->postJson('/api/redeem/check-serial-no', ['serial_no' => $card->serial_no])
                 ->assertStatus(400)
-                ->assertExactJson(['message' => 'This top-up card is invalid.']);
+                ->assertExactJson([
+                    'result' => 'invalid_card',
+                    'message' => 'Invalid top-up card.',
+                ]);
         }
+
+        $this->postJson('/api/redeem/check-serial-no', ['serial_no' => 'UNKNOWN-SERIAL'])
+            ->assertStatus(400)
+            ->assertExactJson([
+            'result' => 'invalid_card',
+                'message' => 'Invalid top-up card.',
+            ]);
     }
 
     public function test_serial_check_blocks_after_five_attempts(): void
