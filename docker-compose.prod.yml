@@ -1,5 +1,8 @@
 name: cg-net-production
 
+x-build-hosts: &build-hosts
+    - 'api.github.com=140.82.112.5'
+
 x-logging: &default-logging
     driver: json-file
     options:
@@ -12,6 +15,7 @@ x-php-service: &php-service
         context: .
         dockerfile: Dockerfile.prod
         target: runtime
+        extra_hosts: *build-hosts
         args:
             VITE_APP_NAME: ${VITE_APP_NAME:-YNO Admin}
             VITE_REVERB_ENABLED: ${VITE_REVERB_ENABLED:-false}
@@ -37,13 +41,7 @@ services:
         <<: *php-service
         command: ['php-fpm', '-F']
         healthcheck:
-            test:
-                [
-                    'CMD',
-                    'php',
-                    '-r',
-                    '$$socket = @fsockopen("127.0.0.1", 9000); exit($$socket ? 0 : 1);',
-                ]
+            test: ['CMD', 'php', '-r', '$$socket = @fsockopen("127.0.0.1", 9000); exit($$socket ? 0 : 1);']
             interval: 30s
             timeout: 5s
             retries: 3
@@ -70,13 +68,7 @@ services:
         <<: *php-service
         command: ['php', 'artisan', 'reverb:start', '--host=0.0.0.0', '--port=8080']
         healthcheck:
-            test:
-                [
-                    'CMD',
-                    'php',
-                    '-r',
-                    '$$socket = @fsockopen("127.0.0.1", 8080); exit($$socket ? 0 : 1);',
-                ]
+            test: ['CMD', 'php', '-r', '$$socket = @fsockopen("127.0.0.1", 8080); exit($$socket ? 0 : 1);']
             interval: 30s
             timeout: 5s
             retries: 3
@@ -142,11 +134,7 @@ services:
             - no-new-privileges:true
         logging: *default-logging
         healthcheck:
-            test:
-                [
-                    'CMD-SHELL',
-                    'REDISCLI_AUTH="$${REDIS_PASSWORD}" redis-cli ping | grep -q PONG',
-                ]
+            test: ['CMD-SHELL', 'REDISCLI_AUTH="$${REDIS_PASSWORD}" redis-cli ping | grep -q PONG']
             interval: 10s
             timeout: 3s
             retries: 5
