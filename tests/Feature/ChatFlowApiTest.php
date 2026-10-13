@@ -268,11 +268,13 @@ class ChatFlowApiTest extends TestCase
         ]);
         $token = $user->createToken('chat')->plainTextToken;
 
-        foreach ([
-            ChatConversationStatus::WaitingAgent,
-            ChatConversationStatus::Open,
-            ChatConversationStatus::Closed,
-        ] as $status) {
+        foreach (
+            [
+                ChatConversationStatus::WaitingAgent,
+                ChatConversationStatus::Open,
+                ChatConversationStatus::Closed,
+            ] as $status
+        ) {
             $conversation->update(['status' => $status]);
             $this->withToken($token)
                 ->postJson('/api/chat/select-option', [
@@ -340,11 +342,13 @@ class ChatFlowApiTest extends TestCase
         $messageIds = $conversation->messages()->orderBy('id')->pluck('id')->all();
         $token = $user->createToken('chat')->plainTextToken;
 
-        foreach ([
-            'en' => ['How can we help you?', 'Internet'],
-            'my' => ['မင်္ဂလာပါ၊ မင်္ဂလာနဲ့ဘာလုပ်ပေးနိုင်မလဲ။', 'အင်တာနက်'],
-            'zh' => ['您好，我们能为您提供什么帮助？', '互联网'],
-        ] as $language => [$message, $optionLabel]) {
+        foreach (
+            [
+                'en' => ['How can we help you?', 'Internet'],
+                'my' => ['မင်္ဂလာပါ၊ မင်္ဂလာနဲ့ဘာလုပ်ပေးနိုင်မလဲ။', 'အင်တာနက်'],
+                'zh' => ['您好，我们能为您提供什么帮助？', '互联网'],
+            ] as $language => [$message, $optionLabel]
+        ) {
             $response = $this->withToken($token)
                 ->postJson('/api/chat/navigate', [
                     'conversation_id' => $conversation->id,
@@ -386,11 +390,13 @@ class ChatFlowApiTest extends TestCase
         ]);
         $token = $user->createToken('chat')->plainTextToken;
 
-        foreach ([
-            ChatConversationStatus::WaitingAgent,
-            ChatConversationStatus::Open,
-            ChatConversationStatus::Closed,
-        ] as $status) {
+        foreach (
+            [
+                ChatConversationStatus::WaitingAgent,
+                ChatConversationStatus::Open,
+                ChatConversationStatus::Closed,
+            ] as $status
+        ) {
             $conversation->update(['status' => $status]);
 
             $this->withToken($token)
@@ -544,7 +550,7 @@ class ChatFlowApiTest extends TestCase
             ->assertOk();
 
         $this->withToken($user->createToken('chat')->plainTextToken)
-            ->getJson('/api/chat/current?conversation_id='.$conversation->id.'&language=my')
+            ->getJson('/api/chat/current?conversation_id=' . $conversation->id . '&language=my')
             ->assertOk()
             ->assertJsonPath('data.messages.0.flow_options.0.label', 'Internet')
             ->assertJsonPath('data.messages.1.selected_option.label', 'Internet')
@@ -662,7 +668,7 @@ class ChatFlowApiTest extends TestCase
             ->assertJsonPath('data.url', 'https://example.com/support');
 
         $this->withToken($token)
-            ->getJson('/api/chat/current?conversation_id='.$conversationId.'&language=en')
+            ->getJson('/api/chat/current?conversation_id=' . $conversationId . '&language=en')
             ->assertOk()
             ->assertJsonCount(1, 'data.messages')
             ->assertJsonPath('data.step.id', $startStep->id);
@@ -708,9 +714,9 @@ class ChatFlowApiTest extends TestCase
         $conversation->refresh();
         $this->assertSame(ChatConversationStatus::WaitingAgent->value, $conversation->status->value);
         Http::assertSentCount(1);
-        Http::assertSent(fn ($request) => $request['chat_id'] === 'test-chat-id'
-            && str_contains($request['text'], 'Conversation: #'.$conversation->id)
-            && str_contains($request['text'], 'Reason: '.$option->option_my));
+        Http::assertSent(fn($request) => $request['chat_id'] === 'test-chat-id'
+            && str_contains($request['text'], 'Conversation: #' . $conversation->id)
+            && str_contains($request['text'], 'Reason: ' . $option->option_my));
     }
 
     public function test_waiting_conversation_rejects_option_and_does_not_send_duplicate_telegram_notification(): void
