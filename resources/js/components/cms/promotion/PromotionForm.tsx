@@ -162,24 +162,6 @@ export function PromotionForm({
         setField('image', file);
         markTouched('image');
         handleImageDelete(file);
-
-        if (!file) {
-            setImageDimensions(null);
-            return;
-        }
-
-        const image = new Image();
-
-        image.onload = () => {
-            setImageDimensions({
-                width: image.naturalWidth,
-                height: image.naturalHeight,
-            });
-
-            URL.revokeObjectURL(image.src);
-        };
-
-        image.src = URL.createObjectURL(file);
     };
 
     const handleImageDelete = (file: File | null) => {
@@ -295,18 +277,13 @@ export function PromotionForm({
                     label={
                         <div className="flex w-full items-center justify-between border-b border-border/40 pb-3">
                             <span>{t('cms.image')}</span>
-
                             <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-                                {t('cms.news.image_size')}:{' '}
-                                {imageDimensions
-                                    ? `${imageDimensions.width} × ${imageDimensions.height} px`
-                                    : '925 × 390 px'}
+                                {t('cms.news.image_size')} : 925 × 390 px
                             </span>
                         </div>
                     }
                     htmlFor="image"
                     error={fieldError('image')}
-                    className=""
                 >
                     <SquareImageUpload
                         id="image"

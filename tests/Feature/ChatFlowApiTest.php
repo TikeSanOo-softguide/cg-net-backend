@@ -8,6 +8,7 @@ use App\Events\ChatMessageCreated;
 use App\Models\ChatFlowOption;
 use App\Models\ChatFlowStep;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
@@ -22,6 +23,7 @@ class ChatFlowApiTest extends TestCase
         $this->postJson('/api/chat/start')->assertUnauthorized();
         $this->getJson('/api/chat/current')->assertUnauthorized();
         $this->postJson('/api/chat/select-option')->assertUnauthorized();
+        $this->postJson('/api/chat/navigate')->assertUnauthorized();
         $this->postJson('/api/chat/messages')->assertUnauthorized();
     }
 
@@ -122,6 +124,372 @@ class ChatFlowApiTest extends TestCase
         $this->assertSame($nextStep->id, $conversation->current_step_id);
     }
 
+    public function test_option_from_a_different_current_step_is_rejected(): void
+    {
+        $user = User::factory()->create();
+        $startStep = $this->startStep();
+        $otherStep = ChatFlowStep::query()->create([
+            'name' => 'Other step',
+            'message_en' => 'Other',
+            'message_my' => 'အခြား',
+            'message_zh' => '其他',
+        ]);
+        $option = ChatFlowOption::query()->create([
+            'step_id' => $otherStep->id,
+            'option_en' => 'Other option',
+            'option_my' => 'အခြား',
+            'option_zh' => '其他',
+            'action' => ChatFlowOptionAction::ReplyText->value,
+            'reply_text_en' => 'Reply',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+        $conversation = $user->chatConversations()->create([
+            'current_step_id' => $startStep->id,
+            'status' => ChatConversationStatus::Bot,
+        ]);
+
+        $this->withToken($user->createToken('chat')->plainTextToken)
+            ->postJson('/api/chat/select-option', [
+                'conversation_id' => $conversation->id,
+                'option_id' => $option->id,
+                'language' => 'en',
+            ])
+            ->assertStatus(409)
+            ->assertJsonPath('code', 'stale_chat_option');
+
+        $this->assertDatabaseCount('chat_messages', 0);
+    }
+
+    public function test_missing_current_step_recovers_to_configured_start_and_preserves_history(): void
+    {
+        $user = User::factory()->create();
+        $startStep = $this->startStep();
+        ChatFlowOption::query()->create([
+            'step_id' => $startStep->id,
+            'option_en' => 'Internet',
+            'option_my' => 'အင်တာနက်',
+            'option_zh' => '互联网',
+            'action' => ChatFlowOptionAction::ReplyText->value,
+            'reply_text_en' => 'Reply',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+        $conversation = $user->chatConversations()->create([
+            'current_step_id' => null,
+            'status' => ChatConversationStatus::Bot,
+        ]);
+        $first = $conversation->messages()->create([
+            'sender_type' => 'system',
+            'message' => 'Earlier prompt',
+            'language' => 'en',
+            'step_id' => $startStep->id,
+            'is_read' => true,
+        ]);
+        $second = $conversation->messages()->create([
+            'sender_type' => 'customer',
+            'message' => 'Earlier answer',
+            'language' => 'en',
+            'step_id' => null,
+            'is_read' => true,
+        ]);
+
+        $response = $this->withToken($user->createToken('chat')->plainTextToken)
+            ->getJson("/api/chat/current?conversation_id={$conversation->id}&language=my")
+            ->assertOk()
+            ->assertJsonPath('data.conversation_id', $conversation->id)
+            ->assertJsonPath('data.step.id', $startStep->id)
+            ->assertJsonPath('data.step.message', $startStep->message_my)
+            ->assertJsonCount(2, 'data.messages');
+
+        $this->assertSame($conversation->id, $conversation->fresh()->id);
+        $this->assertSame($startStep->id, $conversation->fresh()->current_step_id);
+        $this->assertSame([$first->id, $second->id], collect($response->json('data.messages'))->pluck('id')->all());
+    }
+
+    public function test_stale_option_recovers_a_missing_current_step_before_rejecting_navigation(): void
+    {
+        $user = User::factory()->create();
+        $startStep = $this->startStep();
+        $option = ChatFlowOption::query()->create([
+            'step_id' => $startStep->id,
+            'option_en' => 'Old choice',
+            'option_my' => 'အဟောင်း',
+            'option_zh' => '旧选项',
+            'action' => ChatFlowOptionAction::ReplyText->value,
+            'reply_text_en' => 'Reply',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+        $conversation = $user->chatConversations()->create([
+            'current_step_id' => null,
+            'status' => ChatConversationStatus::Bot,
+        ]);
+        $history = $conversation->messages()->create([
+            'sender_type' => 'customer',
+            'message' => 'Earlier response',
+            'language' => 'en',
+            'step_id' => null,
+            'is_read' => true,
+        ]);
+
+        $this->withToken($user->createToken('chat')->plainTextToken)
+            ->postJson('/api/chat/select-option', [
+                'conversation_id' => $conversation->id,
+                'option_id' => $option->id,
+                'language' => 'en',
+            ])
+            ->assertStatus(409)
+            ->assertJsonPath('code', 'stale_chat_option')
+            ->assertJsonPath('data.step.id', $startStep->id)
+            ->assertJsonPath('data.messages.0.id', $history->id);
+
+        $this->assertSame($startStep->id, $conversation->fresh()->current_step_id);
+        $this->assertDatabaseCount('chat_messages', 1);
+    }
+
+    public function test_non_flow_conversations_cannot_select_flow_options(): void
+    {
+        $user = User::factory()->create();
+        $startStep = $this->startStep();
+        $option = ChatFlowOption::query()->create([
+            'step_id' => $startStep->id,
+            'option_en' => 'Reply',
+            'option_my' => 'ပြန်စာ',
+            'option_zh' => '回复',
+            'action' => ChatFlowOptionAction::ReplyText->value,
+            'reply_text_en' => 'Reply',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+        $conversation = $user->chatConversations()->create([
+            'current_step_id' => $startStep->id,
+            'status' => ChatConversationStatus::Bot,
+        ]);
+        $token = $user->createToken('chat')->plainTextToken;
+
+        foreach ([
+            ChatConversationStatus::WaitingAgent,
+            ChatConversationStatus::Open,
+            ChatConversationStatus::Closed,
+        ] as $status) {
+            $conversation->update(['status' => $status]);
+            $this->withToken($token)
+                ->postJson('/api/chat/select-option', [
+                    'conversation_id' => $conversation->id,
+                    'option_id' => $option->id,
+                    'language' => 'en',
+                ])
+                ->assertStatus(409)
+                ->assertJsonPath('data.status', $status->value);
+        }
+
+        $this->assertDatabaseCount('chat_messages', 0);
+    }
+
+    public function test_customer_can_return_to_the_configured_start_step_in_any_supported_language(): void
+    {
+        Http::fake();
+
+        $user = User::factory()->create();
+        $startStep = $this->startStep();
+        $nestedStep = ChatFlowStep::query()->create([
+            'name' => 'Internet',
+            'message_en' => 'Tell us your issue.',
+            'message_my' => 'သင့်ပြဿနာကို ပြောပါ။',
+            'message_zh' => '告诉我们您的问题。',
+            'is_start' => false,
+        ]);
+        $startOption = ChatFlowOption::query()->create([
+            'step_id' => $startStep->id,
+            'option_en' => 'Internet',
+            'option_my' => 'အင်တာနက်',
+            'option_zh' => '互联网',
+            'action' => ChatFlowOptionAction::GoToStep->value,
+            'next_step_id' => $nestedStep->id,
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+        ChatFlowOption::query()->create([
+            'step_id' => $nestedStep->id,
+            'option_en' => 'Nested option',
+            'option_my' => 'အဆင့်ခွဲ ရွေးချယ်မှု',
+            'option_zh' => '嵌套选项',
+            'action' => ChatFlowOptionAction::ReplyText->value,
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+        $conversation = $user->chatConversations()->create([
+            'current_step_id' => $nestedStep->id,
+            'status' => ChatConversationStatus::Bot,
+        ]);
+        $conversation->messages()->create([
+            'sender_type' => 'system',
+            'message' => 'Previous start prompt',
+            'language' => 'en',
+            'step_id' => $startStep->id,
+            'is_read' => true,
+        ]);
+        $conversation->messages()->create([
+            'sender_type' => 'system',
+            'message' => 'Nested prompt',
+            'language' => 'en',
+            'step_id' => $nestedStep->id,
+            'is_read' => true,
+        ]);
+        $messageIds = $conversation->messages()->orderBy('id')->pluck('id')->all();
+        $token = $user->createToken('chat')->plainTextToken;
+
+        foreach ([
+            'en' => ['How can we help you?', 'Internet'],
+            'my' => ['မင်္ဂလာပါ၊ မင်္ဂလာနဲ့ဘာလုပ်ပေးနိုင်မလဲ။', 'အင်တာနက်'],
+            'zh' => ['您好，我们能为您提供什么帮助？', '互联网'],
+        ] as $language => [$message, $optionLabel]) {
+            $response = $this->withToken($token)
+                ->postJson('/api/chat/navigate', [
+                    'conversation_id' => $conversation->id,
+                    'action' => 'main_menu',
+                    'language' => $language,
+                ])
+                ->assertOk()
+                ->assertJsonPath('success', true)
+                ->assertJsonPath('data.conversation_id', $conversation->id)
+                ->assertJsonPath('data.status', ChatConversationStatus::Bot->value)
+                ->assertJsonPath('data.step.id', $startStep->id)
+                ->assertJsonPath('data.step.message', $message)
+                ->assertJsonPath('data.step.options.0.id', $startOption->id)
+                ->assertJsonPath('data.step.options.0.label', $optionLabel)
+                ->assertJsonCount(2, 'data.messages');
+
+            $this->assertSame($messageIds, collect($response->json('data.messages'))->pluck('id')->all());
+            $this->assertSame(2, $conversation->messages()->count());
+            $this->assertSame($startStep->id, $conversation->fresh()->current_step_id);
+        }
+    }
+
+    public function test_main_menu_navigation_is_rejected_outside_chat_flow(): void
+    {
+        Http::fake();
+
+        $user = User::factory()->create();
+        $this->startStep();
+        $nestedStep = ChatFlowStep::query()->create([
+            'name' => 'Internet',
+            'message_en' => 'Tell us your issue.',
+            'message_my' => 'သင့်ပြဿနာကို ပြောပါ။',
+            'message_zh' => '告诉我们您的问题。',
+            'is_start' => false,
+        ]);
+        $conversation = $user->chatConversations()->create([
+            'current_step_id' => $nestedStep->id,
+            'status' => ChatConversationStatus::Bot,
+        ]);
+        $token = $user->createToken('chat')->plainTextToken;
+
+        foreach ([
+            ChatConversationStatus::WaitingAgent,
+            ChatConversationStatus::Open,
+            ChatConversationStatus::Closed,
+        ] as $status) {
+            $conversation->update(['status' => $status]);
+
+            $this->withToken($token)
+                ->postJson('/api/chat/navigate', [
+                    'conversation_id' => $conversation->id,
+                    'action' => 'main_menu',
+                    'language' => 'en',
+                ])
+                ->assertStatus(409)
+                ->assertJsonPath('success', false)
+                ->assertJsonPath('data.status', $status->value);
+
+            $this->assertSame($nestedStep->id, $conversation->fresh()->current_step_id);
+            $this->assertDatabaseCount('chat_messages', 0);
+        }
+    }
+
+    public function test_main_menu_navigation_cannot_access_another_customers_conversation(): void
+    {
+        Http::fake();
+
+        $owner = User::factory()->create();
+        $otherCustomer = User::factory()->create();
+        $this->startStep();
+        $nestedStep = ChatFlowStep::query()->create([
+            'name' => 'Internet',
+            'message_en' => 'Tell us your issue.',
+            'message_my' => 'သင့်ပြဿနာကို ပြောပါ။',
+            'message_zh' => '告诉我们您的问题。',
+            'is_start' => false,
+        ]);
+        $conversation = $owner->chatConversations()->create([
+            'current_step_id' => $nestedStep->id,
+            'status' => ChatConversationStatus::Bot,
+        ]);
+
+        $this->withToken($otherCustomer->createToken('chat')->plainTextToken)
+            ->postJson('/api/chat/navigate', [
+                'conversation_id' => $conversation->id,
+                'action' => 'main_menu',
+                'language' => 'en',
+            ])
+            ->assertForbidden();
+
+        $this->assertSame($nestedStep->id, $conversation->fresh()->current_step_id);
+        $this->assertDatabaseCount('chat_messages', 0);
+    }
+
+    public function test_main_menu_navigation_requires_exactly_one_start_step(): void
+    {
+        Http::fake();
+
+        $user = User::factory()->create();
+        $startStep = $this->startStep();
+        $nestedStep = ChatFlowStep::query()->create([
+            'name' => 'Internet',
+            'message_en' => 'Tell us your issue.',
+            'message_my' => 'သင့်ပြဿနာကို ပြောပါ။',
+            'message_zh' => '告诉我们您的问题。',
+            'is_start' => false,
+        ]);
+        $conversation = $user->chatConversations()->create([
+            'current_step_id' => $nestedStep->id,
+            'status' => ChatConversationStatus::Bot,
+        ]);
+        $token = $user->createToken('chat')->plainTextToken;
+        $request = [
+            'conversation_id' => $conversation->id,
+            'action' => 'main_menu',
+            'language' => 'en',
+        ];
+
+        $startStep->update(['is_start' => false]);
+        $this->withToken($token)
+            ->postJson('/api/chat/navigate', $request)
+            ->assertStatus(409)
+            ->assertJsonPath('code', 'invalid_start_step_configuration');
+
+        $startStep->update(['is_start' => true]);
+        try {
+            ChatFlowStep::query()->create([
+                'name' => 'Duplicate Main Menu',
+                'message_en' => 'Another start',
+                'message_my' => 'နောက်ထပ်စတင်ချက်',
+                'message_zh' => '另一个起始步骤',
+                'is_start' => true,
+            ]);
+            $this->fail('A second start step should violate the unique index.');
+        } catch (QueryException) {
+            $this->assertSame(
+                1,
+                ChatFlowStep::query()->where('is_start', true)->count(),
+            );
+        }
+
+        $this->assertSame($nestedStep->id, $conversation->fresh()->current_step_id);
+        $this->assertDatabaseCount('chat_messages', 0);
+    }
+
     public function test_history_messages_keep_step_options_for_each_chat_flow_step(): void
     {
         Http::fake();
@@ -176,7 +544,7 @@ class ChatFlowApiTest extends TestCase
             ->assertOk();
 
         $this->withToken($user->createToken('chat')->plainTextToken)
-            ->getJson('/api/chat/current?conversation_id=' . $conversation->id . '&language=my')
+            ->getJson('/api/chat/current?conversation_id='.$conversation->id.'&language=my')
             ->assertOk()
             ->assertJsonPath('data.messages.0.flow_options.0.label', 'Internet')
             ->assertJsonPath('data.messages.1.selected_option.label', 'Internet')
@@ -294,7 +662,7 @@ class ChatFlowApiTest extends TestCase
             ->assertJsonPath('data.url', 'https://example.com/support');
 
         $this->withToken($token)
-            ->getJson('/api/chat/current?conversation_id=' . $conversationId . '&language=en')
+            ->getJson('/api/chat/current?conversation_id='.$conversationId.'&language=en')
             ->assertOk()
             ->assertJsonCount(1, 'data.messages')
             ->assertJsonPath('data.step.id', $startStep->id);
@@ -341,8 +709,8 @@ class ChatFlowApiTest extends TestCase
         $this->assertSame(ChatConversationStatus::WaitingAgent->value, $conversation->status->value);
         Http::assertSentCount(1);
         Http::assertSent(fn ($request) => $request['chat_id'] === 'test-chat-id'
-            && str_contains($request['text'], 'Conversation: #' . $conversation->id)
-            && str_contains($request['text'], 'Reason: ' . $option->option_my));
+            && str_contains($request['text'], 'Conversation: #'.$conversation->id)
+            && str_contains($request['text'], 'Reason: '.$option->option_my));
     }
 
     public function test_waiting_conversation_rejects_option_and_does_not_send_duplicate_telegram_notification(): void
