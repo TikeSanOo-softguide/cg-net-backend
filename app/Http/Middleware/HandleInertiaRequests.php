@@ -68,6 +68,7 @@ class HandleInertiaRequests extends Middleware
                 'is_super_admin' => $user instanceof Admin && $user->hasRole(AppPermissions::SuperAdmin),
             ],
             'locale' => $locale,
+            'timezone' => config('app.timezone'),
             'translations' => $this->translationsFor($locale),
             'unreadNotifications' =>
                 $user instanceof Admin

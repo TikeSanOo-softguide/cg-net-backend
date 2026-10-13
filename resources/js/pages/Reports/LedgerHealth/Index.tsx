@@ -116,10 +116,6 @@ function amount(value: number, locale: SupportedLocale): string {
     return `${new Intl.NumberFormat(localeTags[locale]).format(value)} ${TOP_UP_CARD_CURRENCY}`;
 }
 
-function dateTime(value: string | null, locale: SupportedLocale): string {
-    return value ? new Date(value).toLocaleString(localeTags[locale]) : '—';
-}
-
 function transactionHref(transactionNo: string): string {
     const query = new URLSearchParams({ search: transactionNo, open_transaction: transactionNo });
 
@@ -135,7 +131,7 @@ export default function LedgerHealthReportIndex({
     dailyScanEnabled,
     defaultWindow,
 }: Props) {
-    const { t } = useTranslation();
+    const { t, timezone } = useTranslation();
     const locale = usePage<PageProps>().props.locale;
     const returnTo = useReturnTo('/reports');
     const numberFormat = new Intl.NumberFormat(localeTags[locale]);
@@ -187,7 +183,7 @@ export default function LedgerHealthReportIndex({
         { value: 'manual', label: t('ledger_health_report.scan_types.manual') },
     ];
 
-    const snapshotLabel = (item: SnapshotOption): string => formatDateTime(item.checked_at);
+    const snapshotLabel = (item: SnapshotOption): string => formatDateTime(item.checked_at, false, timezone);
 
     useEffect(() => {
         if (!run) return;
@@ -335,9 +331,9 @@ export default function LedgerHealthReportIndex({
         {
             id: 'created_at',
             header: t('ledger_health_report.created_at'),
-            cell: (row) => formatDateTime(row.created_at),
+            cell: (row) => formatDateTime(row.created_at, false, timezone),
             className: 'whitespace-nowrap text-muted-foreground',
-            searchValue: (row) => formatDateTime(row.created_at),
+            searchValue: (row) => formatDateTime(row.created_at, false, timezone),
         },
     ];
     const sourceMismatchColumns: DataTableColumn<SourceMismatch>[] = [
@@ -400,9 +396,9 @@ export default function LedgerHealthReportIndex({
         {
             id: 'created_at',
             header: t('ledger_health_report.created_at'),
-            cell: (row) => formatDateTime(row.created_at),
+            cell: (row) => formatDateTime(row.created_at, false, timezone),
             className: 'whitespace-nowrap text-muted-foreground',
-            searchValue: (row) => formatDateTime(row.created_at),
+            searchValue: (row) => formatDateTime(row.created_at, false, timezone),
         },
     ];
 
@@ -465,7 +461,8 @@ export default function LedgerHealthReportIndex({
                     <span>{t(statusKey)}</span>
                     {snapshot?.checked_at ? (
                         <span className="ml-auto whitespace-nowrap text-xs">
-                            {t('ledger_health_report.last_checked')}: {formatDateTime(snapshot.checked_at)}
+                            {t('ledger_health_report.last_checked')}:{' '}
+                            {formatDateTime(snapshot.checked_at, false, timezone)}
                         </span>
                     ) : null}
                 </div>
@@ -620,8 +617,9 @@ export default function LedgerHealthReportIndex({
 
                 {(scanType === 'daily' || scanType === 'manual') && snapshot?.window_start && snapshot?.window_end ? (
                     <p className="text-xs text-muted-foreground">
-                        {t('ledger_health_report.scan_window')}: {formatDateTime(snapshot.window_start)} →{' '}
-                        {formatDateTime(snapshot.window_end)}
+                        {t('ledger_health_report.scan_window')}:{' '}
+                        {formatDateTime(snapshot.window_start, false, timezone)} →{' '}
+                        {formatDateTime(snapshot.window_end, false, timezone)}
                     </p>
                 ) : null}
 

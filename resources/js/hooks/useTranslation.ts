@@ -15,9 +15,9 @@ function lookup(tree: TranslationTree | string | undefined, key: string): string
 }
 
 export function useTranslation() {
-    const { translations, locale } = usePage().props;
+    const { translations, locale, timezone } = usePage().props;
 
     const t = (key: string): string => lookup(translations, key) ?? key;
 
-    return { t, locale: locale as SupportedLocale };
+    return { t, locale: locale as SupportedLocale, timezone };
 }

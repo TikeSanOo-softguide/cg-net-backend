@@ -9,7 +9,7 @@ final class LedgerHealthWindow
     public const CLOSE_HOUR = 16;
 
     /**
-     * Closing window (start, end] in UTC for storage/queries.
+     * Closing window (start, end] at the configured close hour, returned as UTC instants.
      * End is today at the configured close hour; start is the previous day at that hour.
      *
      * @return array{0: Carbon, 1: Carbon}
@@ -23,6 +23,6 @@ final class LedgerHealthWindow
 
         $startLocal = $endLocal->copy()->subDay();
 
-        return [$startLocal->clone()->utc(), $endLocal->clone()->utc()];
+        return [$startLocal->utc(), $endLocal->utc()];
     }
 }

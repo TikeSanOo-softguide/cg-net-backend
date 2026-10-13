@@ -4,6 +4,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formControlClass } from '@/lib/form-control';
+import { dateInTimezone } from '@/lib/utils';
 import type { SupportedLocale } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -27,9 +28,9 @@ function parseIsoDate(value: string): Date | null {
     }
 
     const [year, month, day] = value.split('-').map(Number);
-    const date = new Date(year, month - 1, day);
+    const date = new Date(Date.UTC(year, month - 1, day));
 
-    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
         return null;
     }
 
@@ -37,43 +38,43 @@ function parseIsoDate(value: string): Date | null {
 }
 
 function toIsoDate(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
 
     return `${year}-${month}-${day}`;
 }
 
 function startOfDay(date: Date): Date {
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 }
 
 function isSameDay(left: Date, right: Date): boolean {
     return (
-        left.getFullYear() === right.getFullYear() &&
-        left.getMonth() === right.getMonth() &&
-        left.getDate() === right.getDate()
+        left.getUTCFullYear() === right.getUTCFullYear() &&
+        left.getUTCMonth() === right.getUTCMonth() &&
+        left.getUTCDate() === right.getUTCDate()
     );
 }
 
 function weekdayLabels(tag: string): string[] {
-    const formatter = new Intl.DateTimeFormat(tag, { weekday: 'narrow' });
+    const formatter = new Intl.DateTimeFormat(tag, { weekday: 'narrow', timeZone: 'UTC' });
 
     return Array.from({ length: WEEK_DAYS }, (_, index) => {
-        const date = new Date(2024, 8, index + 1);
+        const date = new Date(Date.UTC(2024, 8, index + 1));
 
         return formatter.format(date);
     });
 }
 
 function monthCells(view: Date): Array<Date | null> {
-    const first = new Date(view.getFullYear(), view.getMonth(), 1);
-    const daysInMonth = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
-    const leading = first.getDay();
+    const first = new Date(Date.UTC(view.getUTCFullYear(), view.getUTCMonth(), 1));
+    const daysInMonth = new Date(Date.UTC(view.getUTCFullYear(), view.getUTCMonth() + 1, 0)).getUTCDate();
+    const leading = first.getUTCDay();
     const cells: Array<Date | null> = Array.from({ length: leading }, () => null);
 
     for (let day = 1; day <= daysInMonth; day++) {
-        cells.push(new Date(view.getFullYear(), view.getMonth(), day));
+        cells.push(new Date(Date.UTC(view.getUTCFullYear(), view.getUTCMonth(), day)));
     }
 
     while (cells.length % WEEK_DAYS !== 0) {
@@ -116,25 +117,30 @@ export function DatePicker({
     onChange,
     onBlur,
 }: DatePickerProps) {
-    const { t, locale } = useTranslation();
+    const { t, locale, timezone } = useTranslation();
     const [open, setOpen] = useState(false);
     const selected = parseIsoDate(value);
-    const [view, setView] = useState(() => selected ?? new Date());
+    const [view, setView] = useState(() => selected ?? dateInTimezone(new Date(), timezone));
     const tag = localeTag(locale);
     const labels = useMemo(() => weekdayLabels(tag), [tag]);
     const cells = useMemo(() => monthCells(view), [view]);
-    const today = startOfDay(new Date());
+    const today = startOfDay(dateInTimezone(new Date(), timezone));
     const minDate = min ? parseIsoDate(min) : null;
     const maxDate = max ? parseIsoDate(max) : null;
     const todayDisabled = (minDate !== null && today < minDate) || (maxDate !== null && today > maxDate);
     const display = selected
-        ? new Intl.DateTimeFormat(tag, { day: 'numeric', month: 'short', year: 'numeric' }).format(selected)
+        ? new Intl.DateTimeFormat(tag, {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+              timeZone: 'UTC',
+          }).format(selected)
         : '';
-    const monthLabel = new Intl.DateTimeFormat(tag, { month: 'long', year: 'numeric' }).format(view);
+    const monthLabel = new Intl.DateTimeFormat(tag, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(view);
 
     useEffect(() => {
         if (open) {
-            setView(parseIsoDate(value) ?? new Date());
+            setView(parseIsoDate(value) ?? dateInTimezone(new Date(), timezone));
         }
     }, [open, value]);
 
@@ -197,7 +203,7 @@ export function DatePicker({
                     <button
                         type="button"
                         className="inline-flex size-7 items-center justify-center rounded-[6px] text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
-                        onClick={() => setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))}
+                        onClick={() => setView(new Date(Date.UTC(view.getUTCFullYear(), view.getUTCMonth() - 1, 1)))}
                         aria-label={t('common.previous_month')}
                     >
                         <ChevronLeftIcon className="size-4" strokeWidth={1.9} />
@@ -206,7 +212,7 @@ export function DatePicker({
                     <button
                         type="button"
                         className="inline-flex size-7 items-center justify-center rounded-[6px] text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
-                        onClick={() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))}
+                        onClick={() => setView(new Date(Date.UTC(view.getUTCFullYear(), view.getUTCMonth() + 1, 1)))}
                         aria-label={t('common.next_month')}
                     >
                         <ChevronRightIcon className="size-4" strokeWidth={1.9} />
@@ -246,7 +252,7 @@ export function DatePicker({
                                     dayDisabled && 'pointer-events-none opacity-35',
                                 )}
                             >
-                                {date.getDate()}
+                                {date.getUTCDate()}
                             </button>
                         );
                     })}

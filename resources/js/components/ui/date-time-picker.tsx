@@ -3,8 +3,8 @@ import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formControlClass } from '@/lib/form-control';
+import { cn, dateInTimezone } from '@/lib/utils';
 import type { SupportedLocale } from '@/types';
-import { cn } from '@/lib/utils';
 
 const WEEK_DAYS = 7;
 
@@ -14,7 +14,7 @@ function localeTag(locale: SupportedLocale): string {
     return 'en-US';
 }
 
-function parseIsoDateTime(value: string): Date | null {
+function parseIsoDateTime(value: string, timeZone: string): Date | null {
     const trimmed = value?.trim?.() ?? '';
     if (!trimmed) return null;
 
@@ -47,7 +47,7 @@ function parseIsoDateTime(value: string): Date | null {
     }
 
     const direct = new Date(trimmed);
-    return Number.isNaN(direct.getTime()) ? null : direct;
+    return Number.isNaN(direct.getTime()) ? null : dateInTimezone(direct, timeZone);
 }
 
 function toIsoDateTime(date: Date): string {
@@ -81,7 +81,7 @@ function isSameDay(left: Date, right: Date): boolean {
 }
 
 function weekdayLabels(tag: string): string[] {
-    const formatter = new Intl.DateTimeFormat(tag, { weekday: 'narrow' });
+    const formatter = new Intl.DateTimeFormat(tag, { weekday: 'narrow', timeZone: 'UTC' });
     return Array.from({ length: WEEK_DAYS }, (_, index) => {
         const date = new Date(Date.UTC(2024, 8, index + 1));
         return formatter.format(date);
@@ -136,11 +136,11 @@ export function DateTimePicker({
     onChange,
     onBlur,
 }: DateTimePickerProps) {
-    const { t, locale } = useTranslation();
+    const { t, locale, timezone } = useTranslation();
     const [open, setOpen] = useState(false);
 
-    const selected = value ? parseIsoDateTime(value) : null;
-    const [view, setView] = useState(() => selected ?? new Date());
+    const selected = value ? parseIsoDateTime(value, timezone) : null;
+    const [view, setView] = useState(() => selected ?? dateInTimezone(new Date(), timezone));
 
     // Local time value for the native <input type="time">
     const [timeValue, setTimeValue] = useState(() => (selected ? toTimeValue(selected) : ''));
@@ -149,11 +149,11 @@ export function DateTimePicker({
     const labels = useMemo(() => weekdayLabels(tag), [tag]);
     const cells = useMemo(() => monthCells(view), [view]);
 
-    const now = new Date();
+    const now = dateInTimezone(new Date(), timezone);
     const today = startOfDay(now);
 
-    const minDate = min ? parseIsoDateTime(min) : null;
-    const maxDate = max ? parseIsoDateTime(max) : null;
+    const minDate = min ? parseIsoDateTime(min, timezone) : null;
+    const maxDate = max ? parseIsoDateTime(max, timezone) : null;
 
     const nowDisabled = (minDate !== null && now < minDate) || (maxDate !== null && now > maxDate);
 
@@ -187,8 +187,8 @@ export function DateTimePicker({
     // Sync when picker opens or external value changes
     useEffect(() => {
         if (open) {
-            const parsed = value ? parseIsoDateTime(value) : null;
-            setView(parsed ?? new Date());
+            const parsed = value ? parseIsoDateTime(value, timezone) : null;
+            setView(parsed ?? dateInTimezone(new Date(), timezone));
             setTimeValue(parsed ? toTimeValue(parsed) : '');
         }
     }, [open, value]);
@@ -250,7 +250,7 @@ export function DateTimePicker({
     };
 
     const selectNow = () => {
-        const n = new Date();
+        const n = dateInTimezone(new Date(), timezone);
         setTimeValue(toTimeValue(n));
         setView(n);
         onChange(toIsoDateTime(n));

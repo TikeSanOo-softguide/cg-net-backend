@@ -49,7 +49,7 @@ class BillPaymentExport implements FromQuery, ShouldAutoSize, WithHeadings, With
             $payment->status?->value ?? '',
             $payment->external_bill_ref ?? '',
             $payment->external_payment_ref ?? '',
-            $payment->getRawOriginal('created_at') ?? '',
+            $payment->created_at?->toDateTimeString() ?? '',
             $payment->confirmed_at?->toDateTimeString() ?? '',
         ];
     }

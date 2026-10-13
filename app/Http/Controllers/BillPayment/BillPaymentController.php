@@ -39,7 +39,7 @@ class BillPaymentController extends Controller
                     'external_bill_ref' => $payment->external_bill_ref,
                     'external_payment_ref' => $payment->external_payment_ref,
                     'external_response' => $payment->external_response,
-                    'created_at' => $payment->getRawOriginal('created_at'),
+                    'created_at' => $payment->created_at?->toIso8601String(),
                     'confirmed_at' => $payment->confirmed_at?->toIso8601String(),
                 ];
             });

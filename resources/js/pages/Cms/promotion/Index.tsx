@@ -7,7 +7,7 @@ import { NoImage } from '@/components/ui/no-image';
 import type { Paginated } from '@/components/Pagination';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatDate, truncateText } from '@/lib/utils';
+import { formatDate, todayInTimezone, truncateText } from '@/lib/utils';
 
 type Props = {
     items: Paginated<PromotionItem>;
@@ -38,13 +38,7 @@ export default function PromotionsIndex({ items, filters, basePath = '/cms/promo
             return false;
         }
 
-        const [year, month, day] = value.split('-').map(Number);
-        const endDate = new Date(year, month - 1, day);
-        const today = new Date();
-
-        today.setHours(0, 0, 0, 0);
-
-        return endDate < today;
+        return value < todayInTimezone();
     }
 
     return (

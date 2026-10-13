@@ -393,18 +393,29 @@ class ApiAuthenticationTest extends TestCase
         ])->assertUnprocessable();
     }
 
-    public function test_new_login_revokes_previous_sanctum_tokens_for_same_user(): void
+    public function test_login_is_rejected_when_another_device_has_an_active_session(): void
     {
         $user = User::factory()->create(['phone' => self::PHONE, 'password' => '123456']);
         $oldToken = $user->createToken('old-device')->plainTextToken;
+        $user->deviceTokens()->create([
+            'token' => 'old-device-push-token',
+            'platform' => 'android',
+            'last_used_at' => now(),
+        ]);
         $verify = $this->verifyOtpFor('+95922345678');
 
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
             'password' => '123456',
-        ])->assertOk();
+        ])
+            ->assertStatus(409)
+            ->assertJsonPath(
+                'message',
+                'This account is already signed in on an Android device. Please log out from that device first.',
+            );
 
-        $this->withToken($oldToken)->getJson('/api/user')->assertUnauthorized();
+        $this->assertDatabaseCount('personal_access_tokens', 1);
+        $this->withToken($oldToken)->getJson('/api/user')->assertOk();
     }
 
     // ---------------------------------------------------------------------

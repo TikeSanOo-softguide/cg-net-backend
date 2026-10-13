@@ -1,4 +1,5 @@
 import type { AnnouncementFormValues } from '@/components/notification/announcement/AnnouncementForm';
+import { dateTimeInputInTimezone } from '@/lib/utils';
 
 type Translate = (key: string) => string;
 
@@ -79,7 +80,7 @@ export function validateAnnouncementField(
                 data.start_date !== '' &&
                 isValidDateTime(value) &&
                 isValidDateTime(data.start_date) &&
-                parseDateTime(value).getTime() < parseDateTime(data.start_date).getTime()
+                parseDateTime(value) < parseDateTime(data.start_date)
             ) {
                 return t('notification.announcement.validation.end_date_after_or_equal');
             }
@@ -116,21 +117,12 @@ export function announcementSuccessMessage(field: AnnouncementField, t: Translat
     return t(`notification.announcement.validation.${field}_ok`);
 }
 
-function parseDateTime(value: string): Date {
-    if (value.includes('T')) {
-        return new Date(value);
-    }
-
-    return new Date(`${value}:00`);
+function isValidDateTime(value: string): boolean {
+    return dateTimeInputInTimezone(value) !== null;
 }
 
-function isValidDateTime(value: string): boolean {
-    if (!value) {
-        return false;
-    }
+function parseDateTime(value: string): number {
+    const normalized = dateTimeInputInTimezone(value);
 
-    const normalized = value.trim();
-    const date = normalized.includes('T') ? new Date(normalized) : new Date(`${normalized}:00`);
-
-    return !Number.isNaN(date.getTime());
+    return normalized ? Date.parse(`${normalized}Z`) : Number.NaN;
 }

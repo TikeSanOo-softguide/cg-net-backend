@@ -17,7 +17,7 @@ import { FormDialog } from '@/components/FormDialog';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
-import { cn, formatDate } from '@/lib/utils';
+import { cn, formatDate, todayInTimezone } from '@/lib/utils';
 import { CopyValueButton } from '@/components/CopyValueButton';
 import { REQUEST_STATUS } from '@/lib/CommonNameConst';
 import { formatPhoneInternational } from '@/lib/phone';
@@ -206,7 +206,7 @@ export function FailureReportDetailDialog({
 
                             {request.customer_packages.map((customerPackage) => {
                                 const isExpired = customerPackage.expiry_date
-                                    ? new Date(customerPackage.expiry_date) < new Date()
+                                    ? customerPackage.expiry_date < todayInTimezone()
                                     : false;
 
                                 return (

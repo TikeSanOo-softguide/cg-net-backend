@@ -40,7 +40,7 @@ import {
 import type { Paginated } from '@/components/Pagination';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
-import { cn, formatDateTime } from '@/lib/utils';
+import { cn, dateInTimezone, dateTimeInputInTimezone, formatDateTime } from '@/lib/utils';
 
 type Filters = {
     search: string;
@@ -65,21 +65,23 @@ function visitIndex(search: string, status: string, type: string) {
     );
 }
 
-function getStatus(item: AnnouncementItem) {
+function getStatus(item: AnnouncementItem, timezone: string) {
     if (!item.is_active) {
         return 'inactive';
     }
 
+    const now = dateInTimezone(new Date(), timezone).getTime();
+
     if (item.start_date) {
-        const start = new Date(item.start_date);
-        if (!Number.isNaN(start.getTime()) && start > new Date()) {
+        const start = dateTimeInputInTimezone(item.start_date, timezone);
+        if (start && Date.parse(`${start}Z`) > now) {
             return 'pending';
         }
     }
 
     if (item.end_date) {
-        const end = new Date(item.end_date);
-        if (!Number.isNaN(end.getTime()) && end < new Date()) {
+        const end = dateTimeInputInTimezone(item.end_date, timezone);
+        if (end && Date.parse(`${end}Z`) < now) {
             return 'expired';
         }
     }
@@ -88,7 +90,7 @@ function getStatus(item: AnnouncementItem) {
 }
 
 export default function AnnouncementsIndex({ announcement, filters }: Props) {
-    const { t, locale } = useTranslation();
+    const { t, locale, timezone } = useTranslation();
     const can = useCan();
     const [search, setSearch] = useState(filters.search);
     const [status, setStatus] = useState(filters.status);
@@ -234,12 +236,12 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
                                     </p>
                                     <p className="mt-1 text-[11px] text-muted-foreground">
                                         {item.start_date || item.end_date
-                                            ? `${formatDateTime(item.start_date, true)} ~ ${formatDateTime(item.end_date, true)}`
+                                            ? `${formatDateTime(item.start_date, false, timezone)} ~ ${formatDateTime(item.end_date, false, timezone)}`
                                             : '—'}
                                     </p>
                                 </div>
                                 <div className="flex shrink-0 items-center gap-1">
-                                    <StatusBadge className="mr-3" status={getStatus(item)} />
+                                    <StatusBadge className="mr-3" status={getStatus(item, timezone)} />
                                     <TableActionButton
                                         label={t('common.view')}
                                         icon={EyeIcon}

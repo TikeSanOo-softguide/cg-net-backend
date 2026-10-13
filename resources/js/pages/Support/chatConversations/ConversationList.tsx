@@ -4,6 +4,7 @@ import { MessageCircleIcon, SearchIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatTime as formatAppTime } from '@/lib/utils';
 
 import type { ChatFilters, ConversationSummary } from './types';
 
@@ -158,10 +159,9 @@ function statusLabel(status: string, t: (key: string) => string) {
 }
 
 export function formatTime(value: string | null | undefined) {
-    if (!value) return '';
-    return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(value));
+    return value ? formatAppTime(value) : '';
 }
 
 export function formatDateTime(value: string) {
-    return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(value));
+    return formatAppTime(value);
 }

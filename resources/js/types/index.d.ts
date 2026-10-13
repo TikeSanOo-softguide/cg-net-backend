@@ -58,6 +58,7 @@ export type PageProps<T extends Record<string, unknown> = Record<string, unknown
         is_super_admin: boolean;
     };
     locale: SupportedLocale;
+    timezone: string;
     translations: TranslationTree;
     unreadNotifications: number;
     totalAdminNotifications: number;
@@ -80,6 +81,7 @@ declare module '@inertiajs/core' {
                 is_super_admin: boolean;
             };
             locale: SupportedLocale;
+            timezone: string;
             translations: TranslationTree;
             unreadNotifications: number;
             totalAdminNotifications: number;

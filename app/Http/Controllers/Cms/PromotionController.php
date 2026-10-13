@@ -147,8 +147,8 @@ class PromotionController extends Controller
             'is_active' => $promotion->is_active,
             'slug' => $promotion->slug,
             'image_url' => StoresPublicImage::url($promotion->image_url),
-            'created_at' => $promotion->created_at?->toDateTimeString(),
-            'updated_at' => $promotion->updated_at?->toDateTimeString(),
+            'created_at' => $promotion->created_at?->toIso8601String(),
+            'updated_at' => $promotion->updated_at?->toIso8601String(),
         ];
     }
 }
