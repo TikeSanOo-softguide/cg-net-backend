@@ -5,6 +5,7 @@ namespace App\Http\Requests\Cms;
 use App\Models\Category;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class UpdateCategoryRequest extends FormRequest
 {
@@ -29,9 +30,24 @@ class UpdateCategoryRequest extends FormRequest
         $category = $this->route('category');
 
         return [
-            'name_en' => ['required', 'string', 'max:50'],
-            'name_zh' => ['required', 'string', 'max:50'],
-            'name_my' => ['required', 'string', 'max:50'],
+            'name_en' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('categories', 'name_en')->withoutTrashed()->ignore($category->id),
+            ],
+            'name_zh' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('categories', 'name_zh')->withoutTrashed()->ignore($category->id),
+            ],
+            'name_my' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('categories', 'name_my')->withoutTrashed()->ignore($category->id),
+            ],
             'slug' => CmsRules::slug('categories', $category->id, 50),
         ];
     }

@@ -276,6 +276,46 @@ class CmsManagementTest extends TestCase
         $this->assertDatabaseHas('categories', ['id' => $category->id, 'deleted_at' => null]);
     }
 
+    public function test_category_names_must_be_unique_among_non_deleted_categories(): void
+    {
+        $admin = Admin::factory()->create();
+        $existing = Category::factory()->create([
+            'name_en' => 'Unique English',
+            'name_zh' => '唯一中文',
+            'name_my' => 'ထူးခြားသောမြန်မာ',
+        ]);
+
+        foreach (['name_en', 'name_zh', 'name_my'] as $field) {
+            $values = [
+                'name_en' => 'Another English',
+                'name_zh' => '另一个中文',
+                'name_my' => 'အခြားမြန်မာ',
+                'slug' => 'another-' . $field,
+            ];
+            $values[$field] = $existing->{$field};
+
+            $this->actingAs($admin, 'web')
+                ->from('/cms/categories')
+                ->post('/cms/categories', $values)
+                ->assertRedirect('/cms/categories')
+                ->assertSessionHasErrors($field);
+        }
+
+        $existing->delete();
+
+        $this->actingAs($admin, 'web')
+            ->post('/cms/categories', [
+                'name_en' => $existing->name_en,
+                'name_zh' => $existing->name_zh,
+                'name_my' => $existing->name_my,
+                'slug' => $existing->slug,
+            ])
+            ->assertRedirect('/cms/categories')
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(1, Category::query()->where('slug', $existing->slug)->count());
+    }
+
     public function test_admins_can_manage_contacts_and_gallery(): void
     {
         $admin = Admin::factory()->create();

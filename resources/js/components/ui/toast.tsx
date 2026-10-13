@@ -24,7 +24,7 @@ function ToastViewport({ className, ...props }: React.ComponentProps<typeof Toas
 
 const toastVariants = cva(
     [
-        'group pointer-events-auto relative flex h-[75px] min-h-[75px] w-full overflow-hidden rounded-[8px] border border-border/70 bg-[#FFFFFF]',
+        'group pointer-events-auto relative flex h-auto min-h-[75px] w-full overflow-hidden rounded-[8px] border border-border/70 bg-[#FFFFFF]',
         'shadow-[0_8px_24px_rgb(23_50_54/0.10),0_2px_6px_rgb(23_50_54/0.06)]',
         'transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none',
         'data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out',
@@ -110,7 +110,7 @@ function Toast({
             {...props}
         >
             <span className={cn('w-1 shrink-0 self-stretch', style.bar)} aria-hidden />
-            <div className="flex min-w-0 flex-1 items-center gap-3 px-3.5 pr-9">
+            <div className="flex min-w-0 flex-1 items-center gap-3 px-3.5 py-3 pr-9">
                 <span className={cn('flex size-7 shrink-0 items-center justify-center rounded-full', style.iconWrap)}>
                     {style.icon}
                 </span>
@@ -166,7 +166,7 @@ function ToastTitle({ className, ...props }: React.ComponentProps<typeof ToastPr
     return (
         <ToastPrimitives.Title
             data-slot="toast-title"
-            className={cn('truncate text-[13px] leading-5 font-semibold text-foreground', className)}
+            className={cn('break-words text-[13px] leading-[1.6] font-semibold text-foreground', className)}
             {...props}
         />
     );
@@ -176,7 +176,7 @@ function ToastDescription({ className, ...props }: React.ComponentProps<typeof T
     return (
         <ToastPrimitives.Description
             data-slot="toast-description"
-            className={cn('line-clamp-1 text-[12px] leading-4 text-muted-foreground', className)}
+            className={cn('break-words text-[12px] leading-[1.7] text-muted-foreground', className)}
             {...props}
         />
     );

@@ -212,12 +212,20 @@
             "validation": {
                 "name_en_max": "英文名称不能超过 50 个字符。",
                 "name_en_required": "请输入英文名称。",
+                "name_en_string": "英文名称必须为文本。",
+                "name_en_unique": "该英文名称已存在。",
                 "name_my_max": "缅甸语名称不能超过 50 个字符。",
                 "name_my_required": "请输入缅甸语名称。",
+                "name_my_string": "缅甸语名称必须为文本。",
+                "name_my_unique": "该缅甸语名称已存在。",
                 "name_zh_max": "中文名称不能超过 50 个字符。",
                 "name_zh_required": "请输入中文名称。",
+                "name_zh_string": "中文名称必须为文本。",
+                "name_zh_unique": "该中文名称已存在。",
                 "slug_max": "别名不能超过 50 个字符。",
-                "slug_required": "请输入别名。"
+                "slug_required": "请输入别名。",
+                "slug_string": "别名必须为文本。",
+                "slug_unique": "该分类别名已存在。"
             }
         },
         "contact": {

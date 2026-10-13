@@ -42,7 +42,7 @@ export function FlashToast() {
         const show = (flash?: FlashBag, errors?: PageErrors) => {
             const token = flashToken(flash, errors);
 
-            if (! token || token === lastShownFlashToken) {
+            if (!token || token === lastShownFlashToken) {
                 return;
             }
 
@@ -51,10 +51,10 @@ export function FlashToast() {
             const error = flash?.error
                 ? translateFlash(translate, flash.error)
                 : errors?.delete
-                    ? translate(errors.delete)
-                    : null;
+                  ? translate(errors.delete)
+                  : null;
 
-            if (! success && ! error) {
+            if (!success && !error) {
                 return;
             }
 
@@ -77,7 +77,7 @@ export function FlashToast() {
             }
         };
 
-        if (! didShowInitialFlash) {
+        if (!didShowInitialFlash) {
             didShowInitialFlash = true;
             const props = initialProps.current as { flash?: FlashBag; errors?: PageErrors };
             show(props.flash, props.errors);
@@ -88,11 +88,18 @@ export function FlashToast() {
             show(props.flash, props.errors);
         });
 
+        const offStart = router.on('start', () => {
+            if (lastShownFlashToken?.startsWith('error:delete:')) {
+                lastShownFlashToken = null;
+            }
+        });
+
         const offError = router.on('error', (event) => {
             show(undefined, event.detail.errors as PageErrors);
         });
 
         return () => {
+            offStart();
             offSuccess();
             offError();
         };

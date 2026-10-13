@@ -212,12 +212,20 @@
             "validation": {
                 "name_en_max": "The English name may not be greater than 50 characters.",
                 "name_en_required": "Please enter an English name.",
+                "name_en_string": "The English name must be text.",
+                "name_en_unique": "This English name already exists.",
                 "name_my_max": "The Myanmar name may not be greater than 50 characters.",
                 "name_my_required": "Please enter a Myanmar name.",
+                "name_my_string": "The Myanmar name must be text.",
+                "name_my_unique": "This Myanmar name already exists.",
                 "name_zh_max": "The Chinese name may not be greater than 50 characters.",
                 "name_zh_required": "Please enter a Chinese name.",
+                "name_zh_string": "The Chinese name must be text.",
+                "name_zh_unique": "This Chinese name already exists.",
                 "slug_max": "The slug may not be greater than 50 characters.",
-                "slug_required": "Please enter a slug."
+                "slug_required": "Please enter a slug.",
+                "slug_string": "The slug must be text.",
+                "slug_unique": "This slug already exists."
             }
         },
         "contact": {
