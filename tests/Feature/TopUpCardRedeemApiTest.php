@@ -50,7 +50,7 @@ class TopUpCardRedeemApiTest extends TestCase
         $this->postJson('/api/redeem/check-serial-no', ['serial_no' => $usedCard->serial_no])
             ->assertStatus(400)
             ->assertExactJson([
-            'result' => 'already_used',
+                'result' => 'already_used',
                 'message' => 'This top-up card has already been used.',
             ]);
 
@@ -62,11 +62,18 @@ class TopUpCardRedeemApiTest extends TestCase
                     'message' => 'Invalid top-up card.',
                 ]);
         }
+    }
 
-        $this->postJson('/api/redeem/check-serial-no', ['serial_no' => 'UNKNOWN-SERIAL'])
+    public function test_serial_check_returns_invalid_for_unknown_serial(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('serial-check-unknown')->plainTextToken;
+
+        $this->withToken($token)
+            ->postJson('/api/redeem/check-serial-no', ['serial_no' => 'UNKNOWN-SERIAL'])
             ->assertStatus(400)
             ->assertExactJson([
-            'result' => 'invalid_card',
+                'result' => 'invalid_card',
                 'message' => 'Invalid top-up card.',
             ]);
     }
