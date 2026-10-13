@@ -80,6 +80,7 @@ type BannerFormProps = {
     onSubmit: (event: FormEvent) => void;
     onCancel?: () => void;
     mode?: 'create' | 'edit';
+    existingType?: BannerType;
     createdAt?: string | null;
     updatedAt?: string | null;
     bannerTypeCounts: Partial<Record<BannerType, number>>;
@@ -102,6 +103,7 @@ export function BannerForm({
     onSubmit,
     onCancel,
     mode = 'create',
+    existingType,
     createdAt,
     updatedAt,
     imageUrls,
@@ -329,10 +331,12 @@ export function BannerForm({
                         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                             {bannerTypes.map((bannerType) => {
                                 const isSelected = form.data.type === bannerType.value;
+                                const existingTypeCount =
+                                    mode === 'edit' && existingType === bannerType.value ? 1 : 0;
                                 const isLimited =
-                                    mode === 'create' &&
                                     bannerType.limit !== undefined &&
-                                    (bannerTypeCounts[bannerType.value] ?? 0) >= bannerType.limit;
+                                    (bannerTypeCounts[bannerType.value] ?? 0) - existingTypeCount >=
+                                        bannerType.limit;
                                 const limitDescriptionId = `banner-type-${bannerType.value}-limit`;
                                 return (
                                     <label
@@ -355,7 +359,7 @@ export function BannerForm({
                                                 name="banner_type"
                                                 value={bannerType.value}
                                                 checked={isSelected}
-                                                disabled={isLimited}
+                                                disabled={isLimited && !isSelected}
                                                 aria-disabled={isLimited}
                                                 aria-describedby={isLimited ? limitDescriptionId : undefined}
                                                 onChange={() => {
@@ -405,7 +409,7 @@ export function BannerForm({
                             <h3 className="text-sm font-semibold text-foreground">{t('cms.banner.images')}</h3>
                         </div>
                         <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-                            {t('cms.banner.image_size')} : {selectedBannerType.width} × {selectedBannerType.height} px
+                            {t('cms.banner.image_size')} : {selectedBannerType.size} px
                         </span>
                     </div>
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">

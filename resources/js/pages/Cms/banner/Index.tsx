@@ -151,6 +151,12 @@ export default function BannersIndex({ items, filters, bannerTypes, bannerTypeCo
                         },
                     },
                     {
+                        id: 'sort_order',
+                        header: t('cms.sort_order'),
+                        sortable: true,
+                        cell: (row) => row.sort_order ?? '—',
+                    },
+                    {
                         id: 'is_active',
                         header: t('common.status'),
                         mobile: 'badge',

@@ -110,7 +110,7 @@
     "broadband_application": {
         "identity": "Identity",
         "location": "Location",
-        "search_placeholder": "Search by app username, phone"
+        "search_placeholder": "Search app username, phone"
     },
     "change_password": {
         "approved_requests": "Approved Requests",
@@ -122,7 +122,7 @@
         "new_password": "New Password",
         "preferred_date": "Preferred date",
         "request_title": "Change Password Request",
-        "search_placeholder": "Search by app username, account_no",
+        "search_placeholder": "Search app username, account_no",
         "status_updated": "Request status updated",
         "total_requests": "Total Requests",
         "under_review_requests": "Under Review Requests",
@@ -146,7 +146,7 @@
         "request_details_description": "View the details of this change plan request.",
         "requested_packages": "Requested Packages",
         "requested_plan": "Requested Plan",
-        "search_placeholder": "Search by account_no, app username",
+        "search_placeholder": "Search account_no, app username",
         "status_updated": "Request status updated",
         "total_requests": "Total Requests",
         "under_review_requests": "Under Review Requests",
@@ -229,7 +229,7 @@
             "description": "Manage public contact points.",
             "edit": "Edit contact",
             "edit_description": "Update this contact point's details.",
-            "search": "Search by this contact point",
+            "search": "Search contact point",
             "updated": "Contact item updated",
             "validation": {
                 "contact_point_max": "Contact point must not exceed 255 characters.",
@@ -1348,7 +1348,7 @@
         "new_address": "New Address",
         "new_location": "New Location",
         "preferred_date": "Preferred date",
-        "search": "Search by app user name,account_no",
+        "search": "Search pp user name,account_no",
         "service_transfer": "Service Transfer"
     },
     "requests": {

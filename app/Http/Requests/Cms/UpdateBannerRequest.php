@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Cms;
 
 use App\Enums\BannerType;
+use App\Models\Banner;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -18,11 +19,31 @@ class UpdateBannerRequest extends FormRequest
      */
     public function rules(): array
     {
+        /** @var Banner $banner */
+        $banner = $this->route('banner');
+
         return [
             'image_url_en' => CmsRules::image(false),
             'image_url_zh' => CmsRules::image(false),
             'image_url_my' => CmsRules::image(false),
-            'type' => ['required', 'string', Rule::enum(BannerType::class)],
+            'type' => [
+                'required',
+                'string',
+                Rule::enum(BannerType::class),
+                function (string $attribute, mixed $value, \Closure $fail) use ($banner): void {
+                    $limit = is_string($value) ? BannerType::tryFrom($value)?->limit() : null;
+
+                    if (
+                        $limit !== null &&
+                        Banner::query()
+                            ->where('type', $value)
+                            ->where('id', '!=', $banner->id)
+                            ->count() >= $limit
+                    ) {
+                        $fail(__('Maximum limit reached (:limit/:limit).', ['limit' => $limit]));
+                    }
+                },
+            ],
             'sort_order' => ['required', 'integer', 'min:0', 'max:999999999'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],

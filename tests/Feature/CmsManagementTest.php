@@ -148,6 +148,45 @@ class CmsManagementTest extends TestCase
         $this->actingAs($admin, 'web')->get('/banners')->assertNotFound();
     }
 
+    public function test_banner_update_cannot_exceed_a_limited_type_capacity(): void
+    {
+        $admin = Admin::factory()->create();
+        Banner::factory()->create(['type' => 'app_entry']);
+        $banner = Banner::factory()->create(['type' => 'web_background']);
+
+        $this->actingAs($admin, 'web')
+            ->from('/cms/banners')
+            ->put('/cms/banners/' . $banner->id, [
+                'type' => 'app_entry',
+                'sort_order' => $banner->sort_order,
+                'start_date' => null,
+                'end_date' => null,
+                'is_active' => true,
+            ])
+            ->assertRedirect('/cms/banners')
+            ->assertSessionHasErrors('type');
+
+        $this->assertSame('web_background', $banner->fresh()->type->value);
+    }
+
+    public function test_banner_update_keeps_its_slot_when_type_is_at_capacity(): void
+    {
+        $admin = Admin::factory()->create();
+        $banner = Banner::factory()->create(['type' => 'app_entry']);
+
+        $this->actingAs($admin, 'web')
+            ->put('/cms/banners/' . $banner->id, [
+                'type' => 'app_entry',
+                'sort_order' => $banner->sort_order,
+                'start_date' => null,
+                'end_date' => null,
+                'is_active' => true,
+            ])
+            ->assertRedirect('/cms/banners');
+
+        $this->assertSame('app_entry', $banner->fresh()->type->value);
+    }
+
     public function test_news_can_be_created_with_category(): void
     {
         $admin = Admin::factory()->create();
