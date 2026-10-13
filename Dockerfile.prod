@@ -9,6 +9,7 @@ RUN apk add --no-cache \
         libpng \
         libpq \
         libzip \
+        oniguruma \
     && apk add --no-cache --virtual .build-deps \
         $PHPIZE_DEPS \
         curl-dev \
@@ -31,8 +32,10 @@ RUN apk add --no-cache \
         pcntl \
         pdo_pgsql \
         zip \
-    && pecl install redis \
-    && docker-php-ext-enable redis \
+    && curl -fsSL https://github.com/php/pie/releases/download/1.5.2/pie.phar \
+        -o /usr/local/bin/pie \
+    && chmod 0755 /usr/local/bin/pie \
+    && pie install phpredis/phpredis:6.3.0 \
     && apk del .build-deps
 
 FROM php-base AS composer-deps
