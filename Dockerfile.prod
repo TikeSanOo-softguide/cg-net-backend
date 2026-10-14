@@ -145,7 +145,7 @@ CMD ["php-fpm", "-F"]
 
 FROM nginx:1.29-alpine AS nginx
 
-COPY --from=assets --chown=101:101 /var/www/html/public/ /usr/share/nginx/html/
+COPY --from=runtime --chown=101:101 /var/www/html/public/ /usr/share/nginx/html/
 COPY --chown=101:101 docker/nginx/prod.conf /etc/nginx/nginx.conf
 
 USER 101:101
