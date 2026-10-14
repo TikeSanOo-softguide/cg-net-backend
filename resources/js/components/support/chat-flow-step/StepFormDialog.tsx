@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { BotIcon, SquarePenIcon } from 'lucide-react';
 
 import { FormActionBar } from '@/components/FormActionBar';
@@ -68,6 +68,7 @@ function StepFormDialogBody({
     onClose: () => void;
 }) {
     const { t } = useTranslation();
+    const page = usePage<{ errors?: Record<string, string | undefined> }>();
     const isEdit = step !== null;
     const [name, setName] = useState(step?.name ?? '');
     const [messages, setMessages] = useState<LanguageMessages>({
@@ -76,6 +77,7 @@ function StepFormDialogBody({
         zh: step?.message_zh ?? emptyMessages.zh,
     });
     const [isStart, setIsStart] = useState(step?.is_start ?? false);
+    const startStepError = !isStart ? page.props.errors?.is_start : undefined;
     const [touched, setTouched] = useState({
         name: false,
         messages: { en: false, my: false, zh: false },
@@ -175,18 +177,24 @@ function StepFormDialogBody({
                     <div className="space-y-1.5">
                         <FieldLabel>{t('support.chatbot_flows.start_step')}</FieldLabel>
 
-                        <div className="flex min-h-10 items-center justify-start rounded-md border border-primary/30 bg-primary/5 px-3">
+                        <div
+                            className={`flex min-h-10 items-center justify-start rounded-md border px-3 ${
+                                startStepError ? 'border-danger bg-danger/5' : 'border-primary/30 bg-primary/5'
+                            }`}
+                        >
                             <label className="flex cursor-pointer items-center gap-2 text-xs">
                                 <input
                                     type="checkbox"
                                     checked={isStart}
                                     onChange={(event) => setIsStart(event.target.checked)}
+                                    aria-invalid={Boolean(startStepError)}
                                     className="accent-primary"
                                 />
 
                                 <span>{t('support.chatbot_flows.start_step')}</span>
                             </label>
                         </div>
+                        {startStepError ? <p className="text-xs text-danger">{startStepError}</p> : null}
                     </div>
                 </div>
                 <MessageFields

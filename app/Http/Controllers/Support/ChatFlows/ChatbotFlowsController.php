@@ -76,8 +76,17 @@ class ChatbotFlowsController extends Controller
     {
         $validated = $request->validated();
 
-        DB::transaction(function () use ($step, $validated) {
+        $cannotUnsetStart = DB::transaction(function () use ($step, $validated) {
+            $currentStart = ChatFlowStep::query()
+                ->where('is_start', true)
+                ->lockForUpdate()
+                ->first();
             $isStart = $validated['is_start'] ?? false;
+
+            if (! $isStart && $currentStart?->is($step)) {
+                return true;
+            }
+
             if ($isStart) {
                 ChatFlowStep::query()
                     ->where('id', '!=', $step->id)
@@ -93,7 +102,15 @@ class ChatbotFlowsController extends Controller
                 'message_zh' => $validated['message_zh'],
                 'is_start' => $isStart,
             ]);
+
+            return false;
         });
+
+        if ($cannotUnsetStart) {
+            return back()->withErrors([
+                'is_start' => __('support.chatbot_flows.validation.start_step_required'),
+            ]);
+        }
 
         return back()->with('success', 'support.chatbot_flows.step_updated');
     }
@@ -103,7 +120,11 @@ class ChatbotFlowsController extends Controller
      */
     public function destroyStep(ChatFlowStep $step)
     {
-        $isUsed = ChatFlowOption::query()->where('next_step_id', $step->id)->exists();
+        $isUsed = ChatFlowOption::query()
+            ->where(fn($query) => $query
+                ->where('next_step_id', $step->id)
+                ->orWhere('step_id', $step->id))
+            ->exists();
 
         if ($isUsed) {
             return back()->withErrors(['delete' => 'support.chatbot_flows.step_deleted_failed']);

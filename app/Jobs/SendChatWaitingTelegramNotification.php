@@ -25,11 +25,13 @@ class SendChatWaitingTelegramNotification implements ShouldQueue
     public function __construct(
         public readonly int $conversationId,
         public readonly string $message,
-    ) {}
+    ) {
+        $this->onQueue('notifications');
+    }
 
     public function handle(TelegramService $telegram): void
     {
-        $telegram->broadbandApplicaiton($this->message);
+        $telegram->sendChatWaitingNotification($this->message);
     }
 
     public function failed(?Throwable $exception): void

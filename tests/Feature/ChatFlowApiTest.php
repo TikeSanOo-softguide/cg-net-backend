@@ -715,8 +715,7 @@ class ChatFlowApiTest extends TestCase
         $this->assertSame(ChatConversationStatus::WaitingAgent->value, $conversation->status->value);
         Http::assertSentCount(1);
         Http::assertSent(fn($request) => $request['chat_id'] === 'test-chat-id'
-            && str_contains($request['text'], 'Conversation: #' . $conversation->id)
-            && str_contains($request['text'], 'Reason: ' . $option->option_my));
+            && str_contains($request['text'], 'Conversation: #' . $conversation->id));
     }
 
     public function test_waiting_conversation_rejects_option_and_does_not_send_duplicate_telegram_notification(): void

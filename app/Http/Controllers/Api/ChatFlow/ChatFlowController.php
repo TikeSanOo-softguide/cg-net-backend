@@ -623,12 +623,11 @@ class ChatFlowController extends Controller
         $accountId = $conversation->user?->broadband_account_number ?? 'N/A';
         $optionLabel = $this->localizedValue($option, 'option_' . $language) ?? $option->option_en;
 
-        return "New customer is waiting for support\n\n" .
+        return "App User is waiting for support\n\n" .
             "Customer: {$customerName}\n" .
             "Account: {$accountId}\n" .
             "Conversation: #{$conversation->id}\n" .
-            "Language: {$language}\n" .
-            "Reason: {$optionLabel}";
+            "Language: {$language}\n";
     }
 
     private function getStartStep(string $language): ChatFlowStep
