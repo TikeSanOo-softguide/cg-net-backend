@@ -88,6 +88,16 @@ docker compose exec app php artisan migrate --force
 docker compose exec app php artisan migrate --seed --force
 ```
 
+### Run selected seeders
+
+Seed one class without running the full `DatabaseSeeder`:
+
+```bash
+docker compose exec app php artisan db:seed --class='Database\Seeders\AreaSeeder' --force
+```
+
+Run additional seeders by issuing one command for each. Run required prerequisite seeders first; for example, `CustomerSeeder` requires `PackageSeeder`, and `ServiceRequestSeeder` requires `AdminSeeder`, `AreaSeeder`, `PackageSeeder`, and `CustomerSeeder`. Review a seeder before running it in production: seeders such as `CustomerSeeder`, `BillingSeeder`, and `AnnouncementSeeder` create demo records. `DatabaseSeeder` runs the complete demo dataset and is intended for local development, not production.
+
 ### 5. Frontend
 
 ```bash
@@ -232,6 +242,12 @@ PHP-FPM, Horizon, the scheduler, Reverb, and Nginx run in the production Compose
    ```
 
    Run migrations once per deployment and do not seed production.
+   Laravel's public and private disks are kept in the `public_storage` and
+   `private_storage` Docker volumes, respectively, shared read-write with PHP.
+   Nginx mounts only `public_storage` read-only and serves it at `/storage/`;
+   private files are not exposed. Both volumes survive container recreation and
+   ordinary `docker compose down`; back them up, and do not use
+   `docker compose down -v` unless you intend to delete stored files.
 5. Vite `VITE_*` configuration is embedded in the image during the build. Rebuild
    after changing any browser-side Vite setting.
 

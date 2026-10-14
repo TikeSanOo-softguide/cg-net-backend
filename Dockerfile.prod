@@ -130,6 +130,8 @@ RUN printf '%s\n' \
         'decorate_workers_output = no' \
         > /usr/local/etc/php-fpm.d/zz-production.conf \
     && mkdir -p \
+        storage/app/private \
+        storage/app/public \
         storage/framework/cache/data \
         storage/framework/sessions \
         storage/framework/views \

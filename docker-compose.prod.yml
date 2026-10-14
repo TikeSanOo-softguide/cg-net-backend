@@ -27,6 +27,9 @@ x-php-service: &php-service
         args: *vite-args
     env_file:
         - .env
+    volumes:
+        - public_storage:/var/www/html/storage/app/public
+        - private_storage:/var/www/html/storage/app/private
     init: true
     restart: unless-stopped
     cap_drop:
@@ -92,6 +95,8 @@ services:
                 condition: service_healthy
         ports:
             - '${NGINX_PORT:-127.0.0.1:8080}:8080'
+        volumes:
+            - public_storage:/usr/share/nginx/html/storage:ro
         read_only: true
         tmpfs:
             - /tmp:rw,noexec,nosuid,size=16m,uid=101,gid=101,mode=1770
@@ -146,3 +151,5 @@ services:
 
 volumes:
     redis_data:
+    public_storage:
+    private_storage:
