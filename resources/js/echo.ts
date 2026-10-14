@@ -23,6 +23,6 @@ if (enabled && key) {
         wsPort: port,
         wssPort: port,
         forceTLS: useTLS,
-        enabledTransports: useTLS ? ['wss'] : ['ws'],
+        enabledTransports: ['ws', 'wss'],
     });
 }
