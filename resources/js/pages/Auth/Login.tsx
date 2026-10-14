@@ -38,12 +38,7 @@ export default function Login({ status }: LoginProps) {
             <Card className="relative w-full min-w-0 gap-0 overflow-hidden rounded-[12px] border-0 bg-card py-0 shadow-[0_12px_40px_rgb(23_50_54/0.12)] dark:shadow-[0_12px_40px_rgb(0_0_0/0.45)]">
                 <div className="grid w-full grid-cols-1 md:grid-cols-2">
                     <div className="order-1 flex justify-center px-5 pt-5 md:hidden">
-                        <BrandLockup
-                            compact
-                            href="/"
-                            className="justify-center"
-                            logoClassName="size-10 sm:size-11"
-                        />
+                        <BrandLockup compact href="/" className="justify-center" logoClassName="size-10 sm:size-11" />
                     </div>
 
                     <div className="relative order-2 flex flex-col items-center justify-center bg-primary/[0.04] px-5 py-4 sm:px-6 sm:py-5 md:order-1 md:min-h-[360px] md:border-r md:border-border/80 md:px-6 md:py-8 lg:px-8 dark:bg-primary/[0.08]">
@@ -62,7 +57,7 @@ export default function Login({ status }: LoginProps) {
 
                         {status ? <p className="mb-4 text-center text-sm text-accent-foreground">{status}</p> : null}
 
-                        <form onSubmit={submit} className="flex flex-col gap-5">
+                        <form onSubmit={submit} noValidate className="flex flex-col gap-5">
                             <FormField label={t('auth.username')} htmlFor="username" error={form.errors.username}>
                                 <AuthOutlineInput
                                     id="username"
