@@ -1,10 +1,21 @@
 name: cg-net-production
 
+x-build-hosts: &build-hosts
+    - 'api.github.com=140.82.112.5'
+
 x-logging: &default-logging
     driver: json-file
     options:
         max-size: '10m'
         max-file: '3'
+
+x-vite-args: &vite-args
+    VITE_APP_NAME: ${VITE_APP_NAME:-YNO Admin}
+    VITE_REVERB_ENABLED: ${VITE_REVERB_ENABLED:-false}
+    VITE_REVERB_APP_KEY: ${VITE_REVERB_APP_KEY:-}
+    VITE_REVERB_HOST: ${VITE_REVERB_HOST:-}
+    VITE_REVERB_PORT: ${VITE_REVERB_PORT:-443}
+    VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME:-https}
 
 x-php-service: &php-service
     image: cg-net-app:${APP_TAG:?Set APP_TAG in the server .env}
@@ -12,15 +23,13 @@ x-php-service: &php-service
         context: .
         dockerfile: Dockerfile.prod
         target: runtime
-        args:
-            VITE_APP_NAME: ${VITE_APP_NAME:-YNO Admin}
-            VITE_REVERB_ENABLED: ${VITE_REVERB_ENABLED:-false}
-            VITE_REVERB_APP_KEY: ${VITE_REVERB_APP_KEY:-}
-            VITE_REVERB_HOST: ${VITE_REVERB_HOST:-}
-            VITE_REVERB_PORT: ${VITE_REVERB_PORT:-443}
-            VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME:-https}
+        extra_hosts: *build-hosts
+        args: *vite-args
     env_file:
         - .env
+    volumes:
+        - public_storage:/var/www/html/storage/app/public
+        - private_storage:/var/www/html/storage/app/private
     init: true
     restart: unless-stopped
     cap_drop:
@@ -37,13 +46,7 @@ services:
         <<: *php-service
         command: ['php-fpm', '-F']
         healthcheck:
-            test:
-                [
-                    'CMD',
-                    'php',
-                    '-r',
-                    '$$socket = @fsockopen("127.0.0.1", 9000); exit($$socket ? 0 : 1);',
-                ]
+            test: ['CMD', 'php', '-r', '$$socket = @fsockopen("127.0.0.1", 9000); exit($$socket ? 0 : 1);']
             interval: 30s
             timeout: 5s
             retries: 3
@@ -70,13 +73,7 @@ services:
         <<: *php-service
         command: ['php', 'artisan', 'reverb:start', '--host=0.0.0.0', '--port=8080']
         healthcheck:
-            test:
-                [
-                    'CMD',
-                    'php',
-                    '-r',
-                    '$$socket = @fsockopen("127.0.0.1", 8080); exit($$socket ? 0 : 1);',
-                ]
+            test: ['CMD', 'php', '-r', '$$socket = @fsockopen("127.0.0.1", 8080); exit($$socket ? 0 : 1);']
             interval: 30s
             timeout: 5s
             retries: 3
@@ -88,6 +85,7 @@ services:
             context: .
             dockerfile: Dockerfile.prod
             target: nginx
+            args: *vite-args
         init: true
         restart: unless-stopped
         depends_on:
@@ -97,9 +95,12 @@ services:
                 condition: service_healthy
         ports:
             - '${NGINX_PORT:-127.0.0.1:8080}:8080'
+        volumes:
+            - public_storage:/usr/share/nginx/html/storage:ro
         read_only: true
         tmpfs:
             - /tmp:rw,noexec,nosuid,size=16m,uid=101,gid=101,mode=1770
+            - /var/cache/nginx:rw,noexec,nosuid,size=64m,uid=101,gid=101,mode=1770
         cap_drop:
             - ALL
         security_opt:
@@ -142,11 +143,7 @@ services:
             - no-new-privileges:true
         logging: *default-logging
         healthcheck:
-            test:
-                [
-                    'CMD-SHELL',
-                    'REDISCLI_AUTH="$${REDIS_PASSWORD}" redis-cli ping | grep -q PONG',
-                ]
+            test: ['CMD-SHELL', 'REDISCLI_AUTH="$${REDIS_PASSWORD}" redis-cli ping | grep -q PONG']
             interval: 10s
             timeout: 3s
             retries: 5
@@ -154,3 +151,5 @@ services:
 
 volumes:
     redis_data:
+    public_storage:
+    private_storage:

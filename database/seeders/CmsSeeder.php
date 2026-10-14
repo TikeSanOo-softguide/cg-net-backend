@@ -19,7 +19,7 @@ class CmsSeeder extends Seeder
 
         $this->seedBanners();
 
-        Category::factory()->createMany([
+        collect([
             [
                 'name_en' => 'Announcement',
                 'name_zh' => '公告',
@@ -50,7 +50,7 @@ class CmsSeeder extends Seeder
                 'name_zh' => '招聘',
                 'slug' => 'career',
             ],
-        ]);
+        ])->each(fn(array $category) => Category::create($category));
 
         $this->call([
             NewsSeeder::class,
@@ -91,37 +91,43 @@ class CmsSeeder extends Seeder
             ],
         ])->each(fn(array $gallery) => Gallery::create($gallery));
 
-        Contact::factory()->createMany([
+        collect([
             ['contact_point' => '📞 09 887288882'],
             ['contact_point' => '📞 09 421823339'],
             ['contact_point' => '📩 contact@chenguangnetwork.com'],
             ['contact_point' => '🏠 130/A Eain Twin Hmu Street,Mae Khong Ward,Tachileik.'],
             ['contact_point' => '🧭 Monday to Sunday: 9:00 AM - 9:00 PM'],
             ['contact_point' => '📅 Serving you 7 days a week'],
-        ]);
+        ])->each(fn(array $contact) => Contact::create($contact));
     }
 
     private function seedBanners(): void
     {
         foreach (range(1, 7) as $order) {
             $image = 'seeder_images/banner/banner' . ($order === 1 ? '' : $order - 1) . '.png';
-            Banner::factory()->create([
+            Banner::create([
                 'image_url_en' => $image,
                 'image_url_zh' => $image,
                 'image_url_my' => $image,
                 'type' => 'web_background',
                 'sort_order' => $order,
+                'is_active' => true,
+                'start_date' => now()->subDay()->toDateString(),
+                'end_date' => now()->addMonth()->toDateString(),
             ]);
         }
 
         foreach ([1, 2] as $popup) {
             $image = "seeder_images/banner/web_popup/popup{$popup}.png";
-            Banner::factory()->create([
+            Banner::create([
                 'image_url_en' => $image,
                 'image_url_zh' => $image,
                 'image_url_my' => $image,
                 'type' => 'web_popup',
                 'sort_order' => 7 + $popup,
+                'is_active' => true,
+                'start_date' => now()->subDay()->toDateString(),
+                'end_date' => now()->addMonth()->toDateString(),
             ]);
         }
     }

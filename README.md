@@ -88,6 +88,16 @@ docker compose exec app php artisan migrate --force
 docker compose exec app php artisan migrate --seed --force
 ```
 
+### Run selected seeders
+
+Seed one class without running the full `DatabaseSeeder`:
+
+```bash
+docker compose exec app php artisan db:seed --class='Database\Seeders\AreaSeeder' --force
+```
+
+Run additional seeders by issuing one command for each. Run required prerequisite seeders first; for example, `CustomerSeeder` requires `PackageSeeder`, and `ServiceRequestSeeder` requires `AdminSeeder`, `AreaSeeder`, `PackageSeeder`, and `CustomerSeeder`. Review a seeder before running it in production: seeders such as `CustomerSeeder`, `BillingSeeder`, and `AnnouncementSeeder` create demo records. `DatabaseSeeder` runs the complete demo dataset and is intended for local development, not production.
+
 ### 5. Frontend
 
 ```bash
@@ -222,7 +232,11 @@ PHP-FPM, Horizon, the scheduler, Reverb, and Nginx run in the production Compose
 2. Use unique production secrets and set `DB_HOST` to the private PostgreSQL address
    with `DB_SSLMODE=require`. Set a unique immutable `APP_TAG` for the release.
 3. Configure the HTTPS ingress in front of Nginx and forward WebSocket upgrades for
-   `/app`; the Compose Nginx port defaults to loopback only.
+   `/app`; the Compose Nginx port defaults to loopback only. For Reverb, set
+   `REVERB_HOST=reverb`, `REVERB_PORT=8080`, and `REVERB_SCHEME=http` for PHP
+   containers to reach the internal Reverb service. Set `VITE_REVERB_HOST` to the
+   public hostname, with port `443` and scheme `https`, so browsers connect through
+   the HTTPS ingress. Replace the example hostname in `.env.production.example`.
 4. Build and deploy explicitly with `-f docker-compose.prod.yml`:
 
    ```sh
@@ -232,8 +246,15 @@ PHP-FPM, Horizon, the scheduler, Reverb, and Nginx run in the production Compose
    ```
 
    Run migrations once per deployment and do not seed production.
-5. Vite `VITE_*` configuration is embedded in the image during the build. Rebuild
-   after changing any browser-side Vite setting.
+   Laravel's public and private disks are kept in the `public_storage` and
+   `private_storage` Docker volumes, respectively, shared read-write with PHP.
+   Nginx mounts only `public_storage` read-only and serves it at `/storage/`;
+   private files are not exposed. Both volumes survive container recreation and
+   ordinary `docker compose down`; back them up, and do not use
+   `docker compose down -v` unless you intend to delete stored files.
+5. Vite `VITE_*` configuration is embedded in the image during the build. Keep
+   `VITE_REVERB_ENABLED=true` and rebuild after changing any browser-side Vite setting;
+   setting only `BROADCAST_CONNECTION=reverb` does not enable the browser Echo client.
 
 For server-side plain `docker compose` commands, keep
 `COMPOSE_FILE=docker-compose.prod.yml` in the server's `.env`. Continue to pass

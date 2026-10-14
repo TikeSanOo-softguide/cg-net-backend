@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\AdminStatus;
 use App\Models\Admin;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -35,7 +36,11 @@ class AdminSeeder extends Seeder
                 return;
             }
 
-            Admin::factory()->create($admin);
+            Admin::create([
+                ...$admin,
+                'password' => 'password',
+                'status' => AdminStatus::Active,
+            ]);
         });
     }
 }
