@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { REQUEST_STATUS } from '@/lib/CommonNameConst';
-import { cn, formatDate } from '@/lib/utils';
+import { cn, formatDate, todayInTimezone } from '@/lib/utils';
 import { CopyValueButton } from '@/components/CopyValueButton';
 import { formatPhoneInternational } from '@/lib/phone';
 
@@ -101,7 +101,7 @@ export function ChangePlanDetailDialog({
     const isExpired =
         request?.status === REQUEST_STATUS.UNDER_REVIEW &&
         request?.preferred_date &&
-        new Date(request.preferred_date) < new Date();
+        request.preferred_date < todayInTimezone();
 
     const nextButton = request?.status === REQUEST_STATUS.UNDER_REVIEW ? 'approve' : 'review';
 

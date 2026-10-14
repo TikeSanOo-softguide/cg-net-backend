@@ -51,39 +51,20 @@ export function GalleryForm({
     const [existingImageUrl, setExistingImageUrl] = useState(imageUrl ?? null);
     const [touched, setTouched] = useState<TouchedFields>(untouched);
     const [submitted, setSubmitted] = useState(false);
-    const [imageDimensions, setImageDimensions] = useState<{
-        width: number;
-        height: number;
-    } | null>(null);
-
-    useEffect(() => {
-        if (!existingImageUrl) {
-            setImageDimensions(null);
-            return;
-        }
-
-        const image = new Image();
-
-        image.onload = () => {
-            setImageDimensions({
-                width: image.naturalWidth,
-                height: image.naturalHeight,
-            });
-        };
-        image.src = existingImageUrl;
-    }, [existingImageUrl]);
 
     const hasExistingImage = Boolean(existingImageUrl);
 
     const handleImageChange = (file: File | null) => {
+        const previousHasExistingImage = hasExistingImage;
+
         setDashedImage(file);
         setExistingImageUrl(null);
+        setTouched((current) => ({
+            ...current,
+            image: true,
+        }));
         form.setData('image', file);
         form.clearErrors('image');
-
-        if (mode === 'edit' && hasExistingImage && !file) {
-            return;
-        }
 
         const error = validateGalleryField(
             'image',
@@ -93,29 +74,12 @@ export function GalleryForm({
             },
             t,
             mode,
-            hasExistingImage,
+            mode === 'edit' && previousHasExistingImage && Boolean(file),
         );
 
         if (error) {
             form.setError('image', error);
         }
-        if (!file) {
-            setImageDimensions(null);
-            return;
-        }
-
-        const image = new Image();
-
-        image.onload = () => {
-            setImageDimensions({
-                width: image.naturalWidth,
-                height: image.naturalHeight,
-            });
-
-            URL.revokeObjectURL(image.src);
-        };
-
-        image.src = URL.createObjectURL(file);
     };
 
     const markTouched = (field: keyof GalleryFormValues) => {
@@ -238,10 +202,7 @@ export function GalleryForm({
                         </div>
 
                         <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-                            {t('cms.news.image_size')}:{' '}
-                            {imageDimensions
-                                ? `${imageDimensions.width} × ${imageDimensions.height} px`
-                                : '4032 × 3024  px'}
+                            {t('cms.news.image_size')}: 4032 × 3024 px
                         </span>
                     </div>
                 }

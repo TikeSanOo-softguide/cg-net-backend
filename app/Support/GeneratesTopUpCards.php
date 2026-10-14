@@ -402,7 +402,7 @@ final class GeneratesTopUpCards
      */
     public static function nextBatchNo(?CarbonInterface $date = null): string
     {
-        $date ??= now('Asia/Yangon');
+        $date ??= now(config('app.timezone'));
         $prefix = $date->format('YmdHi');
         $counter = 1001;
 

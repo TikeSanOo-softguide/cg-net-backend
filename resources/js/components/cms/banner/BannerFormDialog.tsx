@@ -122,6 +122,7 @@ function BannerFormDialogBody({
             onSubmit={submit}
             onCancel={onClose}
             mode={isEdit ? 'edit' : 'create'}
+            existingType={item?.type}
             bannerTypeCounts={bannerTypeCounts}
             imageUrls={{
                 en: item?.image_url_en,

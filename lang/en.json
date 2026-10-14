@@ -110,7 +110,7 @@
     "broadband_application": {
         "identity": "Identity",
         "location": "Location",
-        "search_placeholder": "Search by app username, phone"
+        "search_placeholder": "Search app username, phone"
     },
     "change_password": {
         "approved_requests": "Approved Requests",
@@ -122,7 +122,7 @@
         "new_password": "New Password",
         "preferred_date": "Preferred date",
         "request_title": "Change Password Request",
-        "search_placeholder": "Search by app username, account_no",
+        "search_placeholder": "Search app username, account_no",
         "status_updated": "Request status updated",
         "total_requests": "Total Requests",
         "under_review_requests": "Under Review Requests",
@@ -146,7 +146,7 @@
         "request_details_description": "View the details of this change plan request.",
         "requested_packages": "Requested Packages",
         "requested_plan": "Requested Plan",
-        "search_placeholder": "Search by account_no, app username",
+        "search_placeholder": "Search account_no, app username",
         "status_updated": "Request status updated",
         "total_requests": "Total Requests",
         "under_review_requests": "Under Review Requests",
@@ -212,12 +212,20 @@
             "validation": {
                 "name_en_max": "The English name may not be greater than 50 characters.",
                 "name_en_required": "Please enter an English name.",
+                "name_en_string": "The English name must be text.",
+                "name_en_unique": "This English name already exists.",
                 "name_my_max": "The Myanmar name may not be greater than 50 characters.",
                 "name_my_required": "Please enter a Myanmar name.",
+                "name_my_string": "The Myanmar name must be text.",
+                "name_my_unique": "This Myanmar name already exists.",
                 "name_zh_max": "The Chinese name may not be greater than 50 characters.",
                 "name_zh_required": "Please enter a Chinese name.",
+                "name_zh_string": "The Chinese name must be text.",
+                "name_zh_unique": "This Chinese name already exists.",
                 "slug_max": "The slug may not be greater than 50 characters.",
-                "slug_required": "Please enter a slug."
+                "slug_required": "Please enter a slug.",
+                "slug_string": "The slug must be text.",
+                "slug_unique": "This slug already exists."
             }
         },
         "contact": {
@@ -229,7 +237,7 @@
             "description": "Manage public contact points.",
             "edit": "Edit contact",
             "edit_description": "Update this contact point's details.",
-            "search": "Search by this contact point",
+            "search": "Search contact point",
             "updated": "Contact item updated",
             "validation": {
                 "contact_point_max": "Contact point must not exceed 255 characters.",
@@ -268,11 +276,11 @@
             "updated": "Gallery image updated",
             "validation": {
                 "image_invalid_type": "The image must be a valid image file.",
-                "image_max_size": "The image must not be greater than 5 MB.",
+                "image_max_size": "The image may not be greater than 5 MB.",
                 "image_required": "Image is required.",
-                "label_en_max": "The English label must not be greater than 120 characters.",
-                "label_my_max": "The Myanmar label must not be greater than 120 characters.",
-                "label_zh_max": "The Chinese label must not be greater than 120 characters."
+                "label_en_max": "The English label may not be greater than 120 characters.",
+                "label_my_max": "The Myanmar label may not be greater than 120 characters.",
+                "label_zh_max": "The Chinese label may not be greater than 120 characters."
             }
         },
         "gallery_description": "Manage gallery images.",
@@ -301,22 +309,22 @@
             "updated": "News updated",
             "validation": {
                 "category_id_required": "Please select a category.",
-                "description_en_max": "The English description must not be greater than 5000 characters.",
+                "description_en_max": "The English description may not be greater than 5000 characters.",
                 "description_en_required": "Please enter an English description.",
-                "description_my_max": "The Myanmar description must not be greater than 5000 characters.",
+                "description_my_max": "The Myanmar description may not be greater than 5000 characters.",
                 "description_my_required": "Please enter a Myanmar description.",
-                "description_zh_max": "The Chinese description must not be greater than 5000 characters.",
+                "description_zh_max": "The Chinese description may not be greater than 5000 characters.",
                 "description_zh_required": "Please enter a Chinese description.",
                 "image_invalid_type": "The image must be a valid image file.",
-                "image_max_size": "The image must not be greater than 5 MB.",
-                "slug_max": "The slug must not be greater than 120 characters.",
+                "image_max_size": "The image may not be greater than 5 MB.",
+                "slug_max": "The slug may not be greater than 120 characters.",
                 "slug_required": "Please enter a slug.",
                 "status_required": "Please select a status.",
-                "title_en_max": "The English title must not be greater than 120 characters.",
+                "title_en_max": "The English title may not be greater than 120 characters.",
                 "title_en_required": "Please enter an English title.",
-                "title_my_max": "The Myanmar title must not be greater than 120 characters.",
+                "title_my_max": "The Myanmar title may not be greater than 120 characters.",
                 "title_my_required": "Please enter a Myanmar title.",
-                "title_zh_max": "The Chinese title must not be greater than 120 characters.",
+                "title_zh_max": "The Chinese title may not be greater than 120 characters.",
                 "title_zh_required": "Please enter a Chinese title."
             }
         },
@@ -333,25 +341,25 @@
             "title_zh": "Title (Chinese)",
             "updated": "Promotion updated",
             "validation": {
-                "description_en_max": "The English description must not be greater than 5000 characters.",
+                "description_en_max": "The English description may not be greater than 5000 characters.",
                 "description_en_required": "Please enter an English description.",
-                "description_my_max": "The Myanmar description must not be greater than 5000 characters.",
+                "description_my_max": "The Myanmar description may not be greater than 5000 characters.",
                 "description_my_required": "Please enter a Myanmar description.",
-                "description_zh_max": "The Chinese description must not be greater than 5000 characters.",
+                "description_zh_max": "The Chinese description may not be greater than 5000 characters.",
                 "description_zh_required": "Please enter a Chinese description.",
                 "end_date": "Please enter a valid end date.",
                 "end_date_after_or_equal": "The end date must be the same as or later than the start date.",
                 "image_invalid_type": "The image must be a valid image file.",
-                "image_max_size": "The image must not be greater than 5 MB.",
+                "image_max_size": "The image may not be greater than 5 MB.",
                 "is_active_required": "Please select a status.",
-                "slug_max": "The slug must not be greater than 120 characters.",
+                "slug_max": "The slug may not be greater than 120 characters.",
                 "slug_required": "Please enter a slug.",
                 "start_date": "Please enter a valid start date.",
-                "title_en_max": "The English title must not be greater than 120 characters.",
+                "title_en_max": "The English title may not be greater than 120 characters.",
                 "title_en_required": "Please enter an English title.",
-                "title_my_max": "The Myanmar title must not be greater than 120 characters.",
+                "title_my_max": "The Myanmar title may not be greater than 120 characters.",
                 "title_my_required": "Please enter a Myanmar title.",
-                "title_zh_max": "The Chinese title must not be greater than 120 characters.",
+                "title_zh_max": "The Chinese title may not be greater than 120 characters.",
                 "title_zh_required": "Please enter a Chinese title."
             }
         },
@@ -377,22 +385,22 @@
             "title_zh": "Title (Chinese)",
             "updated": "Service updated",
             "validation": {
-                "description_en_max": "The English description must not be greater than 5000 characters.",
+                "description_en_max": "The English description may not be greater than 5000 characters.",
                 "description_en_required": "Please enter an English description.",
-                "description_my_max": "The Myanmar description must not be greater than 5000 characters.",
+                "description_my_max": "The Myanmar description may not be greater than 5000 characters.",
                 "description_my_required": "Please enter a Myanmar description.",
-                "description_zh_max": "The Chinese description must not be greater than 5000 characters.",
+                "description_zh_max": "The Chinese description may not be greater than 5000 characters.",
                 "description_zh_required": "Please enter a Chinese description.",
                 "image_invalid_type": "The image must be a valid image file.",
-                "image_max_size": "The image must not be greater than 5 MB.",
-                "slug_max": "The slug must not be greater than 120 characters.",
+                "image_max_size": "The image may not be greater than 5 MB.",
+                "slug_max": "The slug may not be greater than 120 characters.",
                 "slug_required": "Please enter a slug.",
                 "status_required": "Please select a status.",
-                "title_en_max": "The English title must not be greater than 120 characters.",
+                "title_en_max": "The English title may not be greater than 120 characters.",
                 "title_en_required": "Please enter an English title.",
-                "title_my_max": "The Myanmar title must not be greater than 120 characters.",
+                "title_my_max": "The Myanmar title may not be greater than 120 characters.",
                 "title_my_required": "Please enter a Myanmar title.",
-                "title_zh_max": "The Chinese title must not be greater than 120 characters.",
+                "title_zh_max": "The Chinese title may not be greater than 120 characters.",
                 "title_zh_required": "Please enter a Chinese title."
             }
         },
@@ -1213,7 +1221,7 @@
         "validation": {
             "cannot_delete_in_use": "This package cannot be deleted because it is currently in use.",
             "image_invalid_type": "The image must be a valid image file.",
-            "image_max_size": "The image must not be greater than 5 MB.",
+            "image_max_size": "The image may not be greater than 5 MB.",
             "image_required": "Please upload a package image.",
             "image_size": "The image size must be exactly 260 x 348 pixels.",
             "installation_fee_max": "Installation Fee may not be greater than 9-digit.",
@@ -1348,7 +1356,7 @@
         "new_address": "New Address",
         "new_location": "New Location",
         "preferred_date": "Preferred date",
-        "search": "Search by app user name,account_no",
+        "search": "Search pp user name,account_no",
         "service_transfer": "Service Transfer"
     },
     "requests": {

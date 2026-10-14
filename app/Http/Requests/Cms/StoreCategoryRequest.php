@@ -4,6 +4,7 @@ namespace App\Http\Requests\Cms;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class StoreCategoryRequest extends FormRequest
 {
@@ -25,9 +26,9 @@ class StoreCategoryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name_en' => ['required', 'string', 'max:50'],
-            'name_zh' => ['required', 'string', 'max:50'],
-            'name_my' => ['required', 'string', 'max:50'],
+            'name_en' => ['required', 'string', 'max:50', Rule::unique('categories', 'name_en')->withoutTrashed()],
+            'name_zh' => ['required', 'string', 'max:50', Rule::unique('categories', 'name_zh')->withoutTrashed()],
+            'name_my' => ['required', 'string', 'max:50', Rule::unique('categories', 'name_my')->withoutTrashed()],
             'slug' => CmsRules::slug('categories', maxLength: 50),
         ];
     }

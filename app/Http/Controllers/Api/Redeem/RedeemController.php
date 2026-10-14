@@ -16,13 +16,25 @@ class RedeemController extends Controller
 
     public function checkSerialNo(SerialNoCheckRequest $request): JsonResponse
     {
-        $status = TopUpCard::query()->where('serial_no', $request->validated('serial_no'))->value('status');
+        $card = TopUpCard::query()->where('serial_no', $request->validated('serial_no'))->first();
 
-        $isValid = $status === TopUpCardStatus::Active;
+        $result = match (true) {
+            $card === null => 'invalid_card',
+            $card->status === TopUpCardStatus::Used || $card->redeemed_at !== null => 'already_used',
+            $card->status === TopUpCardStatus::Active && $card->expires_at >= now()->toDateString() => 'valid',
+            default => 'invalid_card',
+        };
 
         return response()->json(
-            ['message' => $isValid ? 'This top-up card is valid.' : 'This top-up card is invalid.'],
-            $isValid ? 200 : 400,
+            [
+                'result' => $result,
+                'message' => match ($result) {
+                    'valid' => 'This top-up card is valid.',
+                    'already_used' => 'This top-up card has already been used.',
+                    default => 'Invalid top-up card.',
+                },
+            ],
+            $result === 'valid' ? 200 : 400,
         );
     }
 

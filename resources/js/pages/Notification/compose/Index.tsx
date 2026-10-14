@@ -11,7 +11,7 @@ import { TableActionButton } from '@/components/TableActionButton';
 import { Card } from '@/components/ui/card';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatTime } from '@/lib/utils';
 
 export type PushScheduleItem = {
     id: number;
@@ -27,23 +27,6 @@ export type PushScheduleItem = {
 type Props = {
     schedules: PushScheduleItem[];
 };
-
-function formatScheduleTime(value: string | null): string {
-    if (!value) {
-        return '—';
-    }
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-        return '—';
-    }
-
-    return new Intl.DateTimeFormat(undefined, {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-    }).format(date);
-}
 
 export default function PushComposeIndex({ schedules }: Props) {
     const { t, locale } = useTranslation();
@@ -121,7 +104,7 @@ export default function PushComposeIndex({ schedules }: Props) {
                                                 {formatDate(item.scheduled_at)}
                                             </td>
                                             <td className="px-4 py-3 text-[13px] text-foreground sm:px-5">
-                                                {formatScheduleTime(item.scheduled_at)}
+                                                {formatTime(item.scheduled_at)}
                                             </td>
                                             <td className="px-4 py-3 sm:px-5">
                                                 <StatusBadge status={item.status} />

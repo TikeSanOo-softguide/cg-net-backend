@@ -6,7 +6,7 @@ import { CmsFormShell } from '@/components/cms/shared/CmsFormShell';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/hooks/useTranslation';
-import { validateCategory, validateCategoryField } from '@/lib/category-validation';
+import { getCategoryValidationError, validateCategory, validateCategoryField } from '@/lib/category-validation';
 import { formControlStateClass } from '@/lib/form-control';
 import { cn } from '@/lib/utils';
 
@@ -67,7 +67,7 @@ export function CategoryForm({ form, onSubmit, onCancel, mode = 'create', create
             return undefined;
         }
 
-        return form.errors[field] || validateCategoryField(field, form.data, t);
+        return getCategoryValidationError(form.errors[field], field, t) || validateCategoryField(field, form.data, t);
     };
 
     const submit = (event: FormEvent) => {

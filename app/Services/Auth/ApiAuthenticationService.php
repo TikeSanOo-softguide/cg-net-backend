@@ -13,6 +13,7 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
 /**
@@ -148,7 +149,7 @@ final class ApiAuthenticationService
         RateLimiter::hit($accountKey, $decaySeconds);
         RateLimiter::hit($ipKey, $ipDecaySeconds);
 
-        $session = DB::transaction(function () use ($phone, $password): array {
+        $session = DB::transaction(function () use ($phone, $password, $accountKey, $ipKey): array {
             $user = User::query()->where('phone', $phone)->lockForUpdate()->first();
 
             if (
@@ -161,6 +162,31 @@ final class ApiAuthenticationService
 
             if ($user->status === UserStatus::Deactivated) {
                 $user->update(['status' => UserStatus::Active]);
+            }
+
+            $hasActiveSession = $user->tokens()
+                ->where(fn($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+                ->exists();
+
+            if ($hasActiveSession) {
+                RateLimiter::clear($accountKey);
+                RateLimiter::clear($ipKey);
+
+                $platform = $user->deviceTokens()
+                    ->whereNotNull('platform')
+                    ->orderByDesc('last_used_at')
+                    ->value('platform');
+                $device = match ($platform) {
+                    'android' => 'an Android device',
+                    'ios' => 'an iOS device',
+                    'web' => 'a web browser',
+                    default => 'another device',
+                };
+
+                throw new HttpException(
+                    409,
+                    "This account is already signed in on {$device}. Please log out from that device first.",
+                );
             }
 
             return $this->openSession($user);

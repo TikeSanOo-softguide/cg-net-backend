@@ -6,7 +6,7 @@ import { CmsIndexPage, type CmsFilters } from '@/components/cms/shared/CmsIndexP
 import type { Paginated } from '@/components/Pagination';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatDate } from '@/lib/utils';
+import { formatDate, todayInTimezone } from '@/lib/utils';
 import { MultiSelect, MultiSelectOption } from '@/components/MultiSelect';
 import { FormControl } from '@/components/ui/form-control';
 import { AppWindow, ImageIcon, LucideIcon, Monitor, Smartphone } from 'lucide-react';
@@ -34,7 +34,7 @@ export default function BannersIndex({ items, filters, bannerTypes, bannerTypeCo
     const isExpired = (endDate: string | null) => {
         if (!endDate) return false;
 
-        return new Date(endDate) < new Date();
+        return endDate < todayInTimezone();
     };
 
     const bannerTypeIcons: Record<string, LucideIcon> = {
@@ -149,6 +149,12 @@ export default function BannersIndex({ items, filters, bannerTypes, bannerTypeCo
                                 </span>
                             );
                         },
+                    },
+                    {
+                        id: 'sort_order',
+                        header: t('cms.sort_order'),
+                        sortable: true,
+                        cell: (row) => row.sort_order ?? '—',
                     },
                     {
                         id: 'is_active',

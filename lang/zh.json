@@ -156,7 +156,7 @@
         "all_languages": "全部语言",
         "banner": {
             "create": "新建横幅",
-            "create_description": "添加首页或应用内的横幅。",
+            "create_description": "添加带有链接和展示时间安排的首页或应用内横幅。",
             "created": "横幅已创建",
             "deleted": "横幅已删除",
             "description": "管理首页和应用内的横幅。",
@@ -212,12 +212,20 @@
             "validation": {
                 "name_en_max": "英文名称不能超过 50 个字符。",
                 "name_en_required": "请输入英文名称。",
+                "name_en_string": "英文名称必须为文本。",
+                "name_en_unique": "该英文名称已存在。",
                 "name_my_max": "缅甸语名称不能超过 50 个字符。",
                 "name_my_required": "请输入缅甸语名称。",
+                "name_my_string": "缅甸语名称必须为文本。",
+                "name_my_unique": "该缅甸语名称已存在。",
                 "name_zh_max": "中文名称不能超过 50 个字符。",
                 "name_zh_required": "请输入中文名称。",
+                "name_zh_string": "中文名称必须为文本。",
+                "name_zh_unique": "该中文名称已存在。",
                 "slug_max": "别名不能超过 50 个字符。",
-                "slug_required": "请输入别名。"
+                "slug_required": "请输入别名。",
+                "slug_string": "别名必须为文本。",
+                "slug_unique": "该分类别名已存在。"
             }
         },
         "contact": {
@@ -245,7 +253,7 @@
         "create_tag": "新建标签",
         "created": "CMS 内容已创建",
         "current_image": "当前图片",
-        "delete_description": "该项将从管理列表中移除。",
+        "delete_description": "此项目将从管理列表中移除。如果这是误操作，您可以联系支持人员。",
         "delete_title": "删除此项？",
         "deleted": "CMS 内容已删除",
         "description": "描述",
@@ -270,9 +278,9 @@
                 "image_invalid_type": "图片必须是有效的图片文件。",
                 "image_max_size": "图片大小不得超过 5 MB。",
                 "image_required": "图片为必填项。",
-                "label_en_max": "英文标题不得超过 50 个字符。",
-                "label_my_max": "缅甸文标题不得超过 50 个字符。",
-                "label_zh_max": "中文标题不得超过 50 个字符。"
+                "label_en_max": "英文标签不得超过 120 个字符。",
+                "label_my_max": "缅甸文标签不得超过 120 个字符。",
+                "label_zh_max": "中文标签不得超过 120 个字符。"
             }
         },
         "gallery_description": "管理图库图片。",

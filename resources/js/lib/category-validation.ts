@@ -5,6 +5,35 @@ type Translate = (key: string) => string;
 export const CATEGORY_NAME_MAX_LENGTH = 50;
 export const CATEGORY_SLUG_MAX_LENGTH = 50;
 
+export function getCategoryValidationError(
+    error: string | undefined,
+    field: keyof CategoryFormValues,
+    t: Translate,
+): string | undefined {
+    if (!error) {
+        return undefined;
+    }
+
+    const message = error.toLowerCase();
+    let rule: string | undefined;
+
+    if (message.includes('required')) {
+        rule = 'required';
+    } else if (message.includes('unique') || message.includes('already been taken')) {
+        rule = 'unique';
+    } else if (message.includes('string')) {
+        rule = 'string';
+    } else if (
+        message.includes('may not be greater than') ||
+        message.includes('must not be greater than') ||
+        message.includes('maximum')
+    ) {
+        rule = 'max';
+    }
+
+    return rule ? t(`cms.category.validation.${field}_${rule}`) : error;
+}
+
 export function validateCategoryField(
     field: keyof CategoryFormValues,
     data: CategoryFormValues,

@@ -28,11 +28,7 @@ class StoreBannerRequest extends FormRequest
                 'string',
                 Rule::enum(BannerType::class),
                 function (string $attribute, mixed $value, \Closure $fail): void {
-                    $limit = match ($value) {
-                        BannerType::AppEntry->value => 1,
-                        BannerType::AppPopUp->value => 2,
-                        default => null,
-                    };
+                    $limit = is_string($value) ? BannerType::tryFrom($value)?->limit() : null;
 
                     if ($limit !== null && Banner::query()->where('type', $value)->count() >= $limit) {
                         $fail(__('Maximum limit reached (:limit/:limit).', ['limit' => $limit]));

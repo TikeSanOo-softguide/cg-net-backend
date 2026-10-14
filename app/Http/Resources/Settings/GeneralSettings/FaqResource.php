@@ -21,6 +21,11 @@ class FaqResource extends JsonResource
                 'zh' => $this->title_zh,
                 'my' => $this->title_my,
             ],
+            'description' => [
+                'en' => $this->description_en,
+                'zh' => $this->description_zh,
+                'my' => $this->description_my,
+            ],
         ];
     }
 }

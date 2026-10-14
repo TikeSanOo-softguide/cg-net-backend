@@ -6,7 +6,7 @@ import { BellIcon, CalendarIcon, CommandIcon, LayoutGridIcon, SettingsIcon, type
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
 import { navigation, reports } from '@/lib/navigation';
-import { cn } from '@/lib/utils';
+import { cn, formatTime } from '@/lib/utils';
 import type { AdminNotification, RecentNotification } from '@/types';
 
 const navbarActionClass =
@@ -265,12 +265,7 @@ export function NotificationDropdown({ unread }: NotificationDropdownProps) {
                                                   : look.className;
                                           const isAdminNotification = 'reference_type' in item;
                                           const message = isAdminNotification ? item.message : item.body;
-                                          const time = isAdminNotification
-                                              ? new Date(item.created_at).toLocaleTimeString([], {
-                                                    hour: 'numeric',
-                                                    minute: '2-digit',
-                                                })
-                                              : item.time;
+                                          const time = isAdminNotification ? formatTime(item.created_at) : item.time;
                                           const isRead = isAdminNotification ? item.read_at !== null : item.is_read;
                                           const content = (
                                               <div className="flex items-start gap-2 px-3 py-2">

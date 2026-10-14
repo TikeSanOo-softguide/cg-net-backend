@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Notification\StoreAnnouncementRequest;
 use App\Http\Requests\Notification\UpdateAnnouncementRequest;
 use App\Models\Announcement;
+use App\Support\DateTimeInput;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -92,7 +93,10 @@ class AnnouncementController extends Controller
 
     public function store(StoreAnnouncementRequest $request): RedirectResponse
     {
-        $announcement = Announcement::query()->create($request->validated());
+        $data = $request->validated();
+        $data['start_date'] = DateTimeInput::normalizeToApplicationTimezone($data['start_date'] ?? null);
+        $data['end_date'] = DateTimeInput::normalizeToApplicationTimezone($data['end_date'] ?? null);
+        $announcement = Announcement::query()->create($data);
 
         activity('notifications')
             ->causedBy($request->user())
@@ -107,7 +111,10 @@ class AnnouncementController extends Controller
 
     public function update(UpdateAnnouncementRequest $request, Announcement $announcement): RedirectResponse
     {
-        $announcement->update($request->validated());
+        $data = $request->validated();
+        $data['start_date'] = DateTimeInput::normalizeToApplicationTimezone($data['start_date'] ?? null);
+        $data['end_date'] = DateTimeInput::normalizeToApplicationTimezone($data['end_date'] ?? null);
+        $announcement->update($data);
 
         activity('notifications')
             ->causedBy($request->user())

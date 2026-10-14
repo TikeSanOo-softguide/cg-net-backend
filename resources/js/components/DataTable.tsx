@@ -410,6 +410,7 @@ export function DataTable<T>({
                                     <SearchInput
                                         value={searchValue}
                                         onChange={(value) => {
+                                            if (value.length > 1000) return;
                                             if (!onSearchChange) {
                                                 setClientPage(1);
                                             }

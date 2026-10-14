@@ -27,7 +27,7 @@ import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { REQUEST_STATUS } from '@/lib/CommonNameConst';
 import { useTranslation } from '@/hooks/useTranslation';
-import { cn, formatDate } from '@/lib/utils';
+import { cn, formatDate, todayInTimezone } from '@/lib/utils';
 import { StatCard } from '@/components/StatCard';
 import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
 import { useOpenRequestFromQuery } from '@/hooks/useOpenRequestFromQuery';
@@ -110,10 +110,7 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
     function isPreferredDateExpired(dateString: string | null, status: string): boolean {
         if (!dateString || status !== 'under_review') return false;
 
-        const preferredDate = new Date(dateString);
-        const today = new Date();
-
-        return preferredDate < today;
+        return dateString < todayInTimezone();
     }
 
     return (

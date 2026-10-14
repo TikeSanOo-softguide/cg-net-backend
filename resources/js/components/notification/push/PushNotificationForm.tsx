@@ -17,7 +17,7 @@ import {
     validatePushNotificationField,
     type PushNotificationFormValues,
 } from '@/lib/push-notification-validation';
-import { cn } from '@/lib/utils';
+import { cn, todayInTimezone } from '@/lib/utils';
 
 const emptyForm = (): PushNotificationFormValues => ({
     title_en: '',
@@ -91,7 +91,7 @@ export function PushNotificationForm() {
     };
 
     const setField = <K extends keyof PushNotificationFormValues>(field: K, value: PushNotificationFormValues[K]) => {
-        form.setData(field, value);
+        form.setData({ ...form.data, [field]: value });
         form.clearErrors(field);
     };
 
@@ -308,7 +308,7 @@ export function PushNotificationForm() {
                                 <DatePicker
                                     id="push_schedule_date"
                                     value={form.data.schedule_date}
-                                    min={new Date().toISOString().slice(0, 10)}
+                                    min={todayInTimezone()}
                                     aria-invalid={fieldState('schedule_date') === 'error'}
                                     onBlur={() => markTouched('schedule_date')}
                                     onChange={(value) => {
@@ -365,7 +365,11 @@ export function PushNotificationForm() {
                                                 </SelectTrigger>
                                                 <SelectContent className="min-w-20">
                                                     {HOURS_12.map((hour) => (
-                                                        <SelectItem key={hour} value={hour} className="font-semibold tabular-nums">
+                                                        <SelectItem
+                                                            key={hour}
+                                                            value={hour}
+                                                            className="font-semibold tabular-nums"
+                                                        >
                                                             {hour}
                                                         </SelectItem>
                                                     ))}
@@ -407,7 +411,11 @@ export function PushNotificationForm() {
                                                 </SelectTrigger>
                                                 <SelectContent className="min-w-20">
                                                     {MINUTES.map((minute) => (
-                                                        <SelectItem key={minute} value={minute} className="font-semibold tabular-nums">
+                                                        <SelectItem
+                                                            key={minute}
+                                                            value={minute}
+                                                            className="font-semibold tabular-nums"
+                                                        >
                                                             {minute}
                                                         </SelectItem>
                                                     ))}
@@ -421,7 +429,8 @@ export function PushNotificationForm() {
                                             aria-label={t('notification.push.schedule_time')}
                                         >
                                             {(['AM', 'PM'] as const).map((period) => {
-                                                const active = Boolean(form.data.schedule_time) && timeParts.period === period;
+                                                const active =
+                                                    Boolean(form.data.schedule_time) && timeParts.period === period;
 
                                                 return (
                                                     <button

@@ -15,6 +15,11 @@ return new class extends Migration
             $table->text('message_my');
             $table->text('message_zh');
             $table->boolean('is_start')->default(false);
+            $table->smallInteger('start_step_unique')
+                ->nullable()
+                ->storedAs('CASE WHEN is_start IS TRUE THEN 1 ELSE NULL END');
+
+            $table->unique('start_step_unique');
             $table->timestamps();
         });
     }

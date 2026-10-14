@@ -148,6 +148,45 @@ class CmsManagementTest extends TestCase
         $this->actingAs($admin, 'web')->get('/banners')->assertNotFound();
     }
 
+    public function test_banner_update_cannot_exceed_a_limited_type_capacity(): void
+    {
+        $admin = Admin::factory()->create();
+        Banner::factory()->create(['type' => 'app_entry']);
+        $banner = Banner::factory()->create(['type' => 'web_background']);
+
+        $this->actingAs($admin, 'web')
+            ->from('/cms/banners')
+            ->put('/cms/banners/' . $banner->id, [
+                'type' => 'app_entry',
+                'sort_order' => $banner->sort_order,
+                'start_date' => null,
+                'end_date' => null,
+                'is_active' => true,
+            ])
+            ->assertRedirect('/cms/banners')
+            ->assertSessionHasErrors('type');
+
+        $this->assertSame('web_background', $banner->fresh()->type->value);
+    }
+
+    public function test_banner_update_keeps_its_slot_when_type_is_at_capacity(): void
+    {
+        $admin = Admin::factory()->create();
+        $banner = Banner::factory()->create(['type' => 'app_entry']);
+
+        $this->actingAs($admin, 'web')
+            ->put('/cms/banners/' . $banner->id, [
+                'type' => 'app_entry',
+                'sort_order' => $banner->sort_order,
+                'start_date' => null,
+                'end_date' => null,
+                'is_active' => true,
+            ])
+            ->assertRedirect('/cms/banners');
+
+        $this->assertSame('app_entry', $banner->fresh()->type->value);
+    }
+
     public function test_news_can_be_created_with_category(): void
     {
         $admin = Admin::factory()->create();
@@ -235,6 +274,46 @@ class CmsManagementTest extends TestCase
             ->assertSessionHasErrors('delete');
 
         $this->assertDatabaseHas('categories', ['id' => $category->id, 'deleted_at' => null]);
+    }
+
+    public function test_category_names_must_be_unique_among_non_deleted_categories(): void
+    {
+        $admin = Admin::factory()->create();
+        $existing = Category::factory()->create([
+            'name_en' => 'Unique English',
+            'name_zh' => '唯一中文',
+            'name_my' => 'ထူးခြားသောမြန်မာ',
+        ]);
+
+        foreach (['name_en', 'name_zh', 'name_my'] as $field) {
+            $values = [
+                'name_en' => 'Another English',
+                'name_zh' => '另一个中文',
+                'name_my' => 'အခြားမြန်မာ',
+                'slug' => 'another-' . $field,
+            ];
+            $values[$field] = $existing->{$field};
+
+            $this->actingAs($admin, 'web')
+                ->from('/cms/categories')
+                ->post('/cms/categories', $values)
+                ->assertRedirect('/cms/categories')
+                ->assertSessionHasErrors($field);
+        }
+
+        $existing->delete();
+
+        $this->actingAs($admin, 'web')
+            ->post('/cms/categories', [
+                'name_en' => $existing->name_en,
+                'name_zh' => $existing->name_zh,
+                'name_my' => $existing->name_my,
+                'slug' => $existing->slug,
+            ])
+            ->assertRedirect('/cms/categories')
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(1, Category::query()->where('slug', $existing->slug)->count());
     }
 
     public function test_admins_can_manage_contacts_and_gallery(): void

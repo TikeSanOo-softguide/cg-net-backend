@@ -1,3 +1,5 @@
+import { appTimezone, dateInTimezone } from '@/lib/utils';
+
 export const TOP_UP_CARD_CURRENCY = 'Points';
 
 export type TopUpCardRow = {
@@ -102,25 +104,17 @@ export function topUpCardQrValue(card: Pick<TopUpCardRow, 'serial_no' | 'pin'>):
 }
 
 export function expiryDateIn(days: number): string {
-    const date = new Date();
-    date.setDate(date.getDate() + days);
+    const date = dateInTimezone(new Date());
+    date.setUTCDate(date.getUTCDate() + days);
 
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-
-    return `${year}-${month}-${day}`;
+    return calendarDate(date);
 }
 
 export function expiryDateInYears(years: number): string {
-    const date = new Date();
-    date.setFullYear(date.getFullYear() + years);
+    const date = dateInTimezone(new Date());
+    date.setUTCFullYear(date.getUTCFullYear() + years);
 
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-
-    return `${year}-${month}-${day}`;
+    return calendarDate(date);
 }
 
 export function defaultExpiryDate(): string {
@@ -128,25 +122,21 @@ export function defaultExpiryDate(): string {
 }
 
 export function isoDate(date = new Date()): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-
-    return `${year}-${month}-${day}`;
+    return calendarDate(dateInTimezone(date));
 }
 
 export function dateDaysAgo(days: number): string {
-    const date = new Date();
-    date.setDate(date.getDate() - days);
+    const date = dateInTimezone(new Date());
+    date.setUTCDate(date.getUTCDate() - days);
 
-    return isoDate(date);
+    return calendarDate(date);
 }
 
 export function startOfMonthDate(): string {
-    const date = new Date();
-    date.setDate(1);
+    const date = dateInTimezone(new Date());
+    date.setUTCDate(1);
 
-    return isoDate(date);
+    return calendarDate(date);
 }
 
 export function formatTopUpDateTime(value: string | null): string {
@@ -154,7 +144,10 @@ export function formatTopUpDateTime(value: string | null): string {
         return '—';
     }
 
-    const date = new Date(value);
+    const trimmed = value.trim();
+    const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(trimmed);
+    const isLocalDateTime = !hasTimezone && /^\d{4}-\d{2}-\d{2}[T ]/.test(trimmed);
+    const date = new Date(isLocalDateTime ? `${trimmed.replace(' ', 'T')}Z` : trimmed);
 
     if (Number.isNaN(date.getTime())) {
         return value;
@@ -166,5 +159,14 @@ export function formatTopUpDateTime(value: string | null): string {
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
+        timeZone: isLocalDateTime ? 'UTC' : appTimezone(),
     });
+}
+
+function calendarDate(date: Date): string {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
 }

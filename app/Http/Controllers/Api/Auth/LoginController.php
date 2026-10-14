@@ -26,16 +26,19 @@ class LoginController extends Controller
         try {
             $result = $service->login($verificationToken, $request->string('password')->toString(), $request->ip());
         } catch (ValidationException | HttpExceptionInterface $e) {
+            $reason = match (true) {
+                $e instanceof HttpExceptionInterface && $e->getStatusCode() === 429 => 'Too many login attempts',
+                $e instanceof HttpExceptionInterface && $e->getStatusCode() === 409 => 'Account already has an active session',
+                default => 'Invalid credentials or inactive account',
+            };
+
             $this->securityLogService->recordLoginFailure(
                 guard: 'user',
                 identity: $phone,
                 actor: User::where('phone', $phone)->first(),
                 metadata: [
                     'phone' => $phone,
-                    'reason' =>
-                        $e instanceof HttpExceptionInterface && $e->getStatusCode() === 429
-                            ? 'Too many login attempts'
-                            : 'Invalid credentials or inactive account',
+                    'reason' => $reason,
                 ],
                 request: $request,
             );

@@ -1,3 +1,5 @@
+import { dateInTimezone } from '@/lib/utils';
+
 type Translate = (key: string) => string;
 
 export type PushNotificationFormValues = {
@@ -24,16 +26,23 @@ function parseScheduleDateTime(date: string, time: string): Date | null {
         return null;
     }
 
-    const [year, month, day] = date.split('-').map(Number);
     const hours = Number(match[1]);
     const minutes = Number(match[2]);
-    const parsed = new Date(year, month - 1, day, hours, minutes, 0, 0);
+
+    if (hours > 23 || minutes > 59) {
+        return null;
+    }
+
+    const [year, month, day] = date.split('-').map(Number);
+    const parsed = new Date(Date.UTC(year, month - 1, day, hours, minutes, 0, 0));
 
     if (
         Number.isNaN(parsed.getTime()) ||
-        parsed.getFullYear() !== year ||
-        parsed.getMonth() !== month - 1 ||
-        parsed.getDate() !== day
+        parsed.getUTCFullYear() !== year ||
+        parsed.getUTCMonth() !== month - 1 ||
+        parsed.getUTCDate() !== day ||
+        parsed.getUTCHours() !== hours ||
+        parsed.getUTCMinutes() !== minutes
     ) {
         return null;
     }
@@ -70,7 +79,7 @@ export function validatePushNotificationField(
             if (!value.trim()) {
                 return t('notification.push.validation.schedule_date_required');
             }
-            if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || !parseScheduleDateTime(value, '00:00')) {
                 return t('notification.push.validation.schedule_date_invalid');
             }
             break;
@@ -96,7 +105,7 @@ export function validatePushNotificationField(
             if (!scheduled) {
                 return t('notification.push.validation.schedule_time_invalid');
             }
-            if (scheduled.getTime() <= Date.now()) {
+            if (scheduled.getTime() <= dateInTimezone(new Date()).getTime()) {
                 return t('notification.push.validation.scheduled_at_future');
             }
             break;
