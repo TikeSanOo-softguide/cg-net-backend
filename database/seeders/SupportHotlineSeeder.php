@@ -14,7 +14,7 @@ class SupportHotlineSeeder extends Seeder
     {
         echo "Support hotline seeder started\n";
 
-        Setting::factory()->create([
+        Setting::create([
             'key' => 'support_hotline',
             'value' => '+959123456789',
         ]);
