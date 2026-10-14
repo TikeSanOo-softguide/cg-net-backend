@@ -92,6 +92,7 @@ services:
         read_only: true
         tmpfs:
             - /tmp:rw,noexec,nosuid,size=16m,uid=101,gid=101,mode=1770
+            - /var/cache/nginx:rw,noexec,nosuid,size=64m,uid=101,gid=101,mode=1770
         cap_drop:
             - ALL
         security_opt:
