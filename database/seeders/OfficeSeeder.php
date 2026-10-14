@@ -16,19 +16,9 @@ class OfficeSeeder extends Seeder
 
         $offices = [
             [
-                'name' => 'Yangon Central Office',
-                'cd' => 11,
-                'address' => 'No. 12, Bogyoke Aung San Road, Yangon',
-            ],
-            [
-                'name' => 'Mandalay North Office',
-                'cd' => 21,
-                'address' => 'No. 45, 78th Street, Mandalay',
-            ],
-            [
-                'name' => 'Naypyidaw Office',
-                'cd' => 31,
-                'address' => 'No. 8, Yarza Thingaha Road, Naypyidaw',
+                'name' => 'Mongla Office',
+                'cd' => 88,
+                'address' => '130/A Eain Twin Hmu Street,Mae Khong Ward,Tachileik.',
             ],
         ];
 
