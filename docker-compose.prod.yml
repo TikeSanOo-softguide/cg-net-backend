@@ -80,6 +80,8 @@ services:
             context: .
             dockerfile: Dockerfile.prod
             target: nginx
+            args:
+                APP_TAG: ${APP_TAG}
         init: true
         restart: unless-stopped
         depends_on:
