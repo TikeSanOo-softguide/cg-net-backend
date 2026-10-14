@@ -29,7 +29,7 @@ export default function Index({
     const can = useCan();
     const canReply = can('support.create');
     const canManage = can('support.update');
-    const showQuickReplies = canReply && selectedConversation?.status !== 'closed';
+    const showQuickReplies = canReply;
     const [message, setMessage] = useState('');
 
     useEffect(() => {

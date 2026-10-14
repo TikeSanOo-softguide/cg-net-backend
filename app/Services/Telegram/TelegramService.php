@@ -6,6 +6,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 class TelegramService
 {
@@ -30,20 +31,37 @@ class TelegramService
             );
         } catch (ConnectionException $exception) {
             Log::warning('Telegram notification could not be delivered.', [
-                'exception' => $exception->getMessage(),
+                'exception' => $exception::class,
             ]);
 
             return null;
         }
 
-        if ($response->failed()) {
+        if ($response->failed() || $response->json('ok') !== true) {
             Log::warning('Telegram notification was rejected.', [
                 'status' => $response->status(),
+                'description' => $response->json('description'),
             ]);
 
             return null;
         }
 
         return $response;
+    }
+
+    public function sendChatWaitingNotification(string $message): void
+    {
+        $chatId = config('services.telegram.chat_id');
+        $botToken = config('services.telegram.bot_token');
+
+        if (! is_string($chatId) || trim($chatId) === '' || ! is_string($botToken) || trim($botToken) === '') {
+            $this->broadbandApplicaiton($message);
+
+            return;
+        }
+
+        if ($this->broadbandApplicaiton($message) === null) {
+            throw new RuntimeException('Telegram rejected or could not deliver the chat notification.');
+        }
     }
 }
