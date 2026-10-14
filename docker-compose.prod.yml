@@ -9,6 +9,14 @@ x-logging: &default-logging
         max-size: '10m'
         max-file: '3'
 
+x-vite-args: &vite-args
+    VITE_APP_NAME: ${VITE_APP_NAME:-YNO Admin}
+    VITE_REVERB_ENABLED: ${VITE_REVERB_ENABLED:-false}
+    VITE_REVERB_APP_KEY: ${VITE_REVERB_APP_KEY:-}
+    VITE_REVERB_HOST: ${VITE_REVERB_HOST:-}
+    VITE_REVERB_PORT: ${VITE_REVERB_PORT:-443}
+    VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME:-https}
+
 x-php-service: &php-service
     image: cg-net-app:${APP_TAG:?Set APP_TAG in the server .env}
     build:
@@ -16,13 +24,7 @@ x-php-service: &php-service
         dockerfile: Dockerfile.prod
         target: runtime
         extra_hosts: *build-hosts
-        args:
-            VITE_APP_NAME: ${VITE_APP_NAME:-YNO Admin}
-            VITE_REVERB_ENABLED: ${VITE_REVERB_ENABLED:-false}
-            VITE_REVERB_APP_KEY: ${VITE_REVERB_APP_KEY:-}
-            VITE_REVERB_HOST: ${VITE_REVERB_HOST:-}
-            VITE_REVERB_PORT: ${VITE_REVERB_PORT:-443}
-            VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME:-https}
+        args: *vite-args
     env_file:
         - .env
     init: true
@@ -80,8 +82,7 @@ services:
             context: .
             dockerfile: Dockerfile.prod
             target: nginx
-            args:
-                APP_TAG: ${APP_TAG}
+            args: *vite-args
         init: true
         restart: unless-stopped
         depends_on:

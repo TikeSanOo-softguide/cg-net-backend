@@ -1,5 +1,3 @@
-ARG APP_TAG=local
-
 FROM php:8.3-fpm-alpine AS php-base
 
 RUN apk add --no-cache \
@@ -145,11 +143,9 @@ USER www-data
 ENTRYPOINT ["/usr/local/bin/entrypoint.prod.sh"]
 CMD ["php-fpm", "-F"]
 
-FROM cg-net-app:${APP_TAG} AS app-image
-
 FROM nginx:1.29-alpine AS nginx
 
-COPY --from=app-image --chown=101:101 /var/www/html/public/ /usr/share/nginx/html/
+COPY --from=assets --chown=101:101 /var/www/html/public/ /usr/share/nginx/html/
 COPY --chown=101:101 docker/nginx/prod.conf /etc/nginx/nginx.conf
 
 USER 101:101
