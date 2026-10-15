@@ -16,7 +16,15 @@ class ChangePasswordRequestController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
-        $requests = ChangePasswordRequest::query()->where('user_id', $request->user()->id)->latest()->get();
+        $requests = ChangePasswordRequest::query()
+            ->where('user_id', $request->user()->id)
+            ->whereNull('change_password_requests.deleted_at')
+            ->whereHas('user', fn ($query) => $query->whereColumn(
+                'users.broadband_account_number',
+                'change_password_requests.broadband_account_number',
+            ))
+            ->latest()
+            ->get();
 
         return ChangePasswordRequestResource::collection($requests);
     }

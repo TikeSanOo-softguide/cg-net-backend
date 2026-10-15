@@ -26,6 +26,14 @@ class ChangePlanRequestController extends Controller
                 'newPackage.term',
             ])
             ->where('user_id', $request->user()->id)
+            ->whereNull('change_plan_requests.deleted_at')
+            ->whereHas(
+                'user',
+                fn($query) => $query->whereColumn(
+                    'users.broadband_account_number',
+                    'change_plan_requests.broadband_account_number',
+                ),
+            )
             ->latest()
             ->get();
 
