@@ -12,7 +12,7 @@ import { TableActionButton } from '@/components/TableActionButton';
 import { AppVersionDetailDialog } from '@/components/settings/app-version/AppVersionDetailDialog';
 import { AppVersionFormDialog } from '@/components/settings/app-version/AppVersionFormDialog';
 import type { AppVersionFormData } from '@/components/settings/app-version/AppVersionForm';
-import { FormControl } from '@/components/ui/form-control';
+import { FormField } from '@/components/ui/form-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -185,7 +185,12 @@ export default function AppVersionIndex({ items, filters, versionOptions }: Prop
                         bulkDeleteTitle={t('common.bulk_delete_title')}
                         filters={
                             <>
-                                <FormControl icon={CircleDotIcon} compact className="w-full shrink-0 sm:w-40">
+                                <FormField
+                                    label={t('settings.app_version.platform')}
+                                    htmlFor="status"
+                                    className="w-full shrink-0 sm:w-40"
+                                    labelClassName="text-[13px]"
+                                >
                                     <Select
                                         value={platform || 'all'}
                                         onValueChange={(value) => {
@@ -203,9 +208,14 @@ export default function AppVersionIndex({ items, filters, versionOptions }: Prop
                                             <SelectItem value="ios">{t('common.platform_ios')}</SelectItem>
                                         </SelectContent>
                                     </Select>
-                                </FormControl>
+                                </FormField>
 
-                                <FormControl icon={CircleDotIcon} compact className="w-full shrink-0 sm:w-40">
+                                <FormField
+                                    label={t('settings.app_version.version')}
+                                    htmlFor="status"
+                                    className="w-full shrink-0 sm:w-40"
+                                    labelClassName="text-[13px]"
+                                >
                                     <Select
                                         value={version || 'all'}
                                         onValueChange={(value) => {
@@ -226,7 +236,7 @@ export default function AppVersionIndex({ items, filters, versionOptions }: Prop
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                </FormControl>
+                                </FormField>
                             </>
                         }
                         actions={(row) => (
@@ -290,8 +300,8 @@ export default function AppVersionIndex({ items, filters, versionOptions }: Prop
                 onOpenChange={(open) => {
                     if (!open) setPendingIds([]);
                 }}
-                title={t('common.delete_title')}
-                description={t('common.delete_description')}
+                title={t('settings.app_version.delete_title')}
+                description={t('settings.app_version.delete_description')}
                 destructive
                 confirmLabel={t('common.delete')}
                 onConfirm={() => {
