@@ -30,6 +30,7 @@ x-php-service: &php-service
     volumes:
         - public_storage:/var/www/html/storage/app/public
         - private_storage:/var/www/html/storage/app/private
+        - firebase_credentials:/var/www/html/storage/app/firebase:ro
     init: true
     restart: unless-stopped
     cap_drop:
@@ -153,3 +154,4 @@ volumes:
     redis_data:
     public_storage:
     private_storage:
+    firebase_credentials:
