@@ -18,7 +18,18 @@ class RelocationRequestController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
-        $relocations = RelocationRequest::query()->where('user_id', $request->user()->id)->get();
+        $relocations = RelocationRequest::query()
+            ->where('user_id', $request->user()->id)
+            ->whereNull('relocation_requests.deleted_at')
+            ->whereHas(
+                'user',
+                fn($query) => $query->whereColumn(
+                    'users.broadband_account_number',
+                    'relocation_requests.broadband_account_number',
+                ),
+            )
+            ->get();
+
         return RelocationRequestResource::collection($relocations);
     }
 

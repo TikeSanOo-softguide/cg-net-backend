@@ -20,7 +20,16 @@ class FailureReportController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
-        $failureReports = FailureReport::query()->with('photos')->where('user_id', $request->user()->id)->get();
+        $failureReports = FailureReport::query()
+            ->with('photos')
+            ->where('user_id', $request->user()->id)
+            ->whereNull('failure_reports.deleted_at')
+            ->whereHas('user', fn ($query) => $query->whereColumn(
+                'users.broadband_account_number',
+                'failure_reports.broadband_account_number',
+            ))
+            ->get();
+
         return FailureReportResource::collection($failureReports);
     }
 

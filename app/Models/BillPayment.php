@@ -39,6 +39,7 @@ class BillPayment extends Model
     {
         return [
             'external_response' => 'array',
+            'created_at' => 'datetime',
             'confirmed_at' => 'datetime',
             'status' => BillPaymentStatus::class,
         ];

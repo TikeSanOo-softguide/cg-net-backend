@@ -26,7 +26,10 @@ class PasswordChangeSessionTest extends TestCase
         $user->createToken('tablet');
         $user->deviceTokens()->create(['token' => 'device-a', 'platform' => 'android']);
 
-        User::query()->findOrFail($user->id)->forceFill(['password' => '123456'])->save();
+        User::query()
+            ->findOrFail($user->id)
+            ->forceFill(['password' => '123456'])
+            ->save();
 
         $this->assertDatabaseCount('personal_access_tokens', 0);
         $this->assertDatabaseCount('device_tokens', 0);
@@ -53,7 +56,10 @@ class PasswordChangeSessionTest extends TestCase
         $user->createToken('phone');
         $user->deviceTokens()->create(['token' => 'device-a', 'platform' => 'android']);
 
-        User::query()->findOrFail($user->id)->forceFill(['name' => 'Renamed'])->save();
+        User::query()
+            ->findOrFail($user->id)
+            ->forceFill(['name' => 'Renamed'])
+            ->save();
 
         $this->assertDatabaseCount('personal_access_tokens', 1);
         $this->assertDatabaseCount('device_tokens', 1);
@@ -107,5 +113,36 @@ class PasswordChangeSessionTest extends TestCase
         }
 
         $this->assertTrue(Hash::check('old-password-123', $user->fresh()->password));
+    }
+
+    public function test_password_change_accepts_a_valid_password_with_an_existing_argon_hash(): void
+    {
+        if (!defined('PASSWORD_ARGON2ID')) {
+            $this->markTestSkipped('Argon2id is not supported by this PHP installation.');
+        }
+
+        $user = User::factory()->create(['password' => 'old-password-123']);
+        $argonHash = password_hash('old-password-123', PASSWORD_ARGON2ID);
+        User::query()
+            ->whereKey($user->id)
+            ->update(['password' => $argonHash]);
+        $token = $user->createToken('app')->plainTextToken;
+
+        $this->withToken($token)
+            ->postJson('/api/change-password', [
+                'current_password' => 'wrong-password',
+                'new_password' => '123456',
+                'new_password_confirmation' => '123456',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('current_password');
+
+        $this->withToken($token)
+            ->postJson('/api/change-password', [
+                'current_password' => 'old-password-123',
+                'new_password' => '123456',
+                'new_password_confirmation' => '123456',
+            ])
+            ->assertAccepted();
     }
 }

@@ -158,7 +158,8 @@
             "create": "Create banner",
             "create_description": "Add a homepage or in-app banner with link and schedule.",
             "created": "New Banner created",
-            "deleted": "Banner item deleted",
+            "updated": "Banner updated",
+            "deleted": "Banner deleted",
             "description": "Manage homepage and in-app banners.",
             "edit": "Edit banner",
             "edit_description": "Update this banner's image, link, and schedule.",
@@ -177,7 +178,6 @@
                 "web_background": "Web Background",
                 "web_popup": "Web Popup"
             },
-            "updated": "Banner item updated",
             "validation": {
                 "image_en_required": "Please select English image.",
                 "image_my_required": "Please select Myanmar image.",
@@ -233,12 +233,12 @@
             "create": "Create contact",
             "create_description": "Add a public contact point for customers.",
             "created": "New Contact created",
-            "deleted": "Contact item deleted",
+            "deleted": "Contact deleted",
             "description": "Manage public contact points.",
             "edit": "Edit contact",
             "edit_description": "Update this contact point's details.",
             "search": "Search contact point",
-            "updated": "Contact item updated",
+            "updated": "Contact updated",
             "validation": {
                 "contact_point_max": "Contact point must not exceed 255 characters.",
                 "contact_point_required": "Please enter contact point."
@@ -273,7 +273,7 @@
             "label_my": "Label (Myanmar)",
             "label_zh": "Label (Chinese)",
             "search_placeholder": "Search gallery label",
-            "updated": "Gallery image updated",
+            "updated": "Gallery updated",
             "validation": {
                 "image_invalid_type": "The image must be a valid image file.",
                 "image_max_size": "The image may not be greater than 5 MB.",

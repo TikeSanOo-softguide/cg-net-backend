@@ -108,7 +108,7 @@ class BannerController extends Controller
 
         activity('cms')->causedBy($request->user())->performedOn($banner)->event('deleted')->log('banner_deleted');
 
-        return redirect()->route('cms.banners.index')->with('success', 'cms.contact.deleted');
+        return redirect()->route('cms.banners.index')->with('success', 'cms.banner.deleted');
     }
 
     public function bulkDestroy(Request $request): RedirectResponse
