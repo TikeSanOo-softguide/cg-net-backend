@@ -237,6 +237,7 @@ final class ApiAuthenticationService
         $existingUser->fill([
             'name' => $data['name'],
             'password' => $data['password'],
+            'lang' => $data['lang'],
             'status' => UserStatus::Active,
         ]);
         $existingUser->save();
@@ -270,6 +271,7 @@ final class ApiAuthenticationService
             'phone' => $phone,
             'name' => $data['name'],
             'password' => $data['password'],
+            'lang' => $data['lang'],
             'status' => UserStatus::Active,
         ]);
 

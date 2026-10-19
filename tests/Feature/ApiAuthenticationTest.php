@@ -45,13 +45,15 @@ class ApiAuthenticationTest extends TestCase
             'name' => 'New User',
             'password' => '123456',
             'password_confirmation' => '123456',
+            'lang' => 'my',
         ]);
 
         $response
             ->assertCreated()
             ->assertJsonPath('token_type', 'Bearer')
+            ->assertJsonPath('user.lang', 'my')
             ->assertJsonStructure(['token', 'expires_at', 'user' => ['id', 'phone', 'name']]);
-        $this->assertDatabaseHas('users', ['phone' => self::PHONE, 'name' => 'New User']);
+        $this->assertDatabaseHas('users', ['phone' => self::PHONE, 'name' => 'New User', 'lang' => 'my']);
 
         $user = User::query()->where('phone', self::PHONE)->firstOrFail();
         $this->assertDatabaseHas('wallets', ['user_id' => $user->id, 'balance' => 0]);
@@ -71,7 +73,29 @@ class ApiAuthenticationTest extends TestCase
             'name' => 'New User',
             'password' => '123456',
             'password_confirmation' => '654321',
+            'lang' => 'en',
         ])->assertUnprocessable()->assertJsonValidationErrors('password');
+
+        $this->assertDatabaseMissing('users', ['phone' => self::PHONE]);
+    }
+
+    public function test_registration_requires_a_supported_language(): void
+    {
+        $verify = $this->verifyOtpFor('+95922345678');
+        $data = [
+            'verification_token' => $verify['verification_token'],
+            'name' => 'New User',
+            'password' => '123456',
+            'password_confirmation' => '123456',
+        ];
+
+        $this->postJson('/api/auth/register', $data)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('lang');
+
+        $this->postJson('/api/auth/register', [...$data, 'lang' => 'fr'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('lang');
 
         $this->assertDatabaseMissing('users', ['phone' => self::PHONE]);
     }
@@ -86,6 +110,7 @@ class ApiAuthenticationTest extends TestCase
                 'name' => 'New User',
                 'password' => $password,
                 'password_confirmation' => $password,
+                'lang' => 'en',
             ])->assertUnprocessable()->assertJsonValidationErrors('password');
         }
 
@@ -100,6 +125,7 @@ class ApiAuthenticationTest extends TestCase
             'name' => 'new-user',
             'password' => '123456',
             'password_confirmation' => '123456',
+            'lang' => 'en',
         ];
 
         $this->postJson('/api/auth/register', $data)->assertCreated();
@@ -116,6 +142,7 @@ class ApiAuthenticationTest extends TestCase
             'name' => 'Takeover',
             'password' => '123456',
             'password_confirmation' => '123456',
+            'lang' => 'en',
         ])->assertUnprocessable();
 
         $this->assertDatabaseMissing('users', ['name' => 'Takeover']);
@@ -145,10 +172,12 @@ class ApiAuthenticationTest extends TestCase
             'name' => 'Soft Deleted User',
             'password' => '123456',
             'password_confirmation' => '123456',
+            'lang' => 'zh',
         ])->assertCreated();
 
         $restoredUser = User::withTrashed()->where('phone', self::PHONE)->firstOrFail();
         $this->assertNull($restoredUser->deleted_at);
+        $this->assertSame('zh', $restoredUser->lang);
         $this->assertNull($restoredUser->wallet()->withTrashed()->firstOrFail()->deleted_at);
     }
 
@@ -596,6 +625,7 @@ class ApiAuthenticationTest extends TestCase
             'name' => 'Device User',
             'password' => '123456',
             'password_confirmation' => '123456',
+            'lang' => 'en',
             'device_token' => 'auto-register-device-token',
             'platform' => 'ios',
         ])->assertCreated();
@@ -827,6 +857,7 @@ class ApiAuthenticationTest extends TestCase
             'name' => 'New User',
             'password' => '123456',
             'password_confirmation' => '123456',
+            'lang' => 'en',
         ])->assertCreated();
     }
 }
