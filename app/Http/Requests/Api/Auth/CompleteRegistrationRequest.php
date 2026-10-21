@@ -8,6 +8,13 @@ use Illuminate\Validation\Rule;
 
 class CompleteRegistrationRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'lang' => $this->input('lang', 'en'),
+        ]);
+    }
+
     public function authorize(): bool
     {
         return true;

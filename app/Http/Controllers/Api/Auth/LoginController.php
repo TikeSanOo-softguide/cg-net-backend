@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\LoginRequest;
+use App\Http\Requests\Api\Auth\SessionCheckRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\Auth\ApiAuthenticationService;
 use App\Services\DeviceToken\DeviceTokenService;
 use App\Services\SecurityLog\SecurityLogService;
+use App\Support\JsonTranslations;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -28,7 +30,8 @@ class LoginController extends Controller
         } catch (ValidationException | HttpExceptionInterface $e) {
             $reason = match (true) {
                 $e instanceof HttpExceptionInterface && $e->getStatusCode() === 429 => 'Too many login attempts',
-                $e instanceof HttpExceptionInterface && $e->getStatusCode() === 409 => 'Account already has an active session',
+                $e instanceof HttpExceptionInterface && $e->getStatusCode() === 409
+                    => 'Account already has an active session',
                 default => 'Invalid credentials or inactive account',
             };
 
@@ -78,5 +81,17 @@ class LoginController extends Controller
         ]);
 
         return response()->json(['message' => 'Logged out successfully.']);
+    }
+
+    public function checkSession(SessionCheckRequest $request): JsonResponse
+    {
+        $user = User::query()->where('phone', $request->validated('phone'))->first();
+        $showAlert = $user?->deviceTokens()->exists() ?? false;
+        $locale = $request->getPreferredLanguage(JsonTranslations::LOCALES) ?? config('app.locale');
+
+        return response()->json([
+            'show_alert' => $showAlert,
+            'message' => $showAlert ? __('auth.registered_on_another_device', [], $locale) : null,
+        ]);
     }
 }

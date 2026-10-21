@@ -44,6 +44,7 @@ Route::prefix('auth')
     ->group(function () {
         Route::post('/otp/request', [OtpController::class, 'request']);
         Route::post('/otp/verify', [OtpController::class, 'verify']);
+        Route::post('/session/check', [LoginController::class, 'checkSession'])->middleware('throttle:10,1');
         Route::post('/login', LoginController::class)->middleware('throttle:30,1');
         Route::post('/register', RegistrationController::class)->middleware('throttle:30,1');
     });

@@ -51,6 +51,7 @@
         "hide_password": "Hide password",
         "inactive": "This account is inactive and cannot sign in.",
         "password": "Password",
+        "registered_on_another_device": "This account is registered on another device.",
         "remember_me": "Remember me",
         "show_password": "Show password",
         "sign_in": "Sign in",
