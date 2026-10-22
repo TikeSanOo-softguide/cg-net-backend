@@ -5,7 +5,6 @@ import {
     ArrowRightLeft,
     Banknote,
     Bell,
-    Boxes,
     Building2,
     CalendarDays,
     ChartSpline,
@@ -21,7 +20,6 @@ import {
     Images,
     KeyRound,
     LayoutDashboard,
-    Link2,
     MapPinned,
     Megaphone,
     MessageSquare,
@@ -33,13 +31,11 @@ import {
     Plug,
     Receipt,
     Reply,
-    Router,
     Rss,
     ScrollText,
     Settings,
     Shield,
     ShieldCheck,
-    Signal,
     SlidersHorizontal,
     Smartphone,
     Ticket,
@@ -85,31 +81,6 @@ export const navigation: NavGroup[] = [
         descriptionKey: 'menu.customers_list_description',
         href: '/customers',
         icon: UserRound,
-    },
-    {
-        id: 'cpe',
-        labelKey: 'menu.cpe_management',
-        icon: Router,
-        children: [
-            {
-                labelKey: 'menu.cpe_inventory',
-                descriptionKey: 'menu.cpe_inventory_description',
-                href: '/cpe/inventory',
-                icon: Boxes,
-            },
-            {
-                labelKey: 'menu.cpe_assignment',
-                descriptionKey: 'menu.cpe_assignment_description',
-                href: '/cpe/assignment',
-                icon: Link2,
-            },
-            {
-                labelKey: 'menu.connection_status',
-                descriptionKey: 'menu.connection_status_description',
-                href: '/cpe/status',
-                icon: Signal,
-            },
-        ],
     },
     {
         id: 'billing',
@@ -457,10 +428,6 @@ export function viewPermissionForHref(href: string): string | undefined {
 
     if (href.startsWith('/customers')) {
         return 'customers.view';
-    }
-
-    if (href.startsWith('/cpe')) {
-        return 'cpe.view';
     }
 
     if (href.startsWith('/packages')) {

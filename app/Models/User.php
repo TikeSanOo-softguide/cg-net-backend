@@ -117,11 +117,6 @@ class User extends Authenticatable
         return $this->hasMany(InstallationApplication::class);
     }
 
-    public function cpeDevices(): HasMany
-    {
-        return $this->hasMany(CpeDevice::class);
-    }
-
     public function failureReports(): HasMany
     {
         return $this->hasMany(FailureReport::class);

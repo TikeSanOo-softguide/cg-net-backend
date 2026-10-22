@@ -16,7 +16,6 @@ final class AdminHome
         return [
             ['dashboard.view', '/dashboard'],
             ['customers.view', '/customers'],
-            ['cpe.view', '/cpe/inventory'],
             ['packages.view', '/packages'],
             ['billing.view', '/billing/invoices'],
             ['top-up-cards.view', '/top-up-cards/batch'],

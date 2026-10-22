@@ -8,7 +8,6 @@ use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
 use App\Enums\UserStatus;
 use App\Enums\WalletActorType;
-use App\Models\CpeDevice;
 use App\Models\CustomerPackage;
 use App\Models\LedgerTransaction;
 use App\Models\Package;
@@ -135,8 +134,6 @@ class CustomerSeeder extends Seeder
                 'status' => LedgerTransactionStatus::Pending,
                 'amount' => fake()->numberBetween(1000, 5000),
             ]);
-
-            CpeDevice::factory()->create(['user_id' => $user->id]);
 
             $user->forceFill([
                 'created_at' => now()->subDays(fake()->numberBetween(0, 29)),

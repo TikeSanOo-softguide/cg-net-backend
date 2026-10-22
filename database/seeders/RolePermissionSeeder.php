@@ -41,7 +41,7 @@ class RolePermissionSeeder extends Seeder
             $all->filter(function (Permission $permission): bool {
                 return in_array(
                     explode('.', $permission->name)[0],
-                    ['dashboard', 'customers', 'cpe', 'packages', 'billing', 'top-up-cards', 'regions', 'cms'],
+                    ['dashboard', 'customers', 'packages', 'billing', 'top-up-cards', 'regions', 'cms'],
                     true,
                 );
             }),
