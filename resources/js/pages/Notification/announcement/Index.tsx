@@ -16,7 +16,7 @@ import {
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { FormDialog } from '@/components/FormDialog';
-import { formActionBarClass, formActionButtonClass, formActionSubmitClass } from '@/components/FormActionBar';
+import { formActionBarClass, formActionCancelClass, formActionSubmitClass } from '@/components/FormActionBar';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { SearchInput } from '@/components/SearchInput';
@@ -482,8 +482,8 @@ function AnnouncementDetailDialog({
                         <Button
                             type="button"
                             size="sm"
-                            variant="ghost"
-                            className={formActionButtonClass}
+                            variant="destructive"
+                            className={formActionCancelClass}
                             onClick={() => onOpenChange(false)}
                         >
                             <XIcon className="size-3.5" strokeWidth={1.85} />
