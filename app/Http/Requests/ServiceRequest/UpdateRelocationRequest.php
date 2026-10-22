@@ -27,7 +27,7 @@ class UpdateRelocationRequest extends FormRequest
             ],
             'current_address' => ['required', 'string', 'max:5000'],
             'new_address' => ['required', 'string', 'max:5000'],
-            'preferred_date' => ['required', 'date'],
+            'preferred_date' => ['nullable', 'date'],
             'phone' => ['required', 'string', 'max:16'],
             'details' => ['nullable', 'string', 'max:5000'],
             'status' => ['nullable', Rule::enum(RequestStatus::class)],
