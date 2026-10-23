@@ -207,10 +207,21 @@ class CustomerProfileApiTest extends TestCase
             ]);
 
         Http::fake([
-            '*broadband_accounts*' => Http::response(
-                [['account_number' => 'CG12345678', 'customer_name' => 'Profile Customer']],
-                200,
-            ),
+            'provider.test/WalletApp/ServerCommand/GetTokenAPI*' => Http::response([
+                'ErrCode' => 0,
+                'Message' => 'ok',
+                'token' => 'profile-test-token',
+            ]),
+            'provider.test/WalletApp/ServerCommand/AccountInfoAPI*' => Http::response([
+                'ErrCode' => 0,
+                'Message' => 'ok',
+                'Data' => ['account' => '12345678', 'customer_name' => 'Profile Customer'],
+            ]),
+        ]);
+        config([
+            'services.cg_api.url' => 'https://provider.test/WalletApp/ServerCommand',
+            'services.cg_api.client_id' => 'profile-client',
+            'services.cg_api.client_secret' => 'profile-secret',
         ]);
 
         $response = $this->withToken($user->createToken('profile')->plainTextToken)
@@ -228,10 +239,10 @@ class CustomerProfileApiTest extends TestCase
             ->assertJsonPath('data.packages.0.details.network_name.my', $package->network->name_my)
             ->assertJsonPath('data.packages.0.details.speed.mbps', $package->speed->mbps)
             ->assertJsonPath('data.packages.0.details.term.months', $package->term->months)
-            ->assertJsonPath('data.packages.0.username', 'cg-user-123')
-            ->assertJsonPath('data.packages.0.password', 'package-secret')
             ->assertHeader('Cache-Control', 'no-store, private')
             ->assertHeader('Pragma', 'no-cache');
+        $this->assertArrayNotHasKey('username', $response->json('data.packages.0'));
+        $this->assertArrayNotHasKey('password', $response->json('data.packages.0'));
         $response->assertJsonMissingPath('data.user.password');
         $response->assertJsonMissingPath('data.wallet.user');
     }
@@ -250,10 +261,21 @@ class CustomerProfileApiTest extends TestCase
         ]);
 
         Http::fake([
-            '*broadband_accounts*' => Http::response(
-                [['account_number' => 'CG12345678', 'customer_name' => 'Profile Customer']],
-                200,
-            ),
+            'provider.test/WalletApp/ServerCommand/GetTokenAPI*' => Http::response([
+                'ErrCode' => 0,
+                'Message' => 'ok',
+                'token' => 'profile-test-token',
+            ]),
+            'provider.test/WalletApp/ServerCommand/AccountInfoAPI*' => Http::response([
+                'ErrCode' => 0,
+                'Message' => 'ok',
+                'Data' => ['account' => '12345678', 'customer_name' => 'Profile Customer'],
+            ]),
+        ]);
+        config([
+            'services.cg_api.url' => 'https://provider.test/WalletApp/ServerCommand',
+            'services.cg_api.client_id' => 'profile-client',
+            'services.cg_api.client_secret' => 'profile-secret',
         ]);
 
         $response = $this->withToken($user->createToken('profile')->plainTextToken)

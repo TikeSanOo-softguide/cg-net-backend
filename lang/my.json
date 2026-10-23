@@ -1117,10 +1117,13 @@
         }
     },
     "package_orders": {
+        "activation_result_code": "Activation ရလဒ်ကုဒ်",
         "completed_at": "ပြီးစီးချိန်",
         "expires_at": "သက်တမ်းကုန်ချိန်",
         "external_response": "ပြင်ပဝန်ဆောင်မှု တုံ့ပြန်ချက်",
+        "failure_reason": "မအောင်မြင်မှု / ပြန်လည်စစ်ဆေးရန် မှတ်ချက်",
         "order_details": "ပက်ကေ့ဂျ်မှာယူမှု အသေးစိတ်",
+        "order_no": "CG-Net မှာယူမှုနံပါတ်",
         "search_placeholder": "မှာယူမှု ID၊ ဖောက်သည် သို့မဟုတ် ငွေမှတ်တမ်းကို ရှာရန်",
         "service_details": "အသက်သွင်းထားသော ဝန်ဆောင်မှု",
         "snapshot": "မှာယူမှု အချက်အလက်",

@@ -1117,10 +1117,13 @@
         }
     },
     "package_orders": {
+        "activation_result_code": "激活结果代码",
         "completed_at": "完成时间",
         "expires_at": "到期时间",
         "external_response": "外部服务响应",
+        "failure_reason": "失败 / 对账备注",
         "order_details": "套餐订单详情",
+        "order_no": "CG-Net 订单号",
         "search_placeholder": "搜索订单编号、客户或交易",
         "service_details": "已开通的服务",
         "snapshot": "订单快照",

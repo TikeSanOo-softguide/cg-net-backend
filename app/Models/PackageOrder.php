@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\PackageOrderStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,7 +19,15 @@ use LogicException;
     'snapshot',
     'external_response',
     'completed_at',
+    'order_no',
+    'account',
+    'activation_password',
+    'product_id',
+    'product_price',
+    'activation_result_code',
+    'failure_reason',
 ])]
+#[Hidden(['account', 'activation_password'])]
 class PackageOrder extends Model
 {
     use HasFactory;
@@ -41,6 +50,9 @@ class PackageOrder extends Model
             'external_response' => 'array',
             'completed_at' => 'datetime',
             'status' => PackageOrderStatus::class,
+            'activation_password' => 'encrypted',
+            'product_price' => 'decimal:2',
+            'activation_result_code' => 'integer',
         ];
     }
 

@@ -30,8 +30,8 @@ class ProfileController extends Controller
         try {
             $broadbandAccount =
                 $user->broadband_account_number !== null
-                    ? $accountInfoService->findAccount($user->broadband_account_number)
-                    : null;
+                ? $accountInfoService->findAccount($user->broadband_account_number)
+                : null;
         } catch (ConnectionException) {
             return response()->json(
                 [
@@ -136,12 +136,32 @@ class ProfileController extends Controller
     {
         return $user
             ->customerPackages()
-            ->with('package.network', 'package.speed', 'package.term')
+            ->with('package.network', 'package.speed', 'package.term', 'packageOrder')
             ->where('status', CustomerPackageStatus::Active)
             ->where(function ($query): void {
                 $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
             })
             ->latest('starts_at')
             ->get();
+    }
+
+    public function packageCredentials(Request $request, int $customerPackageId): JsonResponse
+    {
+        $customerPackage = CustomerPackage::query()
+            ->whereKey($customerPackageId)
+            ->where('user_id', $request->user()->getKey())
+            ->firstOrFail();
+
+        return response()
+            ->json([
+                'data' => [
+                    'credentials' => [
+                        'account' => $customerPackage->username,
+                        'password' => $customerPackage->password,
+                    ],
+                ],
+            ])
+            ->header('Cache-Control', 'private, no-store')
+            ->header('Pragma', 'no-cache');
     }
 }

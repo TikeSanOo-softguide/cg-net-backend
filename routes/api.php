@@ -100,6 +100,8 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::get('/notification-preferences', [ProfileController::class, 'getNotificationPreferences']);
         Route::patch('/notification-preferences', [ProfileController::class, 'updateNotificationPreferences']);
         Route::post('/deactivate', [ProfileController::class, 'deactivate']);
+        Route::get('/packages/{customerPackageId}/credentials', [ProfileController::class, 'packageCredentials'])
+            ->whereNumber('customerPackageId');
         Route::get('/transactions', TransactionHistoryController::class);
     });
 
