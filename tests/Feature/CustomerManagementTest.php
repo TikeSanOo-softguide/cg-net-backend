@@ -82,12 +82,7 @@ class CustomerManagementTest extends TestCase
 
     public function test_admins_can_view_customer_detail(): void
     {
-        config(['services.broadband.url' => 'https://broadband.test']);
-        Http::fake([
-            'broadband.test/broadband_accounts*' => Http::response([
-                ['account_number' => 'CG12345678', 'customer_name' => 'Aung Aung', 'status' => 'active'],
-            ]),
-        ]);
+        $this->fakeCgAccountInfo('12345678');
 
         $admin = Admin::factory()->create();
         $customer = User::factory()->create(['broadband_account_number' => 'CG12345678']);
@@ -119,7 +114,8 @@ class CustomerManagementTest extends TestCase
                     ->where('sessionInfo.token_name', 'flutter')
                     ->where('sessionInfo.last_used_at', null)
                     ->where('sessionInfo.expires_at', null)
-                    ->where('accountBinding.account_number', 'CG12345678')
+                    ->where('accountBinding.account_number', '12345678')
+                    ->where('accountBinding.service_type', 'CG')
                     ->has('packageHistory', 1)
                     ->where('wallet.balance', '15000')
                     ->has('wallet.transactions', 1),
@@ -176,7 +172,7 @@ class CustomerManagementTest extends TestCase
 
     public function test_customer_detail_remains_available_when_broadband_service_cannot_be_reached(): void
     {
-        config(['services.broadband.url' => 'https://broadband.test']);
+        $this->configureCgApi();
         Http::fake(fn() => throw new ConnectionException('DNS lookup failed.'));
 
         $admin = Admin::factory()->create();
@@ -188,7 +184,7 @@ class CustomerManagementTest extends TestCase
             ->assertInertia(
                 fn(Assert $page) => $page
                     ->component('Customer/Show')
-                    ->where('accountBinding.account_number', 'CG0000007')
+                    ->where('accountBinding.account_number', '0000007')
                     ->where('accountBinding.status', 'unknown'),
             );
     }
@@ -377,12 +373,7 @@ class CustomerManagementTest extends TestCase
 
     public function test_admin_can_bind_and_unbind_a_broadband_account_number(): void
     {
-        config(['services.broadband.url' => 'https://broadband.test']);
-        Http::fake([
-            'broadband.test/broadband_accounts*' => Http::response([
-                ['account_number' => 'CG99999999', 'customer_name' => 'Bound Customer', 'status' => 'active'],
-            ]),
-        ]);
+        $this->fakeCgAccountInfo('99999999');
 
         $admin = Admin::factory()->create();
         $customer = User::factory()->create();
@@ -687,5 +678,32 @@ class CustomerManagementTest extends TestCase
             ->assertRedirect();
 
         $this->assertNotSoftDeleted($customer);
+    }
+
+    private function configureCgApi(): void
+    {
+        config([
+            'services.cg_api.url' => 'https://provider.test/WalletApp/ServerCommand',
+            'services.cg_api.client_id' => 'customer-client',
+            'services.cg_api.client_secret' => 'customer-secret',
+        ]);
+    }
+
+    private function fakeCgAccountInfo(string $account): void
+    {
+        $this->configureCgApi();
+        Http::fake([
+            'provider.test/WalletApp/ServerCommand/GetTokenAPI*' => Http::response([
+                'ErrCode' => 0,
+                'Message' => 'ok',
+                'token' => 'customer-test-token',
+                'expires_in' => 3600,
+            ]),
+            'provider.test/WalletApp/ServerCommand/AccountInfoAPI*' => Http::response([
+                'ErrCode' => 0,
+                'Message' => 'ok',
+                'Data' => ['account' => $account, 'status' => 'active'],
+            ]),
+        ]);
     }
 }

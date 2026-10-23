@@ -28,7 +28,7 @@ class ServiceRequestApiTest extends TestCase
             '/api/change-plan-requests',
             '/api/change-password-requests',
             '/api/relocation-requests',
-            '/api/broadband-applications',
+            '/api/installation-application',
         ] as $endpoint) {
             $this->getJson($endpoint)->assertUnauthorized();
         }
@@ -38,7 +38,7 @@ class ServiceRequestApiTest extends TestCase
             '/api/change-plan-requests/create',
             '/api/change-password-requests/create',
             '/api/relocation-requests/create',
-            '/api/broadband-applications/create',
+            '/api/installation-application/create',
         ] as $endpoint) {
             $this->postJson($endpoint)->assertUnauthorized();
         }
@@ -75,7 +75,7 @@ class ServiceRequestApiTest extends TestCase
         ];
 
         $response = $this->withToken($token)
-            ->post('/api/broadband-applications/create', $applicationData, ['Accept' => 'application/json'])
+            ->post('/api/installation-application/create', $applicationData, ['Accept' => 'application/json'])
             ->assertCreated()
             ->assertJsonPath('data.user_id', $user->id)
             ->assertJsonPath('data.package_id', $package->id)
@@ -85,16 +85,16 @@ class ServiceRequestApiTest extends TestCase
         $application = InstallationApplication::query()->findOrFail($response->json('data.id'));
 
         $this->withToken($token)
-            ->getJson('/api/broadband-applications')
+            ->getJson('/api/installation-application')
             ->assertOk()
             ->assertJsonCount(1, 'data');
         $this->withToken($token)
-            ->getJson('/api/broadband-applications/'.$application->id)
+            ->getJson('/api/installation-application/'.$application->id)
             ->assertOk()
             ->assertJsonPath('data.id', $application->id);
 
         $this->withToken($token)
-            ->put('/api/broadband-applications/'.$application->id, [
+            ->put('/api/installation-application/'.$application->id, [
                 ...$applicationData,
                 'id_name' => 'Updated Customer',
                 'address' => 'Updated customer address',
@@ -109,12 +109,12 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonCount(2, 'data.photos');
 
         $this->withToken($token)
-            ->patchJson('/api/broadband-applications/'.$application->id.'/cancel')
+            ->patchJson('/api/installation-application/'.$application->id.'/cancel')
             ->assertOk()
             ->assertJsonPath('data.status', 'cancelled');
 
         $this->withToken($token)
-            ->deleteJson('/api/broadband-applications/'.$application->id)
+            ->deleteJson('/api/installation-application/'.$application->id)
             ->assertNoContent();
 
         $this->assertSoftDeleted('installation_applications', ['id' => $application->id]);
@@ -374,7 +374,7 @@ class ServiceRequestApiTest extends TestCase
             ])
             ->assertForbidden();
         $this->withToken($token)
-            ->getJson('/api/broadband-applications/'.$broadbandApplication->id)
+            ->getJson('/api/installation-application/'.$broadbandApplication->id)
             ->assertForbidden();
     }
 }

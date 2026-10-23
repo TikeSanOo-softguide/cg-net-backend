@@ -11,7 +11,7 @@ class ApiMessageException extends HttpException
 {
     /** @param array<string, mixed> $extra */
     public function __construct(
-        public readonly MessageCode $code,
+        public readonly MessageCode $messageCode,
         int $status = 422,
         public readonly array $extra = [],
         ?Throwable $previous = null,
@@ -22,16 +22,16 @@ class ApiMessageException extends HttpException
             $headers['Retry-After'] = (string) $retryAfter;
         }
 
-        parent::__construct($status, $code->message(), $previous, $headers);
+        parent::__construct($status, $messageCode->message(), $previous, $headers);
     }
 
     /** @return array<string, mixed> */
     public function payload(): array
     {
         return array_merge([
-            'code' => $this->code->value,
-            'level' => $this->code->level(),
-            'message' => $this->code->message(),
+            'code' => $this->messageCode->value,
+            'level' => $this->messageCode->level(),
+            'message' => $this->messageCode->message(),
         ], $this->extra);
     }
 

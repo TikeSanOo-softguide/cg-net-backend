@@ -50,7 +50,7 @@ class BroadbandApplicationRequestController extends Controller
                 'user_id' => $request->user()->id,
                 'status' => RequestStatus::UnderReview->value,
             ]);
-            ServiceRequestSubmitted::dispatch('installation-applications', $application->id);
+            ServiceRequestSubmitted::dispatch('installation_application', $application->id);
 
             foreach ($request->file('photos', []) as $photo) {
                 $application->photos()->create([
