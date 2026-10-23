@@ -15,7 +15,8 @@ use App\Http\Requests\Customer\UpdateCustomerRequest;
 use App\Http\Requests\Customer\UpdateCustomerStatusRequest;
 use App\Models\User;
 use App\Models\UserLog;
-use App\Services\BroarbandAccount\BroadbandAccountService;
+use App\Services\BroarbandAccount\AccountInfoService;
+use App\Services\BroarbandAccount\BroadbandApiException;
 use App\Services\Customer\WalletAdjustmentService;
 use App\Services\Ledger\LedgerPoster;
 use App\Services\Transaction\TransactionService;
@@ -136,10 +137,11 @@ class CustomerController extends Controller
         Request $request,
         User $customer,
         TransactionService $transactions,
-        BroadbandAccountService $broadbandAccountService,
+        AccountInfoService $accountInfoService,
     ): Response {
         $locale = app()->getLocale();
-        $activeToken = $customer->tokens()
+        $activeToken = $customer
+            ->tokens()
             ->where(fn($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
             ->latest('created_at')
             ->first();
@@ -261,33 +263,31 @@ class CustomerController extends Controller
         );
 
         $accountBinding = null;
-        $broadbandPackage = null;
 
         if ($customer->broadband_account_number !== null) {
             try {
-                $accountBinding = $broadbandAccountService->findByAccountNumber($customer->broadband_account_number);
+                $accountBinding = $accountInfoService->findAccount($customer->broadband_account_number);
             } catch (ConnectionException) {
                 $accountBinding = [
                     'account_number' => $customer->broadband_account_number,
                     'status' => 'unknown',
                 ];
+            } catch (BroadbandApiException) {
+                $accountBinding = null;
             }
 
             if ($accountBinding) {
-                $currentCustomerPackageId = (int) ($accountBinding['current_customer_package_id'] ?? 0);
+                if (str_starts_with($customer->broadband_account_number, 'FTTH')) {
+                    $serviceType = 'FTTH';
+                } elseif (str_starts_with($customer->broadband_account_number, 'CG')) {
+                    $serviceType = 'CG';
+                } else {
+                    $serviceType = '';
+                }
+                $account = substr($customer->broadband_account_number, strlen($serviceType));
 
-                $customerPackage = $customer
-                    ->customerPackages()
-                    ->with('package')
-                    ->where('status', 'active')
-                    ->where('starts_at', '<=', now())
-                    ->where(function ($query) {
-                        $query->whereNull('expires_at')->orWhere('expires_at', '>=', now());
-                    })
-                    ->latest('starts_at')
-                    ->first();
-
-                $broadbandPackage = $customerPackage?->package;
+                $accountBinding['account_number'] = $account;
+                $accountBinding['service_type'] = $serviceType;
             }
         }
 
@@ -306,14 +306,10 @@ class CustomerController extends Controller
                 : null,
             'accountBinding' => $accountBinding
                 ? [
-                    'account_number' => $accountBinding['account_number'] ?? null,
-                    'customer_name' => $accountBinding['customer_name'] ?? null,
+                    'account_number' => $account ?? null,
+                    'service_type' => $accountBinding['service_type'] ?? null,
                     'status' => $accountBinding['status'] ?? null,
-                    'package_name' => [
-                        'en' => PackageLabel::make($broadbandPackage, 'en'),
-                        'my' => PackageLabel::make($broadbandPackage, 'my'),
-                        'zh' => PackageLabel::make($broadbandPackage, 'zh'),
-                    ],
+                    'package_name' => $accountBinding['productName'] ?? null,
                 ]
                 : null,
             'packageHistory' => $packageRows->values(),
@@ -420,7 +416,8 @@ class CustomerController extends Controller
 
     public function revokeSession(Request $request, User $customer): RedirectResponse
     {
-        $hasActiveSession = $customer->tokens()
+        $hasActiveSession = $customer
+            ->tokens()
             ->where(fn($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
             ->exists();
 
@@ -438,17 +435,21 @@ class CustomerController extends Controller
     }
 
     public function bindAccount(
-        BroadbandAccountService $broadbandAccountService,
+        AccountInfoService $accountInfoService,
         BindAccountNumberRequest $request,
         User $customer,
     ): RedirectResponse {
         $accountNumber = trim($request->validated('account_number'));
 
         try {
-            $account = $broadbandAccountService->findByAccountNumber($accountNumber);
+            $account = $accountInfoService->findAccount($accountNumber);
         } catch (ConnectionException $e) {
             return back()->withErrors([
-                'account_number' => 'customers.account_service_unavailable',
+                'account_number' => 'customers.account_not_found',
+            ]);
+        } catch (BroadbandApiException) {
+            return back()->withErrors([
+                'account_number' => 'customers.account_not_found',
             ]);
         }
 

@@ -553,6 +553,8 @@
         "no_accounts": "No broadband accounts bound",
         "no_active_session": "No active session",
         "no_current_package": "No current package",
+        "package_name": "Package name",
+        "service_type": "Service type",
         "no_packages": "No packages in this tab",
         "no_top_ups": "No top-up history",
         "no_transactions": "No wallet transactions",

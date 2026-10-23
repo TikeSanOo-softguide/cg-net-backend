@@ -553,6 +553,8 @@
         "no_accounts": "尚未绑定宽带账户",
         "no_active_session": "没有活动会话",
         "no_current_package": "暂无有效套餐",
+        "package_name": "套餐名称",
+        "service_type": "服务类型",
         "no_packages": "此选项卡中没有套餐",
         "no_top_ups": "暂无充值记录",
         "no_transactions": "暂无钱包交易",
