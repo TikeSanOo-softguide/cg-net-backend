@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @property array{user: User, broadband_account?: array<string, mixed>|null, wallet: Wallet|null, packages: Collection<int, CustomerPackage>} $resource
+ * @property array{user: User, wallet: Wallet|null, packages: Collection<int, CustomerPackage>} $resource
  */
 class ProfileResource extends JsonResource
 {
@@ -24,12 +24,24 @@ class ProfileResource extends JsonResource
         $wallet = $this->resource['wallet'];
         /** @var Collection<int, CustomerPackage> $packages */
         $packages = $this->resource['packages'];
-        $broadbandAccount = $this->resource['broadband_account'] ?? null;
+        $accountNumber = $user->broadband_account_number;
+        $serviceType = null;
+
+        if (is_string($accountNumber) && str_starts_with($accountNumber, 'FTTH')) {
+            $serviceType = 'FTTH';
+        } elseif (is_string($accountNumber) && str_starts_with($accountNumber, 'CG')) {
+            $serviceType = 'CG';
+        }
+
+        if ($serviceType !== null) {
+            $accountNumber = substr($accountNumber, strlen($serviceType));
+        }
+
         return [
             'user' => UserResource::make($user),
             'broadbandAccount' => [
-                'account_number' => $user->broadband_account_number,
-                'customer_name' => is_array($broadbandAccount) ? $broadbandAccount['customer_name'] ?? null : null,
+                'account_number' => $accountNumber,
+                'service_type' => $serviceType,
             ],
             'wallet' => $wallet ? WalletResource::make($wallet) : null,
             'packages' => $packages ? CustomerPackageResource::collection($packages) : null,
