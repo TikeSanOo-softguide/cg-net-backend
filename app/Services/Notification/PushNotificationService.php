@@ -256,6 +256,10 @@ class PushNotificationService
                             continue;
                         }
 
+                        if (!$user->canReceivePush($category)) {
+                            continue;
+                        }
+
                         $locale = in_array($user->lang, ['en', 'my', 'zh'], true) ? $user->lang : 'en';
                         Notification::send(
                             $user,
@@ -305,6 +309,7 @@ class PushNotificationService
         $recipients = 0;
 
         User::query()
+            ->where('general_enabled', true)
             ->whereHas('deviceTokens')
             ->orderBy('id')
             ->chunkById(200, function ($users) use ($notification, &$recipients): void {

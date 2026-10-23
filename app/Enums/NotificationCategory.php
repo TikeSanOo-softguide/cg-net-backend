@@ -10,4 +10,5 @@ enum NotificationCategory: string
     case System = 'system';
     case Promotion = 'promotion';
     case BillAlert = 'bill_alert';
+    case General = 'general';
 }

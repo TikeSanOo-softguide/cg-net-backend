@@ -16,6 +16,10 @@ class UserResource extends JsonResource
             'lang' => $this->lang,
             'broadband_account_number' => $this->broadband_account_number,
             'status' => $this->status->value,
+            'announcements_notifications' => $this->announcements_enabled,
+            'system_notifications' => $this->system_enabled,
+            'promotion_notifications' => $this->promotion_enabled,
+            'general_notifications' => $this->general_enabled,
         ];
     }
 }

@@ -15,6 +15,7 @@ use App\Models\Notification as UserNotification;
 use App\Models\Promotion;
 use App\Models\Service;
 use App\Models\User;
+use App\Notifications\AdminPushNotification;
 use App\Notifications\CampaignNotification;
 use App\Services\Notification\PushNotificationService;
 use App\Support\CmsPermissions;
@@ -548,6 +549,80 @@ class CmsManagementTest extends TestCase
         $this->assertSame(3, Promotion::query()->whereNull('push_sent_at')->count());
     }
 
+    public function test_campaign_pushes_respect_the_users_category_preferences(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create(['system_enabled' => false]);
+        $user->deviceTokens()->create(['token' => 'fcm-category-preference']);
+        $generalOptOutUser = User::factory()->create(['general_enabled' => false]);
+        $generalOptOutUser->deviceTokens()->create(['token' => 'fcm-general-preference']);
+        $systemAnnouncement = Announcement::factory()->create([
+            'type' => AnnouncementType::System,
+            'is_active' => true,
+            'start_date' => now()->subHour(),
+            'end_date' => now()->addHour(),
+        ]);
+        $announcement = Announcement::factory()->create([
+            'type' => AnnouncementType::Announce,
+            'is_active' => true,
+            'start_date' => now()->subHour(),
+            'end_date' => now()->addHour(),
+        ]);
+
+        $this->assertSame(1, app(PushNotificationService::class)->processDueTitles());
+
+        Notification::assertSentTo($user, CampaignNotification::class, function (
+            CampaignNotification $notification,
+        ) use ($announcement): bool {
+            return $notification->category === NotificationCategory::Announcement->value &&
+                $notification->actionId === (string) $announcement->id;
+        });
+        Notification::assertNotSentTo($user, CampaignNotification::class, function (
+            CampaignNotification $notification,
+        ) use ($systemAnnouncement): bool {
+            return $notification->actionId === (string) $systemAnnouncement->id;
+        });
+        Notification::assertSentTo($generalOptOutUser, CampaignNotification::class, function (
+            CampaignNotification $notification,
+        ) use ($announcement): bool {
+            return $notification->category === NotificationCategory::Announcement->value &&
+                $notification->actionId === (string) $announcement->id;
+        });
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $user->id,
+            'category' => NotificationCategory::System->value,
+            'action_id' => (string) $systemAnnouncement->id,
+            'sent_at' => null,
+        ]);
+        $this->assertNull($systemAnnouncement->fresh()->push_sent_at);
+    }
+
+    public function test_admin_pushes_respect_the_general_notification_preference(): void
+    {
+        Notification::fake();
+
+        $enabledUser = User::factory()->create([
+            'announcements_enabled' => false,
+            'system_enabled' => false,
+            'promotion_enabled' => false,
+            'general_enabled' => true,
+        ]);
+        $enabledUser->deviceTokens()->create(['token' => 'fcm-general-enabled']);
+        $disabledUser = User::factory()->create(['general_enabled' => false]);
+        $disabledUser->deviceTokens()->create(['token' => 'fcm-general-disabled']);
+
+        $recipients = app(PushNotificationService::class)->pushNow([
+            'title_en' => 'Admin push EN',
+            'title_zh' => 'Admin push ZH',
+            'title_my' => 'Admin push MY',
+        ]);
+
+        $this->assertSame(1, $recipients);
+        Notification::assertSentTo($enabledUser, AdminPushNotification::class);
+        Notification::assertNotSentTo($disabledUser, AdminPushNotification::class);
+    }
+
     public function test_title_push_is_not_marked_sent_when_no_device_is_registered(): void
     {
         Notification::fake();
@@ -566,7 +641,9 @@ class CmsManagementTest extends TestCase
     private function fakeImage(string $name = 'promo.jpg'): UploadedFile
     {
         // Minimal 1x1 JPEG so tests do not require the GD extension.
-        $jpeg = base64_decode('/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGcP//EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z');
+        $jpeg = base64_decode(
+            '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGcP//EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z',
+        );
 
         return UploadedFile::fake()->createWithContent($name, $jpeg);
     }

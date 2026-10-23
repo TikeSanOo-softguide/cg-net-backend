@@ -97,6 +97,8 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::get('/profile', [ProfileController::class, 'show']);
         Route::patch('/language', [ProfileController::class, 'updateLanguage']);
         Route::patch('/profile', [ProfileController::class, 'update']);
+        Route::get('/notification-preferences', [ProfileController::class, 'getNotificationPreferences']);
+        Route::patch('/notification-preferences', [ProfileController::class, 'updateNotificationPreferences']);
         Route::post('/deactivate', [ProfileController::class, 'deactivate']);
         Route::get('/transactions', TransactionHistoryController::class);
     });

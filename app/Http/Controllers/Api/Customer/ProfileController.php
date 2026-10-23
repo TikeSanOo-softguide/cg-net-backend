@@ -7,6 +7,7 @@ use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Customer\DeactivateAccountRequest;
 use App\Http\Requests\Api\Customer\UpdateLanguageRequest;
+use App\Http\Requests\Api\Customer\UpdateNotificationPreferencesRequest;
 use App\Http\Requests\Api\Customer\UpdateProfileRequest;
 use App\Http\Resources\Customer\ProfileResource;
 use App\Models\CustomerPackage;
@@ -98,6 +99,34 @@ class ProfileController extends Controller
         return response()->json([
             'data' => [
                 'lang' => $user->lang,
+            ],
+        ]);
+    }
+
+    public function getNotificationPreferences(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        return response()->json([
+            'announcements_enabled' => $user->announcements_enabled,
+            'system_enabled' => $user->system_enabled,
+            'promotion_enabled' => $user->promotion_enabled,
+            'general_enabled' => $user->general_enabled,
+        ]);
+    }
+
+    public function updateNotificationPreferences(UpdateNotificationPreferencesRequest $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $user->update($request->validated());
+
+        return response()->json([
+            'data' => [
+                'announcements_notifications' => $user->announcements_enabled,
+                'system_notifications' => $user->system_enabled,
+                'promotion_notifications' => $user->promotion_enabled,
+                'general_notifications' => $user->general_enabled,
             ],
         ]);
     }
