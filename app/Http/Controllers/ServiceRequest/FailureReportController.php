@@ -5,8 +5,10 @@ namespace App\Http\Controllers\ServiceRequest;
 use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\FailureReport;
+use App\Support\StoresPublicImage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -82,7 +84,9 @@ class FailureReportController extends Controller
                         ->map(
                             fn($photo) => [
                                 'id' => $photo->id,
-                                'image_url' => $photo->image_url,
+                                'image_url' => Str::startsWith($photo->image_url, ['http://', 'https://'])
+                                    ? $photo->image_url
+                                    : StoresPublicImage::url($photo->image_url),
                                 'label' => $photo->label ?? null,
                             ],
                         )

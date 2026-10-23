@@ -553,6 +553,8 @@
         "no_accounts": "尚未绑定宽带账户",
         "no_active_session": "没有活动会话",
         "no_current_package": "暂无有效套餐",
+        "package_name": "套餐名称",
+        "service_type": "服务类型",
         "no_packages": "此选项卡中没有套餐",
         "no_top_ups": "暂无充值记录",
         "no_transactions": "暂无钱包交易",
@@ -1115,10 +1117,13 @@
         }
     },
     "package_orders": {
+        "activation_result_code": "激活结果代码",
         "completed_at": "完成时间",
         "expires_at": "到期时间",
         "external_response": "外部服务响应",
+        "failure_reason": "失败 / 对账备注",
         "order_details": "套餐订单详情",
+        "order_no": "CG-Net 订单号",
         "search_placeholder": "搜索订单编号、客户或交易",
         "service_details": "已开通的服务",
         "snapshot": "订单快照",

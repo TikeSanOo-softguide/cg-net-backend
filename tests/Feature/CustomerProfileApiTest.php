@@ -49,6 +49,89 @@ class CustomerProfileApiTest extends TestCase
 
         $this->assertSame('en', $user->fresh()->lang);
     }
+
+    public function test_notification_preferences_default_to_true_and_are_returned_in_the_profile(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('notification-preferences')->plainTextToken;
+
+        $this->withToken($token)
+            ->getJson('/api/customer/profile')
+            ->assertOk()
+            ->assertJsonPath('data.user.announcements_notifications', true)
+            ->assertJsonPath('data.user.system_notifications', true)
+            ->assertJsonPath('data.user.promotion_notifications', true)
+            ->assertJsonPath('data.user.general_notifications', true);
+    }
+
+    public function test_customer_can_fetch_all_four_notification_preferences(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('notification-preferences')->plainTextToken;
+
+        $this->withToken($token)
+            ->getJson('/api/customer/notification-preferences')
+            ->assertOk()
+            ->assertJsonPath('announcements_enabled', true)
+            ->assertJsonPath('system_enabled', true)
+            ->assertJsonPath('promotion_enabled', true)
+            ->assertJsonPath('general_enabled', true);
+    }
+
+    public function test_customer_can_update_notification_preferences_partially(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('notification-preferences')->plainTextToken;
+
+        $this->withToken($token)
+            ->patchJson('/api/customer/notification-preferences', [
+                'announcements_enabled' => false,
+                'general_enabled' => false,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.announcements_notifications', false)
+            ->assertJsonPath('data.system_notifications', true)
+            ->assertJsonPath('data.promotion_notifications', true)
+            ->assertJsonPath('data.general_notifications', false);
+
+        $this->assertFalse($user->fresh()->announcements_enabled);
+        $this->assertFalse($user->fresh()->general_enabled);
+
+        $this->withToken($token)
+            ->getJson('/api/customer/profile')
+            ->assertOk()
+            ->assertJsonPath('data.user.announcements_notifications', false)
+            ->assertJsonPath('data.user.general_notifications', false);
+    }
+
+    public function test_customer_can_update_notification_preferences_with_legacy_keys(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('notification-preferences')->plainTextToken;
+
+        $this->withToken($token)
+            ->patchJson('/api/customer/notification-preferences', ['general_notifications' => false])
+            ->assertOk()
+            ->assertJsonPath('data.general_notifications', false);
+
+        $this->assertFalse($user->fresh()->general_enabled);
+    }
+
+    public function test_notification_preferences_require_authentication_and_boolean_values(): void
+    {
+        $this->patchJson('/api/customer/notification-preferences', [
+            'general_notifications' => false,
+        ])->assertUnauthorized();
+
+        $user = User::factory()->create();
+        $this->withToken($user->createToken('notification-preferences')->plainTextToken)
+            ->patchJson('/api/customer/notification-preferences', ['general_notifications' => 'off'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('general_enabled');
+
+        $this->assertTrue($user->fresh()->general_enabled);
+    }
+
     public function test_customer_can_update_only_their_name_from_the_profile_api(): void
     {
         $user = User::factory()->create([
@@ -124,9 +207,21 @@ class CustomerProfileApiTest extends TestCase
             ]);
 
         Http::fake([
-            '*broadband_accounts*' => Http::response([
-                ['account_number' => 'CG12345678', 'customer_name' => 'Profile Customer'],
-            ], 200),
+            'provider.test/WalletApp/ServerCommand/GetTokenAPI*' => Http::response([
+                'ErrCode' => 0,
+                'Message' => 'ok',
+                'token' => 'profile-test-token',
+            ]),
+            'provider.test/WalletApp/ServerCommand/AccountInfoAPI*' => Http::response([
+                'ErrCode' => 0,
+                'Message' => 'ok',
+                'Data' => ['account' => '12345678', 'customer_name' => 'Profile Customer'],
+            ]),
+        ]);
+        config([
+            'services.cg_api.url' => 'https://provider.test/WalletApp/ServerCommand',
+            'services.cg_api.client_id' => 'profile-client',
+            'services.cg_api.client_secret' => 'profile-secret',
         ]);
 
         $response = $this->withToken($user->createToken('profile')->plainTextToken)
@@ -144,10 +239,10 @@ class CustomerProfileApiTest extends TestCase
             ->assertJsonPath('data.packages.0.details.network_name.my', $package->network->name_my)
             ->assertJsonPath('data.packages.0.details.speed.mbps', $package->speed->mbps)
             ->assertJsonPath('data.packages.0.details.term.months', $package->term->months)
-            ->assertJsonPath('data.packages.0.username', 'cg-user-123')
-            ->assertJsonPath('data.packages.0.password', 'package-secret')
             ->assertHeader('Cache-Control', 'no-store, private')
             ->assertHeader('Pragma', 'no-cache');
+        $this->assertArrayNotHasKey('username', $response->json('data.packages.0'));
+        $this->assertArrayNotHasKey('password', $response->json('data.packages.0'));
         $response->assertJsonMissingPath('data.user.password');
         $response->assertJsonMissingPath('data.wallet.user');
     }
@@ -166,9 +261,21 @@ class CustomerProfileApiTest extends TestCase
         ]);
 
         Http::fake([
-            '*broadband_accounts*' => Http::response([
-                ['account_number' => 'CG12345678', 'customer_name' => 'Profile Customer'],
-            ], 200),
+            'provider.test/WalletApp/ServerCommand/GetTokenAPI*' => Http::response([
+                'ErrCode' => 0,
+                'Message' => 'ok',
+                'token' => 'profile-test-token',
+            ]),
+            'provider.test/WalletApp/ServerCommand/AccountInfoAPI*' => Http::response([
+                'ErrCode' => 0,
+                'Message' => 'ok',
+                'Data' => ['account' => '12345678', 'customer_name' => 'Profile Customer'],
+            ]),
+        ]);
+        config([
+            'services.cg_api.url' => 'https://provider.test/WalletApp/ServerCommand',
+            'services.cg_api.client_id' => 'profile-client',
+            'services.cg_api.client_secret' => 'profile-secret',
         ]);
 
         $response = $this->withToken($user->createToken('profile')->plainTextToken)

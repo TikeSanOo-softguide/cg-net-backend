@@ -47,6 +47,9 @@ class FakePackageActivationService implements PackageActivationServiceInterface
             return new PackageActivationResult(success: true);
         }
 
-        return PackageActivationResult::success('test-user', 'test-password');
+        return PackageActivationResult::success(
+            (string) $packageOrder->account,
+            (string) $packageOrder->activation_password,
+        );
     }
 }

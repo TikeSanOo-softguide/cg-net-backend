@@ -17,13 +17,16 @@ class BuyPackageRequest extends FormRequest
 
         $this->merge([
             'idempotency_key' => is_string($header) ? trim($header) : $header,
+            'product_id' => is_int($this->input('product_id'))
+                ? (string) $this->input('product_id')
+                : $this->input('product_id'),
         ]);
     }
 
     public function rules(): array
     {
         return [
-            'package_id' => ['required', 'integer', 'exists:packages,id'],
+            'product_id' => ['required', 'string', 'max:255'],
             'idempotency_key' => ['required', 'string', 'min:8', 'max:93', 'not_regex:/^refund:/i'],
         ];
     }

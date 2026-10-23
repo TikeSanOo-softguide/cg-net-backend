@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\NotificationCategory;
 use App\Enums\UserStatus;
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -17,7 +17,20 @@ use Laravel\Sanctum\HasApiTokens;
 use Laravel\Sanctum\PersonalAccessToken;
 use LogicException;
 
-#[Fillable(['phone', 'name', 'password', 'status', 'broadband_account_number', 'lang'])]
+#[
+    Fillable([
+        'phone',
+        'name',
+        'password',
+        'status',
+        'broadband_account_number',
+        'lang',
+        'announcements_enabled',
+        'system_enabled',
+        'promotion_enabled',
+        'general_enabled',
+    ]),
+]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -89,7 +102,22 @@ class User extends Authenticatable
         return [
             'password' => 'hashed',
             'status' => UserStatus::class,
+            'announcements_enabled' => 'boolean',
+            'system_enabled' => 'boolean',
+            'promotion_enabled' => 'boolean',
+            'general_enabled' => 'boolean',
         ];
+    }
+
+    public function canReceivePush(?NotificationCategory $category = null): bool
+    {
+        return match ($category) {
+            NotificationCategory::Announcement => $this->announcements_enabled,
+            NotificationCategory::System => $this->system_enabled,
+            NotificationCategory::Promotion => $this->promotion_enabled,
+            NotificationCategory::General => $this->general_enabled,
+            default => true,
+        };
     }
 
     public function customerPackages(): HasMany

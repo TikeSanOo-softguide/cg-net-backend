@@ -85,7 +85,7 @@ class AppServiceProvider extends ServiceProvider
         $driver = (string) config('services.package_activation.driver', 'unconfigured');
 
         if ($driver !== 'fake') {
-            return new RealPackageActivationService();
+            return $this->app->make(RealPackageActivationService::class);
         }
 
         if (!$this->app->environment('local')) {

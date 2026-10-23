@@ -12,12 +12,9 @@ use App\Models\State;
 
 class RegionController extends Controller
 {
-
     public function locations()
     {
-        $states = State::query()
-            ->with('regions.areas')
-            ->get();
+        $states = State::query()->with('regions.areas')->get();
 
         return StateResource::collection($states);
     }
@@ -26,8 +23,7 @@ class RegionController extends Controller
      */
     public function states()
     {
-        $states = State::query()
-            ->get();
+        $states = State::query()->get();
 
         return StateResource::collection($states);
     }
@@ -37,9 +33,7 @@ class RegionController extends Controller
      */
     public function regions(int $stateId)
     {
-        $regions = Region::query()
-            ->where('state_id', $stateId)
-            ->get();
+        $regions = Region::query()->where('state_id', $stateId)->get();
 
         return RegionResource::collection($regions);
     }
@@ -49,9 +43,14 @@ class RegionController extends Controller
      */
     public function areas(int $regionId)
     {
-        $areas = Area::query()
-            ->where('region_id', $regionId)
-            ->get();
+        $areas = Area::query()->where('region_id', $regionId)->get();
+
+        return AreaResource::collection($areas);
+    }
+
+    public function area()
+    {
+        $areas = Area::query()->get();
 
         return AreaResource::collection($areas);
     }

@@ -50,11 +50,11 @@ class BroadbandApplicationRequestController extends Controller
                 'user_id' => $request->user()->id,
                 'status' => RequestStatus::UnderReview->value,
             ]);
-            ServiceRequestSubmitted::dispatch('installation_application', $application->id);
+            ServiceRequestSubmitted::dispatch('installation-applications', $application->id);
 
             foreach ($request->file('photos', []) as $photo) {
                 $application->photos()->create([
-                    'image_url' => StoresPublicImage::store($photo, 'service-request/broadband-applications'),
+                    'image_url' => StoresPublicImage::store($photo, 'service-request/installation-applications'),
                 ]);
             }
 
@@ -114,7 +114,7 @@ class BroadbandApplicationRequestController extends Controller
                     $existingPhoto = $existingPhotos->get($index);
                     $imageUrl = StoresPublicImage::store(
                         $photo,
-                        'service-request/broadband-applications',
+                        'service-request/installation-applications',
                         $existingPhoto?->image_url,
                     );
 

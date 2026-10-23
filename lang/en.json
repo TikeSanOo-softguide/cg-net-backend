@@ -553,6 +553,8 @@
         "no_accounts": "No broadband accounts bound",
         "no_active_session": "No active session",
         "no_current_package": "No current package",
+        "package_name": "Package name",
+        "service_type": "Service type",
         "no_packages": "No packages in this tab",
         "no_top_ups": "No top-up history",
         "no_transactions": "No wallet transactions",
@@ -1115,10 +1117,13 @@
         }
     },
     "package_orders": {
+        "activation_result_code": "Activation result code",
         "completed_at": "Completed at",
         "expires_at": "Expires at",
         "external_response": "External response",
+        "failure_reason": "Failure / reconciliation note",
         "order_details": "Package order details",
+        "order_no": "CG-Net order number",
         "search_placeholder": "Search order ID, customer, or transaction",
         "service_details": "Activated service",
         "snapshot": "Order snapshot",

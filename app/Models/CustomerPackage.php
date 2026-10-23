@@ -24,7 +24,7 @@ use LogicException;
         'status',
     ]),
 ]
-#[Hidden(['password'])]
+#[Hidden(['username', 'password'])]
 class CustomerPackage extends Model
 {
     /** @use HasFactory<CustomerPackageFactory> */
@@ -46,6 +46,7 @@ class CustomerPackage extends Model
             'starts_at' => 'datetime',
             'expires_at' => 'datetime',
             'status' => CustomerPackageStatus::class,
+            'password' => 'encrypted',
         ];
     }
 

@@ -54,6 +54,14 @@ return [
         'url' => env('BROADBAND_API_URL'),
     ],
 
+    'cg_api' => [
+        'url' => env('CG_API_URL'),
+        'client_id' => env('CG_API_CLIENT_ID'),
+        'client_secret' => env('CG_API_CLIENT_SECRET'),
+        'timeout' => (int) env('CG_API_TIMEOUT', 15),
+        'connect_timeout' => (int) env('CG_API_CONNECT_TIMEOUT', 5),
+    ],
+
     'package_activation' => [
         'driver' => env('PACKAGE_ACTIVATION_DRIVER', 'unconfigured'),
     ],

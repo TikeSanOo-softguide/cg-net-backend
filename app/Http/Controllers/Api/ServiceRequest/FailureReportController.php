@@ -24,10 +24,14 @@ class FailureReportController extends Controller
             ->with('photos')
             ->where('user_id', $request->user()->id)
             ->whereNull('failure_reports.deleted_at')
-            ->whereHas('user', fn ($query) => $query->whereColumn(
-                'users.broadband_account_number',
-                'failure_reports.broadband_account_number',
-            ))
+            ->whereHas(
+                'user',
+                fn($query) => $query->whereColumn(
+                    'users.broadband_account_number',
+                    'failure_reports.broadband_account_number',
+                ),
+            )
+            ->latest()
             ->get();
 
         return FailureReportResource::collection($failureReports);

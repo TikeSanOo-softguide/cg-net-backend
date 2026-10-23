@@ -97,7 +97,11 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::get('/profile', [ProfileController::class, 'show']);
         Route::patch('/language', [ProfileController::class, 'updateLanguage']);
         Route::patch('/profile', [ProfileController::class, 'update']);
+        Route::get('/notification-preferences', [ProfileController::class, 'getNotificationPreferences']);
+        Route::patch('/notification-preferences', [ProfileController::class, 'updateNotificationPreferences']);
         Route::post('/deactivate', [ProfileController::class, 'deactivate']);
+        Route::get('/packages/{customerPackageId}/credentials', [ProfileController::class, 'packageCredentials'])
+            ->whereNumber('customerPackageId');
         Route::get('/transactions', TransactionHistoryController::class);
     });
 
@@ -164,7 +168,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::delete('/{changePasswordRequest}', [ChangePasswordRequestController::class, 'destroy']);
     });
 
-    Route::prefix('broadband-applications')->group(function () {
+    Route::prefix('installation-application')->group(function () {
         Route::get('/', [BroadbandApplicationRequestController::class, 'index']);
         Route::post('/create', [BroadbandApplicationRequestController::class, 'store']);
         Route::get('/{installationApplication}', [BroadbandApplicationRequestController::class, 'show']);
@@ -172,6 +176,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::patch('/{installationApplication}/cancel', [BroadbandApplicationRequestController::class, 'cancel']);
         Route::delete('/{installationApplication}', [BroadbandApplicationRequestController::class, 'destroy']);
     });
+    Route::get('/areas', [RegionController::class, 'area']);
 
     Route::prefix('change-password')->group(function () {
         Route::post('/', [ChangePasswordController::class, 'store']);
