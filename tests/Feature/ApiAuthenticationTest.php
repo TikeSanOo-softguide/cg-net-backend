@@ -438,9 +438,11 @@ class ApiAuthenticationTest extends TestCase
             'password' => '123456',
         ])
             ->assertStatus(409)
+            ->assertJsonPath('code', 'MSG-AUTH-012')
+            ->assertJsonPath('level', 'warning')
             ->assertJsonPath(
                 'message',
-                'This account is already signed in on an Android device. Please log out from that device first.',
+                'This account is already signed in on another device.',
             );
 
         $this->assertDatabaseCount('personal_access_tokens', 1);
@@ -650,7 +652,9 @@ class ApiAuthenticationTest extends TestCase
         $this->postJson('/api/auth/otp/verify', [
             'challenge_id' => $challenge['challenge_id'],
             'code' => '000000',
-        ])->assertUnprocessable();
+        ])
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'MSG-AUTH-005');
     }
 
     public function test_expired_otp_challenge_cannot_be_verified(): void

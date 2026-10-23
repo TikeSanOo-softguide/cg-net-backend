@@ -2,6 +2,8 @@
 
 namespace App\Services\Auth;
 
+use App\Enums\MessageCode;
+use App\Exceptions\ApiMessageException;
 use App\Exceptions\Auth\InvalidCredentialsException;
 use App\Exceptions\Auth\OtpThrottledException;
 use App\Services\Auth\Otp\OtpProviderInterface;
@@ -9,7 +11,6 @@ use Closure;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
-use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
 final class OtpService
 {
@@ -72,52 +73,70 @@ final class OtpService
         $this->ensureRateLimit('otp:verify:' . hash('sha256', $challengeId), 'otp_verify');
 
         try {
-            return Cache::lock($this->lockKey($challengeId), 10)->block(3, function () use (
-                $challengeId,
-                $code,
-            ): string {
-                $key = $this->challengeKey($challengeId);
-                $state = $this->store()->get($key);
-                if (!is_array($state)) {
-                    $this->invalidOtp();
-                }
+            $verificationToken = Cache::lock($this->lockKey($challengeId), 10)->block(
+                3,
+                function () use ($challengeId, $code): ?string {
+                    $key = $this->challengeKey($challengeId);
+                    $state = $this->store()->get($key);
+                    if (!is_array($state)) {
+                        return null;
+                    }
 
-                $lockedUntil = (int) ($state['locked_until'] ?? 0);
-                if ($lockedUntil > 0 && $lockedUntil > now()->timestamp) {
-                    $this->invalidOtp();
-                }
+                    $lockedUntil = (int) ($state['locked_until'] ?? 0);
+                    if ($lockedUntil > 0 && $lockedUntil > now()->timestamp) {
+                        return null;
+                    }
 
-                if (!$this->provider->verify((string) $state['provider_reference'], $code)) {
-                    $attempts = ((int) ($state['attempts'] ?? 0)) + 1;
-                    $state['attempts'] = $attempts;
-                    $state['locked_until'] =
-                        $attempts >= (int) config('otp.max_attempts')
-                            ? now()->addSeconds((int) config('otp.challenge_ttl'))->timestamp
-                            : null;
-                    $this->store()->put($key, $state, (int) config('otp.challenge_ttl'));
-                    $this->invalidOtp();
-                }
+                    try {
+                        $matched = $this->provider->verify((string) $state['provider_reference'], $code);
+                    } catch (\Throwable) {
+                        $matched = false;
+                    }
 
-                $phone = (string) $state['phone'];
-                $this->store()->forget($key);
+                    if (!$matched) {
+                        $attempts = ((int) ($state['attempts'] ?? 0)) + 1;
+                        $state['attempts'] = $attempts;
+                        $state['locked_until'] =
+                            $attempts >= (int) config('otp.max_attempts')
+                                ? now()->addSeconds((int) config('otp.challenge_ttl'))->timestamp
+                                : null;
+                        $this->store()->put($key, $state, (int) config('otp.challenge_ttl'));
 
-                $verificationToken = bin2hex(random_bytes(32));
-                $verificationTtl = (int) config('otp.verification_token_ttl');
-                $this->store()->put(
-                    $this->verificationKey($verificationToken),
-                    [
-                        'phone' => $phone,
-                        'failures' => 0,
-                        'expires_at' => now()->addSeconds($verificationTtl)->timestamp,
-                    ],
-                    $verificationTtl,
-                );
+                        return null;
+                    }
 
-                return $verificationToken;
-            });
+                    $phone = (string) $state['phone'];
+                    $this->store()->forget($key);
+
+                    $token = bin2hex(random_bytes(32));
+                    $verificationTtl = (int) config('otp.verification_token_ttl');
+                    $this->store()->put(
+                        $this->verificationKey($token),
+                        [
+                            'phone' => $phone,
+                            'failures' => 0,
+                            'expires_at' => now()->addSeconds($verificationTtl)->timestamp,
+                        ],
+                        $verificationTtl,
+                    );
+
+                    return $token;
+                },
+            );
         } catch (LockTimeoutException $exception) {
-            throw new TooManyRequestsHttpException(3, 'Verification is already in progress.', $exception);
+            throw new ApiMessageException(
+                MessageCode::AuthOtpVerifyInProgress,
+                429,
+                ['retry_after' => 3],
+                $exception,
+            );
         }
+
+        if (!is_string($verificationToken) || $verificationToken === '') {
+            $this->invalidOtp();
+        }
+
+        return $verificationToken;
     }
 
     /** Phone a still-valid verification token belongs to, without consuming it. */
@@ -165,7 +184,12 @@ final class OtpService
                 return $result;
             });
         } catch (LockTimeoutException $exception) {
-            throw new TooManyRequestsHttpException(3, 'Registration is already in progress.', $exception);
+            throw new ApiMessageException(
+                MessageCode::AuthRegistrationInProgress,
+                429,
+                ['retry_after' => 3],
+                $exception,
+            );
         }
     }
 
@@ -193,7 +217,11 @@ final class OtpService
         $decaySeconds = (int) config("otp.rate_limits.$limit.decay_seconds");
 
         if (RateLimiter::tooManyAttempts($key, $maxAttempts)) {
-            throw new TooManyRequestsHttpException(RateLimiter::availableIn($key), 'Too many requests.');
+            throw new ApiMessageException(
+                MessageCode::AuthTooManyRequests,
+                429,
+                ['retry_after' => max(1, RateLimiter::availableIn($key))],
+            );
         }
 
         RateLimiter::hit($key, $decaySeconds);
@@ -223,12 +251,12 @@ final class OtpService
 
     private function invalidOtp(): never
     {
-        abort(422, 'The OTP is invalid or expired.');
+        throw new ApiMessageException(MessageCode::AuthOtpFailed);
     }
 
     private function invalidToken(): never
     {
-        abort(422, 'The verification token is invalid or expired.');
+        throw new ApiMessageException(MessageCode::AuthVerificationTokenInvalid);
     }
 
     private function store()
