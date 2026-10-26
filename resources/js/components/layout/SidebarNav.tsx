@@ -7,7 +7,7 @@ import { BrandLockup } from '@/components/layout/BrandLockup';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTranslation } from '@/hooks/useTranslation';
-import { groupIsActive, isActivePath, navigation, type NavGroup, type NavItem } from '@/lib/navigation';
+import { groupIsActive, isActivePath, navIconTone, navigation, type NavGroup, type NavItem } from '@/lib/navigation';
 import { navigationResetHeaders } from '@/lib/navigation-stack';
 import { cn } from '@/lib/utils';
 
@@ -23,19 +23,18 @@ type SidebarNavProps = {
     showBrand?: boolean;
 };
 
-const selectedItemClass =
-    'bg-sidebar-item text-white hover:bg-sidebar-item-hover hover:text-white [&_svg]:text-white';
-const selectedChildItemClass =
-    'bg-sidebar-child-selected text-primary hover:bg-sidebar-child-selected-hover hover:text-primary [&_svg]:text-primary';
+const sidebarMotion =
+    'motion-reduce:transition-none duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]';
+const selectedItemClass = 'bg-primary/12 text-foreground hover:bg-primary/18 hover:text-foreground';
+const selectedChildItemClass = 'bg-primary/12 text-foreground hover:bg-primary/18 hover:text-foreground';
 const idleItemClass = 'text-sidebar-foreground hover:bg-primary/12 hover:text-foreground';
 
 function itemClass(active: boolean, expanded: boolean) {
     return cn(
-        'flex items-center overflow-x-hidden rounded-[6px] text-[14px] font-medium leading-6',
-        'motion-reduce:transition-none transition-[gap,color,background-color,padding,width,height] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
-        expanded
-            ? 'min-h-10 h-auto w-full justify-start gap-3 px-3 py-2'
-            : 'mx-auto size-9 justify-center gap-0 px-0',
+        'mx-auto flex h-10 w-full items-center overflow-hidden rounded-[6px] text-[14px] font-medium leading-6',
+        sidebarMotion,
+        'transition-[max-width,gap,padding,color,background-color]',
+        expanded ? 'max-w-[280px] justify-start gap-3 px-3' : 'max-w-9 justify-start gap-0 px-2',
         active ? selectedItemClass : idleItemClass,
     );
 }
@@ -186,7 +185,10 @@ function RailFlyout({
                                                   childActive ? selectedChildItemClass : idleItemClass,
                                               )}
                                           >
-                                              <ChildIcon className="size-4 shrink-0" strokeWidth={1.9} />
+                                              <ChildIcon
+                                                  className={cn('size-4 shrink-0', navIconTone(child.href))}
+                                                  strokeWidth={1.9}
+                                              />
                                               <span className="truncate">{t(child.labelKey)}</span>
                                           </Link>
                                       </li>
@@ -287,7 +289,8 @@ export function SidebarNav({
                 <div
                     className={cn(
                         'flex h-[var(--navbar-height)] shrink-0 items-center overflow-hidden border-b border-sidebar-border',
-                        'motion-reduce:transition-none transition-[padding] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                        sidebarMotion,
+                        'transition-[padding]',
                         expanded ? 'justify-start px-3' : 'justify-center px-0',
                     )}
                 >
@@ -300,7 +303,8 @@ export function SidebarNav({
                     ref={scrollRef}
                     className={cn(
                         'sidebar-scroll h-full min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain py-3',
-                        'motion-reduce:transition-none transition-[padding] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                        sidebarMotion,
+                        'transition-[padding]',
                         expanded ? 'px-3' : 'px-2',
                     )}
                     aria-label="Sidebar"
@@ -359,12 +363,13 @@ function SidebarGroup({
 
     const row = (
         <div className={itemClass(active, expanded)}>
-            <Icon className="size-5 shrink-0" strokeWidth={1.9} />
+            <Icon className={cn('size-5 shrink-0', navIconTone(group.id))} strokeWidth={1.9} />
             <span
                 className={cn(
-                    'min-w-0 flex-1 truncate text-left',
-                    'motion-reduce:transition-none transition-[opacity] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
-                    expanded ? 'opacity-100' : 'pointer-events-none max-w-0 opacity-0',
+                    'min-w-0 flex-1 overflow-hidden whitespace-nowrap text-left',
+                    sidebarMotion,
+                    'transition-[max-width,opacity]',
+                    expanded ? 'max-w-[180px] opacity-100' : 'pointer-events-none max-w-0 opacity-0',
                 )}
                 aria-hidden={! expanded}
             >
@@ -373,8 +378,9 @@ function SidebarGroup({
             {group.children ? (
                 <ChevronDownIcon
                     className={cn(
-                        'size-4 shrink-0 overflow-hidden',
-                        'motion-reduce:transition-none transition-[width,opacity,transform,margin] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                        'h-4 shrink-0 overflow-hidden',
+                        sidebarMotion,
+                        'transition-[width,opacity,transform]',
                         expanded ? 'w-4 opacity-100' : 'w-0 opacity-0',
                         open && expanded && 'rotate-180',
                     )}
@@ -402,7 +408,9 @@ function SidebarGroup({
     const childrenList = group.children ? (
         <div
             className={cn(
-                'grid motion-reduce:transition-none transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                'grid',
+                sidebarMotion,
+                'transition-[grid-template-rows,opacity]',
                 expanded && open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
             )}
         >
@@ -425,7 +433,10 @@ function SidebarGroup({
                                         childActive ? selectedChildItemClass : idleItemClass,
                                     )}
                                 >
-                                    <ChildIcon className="size-4 shrink-0" strokeWidth={1.9} />
+                                    <ChildIcon
+                                        className={cn('size-4 shrink-0', navIconTone(child.href))}
+                                        strokeWidth={1.9}
+                                    />
                                     <span className="truncate">{t(child.labelKey)}</span>
                                 </Link>
                             </li>

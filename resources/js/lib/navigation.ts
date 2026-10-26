@@ -46,6 +46,62 @@ import {
     Wrench,
 } from 'lucide-react';
 
+const navIconTones: Record<string, string> = {
+    dashboard: 'text-[#3B82F6]',
+    customers: 'text-[#0EA5E9]',
+    billing: 'text-[#F59E0B]',
+    '/billing/invoices': 'text-[#6366F1]',
+    '/billing/transactions': 'text-[#10B981]',
+    '/billing/package-orders': 'text-[#8B5CF6]',
+    '/billing/bill-payments': 'text-[#14B8A6]',
+    'service-requests': 'text-[#F97316]',
+    '/service-requests/installations': 'text-[#3B82F6]',
+    '/service-requests/failures': 'text-[#EF4444]',
+    '/service-requests/relocations': 'text-[#06B6D4]',
+    '/service-requests/change-plan': 'text-[#8B5CF6]',
+    '/service-requests/change-password': 'text-[#F59E0B]',
+    'top-up-cards': 'text-[#22C55E]',
+    '/top-up-cards/offices': 'text-[#0EA5E9]',
+    '/top-up-cards/batch': 'text-[#22C55E]',
+    '/top-up-cards/card-import': 'text-[#6366F1]',
+    '/top-up-cards/card-history': 'text-[#F97316]',
+    notifications: 'text-[#A855F7]',
+    '/notifications/announcement': 'text-[#3B82F6]',
+    '/notifications/promotions': 'text-[#EC4899]',
+    '/notifications/bill-due-alerts': 'text-[#EF4444]',
+    '/notifications/compose': 'text-[#8B5CF6]',
+    '/notifications/templates': 'text-[#64748B]',
+    support: 'text-[#14B8A6]',
+    '/support/conversations': 'text-[#3B82F6]',
+    '/support/quick-replies': 'text-[#22C55E]',
+    '/support/chatbot-flows': 'text-[#8B5CF6]',
+    packages: 'text-[#F97316]',
+    regions: 'text-[#06B6D4]',
+    reports: 'text-[#8B5CF6]',
+    cms: 'text-[#EC4899]',
+    '/cms/promotions': 'text-[#F59E0B]',
+    '/cms/banners': 'text-[#3B82F6]',
+    '/cms/categories': 'text-[#6366F1]',
+    '/cms/news': 'text-[#0EA5E9]',
+    '/cms/services': 'text-[#14B8A6]',
+    '/cms/gallery': 'text-[#A855F7]',
+    '/cms/contacts': 'text-[#22C55E]',
+    staff: 'text-[#6366F1]',
+    '/staff': 'text-[#3B82F6]',
+    '/roles': 'text-[#8B5CF6]',
+    logs: 'text-[#E11D48]',
+    '/logs/security': 'text-[#EF4444]',
+    '/logs/activity': 'text-[#F59E0B]',
+    '/logs/users': 'text-[#0EA5E9]',
+    settings: 'text-[#0D9488]',
+    '/settings/app-version': 'text-[#3B82F6]',
+    '/settings/general': 'text-[#6366F1]',
+};
+
+export function navIconTone(key: string): string {
+    return navIconTones[key] ?? 'text-primary';
+}
+
 export type NavItem = {
     labelKey: string;
     descriptionKey: string;
