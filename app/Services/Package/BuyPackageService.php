@@ -2,6 +2,7 @@
 
 namespace App\Services\Package;
 
+use App\Enums\MessageCode;
 use App\Enums\CustomerPackageStatus;
 use App\Enums\LedgerAccountCode;
 use App\Enums\LedgerTransactionStatus;
@@ -17,6 +18,7 @@ use App\Models\User;
 use App\Models\Wallet;
 use App\Services\Ledger\LedgerPoster;
 use App\Services\PackageActivation\PackageActivationResult;
+use App\Support\ApiMessage;
 use App\Services\PackageActivation\PackageActivationServiceInterface;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -50,17 +52,11 @@ class BuyPackageService
         $wallet = $user->wallet;
 
         if (! $wallet) {
-            return $this->response(404, [
-                'success' => false,
-                'message' => 'Wallet not found.',
-            ]);
+            return $this->coded(404, MessageCode::PkgWalletNotFound);
         }
 
         if ($wallet->status !== WalletStatus::Active) {
-            return $this->response(403, [
-                'success' => false,
-                'message' => 'Wallet is not active.',
-            ]);
+            return $this->coded(403, MessageCode::PkgWalletInactive);
         }
 
         $wallet->refresh();
@@ -77,10 +73,7 @@ class BuyPackageService
         try {
             $product = $this->catalog->find($productId);
         } catch (RuntimeException) {
-            return $this->response(503, [
-                'success' => false,
-                'message' => 'Package catalog is temporarily unavailable. No payment was taken.',
-            ]);
+            return $this->coded(503, MessageCode::PkgCatalogUnavailable);
         }
 
         if (! $product) {
@@ -160,9 +153,7 @@ class BuyPackageService
                 report(new RuntimeException('CG-Net activation succeeded but local completion needs reconciliation.'));
                 $this->markPendingVerification($order, 0, 'Provider success is awaiting local reconciliation.');
 
-                return $this->response(500, [
-                    'success' => false,
-                    'message' => 'Activation is confirmed and purchase completion is pending reconciliation.',
+                return $this->coded(500, MessageCode::PkgCompletionPending, [
                     'data' => [
                         'product_id' => $productId,
                         'amount' => $amount,
@@ -191,9 +182,7 @@ class BuyPackageService
         $order->refresh();
         $debitTransaction->refresh();
 
-        return $this->response(200, [
-            'success' => true,
-            'message' => 'Package purchased successfully.',
+        return $this->coded(200, MessageCode::PkgPurchased, [
             'data' => $this->successData($productId, $amount, $order, $debitTransaction, $customerPackage),
         ]);
     }
@@ -548,7 +537,7 @@ class BuyPackageService
         User $user,
     ): array {
         if ($existing->type !== LedgerTransactionType::WifiPackage) {
-            return $this->conflict('This idempotency key was already used.');
+            return $this->coded(409, MessageCode::PkgKeyUsed);
         }
 
         $order = PackageOrder::query()
@@ -556,11 +545,11 @@ class BuyPackageService
             ->first();
 
         if (! $order) {
-            return $this->conflict('This idempotency key was already used.');
+            return $this->coded(409, MessageCode::PkgKeyUsed);
         }
 
         if ((string) ($order->snapshot['product_id'] ?? '') !== $productId) {
-            return $this->conflict('This idempotency key was already used for a different package.');
+            return $this->coded(409, MessageCode::PkgKeyMismatch);
         }
 
         if (
@@ -570,12 +559,10 @@ class BuyPackageService
             $customerPackage = $order->customerPackage;
 
             if (! $customerPackage) {
-                return $this->conflict('This package purchase cannot be replayed.');
+                return $this->coded(409, MessageCode::PkgCannotReplay);
             }
 
-            return $this->response(200, [
-                'success' => true,
-                'message' => 'Package purchase already processed.',
+            return $this->coded(200, MessageCode::PkgAlreadyProcessed, [
                 'data' => $this->successData($productId, (int) $existing->amount, $order, $existing, $customerPackage),
             ]);
         }
@@ -594,9 +581,7 @@ class BuyPackageService
                 $order->refresh();
                 $existing->refresh();
 
-                return $this->response(200, [
-                    'success' => true,
-                    'message' => 'Package purchase already processed.',
+                return $this->coded(200, MessageCode::PkgAlreadyProcessed, [
                     'data' => $this->successData($productId, (int) $existing->amount, $order, $existing, $customerPackage),
                 ]);
             } catch (Throwable) {
@@ -622,9 +607,7 @@ class BuyPackageService
                 ->where('type', LedgerTransactionType::Refund)
                 ->first();
 
-            return $this->response(502, [
-                'success' => false,
-                'message' => 'Package activation failed. Wallet was refunded.',
+            return $this->coded(502, MessageCode::PkgActivationRefunded, [
                 'data' => [
                     'product_id' => $productId,
                     'amount' => (int) $existing->amount,
@@ -643,7 +626,7 @@ class BuyPackageService
             return $this->pendingOrderResponse($productId, (int) $existing->amount, $order, $existing);
         }
 
-        return $this->conflict('This package purchase cannot be replayed.');
+        return $this->coded(409, MessageCode::PkgCannotReplay);
     }
 
     /**
@@ -698,9 +681,7 @@ class BuyPackageService
             ->where('type', LedgerTransactionType::Refund)
             ->first();
 
-        return $this->response(502, [
-            'success' => false,
-            'message' => 'Package activation failed. Wallet was refunded.',
+        return $this->coded(502, MessageCode::PkgActivationRefunded, [
             'data' => [
                 'product_id' => $productId,
                 'amount' => $amount,
@@ -736,13 +717,11 @@ class BuyPackageService
     ): array {
         $order->refresh();
 
-        $message = $order->status === PackageOrderStatus::Processing
-            ? 'This package purchase is already being processed.'
-            : 'Package activation is awaiting provider reconciliation. The wallet debit remains on hold.';
+        $code = $order->status === PackageOrderStatus::Processing
+            ? MessageCode::PkgProcessing
+            : MessageCode::PkgReconciliationPending;
 
-        return $this->response(202, [
-            'success' => false,
-            'message' => $message,
+        return $this->coded(202, $code, [
             'data' => [
                 'product_id' => $productId,
                 'amount' => $amount,
@@ -759,11 +738,9 @@ class BuyPackageService
      */
     protected function insufficientBalanceResponse(string $productId, int $amount): array
     {
-        return $this->response(422, [
-            'success' => false,
-            'message' => 'Insufficient wallet balance.',
+        return $this->coded(422, MessageCode::PkgInsufficientBalance, [
             'errors' => [
-                'amount' => ['Insufficient wallet balance.'],
+                'amount' => [MessageCode::PkgInsufficientBalance->message()],
             ],
             'data' => [
                 'product_id' => $productId,
@@ -773,14 +750,14 @@ class BuyPackageService
     }
 
     /**
+     * @param  array<string, mixed>  $body
      * @return array{http_status: int, body: array<string, mixed>}
      */
-    protected function conflict(string $message): array
+    protected function coded(int $httpStatus, MessageCode $code, array $body = []): array
     {
-        return $this->response(409, [
-            'success' => false,
-            'message' => $message,
-        ]);
+        $success = $httpStatus >= 200 && $httpStatus < 300 && $httpStatus !== 202;
+
+        return $this->response($httpStatus, ApiMessage::attach($code, array_merge(['success' => $success], $body)));
     }
 
     /**

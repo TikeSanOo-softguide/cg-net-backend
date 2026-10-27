@@ -2,6 +2,7 @@
 
 namespace App\Services\TopUpCard;
 
+use App\Enums\MessageCode;
 use App\Enums\LedgerAccountCode;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
@@ -14,6 +15,7 @@ use App\Models\TopUpCard;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Services\Ledger\LedgerPoster;
+use App\Support\ApiMessage;
 use App\Support\TopUpCardPin;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -51,10 +53,7 @@ class TopUpCardRedemptionService
                 $recipientId = User::query()->where('phone', $phone)->value('id');
 
                 if (!$recipientId) {
-                    return $this->response(404, [
-                        'success' => false,
-                        'message' => 'Account not found.',
-                    ]);
+                    return $this->response(404, MessageCode::TopupAccountNotFound);
                 }
 
                 $users = User::query()
@@ -68,33 +67,21 @@ class TopUpCardRedemptionService
                 $account = $users->get($recipientId);
 
                 if (!$user || $user->status !== UserStatus::Active) {
-                    return $this->response(403, [
-                        'success' => false,
-                        'message' => 'Account is not available.',
-                    ]);
+                    return $this->response(403, MessageCode::TopupAccountUnavailable);
                 }
 
                 if (!$account || $account->status !== UserStatus::Active) {
-                    return $this->response(403, [
-                        'success' => false,
-                        'message' => 'Account is not available.',
-                    ]);
+                    return $this->response(403, MessageCode::TopupAccountUnavailable);
                 }
 
                 $wallet = $account->wallet()->lockForUpdate()->first();
 
                 if (!$wallet) {
-                    return $this->response(404, [
-                        'success' => false,
-                        'message' => 'Wallet not found.',
-                    ]);
+                    return $this->response(404, MessageCode::TopupWalletNotFound);
                 }
 
                 if ($wallet->status !== WalletStatus::Active) {
-                    return $this->response(403, [
-                        'success' => false,
-                        'message' => 'Wallet is not active.',
-                    ]);
+                    return $this->response(403, MessageCode::TopupWalletInactive);
                 }
 
                 $rateLimitResponse = $this->rateLimitResponse((string) $userId, $ipAddress);
@@ -110,10 +97,7 @@ class TopUpCardRedemptionService
                 if (!$card || !$pinMatches) {
                     $this->registerPinFailure((string) $userId, $ipAddress);
 
-                    return $this->response(400, [
-                        'success' => false,
-                        'message' => 'Invalid or unavailable top-up card.',
-                    ]);
+                    return $this->response(400, MessageCode::TopupCardInvalid);
                 }
 
                 $existing = $this->findExistingByIdempotencyKey($idempotencyKey);
@@ -125,10 +109,7 @@ class TopUpCardRedemptionService
                 if (!$this->cardIsRedeemable($card)) {
                     $this->registerPinFailure((string) $userId, $ipAddress);
 
-                    return $this->response(400, [
-                        'success' => false,
-                        'message' => 'Invalid or unavailable top-up card.',
-                    ]);
+                    return $this->response(400, MessageCode::TopupCardInvalid);
                 }
 
                 $amount = (int) $card->amount;
@@ -139,10 +120,7 @@ class TopUpCardRedemptionService
                     $balanceBefore < 0 ||
                     $amount > (int) config('top_up_cards.redemption.max_wallet_balance') - $balanceBefore
                 ) {
-                    return $this->response(409, [
-                        'success' => false,
-                        'message' => 'This action could not be completed.',
-                    ]);
+                    return $this->response(409, MessageCode::TopupActionIncomplete);
                 }
 
                 $transaction = $this->ledger->creditWallet(
@@ -174,9 +152,7 @@ class TopUpCardRedemptionService
                 $card->ledger_transaction_id = $transaction->id;
                 $card->save();
 
-                return $this->response(200, [
-                    'success' => true,
-                    'message' => 'Top-up successful.',
+                return $this->response(200, MessageCode::TopupSuccess, [
                     'amount' => $amount,
                     'balance' => $balanceAfter,
                     'transaction_no' => $transaction->transaction_no,
@@ -221,19 +197,13 @@ class TopUpCardRedemptionService
         string $idempotencyKey,
     ): array {
         if ($user->status !== UserStatus::Active) {
-            return $this->response(403, [
-                'success' => false,
-                'message' => 'Account is not available.',
-            ]);
+            return $this->response(403, MessageCode::TopupAccountUnavailable);
         }
 
         $existing = $this->findExistingByIdempotencyKey($idempotencyKey);
 
         if ($existing === null) {
-            return $this->response(409, [
-                'success' => false,
-                'message' => 'This request could not be completed.',
-            ]);
+            return $this->response(409, MessageCode::TopupRequestIncomplete);
         }
 
         $recipientId = User::query()->where('phone', $phone)->value('id');
@@ -241,10 +211,7 @@ class TopUpCardRedemptionService
         $card = TopUpCard::query()->where('pin', $pinDigest)->first();
 
         if ($wallet === null || $card === null) {
-            return $this->response(409, [
-                'success' => false,
-                'message' => 'This request could not be completed.',
-            ]);
+            return $this->response(409, MessageCode::TopupRequestIncomplete);
         }
 
         return $this->existingResponse($existing, $wallet, $card);
@@ -276,13 +243,11 @@ class TopUpCardRedemptionService
             $ipRateLimited ? RateLimiter::availableIn($ipFailureKey) : 0,
         );
 
-        $message = match (true) {
-            $userRateLimited && $ipRateLimited => 'Too many attempts, retry after 1 hour.',
-            $userRateLimited => 'Too many attempts, retry after 30 minutes.',
-            default => 'Too many attempts, retry after 1 hour.',
-        };
+        $code = $userRateLimited && !$ipRateLimited
+            ? MessageCode::TopupTooManyUser
+            : MessageCode::TopupTooManyIp;
 
-        return $this->response(429, ['message' => $message], ['Retry-After' => (string) $retryAfter]);
+        return $this->response(429, $code, [], ['Retry-After' => (string) $retryAfter]);
     }
 
     protected function registerPinFailure(string $userId, string $ipAddress): void
@@ -334,15 +299,10 @@ class TopUpCardRedemptionService
             (int) $entries->sum('debit') !== (int) $existing->amount ||
             (int) $entries->sum('credit') !== (int) $existing->amount
         ) {
-            return $this->response(409, [
-                'success' => false,
-                'message' => 'This request could not be completed.',
-            ]);
+            return $this->response(409, MessageCode::TopupRequestIncomplete);
         }
 
-        return $this->response(200, [
-            'success' => true,
-            'message' => 'Top-up already processed.',
+        return $this->response(200, MessageCode::TopupAlreadyProcessed, [
             'amount' => $existing->amount,
             'balance' => (int) $wallet->fresh()->balance,
             'transaction_no' => $existing->transaction_no,
@@ -354,11 +314,13 @@ class TopUpCardRedemptionService
      * @param  array<string, string>  $headers
      * @return array{http_status: int, body: array<string, mixed>, headers: array<string, string>}
      */
-    private function response(int $httpStatus, array $body, array $headers = []): array
+    private function response(int $httpStatus, MessageCode $code, array $body = [], array $headers = []): array
     {
+        $success = $httpStatus >= 200 && $httpStatus < 300;
+
         return [
             'http_status' => $httpStatus,
-            'body' => $body,
+            'body' => ApiMessage::attach($code, array_merge(['success' => $success], $body)),
             'headers' => $headers,
         ];
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Customer;
 
+use App\Enums\MessageCode;
 use App\Enums\CustomerPackageStatus;
 use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
@@ -15,6 +16,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Support\ApiMessage;
 use Illuminate\Support\Facades\Hash;
 
 class ProfileController extends Controller
@@ -51,17 +53,16 @@ class ProfileController extends Controller
 
         if (!Hash::check($request->validated('password'), $user->getAuthPassword())) {
             return response()->json(
-                [
-                    'message' => 'The provided password is incorrect.',
-                    'errors' => ['password' => ['The provided password is incorrect.']],
-                ],
+                ApiMessage::attach(MessageCode::UserPasswordIncorrect, [
+                    'errors' => ['password' => [MessageCode::UserPasswordIncorrect->message()]],
+                ]),
                 422,
             );
         }
 
         $user->update(['status' => UserStatus::Deactivated]);
 
-        return response()->json(['message' => 'Account deactivated successfully.']);
+        return response()->json(ApiMessage::attach(MessageCode::UserDeactivated));
     }
 
     public function updateLanguage(UpdateLanguageRequest $request): JsonResponse

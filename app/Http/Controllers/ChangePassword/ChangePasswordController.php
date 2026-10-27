@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\ChangePassword;
 
+use App\Enums\MessageCode;
+use App\Exceptions\ApiMessageException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ChangePassword\ChangePasswordRequest as StoreChangePasswordRequest;
 use App\Http\Requests\ChangePassword\VerifyChangePasswordOtpRequest;
 use App\Models\User;
 use App\Services\Auth\OtpService;
+use App\Support\ApiMessage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
@@ -45,17 +48,17 @@ class ChangePasswordController extends Controller
 
             $cache = Cache::store(config('otp.cache_store', 'redis'));
             $pendingPassword = $cache->pull($this->pendingPasswordKey($challengeId));
-            abort_unless(
-                is_array($pendingPassword) &&
-                    (int) ($pendingPassword['user_id'] ?? 0) === $user->id &&
-                    is_string($pendingPassword['password'] ?? null),
-                422,
-                'The password change request is invalid or expired.',
-            );
+            if (
+                ! is_array($pendingPassword) ||
+                (int) ($pendingPassword['user_id'] ?? 0) !== $user->id ||
+                ! is_string($pendingPassword['password'] ?? null)
+            ) {
+                throw new ApiMessageException(MessageCode::PwdChangeExpired);
+            }
 
             $user->forceFill(['password' => $pendingPassword['password']])->save();
 
-            return response()->json(['message' => 'Password changed successfully.']);
+            return response()->json(ApiMessage::attach(MessageCode::PwdChanged));
         });
     }
 

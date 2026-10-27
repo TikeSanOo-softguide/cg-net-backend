@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Api\BroadbandAccount;
 
+use App\Enums\MessageCode;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\BroarbandAccount\AccountInfoService;
 use App\Services\BroarbandAccount\BroadbandApiException;
+use App\Support\ApiMessage;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class BroadbandAccountController extends Controller
@@ -23,54 +26,26 @@ class BroadbandAccountController extends Controller
         try {
             $account = $this->accountInfoService->find($request->account_number, $request->service_type);
         } catch (ConnectionException) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'broadband_api_connection_failed',
-                ],
-                502,
-            );
+            return $this->result(false, MessageCode::BbConnectionFailed, 502);
         } catch (BroadbandApiException $exception) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => $exception->errorCode,
-                ],
-                502,
-            );
+            return $this->result(false, MessageCode::BbUpstreamFailed, 502, [
+                'message' => $exception->errorCode,
+            ]);
         }
 
         if (!$account) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'broadband_account_not_match',
-                ],
-                404,
-            );
+            return $this->result(false, MessageCode::BbNotMatch, 404);
         }
 
         $user = $request->user();
         $broadbandAccount = $request->service_type . $request->account_number;
 
         if ($user->broadband_account_number === $broadbandAccount) {
-            return response()->json(
-                [
-                    'success' => true,
-                    'message' => 'broadband_already_connected',
-                ],
-                200,
-            );
+            return $this->result(true, MessageCode::BbAlreadyConnected, 200);
         }
 
         if (isset($user->broadband_account_number) && $user->broadband_account_number !== $broadbandAccount) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'broadband_different_account',
-                ],
-                409,
-            );
+            return $this->result(false, MessageCode::BbDifferentAccount, 409);
         }
 
         $alreadyUsed = User::where('broadband_account_number', $broadbandAccount)
@@ -78,26 +53,14 @@ class BroadbandAccountController extends Controller
             ->exists();
 
         if ($alreadyUsed) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'broadband_account_in_use',
-                ],
-                409,
-            );
+            return $this->result(false, MessageCode::BbInUse, 409);
         }
 
         $user->update([
             'broadband_account_number' => $broadbandAccount,
         ]);
 
-        return response()->json(
-            [
-                'success' => true,
-                'message' => 'Successfully connected',
-            ],
-            200,
-        );
+        return $this->result(true, MessageCode::BbConnected, 200);
     }
 
     public function unbindAccount(Request $request)
@@ -113,13 +76,7 @@ class BroadbandAccountController extends Controller
             'broadband_account_number' => null,
         ]);
 
-        return response()->json(
-            [
-                'success' => true,
-                'message' => 'Successfully disconnected',
-            ],
-            200,
-        );
+        return $this->result(true, MessageCode::BbDisconnected, 200);
     }
 
     public function findAccount(Request $request, AccountInfoService $accountInfo)
@@ -132,40 +89,28 @@ class BroadbandAccountController extends Controller
         try {
             $account = $accountInfo->find($validated['account_number'], $validated['service_type']);
         } catch (ConnectionException) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'broadband_api_connection_failed',
-                ],
-                502,
-            );
+            return $this->result(false, MessageCode::BbConnectionFailed, 502);
         } catch (BroadbandApiException $exception) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => $exception->errorCode,
-                ],
-                502,
-            );
+            return $this->result(false, MessageCode::BbUpstreamFailed, 502, [
+                'message' => $exception->errorCode,
+            ]);
         }
 
         if (!$account) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'broadband_account_not_match',
-                ],
-                404,
-            );
+            return $this->result(false, MessageCode::BbNotMatch, 404);
         }
 
+        return $this->result(true, MessageCode::BbFound, 200, [
+            'data' => $account,
+        ]);
+    }
+
+    /** @param array<string, mixed> $extra */
+    private function result(bool $success, MessageCode $code, int $status, array $extra = []): JsonResponse
+    {
         return response()->json(
-            [
-                'success' => true,
-                'message' => 'Account found successfully',
-                'data' => $account,
-            ],
-            200,
+            ApiMessage::attach($code, array_merge(['success' => $success], $extra)),
+            $status,
         );
     }
 }

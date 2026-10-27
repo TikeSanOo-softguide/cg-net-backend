@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Auth;
 
+use App\Enums\MessageCode;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\LoginRequest;
 use App\Http\Requests\Api\Auth\SessionCheckRequest;
@@ -10,6 +11,7 @@ use App\Models\User;
 use App\Services\Auth\ApiAuthenticationService;
 use App\Services\DeviceToken\DeviceTokenService;
 use App\Services\SecurityLog\SecurityLogService;
+use App\Support\ApiMessage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -79,7 +81,7 @@ class LoginController extends Controller
             'user_id' => $user->id,
         ]);
 
-        return response()->json(['message' => 'Logged out successfully.']);
+        return response()->json(ApiMessage::attach(MessageCode::AuthLoggedOut));
     }
 
     public function checkSession(SessionCheckRequest $request): JsonResponse

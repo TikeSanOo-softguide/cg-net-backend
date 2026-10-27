@@ -2,6 +2,7 @@
 
 namespace App\Services\FtthBill;
 
+use App\Enums\MessageCode;
 use App\Enums\BillPaymentNotificationEvent;
 use App\Enums\BillPaymentStatus;
 use App\Enums\LedgerAccountCode;
@@ -18,6 +19,7 @@ use App\Notifications\FtthBillPaymentStatusNotification;
 use App\Services\Billing\BillingServerClient;
 use App\Services\BroarbandAccount\BroadbandAccountService;
 use App\Services\Ledger\LedgerPoster;
+use App\Support\ApiMessage;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -48,17 +50,11 @@ class FtthBillPaymentService
         $wallet = $user->wallet;
 
         if (!$wallet) {
-            return $this->response(404, [
-                'success' => false,
-                'message' => 'Wallet not found.',
-            ]);
+            return $this->coded(404, MessageCode::FtthWalletNotFound);
         }
 
         if ($wallet->status !== WalletStatus::Active) {
-            return $this->response(403, [
-                'success' => false,
-                'message' => 'Wallet is not active.',
-            ]);
+            return $this->coded(403, MessageCode::FtthWalletInactive);
         }
 
         $existing = LedgerTransaction::query()
@@ -79,11 +75,9 @@ class FtthBillPaymentService
         }
 
         if ($wallet->balance < $amount) {
-            return $this->response(422, [
-                'success' => false,
-                'message' => 'Insufficient wallet balance.',
+            return $this->coded(422, MessageCode::FtthInsufficientBalance, [
                 'errors' => [
-                    'amount' => ['Insufficient wallet balance.'],
+                    'amount' => [MessageCode::FtthInsufficientBalance->message()],
                 ],
             ]);
         }
@@ -131,17 +125,13 @@ class FtthBillPaymentService
         $accountNumber = $user->broadband_account_number;
 
         if (!$accountNumber) {
-            return $this->response(422, [
-                'success' => false,
-                'message' => 'Broadband account number not found.',
-            ]);
+            return $this->coded(422, MessageCode::FtthAccountMissing);
         }
 
         try {
             $slip = $this->billing->lookupPendingBillSlip($accountNumber);
         } catch (RuntimeException $exception) {
-            return $this->response(502, [
-                'success' => false,
+            return $this->coded(502, MessageCode::FtthBillingFailed, [
                 'message' => $exception->getMessage(),
             ]);
         }
@@ -152,9 +142,7 @@ class FtthBillPaymentService
 
         $broadbandAccount = $this->broadbandAccounts->findByAccountNumber($accountNumber);
 
-        return $this->response(200, [
-            'success' => true,
-            'message' => 'Pending FTTH bill slip retrieved.',
+        return $this->coded(200, MessageCode::FtthPendingSlip, [
             'data' => [
                 'bill_month' => $billMonth,
                 'bill_month_label' => $billMonthLabel,
@@ -173,10 +161,7 @@ class FtthBillPaymentService
         $accountNumber = $user->broadband_account_number;
 
         if (!$accountNumber) {
-            return $this->response(422, [
-                'success' => false,
-                'message' => 'Broadband account number not found.',
-            ]);
+            return $this->coded(422, MessageCode::FtthAccountMissing);
         }
 
         try {
@@ -192,15 +177,12 @@ class FtthBillPaymentService
                 fn(array $first, array $second): int => strcmp($second['bill_month'], $first['bill_month']),
             );
         } catch (RuntimeException $exception) {
-            return $this->response(502, [
-                'success' => false,
+            return $this->coded(502, MessageCode::FtthBillingFailed, [
                 'message' => $exception->getMessage(),
             ]);
         }
 
-        return $this->response(200, [
-            'success' => true,
-            'message' => 'Paid FTTH bill slips retrieved.',
+        return $this->coded(200, MessageCode::FtthPaidSlips, [
             'data' => [
                 'paid_slips' => $paidSlips,
             ],
@@ -361,9 +343,7 @@ class FtthBillPaymentService
     ): array {
         $this->markPaymentSuccessful($transaction, $accountNumber, $billingResponse);
 
-        return $this->response(200, [
-            'success' => true,
-            'message' => 'FTTH bill paid successfully.',
+        return $this->coded(200, MessageCode::FtthPaid, [
             'data' => [
                 'amount' => $transaction->amount,
                 'billing_status' => LedgerTransactionStatus::Completed->value,
@@ -385,9 +365,7 @@ class FtthBillPaymentService
     ): array {
         $refundTransaction = $this->refundWalletBalance($transaction, $wallet, $user, $accountNumber, $billingResponse);
 
-        return $this->response(502, [
-            'success' => false,
-            'message' => 'External billing payment failed. Wallet was refunded.',
+        return $this->coded(502, MessageCode::FtthRefunded, [
             'data' => [
                 'amount' => $transaction->amount,
                 'billing_status' => LedgerTransactionStatus::Failed->value,
@@ -426,9 +404,8 @@ class FtthBillPaymentService
             $accountNumber,
         );
 
-        return $this->response(202, [
+        return $this->coded(202, MessageCode::FtthProcessing, [
             'success' => true,
-            'message' => 'FTTH bill payment is processing. Confirmation is pending from the billing server.',
             'data' => [
                 'amount' => $transaction->amount,
                 'billing_status' => LedgerTransactionStatus::Processing->value,
@@ -634,9 +611,8 @@ class FtthBillPaymentService
         $status = $existing->status;
 
         if ($existing->type === LedgerTransactionType::FtthBill && $status === LedgerTransactionStatus::Completed) {
-            return $this->response(200, [
+            return $this->coded(200, MessageCode::FtthAlreadyProcessed, [
                 'success' => true,
-                'message' => 'FTTH bill payment already processed.',
                 'data' => [
                     'amount' => $existing->amount,
                     'billing_status' => LedgerTransactionStatus::Completed->value,
@@ -651,9 +627,7 @@ class FtthBillPaymentService
                 ->where('type', LedgerTransactionType::Refund)
                 ->first();
 
-            return $this->response(502, [
-                'success' => false,
-                'message' => 'External billing payment failed. Wallet was refunded.',
+            return $this->coded(502, MessageCode::FtthRefunded, [
                 'data' => [
                     'amount' => $existing->amount,
                     'billing_status' => LedgerTransactionStatus::Failed->value,
@@ -664,9 +638,8 @@ class FtthBillPaymentService
         }
 
         if ($existing->type === LedgerTransactionType::FtthBill && $status === LedgerTransactionStatus::Processing) {
-            return $this->response(202, [
+            return $this->coded(202, MessageCode::FtthAlreadyProcessing, [
                 'success' => true,
-                'message' => 'This payment request is already being processed.',
                 'data' => [
                     'amount' => $existing->amount,
                     'billing_status' => LedgerTransactionStatus::Processing->value,
@@ -676,9 +649,7 @@ class FtthBillPaymentService
         }
 
         if ($existing->type === LedgerTransactionType::Refund) {
-            return $this->response(502, [
-                'success' => false,
-                'message' => 'External billing payment failed. Wallet was refunded.',
+            return $this->coded(502, MessageCode::FtthRefunded, [
                 'data' => [
                     'amount' => $existing->amount,
                     'billing_status' => LedgerTransactionStatus::Failed->value,
@@ -687,9 +658,7 @@ class FtthBillPaymentService
             ]);
         }
 
-        return $this->response(409, [
-            'success' => false,
-            'message' => 'This payment request cannot be replayed.',
+        return $this->coded(409, MessageCode::FtthCannotReplay, [
             'data' => [
                 'amount' => $existing->amount,
                 'transaction_no' => $existing->transaction_no,
@@ -701,6 +670,17 @@ class FtthBillPaymentService
      * @param  array<string, mixed>  $body
      * @return array{http_status: int, body: array<string, mixed>}
      */
+    /**
+     * @param  array<string, mixed>  $body
+     * @return array{http_status: int, body: array<string, mixed>}
+     */
+    protected function coded(int $httpStatus, MessageCode $code, array $body = []): array
+    {
+        $success = $body['success'] ?? ($httpStatus >= 200 && $httpStatus < 300);
+
+        return $this->response($httpStatus, ApiMessage::attach($code, array_merge(['success' => $success], $body)));
+    }
+
     protected function response(int $httpStatus, array $body): array
     {
         return [

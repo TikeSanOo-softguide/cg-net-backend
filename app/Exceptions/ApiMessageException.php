@@ -4,6 +4,7 @@ namespace App\Exceptions;
 
 use App\Enums\MessageCode;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Throwable;
 
@@ -40,5 +41,10 @@ class ApiMessageException extends HttpException
         return response()
             ->json($this->payload(), $this->getStatusCode())
             ->withHeaders($this->getHeaders());
+    }
+
+    public function render(Request $request): JsonResponse
+    {
+        return $this->toJsonResponse();
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\ChatFlow;
 
+use App\Enums\MessageCode;
 use App\Enums\ChatConversationStatus;
 use App\Enums\ChatFlowOptionAction;
 use App\Enums\ChatSenderType;
@@ -15,11 +16,11 @@ use App\Models\ChatFlowOption;
 use App\Models\ChatFlowStep;
 use App\Models\ChatMessage;
 use App\Models\User;
+use App\Support\ApiMessage;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class ChatFlowController extends Controller
 {
@@ -165,7 +166,7 @@ class ChatFlowController extends Controller
             : $this->activeConversation($user);
 
         if (! $conversation) {
-            abort(409, __('support.chat_conversations.no_active_conversation', [], $language));
+            $this->fail(MessageCode::ChatNoActive, 409, __('support.chat_conversations.no_active_conversation', [], $language));
         }
 
         $previousStatus = null;
@@ -178,6 +179,9 @@ class ChatFlowController extends Controller
                 $this->rejectForState(
                     $conversation,
                     $conversation->status->isWaiting()
+                        ? MessageCode::ChatWaitingForAgent
+                        : MessageCode::ChatLive,
+                    $conversation->status->isWaiting()
                         ? __('support.chat_conversations.conversation_waiting_for_agent', [], $language)
                         : __('support.chat_conversations.conversation_in_live_chat', [], $language),
                 );
@@ -189,11 +193,11 @@ class ChatFlowController extends Controller
                 ->find((int) $validated['option_id']);
 
             if (! $option) {
-                abort(404, __('support.chat_conversations.no_chat_flow_option', [], $language));
+                $this->fail(MessageCode::ChatOptionMissing, 404, __('support.chat_conversations.no_chat_flow_option', [], $language));
             }
 
             if (! $option->is_active) {
-                abort(422, __('support.chat_conversations.this_option_is_no_longer_active', [], $language));
+                $this->fail(MessageCode::ChatOptionInactive, 422, __('support.chat_conversations.this_option_is_no_longer_active', [], $language));
             }
 
             $currentStep = $conversation->currentStep;
@@ -208,24 +212,30 @@ class ChatFlowController extends Controller
             }
 
             if ($option->step_id !== $conversation->current_step_id) {
-                throw new HttpResponseException(response()->json([
-                    'success' => false,
-                    'code' => 'stale_chat_option',
-                    'message' => __('support.chat_conversations.option_no_longer_available', [], $language),
-                    'data' => $this->conversationPayload($conversation, $language),
-                ], 409));
+                $this->fail(
+                    MessageCode::ChatStaleOption,
+                    409,
+                    __('support.chat_conversations.option_no_longer_available', [], $language),
+                    [
+                        'code' => 'stale_chat_option',
+                        'data' => $this->conversationPayload($conversation, $language),
+                    ],
+                );
             }
 
             if ($option->action === ChatFlowOptionAction::GoToStep->value) {
                 $destination = $option->nextStep()->first();
 
                 if (! $destination) {
-                    throw new HttpResponseException(response()->json([
-                        'success' => false,
-                        'code' => 'stale_chat_option',
-                        'message' => __('support.chat_conversations.option_no_longer_available', [], $language),
-                        'data' => $this->conversationPayload($conversation, $language),
-                    ], 409));
+                    $this->fail(
+                        MessageCode::ChatStaleOption,
+                        409,
+                        __('support.chat_conversations.option_no_longer_available', [], $language),
+                        [
+                            'code' => 'stale_chat_option',
+                            'data' => $this->conversationPayload($conversation, $language),
+                        ],
+                    );
                 }
             }
 
@@ -276,12 +286,15 @@ class ChatFlowController extends Controller
         });
 
         if ($recoveredPayload) {
-            return response()->json([
-                'success' => false,
-                'code' => 'stale_chat_option',
-                'message' => __('support.chat_conversations.option_no_longer_available', [], $language),
-                'data' => $recoveredPayload,
-            ], 409);
+            $this->fail(
+                MessageCode::ChatStaleOption,
+                409,
+                __('support.chat_conversations.option_no_longer_available', [], $language),
+                [
+                    'code' => 'stale_chat_option',
+                    'data' => $recoveredPayload,
+                ],
+            );
         }
 
         foreach ($createdMessages as $message) {
@@ -326,6 +339,12 @@ class ChatFlowController extends Controller
                 };
                 $this->rejectForState(
                     $conversation,
+                    match (true) {
+                        $conversation->status->isWaiting() => MessageCode::ChatWaitingForAgent,
+                        $conversation->status->isLive() => MessageCode::ChatLive,
+                        $conversation->status === ChatConversationStatus::Closed => MessageCode::ChatClosed,
+                        default => MessageCode::ChatSelectOption,
+                    },
                     $message,
                 );
             }
@@ -358,11 +377,19 @@ class ChatFlowController extends Controller
             $conversation = ChatConversation::query()->lockForUpdate()->findOrFail($conversation->id);
 
             if (! $conversation->status->isLive()) {
-                $this->rejectForState($conversation, match (true) {
-                    $conversation->status === ChatConversationStatus::Closed => __('support.chat_conversations.conversation_closed', [], $language),
-                    $conversation->status->isWaiting() => __('support.chat_conversations.waiting_for_agent', [], $language),
-                    default => __('support.chat_conversations.select_chat_flow_option', [], $language),
-                });
+                $this->rejectForState(
+                    $conversation,
+                    match (true) {
+                        $conversation->status === ChatConversationStatus::Closed => MessageCode::ChatClosed,
+                        $conversation->status->isWaiting() => MessageCode::ChatWaitForJoin,
+                        default => MessageCode::ChatSelectOption,
+                    },
+                    match (true) {
+                        $conversation->status === ChatConversationStatus::Closed => __('support.chat_conversations.conversation_closed', [], $language),
+                        $conversation->status->isWaiting() => __('support.chat_conversations.waiting_for_agent', [], $language),
+                        default => __('support.chat_conversations.select_chat_flow_option', [], $language),
+                    },
+                );
             }
 
             $message = $conversation->messages()->create([
@@ -392,7 +419,7 @@ class ChatFlowController extends Controller
         $nextStep = $option->nextStep()->first();
 
         if (! $nextStep) {
-            abort(422, __('support.chat_conversations.no_valid_next_step', [], $language));
+            $this->fail(MessageCode::ChatNoNextStep, 422, __('support.chat_conversations.no_valid_next_step', [], $language));
         }
 
         $conversation->current_step_id = $nextStep->id;
@@ -590,13 +617,30 @@ class ChatFlowController extends Controller
         ];
     }
 
-    private function rejectForState(ChatConversation $conversation, string $message): never
+    private function rejectForState(ChatConversation $conversation, MessageCode $code, string $message): never
     {
-        throw new HttpResponseException(response()->json([
+        $this->fail($code, 409, $message, [
+            'data' => $this->statePayload($conversation),
+        ]);
+    }
+
+    /** @param array<string, mixed> $extra */
+    private function fail(MessageCode $code, int $status, string $message, array $extra = []): never
+    {
+        $flowCode = $extra['code'] ?? null;
+        unset($extra['code']);
+
+        $body = ApiMessage::attach($code, array_merge([
             'success' => false,
             'message' => $message,
-            'data' => $this->statePayload($conversation),
-        ], 409));
+        ], $extra));
+
+        if (is_string($flowCode)) {
+            $body['message_code'] = $code->value;
+            $body['code'] = $flowCode;
+        }
+
+        throw new HttpResponseException(response()->json($body, $status));
     }
 
     private function broadcastStatusChanged(ChatConversation $conversation, ?ChatConversationStatus $previousStatus): void
@@ -640,11 +684,12 @@ class ChatFlowController extends Controller
             ->get();
 
         if ($steps->count() !== 1) {
-            throw new HttpResponseException(response()->json([
-                'success' => false,
-                'code' => 'invalid_start_step_configuration',
-                'message' => __('support.chat_conversations.invalid_start_step_configuration', [], $language),
-            ], 409));
+            $this->fail(
+                MessageCode::ChatInvalidStart,
+                409,
+                __('support.chat_conversations.invalid_start_step_configuration', [], $language),
+                ['code' => 'invalid_start_step_configuration'],
+            );
         }
 
         return $steps->sole();
@@ -663,7 +708,7 @@ class ChatFlowController extends Controller
         $user = $request->user();
 
         if (! $user instanceof User) {
-            throw new AccessDeniedHttpException('Only customers can use the chat API.');
+            $this->fail(MessageCode::ChatCustomersOnly, 403, MessageCode::ChatCustomersOnly->message());
         }
 
         return $user;
@@ -679,11 +724,11 @@ class ChatFlowController extends Controller
         $conversation = ChatConversation::query()->find($conversationId);
 
         if (! $conversation) {
-            abort(404, 'Conversation not found.');
+            $this->fail(MessageCode::ChatNotFound, 404, MessageCode::ChatNotFound->message());
         }
 
         if ((int) $conversation->user_id !== (int) $user->id) {
-            throw new AccessDeniedHttpException('You do not have access to this conversation.');
+            $this->fail(MessageCode::ChatForbidden, 403, MessageCode::ChatForbidden->message());
         }
 
         return $conversation;
@@ -694,7 +739,7 @@ class ChatFlowController extends Controller
         $normalized = strtolower((string) ($language ?? 'en'));
 
         if (! in_array($normalized, ['en', 'my', 'zh'], true)) {
-            abort(422, 'The language must be one of: en, my, zh.');
+            $this->fail(MessageCode::ChatLanguageInvalid, 422, MessageCode::ChatLanguageInvalid->message());
         }
 
         return $normalized;

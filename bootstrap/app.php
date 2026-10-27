@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\MessageCode;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetLocale;
 use App\Support\AdminHome;
@@ -14,6 +15,8 @@ use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\SecurityLog\SecurityLogService;
+use App\Support\ApiFrameworkErrorResponse;
+use App\Support\ApiMessage;
 
 use Illuminate\Auth\Access\AuthorizationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -47,10 +50,9 @@ return Application::configure(basePath: dirname(__DIR__))
                 $retryAfter = (int) $response->headers->get('Retry-After', 1800);
 
                 return response()->json(
-                    [
-                        'message' => 'Too many attempts. Please try again after 30 minutes.',
+                    ApiMessage::attach(MessageCode::TopupSerialThrottled, [
                         'retry_after' => $retryAfter,
-                    ],
+                    ]),
                     429,
                     $response->headers->all(),
                 );
@@ -103,7 +105,9 @@ return Application::configure(basePath: dirname(__DIR__))
                 return Inertia::render('Errors/NotFound')->toResponse($request)->setStatusCode(404);
             }
 
-            return $response;
+            $coded = ApiFrameworkErrorResponse::decorate($response, $exception, $request);
+
+            return $coded ?? $response;
         });
     })
     ->create();
