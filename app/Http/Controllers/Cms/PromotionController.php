@@ -21,8 +21,8 @@ class PromotionController extends Controller
         $listing = CmsListing::paginate(
             $request,
             Promotion::query(),
-            ['title', 'description'],
-            ['title', 'start_date', 'end_date', 'is_active', 'created_at'],
+            ['title_en', 'title_zh', 'title_my', 'description_en', 'description_zh', 'description_my'],
+            ['title_en', 'start_date', 'end_date', 'is_active', 'created_at'],
             statusColumn: 'is_active',
         );
 
@@ -40,7 +40,7 @@ class PromotionController extends Controller
     public function store(StorePromotionRequest $request): RedirectResponse
     {
         $data = $request->safe()->except('image');
-        $data['image_path'] = StoresPublicImage::store($request->file('image'), 'cms/promotions');
+        $data['image_url'] = StoresPublicImage::store($request->file('image'), 'cms/promotions');
 
         $promotion = Promotion::query()->create($data);
 
@@ -61,7 +61,7 @@ class PromotionController extends Controller
         $data = $request->safe()->except('image');
 
         if ($request->hasFile('image')) {
-            $data['image_path'] = StoresPublicImage::store($request->file('image'), 'cms/promotions', $promotion->image_path);
+            $data['image_url'] = StoresPublicImage::store($request->file('image'), 'cms/promotions', $promotion->image_url);
         }
 
         $promotion->update($data);
@@ -73,7 +73,7 @@ class PromotionController extends Controller
 
     public function destroy(Request $request, Promotion $promotion): RedirectResponse
     {
-        StoresPublicImage::delete($promotion->image_path);
+        StoresPublicImage::delete($promotion->image_url);
         $promotion->delete();
 
         activity('cms')->causedBy($request->user())->performedOn($promotion)->event('deleted')->log('promotion_deleted');
@@ -88,7 +88,7 @@ class PromotionController extends Controller
             Promotion::query(),
             'cms.promotions.index',
             'promotion_deleted',
-            beforeDelete: fn (Promotion $promotion) => StoresPublicImage::delete($promotion->image_path),
+            beforeDelete: fn (Promotion $promotion) => StoresPublicImage::delete($promotion->image_url),
         );
     }
 
@@ -99,12 +99,17 @@ class PromotionController extends Controller
     {
         return [
             'id' => $promotion->id,
-            'title' => $promotion->title,
-            'description' => $promotion->description,
+            'title_en' => $promotion->title_en,
+            'title_zh' => $promotion->title_zh,
+            'title_my' => $promotion->title_my,
+            'description_en' => $promotion->description_en,
+            'description_zh' => $promotion->description_zh,
+            'description_my' => $promotion->description_my,
+            'slug' => $promotion->slug,
             'start_date' => $promotion->start_date?->toDateString(),
             'end_date' => $promotion->end_date?->toDateString(),
             'is_active' => $promotion->is_active,
-            'image_url' => StoresPublicImage::url($promotion->image_path),
+            'image_url' => StoresPublicImage::url($promotion->image_url),
             'created_at' => $promotion->created_at?->toDateString(),
         ];
     }

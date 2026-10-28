@@ -4,7 +4,6 @@ namespace App\Http\Requests\Cms;
 
 use App\Enums\NewsStatus;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class StoreNewsRequest extends FormRequest
@@ -16,10 +15,11 @@ class StoreNewsRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if (! $this->filled('slug') && $this->filled('title')) {
-            $this->merge(['slug' => Str::slug((string) $this->string('title')) ?: Str::random(8)]);
+        if (! $this->filled('slug') && $this->filled('title_en')) {
+            $this->merge([
+                'slug' => CmsRules::slugFrom((string) $this->string('title_en')),
+            ]);
         }
-
     }
 
     /**
@@ -29,9 +29,9 @@ class StoreNewsRequest extends FormRequest
     {
         return [
             'category_id' => ['required', 'integer', Rule::exists('categories', 'id')->whereNull('deleted_at')],
-            'title' => ['required', 'string', 'max:255'],
+            ...CmsRules::localized('title', true, 255),
             'slug' => CmsRules::slug('news'),
-            'content' => ['required', 'string'],
+            ...CmsRules::localized('description', true),
             'status' => ['required', Rule::enum(NewsStatus::class)],
             'image' => CmsRules::image(false),
         ];

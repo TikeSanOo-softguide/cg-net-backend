@@ -22,8 +22,8 @@ class NewsController extends Controller
         $listing = CmsListing::paginate(
             $request,
             News::query()->with('category:id,name_en'),
-            ['title', 'slug'],
-            ['title', 'status', 'created_at'],
+            ['title_en', 'title_zh', 'title_my', 'slug'],
+            ['title_en', 'status', 'created_at'],
             statusColumn: 'status',
         );
 
@@ -43,7 +43,7 @@ class NewsController extends Controller
         $data = $request->safe()->except('image');
 
         if ($request->hasFile('image')) {
-            $data['image_path'] = StoresPublicImage::store($request->file('image'), 'cms/news');
+            $data['image_url'] = StoresPublicImage::store($request->file('image'), 'cms/news');
         }
 
         $news = News::query()->create($data);
@@ -66,7 +66,7 @@ class NewsController extends Controller
         $data = $request->safe()->except('image');
 
         if ($request->hasFile('image')) {
-            $data['image_path'] = StoresPublicImage::store($request->file('image'), 'cms/news', $news->image_path);
+            $data['image_url'] = StoresPublicImage::store($request->file('image'), 'cms/news', $news->image_url);
         }
 
         $news->update($data);
@@ -78,7 +78,7 @@ class NewsController extends Controller
 
     public function destroy(Request $request, News $news): RedirectResponse
     {
-        StoresPublicImage::delete($news->image_path);
+        StoresPublicImage::delete($news->image_url);
         $news->delete();
 
         activity('cms')->causedBy($request->user())->performedOn($news)->event('deleted')->log('news_deleted');
@@ -94,20 +94,20 @@ class NewsController extends Controller
             'cms.news.index',
             'news_deleted',
             beforeDelete: function (News $news): void {
-                StoresPublicImage::delete($news->image_path);
+                StoresPublicImage::delete($news->image_url);
             },
         );
     }
 
     /**
-    * @return array{categories: list<array{id: int, name: string}>}
+     * @return array{categories: list<array{id: int, name_en: string}>}
      */
     private function formOptions(): array
     {
         return [
             'categories' => Category::query()->orderBy('name_en')->get(['id', 'name_en'])->map(fn (Category $category) => [
                 'id' => $category->id,
-                'name' => $category->name_en,
+                'name_en' => $category->name_en,
             ])->all(),
         ];
     }
@@ -120,12 +120,16 @@ class NewsController extends Controller
         return [
             'id' => $news->id,
             'category_id' => $news->category_id,
-            'category_name' => $news->category?->name,
-            'title' => $news->title,
+            'category_name' => $news->category?->name_en,
+            'title_en' => $news->title_en,
+            'title_zh' => $news->title_zh,
+            'title_my' => $news->title_my,
             'slug' => $news->slug,
-            'content' => $news->content,
+            'description_en' => $news->description_en,
+            'description_zh' => $news->description_zh,
+            'description_my' => $news->description_my,
             'status' => $news->status->value,
-            'image_url' => StoresPublicImage::url($news->image_path),
+            'image_url' => StoresPublicImage::url($news->image_url),
             'created_at' => $news->created_at?->toDateString(),
         ];
     }

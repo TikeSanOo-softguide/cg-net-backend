@@ -4,7 +4,6 @@ namespace App\Http\Requests\Cms;
 
 use App\Models\Category;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Str;
 
 class UpdateCategoryRequest extends FormRequest
 {
@@ -15,8 +14,10 @@ class UpdateCategoryRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if (! $this->filled('slug') && $this->filled('name')) {
-            $this->merge(['slug' => Str::slug((string) $this->string('name')) ?: Str::random(8)]);
+        if (! $this->filled('slug') && $this->filled('name_en')) {
+            $this->merge([
+                'slug' => CmsRules::slugFrom((string) $this->string('name_en')),
+            ]);
         }
     }
 
@@ -29,7 +30,7 @@ class UpdateCategoryRequest extends FormRequest
         $category = $this->route('category');
 
         return [
-            'name' => ['required', 'string', 'max:120'],
+            ...CmsRules::localized('name', true, 120),
             'slug' => CmsRules::slug('categories', $category->id),
         ];
     }

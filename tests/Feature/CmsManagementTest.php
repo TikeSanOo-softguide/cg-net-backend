@@ -7,6 +7,7 @@ use App\Models\Admin;
 use App\Models\Banner;
 use App\Models\Category;
 use App\Models\Contact;
+use App\Models\Gallery;
 use App\Models\News;
 use App\Models\Promotion;
 use App\Support\CmsPermissions;
@@ -72,7 +73,7 @@ class CmsManagementTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Cms/Promotions/Index')
                 ->has('items.data', 1)
-                ->where('items.data.0.title', 'Monsoon offer'));
+                ->where('items.data.0.title_en', 'Monsoon offer'));
     }
 
     public function test_admins_can_create_update_and_delete_a_promotion(): void
@@ -81,8 +82,12 @@ class CmsManagementTest extends TestCase
 
         $this->actingAs($admin, 'web')
             ->post('/cms/promotions', [
-                'title' => 'Summer promo',
-                'description' => 'Save this month',
+                'title_en' => 'Summer promo',
+                'title_zh' => '夏季促销',
+                'title_my' => 'နွေရာသီ ပရိုမိုးရှင်း',
+                'description_en' => 'Save this month',
+                'description_zh' => '本月优惠',
+                'description_my' => 'ဒီလ လျှော့စျေး',
                 'start_date' => '2026-08-01',
                 'end_date' => '2026-08-31',
                 'is_active' => '1',
@@ -91,20 +96,29 @@ class CmsManagementTest extends TestCase
             ->assertRedirect('/cms/promotions');
 
         $promotion = Promotion::query()->firstOrFail();
-        $this->assertSame('Summer promo', $promotion->title);
-        Storage::disk('public')->assertExists($promotion->image_path);
+        $this->assertSame('Summer promo', $promotion->title_en);
+        $this->assertSame('夏季促销', $promotion->title_zh);
+        $this->assertSame('နွေရာသီ ပရိုမိုးရှင်း', $promotion->title_my);
+        $this->assertSame('Save this month', $promotion->description_en);
+        $this->assertSame('summer-promo', $promotion->slug);
+        Storage::disk('public')->assertExists($promotion->image_url);
 
         $this->actingAs($admin, 'web')
             ->put('/cms/promotions/'.$promotion->id, [
-                'title' => 'Summer promo updated',
-                'description' => 'Save this month',
+                'title_en' => 'Summer promo updated',
+                'title_zh' => '夏季促销',
+                'title_my' => 'နွေရာသီ ပရိုမိုးရှင်း',
+                'description_en' => 'Save this month',
+                'description_zh' => '本月优惠',
+                'description_my' => 'ဒီလ လျှော့စျေး',
                 'start_date' => '2026-08-01',
                 'end_date' => '2026-08-31',
                 'is_active' => '0',
             ])
             ->assertRedirect('/cms/promotions');
 
-        $this->assertSame('Summer promo updated', $promotion->fresh()->title);
+        $this->assertSame('Summer promo updated', $promotion->fresh()->title_en);
+        $this->assertSame('summer-promo-updated', $promotion->fresh()->slug);
         $this->assertFalse($promotion->fresh()->is_active);
 
         $this->actingAs($admin, 'web')
@@ -129,18 +143,42 @@ class CmsManagementTest extends TestCase
         $this->actingAs($admin, 'web')
             ->get('/banners')
             ->assertNotFound();
+
+        $this->actingAs($admin, 'web')
+            ->post('/cms/banners', [
+                'sort_order' => 4,
+                'is_active' => '1',
+                'image_en' => UploadedFile::fake()->image('banner-en.jpg'),
+                'image_zh' => UploadedFile::fake()->image('banner-zh.jpg'),
+                'image_my' => UploadedFile::fake()->image('banner-my.jpg'),
+            ])
+            ->assertRedirect('/cms/banners');
+
+        $created = Banner::query()->where('sort_order', 4)->firstOrFail();
+        Storage::disk('public')->assertExists($created->image_url_en);
+        Storage::disk('public')->assertExists($created->image_url_zh);
+        Storage::disk('public')->assertExists($created->image_url_my);
     }
 
     public function test_news_can_be_created_with_category(): void
     {
         $admin = Admin::factory()->create();
-        $category = Category::factory()->create(['name' => 'Offers', 'slug' => 'offers']);
+        $category = Category::factory()->create([
+            'name_en' => 'Offers',
+            'name_zh' => '优惠',
+            'name_my' => 'လျှော့စျေး',
+            'slug' => 'offers',
+        ]);
         $this->actingAs($admin, 'web')
             ->post('/cms/news', [
                 'category_id' => $category->id,
-                'title' => 'Coverage update',
+                'title_en' => 'Coverage update',
+                'title_zh' => '覆盖更新',
+                'title_my' => 'ကွန်ရက် အပ်ဒိတ်',
                 'slug' => 'coverage-update',
-                'content' => 'Fiber is now live.',
+                'description_en' => 'Fiber is now live.',
+                'description_zh' => '光纤已开通。',
+                'description_my' => 'ဖိုင်ဘာ ရရှိပါပြီ။',
                 'status' => NewsStatus::Published->value,
                 'image' => UploadedFile::fake()->image('news.jpg'),
             ])
@@ -148,7 +186,31 @@ class CmsManagementTest extends TestCase
 
         $news = News::query()->firstOrFail();
         $this->assertSame($category->id, $news->category_id);
-        Storage::disk('public')->assertExists($news->image_path);
+        $this->assertSame('Coverage update', $news->title_en);
+        $this->assertSame('覆盖更新', $news->title_zh);
+        $this->assertSame('Fiber is now live.', $news->description_en);
+        $this->assertSame('ဖိုင်ဘာ ရရှိပါပြီ။', $news->description_my);
+        Storage::disk('public')->assertExists($news->image_url);
+    }
+
+    public function test_admins_can_create_a_category_with_locale_names(): void
+    {
+        $admin = Admin::factory()->create();
+
+        $this->actingAs($admin, 'web')
+            ->post('/cms/categories', [
+                'name_en' => 'Offers',
+                'name_zh' => '优惠',
+                'name_my' => 'လျှော့စျေး',
+            ])
+            ->assertRedirect('/cms/categories');
+
+        $this->assertDatabaseHas('categories', [
+            'name_en' => 'Offers',
+            'name_zh' => '优惠',
+            'name_my' => 'လျှော့စျေး',
+            'slug' => 'offers',
+        ]);
     }
 
     public function test_category_with_news_cannot_be_deleted(): void
@@ -181,11 +243,18 @@ class CmsManagementTest extends TestCase
 
         $this->actingAs($admin, 'web')
             ->post('/cms/gallery', [
-                'label' => 'Office',
+                'label_en' => 'Office',
+                'label_zh' => '办公室',
+                'label_my' => 'ရုံး',
                 'image' => UploadedFile::fake()->image('gallery.jpg'),
             ])
             ->assertRedirect('/cms/gallery');
 
+        $gallery = Gallery::query()->firstOrFail();
+        $this->assertSame('Office', $gallery->label_en);
+        $this->assertSame('办公室', $gallery->label_zh);
+        $this->assertSame('ရုံး', $gallery->label_my);
+        Storage::disk('public')->assertExists($gallery->image_url);
         $this->assertDatabaseHas('contacts', ['contact_point' => 'support@cg-net.test']);
         $this->assertDatabaseCount('gallery', 1);
     }

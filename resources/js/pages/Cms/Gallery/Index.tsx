@@ -6,7 +6,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 type GalleryRow = {
     id: number;
-    label: string | null;
+    label_en: string | null;
     image_url: string | null;
     created_at: string | null;
 };
@@ -33,15 +33,15 @@ export default function GalleryIndex({ items, filters }: Props) {
                 filters={filters}
                 columns={[
                     {
-                        id: 'label',
-                        header: t('cms.label'),
+                        id: 'label_en',
+                        header: t('cms.label_en'),
                         mobile: 'title',
                         sortable: true,
                         className: 'font-medium',
                         cell: (row) => (
                             <span className="inline-flex items-center gap-2">
                                 {row.image_url ? <img src={row.image_url} alt="" className="size-8 rounded object-cover" /> : null}
-                                {row.label ?? '—'}
+                                {row.label_en ?? '—'}
                             </span>
                         ),
                     },

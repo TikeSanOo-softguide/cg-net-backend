@@ -17,7 +17,7 @@ class UpdateGalleryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'label' => ['nullable', 'string', 'max:255'],
+            ...CmsRules::localized('label', false, 255),
             'image' => CmsRules::image(false),
         ];
     }

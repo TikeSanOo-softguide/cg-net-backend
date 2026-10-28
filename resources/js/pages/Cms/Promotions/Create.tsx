@@ -9,8 +9,12 @@ import { useTranslation } from '@/hooks/useTranslation';
 export default function PromotionCreate() {
     const { t } = useTranslation();
     const form = useForm<PromotionFormValues>({
-        title: '',
-        description: '',
+        title_en: '',
+        title_zh: '',
+        title_my: '',
+        description_en: '',
+        description_zh: '',
+        description_my: '',
         start_date: '',
         end_date: '',
         is_active: true,

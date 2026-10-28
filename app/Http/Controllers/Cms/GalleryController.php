@@ -21,8 +21,8 @@ class GalleryController extends Controller
         $listing = CmsListing::paginate(
             $request,
             Gallery::query(),
-            ['label'],
-            ['label', 'created_at'],
+            ['label_en', 'label_zh', 'label_my'],
+            ['label_en', 'created_at'],
         );
 
         return Inertia::render('Cms/Gallery/Index', [
@@ -39,8 +39,10 @@ class GalleryController extends Controller
     public function store(StoreGalleryRequest $request): RedirectResponse
     {
         $gallery = Gallery::query()->create([
-            'label' => $request->validated('label'),
-            'image_path' => StoresPublicImage::store($request->file('image'), 'cms/gallery'),
+            'label_en' => $request->validated('label_en'),
+            'label_zh' => $request->validated('label_zh'),
+            'label_my' => $request->validated('label_my'),
+            'image_url' => StoresPublicImage::store($request->file('image'), 'cms/gallery'),
         ]);
 
         activity('cms')->causedBy($request->user())->performedOn($gallery)->event('created')->log('gallery_created');
@@ -58,11 +60,13 @@ class GalleryController extends Controller
     public function update(UpdateGalleryRequest $request, Gallery $gallery): RedirectResponse
     {
         $data = [
-            'label' => $request->validated('label'),
+            'label_en' => $request->validated('label_en'),
+            'label_zh' => $request->validated('label_zh'),
+            'label_my' => $request->validated('label_my'),
         ];
 
         if ($request->hasFile('image')) {
-            $data['image_path'] = StoresPublicImage::store($request->file('image'), 'cms/gallery', $gallery->image_path);
+            $data['image_url'] = StoresPublicImage::store($request->file('image'), 'cms/gallery', $gallery->image_url);
         }
 
         $gallery->update($data);
@@ -74,7 +78,7 @@ class GalleryController extends Controller
 
     public function destroy(Request $request, Gallery $gallery): RedirectResponse
     {
-        StoresPublicImage::delete($gallery->image_path);
+        StoresPublicImage::delete($gallery->image_url);
         $gallery->delete();
 
         activity('cms')->causedBy($request->user())->performedOn($gallery)->event('deleted')->log('gallery_deleted');
@@ -89,7 +93,7 @@ class GalleryController extends Controller
             Gallery::query(),
             'cms.gallery.index',
             'gallery_deleted',
-            beforeDelete: fn (Gallery $gallery) => StoresPublicImage::delete($gallery->image_path),
+            beforeDelete: fn (Gallery $gallery) => StoresPublicImage::delete($gallery->image_url),
         );
     }
 
@@ -100,8 +104,10 @@ class GalleryController extends Controller
     {
         return [
             'id' => $gallery->id,
-            'label' => $gallery->label,
-            'image_url' => StoresPublicImage::url($gallery->image_path),
+            'label_en' => $gallery->label_en,
+            'label_zh' => $gallery->label_zh,
+            'label_my' => $gallery->label_my,
+            'image_url' => StoresPublicImage::url($gallery->image_url),
             'created_at' => $gallery->created_at?->toDateString(),
         ];
     }

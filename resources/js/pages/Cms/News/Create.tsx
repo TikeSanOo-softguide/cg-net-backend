@@ -14,9 +14,13 @@ export default function NewsCreate({ categories }: Props) {
     const { t } = useTranslation();
     const form = useForm<NewsFormValues>({
         category_id: categories[0] ? String(categories[0].id) : '',
-        title: '',
+        title_en: '',
+        title_zh: '',
+        title_my: '',
         slug: '',
-        content: '',
+        description_en: '',
+        description_zh: '',
+        description_my: '',
         status: 'draft',
         image: null,
     });

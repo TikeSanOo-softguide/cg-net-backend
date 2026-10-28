@@ -7,7 +7,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 type NewsRow = {
     id: number;
-    title: string;
+    title_en: string;
     category_name: string | null;
     status: string;
     created_at: string | null;
@@ -35,7 +35,7 @@ export default function NewsIndex({ items, filters }: Props) {
                 filters={filters}
                 statusFilter="news"
                 columns={[
-                    { id: 'title', header: t('cms.title'), mobile: 'title', sortable: true, className: 'font-medium', cell: (row) => row.title },
+                    { id: 'title_en', header: t('cms.title_en'), mobile: 'title', sortable: true, className: 'font-medium', cell: (row) => row.title_en },
                     { id: 'category_name', header: t('cms.category'), mobile: 'subtitle', cell: (row) => row.category_name ?? '—' },
                     { id: 'status', header: t('common.status'), sortable: true, mobile: 'badge', cell: (row) => <StatusBadge status={row.status} /> },
                     { id: 'created_at', header: t('customers.joined'), sortable: true, mobile: 'meta', className: 'text-muted-foreground', cell: (row) => row.created_at },

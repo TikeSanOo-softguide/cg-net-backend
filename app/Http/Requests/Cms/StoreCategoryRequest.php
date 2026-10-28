@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Cms;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Str;
 
 class StoreCategoryRequest extends FormRequest
 {
@@ -14,8 +13,10 @@ class StoreCategoryRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if (! $this->filled('slug') && $this->filled('name')) {
-            $this->merge(['slug' => Str::slug((string) $this->string('name')) ?: Str::random(8)]);
+        if (! $this->filled('slug') && $this->filled('name_en')) {
+            $this->merge([
+                'slug' => CmsRules::slugFrom((string) $this->string('name_en')),
+            ]);
         }
     }
 
@@ -25,7 +26,7 @@ class StoreCategoryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:120'],
+            ...CmsRules::localized('name', true, 120),
             'slug' => CmsRules::slug('categories'),
         ];
     }

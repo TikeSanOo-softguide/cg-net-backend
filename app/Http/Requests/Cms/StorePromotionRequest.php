@@ -11,25 +11,32 @@ class StorePromotionRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'is_active' => filter_var($this->input('is_active'), FILTER_VALIDATE_BOOLEAN),
+        ]);
+
+        if (! $this->filled('slug') && $this->filled('title_en')) {
+            $this->merge([
+                'slug' => CmsRules::slugFrom((string) $this->string('title_en')),
+            ]);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
     public function rules(): array
     {
         return [
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:5000'],
+            ...CmsRules::localized('title', true, 255),
+            ...CmsRules::localized('description', true, 5000),
+            'slug' => CmsRules::slug('promotions'),
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'is_active' => ['required', 'boolean'],
             'image' => CmsRules::image(true),
         ];
-    }
-
-    protected function prepareForValidation(): void
-    {
-        $this->merge([
-            'is_active' => filter_var($this->input('is_active'), FILTER_VALIDATE_BOOLEAN),
-        ]);
     }
 }

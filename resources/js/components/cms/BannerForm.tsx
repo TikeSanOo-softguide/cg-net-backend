@@ -1,6 +1,6 @@
 import { FormEvent } from 'react';
 import type { InertiaFormProps } from '@inertiajs/react';
-import { CalendarClockIcon, CalendarIcon, CircleDotIcon, HashIcon, Link2Icon, TypeIcon } from 'lucide-react';
+import { CalendarClockIcon, CalendarIcon, CircleDotIcon, HashIcon } from 'lucide-react';
 
 import { CmsField } from '@/components/cms/CmsField';
 import { CmsFormShell } from '@/components/cms/CmsFormShell';
@@ -10,33 +10,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useTranslation } from '@/hooks/useTranslation';
 
 export type BannerFormValues = {
-    title: string;
-    link_url: string;
     sort_order: number;
     start_date: string;
     end_date: string;
     is_active: boolean;
-    image: File | null;
+    image_en: File | null;
+    image_zh: File | null;
+    image_my: File | null;
 };
 
 type BannerFormProps = {
     form: InertiaFormProps<BannerFormValues>;
     onSubmit: (event: FormEvent) => void;
     cancelHref: string;
-    imageUrl?: string | null;
+    imageUrlEn?: string | null;
+    imageUrlZh?: string | null;
+    imageUrlMy?: string | null;
 };
 
-export function BannerForm({ form, onSubmit, cancelHref, imageUrl }: BannerFormProps) {
+export function BannerForm({ form, onSubmit, cancelHref, imageUrlEn, imageUrlZh, imageUrlMy }: BannerFormProps) {
     const { t } = useTranslation();
 
     return (
         <CmsFormShell onSubmit={onSubmit} cancelHref={cancelHref} processing={form.processing}>
-            <CmsField label={t('cms.title')} htmlFor="title" error={form.errors.title} icon={TypeIcon} className="sm:col-span-2">
-                <Input id="title" value={form.data.title} required onChange={(event) => form.setData('title', event.target.value)} />
-            </CmsField>
-            <CmsField label={t('cms.link_url')} htmlFor="link_url" error={form.errors.link_url} icon={Link2Icon} className="sm:col-span-2">
-                <Input id="link_url" type="url" value={form.data.link_url} onChange={(event) => form.setData('link_url', event.target.value)} />
-            </CmsField>
             <CmsField label={t('cms.sort_order')} htmlFor="sort_order" error={form.errors.sort_order} icon={HashIcon}>
                 <Input id="sort_order" type="number" min={0} value={form.data.sort_order} onChange={(event) => form.setData('sort_order', Number(event.target.value))} />
             </CmsField>
@@ -55,7 +51,9 @@ export function BannerForm({ form, onSubmit, cancelHref, imageUrl }: BannerFormP
             <CmsField label={t('cms.end_date')} htmlFor="end_date" error={form.errors.end_date} icon={CalendarClockIcon}>
                 <Input id="end_date" type="date" value={form.data.end_date} onChange={(event) => form.setData('end_date', event.target.value)} />
             </CmsField>
-            <CmsImageField error={form.errors.image} currentUrl={imageUrl} required={!imageUrl} onChange={(file) => form.setData('image', file)} />
+            <CmsImageField label={t('cms.image_en')} inputId="image_en" error={form.errors.image_en} currentUrl={imageUrlEn} required={!imageUrlEn} onChange={(file) => form.setData('image_en', file)} />
+            <CmsImageField label={t('cms.image_zh')} inputId="image_zh" error={form.errors.image_zh} currentUrl={imageUrlZh} required={!imageUrlZh} onChange={(file) => form.setData('image_zh', file)} />
+            <CmsImageField label={t('cms.image_my')} inputId="image_my" error={form.errors.image_my} currentUrl={imageUrlMy} required={!imageUrlMy} onChange={(file) => form.setData('image_my', file)} />
         </CmsFormShell>
     );
 }

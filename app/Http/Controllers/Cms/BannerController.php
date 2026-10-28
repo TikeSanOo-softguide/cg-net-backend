@@ -11,6 +11,7 @@ use App\Support\CmsListing;
 use App\Support\StoresPublicImage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,8 +22,8 @@ class BannerController extends Controller
         $listing = CmsListing::paginate(
             $request,
             Banner::query(),
-            ['title', 'link_url'],
-            ['title', 'sort_order', 'is_active', 'start_date', 'end_date', 'created_at'],
+            [],
+            ['sort_order', 'is_active', 'start_date', 'end_date', 'created_at'],
             defaultSort: 'sort_order',
             statusColumn: 'is_active',
         );
@@ -40,7 +41,7 @@ class BannerController extends Controller
 
     public function store(StoreBannerRequest $request): RedirectResponse
     {
-        $banner = Banner::query()->create($this->attributes($request->validated(), $request->file('image')));
+        $banner = Banner::query()->create($this->attributes($request));
 
         activity('cms')->causedBy($request->user())->performedOn($banner)->event('created')->log('banner_created');
 
@@ -56,7 +57,7 @@ class BannerController extends Controller
 
     public function update(UpdateBannerRequest $request, Banner $banner): RedirectResponse
     {
-        $banner->update($this->attributes($request->validated(), $request->file('image'), $banner->image_path));
+        $banner->update($this->attributes($request, $banner));
 
         activity('cms')->causedBy($request->user())->performedOn($banner)->event('updated')->log('banner_updated');
 
@@ -65,7 +66,7 @@ class BannerController extends Controller
 
     public function destroy(Request $request, Banner $banner): RedirectResponse
     {
-        StoresPublicImage::delete($banner->image_path);
+        $this->deleteImages($banner);
         $banner->delete();
 
         activity('cms')->causedBy($request->user())->performedOn($banner)->event('deleted')->log('banner_deleted');
@@ -80,30 +81,42 @@ class BannerController extends Controller
             Banner::query(),
             'cms.banners.index',
             'banner_deleted',
-            beforeDelete: fn (Banner $banner) => StoresPublicImage::delete($banner->image_path),
+            beforeDelete: fn (Banner $banner) => $this->deleteImages($banner),
         );
     }
 
     /**
-     * @param  array<string, mixed>  $validated
      * @return array<string, mixed>
      */
-    private function attributes(array $validated, $image = null, ?string $previousPath = null): array
+    private function attributes(StoreBannerRequest|UpdateBannerRequest $request, ?Banner $banner = null): array
     {
+        $validated = $request->validated();
         $data = [
-            'title' => $validated['title'],
-            'link_url' => $validated['link_url'] ?: null,
             'sort_order' => $validated['sort_order'],
             'is_active' => $validated['is_active'],
             'start_date' => $validated['start_date'] ?? null,
             'end_date' => $validated['end_date'] ?? null,
         ];
 
-        if ($image) {
-            $data['image_path'] = StoresPublicImage::store($image, 'cms/banners', $previousPath);
+        foreach (['en', 'zh', 'my'] as $locale) {
+            $file = $request->file('image_'.$locale);
+
+            if (! $file instanceof UploadedFile) {
+                continue;
+            }
+
+            $column = 'image_url_'.$locale;
+            $data[$column] = StoresPublicImage::store($file, 'cms/banners', $banner?->{$column});
         }
 
         return $data;
+    }
+
+    private function deleteImages(Banner $banner): void
+    {
+        StoresPublicImage::delete($banner->image_url_en);
+        StoresPublicImage::delete($banner->image_url_zh);
+        StoresPublicImage::delete($banner->image_url_my);
     }
 
     /**
@@ -113,13 +126,13 @@ class BannerController extends Controller
     {
         return [
             'id' => $banner->id,
-            'title' => $banner->title,
-            'link_url' => $banner->link_url,
+            'image_url_en' => StoresPublicImage::url($banner->image_url_en),
+            'image_url_zh' => StoresPublicImage::url($banner->image_url_zh),
+            'image_url_my' => StoresPublicImage::url($banner->image_url_my),
             'sort_order' => $banner->sort_order,
             'is_active' => $banner->is_active,
-            'start_date' => $banner->start_date,
-            'end_date' => $banner->end_date,
-            'image_url' => StoresPublicImage::url($banner->image_path),
+            'start_date' => $banner->start_date?->toDateString(),
+            'end_date' => $banner->end_date?->toDateString(),
             'created_at' => $banner->created_at?->toDateString(),
         ];
     }

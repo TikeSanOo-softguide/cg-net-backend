@@ -7,12 +7,11 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 type BannerRow = {
     id: number;
-    title: string;
     sort_order: number;
     is_active: boolean;
     start_date: string | null;
     end_date: string | null;
-    image_url: string | null;
+    image_url_en: string | null;
 };
 
 type Props = {
@@ -38,19 +37,18 @@ export default function BannersIndex({ items, filters }: Props) {
                 statusFilter="active"
                 columns={[
                     {
-                        id: 'title',
-                        header: t('cms.title'),
+                        id: 'sort_order',
+                        header: t('cms.sort_order'),
                         mobile: 'title',
                         sortable: true,
                         className: 'font-medium',
                         cell: (row) => (
                             <span className="inline-flex items-center gap-2">
-                                {row.image_url ? <img src={row.image_url} alt="" className="size-8 rounded object-cover" /> : null}
-                                {row.title}
+                                {row.image_url_en ? <img src={row.image_url_en} alt="" className="size-8 rounded object-cover" /> : null}
+                                {row.sort_order}
                             </span>
                         ),
                     },
-                    { id: 'sort_order', header: t('cms.sort_order'), sortable: true, cell: (row) => row.sort_order },
                     { id: 'is_active', header: t('common.status'), sortable: true, mobile: 'badge', cell: (row) => <StatusBadge status={row.is_active ? 'active' : 'inactive'} /> },
                 ]}
             />

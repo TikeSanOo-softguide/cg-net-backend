@@ -7,12 +7,17 @@ import { PageHeader } from '@/components/PageHeader';
 import { useTranslation } from '@/hooks/useTranslation';
 
 type Props = {
-    item: { id: number; name: string; slug: string };
+    item: { id: number; name_en: string; name_zh: string; name_my: string; slug: string };
 };
 
 export default function CategoryEdit({ item }: Props) {
     const { t } = useTranslation();
-    const form = useForm<NameSlugFormValues>({ name: item.name, slug: item.slug });
+    const form = useForm<NameSlugFormValues>({
+        name_en: item.name_en,
+        name_zh: item.name_zh,
+        name_my: item.name_my,
+        slug: item.slug,
+    });
 
     const submit = (event: FormEvent) => {
         event.preventDefault();

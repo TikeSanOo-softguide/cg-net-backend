@@ -20,7 +20,7 @@ class CategoryController extends Controller
         $listing = CmsListing::paginate(
             $request,
             Category::query()->withCount('news'),
-            ['name_en', 'slug'],
+            ['name_en', 'name_zh', 'name_my', 'slug'],
             ['name_en', 'slug', 'created_at'],
         );
 
@@ -91,7 +91,9 @@ class CategoryController extends Controller
     {
         return [
             'id' => $category->id,
-            'name' => $category->name_en,
+            'name_en' => $category->name_en,
+            'name_zh' => $category->name_zh,
+            'name_my' => $category->name_my,
             'slug' => $category->slug,
             'news_count' => $category->news_count ?? $category->news()->count(),
             'created_at' => $category->created_at?->toDateString(),

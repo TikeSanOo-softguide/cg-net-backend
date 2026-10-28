@@ -8,7 +8,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 export default function CategoryCreate() {
     const { t } = useTranslation();
-    const form = useForm<NameSlugFormValues>({ name: '', slug: '' });
+    const form = useForm<NameSlugFormValues>({ name_en: '', name_zh: '', name_my: '', slug: '' });
 
     const submit = (event: FormEvent) => {
         event.preventDefault();

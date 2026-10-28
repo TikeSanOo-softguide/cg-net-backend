@@ -6,7 +6,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 type CategoryRow = {
     id: number;
-    name: string;
+    name_en: string;
     slug: string;
     news_count: number;
     created_at: string | null;
@@ -33,7 +33,7 @@ export default function CategoriesIndex({ items, filters }: Props) {
                 items={items}
                 filters={filters}
                 columns={[
-                    { id: 'name', header: t('cms.name'), mobile: 'title', sortable: true, className: 'font-medium', cell: (row) => row.name },
+                    { id: 'name_en', header: t('cms.name_en'), mobile: 'title', sortable: true, className: 'font-medium', cell: (row) => row.name_en },
                     { id: 'slug', header: t('cms.slug'), mobile: 'subtitle', sortable: true, className: 'font-mono text-[12px]', cell: (row) => row.slug },
                 ]}
             />

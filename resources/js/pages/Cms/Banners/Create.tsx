@@ -9,13 +9,13 @@ import { useTranslation } from '@/hooks/useTranslation';
 export default function BannerCreate() {
     const { t } = useTranslation();
     const form = useForm<BannerFormValues>({
-        title: '',
-        link_url: '',
         sort_order: 0,
         start_date: '',
         end_date: '',
         is_active: true,
-        image: null,
+        image_en: null,
+        image_zh: null,
+        image_my: null,
     });
 
     const submit = (event: FormEvent) => {

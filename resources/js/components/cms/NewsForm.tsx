@@ -13,16 +13,20 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 export type NewsFormValues = {
     category_id: string;
-    title: string;
+    title_en: string;
+    title_zh: string;
+    title_my: string;
     slug: string;
-    content: string;
+    description_en: string;
+    description_zh: string;
+    description_my: string;
     status: string;
     image: File | null;
 };
 
 export type NewsOption = {
     id: number;
-    name: string;
+    name_en: string;
 };
 
 function toSlug(value: string): string {
@@ -55,25 +59,33 @@ export function NewsForm({ form, onSubmit, cancelHref, categories, imageUrl }: N
                         </SelectTrigger>
                         <SelectContent>
                             {categories.map((category) => (
-                                <SelectItem key={category.id} value={String(category.id)}>{category.name}</SelectItem>
+                                <SelectItem key={category.id} value={String(category.id)}>{category.name_en}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
                 </FormControl>
                 {categories.length === 0 ? <p className="mt-1 text-xs text-muted-foreground">{t('cms.no_categories')}</p> : null}
             </CmsField>
-            <CmsField label={t('cms.title')} htmlFor="title" error={form.errors.title} icon={TypeIcon} className="sm:col-span-2">
+            <CmsField label={t('cms.title_en')} htmlFor="title_en" error={form.errors.title_en} icon={TypeIcon} className="sm:col-span-2">
                 <Input
-                    id="title"
-                    value={form.data.title}
+                    id="title_en"
+                    value={form.data.title_en}
                     required
                     onChange={(event) => {
-                        form.setData('title', event.target.value);
-                        if (!slugTouched) {
-                            form.setData('slug', toSlug(event.target.value));
-                        }
+                        const title = event.target.value;
+                        form.setData((data) => ({
+                            ...data,
+                            title_en: title,
+                            slug: slugTouched ? data.slug : toSlug(title),
+                        }));
                     }}
                 />
+            </CmsField>
+            <CmsField label={t('cms.title_zh')} htmlFor="title_zh" error={form.errors.title_zh} icon={TypeIcon} className="sm:col-span-2">
+                <Input id="title_zh" value={form.data.title_zh} required onChange={(event) => form.setData('title_zh', event.target.value)} />
+            </CmsField>
+            <CmsField label={t('cms.title_my')} htmlFor="title_my" error={form.errors.title_my} icon={TypeIcon} className="sm:col-span-2">
+                <Input id="title_my" value={form.data.title_my} required onChange={(event) => form.setData('title_my', event.target.value)} />
             </CmsField>
             <CmsField label={t('cms.slug')} htmlFor="slug" error={form.errors.slug} icon={Link2Icon}>
                 <Input
@@ -96,8 +108,14 @@ export function NewsForm({ form, onSubmit, cancelHref, categories, imageUrl }: N
                     </SelectContent>
                 </Select>
             </CmsField>
-            <CmsField label={t('cms.content')} htmlFor="content" error={form.errors.content} icon={FileTextIcon} className="sm:col-span-2">
-                <Textarea id="content" className="min-h-40" value={form.data.content} required onChange={(event) => form.setData('content', event.target.value)} />
+            <CmsField label={t('cms.description_en')} htmlFor="description_en" error={form.errors.description_en} icon={FileTextIcon} className="sm:col-span-2">
+                <Textarea id="description_en" className="min-h-40" value={form.data.description_en} required onChange={(event) => form.setData('description_en', event.target.value)} />
+            </CmsField>
+            <CmsField label={t('cms.description_zh')} htmlFor="description_zh" error={form.errors.description_zh} icon={FileTextIcon} className="sm:col-span-2">
+                <Textarea id="description_zh" className="min-h-40" value={form.data.description_zh} required onChange={(event) => form.setData('description_zh', event.target.value)} />
+            </CmsField>
+            <CmsField label={t('cms.description_my')} htmlFor="description_my" error={form.errors.description_my} icon={FileTextIcon} className="sm:col-span-2">
+                <Textarea id="description_my" className="min-h-40" value={form.data.description_my} required onChange={(event) => form.setData('description_my', event.target.value)} />
             </CmsField>
             <CmsImageField error={form.errors.image} currentUrl={imageUrl} onChange={(file) => form.setData('image', file)} />
         </CmsFormShell>

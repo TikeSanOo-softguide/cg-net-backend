@@ -7,16 +7,22 @@ import { PageHeader } from '@/components/PageHeader';
 import { useTranslation } from '@/hooks/useTranslation';
 
 type Props = {
-    item: { id: number; label: string | null; image_url: string | null };
+    item: { id: number; label_en: string | null; label_zh: string | null; label_my: string | null; image_url: string | null };
 };
 
 export default function GalleryEdit({ item }: Props) {
     const { t } = useTranslation();
-    const form = useForm<GalleryFormValues>({ label: item.label ?? '', image: null });
+    const form = useForm<GalleryFormValues>({
+        label_en: item.label_en ?? '',
+        label_zh: item.label_zh ?? '',
+        label_my: item.label_my ?? '',
+        image: null,
+    });
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
-        form.transform((data) => ({ ...data, _method: 'put' })).post(`/cms/gallery/${item.id}`, { forceFormData: true });
+        form.transform((data) => ({ ...data, _method: 'put' }));
+        form.post(`/cms/gallery/${item.id}`, { forceFormData: true });
     };
 
     return (

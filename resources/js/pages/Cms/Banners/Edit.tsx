@@ -9,31 +9,32 @@ import { useTranslation } from '@/hooks/useTranslation';
 type Props = {
     item: {
         id: number;
-        title: string;
-        link_url: string | null;
         sort_order: number;
         start_date: string | null;
         end_date: string | null;
         is_active: boolean;
-        image_url: string | null;
+        image_url_en: string | null;
+        image_url_zh: string | null;
+        image_url_my: string | null;
     };
 };
 
 export default function BannerEdit({ item }: Props) {
     const { t } = useTranslation();
     const form = useForm<BannerFormValues>({
-        title: item.title,
-        link_url: item.link_url ?? '',
         sort_order: item.sort_order,
         start_date: item.start_date ?? '',
         end_date: item.end_date ?? '',
         is_active: item.is_active,
-        image: null,
+        image_en: null,
+        image_zh: null,
+        image_my: null,
     });
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
-        form.transform((data) => ({ ...data, _method: 'put' })).post(`/cms/banners/${item.id}`, { forceFormData: true });
+        form.transform((data) => ({ ...data, _method: 'put' }));
+        form.post(`/cms/banners/${item.id}`, { forceFormData: true });
     };
 
     return (
@@ -41,7 +42,14 @@ export default function BannerEdit({ item }: Props) {
             <Head title={t('cms.edit_banner')} />
             <FormPage>
                 <PageHeader eyebrow={t('menu.cms_banners')} title={t('cms.edit_banner')} />
-                <BannerForm form={form} onSubmit={submit} cancelHref="/cms/banners" imageUrl={item.image_url} />
+                <BannerForm
+                    form={form}
+                    onSubmit={submit}
+                    cancelHref="/cms/banners"
+                    imageUrlEn={item.image_url_en}
+                    imageUrlZh={item.image_url_zh}
+                    imageUrlMy={item.image_url_my}
+                />
             </FormPage>
         </>
     );

@@ -11,9 +11,13 @@ type Props = {
     item: {
         id: number;
         category_id: number;
-        title: string;
+        title_en: string;
+        title_zh: string;
+        title_my: string;
         slug: string;
-        content: string;
+        description_en: string;
+        description_zh: string;
+        description_my: string;
         status: string;
         image_url: string | null;
     };
@@ -23,9 +27,13 @@ export default function NewsEdit({ categories, item }: Props) {
     const { t } = useTranslation();
     const form = useForm<NewsFormValues>({
         category_id: String(item.category_id),
-        title: item.title,
+        title_en: item.title_en,
+        title_zh: item.title_zh,
+        title_my: item.title_my,
         slug: item.slug,
-        content: item.content,
+        description_en: item.description_en,
+        description_zh: item.description_zh,
+        description_my: item.description_my,
         status: item.status,
         image: null,
     });

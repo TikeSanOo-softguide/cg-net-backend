@@ -7,7 +7,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 type PromotionRow = {
     id: number;
-    title: string;
+    title_en: string;
     start_date: string | null;
     end_date: string | null;
     is_active: boolean;
@@ -38,15 +38,15 @@ export default function PromotionsIndex({ items, filters }: Props) {
                 statusFilter="active"
                 columns={[
                     {
-                        id: 'title',
-                        header: t('cms.title'),
+                        id: 'title_en',
+                        header: t('cms.title_en'),
                         mobile: 'title',
                         sortable: true,
                         className: 'font-medium',
                         cell: (row) => (
                             <span className="inline-flex items-center gap-2">
                                 {row.image_url ? <img src={row.image_url} alt="" className="size-8 rounded object-cover" /> : null}
-                                {row.title}
+                                {row.title_en}
                             </span>
                         ),
                     },
