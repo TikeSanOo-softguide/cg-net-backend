@@ -21,7 +21,8 @@ use Illuminate\Support\Facades\RateLimiter;
  * requestOtp -> verifyOtp -> next_step=password -> login
  *                         -> next_step=register -> register
  *                         -> next_step=authenticated (password step disabled)
- * Deactivated accounts always receive the password step with account_status=deactivated.
+ * Deactivated accounts receive the password step and are rejected at login
+ * until an administrator reactivates them.
  */
 final class ApiAuthenticationService
 {
@@ -163,16 +164,16 @@ final class ApiAuthenticationService
         $session = DB::transaction(function () use ($phone, $password, $accountKey, $ipKey): array {
             $user = User::query()->where('phone', $phone)->lockForUpdate()->first();
 
-            if (
-                !$user ||
-                !in_array($user->status, [UserStatus::Active, UserStatus::Deactivated], true) ||
-                !Hash::check($password, $user->getAuthPassword())
-            ) {
+            if (!$user || !Hash::check($password, $user->getAuthPassword())) {
                 throw new InvalidCredentialsException();
             }
 
             if ($user->status === UserStatus::Deactivated) {
-                $user->update(['status' => UserStatus::Active]);
+                throw new ApiMessageException(MessageCode::AuthAccountDeactivated, 403);
+            }
+
+            if ($user->status !== UserStatus::Active) {
+                throw new InvalidCredentialsException();
             }
 
             $hasActiveSession = $user->tokens()

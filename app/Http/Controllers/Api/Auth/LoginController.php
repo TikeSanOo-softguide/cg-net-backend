@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Auth;
 
 use App\Enums\MessageCode;
+use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\LoginRequest;
 use App\Http\Requests\Api\Auth\SessionCheckRequest;
@@ -87,8 +88,28 @@ class LoginController extends Controller
     public function checkSession(SessionCheckRequest $request): JsonResponse
     {
         $user = User::query()->where('phone', $request->validated('phone'))->first();
-        $showAlert = $user?->deviceTokens()->exists() ?? false;
+        $showAlert =
+            $user
+                ?->tokens()
+                ->where(fn($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+                ->exists() ?? false;
 
-        return response()->json(['show_alert' => $showAlert]);
+        if ($user !== null && $user->status !== UserStatus::Active) {
+            return response()->json(
+                [
+                    'code' => MessageCode::AuthAccountDeactivated->value,
+                    'account_status' => $user->status->value,
+                    'is_active' => false,
+                    'show_alert' => $showAlert,
+                ],
+                403,
+            );
+        }
+
+        return response()->json([
+            'show_alert' => $showAlert,
+            'account_status' => $user?->status->value,
+            'is_active' => $user === null ? null : true,
+        ]);
     }
 }

@@ -347,23 +347,28 @@ class ApiAuthenticationTest extends TestCase
         $this->assertDatabaseCount('personal_access_tokens', 0);
     }
 
-    public function test_deactivated_user_is_reactivated_after_entering_the_correct_password(): void
+    public function test_deactivated_user_cannot_log_in_and_receives_the_account_status_code(): void
     {
         $user = User::factory()->create([
             'phone' => self::PHONE,
             'password' => '123456',
-            'status' => UserStatus::Deactivated,
+            'status' => UserStatus::Active,
         ]);
         $verify = $this->verifyOtpFor('+95922345678');
+        $user->update(['status' => UserStatus::Deactivated]);
 
-        $response = $this->postJson('/api/auth/login', [
+        $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
             'password' => '123456',
-        ])->assertOk();
+        ])->assertForbidden()
+            ->assertExactJson([
+                'code' => 'MSG-AUTH-020',
+                'level' => 'error',
+                'message' => 'This account has been deactivated.',
+            ]);
 
-        $this->assertSame(UserStatus::Active, $user->fresh()->status);
-        $response->assertJsonStructure(['token', 'token_type', 'expires_at', 'user']);
-        $this->assertDatabaseCount('personal_access_tokens', 1);
+        $this->assertSame(UserStatus::Deactivated, $user->fresh()->status);
+        $this->assertDatabaseCount('personal_access_tokens', 0);
     }
 
     public function test_deactivated_user_is_not_reactivated_by_an_incorrect_password(): void
@@ -371,9 +376,10 @@ class ApiAuthenticationTest extends TestCase
         $user = User::factory()->create([
             'phone' => self::PHONE,
             'password' => '123456',
-            'status' => UserStatus::Deactivated,
+            'status' => UserStatus::Active,
         ]);
         $verify = $this->verifyOtpFor('+95922345678');
+        $user->update(['status' => UserStatus::Deactivated]);
 
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
