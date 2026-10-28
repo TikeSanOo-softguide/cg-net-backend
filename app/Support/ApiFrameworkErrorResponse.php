@@ -30,6 +30,16 @@ final class ApiFrameworkErrorResponse
                 ]);
         }
 
+        if ($response->getStatusCode() === 429 && $request->is('api/redeem/check-serial-no')) {
+            $retryAfter = max(1, (int) $response->headers->get('Retry-After', 1800));
+            $json = self::json(MessageCode::TopupSerialThrottled, 429, $response, [
+                'retry_after' => $retryAfter,
+            ]);
+            $json->headers->set('Retry-After', (string) $retryAfter);
+
+            return $json;
+        }
+
         $status = $response->getStatusCode();
         $code = match ($status) {
             401 => MessageCode::AuthSessionExpired,

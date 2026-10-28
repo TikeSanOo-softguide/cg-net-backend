@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\MessageCode;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetLocale;
 use App\Support\AdminHome;
@@ -15,10 +14,13 @@ use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\SecurityLog\SecurityLogService;
-use App\Support\ApiFrameworkErrorResponse;
-use App\Support\ApiMessage;
 
+use App\Exceptions\ApiMessageException;
+use App\Support\ApiAuthErrorResponse;
+use App\Support\ApiFrameworkErrorResponse;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -29,7 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->trustProxies(at: env('TRUSTED_PROXIES', '*'));
+        // $middleware->trustProxies(at: env('TRUSTED_PROXIES', '*'));
         $middleware->web(append: [SetLocale::class, HandleInertiaRequests::class]);
         $middleware->statefulApi();
 
@@ -43,20 +45,28 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(fn(Request $request) => $request->is('api/*') || $request->expectsJson());
 
+        $exceptions->render(function (ApiMessageException $exception, Request $request) {
+            if (!$request->is('api/*')) {
+                return null;
+            }
+
+            return ApiAuthErrorResponse::fromMessageException($exception);
+        });
+
+        $exceptions->render(function (ValidationException $exception, Request $request) {
+            return ApiAuthErrorResponse::fromValidation($exception, $request);
+        });
+
+        $exceptions->render(function (AuthenticationException $exception, Request $request) {
+            if (!ApiAuthErrorResponse::shouldHandleAuthentication($request, $exception)) {
+                return null;
+            }
+
+            return ApiAuthErrorResponse::fromAuthentication();
+        });
+
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {
             $statusCode = $response->getStatusCode();
-
-            if ($statusCode === 429 && $request->is('api/redeem/check-serial-no')) {
-                $retryAfter = (int) $response->headers->get('Retry-After', 1800);
-
-                return response()->json(
-                    ApiMessage::attach(MessageCode::TopupSerialThrottled, [
-                        'retry_after' => $retryAfter,
-                    ]),
-                    429,
-                    $response->headers->all(),
-                );
-            }
 
             $isStorageUrl = $request->is('storage/*') || str_contains($request->path(), 'storage/');
 
@@ -105,9 +115,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return Inertia::render('Errors/NotFound')->toResponse($request)->setStatusCode(404);
             }
 
-            $coded = ApiFrameworkErrorResponse::decorate($response, $exception, $request);
-
-            return $coded ?? $response;
+            return ApiFrameworkErrorResponse::decorate($response, $exception, $request) ?? $response;
         });
     })
     ->create();

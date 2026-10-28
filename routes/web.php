@@ -777,5 +777,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
 });
 
 Route::fallback(function () {
+    if (request()->is('api/*')) {
+        abort(404);
+    }
+
     return Inertia::render('Errors/NotFound')->toResponse(request())->setStatusCode(404);
 });

@@ -357,7 +357,9 @@ class ServiceRequestApiTest extends TestCase
 
         $this->withToken($token)
             ->getJson('/api/failure-reports/'.$failureReport->id)
-            ->assertForbidden();
+            ->assertForbidden()
+            ->assertJsonPath('code', 'MSG-SYS-003')
+            ->assertJsonPath('level', 'error');
         $this->withToken($token)
             ->getJson('/api/change-plan-requests/'.$changePlanRequest->id)
             ->assertForbidden();
