@@ -145,17 +145,9 @@ final class ApiAuthenticationService
             RateLimiter::tooManyAttempts($accountKey, $accountMaxAttempts) ||
             RateLimiter::tooManyAttempts($ipKey, $ipMaxAttempts)
         ) {
-            throw new ApiMessageException(
-                MessageCode::AuthLoginTooManyAttempts,
-                429,
-                [
-                    'retry_after' => max(
-                        1,
-                        RateLimiter::availableIn($accountKey),
-                        RateLimiter::availableIn($ipKey),
-                    ),
-                ],
-            );
+            throw new ApiMessageException(MessageCode::AuthLoginTooManyAttempts, 429, [
+                'retry_after' => max(1, RateLimiter::availableIn($accountKey), RateLimiter::availableIn($ipKey)),
+            ]);
         }
 
         RateLimiter::hit($accountKey, $decaySeconds);
@@ -169,14 +161,19 @@ final class ApiAuthenticationService
             }
 
             if ($user->status === UserStatus::Deactivated) {
-                throw new ApiMessageException(MessageCode::AuthAccountDeactivated, 403);
+                throw new ApiMessageException(MessageCode::UserDeactivated, 403);
+            }
+
+            if ($user->status === UserStatus::Suspended) {
+                throw new ApiMessageException(MessageCode::UserSuspended, 403);
             }
 
             if ($user->status !== UserStatus::Active) {
                 throw new InvalidCredentialsException();
             }
 
-            $hasActiveSession = $user->tokens()
+            $hasActiveSession = $user
+                ->tokens()
                 ->where(fn($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
                 ->exists();
 

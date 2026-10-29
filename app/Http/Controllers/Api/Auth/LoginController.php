@@ -94,22 +94,25 @@ class LoginController extends Controller
                 ->where(fn($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
                 ->exists() ?? false;
 
-        if ($user !== null && $user->status !== UserStatus::Active) {
+        if ($user !== null && $user->status == UserStatus::Deactivated) {
             return response()->json(
-                [
-                    'code' => MessageCode::AuthAccountDeactivated->value,
-                    'account_status' => $user->status->value,
-                    'is_active' => false,
+                ApiMessage::attach(MessageCode::UserDeactivated, [
                     'show_alert' => $showAlert,
-                ],
+                ]),
+                403,
+            );
+        }
+        if ($user !== null && $user->status == UserStatus::Suspended) {
+            return response()->json(
+                ApiMessage::attach(MessageCode::UserSuspended, [
+                    'show_alert' => $showAlert,
+                ]),
                 403,
             );
         }
 
         return response()->json([
             'show_alert' => $showAlert,
-            'account_status' => $user?->status->value,
-            'is_active' => $user === null ? null : true,
         ]);
     }
 }

@@ -326,7 +326,12 @@ class ApiAuthenticationTest extends TestCase
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
             'password' => '123456',
-        ])->assertUnprocessable();
+        ])->assertForbidden()
+            ->assertExactJson([
+                'code' => 'MSG-USER-004',
+                'level' => 'error',
+                'message' => 'Account suspended successfully.',
+            ]);
     }
 
     public function test_deactivated_user_gets_password_step_even_when_password_login_is_disabled(): void
@@ -362,9 +367,9 @@ class ApiAuthenticationTest extends TestCase
             'password' => '123456',
         ])->assertForbidden()
             ->assertExactJson([
-                'code' => 'MSG-AUTH-020',
-                'level' => 'error',
-                'message' => 'This account has been deactivated.',
+                'code' => 'MSG-USER-003',
+                'level' => 'success',
+                'message' => 'Account deactivated successfully.',
             ]);
 
         $this->assertSame(UserStatus::Deactivated, $user->fresh()->status);

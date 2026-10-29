@@ -29,7 +29,6 @@ enum MessageCode: string
     case AuthSessionExpired = 'MSG-AUTH-017';
     case AuthTooManyRequests = 'MSG-AUTH-018';
     case AuthLoggedOut = 'MSG-AUTH-019';
-    case AuthAccountDeactivated = 'MSG-AUTH-020';
 
     case ApiNetworkFailed = 'MSG-API-001';
     case ApiTimeout = 'MSG-API-002';
@@ -88,6 +87,7 @@ enum MessageCode: string
 
     case UserPasswordIncorrect = 'MSG-USER-002';
     case UserDeactivated = 'MSG-USER-003';
+    case UserSuspended = 'MSG-USER-004';
 
     case FtthWalletNotFound = 'MSG-FTTH-001';
     case FtthWalletInactive = 'MSG-FTTH-002';
@@ -171,7 +171,6 @@ enum MessageCode: string
             self::AuthVerificationTokenInvalid => 'The verification token is invalid or expired.',
             self::AuthLoginTooManyAttempts => 'Too many login attempts',
             self::AuthAlreadySignedIn => 'This account is already signed in on another device.',
-            self::AuthAccountDeactivated => 'This account has been deactivated.',
             self::AuthRegistrationInUse => 'The registration details are already in use.',
             self::AuthAccountRestricted => 'This account is restricted and cannot be re-registered.',
             self::AuthOtpVerifyInProgress => 'Verification is already in progress.',
@@ -230,6 +229,7 @@ enum MessageCode: string
             self::DevRemoved => 'Device token removed.',
             self::UserPasswordIncorrect => 'The provided password is incorrect.',
             self::UserDeactivated => 'Account deactivated successfully.',
+            self::UserSuspended => 'Account suspended successfully.',
             self::FtthWalletNotFound => 'Wallet not found.',
             self::FtthWalletInactive => 'Wallet is not active.',
             self::FtthInsufficientBalance => 'Insufficient wallet balance.',

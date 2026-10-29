@@ -28,8 +28,6 @@ class SessionCheckTest extends TestCase
             ->assertOk()
             ->assertExactJson([
                 'show_alert' => true,
-                'account_status' => 'active',
-                'is_active' => true,
             ]);
     }
 
@@ -60,8 +58,6 @@ class SessionCheckTest extends TestCase
             ->assertOk()
             ->assertExactJson([
                 'show_alert' => false,
-                'account_status' => null,
-                'is_active' => null,
             ]);
     }
 
@@ -75,14 +71,14 @@ class SessionCheckTest extends TestCase
         $this->postJson('/api/auth/session/check', ['phone' => '95922345678'])
             ->assertForbidden()
             ->assertExactJson([
-                'code' => 'MSG-AUTH-020',
-                'account_status' => 'deactivated',
-                'is_active' => false,
+                'code' => 'MSG-USER-003',
+                'level' => 'success',
+                'message' => 'Account deactivated successfully.',
                 'show_alert' => false,
             ]);
     }
 
-    public function test_it_returns_the_inactive_account_code_for_a_suspended_account(): void
+    public function test_it_returns_the_suspended_account_code(): void
     {
         User::factory()->create([
             'phone' => '95922345678',
@@ -92,9 +88,9 @@ class SessionCheckTest extends TestCase
         $this->postJson('/api/auth/session/check', ['phone' => '95922345678'])
             ->assertForbidden()
             ->assertExactJson([
-                'code' => 'MSG-AUTH-020',
-                'account_status' => 'suspended',
-                'is_active' => false,
+                'code' => 'MSG-USER-004',
+                'level' => 'error',
+                'message' => 'Account suspended successfully.',
                 'show_alert' => false,
             ]);
     }
