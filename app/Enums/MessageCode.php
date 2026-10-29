@@ -87,6 +87,7 @@ enum MessageCode: string
 
     case UserPasswordIncorrect = 'MSG-USER-002';
     case UserDeactivated = 'MSG-USER-003';
+    case UserSuspended = 'MSG-USER-004';
 
     case FtthWalletNotFound = 'MSG-FTTH-001';
     case FtthWalletInactive = 'MSG-FTTH-002';
@@ -136,7 +137,8 @@ enum MessageCode: string
             self::ChatLive,
             self::ChatClosed,
             self::ChatSelectOption,
-            self::ChatWaitForJoin => 'warning',
+            self::ChatWaitForJoin
+                => 'warning',
             self::AuthLoggedOut,
             self::BbConnected,
             self::BbDisconnected,
@@ -150,7 +152,8 @@ enum MessageCode: string
             self::UserDeactivated,
             self::FtthPendingSlip,
             self::FtthPaidSlips,
-            self::FtthPaid => 'success',
+            self::FtthPaid
+                => 'success',
             default => 'error',
         };
     }
@@ -214,7 +217,8 @@ enum MessageCode: string
             self::PkgAlreadyProcessed => 'Package purchase already processed.',
             self::PkgActivationRefunded => 'Package activation failed. Wallet was refunded.',
             self::PkgProcessing => 'This package purchase is already being processed.',
-            self::PkgReconciliationPending => 'Package activation is awaiting provider reconciliation. The wallet debit remains on hold.',
+            self::PkgReconciliationPending
+                => 'Package activation is awaiting provider reconciliation. The wallet debit remains on hold.',
             self::PkgInsufficientBalance => 'Insufficient wallet balance.',
             self::PkgKeyUsed => 'This idempotency key was already used.',
             self::PkgKeyMismatch => 'This idempotency key was already used for a different package.',
@@ -225,6 +229,7 @@ enum MessageCode: string
             self::DevRemoved => 'Device token removed.',
             self::UserPasswordIncorrect => 'The provided password is incorrect.',
             self::UserDeactivated => 'Account deactivated successfully.',
+            self::UserSuspended => 'Account suspended successfully.',
             self::FtthWalletNotFound => 'Wallet not found.',
             self::FtthWalletInactive => 'Wallet is not active.',
             self::FtthInsufficientBalance => 'Insufficient wallet balance.',
@@ -248,7 +253,8 @@ enum MessageCode: string
             self::ChatLanguageInvalid => 'The language must be one of: en, my, zh.',
             self::ChatCustomersOnly => 'Only customers can use the chat API.',
             self::ChatForbidden => 'You do not have access to this conversation.',
-            self::ChatWaitingForAgent => 'Conversation is waiting for an agent. Chat flow options are no longer available.',
+            self::ChatWaitingForAgent
+                => 'Conversation is waiting for an agent. Chat flow options are no longer available.',
             self::ChatLive => 'Conversation is in live chat. Chat flow options are no longer available.',
             self::ChatClosed => 'Conversation is closed. Please start a new conversation.',
             self::ChatSelectOption => 'Please select a chat flow option. Free-text messages are not available yet.',

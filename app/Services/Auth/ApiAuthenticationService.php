@@ -21,7 +21,8 @@ use Illuminate\Support\Facades\RateLimiter;
  * requestOtp -> verifyOtp -> next_step=password -> login
  *                         -> next_step=register -> register
  *                         -> next_step=authenticated (password step disabled)
- * Deactivated accounts always receive the password step with account_status=deactivated.
+ * Deactivated accounts receive the password step and are rejected at login
+ * until an administrator reactivates them.
  */
 final class ApiAuthenticationService
 {
@@ -144,17 +145,9 @@ final class ApiAuthenticationService
             RateLimiter::tooManyAttempts($accountKey, $accountMaxAttempts) ||
             RateLimiter::tooManyAttempts($ipKey, $ipMaxAttempts)
         ) {
-            throw new ApiMessageException(
-                MessageCode::AuthLoginTooManyAttempts,
-                429,
-                [
-                    'retry_after' => max(
-                        1,
-                        RateLimiter::availableIn($accountKey),
-                        RateLimiter::availableIn($ipKey),
-                    ),
-                ],
-            );
+            throw new ApiMessageException(MessageCode::AuthLoginTooManyAttempts, 429, [
+                'retry_after' => max(1, RateLimiter::availableIn($accountKey), RateLimiter::availableIn($ipKey)),
+            ]);
         }
 
         RateLimiter::hit($accountKey, $decaySeconds);
@@ -163,19 +156,24 @@ final class ApiAuthenticationService
         $session = DB::transaction(function () use ($phone, $password, $accountKey, $ipKey): array {
             $user = User::query()->where('phone', $phone)->lockForUpdate()->first();
 
-            if (
-                !$user ||
-                !in_array($user->status, [UserStatus::Active, UserStatus::Deactivated], true) ||
-                !Hash::check($password, $user->getAuthPassword())
-            ) {
+            if (!$user || !Hash::check($password, $user->getAuthPassword())) {
                 throw new InvalidCredentialsException();
             }
 
             if ($user->status === UserStatus::Deactivated) {
-                $user->update(['status' => UserStatus::Active]);
+                throw new ApiMessageException(MessageCode::UserDeactivated, 403);
             }
 
-            $hasActiveSession = $user->tokens()
+            if ($user->status === UserStatus::Suspended) {
+                throw new ApiMessageException(MessageCode::UserSuspended, 403);
+            }
+
+            if ($user->status !== UserStatus::Active) {
+                throw new InvalidCredentialsException();
+            }
+
+            $hasActiveSession = $user
+                ->tokens()
                 ->where(fn($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
                 ->exists();
 
