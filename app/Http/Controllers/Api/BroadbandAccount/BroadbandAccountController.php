@@ -19,7 +19,7 @@ class BroadbandAccountController extends Controller
     public function bindAccount(Request $request)
     {
         $request->validate([
-            'account_number' => ['required', 'string'],
+            'account_number' => ['required', 'string', 'max:25'],
             'service_type' => ['required', 'string'],
         ]);
 
@@ -108,9 +108,6 @@ class BroadbandAccountController extends Controller
     /** @param array<string, mixed> $extra */
     private function result(bool $success, MessageCode $code, int $status, array $extra = []): JsonResponse
     {
-        return response()->json(
-            ApiMessage::attach($code, array_merge(['success' => $success], $extra)),
-            $status,
-        );
+        return response()->json(ApiMessage::attach($code, array_merge(['success' => $success], $extra)), $status);
     }
 }
