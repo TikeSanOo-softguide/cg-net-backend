@@ -5,7 +5,7 @@ type Translate = (key: string, options?: Record<string, string | number>) => str
 export const PACKAGE_IMAGE_WIDTH = 260;
 export const PACKAGE_IMAGE_HEIGHT = 348;
 export const PACKAGE_IMAGE_MAX_SIZE_KB = 5120;
-export const PACKAGE_IMAGE_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+export const PACKAGE_IMAGE_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 function toDimensionMessage(t: Translate): string {
     const fallback = `Image must be ${PACKAGE_IMAGE_WIDTH} x ${PACKAGE_IMAGE_HEIGHT} pixels.`;

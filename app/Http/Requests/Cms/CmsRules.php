@@ -12,7 +12,12 @@ final class CmsRules
      */
     public static function image(bool $required): array
     {
-        return [$required ? 'required' : 'nullable', File::image()->max(5120)];
+        return [
+            $required ? 'required' : 'nullable',
+            File::image()
+                ->types(['jpeg', 'png', 'webp'])
+                ->max(5120),
+        ];
     }
 
     /**

@@ -135,7 +135,7 @@ class PasswordChangeSessionTest extends TestCase
                 'new_password_confirmation' => '123456',
             ])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors('current_password');
+            ->assertJsonPath('code', 'MSG-USER-002');
 
         $this->withToken($token)
             ->postJson('/api/change-password', [
