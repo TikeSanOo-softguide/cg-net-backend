@@ -24,8 +24,79 @@ class CgNetProductCatalog
      */
     public function products(): array
     {
+        return $this->fetchProducts('CGNETProductInfoListAPI');
+    }
+
+    /**
+     * @return list<array{
+     *     productID: string,
+     *     productName: string,
+     *     productPrice: float,
+     *     monthCycle: int,
+     *     monthCycleUnit: '月'|'天',
+     *     productLine: string,
+     *     productSpeed: string,
+     *     installationFee: float|null
+     * }>
+     */
+    public function productsForServiceType(string $serviceType): array
+    {
+        return $this->fetchProducts($this->commandForServiceType($serviceType));
+    }
+
+    public function commandForServiceType(string $serviceType): string
+    {
+        return match ($serviceType) {
+            'FTTH' => 'FTTHProductInfoListAPI',
+            'CG' => 'CGRouterProductInfoListAPI',
+            default => throw new \InvalidArgumentException('Unsupported installation service type.'),
+        };
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findForServiceType(string $serviceType, string $productId): ?array
+    {
+        foreach ($this->productsForServiceType($serviceType) as $product) {
+            if ($product['productID'] === $productId) {
+                return $product;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function find(string $productId): ?array
+    {
+        foreach ($this->products() as $product) {
+            if ($product['productID'] === $productId) {
+                return $product;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return list<array{
+     *     productID: string,
+     *     productName: string,
+     *     productPrice: float,
+     *     monthCycle: int,
+     *     monthCycleUnit: '月'|'天',
+     *     productLine: string,
+     *     productSpeed: string,
+     *     installationFee: float|null
+     * }>
+     */
+    private function fetchProducts(string $command): array
+    {
         try {
-            $response = $this->api->get('CGNETProductInfoListAPI');
+            $response = $this->api->get($command);
         } catch (ConnectionException $exception) {
             throw new RuntimeException('Unable to retrieve the CG-Net product catalog.', previous: $exception);
         }
@@ -65,20 +136,6 @@ class CgNetProductCatalog
         }
 
         return $products;
-    }
-
-    /**
-     * @return array<string, mixed>|null
-     */
-    public function find(string $productId): ?array
-    {
-        foreach ($this->products() as $product) {
-            if ($product['productID'] === $productId) {
-                return $product;
-            }
-        }
-
-        return null;
     }
 
     private function validProduct(mixed $product): bool

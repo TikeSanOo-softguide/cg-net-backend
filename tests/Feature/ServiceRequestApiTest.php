@@ -120,6 +120,94 @@ class ServiceRequestApiTest extends TestCase
         $this->assertSoftDeleted('installation_applications', ['id' => $application->id]);
     }
 
+    public function test_installation_products_come_from_walletapp_ftth_and_cg_commands(): void
+    {
+        config([
+            'services.cg_api.url' => 'https://provider.test/WalletApp/ServerCommand',
+            'services.cg_api.client_id' => 'provider-client',
+            'services.cg_api.client_secret' => 'provider-secret',
+        ]);
+        Http::fake([
+            'provider.test/WalletApp/ServerCommand/GetTokenAPI*' => Http::response([
+                'ErrCode' => 0,
+                'Message' => 'ok',
+                'token' => 'provider-access-token',
+            ]),
+            'provider.test/WalletApp/ServerCommand/FTTHProductInfoListAPI' => Http::response([
+                'ErrCode' => 0,
+                'Message' => 'ok',
+                'result' => [[
+                    'productID' => '249',
+                    'productName' => '办公移动网_100M_月',
+                    'productPrice' => 2000.0,
+                    'monthCycle' => 1,
+                    'monthCycleUnit' => '月',
+                    'productLine' => '移动网_办公',
+                    'productSpeed' => '100M',
+                    'installationFee' => '500',
+                ]],
+            ]),
+            'provider.test/WalletApp/ServerCommand/CGRouterProductInfoListAPI' => Http::response([
+                'ErrCode' => 0,
+                'Message' => 'ok',
+                'result' => [[
+                    'productID' => '310',
+                    'productName' => 'CG Router 50M',
+                    'productPrice' => 1500.0,
+                    'monthCycle' => 1,
+                    'monthCycleUnit' => '月',
+                    'productLine' => 'CG-Router',
+                    'productSpeed' => '50M',
+                    'installationFee' => 0,
+                ]],
+            ]),
+        ]);
+
+        $user = User::factory()->create();
+        $token = $user->createToken('service-requests')->plainTextToken;
+
+        $this->withToken($token)
+            ->getJson('/api/installation-application/products?service_type=FTTH')
+            ->assertOk()
+            ->assertJsonPath('data.0.productID', '249')
+            ->assertJsonPath('data.0.productLine', '移动网_办公');
+
+        $this->withToken($token)
+            ->getJson('/api/installation-application/products?service_type=CG')
+            ->assertOk()
+            ->assertJsonPath('data.0.productID', '310');
+    }
+
+    public function test_installation_products_endpoint_returns_message_code_when_catalog_unavailable(): void
+    {
+        config([
+            'services.cg_api.url' => 'https://provider.test/WalletApp/ServerCommand',
+            'services.cg_api.client_id' => 'provider-client',
+            'services.cg_api.client_secret' => 'provider-secret',
+        ]);
+        Http::fake([
+            'provider.test/WalletApp/ServerCommand/GetTokenAPI*' => Http::response([
+                'ErrCode' => 0,
+                'Message' => 'ok',
+                'token' => 'provider-access-token',
+            ]),
+            'provider.test/WalletApp/ServerCommand/FTTHProductInfoListAPI' => Http::response([
+                'ErrCode' => 100,
+                'Message' => 'provider boom',
+                'result' => [],
+            ]),
+        ]);
+
+        $user = User::factory()->create();
+        $token = $user->createToken('service-requests')->plainTextToken;
+
+        $this->withToken($token)
+            ->getJson('/api/installation-application/products?service_type=FTTH')
+            ->assertStatus(503)
+            ->assertJsonPath('code', 'MSG-PKG-003')
+            ->assertJsonMissing(['message' => 'provider boom']);
+    }
+
     public function test_customer_can_create_update_cancel_and_delete_a_relocation_request(): void
     {
         $user = User::factory()->create(['broadband_account_number' => 'CG62345678']);

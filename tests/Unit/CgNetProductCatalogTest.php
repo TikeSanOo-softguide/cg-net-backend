@@ -81,6 +81,55 @@ class CgNetProductCatalogTest extends TestCase
         Http::assertSentCount(3);
     }
 
+    public function test_it_fetches_ftth_and_cg_router_installation_catalogs(): void
+    {
+        $this->configureCgNet();
+        Http::fake([
+            'provider.test/WalletApp/ServerCommand/GetTokenAPI*' => $this->tokenResponse(),
+            'provider.test/WalletApp/ServerCommand/FTTHProductInfoListAPI' => Http::response([
+                'ErrCode' => 0,
+                'Message' => 'ok',
+                'result' => [[
+                    'productID' => '249',
+                    'productName' => '办公移动网_100M_月',
+                    'productPrice' => 2000.0,
+                    'monthCycle' => 1,
+                    'monthCycleUnit' => '月',
+                    'productLine' => '移动网_办公',
+                    'productSpeed' => '100M',
+                    'installationFee' => '500',
+                ]],
+            ]),
+            'provider.test/WalletApp/ServerCommand/CGRouterProductInfoListAPI' => Http::response([
+                'ErrCode' => 0,
+                'Message' => 'ok',
+                'result' => [[
+                    'productID' => '310',
+                    'productName' => 'CG Router 50M',
+                    'productPrice' => 1500.0,
+                    'monthCycle' => 1,
+                    'monthCycleUnit' => '月',
+                    'productLine' => 'CG-Router',
+                    'productSpeed' => '50M',
+                    'installationFee' => 0,
+                ]],
+            ]),
+        ]);
+
+        $catalog = app(CgNetProductCatalog::class);
+        $ftth = $catalog->productsForServiceType('FTTH');
+        $cg = $catalog->findForServiceType('CG', '310');
+
+        $this->assertSame('249', $ftth[0]['productID']);
+        $this->assertSame('办公移动网_100M_月', $ftth[0]['productName']);
+        $this->assertSame(500.0, $ftth[0]['installationFee']);
+        $this->assertSame('310', $cg['productID']);
+        $this->assertSame('FTTHProductInfoListAPI', $catalog->commandForServiceType('FTTH'));
+        $this->assertSame('CGRouterProductInfoListAPI', $catalog->commandForServiceType('CG'));
+        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://provider.test/WalletApp/ServerCommand/FTTHProductInfoListAPI');
+        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://provider.test/WalletApp/ServerCommand/CGRouterProductInfoListAPI');
+    }
+
     public function test_it_rejects_invalid_or_unsuccessful_catalog_responses(): void
     {
         $this->configureCgNet();

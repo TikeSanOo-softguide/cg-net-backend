@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\ServiceRequest;
 
+use App\Enums\MessageCode;
 use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ServiceRequest\CreateBroadbandApplicationRequest;
@@ -9,17 +10,48 @@ use App\Http\Requests\ServiceRequest\UpdateBroadbandApplicationRequest;
 use App\Http\Resources\BroadbandApplication\BroadbandApplicationResource;
 use App\Events\ServiceRequestSubmitted;
 use App\Models\InstallationApplication;
+use App\Services\Package\CgNetProductCatalog;
 use App\Services\Telegram\TelegramService;
+use App\Support\ApiMessage;
 use App\Support\StoresPublicImage;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use RuntimeException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class BroadbandApplicationRequestController extends Controller
 {
-    public function __construct(private TelegramService $telegram) {}
+    public function __construct(
+        private TelegramService $telegram,
+        private CgNetProductCatalog $catalog,
+    ) {}
+
+    public function products(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'service_type' => ['required', 'string', 'in:FTTH,CG'],
+        ]);
+
+        try {
+            $products = $this->catalog->productsForServiceType($validated['service_type']);
+        } catch (RuntimeException $exception) {
+            Log::warning('CG-Net installation catalog unavailable.', [
+                'service_type' => $validated['service_type'],
+                'error' => $exception->getMessage(),
+            ]);
+
+            return response()->json(
+                ApiMessage::attach(MessageCode::PkgCatalogUnavailable),
+                503,
+            );
+        }
+
+        return response()->json(['data' => $products]);
+    }
 
     public function index(Request $request): AnonymousResourceCollection
     {

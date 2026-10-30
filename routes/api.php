@@ -170,6 +170,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
     Route::prefix('installation-application')->group(function () {
         Route::get('/', [BroadbandApplicationRequestController::class, 'index']);
+        Route::get('/products', [BroadbandApplicationRequestController::class, 'products']);
         Route::post('/create', [BroadbandApplicationRequestController::class, 'store']);
         Route::get('/{installationApplication}', [BroadbandApplicationRequestController::class, 'show']);
         Route::put('/{installationApplication}', [BroadbandApplicationRequestController::class, 'update']);
