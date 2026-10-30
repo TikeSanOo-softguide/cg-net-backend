@@ -20,6 +20,11 @@ class ChangePasswordController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
+
+        if (!Hash::check($request->validated('current_password'), $user->getAuthPassword())) {
+            throw new ApiMessageException(MessageCode::UserPasswordIncorrect);
+        }
+
         $challenge = $otp->request($user->phone, (string) $request->ip());
 
         Cache::store(config('otp.cache_store', 'redis'))->put(
@@ -49,9 +54,9 @@ class ChangePasswordController extends Controller
             $cache = Cache::store(config('otp.cache_store', 'redis'));
             $pendingPassword = $cache->pull($this->pendingPasswordKey($challengeId));
             if (
-                ! is_array($pendingPassword) ||
+                !is_array($pendingPassword) ||
                 (int) ($pendingPassword['user_id'] ?? 0) !== $user->id ||
-                ! is_string($pendingPassword['password'] ?? null)
+                !is_string($pendingPassword['password'] ?? null)
             ) {
                 throw new ApiMessageException(MessageCode::PwdChangeExpired);
             }
