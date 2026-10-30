@@ -20,6 +20,82 @@ class CustomerProfileApiTest extends TestCase
         $this->getJson('/api/customer/profile')->assertUnauthorized();
     }
 
+    public function test_customer_profile_returns_broadband_account_details(): void
+    {
+        $user = User::factory()->create(['broadband_account_number' => 'CG12345678']);
+        config([
+            'services.cg_api.url' => 'https://provider.test/WalletApp/ServerCommand',
+            'services.cg_api.client_id' => 'profile-client',
+            'services.cg_api.client_secret' => 'profile-secret',
+        ]);
+        Http::fake([
+            'provider.test/WalletApp/ServerCommand/GetTokenAPI*' => Http::response([
+                'ErrCode' => 0,
+                'token' => 'profile-test-token',
+            ]),
+            'provider.test/WalletApp/ServerCommand/AccountInfoAPI*' => Http::response([
+                'ErrCode' => 0,
+                'Data' => [
+                    'account' => '12345678',
+                    'name' => 'Profile Customer',
+                    'mobile' => '95912345678',
+                ],
+            ]),
+        ]);
+
+        $this->withToken($user->createToken('profile')->plainTextToken)
+            ->getJson('/api/customer/profile')
+            ->assertOk()
+            ->assertJsonPath('data.account.account', '12345678')
+            ->assertJsonPath('data.account.name', 'Profile Customer')
+            ->assertJsonPath('data.account.mobile', '95912345678')
+            ->assertJsonPath('data.broadbandAccount.account_number', '12345678')
+            ->assertJsonPath('data.broadbandAccount.service_type', 'CG');
+
+        Http::assertSentCount(2);
+    }
+
+    public function test_customer_profile_succeeds_when_account_number_has_an_unsupported_prefix(): void
+    {
+        $user = User::factory()->create(['broadband_account_number' => 'C12345678']);
+        Http::fake();
+
+        $this->withToken($user->createToken('profile')->plainTextToken)
+            ->getJson('/api/customer/profile')
+            ->assertOk()
+            ->assertJsonPath('data.broadbandAccount.account_number', 'C12345678')
+            ->assertJsonPath('data.broadbandAccount.service_type', null);
+
+        Http::assertNothingSent();
+    }
+
+    public function test_customer_profile_succeeds_when_broadband_account_lookup_fails(): void
+    {
+        $user = User::factory()->create(['broadband_account_number' => 'CG12345678']);
+        config([
+            'services.cg_api.url' => 'https://provider.test/WalletApp/ServerCommand',
+            'services.cg_api.client_id' => 'profile-client',
+            'services.cg_api.client_secret' => 'profile-secret',
+        ]);
+        Http::fake([
+            'provider.test/WalletApp/ServerCommand/GetTokenAPI*' => Http::response([
+                'ErrCode' => 0,
+                'token' => 'profile-test-token',
+            ]),
+            'provider.test/WalletApp/ServerCommand/AccountInfoAPI*' => Http::response([
+                'ErrCode' => 1,
+                'Message' => 'Account lookup failed',
+            ]),
+        ]);
+
+        $this->withToken($user->createToken('profile')->plainTextToken)
+            ->getJson('/api/customer/profile')
+            ->assertOk()
+            ->assertJsonPath('data.account', null)
+            ->assertJsonPath('data.broadbandAccount.account_number', '12345678')
+            ->assertJsonPath('data.broadbandAccount.service_type', 'CG');
+    }
+
     public function test_customer_can_switch_and_retrieve_their_saved_language(): void
     {
         $user = User::factory()->create(['lang' => 'en']);
@@ -175,7 +251,7 @@ class CustomerProfileApiTest extends TestCase
         ]);
     }
 
-    public function test_customer_can_get_only_their_profile_balance_broadband_and_package_credentials(): void
+    public function test_customer_can_get_their_profile_balance_broadband_and_active_packages(): void
     {
         $user = User::factory()->create([
             'phone' => '95912345678',
@@ -215,7 +291,7 @@ class CustomerProfileApiTest extends TestCase
             'provider.test/WalletApp/ServerCommand/AccountInfoAPI*' => Http::response([
                 'ErrCode' => 0,
                 'Message' => 'ok',
-                'Data' => ['account' => '12345678', 'customer_name' => 'Profile Customer'],
+                'Data' => ['account' => '12345678', 'name' => 'Profile Customer'],
             ]),
         ]);
         config([
@@ -231,6 +307,10 @@ class CustomerProfileApiTest extends TestCase
             ->assertJsonPath('data.user.name', $user->name)
             ->assertJsonPath('data.user.phone', '95912345678')
             ->assertJsonPath('data.user.broadband_account_number', 'CG12345678')
+            ->assertJsonPath('data.account.account', '12345678')
+            ->assertJsonPath('data.account.name', 'Profile Customer')
+            ->assertJsonPath('data.broadbandAccount.account_number', '12345678')
+            ->assertJsonPath('data.broadbandAccount.service_type', 'CG')
             ->assertJsonPath('data.wallet.balance', 12500)
             ->assertJsonCount(2, 'data.packages')
             ->assertJsonPath('data.packages.0.id', $customerPackage->id)
@@ -241,10 +321,12 @@ class CustomerProfileApiTest extends TestCase
             ->assertJsonPath('data.packages.0.details.term.months', $package->term->months)
             ->assertHeader('Cache-Control', 'no-store, private')
             ->assertHeader('Pragma', 'no-cache');
-        $this->assertArrayNotHasKey('username', $response->json('data.packages.0'));
-        $this->assertArrayNotHasKey('password', $response->json('data.packages.0'));
         $response->assertJsonMissingPath('data.user.password');
         $response->assertJsonMissingPath('data.wallet.user');
+        $response->assertJsonMissingPath('data.account.customer_name');
+        $response->assertJsonMissingPath('data.packages.0.username');
+        $response->assertJsonMissingPath('data.packages.0.password');
+        Http::assertSentCount(2);
     }
 
     public function test_customer_profile_does_not_return_another_customers_package_credentials(): void
