@@ -3,14 +3,7 @@ import type { BannerFormValues } from '@/components/cms/banner/BannerForm';
 type Translate = (key: string) => string;
 
 export const BANNER_IMAGE_MAX_SIZE_KB = 5120;
-export const BANNER_IMAGE_ACCEPTED_TYPES = [
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/bmp',
-    'image/svg+xml',
-    'image/webp',
-];
+export const BANNER_IMAGE_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 const bannerImageFieldMessageMap = {
     image_url_en: 'image_en_required',

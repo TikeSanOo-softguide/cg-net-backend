@@ -5,14 +5,7 @@ type Translate = (key: string) => string;
 export const GALLERY_LABEL_MAX_LENGTH = 120;
 export const GALLERY_IMAGE_MAX_SIZE_KB = 5120;
 
-export const GALLERY_IMAGE_ACCEPTED_TYPES = [
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/bmp',
-    'image/svg+xml',
-    'image/webp',
-];
+export const GALLERY_IMAGE_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 type GalleryMode = 'create' | 'edit';
 
