@@ -20,6 +20,7 @@ use App\Models\User;
 use App\Models\Wallet;
 use App\Services\CgNetApiClient;
 use App\Services\Ledger\LedgerPoster;
+use App\Services\Package\BuyPackageService;
 use App\Services\Package\CgNetProductCatalog;
 use App\Services\PackageActivation\FakePackageActivationService;
 use App\Services\PackageActivation\PackageActivationServiceInterface;
@@ -426,6 +427,31 @@ class PackagePurchaseTest extends TestCase
         $this->assertSame(190000, $wallet->balance);
         $this->assertDatabaseCount('customer_packages', 1);
         $this->assertSame(1, $this->activation->calls);
+    }
+
+    public function test_another_user_cannot_reuse_an_idempotency_key(): void
+    {
+        $first = User::factory()->create();
+        $firstWallet = $this->wallet($first, 200000);
+        $second = User::factory()->create();
+        $secondWallet = $this->wallet($second, 200000);
+        $package = $this->makePackage(price: 10000, months: 6);
+        $service = app(BuyPackageService::class);
+        $productId = (string) $package->provider_product_id;
+
+        $firstResult = $service->buy($first->fresh(), $productId, 'pkg-shared-key1');
+        $this->assertSame(200, $firstResult['http_status']);
+
+        $secondResult = $service->buy($second->fresh(), $productId, 'pkg-shared-key1');
+        $this->assertSame(409, $secondResult['http_status']);
+        $this->assertSame('MSG-PKG-011', $secondResult['body']['code']);
+        $this->assertSame('This idempotency key was already used.', $secondResult['body']['message']);
+
+        $firstWallet->refresh();
+        $secondWallet->refresh();
+        $this->assertSame(190000, $firstWallet->balance);
+        $this->assertSame(200000, $secondWallet->balance);
+        $this->assertSame(1, LedgerTransaction::query()->where('idempotency_key', 'pkg-shared-key1')->count());
     }
 
     public function test_processing_purchase_is_not_debited_or_activated_again(): void

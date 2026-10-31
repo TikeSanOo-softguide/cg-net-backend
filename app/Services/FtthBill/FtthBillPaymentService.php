@@ -57,21 +57,26 @@ class FtthBillPaymentService
             return $this->coded(403, MessageCode::FtthWalletInactive);
         }
 
+        $accountNumber = trim($accountNumber);
+
+        if ($accountNumber === '') {
+            return $this->accountMissing();
+        }
+
         $existing = LedgerTransaction::query()
+            ->with('billPayment')
             ->where('wallet_id', $wallet->id)
             ->where('idempotency_key', $idempotencyKey)
             ->first();
 
         if ($existing) {
-            return $this->existingResponse($existing);
+            return $this->existingResponse($existing, $accountNumber);
         }
 
         try {
             $amount = $this->billing->lookupBillAmount($accountNumber);
-        } catch (RuntimeException $exception) {
-            throw ValidationException::withMessages([
-                'broadband_account_number' => [$exception->getMessage()],
-            ]);
+        } catch (RuntimeException) {
+            return $this->accountMissing();
         }
 
         if ($wallet->balance < $amount) {
@@ -94,11 +99,12 @@ class FtthBillPaymentService
             );
         } catch (UniqueConstraintViolationException) {
             $existing = LedgerTransaction::query()
+                ->with('billPayment')
                 ->where('wallet_id', $wallet->id)
                 ->where('idempotency_key', $idempotencyKey)
                 ->firstOrFail();
 
-            return $this->existingResponse($existing);
+            return $this->existingResponse($existing, $accountNumber);
         } catch (ValidationException $exception) {
             throw $exception;
         }
@@ -316,6 +322,7 @@ class FtthBillPaymentService
                 actorId: $user->id,
                 ipAddress: $ipAddress,
                 userAgent: $userAgent,
+                note: 'FTTH bill '.$accountNumber,
             );
 
             BillPayment::query()->create([
@@ -606,8 +613,12 @@ class FtthBillPaymentService
     /**
      * @return array{http_status: int, body: array<string, mixed>}
      */
-    protected function existingResponse(LedgerTransaction $existing): array
+    protected function existingResponse(LedgerTransaction $existing, ?string $accountNumber = null): array
     {
+        if ($accountNumber !== null && ! $this->replayMatchesAccount($existing, $accountNumber)) {
+            return $this->coded(409, MessageCode::FtthCannotReplay);
+        }
+
         $status = $existing->status;
 
         if ($existing->type === LedgerTransactionType::FtthBill && $status === LedgerTransactionStatus::Completed) {
@@ -666,14 +677,29 @@ class FtthBillPaymentService
         ]);
     }
 
+    protected function replayMatchesAccount(LedgerTransaction $existing, string $accountNumber): bool
+    {
+        $stored = $existing->billPayment?->broadband_account_number;
+
+        if (! is_string($stored) || trim($stored) === '') {
+            return true;
+        }
+
+        return trim($stored) === trim($accountNumber);
+    }
+
     /**
-     * @param  array<string, mixed>  $body
      * @return array{http_status: int, body: array<string, mixed>}
      */
-    /**
-     * @param  array<string, mixed>  $body
-     * @return array{http_status: int, body: array<string, mixed>}
-     */
+    protected function accountMissing(): array
+    {
+        return $this->coded(422, MessageCode::FtthAccountMissing, [
+            'errors' => [
+                'broadband_account_number' => [MessageCode::FtthAccountMissing->message()],
+            ],
+        ]);
+    }
+
     protected function coded(int $httpStatus, MessageCode $code, array $body = []): array
     {
         $success = $body['success'] ?? ($httpStatus >= 200 && $httpStatus < 300);

@@ -521,7 +521,7 @@ class BuyPackageService
             ->first();
 
         if (! $existing || (int) $existing->wallet_id !== (int) $wallet->id) {
-            return $this->conflict('This idempotency key was already used.');
+            return $this->coded(409, MessageCode::PkgKeyUsed);
         }
 
         return $this->existingResponse($existing, $productId, $wallet, $user);

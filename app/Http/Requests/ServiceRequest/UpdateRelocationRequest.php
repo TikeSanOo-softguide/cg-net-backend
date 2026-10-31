@@ -30,7 +30,10 @@ class UpdateRelocationRequest extends FormRequest
             'preferred_date' => ['nullable', 'date'],
             'phone' => ['required', 'string', 'max:16'],
             'details' => ['nullable', 'string', 'max:5000'],
-            'status' => ['nullable', Rule::enum(RequestStatus::class)],
+            'status' => ['nullable', Rule::in([
+                RequestStatus::UnderReview->value,
+                RequestStatus::Cancelled->value,
+            ])],
         ];
     }
 }

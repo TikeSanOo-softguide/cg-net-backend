@@ -29,7 +29,10 @@ class UpdateBroadbandApplicationRequest extends FormRequest
             'note' => ['nullable', 'string', 'max:5000'],
             'photos' => ['required', 'array', 'size:2'],
             'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'status' => ['nullable',  Rule::enum(RequestStatus::class)],
+            'status' => ['nullable', Rule::in([
+                RequestStatus::UnderReview->value,
+                RequestStatus::Cancelled->value,
+            ])],
         ];
     }
 }

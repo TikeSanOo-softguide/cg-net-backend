@@ -101,6 +101,10 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinutes(30, 5)->by((string) ($request->user()?->getAuthIdentifier() ?: $request->ip()));
         });
 
+        RateLimiter::for('ftth-bill-pay', function (Request $request) {
+            return Limit::perMinute(10)->by((string) ($request->user()?->getAuthIdentifier() ?: $request->ip()));
+        });
+
         RateLimiter::for('top-up-card-generation', function (Request $request) {
             $maxAttempts = max(1, (int) config('top_up_cards.rate_limit_per_minute', 5));
 

@@ -15,7 +15,7 @@ class PayFtthBillRequest extends FormRequest
     {
         return [
             'broadband_account_number' => ['required', 'string', 'max:32'],
-            'idempotency_key' => ['required', 'string', 'min:8', 'max:100'],
+            'idempotency_key' => ['required', 'string', 'min:8', 'max:93', 'not_regex:/^refund:/i'],
         ];
     }
 }

@@ -401,9 +401,20 @@ class ServiceRequestApiTest extends TestCase
                 'new_password' => 'another-secret',
                 'status' => 'approved',
             ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['status']);
+        $this->assertSame('under_review', $changePasswordRequest->refresh()->status->value);
+
+        $this->withToken($token)
+            ->putJson('/api/change-password-requests/'.$changePasswordRequest->id, [
+                ...$requestData,
+                'new_wifi_name' => 'NewWifi',
+                'new_password' => 'another-secret',
+                'status' => 'under_review',
+            ])
             ->assertOk()
             ->assertJsonPath('data.new_wifi_name', 'NewWifi')
-            ->assertJsonPath('data.status', 'approved');
+            ->assertJsonPath('data.status', 'under_review');
 
         $this->withToken($token)
             ->deleteJson('/api/change-password-requests/'.$changePasswordRequest->id)
