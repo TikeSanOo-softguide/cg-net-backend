@@ -29,7 +29,7 @@ class UpdateChangePlanRequest extends FormRequest
             'preferred_date' => ['required', 'date'],
             'contact_name' => ['required', 'string', 'max:255'],
             'contact_phone' => ['required', 'string', 'max:16'],
-            'note' => ['nullable', 'string'],
+            'note' => ['nullable', 'string', 'max:5000'],
         ];
     }
 }

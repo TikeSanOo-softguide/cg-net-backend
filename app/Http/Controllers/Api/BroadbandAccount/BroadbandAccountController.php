@@ -20,7 +20,7 @@ class BroadbandAccountController extends Controller
     {
         $request->validate([
             'account_number' => ['required', 'string', 'max:25'],
-            'service_type' => ['required', 'string'],
+            'service_type' => ['required', 'string', 'in:FTTH,CG'],
         ]);
 
         try {

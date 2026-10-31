@@ -35,8 +35,8 @@ class CreateChangePasswordRequest extends CreateServiceRequest
                 'max:32',
                 Rule::exists('users', 'broadband_account_number')->where('id', $this->user()->id),
             ],
-            'new_wifi_name' => ['nullable', 'string', 'required_without:new_password'],
-            'new_password' => ['nullable', 'string', 'required_without:new_wifi_name'],
+            'new_wifi_name' => ['nullable', 'string', 'max:255', 'required_without:new_password'],
+            'new_password' => ['nullable', 'string', 'max:255', 'required_without:new_wifi_name'],
             'contact_name' => ['required', 'string', 'max:255'],
             'contact_phone' => ['required', 'string', 'max:255'],
         ];

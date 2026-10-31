@@ -37,7 +37,7 @@ class UpdateFailureReport extends FormRequest
             'contact_name' => ['required', 'string', 'max:255'],
             'contact_phone' => ['required', 'string', 'max:16'],
             'photos' => ['nullable', 'array', 'size:3'],
-            'photos.*' => ['required', 'image', 'max:5120'],
+            'photos.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'status' => ['nullable', Rule::in([
                 RequestStatus::UnderReview->value,
                 RequestStatus::Cancelled->value,

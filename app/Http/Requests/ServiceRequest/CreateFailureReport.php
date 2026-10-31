@@ -3,6 +3,7 @@
 namespace App\Http\Requests\ServiceRequest;
 
 use App\Enums\FailureType;
+use App\Enums\RequestStatus;
 use App\Models\FailureReport;
 use Illuminate\Validation\Rule;
 
@@ -39,9 +40,12 @@ class CreateFailureReport extends CreateServiceRequest
             'description' => ['required', 'string', 'max:5000'],
             'contact_name' => ['required', 'string', 'max:255'],
             'contact_phone' => ['required', 'string', 'max:16'],
-            'status' => ['nullable', 'string', 'max:255'],
+            'status' => ['nullable', 'string', 'max:16', Rule::in([
+                RequestStatus::UnderReview->value,
+                RequestStatus::Cancelled->value,
+            ])],
             'photos' => ['required', 'array', 'size:3'],
-            'photos.*' => ['required', 'image', 'max:5120'],
+            'photos.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ];
     }
 }

@@ -478,4 +478,49 @@ class ServiceRequestApiTest extends TestCase
             ->getJson('/api/installation-application/'.$broadbandApplication->id)
             ->assertForbidden();
     }
+
+    public function test_failure_report_create_rejects_an_approved_status(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->create(['broadband_account_number' => 'CG62345679']);
+        $token = $user->createToken('service-requests')->plainTextToken;
+
+        $this->withToken($token)
+            ->post('/api/failure-reports/create', [
+                'broadband_account_number' => $user->broadband_account_number,
+                'failure_type' => FailureType::NoInternet->value,
+                'description' => 'The connection has been unavailable since this morning.',
+                'contact_name' => 'Test Customer',
+                'contact_phone' => '95912345678',
+                'status' => 'approved',
+                'photos' => [
+                    UploadedFile::fake()->image('router-1.jpg'),
+                    UploadedFile::fake()->image('router-2.jpg'),
+                    UploadedFile::fake()->image('router-3.jpg'),
+                ],
+            ], ['Accept' => 'application/json'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('status');
+
+        $this->assertDatabaseCount('failure_reports', 0);
+    }
+
+    public function test_change_password_rejects_a_wifi_name_longer_than_the_column(): void
+    {
+        $user = User::factory()->create(['broadband_account_number' => 'CG72345678']);
+        $token = $user->createToken('service-requests')->plainTextToken;
+
+        $this->withToken($token)
+            ->postJson('/api/change-password-requests/create', [
+                'user_id' => $user->id,
+                'broadband_account_number' => $user->broadband_account_number,
+                'new_wifi_name' => str_repeat('a', 256),
+                'contact_name' => 'Test Customer',
+                'contact_phone' => '95912345678',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('new_wifi_name');
+
+        $this->assertDatabaseCount('change_password_requests', 0);
+    }
 }
