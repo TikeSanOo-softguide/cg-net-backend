@@ -18,6 +18,27 @@ class UpdateFailureReport extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $stored = $this->user()?->broadband_account_number;
+        if (! is_string($stored) || $stored === '') {
+            return;
+        }
+
+        $given = trim((string) $this->input('broadband_account_number', ''));
+        if ($given === '' || $given === $stored) {
+            return;
+        }
+
+        foreach (['FTTH', 'CG'] as $prefix) {
+            if (str_starts_with($stored, $prefix) && substr($stored, strlen($prefix)) === $given) {
+                $this->merge(['broadband_account_number' => $stored]);
+
+                return;
+            }
+        }
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *
