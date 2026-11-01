@@ -5,10 +5,8 @@ namespace Database\Seeders;
 use App\Enums\CustomerPackageStatus;
 use App\Enums\RequestStatus;
 use App\Models\Admin;
-use App\Models\Area;
 use App\Models\ChangePasswordRequest;
 use App\Models\ChangePlanRequest;
-use App\Models\InstallationApplication;
 use App\Models\Package;
 use App\Models\RelocationRequest;
 use App\Models\User;
@@ -31,51 +29,25 @@ class ServiceRequestSeeder extends Seeder
         $users = $userIds
             ? User::query()->whereIn('id', $userIds)->orderBy('id')->get()
             : User::query()->orderByDesc('id')->limit(20)->get()->sortBy('id')->values();
-        $areas = Area::query()->get();
         $packages = Package::query()->get();
 
-        if ($users->count() < 8 || $areas->isEmpty() || $packages->isEmpty() || !Admin::query()->exists()) {
+        if ($users->count() < 8 || $packages->isEmpty() || !Admin::query()->exists()) {
             throw new \RuntimeException(
-                'Run AdminSeeder, AreaSeeder, PackageSeeder, and CustomerSeeder before ServiceRequestSeeder.',
+                'Run AdminSeeder, PackageSeeder, and CustomerSeeder before ServiceRequestSeeder.',
             );
         }
 
-        $this->seedRequests($users, $areas, $packages);
+        $this->seedRequests($users, $packages);
     }
 
     /**
      * @param  \Illuminate\Database\Eloquent\Collection<int, User>  $users
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Area>  $areas
      * @param  Collection<int, Package>  $packages
      */
-    private function seedRequests($users, $areas, $packages): void
+    private function seedRequests($users, $packages): void
     {
         $sample = $users->take(8)->values();
         $admin = Admin::query()->first();
-        $areasByRegion = $areas->groupBy('region_id')->values();
-        $installationStatuses = [RequestStatus::UnderReview, RequestStatus::Approved, RequestStatus::Cancelled];
-        $today = now();
-
-        foreach (range(0, 29) as $index) {
-            $user = $sample[$index % $sample->count()];
-            $area = $areasByRegion[$index % $areasByRegion->count()]->random();
-            $createdAt = $today
-                ->copy()
-                ->subDays(29 - $index)
-                ->setTime(min(12, $today->hour), 0);
-
-            $application = InstallationApplication::factory()->create([
-                'user_id' => $user->id,
-                'area_id' => $area->id,
-                'package_id' => $packages->random()->id,
-                'status' => $installationStatuses[$index % count($installationStatuses)],
-            ]);
-
-            $application->forceFill([
-                'created_at' => $createdAt,
-                'updated_at' => $createdAt,
-            ])->save();
-        }
 
         $relocUser = $sample[6];
         RelocationRequest::factory()->create([

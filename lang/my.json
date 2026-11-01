@@ -108,9 +108,27 @@
         "name": "ရောင်နီဦး"
     },
     "broadband_application": {
+        "app_user": "အက်ပ် အသုံးပြုသူ",
+        "area": "မြို့နယ်",
+        "billing_period": "ဘေလ်ကာလ",
+        "cg_router": "CG Router",
+        "day": "ရက်",
+        "days": "ရက်",
         "identity": "အထောက်အထား",
+        "installation_contact": "တပ်ဆင်မည့်သူ",
+        "installation_fee": "တပ်ဆင်ခ",
         "location": "တည်နေရာ",
-        "search_placeholder": "Search by app username,phone"
+        "month": "လ",
+        "months": "လ",
+        "network_provider": "ကွန်ရက်",
+        "package": "ပက်ကေ့ချ်",
+        "package_price": "ပက်ကေ့ချ်ဈေး",
+        "region": "ခရိုင်",
+        "search_placeholder": "အက်ပ်အသုံးပြုသူ၊ ဖုန်း သို့မဟုတ် လက်မှတ်နံပါတ်ဖြင့် ရှာပါ",
+        "service_type": "အမျိုးအစား",
+        "speed": "အမြန်နှုန်း",
+        "state": "ပြည်နယ်",
+        "ticket_number": "လက်မှတ်နံပါတ်"
     },
     "change_password": {
         "approved_requests": "အတည်ပြုပြီး တောင်းဆိုချက်များ",

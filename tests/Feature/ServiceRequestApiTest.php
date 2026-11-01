@@ -57,31 +57,40 @@ class ServiceRequestApiTest extends TestCase
 
         $user = User::factory()->create();
         $token = $user->createToken('service-requests')->plainTextToken;
-        $package = Package::factory()->create();
         $area = Area::factory()->create();
         $applicationData = [
-            'package_id' => $package->id,
+            'name' => 'Test Customer',
+            'service_type' => 'FTTH',
             'area_id' => $area->id,
-            'id_type' => 'NRC',
-            'id_name' => 'Test Customer',
-            'id_number' => '12/ABC(N)123456',
-            'address' => 'Customer address',
-            'phone' => '95912345678',
-            'note' => 'Please install soon.',
-            'photos' => [
-                UploadedFile::fake()->image('id-front.jpg'),
-                UploadedFile::fake()->image('id-back.jpg'),
+            'package_detail' => [
+                'product_id' => '249',
+                'product_name' => '100M office',
+                'product_line' => 'FTTH',
+                'product_speed' => '100M',
+                'product_price' => 2000,
+                'installation_fee' => 500,
+                'month_cycle' => 1,
+                'month_cycle_unit' => '月',
             ],
+            'address' => 'Customer address',
+            'phone' => '09922345678',
+            'note' => 'Please install soon.',
         ];
 
         $response = $this->withToken($token)
             ->post('/api/installation-application/create', $applicationData, ['Accept' => 'application/json'])
             ->assertCreated()
+            ->assertJsonPath('code', 'MSG-REQ-002')
+            ->assertJsonPath('level', 'success')
             ->assertJsonPath('data.user_id', $user->id)
-            ->assertJsonPath('data.package_id', $package->id)
+            ->assertJsonPath('data.name', 'Test Customer')
+            ->assertJsonPath('data.service_type', 'FTTH')
+            ->assertJsonPath('data.ticket_number', 'INT'.now()->format('md').'0001')
+            ->assertJsonPath('data.package_detail.product_id', '249')
             ->assertJsonPath('data.area_id', $area->id)
+            ->assertJsonPath('data.phone', '959922345678')
             ->assertJsonPath('data.status', 'under_review')
-            ->assertJsonCount(2, 'data.photos');
+            ->assertJsonMissingPath('data.photos');
         $application = InstallationApplication::query()->findOrFail($response->json('data.id'));
 
         $this->withToken($token)
@@ -96,21 +105,21 @@ class ServiceRequestApiTest extends TestCase
         $this->withToken($token)
             ->put('/api/installation-application/'.$application->id, [
                 ...$applicationData,
-                'id_name' => 'Updated Customer',
+                'name' => 'Updated Customer',
                 'address' => 'Updated customer address',
-                'photos' => [
-                    UploadedFile::fake()->image('updated-front.jpg'),
-                    UploadedFile::fake()->image('updated-back.jpg'),
-                ],
             ], ['Accept' => 'application/json'])
             ->assertOk()
-            ->assertJsonPath('data.id_name', 'Updated Customer')
+            ->assertJsonPath('code', 'MSG-REQ-003')
+            ->assertJsonPath('level', 'success')
+            ->assertJsonPath('data.name', 'Updated Customer')
             ->assertJsonPath('data.address', 'Updated customer address')
-            ->assertJsonCount(2, 'data.photos');
+            ->assertJsonMissingPath('data.photos');
 
         $this->withToken($token)
             ->patchJson('/api/installation-application/'.$application->id.'/cancel')
             ->assertOk()
+            ->assertJsonPath('code', 'MSG-REQ-001')
+            ->assertJsonPath('level', 'success')
             ->assertJsonPath('data.status', 'cancelled');
 
         $this->withToken($token)
@@ -477,6 +486,89 @@ class ServiceRequestApiTest extends TestCase
         $this->withToken($token)
             ->getJson('/api/installation-application/'.$broadbandApplication->id)
             ->assertForbidden();
+    }
+
+    public function test_installation_update_ignores_photo_metadata_and_keeps_the_stored_photos(): void
+    {
+        Storage::fake('public');
+        config([
+            'services.telegram.bot_token' => 'test-bot-token',
+            'services.telegram.chat_id' => 'test-chat-id',
+        ]);
+        Http::fake([
+            'https://api.telegram.org/*' => Http::response(['ok' => true], 200),
+        ]);
+
+        $user = User::factory()->create();
+        $token = $user->createToken('service-requests')->plainTextToken;
+        $area = Area::factory()->create();
+        $packageDetail = [
+            'product_id' => '249',
+            'product_name' => '100M office',
+            'product_line' => 'FTTH',
+            'product_speed' => '100M',
+            'product_price' => 2000,
+            'installation_fee' => 500,
+            'month_cycle' => 1,
+            'month_cycle_unit' => '月',
+        ];
+        $created = $this->withToken($token)
+            ->post('/api/installation-application/create', [
+                'name' => 'Test Customer',
+            'service_type' => 'FTTH',
+                'area_id' => $area->id,
+                'package_detail' => $packageDetail,
+                'address' => 'Customer address',
+                'phone' => '95922345678',
+                'note' => 'Please install soon.',
+            ], ['Accept' => 'application/json'])
+            ->assertCreated();
+
+        $this->withToken($token)
+            ->putJson('/api/installation-application/'.$created->json('data.id'), [
+                'name' => 'Edited Without New Photos',
+                'service_type' => 'FTTH',
+                'area_id' => $area->id,
+                'package_detail' => $packageDetail,
+                'address' => 'Customer address',
+                'phone' => '95922345678',
+                'note' => 'Please install soon.',
+                'status' => 'under_review',
+                'photos' => [
+                    ['image_url' => 'https://example.test/front.jpg'],
+                    ['image_url' => 'https://example.test/back.jpg'],
+                ],
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.name', 'Edited Without New Photos')
+            ->assertJsonMissingPath('data.photos');
+    }
+
+    public function test_installation_application_rejects_an_unsupported_phone(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('service-requests')->plainTextToken;
+        $area = Area::factory()->create();
+
+        $this->withToken($token)
+            ->postJson('/api/installation-application/create', [
+                'name' => 'Test Customer',
+                'service_type' => 'FTTH',
+                'area_id' => $area->id,
+                'package_detail' => [
+                    'product_id' => '249',
+                    'product_name' => '100M office',
+                    'product_price' => 2000,
+                    'installation_fee' => 500,
+                    'month_cycle' => 1,
+                ],
+                'address' => 'Customer address',
+                'phone' => 'abc',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('phone');
+
+        $this->assertDatabaseCount('installation_applications', 0);
     }
 
     public function test_failure_report_create_rejects_an_approved_status(): void

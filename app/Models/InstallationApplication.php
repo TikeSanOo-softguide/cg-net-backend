@@ -12,11 +12,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[
     Fillable([
-        'package_id',
         'area_id',
-        'id_type',
-        'id_name',
-        'id_number',
+        'name',
+        'service_type',
+        'ticket_number',
+        'package_detail',
         'address',
         'phone',
         'note',
@@ -33,12 +33,8 @@ class InstallationApplication extends Model
     {
         return [
             'status' => RequestStatus::class,
+            'package_detail' => 'array',
         ];
-    }
-
-    public function package(): BelongsTo
-    {
-        return $this->belongsTo(Package::class);
     }
 
     public function area(): BelongsTo

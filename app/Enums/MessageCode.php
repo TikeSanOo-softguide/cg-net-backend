@@ -85,6 +85,10 @@ enum MessageCode: string
     case DevRegistered = 'MSG-DEV-001';
     case DevRemoved = 'MSG-DEV-002';
 
+    case ReqCancelled = 'MSG-REQ-001';
+    case ReqSubmitted = 'MSG-REQ-002';
+    case ReqUpdated = 'MSG-REQ-003';
+
     case UserPasswordIncorrect = 'MSG-USER-002';
     case UserDeactivated = 'MSG-USER-003';
     case UserSuspended = 'MSG-USER-004';
@@ -149,6 +153,9 @@ enum MessageCode: string
             self::PwdChanged,
             self::DevRegistered,
             self::DevRemoved,
+            self::ReqCancelled,
+            self::ReqSubmitted,
+            self::ReqUpdated,
             self::UserDeactivated,
             self::FtthPendingSlip,
             self::FtthPaidSlips,
@@ -211,7 +218,7 @@ enum MessageCode: string
             self::TopupSerialThrottled => 'Too many attempts. Please try again after 30 minutes.',
             self::PkgWalletNotFound => 'Wallet not found.',
             self::PkgWalletInactive => 'Wallet is not active.',
-            self::PkgCatalogUnavailable => 'Package catalog is temporarily unavailable. No payment was taken.',
+            self::PkgCatalogUnavailable => 'Package catalog is temporarily unavailable.',
             self::PkgCompletionPending => 'Activation is confirmed and purchase completion is pending reconciliation.',
             self::PkgPurchased => 'Package purchased successfully.',
             self::PkgAlreadyProcessed => 'Package purchase already processed.',
@@ -227,6 +234,9 @@ enum MessageCode: string
             self::PwdChangeExpired => 'The password change request is invalid or expired.',
             self::DevRegistered => 'Device token registered.',
             self::DevRemoved => 'Device token removed.',
+            self::ReqCancelled => 'Installation application cancelled.',
+            self::ReqSubmitted => 'Installation application submitted.',
+            self::ReqUpdated => 'Installation application updated.',
             self::UserPasswordIncorrect => 'The provided password is incorrect.',
             self::UserDeactivated => 'Account deactivated successfully.',
             self::UserSuspended => 'Account suspended successfully.',

@@ -25,13 +25,19 @@ type BroadbandApplication = {
     note: string | null;
     status: string;
     created_at: string;
-    id_type: string;
-    id_name: string;
-    id_number: string;
-    photos: {
-        id: number;
-        image_url: string;
-    }[];
+    name: string;
+    service_type: string | null;
+    ticket_number: string | null;
+    package_detail: {
+        product_id?: string;
+        product_name?: string;
+        product_line?: string;
+        product_speed?: string;
+        product_price?: number | string;
+        installation_fee?: number | string;
+        month_cycle?: number | string;
+        month_cycle_unit?: string;
+    } | null;
     user: {
         id: number;
         name: string;
@@ -55,24 +61,6 @@ type BroadbandApplication = {
             } | null;
         } | null;
     } | null;
-    package: {
-        id: number;
-        price?: string | number;
-        network?: {
-            id: number;
-            name_en: string;
-            name_zh: string;
-            name_my: string;
-        } | null;
-        speed?: {
-            id: number;
-            mbps: number;
-        } | null;
-        term?: {
-            id: number;
-            months: number;
-        } | null;
-    } | null;
     admin: {
         id: number;
         username: string;
@@ -82,6 +70,7 @@ type BroadbandApplication = {
 type Filters = {
     search: string;
     status: string;
+    service_type: string;
 };
 
 type Props = {
@@ -96,62 +85,14 @@ type Props = {
     };
 };
 
-function packageName(pkg: BroadbandApplication['package'], locale: string, t: (key: string) => string): string {
-    if (!pkg) {
-        return 'N/A';
-    }
+function packageName(detail: BroadbandApplication['package_detail']): string {
+    const name = detail?.product_name?.trim();
 
-    const networkName =
-        pkg.network?.[`name_${locale}` as 'name_en' | 'name_zh' | 'name_my'] ??
-        pkg.network?.name_en ??
-        pkg.network?.name_my ??
-        pkg.network?.name_zh;
-
-    const parts = [
-        networkName,
-        pkg.speed ? `${pkg.speed.mbps} Mbps` : null,
-        pkg.term
-            ? `${pkg.term.months} ${pkg.term.months === 1 ? t('failure_report.month') : t('packages.months')}`
-            : null,
-    ].filter(Boolean);
-
-    return parts.length > 0 ? parts.join(' - ') : `Package #${pkg.id}`;
-}
-
-function areaName(area: BroadbandApplication['area'], locale: string): string {
-    if (!area) {
-        return 'N/A';
-    }
-
-    const getLocalizedName = (
-        item?: {
-            name_en?: string | null;
-            name_zh?: string | null;
-            name_my?: string | null;
-        } | null,
-    ) => {
-        if (!item) {
-            return null;
-        }
-
-        return (
-            item[`name_${locale}` as 'name_en' | 'name_zh' | 'name_my'] ??
-            item.name_en ??
-            item.name_my ??
-            item.name_zh ??
-            null
-        );
-    };
-
-    const parts = [getLocalizedName(area), getLocalizedName(area.region), getLocalizedName(area.region?.state)].filter(
-        Boolean,
-    );
-
-    return parts.length > 0 ? parts.join(' - ') : `Area #${area.id}`;
+    return name ? name : 'N/A';
 }
 
 export default function BroadbandApplicationIndex({ requests, filters, statuses, stats }: Props) {
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
     const can = useCan();
     const [search, setSearch] = useState(filters.search);
     const [selectedRequest, setSelectedRequest] = useState<BroadbandApplication | null>(null);
@@ -195,6 +136,7 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
             {
                 search: (next.search ?? filters.search) || undefined,
                 status: next.status ?? filters.status,
+                service_type: (next.service_type ?? filters.service_type) || undefined,
             },
             {
                 preserveState: true,
@@ -225,11 +167,31 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                     getRowId={(request) => String(request.id)}
                     search={search}
                     onSearchChange={onSearchChange}
-                    searchPlaceholder={t('customers.search_placeholder')}
+                    searchPlaceholder={t('broadband_application.search_placeholder')}
                     pagination={requests}
                     onView={(request) => setSelectedRequest(request)}
                     directActions
                     filters={
+                        <>
+                        <FormControl icon={WifiIcon} compact className="w-full shrink-0 sm:w-40">
+                            <Select
+                                value={filters.service_type || 'all'}
+                                onValueChange={(serviceType) =>
+                                    visit({
+                                        service_type: serviceType === 'all' ? '' : serviceType,
+                                    })
+                                }
+                            >
+                                <SelectTrigger className="w-full rounded-xl border-border/60 bg-background">
+                                    <SelectValue placeholder={t('broadband_application.service_type')} />
+                                </SelectTrigger>
+                                <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                    <SelectItem value="all">{t('common.all')}</SelectItem>
+                                    <SelectItem value="FTTH">FTTH</SelectItem>
+                                    <SelectItem value="CG">{t('broadband_application.cg_router')}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </FormControl>
                         <FormControl icon={WifiIcon} compact className="w-full shrink-0 sm:w-48">
                             <Select
                                 value={filters.status || 'all'}
@@ -253,32 +215,61 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                                 </SelectContent>
                             </Select>
                         </FormControl>
+                        </>
                     }
                     columns={[
                         {
                             id: 'customer',
-                            header: t('menu.customer_management'),
+                            header: t('broadband_application.app_user'),
                             mobile: 'title' as const,
                             cell: (request) => (
                                 <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-2.5">
                                     <div className="row-span-2">
-                                        <StaffListAvatar
-                                            username={(request.user?.name ?? request.id_name) || 'Customer'}
-                                        />
+                                        <StaffListAvatar username={request.user?.name || '—'} />
                                     </div>
                                     <span className="min-w-0 truncate font-medium">
-                                        {truncateText(request.user?.name ?? request.id_name, 20)}
+                                        {truncateText(request.user?.name || '—', 20)}
                                     </span>
 
                                     <p className="mt-1 truncate font-mono text-muted-foreground">
                                         {request.user?.phone
                                             ? formatPhoneInternational(request.user.phone)
-                                            : request.id_number}
+                                            : '—'}
                                     </p>
                                 </div>
                             ),
                             searchValue: (request) =>
-                                `${request.user?.name ?? ''} ${request.id_name} ${request.id_number} ${request.phone}`,
+                                `${request.user?.name ?? ''} ${request.user?.phone ?? ''}`,
+                        },
+                        {
+                            id: 'ticket_number',
+                            header: t('broadband_application.ticket_number'),
+                            mobile: 'subtitle' as const,
+                            cell: (request) => {
+                                const ticket = request.ticket_number?.trim();
+
+                                return ticket ? (
+                                    <span className="inline-flex max-w-full items-center rounded-md bg-primary/10 px-2 py-0.5 font-mono text-[11px] font-medium text-primary">
+                                        {ticket}
+                                    </span>
+                                ) : (
+                                    <span>—</span>
+                                );
+                            },
+                            searchValue: (request) => request.ticket_number ?? '',
+                        },
+                        {
+                            id: 'service_type',
+                            header: t('broadband_application.service_type'),
+                            mobile: 'meta' as const,
+                            cell: (request) => (
+                                <span>
+                                    {request.service_type === 'CG'
+                                        ? t('broadband_application.cg_router')
+                                        : request.service_type?.trim() || '—'}
+                                </span>
+                            ),
+                            searchValue: (request) => request.service_type ?? '',
                         },
                         {
                             id: 'package',
@@ -287,10 +278,10 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                             sortable: true,
                             cell: (request) => (
                                 <span className="inline-flex max-w-[260px] items-center gap-1.5">
-                                    <span>{truncateText(packageName(request.package, locale, t), 40)}</span>{' '}
+                                    <span>{truncateText(packageName(request.package_detail), 40)}</span>{' '}
                                 </span>
                             ),
-                            searchValue: (request) => packageName(request.package, locale, t),
+                            searchValue: (request) => packageName(request.package_detail),
                         },
                         {
                             id: 'address',
@@ -310,18 +301,6 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                                 </div>
                             ),
                             searchValue: (request) => request.phone,
-                        },
-                        {
-                            id: 'area',
-                            header: t('broadband_application.location'),
-                            mobile: 'meta' as const,
-                            sortable: true,
-                            cell: (request) => (
-                                <span className="inline-flex max-w-[260px] items-center gap-1.5">
-                                    <span> {truncateText(areaName(request.area, locale) ?? '—', 35)}</span>
-                                </span>
-                            ),
-                            searchValue: (request) => areaName(request.area, locale),
                         },
                         {
                             id: 'created_at',

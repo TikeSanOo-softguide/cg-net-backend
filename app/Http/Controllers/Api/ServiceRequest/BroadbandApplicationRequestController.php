@@ -13,7 +13,6 @@ use App\Models\InstallationApplication;
 use App\Services\Package\CgNetProductCatalog;
 use App\Services\Telegram\TelegramService;
 use App\Support\ApiMessage;
-use App\Support\StoresPublicImage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -56,7 +55,7 @@ class BroadbandApplicationRequestController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $applications = InstallationApplication::query()
-            ->with(['package.network', 'package.speed', 'package.term', 'area.region.state', 'photos'])
+            ->with(['area.region.state'])
             ->where('user_id', $request->user()->id)
             ->latest()
             ->get();
@@ -79,16 +78,11 @@ class BroadbandApplicationRequestController extends Controller
 
             $application = InstallationApplication::query()->create([
                 ...$validated,
+                'ticket_number' => $this->nextTicketNumber(),
                 'user_id' => $request->user()->id,
                 'status' => RequestStatus::UnderReview->value,
             ]);
             ServiceRequestSubmitted::dispatch('installation_application', $application->id);
-
-            foreach ($request->file('photos', []) as $photo) {
-                $application->photos()->create([
-                    'image_url' => StoresPublicImage::store($photo, 'service-request/installation-applications'),
-                ]);
-            }
 
             $this->logActivity($request, 'create_broadband_application', [
                 'broadband_application_id' => $application->id,
@@ -104,28 +98,26 @@ class BroadbandApplicationRequestController extends Controller
             'area:id,name_en,name_zh,name_my,region_id',
             'area.region:id,name_en,name_zh,name_my,state_id',
             'area.region.state:id,name_en,name_zh,name_my',
-            'package:id,network_id,speed_id,term_id',
-            'package.network:id,name_en,name_zh,name_my',
-            'package.speed:id,mbps',
-            'package.term:id,months',
         ]);
 
+        $detail = $application->package_detail ?? [];
         $message =
             "📡 Broadband Installation\n\n" .
             "🗓️ Date: {$application->updated_at->format('d M Y, h:i A')}\n" .
-            "👤 Customer: {$application->user->name}\n" .
-            "📞 Phone: {$application->user->phone}\n" .
+            "👤 Customer: {$application->name}\n" .
+            "📞 Phone: {$application->phone}\n" .
             "📍 Area: {$application->area->name_en}\n" .
             "🌐 Region: {$application->area->region->name_en}\n" .
-            "📦 Package: {$application->package->network->name_en}\n" .
-            "⚡ Speed: {$application->package->speed->mbps} Mbps\n" .
-            "📅 Term: {$application->package->term->months} months\n" .
+            "📦 Package: ".($detail['product_name'] ?? '—')."\n" .
+            "⚡ Speed: ".($detail['product_speed'] ?? '—')."\n" .
+            "📅 Term: ".($detail['month_cycle'] ?? '—').' '.($detail['month_cycle_unit'] ?? '')."\n" .
             "📋 Status: {$application->status->value}";
 
         $this->telegram->broadbandApplicaiton($message);
-        $application->load(['package.network', 'package.speed', 'package.term', 'area.region.state', 'photos']);
+        $application->load(['area.region.state']);
 
-        return new BroadbandApplicationResource($application);
+        return (new BroadbandApplicationResource($application))
+            ->additional(ApiMessage::attach(MessageCode::ReqSubmitted));
     }
 
     public function update(
@@ -138,48 +130,22 @@ class BroadbandApplicationRequestController extends Controller
             $validated = $request->validated();
             $installationApplication->update($validated);
 
-            if ($request->hasFile('photos')) {
-                $photos = $request->file('photos');
-                $existingPhotos = $installationApplication->photos()->get();
-
-                foreach ($photos as $index => $photo) {
-                    $existingPhoto = $existingPhotos->get($index);
-                    $imageUrl = StoresPublicImage::store(
-                        $photo,
-                        'service-request/installation-applications',
-                        $existingPhoto?->image_url,
-                    );
-
-                    if ($existingPhoto) {
-                        $existingPhoto->update(['image_url' => $imageUrl]);
-                    } else {
-                        $installationApplication->photos()->create(['image_url' => $imageUrl]);
-                    }
-                }
-            }
-
             $this->logActivity($request, 'update_broadband_application', [
                 'broadband_application_id' => $installationApplication->id,
             ]);
 
-            return new BroadbandApplicationResource(
+            return (new BroadbandApplicationResource(
                 $installationApplication
                     ->refresh()
-                    ->load(['package.network', 'package.speed', 'package.term', 'area.region.state', 'photos']),
-            );
+                    ->load(['area.region.state']),
+            ))->additional(ApiMessage::attach(MessageCode::ReqUpdated));
         });
     }
 
     public function destroy(Request $request, InstallationApplication $installationApplication): Response
     {
         $this->ensureOwner($request, $installationApplication);
-        DB::transaction(function () use ($installationApplication) {
-            foreach ($installationApplication->photos as $photo) {
-                StoresPublicImage::delete($photo->image_url);
-                $photo->delete();
-            }
-            $installationApplication->delete();
-        });
+        $installationApplication->delete();
 
         $this->logActivity($request, 'delete_broadband_application', [
             'broadband_application_id' => $installationApplication->id,
@@ -201,7 +167,8 @@ class BroadbandApplicationRequestController extends Controller
             'broadband_application_id' => $installationApplication->id,
         ]);
 
-        return new BroadbandApplicationResource($installationApplication->refresh());
+        return (new BroadbandApplicationResource($installationApplication->refresh()))
+            ->additional(ApiMessage::attach(MessageCode::ReqCancelled));
     }
 
     private function ensureOwner(Request $request, InstallationApplication $installationApplication): void
@@ -209,5 +176,21 @@ class BroadbandApplicationRequestController extends Controller
         if ($installationApplication->user_id !== $request->user()->id) {
             throw new AccessDeniedHttpException();
         }
+    }
+
+    private function nextTicketNumber(): string
+    {
+        $prefix = 'INT'.now()->format('md');
+        $max = InstallationApplication::withTrashed()
+            ->where('ticket_number', 'like', $prefix.'%')
+            ->lockForUpdate()
+            ->pluck('ticket_number')
+            ->reduce(function (int $highest, ?string $number) use ($prefix): int {
+                $sequence = (int) substr((string) $number, strlen($prefix));
+
+                return max($highest, $sequence);
+            }, 0);
+
+        return $prefix.str_pad((string) ($max + 1), 4, '0', STR_PAD_LEFT);
     }
 }

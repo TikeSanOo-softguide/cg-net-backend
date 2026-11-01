@@ -108,9 +108,27 @@
         "name": "Yaung Ni Oo"
     },
     "broadband_application": {
+        "app_user": "App User",
+        "area": "Area",
+        "billing_period": "Billing period",
+        "cg_router": "CG Router",
+        "day": "day",
+        "days": "days",
         "identity": "Identity",
+        "installation_contact": "Installation contact",
+        "installation_fee": "Installation fee",
         "location": "Location",
-        "search_placeholder": "Search app username, phone"
+        "month": "month",
+        "months": "months",
+        "network_provider": "Network provider",
+        "package": "Package",
+        "package_price": "Package price",
+        "region": "Region",
+        "search_placeholder": "Search app user, phone, or ticket",
+        "service_type": "Service type",
+        "speed": "Speed",
+        "state": "State",
+        "ticket_number": "Ticket Number"
     },
     "change_password": {
         "approved_requests": "Approved Requests",

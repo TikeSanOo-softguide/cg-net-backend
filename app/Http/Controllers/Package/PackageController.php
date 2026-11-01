@@ -214,7 +214,6 @@ class PackageController extends Controller
     {
         return DB::table('package_orders')->where('package_id', $packageId)->exists() ||
             DB::table('customer_packages')->where('package_id', $packageId)->exists() ||
-            DB::table('installation_applications')->where('package_id', $packageId)->exists() ||
             DB::table('change_plan_requests')
                 ->where(function ($query) use ($packageId) {
                     $query->where('current_package_id', $packageId)->orWhere('new_package_id', $packageId);

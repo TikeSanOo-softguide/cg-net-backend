@@ -9,11 +9,11 @@ return new class extends Migration {
     {
         Schema::create('installation_applications', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('package_id')->constrained('packages')->cascadeOnDelete();
             $table->foreignId('area_id')->constrained('areas')->cascadeOnDelete();
-            $table->string('id_type', 16);
-            $table->string('id_name');
-            $table->string('id_number');
+            $table->string('name');
+            $table->string('service_type', 8)->nullable();
+            $table->string('ticket_number', 32)->nullable()->unique();
+            $table->json('package_detail');
             $table->text('address');
             $table->string('phone');
             $table->text('note')->nullable();

@@ -108,9 +108,27 @@
         "name": "晨光"
     },
     "broadband_application": {
+        "app_user": "应用用户",
+        "area": "乡镇",
+        "billing_period": "计费周期",
+        "cg_router": "CG Router",
+        "day": "天",
+        "days": "天",
         "identity": "身份信息",
+        "installation_contact": "安装联系人",
+        "installation_fee": "安装费",
         "location": "位置",
-        "search_placeholder": "按应用用户名、电话搜索"
+        "month": "个月",
+        "months": "个月",
+        "network_provider": "网络",
+        "package": "套餐",
+        "package_price": "套餐价格",
+        "region": "县/区",
+        "search_placeholder": "搜索应用用户、电话或工单号",
+        "service_type": "服务类型",
+        "speed": "网速",
+        "state": "州/省",
+        "ticket_number": "工单号"
     },
     "change_password": {
         "approved_requests": "已批准的申请数",

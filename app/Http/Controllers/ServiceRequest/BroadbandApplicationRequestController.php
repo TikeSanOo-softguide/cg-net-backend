@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Models\InstallationApplication;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Enum;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -17,6 +16,10 @@ class BroadbandApplicationRequestController extends Controller
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search'));
+        $serviceType = $request->string('service_type')->toString();
+        if (! in_array($serviceType, ['FTTH', 'CG'], true)) {
+            $serviceType = '';
+        }
         $status = $request->has('status')
             ? ($request->string('status')->toString() === 'all'
                 ? ''
@@ -31,11 +34,6 @@ class BroadbandApplicationRequestController extends Controller
                 'area:id,name_en,name_zh,name_my,region_id',
                 'area.region:id,name_en,name_zh,name_my,state_id',
                 'area.region.state:id,name_en,name_zh,name_my',
-                'package:id,network_id,speed_id,term_id',
-                'package.network:id,name_en,name_zh,name_my',
-                'package.speed:id,mbps',
-                'package.term:id,months',
-                'photos:id,installation_application_id,image_url',
             ])
             ->when($openRequestId < 1 && $search !== '', function ($query) use ($search): void {
                 $search = "%{$search}%";
@@ -43,10 +41,16 @@ class BroadbandApplicationRequestController extends Controller
                 $query->where(function ($query) use ($search): void {
                     $query
                         ->whereLike('phone', $search)
+                        ->orWhereLike('name', $search)
+                        ->orWhereLike('ticket_number', $search)
                         ->orWhereHas('user', fn($q) => $q->whereLike('name', $search))
                         ->orWhereHas('user', fn($q) => $q->whereLike('phone', $search));
                 });
             })
+            ->when(
+                $openRequestId < 1 && $serviceType !== '',
+                fn ($query) => $query->where('service_type', $serviceType),
+            )
             ->when(
                 $openRequestId < 1 &&
                     $status !== '' &&
@@ -59,20 +63,12 @@ class BroadbandApplicationRequestController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        $broadbandApplication->getCollection()->transform(function ($application) {
-            $application->photos->transform(function ($photo) {
-                $photo->image_url = Storage::url($photo->image_url);
-
-                return $photo;
-            });
-            return $application;
-        });
-
         return Inertia::render('ServiceRequests/BroadbandApplication/Index', [
             'requests' => $broadbandApplication,
             'filters' => [
                 'search' => $search,
                 'status' => $status,
+                'service_type' => $serviceType,
             ],
             'statuses' => array_column(RequestStatus::cases(), 'value'),
             'stats' => $this->stats(),
@@ -90,7 +86,9 @@ class BroadbandApplicationRequestController extends Controller
             'admin_id' => $request->user()->id,
         ]);
 
-        return back()->with('success', 'requests.status_updated');
+        return to_route('service-requests.installations.index', [
+            'status' => $validated['status'],
+        ])->with('success', 'requests.status_updated');
     }
 
     private function stats(): array
