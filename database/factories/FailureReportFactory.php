@@ -25,7 +25,7 @@ class FailureReportFactory extends Factory
             'description' => fake()->paragraph(),
             'contact_name' => MyanmarFake::name(),
             'contact_phone' => MyanmarFake::phone(),
-            'ticket_number' => 'FR'.now()->format('md').str_pad((string) fake()->unique()->numberBetween(1, 9999), 4, '0', STR_PAD_LEFT),
+            'ticket_number' => 'FLR'.now()->format('md').str_pad((string) fake()->unique()->numberBetween(1, 9999), 4, '0', STR_PAD_LEFT),
             'status' => fake()->randomElement(RequestStatus::cases()),
             'admin_id' => 1,
         ];

@@ -59,7 +59,7 @@ class FailureReportController extends Controller
                 'ticket_number' => GeneratesTicketNumber::next(
                     FailureReport::class,
                     'ticket_number',
-                    'FR'.now()->format('md'),
+                    'FLR'.now()->format('md'),
                 ),
                 'status' => 'under_review',
             ]);

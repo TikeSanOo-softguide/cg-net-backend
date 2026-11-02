@@ -305,7 +305,7 @@ class ServiceRequestApiTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('data.user_id', $user->id)
             ->assertJsonPath('data.broadband_account_number', $user->broadband_account_number)
-            ->assertJsonPath('data.ticket_number', 'FR' . now()->format('md') . '0001')
+            ->assertJsonPath('data.ticket_number', 'FLR' . now()->format('md') . '0001')
             ->assertJsonPath('data.failure_type', FailureType::NoInternet->value)
             ->assertJsonPath('data.status', 'under_review')
             ->assertJsonCount(3, 'data.photos');
