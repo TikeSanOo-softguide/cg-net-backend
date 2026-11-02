@@ -23,23 +23,29 @@ class ServiceRequestApiTest extends TestCase
 
     public function test_service_request_apis_require_authentication(): void
     {
-        foreach ([
-            '/api/failure-reports',
-            '/api/change-plan-requests',
-            '/api/change-password-requests',
-            '/api/relocation-requests',
-            '/api/installation-application',
-        ] as $endpoint) {
+        foreach (
+            [
+                '/api/failure-reports',
+                '/api/change-plan-requests',
+                '/api/change-password-requests',
+                '/api/relocation-requests',
+                '/api/installation-application',
+            ]
+            as $endpoint
+        ) {
             $this->getJson($endpoint)->assertUnauthorized();
         }
 
-        foreach ([
-            '/api/failure-reports/create',
-            '/api/change-plan-requests/create',
-            '/api/change-password-requests/create',
-            '/api/relocation-requests/create',
-            '/api/installation-application/create',
-        ] as $endpoint) {
+        foreach (
+            [
+                '/api/failure-reports/create',
+                '/api/change-plan-requests/create',
+                '/api/change-password-requests/create',
+                '/api/relocation-requests/create',
+                '/api/installation-application/create',
+            ]
+            as $endpoint
+        ) {
             $this->postJson($endpoint)->assertUnauthorized();
         }
     }
@@ -75,6 +81,10 @@ class ServiceRequestApiTest extends TestCase
             'address' => 'Customer address',
             'phone' => '09922345678',
             'note' => 'Please install soon.',
+            'id_type' => 'NRC',
+            'id_name' => 'Test Customer',
+            'id_number' => '12/ABC(N)123456',
+            'photos' => [UploadedFile::fake()->image('id-front.jpg'), UploadedFile::fake()->image('id-back.jpg')],
         ];
 
         $response = $this->withToken($token)
@@ -85,7 +95,7 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonPath('data.user_id', $user->id)
             ->assertJsonPath('data.name', 'Test Customer')
             ->assertJsonPath('data.service_type', 'FTTH')
-            ->assertJsonPath('data.ticket_number', 'INT'.now()->format('md').'0001')
+            ->assertJsonPath('data.ticket_number', 'INT' . now()->format('md') . '0001')
             ->assertJsonPath('data.package_detail.product_id', '249')
             ->assertJsonPath('data.area_id', $area->id)
             ->assertJsonPath('data.phone', '959922345678')
@@ -93,21 +103,26 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonMissingPath('data.photos');
         $application = InstallationApplication::query()->findOrFail($response->json('data.id'));
 
+        $this->withToken($token)->getJson('/api/installation-application')->assertOk()->assertJsonCount(1, 'data');
         $this->withToken($token)
-            ->getJson('/api/installation-application')
-            ->assertOk()
-            ->assertJsonCount(1, 'data');
-        $this->withToken($token)
-            ->getJson('/api/installation-application/'.$application->id)
+            ->getJson('/api/installation-application/' . $application->id)
             ->assertOk()
             ->assertJsonPath('data.id', $application->id);
 
         $this->withToken($token)
-            ->put('/api/installation-application/'.$application->id, [
-                ...$applicationData,
-                'name' => 'Updated Customer',
-                'address' => 'Updated customer address',
-            ], ['Accept' => 'application/json'])
+            ->put(
+                '/api/installation-application/' . $application->id,
+                [
+                    ...$applicationData,
+                    'name' => 'Updated Customer',
+                    'address' => 'Updated customer address',
+                    'photos' => [
+                        UploadedFile::fake()->image('updated-front.jpg'),
+                        UploadedFile::fake()->image('updated-back.jpg'),
+                    ],
+                ],
+                ['Accept' => 'application/json'],
+            )
             ->assertOk()
             ->assertJsonPath('code', 'MSG-REQ-003')
             ->assertJsonPath('level', 'success')
@@ -116,14 +131,14 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonMissingPath('data.photos');
 
         $this->withToken($token)
-            ->patchJson('/api/installation-application/'.$application->id.'/cancel')
+            ->patchJson('/api/installation-application/' . $application->id . '/cancel')
             ->assertOk()
             ->assertJsonPath('code', 'MSG-REQ-001')
             ->assertJsonPath('level', 'success')
             ->assertJsonPath('data.status', 'cancelled');
 
         $this->withToken($token)
-            ->deleteJson('/api/installation-application/'.$application->id)
+            ->deleteJson('/api/installation-application/' . $application->id)
             ->assertNoContent();
 
         $this->assertSoftDeleted('installation_applications', ['id' => $application->id]);
@@ -145,30 +160,34 @@ class ServiceRequestApiTest extends TestCase
             'provider.test/WalletApp/ServerCommand/FTTHProductInfoListAPI' => Http::response([
                 'ErrCode' => 0,
                 'Message' => 'ok',
-                'result' => [[
-                    'productID' => '249',
-                    'productName' => '办公移动网_100M_月',
-                    'productPrice' => 2000.0,
-                    'monthCycle' => 1,
-                    'monthCycleUnit' => '月',
-                    'productLine' => '移动网_办公',
-                    'productSpeed' => '100M',
-                    'installationFee' => '500',
-                ]],
+                'result' => [
+                    [
+                        'productID' => '249',
+                        'productName' => '办公移动网_100M_月',
+                        'productPrice' => 2000.0,
+                        'monthCycle' => 1,
+                        'monthCycleUnit' => '月',
+                        'productLine' => '移动网_办公',
+                        'productSpeed' => '100M',
+                        'installationFee' => '500',
+                    ],
+                ],
             ]),
             'provider.test/WalletApp/ServerCommand/CGRouterProductInfoListAPI' => Http::response([
                 'ErrCode' => 0,
                 'Message' => 'ok',
-                'result' => [[
-                    'productID' => '310',
-                    'productName' => 'CG Router 50M',
-                    'productPrice' => 1500.0,
-                    'monthCycle' => 1,
-                    'monthCycleUnit' => '月',
-                    'productLine' => 'CG-Router',
-                    'productSpeed' => '50M',
-                    'installationFee' => 0,
-                ]],
+                'result' => [
+                    [
+                        'productID' => '310',
+                        'productName' => 'CG Router 50M',
+                        'productPrice' => 1500.0,
+                        'monthCycle' => 1,
+                        'monthCycleUnit' => '月',
+                        'productLine' => 'CG-Router',
+                        'productSpeed' => '50M',
+                        'installationFee' => 0,
+                    ],
+                ],
             ]),
         ]);
 
@@ -230,20 +249,18 @@ class ServiceRequestApiTest extends TestCase
             'details' => 'Please call before the relocation.',
         ];
 
-        $response = $this->withToken($token)->postJson('/api/relocation-requests/create', $requestData)
+        $response = $this->withToken($token)
+            ->postJson('/api/relocation-requests/create', $requestData)
             ->assertCreated()
             ->assertJsonPath('data.user_id', $user->id)
             ->assertJsonPath('data.broadband_account_number', $user->broadband_account_number)
             ->assertJsonPath('data.status', 'under_review');
         $relocationRequest = RelocationRequest::query()->findOrFail($response->json('data.id'));
 
-        $this->withToken($token)
-            ->getJson('/api/relocation-requests')
-            ->assertOk()
-            ->assertJsonCount(1, 'data');
+        $this->withToken($token)->getJson('/api/relocation-requests')->assertOk()->assertJsonCount(1, 'data');
 
         $this->withToken($token)
-            ->putJson('/api/relocation-requests/'.$relocationRequest->id, [
+            ->putJson('/api/relocation-requests/' . $relocationRequest->id, [
                 ...$requestData,
                 'new_address' => 'Updated new address',
                 'details' => 'Updated relocation details.',
@@ -253,12 +270,12 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonPath('data.details', 'Updated relocation details.');
 
         $this->withToken($token)
-            ->patchJson('/api/relocation-requests/'.$relocationRequest->id.'/cancel')
+            ->patchJson('/api/relocation-requests/' . $relocationRequest->id . '/cancel')
             ->assertOk()
             ->assertJsonPath('data.status', 'cancelled');
 
         $this->withToken($token)
-            ->deleteJson('/api/relocation-requests/'.$relocationRequest->id)
+            ->deleteJson('/api/relocation-requests/' . $relocationRequest->id)
             ->assertNoContent();
 
         $this->assertSoftDeleted('relocation_requests', ['id' => $relocationRequest->id]);
@@ -288,6 +305,7 @@ class ServiceRequestApiTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('data.user_id', $user->id)
             ->assertJsonPath('data.broadband_account_number', $user->broadband_account_number)
+            ->assertJsonPath('data.ticket_number', 'FR' . now()->format('md') . '0001')
             ->assertJsonPath('data.failure_type', FailureType::NoInternet->value)
             ->assertJsonPath('data.status', 'under_review')
             ->assertJsonCount(3, 'data.photos');
@@ -295,17 +313,14 @@ class ServiceRequestApiTest extends TestCase
         $failureReport = FailureReport::query()->findOrFail($response->json('data.id'));
         $this->assertDatabaseCount('failure_photos', 3);
 
+        $this->withToken($token)->getJson('/api/failure-reports')->assertOk()->assertJsonCount(1, 'data');
         $this->withToken($token)
-            ->getJson('/api/failure-reports')
-            ->assertOk()
-            ->assertJsonCount(1, 'data');
-        $this->withToken($token)
-            ->getJson('/api/failure-reports/'.$failureReport->id)
+            ->getJson('/api/failure-reports/' . $failureReport->id)
             ->assertOk()
             ->assertJsonPath('data.id', $failureReport->id);
 
         $this->withToken($token)
-            ->putJson('/api/failure-reports/'.$failureReport->id, [
+            ->putJson('/api/failure-reports/' . $failureReport->id, [
                 ...$createData,
                 'photos' => null,
                 'failure_type' => FailureType::Slow->value,
@@ -315,16 +330,127 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonPath('data.failure_type', FailureType::Slow->value)
             ->assertJsonPath('data.description', 'The connection is slow.');
 
-        $this->withToken($token)
-            ->patchJson('/api/failure-reports/'.$failureReport->id.'/cancel')
-            ->assertOk()
-            ->assertJsonPath('data.status', 'cancelled');
+        $photos = $failureReport->photos()->get();
+        $photoPaths = $photos->pluck('image_url')->all();
 
         $this->withToken($token)
-            ->deleteJson('/api/failure-reports/'.$failureReport->id)
+            ->patchJson('/api/failure-reports/' . $failureReport->id . '/cancel')
+            ->assertOk()
+            ->assertJsonPath('data.status', 'cancelled')
+            ->assertJsonCount(3, 'data.photos');
+
+        foreach ($photoPaths as $photoPath) {
+            $this->assertTrue(Storage::disk('public')->exists($photoPath));
+        }
+        foreach ($photos as $photo) {
+            $this->assertDatabaseHas('failure_photos', [
+                'id' => $photo->id,
+                'image_url' => $photo->image_url,
+            ]);
+        }
+
+        $this->withToken($token)
+            ->deleteJson('/api/failure-reports/' . $failureReport->id)
             ->assertNoContent();
 
         $this->assertSoftDeleted('failure_reports', ['id' => $failureReport->id]);
+    }
+
+    public function test_customer_can_create_a_failure_report_without_photos(): void
+    {
+        $user = User::factory()->create(['broadband_account_number' => 'CG12345678']);
+        $token = $user->createToken('service-requests')->plainTextToken;
+
+        $this->withToken($token)
+            ->postJson('/api/failure-reports/create', [
+                'broadband_account_number' => $user->broadband_account_number,
+                'failure_type' => FailureType::NoInternet->value,
+                'description' => 'The connection has been unavailable since this morning.',
+                'contact_name' => 'Test Customer',
+                'contact_phone' => '95912345678',
+                'photos' => null,
+            ])
+            ->assertCreated()
+            ->assertJsonCount(0, 'data.photos');
+
+        $this->assertDatabaseCount('failure_photos', 0);
+    }
+
+    public function test_updating_failure_report_photos_removes_unsubmitted_photos(): void
+    {
+        Storage::fake('public');
+
+        $user = User::factory()->create(['broadband_account_number' => 'CG12345678']);
+        $token = $user->createToken('service-requests')->plainTextToken;
+        $createData = [
+            'broadband_account_number' => $user->broadband_account_number,
+            'failure_type' => FailureType::NoInternet->value,
+            'description' => 'The connection has been unavailable since this morning.',
+            'contact_name' => 'Test Customer',
+            'contact_phone' => '95912345678',
+            'photos' => [
+                UploadedFile::fake()->image('router-1.jpg'),
+                UploadedFile::fake()->image('router-2.jpg'),
+                UploadedFile::fake()->image('router-3.jpg'),
+            ],
+        ];
+
+        $response = $this->withToken($token)
+            ->post('/api/failure-reports/create', $createData, ['Accept' => 'application/json'])
+            ->assertCreated();
+
+        $failureReport = FailureReport::query()->findOrFail($response->json('data.id'));
+        $photos = $failureReport->photos()->get();
+        $photoPaths = $photos->pluck('image_url')->all();
+
+        $this->withToken($token)
+            ->post('/api/failure-reports/' . $failureReport->id, [
+                '_method' => 'PUT',
+                ...$createData,
+                'photos' => [UploadedFile::fake()->image('replacement.jpg')],
+            ], ['Accept' => 'application/json'])
+            ->assertOk()
+            ->assertJsonCount(1, 'data.photos');
+
+        foreach ($photos->slice(1) as $photo) {
+            $this->assertSoftDeleted('failure_photos', ['id' => $photo->id]);
+        }
+        foreach ($photoPaths as $photoPath) {
+            $this->assertFalse(Storage::disk('public')->exists($photoPath));
+        }
+        $this->assertDatabaseCount('failure_photos', 3);
+        $this->assertCount(1, $failureReport->photos()->get());
+    }
+
+    public function test_customer_must_submit_at_least_one_photo_when_photos_are_provided(): void
+    {
+        Storage::fake('public');
+
+        $user = User::factory()->create(['broadband_account_number' => 'CG12345678']);
+        $token = $user->createToken('service-requests')->plainTextToken;
+        $requestData = [
+            'broadband_account_number' => $user->broadband_account_number,
+            'failure_type' => FailureType::NoInternet->value,
+            'description' => 'The connection has been unavailable since this morning.',
+            'contact_name' => 'Test Customer',
+            'contact_phone' => '95912345678',
+        ];
+
+        $this->withToken($token)
+            ->postJson('/api/failure-reports/create', [...$requestData, 'photos' => []])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('photos');
+
+        $this->withToken($token)
+            ->post(
+                '/api/failure-reports/create',
+                [...$requestData, 'photos' => [UploadedFile::fake()->image('router.jpg')]],
+                ['Accept' => 'application/json'],
+            )
+            ->assertCreated()
+            ->assertJsonCount(1, 'data.photos');
+
+        $this->assertDatabaseCount('failure_photos', 1);
     }
 
     public function test_customer_can_create_update_and_delete_a_change_plan_request(): void
@@ -344,23 +470,21 @@ class ServiceRequestApiTest extends TestCase
             'note' => 'Please change my package.',
         ];
 
-        $response = $this->withToken($token)->postJson('/api/change-plan-requests/create', $requestData)
+        $response = $this->withToken($token)
+            ->postJson('/api/change-plan-requests/create', $requestData)
             ->assertCreated()
             ->assertJsonPath('data.user_id', $user->id)
             ->assertJsonPath('data.status', 'under_review');
         $changePlanRequest = ChangePlanRequest::query()->findOrFail($response->json('data.id'));
 
+        $this->withToken($token)->getJson('/api/change-plan-requests')->assertOk()->assertJsonCount(1, 'data');
         $this->withToken($token)
-            ->getJson('/api/change-plan-requests')
-            ->assertOk()
-            ->assertJsonCount(1, 'data');
-        $this->withToken($token)
-            ->getJson('/api/change-plan-requests/'.$changePlanRequest->id)
+            ->getJson('/api/change-plan-requests/' . $changePlanRequest->id)
             ->assertOk()
             ->assertJsonPath('data.id', $changePlanRequest->id);
 
         $this->withToken($token)
-            ->putJson('/api/change-plan-requests/'.$changePlanRequest->id, [
+            ->putJson('/api/change-plan-requests/' . $changePlanRequest->id, [
                 ...$requestData,
                 'new_package_id' => Package::factory()->create()->id,
                 'note' => 'Please apply the updated package.',
@@ -369,7 +493,7 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonPath('data.note', 'Please apply the updated package.');
 
         $this->withToken($token)
-            ->deleteJson('/api/change-plan-requests/'.$changePlanRequest->id)
+            ->deleteJson('/api/change-plan-requests/' . $changePlanRequest->id)
             ->assertNoContent();
 
         $this->assertSoftDeleted('change_plan_requests', ['id' => $changePlanRequest->id]);
@@ -388,23 +512,21 @@ class ServiceRequestApiTest extends TestCase
             'contact_phone' => '95912345678',
         ];
 
-        $response = $this->withToken($token)->postJson('/api/change-password-requests/create', $requestData)
+        $response = $this->withToken($token)
+            ->postJson('/api/change-password-requests/create', $requestData)
             ->assertCreated()
             ->assertJsonPath('data.user_id', $user->id)
             ->assertJsonPath('data.status', 'under_review');
         $changePasswordRequest = ChangePasswordRequest::query()->findOrFail($response->json('data.id'));
 
+        $this->withToken($token)->getJson('/api/change-password-requests')->assertOk()->assertJsonCount(1, 'data');
         $this->withToken($token)
-            ->getJson('/api/change-password-requests')
-            ->assertOk()
-            ->assertJsonCount(1, 'data');
-        $this->withToken($token)
-            ->getJson('/api/change-password-requests/'.$changePasswordRequest->id)
+            ->getJson('/api/change-password-requests/' . $changePasswordRequest->id)
             ->assertOk()
             ->assertJsonPath('data.id', $changePasswordRequest->id);
 
         $this->withToken($token)
-            ->putJson('/api/change-password-requests/'.$changePasswordRequest->id, [
+            ->putJson('/api/change-password-requests/' . $changePasswordRequest->id, [
                 ...$requestData,
                 'new_wifi_name' => 'NewWifi',
                 'new_password' => 'another-secret',
@@ -415,7 +537,7 @@ class ServiceRequestApiTest extends TestCase
         $this->assertSame('under_review', $changePasswordRequest->refresh()->status->value);
 
         $this->withToken($token)
-            ->putJson('/api/change-password-requests/'.$changePasswordRequest->id, [
+            ->putJson('/api/change-password-requests/' . $changePasswordRequest->id, [
                 ...$requestData,
                 'new_wifi_name' => 'NewWifi',
                 'new_password' => 'another-secret',
@@ -426,10 +548,78 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonPath('data.status', 'under_review');
 
         $this->withToken($token)
-            ->deleteJson('/api/change-password-requests/'.$changePasswordRequest->id)
+            ->deleteJson('/api/change-password-requests/' . $changePasswordRequest->id)
             ->assertNoContent();
 
         $this->assertSoftDeleted('change_password_requests', ['id' => $changePasswordRequest->id]);
+    }
+
+    public function test_change_password_requests_reject_passwords_over_30_characters(): void
+    {
+        $user = User::factory()->create(['broadband_account_number' => 'CG32345678']);
+        $token = $user->createToken('service-requests')->plainTextToken;
+        $requestData = [
+            'user_id' => $user->id,
+            'broadband_account_number' => $user->broadband_account_number,
+            'new_wifi_name' => 'UpdatedWifi',
+            'new_password' => str_repeat('x', 31),
+            'contact_name' => 'Test Customer',
+            'contact_phone' => '95912345678',
+        ];
+
+        $this->withToken($token)
+            ->postJson('/api/change-password-requests/create', $requestData)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('new_password');
+
+        $response = $this->withToken($token)
+            ->postJson('/api/change-password-requests/create', [...$requestData, 'new_password' => str_repeat('x', 30)])
+            ->assertCreated();
+        $changePasswordRequest = ChangePasswordRequest::query()->findOrFail($response->json('data.id'));
+
+        $this->withToken($token)
+            ->putJson('/api/change-password-requests/' . $changePasswordRequest->id, [
+                ...$requestData,
+                'new_password' => str_repeat('x', 31),
+                'status' => 'under_review',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('new_password');
+
+        $this->assertSame(str_repeat('x', 30), $changePasswordRequest->refresh()->new_password);
+    }
+
+    public function test_ftth_customers_cannot_create_or_update_change_password_requests(): void
+    {
+        $user = User::factory()->create(['broadband_account_number' => 'FTTH12345678']);
+        $token = $user->createToken('service-requests')->plainTextToken;
+        $requestData = [
+            'user_id' => $user->id,
+            'broadband_account_number' => $user->broadband_account_number,
+            'new_wifi_name' => 'UpdatedWifi',
+            'new_password' => 'updated-secret',
+            'contact_name' => 'Test Customer',
+            'contact_phone' => '95912345678',
+        ];
+
+        $this->withToken($token)
+            ->postJson('/api/change-password-requests/create', $requestData)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('broadband_account_number');
+        $this->assertDatabaseCount('change_password_requests', 0);
+
+        $changePasswordRequest = ChangePasswordRequest::factory()->create([
+            'user_id' => $user->id,
+            'broadband_account_number' => $user->broadband_account_number,
+        ]);
+        $this->withToken($token)
+            ->putJson('/api/change-password-requests/' . $changePasswordRequest->id, [
+                ...$requestData,
+                'status' => 'under_review',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('broadband_account_number');
+        $this->assertSame('under_review', $changePasswordRequest->refresh()->status->value);
     }
 
     public function test_customers_cannot_view_another_users_service_requests(): void
@@ -464,18 +654,18 @@ class ServiceRequestApiTest extends TestCase
         ]);
 
         $this->withToken($token)
-            ->getJson('/api/failure-reports/'.$failureReport->id)
+            ->getJson('/api/failure-reports/' . $failureReport->id)
             ->assertForbidden()
             ->assertJsonPath('code', 'MSG-SYS-003')
             ->assertJsonPath('level', 'error');
         $this->withToken($token)
-            ->getJson('/api/change-plan-requests/'.$changePlanRequest->id)
+            ->getJson('/api/change-plan-requests/' . $changePlanRequest->id)
             ->assertForbidden();
         $this->withToken($token)
-            ->getJson('/api/change-password-requests/'.$changePasswordRequest->id)
+            ->getJson('/api/change-password-requests/' . $changePasswordRequest->id)
             ->assertForbidden();
         $this->withToken($token)
-            ->putJson('/api/relocation-requests/'.$relocationRequest->id, [
+            ->putJson('/api/relocation-requests/' . $relocationRequest->id, [
                 'broadband_account_number' => $user->broadband_account_number,
                 'current_address' => 'Current address',
                 'new_address' => 'Updated address',
@@ -484,7 +674,7 @@ class ServiceRequestApiTest extends TestCase
             ])
             ->assertForbidden();
         $this->withToken($token)
-            ->getJson('/api/installation-application/'.$broadbandApplication->id)
+            ->getJson('/api/installation-application/' . $broadbandApplication->id)
             ->assertForbidden();
     }
 
@@ -513,19 +703,23 @@ class ServiceRequestApiTest extends TestCase
             'month_cycle_unit' => '月',
         ];
         $created = $this->withToken($token)
-            ->post('/api/installation-application/create', [
-                'name' => 'Test Customer',
-            'service_type' => 'FTTH',
-                'area_id' => $area->id,
-                'package_detail' => $packageDetail,
-                'address' => 'Customer address',
-                'phone' => '95922345678',
-                'note' => 'Please install soon.',
-            ], ['Accept' => 'application/json'])
+            ->post(
+                '/api/installation-application/create',
+                [
+                    'name' => 'Test Customer',
+                    'service_type' => 'FTTH',
+                    'area_id' => $area->id,
+                    'package_detail' => $packageDetail,
+                    'address' => 'Customer address',
+                    'phone' => '95922345678',
+                    'note' => 'Please install soon.',
+                ],
+                ['Accept' => 'application/json'],
+            )
             ->assertCreated();
 
         $this->withToken($token)
-            ->putJson('/api/installation-application/'.$created->json('data.id'), [
+            ->putJson('/api/installation-application/' . $created->json('data.id'), [
                 'name' => 'Edited Without New Photos',
                 'service_type' => 'FTTH',
                 'area_id' => $area->id,
@@ -578,19 +772,23 @@ class ServiceRequestApiTest extends TestCase
         $token = $user->createToken('service-requests')->plainTextToken;
 
         $this->withToken($token)
-            ->post('/api/failure-reports/create', [
-                'broadband_account_number' => $user->broadband_account_number,
-                'failure_type' => FailureType::NoInternet->value,
-                'description' => 'The connection has been unavailable since this morning.',
-                'contact_name' => 'Test Customer',
-                'contact_phone' => '95912345678',
-                'status' => 'approved',
-                'photos' => [
-                    UploadedFile::fake()->image('router-1.jpg'),
-                    UploadedFile::fake()->image('router-2.jpg'),
-                    UploadedFile::fake()->image('router-3.jpg'),
+            ->post(
+                '/api/failure-reports/create',
+                [
+                    'broadband_account_number' => $user->broadband_account_number,
+                    'failure_type' => FailureType::NoInternet->value,
+                    'description' => 'The connection has been unavailable since this morning.',
+                    'contact_name' => 'Test Customer',
+                    'contact_phone' => '95912345678',
+                    'status' => 'approved',
+                    'photos' => [
+                        UploadedFile::fake()->image('router-1.jpg'),
+                        UploadedFile::fake()->image('router-2.jpg'),
+                        UploadedFile::fake()->image('router-3.jpg'),
+                    ],
                 ],
-            ], ['Accept' => 'application/json'])
+                ['Accept' => 'application/json'],
+            )
             ->assertUnprocessable()
             ->assertJsonValidationErrors('status');
 

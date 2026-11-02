@@ -71,6 +71,7 @@ type CustomerPackage = {
 type FailureReportRow = {
     id: number;
     notification_unread: boolean;
+    ticket_number: string | null;
     customer_name: string;
     customer_phone: string;
     broadband_account_number: string;
@@ -228,7 +229,9 @@ export default function FailureReportsIndex({ reports, filters, statuses, stats 
                                         <StaffListAvatar
                                             username={request.customer_name}
                                             unreadLabel={
-                                                request.notification_unread ? t('admin_notifications.unread') : undefined
+                                                request.notification_unread
+                                                    ? t('admin_notifications.unread')
+                                                    : undefined
                                             }
                                         />
                                     </div>
@@ -243,6 +246,24 @@ export default function FailureReportsIndex({ reports, filters, statuses, stats 
                             ),
                             searchValue: (request) => `${request.customer_name} ${request.broadband_account_number}`,
                         },
+                        {
+                            id: 'ticket_number',
+                            header: t('broadband_application.ticket_number'),
+                            mobile: 'subtitle' as const,
+                            cell: (request) => {
+                                const ticket = request.ticket_number?.trim();
+
+                                return ticket ? (
+                                    <span className="inline-flex max-w-full items-center rounded-md bg-primary/10 px-2 py-0.5 font-mono text-[11px] font-medium text-primary">
+                                        {ticket}
+                                    </span>
+                                ) : (
+                                    <span>—</span>
+                                );
+                            },
+                            searchValue: (request) => request.ticket_number ?? '',
+                        },
+
                         {
                             id: 'failure_type',
                             header: t('failure_report.failure_type'),

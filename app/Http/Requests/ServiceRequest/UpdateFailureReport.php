@@ -21,7 +21,7 @@ class UpdateFailureReport extends FormRequest
     protected function prepareForValidation(): void
     {
         $stored = $this->user()?->broadband_account_number;
-        if (! is_string($stored) || $stored === '') {
+        if (!is_string($stored) || $stored === '') {
             return;
         }
 
@@ -57,12 +57,9 @@ class UpdateFailureReport extends FormRequest
             'description' => ['required', 'string', 'max:5000'],
             'contact_name' => ['required', 'string', 'max:255'],
             'contact_phone' => ['required', 'string', 'max:16'],
-            'photos' => ['nullable', 'array', 'size:3'],
+            'photos' => ['nullable', 'array', 'min:1'],
             'photos.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
-            'status' => ['nullable', Rule::in([
-                RequestStatus::UnderReview->value,
-                RequestStatus::Cancelled->value,
-            ])],
+            'status' => ['nullable', Rule::in([RequestStatus::UnderReview->value, RequestStatus::Cancelled->value])],
         ];
     }
 }

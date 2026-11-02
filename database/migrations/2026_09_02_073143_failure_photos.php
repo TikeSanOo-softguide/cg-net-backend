@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('failure_photos', function (Blueprint $table) {
             $table->id();
             $table->foreignId('failure_report_id')->constrained()->cascadeOnDelete();
-            $table->string('image_url', 500);
+            $table->string('image_url', 500)->nullable();
             $table->string('label')->nullable();
             $table->timestamps();
             $table->softDeletes();

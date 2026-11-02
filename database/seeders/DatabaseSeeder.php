@@ -29,9 +29,6 @@ class DatabaseSeeder extends Seeder
 
         $this->call(OfficeSeeder::class);
         $this->call(ServiceRequestSeeder::class, false, ['userIds' => $customerIds]);
-        $this->call([
-            FailureReportSeeder::class,
-        ]);
         $this->call(BillingSeeder::class, false, ['userIds' => $customerIds]);
         $this->call([
             NotificationTemplateSeeder::class,
