@@ -21,10 +21,10 @@ export function staffInitials(username: string): string {
 
 export function StaffListAvatar({ username, className, unreadLabel }: StaffListAvatarProps) {
     return (
-        <span className="relative inline-flex size-8 shrink-0">
+        <span className="relative inline-flex shrink-0">
             <span
                 className={cn(
-                    'flex size-8 items-center justify-center rounded-full bg-primary/12 text-[11px] font-semibold tracking-wide text-primary uppercase',
+                    'flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/12 text-[11px] font-semibold tracking-wide text-primary uppercase',
                     className,
                 )}
                 aria-hidden
