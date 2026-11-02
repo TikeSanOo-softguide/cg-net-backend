@@ -8,6 +8,7 @@ use App\Http\Requests\Reports\RunLedgerHealthCheckRequest;
 use App\Http\Requests\Reports\UpdateLedgerHealthDailyScanRequest;
 use App\Jobs\GenerateLedgerHealthSnapshot;
 use App\Models\LedgerHealthSnapshot;
+use App\Services\AdminNotification\AdminNotificationReadStatus;
 use App\Support\AppSetting;
 use App\Support\LedgerHealthWindow;
 use Illuminate\Http\RedirectResponse;
@@ -18,7 +19,7 @@ use Inertia\Response;
 
 class LedgerHealthReportController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, AdminNotificationReadStatus $readStatus): Response
     {
         $scanType = $this->resolveScanType($request->string('type')->toString());
         [$defaultWindowStart, $defaultWindowEnd] = LedgerHealthWindow::forCloseDate();
@@ -34,6 +35,11 @@ class LedgerHealthReportController extends Controller
             ->latest('id')
             ->limit(50)
             ->get(['id', 'type', 'checked_at', 'window_start', 'window_end']);
+        $unreadSnapshotIds = $readStatus->unreadReferenceIds(
+            (int) $request->user()->getAuthIdentifier(),
+            'ledger_health_snapshot_'.$scanType->value,
+            $snapshots->pluck('id')->all(),
+        );
 
         $selectedSnapshotId = $request->integer('snapshot');
         $selectedSnapshotId = $snapshots->contains('id', $selectedSnapshotId)
@@ -68,12 +74,13 @@ class LedgerHealthReportController extends Controller
             'snapshotId' => $snapshot?->id,
             'snapshots' => $snapshots
                 ->map(
-                    fn(LedgerHealthSnapshot $item): array => [
+                    fn (LedgerHealthSnapshot $item): array => [
                         'id' => $item->id,
                         'type' => $item->type->value,
                         'checked_at' => $item->checked_at?->toISOString(),
                         'window_start' => $item->window_start?->toISOString(),
                         'window_end' => $item->window_end?->toISOString(),
+                        'notification_unread' => in_array($item->id, $unreadSnapshotIds, true),
                     ],
                 )
                 ->values(),

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\ServiceRequest;
 use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\InstallationApplication;
+use App\Services\AdminNotification\AdminNotificationReadStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Enum;
@@ -13,7 +14,7 @@ use Inertia\Response;
 
 class BroadbandApplicationRequestController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, AdminNotificationReadStatus $readStatus): Response
     {
         $search = trim((string) $request->string('search'));
         $serviceType = $request->string('service_type')->toString();
@@ -67,6 +68,16 @@ class BroadbandApplicationRequestController extends Controller
             ->latest('id')
             ->paginate(10)
             ->withQueryString();
+
+        $unreadRequestIds = $readStatus->unreadReferenceIds(
+            (int) $request->user()->getAuthIdentifier(),
+            'installation_application',
+            $broadbandApplication->getCollection()->pluck('id')->all(),
+        );
+        $broadbandApplication->through(fn (InstallationApplication $application): array => [
+            ...$application->toArray(),
+            'notification_unread' => in_array($application->id, $unreadRequestIds, true),
+        ]);
 
         return Inertia::render('ServiceRequests/BroadbandApplication/Index', [
             'requests' => $broadbandApplication,

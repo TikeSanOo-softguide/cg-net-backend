@@ -70,6 +70,7 @@ type CustomerPackage = {
 
 type FailureReportRow = {
     id: number;
+    notification_unread: boolean;
     customer_name: string;
     customer_phone: string;
     broadband_account_number: string;
@@ -126,7 +127,12 @@ export default function FailureReportsIndex({ reports, filters, statuses, stats 
     const debounce = useRef<number>(0);
     const [selectedRequest, setSelectedRequest] = useState<FailureReportRow | null>(null);
 
-    const closeRequestDetails = useOpenRequestFromQuery(reports.data, setSelectedRequest);
+    const closeRequestDetails = useOpenRequestFromQuery(
+        reports.data,
+        selectedRequest,
+        setSelectedRequest,
+        'failure_report',
+    );
 
     useEffect(() => {
         setSearch(filters.search);
@@ -219,7 +225,12 @@ export default function FailureReportsIndex({ reports, filters, statuses, stats 
                             cell: (request) => (
                                 <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-2.5">
                                     <div className="row-span-2">
-                                        <StaffListAvatar username={request.customer_name} />
+                                        <StaffListAvatar
+                                            username={request.customer_name}
+                                            unreadLabel={
+                                                request.notification_unread ? t('admin_notifications.unread') : undefined
+                                            }
+                                        />
                                     </div>
                                     <span className="min-w-0 truncate font-medium">
                                         {truncateText(request.customer_name, 20)}

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\ServiceRequest;
 use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\ChangePlanRequest;
+use App\Services\AdminNotification\AdminNotificationReadStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Enum;
@@ -13,7 +14,7 @@ use Inertia\Response;
 
 class ChangePlanRequestController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, AdminNotificationReadStatus $readStatus): Response
     {
         $search = trim((string) $request->string('search'));
         $status = $request->has('status')
@@ -54,6 +55,16 @@ class ChangePlanRequestController extends Controller
             ->latest('id')
             ->paginate(10)
             ->withQueryString();
+
+        $unreadRequestIds = $readStatus->unreadReferenceIds(
+            (int) $request->user()->getAuthIdentifier(),
+            'change_plan_request',
+            $changePlanRequests->getCollection()->pluck('id')->all(),
+        );
+        $changePlanRequests->through(fn (ChangePlanRequest $changePlanRequest): array => [
+            ...$changePlanRequest->toArray(),
+            'notification_unread' => in_array($changePlanRequest->id, $unreadRequestIds, true),
+        ]);
 
         return Inertia::render('ServiceRequests/changePlan/Index', [
             'requests' => $changePlanRequests,

@@ -33,6 +33,7 @@ import { useOpenRequestFromQuery } from '@/hooks/useOpenRequestFromQuery';
 
 type RelocationRequest = {
     id: number;
+    notification_unread: boolean;
     current_address: string;
     new_address: string;
     preferred_date: string | null;
@@ -75,7 +76,12 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
     const [selectedRequest, setSelectedRequest] = useState<RelocationRequest | null>(null);
     const debounce = useRef<number>(0);
 
-    const closeRequestDetails = useOpenRequestFromQuery(requests.data, setSelectedRequest);
+    const closeRequestDetails = useOpenRequestFromQuery(
+        requests.data,
+        selectedRequest,
+        setSelectedRequest,
+        'relocation_request',
+    );
 
     const cards = [
         {
@@ -187,7 +193,12 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                             cell: (request) => (
                                 <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-2.5">
                                     <div className="row-span-2">
-                                        <StaffListAvatar username={request.user.name} />
+                                        <StaffListAvatar
+                                            username={request.user.name}
+                                            unreadLabel={
+                                                request.notification_unread ? t('admin_notifications.unread') : undefined
+                                            }
+                                        />
                                     </div>
                                     <span className="min-w-0 truncate font-medium">
                                         {truncateText(request.user.name, 20)}

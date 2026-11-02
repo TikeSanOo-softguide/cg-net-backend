@@ -5,6 +5,7 @@ namespace App\Http\Controllers\ServiceRequest;
 use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\FailureReport;
+use App\Services\AdminNotification\AdminNotificationReadStatus;
 use App\Support\StoresPublicImage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ use Inertia\Response;
 
 class FailureReportController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, AdminNotificationReadStatus $readStatus): Response
     {
         $search = trim((string) $request->string('search'));
         $status = $request->has('status')
@@ -65,10 +66,18 @@ class FailureReportController extends Controller
             ->when($openRequestId > 0, fn($query) => $query->whereKey($openRequestId))
             ->orderBy($sort, $direction)
             ->paginate(15)
-            ->withQueryString()
+            ->withQueryString();
+
+        $unreadReportIds = $readStatus->unreadReferenceIds(
+            (int) $request->user()->getAuthIdentifier(),
+            'failure_report',
+            $reports->getCollection()->pluck('id')->all(),
+        );
+        $reports
             ->through(
                 fn(FailureReport $report) => [
                     'id' => $report->id,
+                    'notification_unread' => in_array($report->id, $unreadReportIds, true),
                     'customer_name' => $report->user?->name ?? '—',
                     'customer_phone' => $report->user?->phone ?? '—',
                     'broadband_account_number' => $report->broadband_account_number ?? '—',

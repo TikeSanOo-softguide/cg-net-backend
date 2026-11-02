@@ -2,11 +2,14 @@ import * as React from 'react';
 import { createPortal } from 'react-dom';
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon, SearchIcon } from 'lucide-react';
 
+import { UnreadNotificationDot } from '@/components/UnreadNotificationDot';
 import { cn } from '@/lib/utils';
 
 export type SearchableSelectOption = {
     value: string;
     label: string;
+    unread?: boolean;
+    unreadLabel?: string;
 };
 
 type SearchableSelectProps = {
@@ -165,10 +168,19 @@ function SearchableSelect({
                     triggerClassName,
                 )}
             >
-                <span className={cn('min-w-0 truncate', !selectedOption && 'text-muted-foreground')}>
+                <span className={cn('flex min-w-0 items-center truncate', !selectedOption && 'text-muted-foreground')}>
                     {selectedOption?.label ?? placeholder}
                 </span>
-                {open ? <ChevronUpIcon className="size-4" /> : <ChevronDownIcon className="size-4" />}{' '}
+                {selectedOption?.unread && selectedOption.unreadLabel ? (
+                    <UnreadNotificationDot
+                        label={selectedOption.unreadLabel}
+                        className="size-1.5 ring-2 ring-background"
+                    />
+                ) : open ? (
+                    <ChevronUpIcon className="size-4" />
+                ) : (
+                    <ChevronDownIcon className="size-4" />
+                )}{' '}
             </button>
             {open &&
                 typeof document !== 'undefined' &&
@@ -265,9 +277,16 @@ function SearchableSelect({
                                                 isSelected && 'bg-accent text-accent-foreground',
                                             )}
                                         >
-                                            <span className="min-w-0 truncate"> {option.label} </span>{' '}
+                                            <span className="min-w-0 truncate">{option.label}</span>
                                             <span className="absolute right-2 flex size-3.5 items-center justify-center">
-                                                {isSelected && <CheckIcon className="size-4" />}{' '}
+                                                {option.unread && option.unreadLabel ? (
+                                                    <UnreadNotificationDot
+                                                        label={option.unreadLabel}
+                                                        className="size-1.5 ring-2 ring-background"
+                                                    />
+                                                ) : (
+                                                    isSelected && <CheckIcon className="size-4" />
+                                                )}{' '}
                                             </span>
                                         </button>
                                     );
