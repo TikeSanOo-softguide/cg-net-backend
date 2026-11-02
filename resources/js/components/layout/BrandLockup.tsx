@@ -37,7 +37,7 @@ export function BrandLockup({
                 <span
                     className={cn(
                         'overflow-hidden whitespace-nowrap font-heading text-[15px] font-bold tracking-[0.04em] text-primary uppercase sm:text-base',
-                        'motion-reduce:transition-none transition-[max-width,opacity,margin] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                        'motion-reduce:transition-none transition-[max-width,opacity,margin] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]',
                         showWordmark ? 'ml-0 max-w-[200px] opacity-100' : 'pointer-events-none max-w-0 opacity-0',
                     )}
                     aria-hidden={!showWordmark}
@@ -50,7 +50,7 @@ export function BrandLockup({
 
     const classes = cn(
         'group/brand flex min-w-0 items-center',
-        'motion-reduce:transition-none transition-[gap] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+        'motion-reduce:transition-none transition-[gap] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]',
         showWordmark ? 'gap-2.5' : 'gap-0',
         href !== false && 'rounded-[8px] outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
         className,
