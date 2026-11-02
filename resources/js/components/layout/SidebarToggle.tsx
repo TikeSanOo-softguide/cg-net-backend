@@ -25,7 +25,10 @@ export function SidebarToggle({ expanded, onToggle, label }: SidebarToggleProps)
             )}
         >
             <ChevronLeftIcon
-                className={cn('size-4 transition-transform duration-300 ease-out', !expanded && 'rotate-180')}
+                className={cn(
+                    'size-4 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                    !expanded && 'rotate-180',
+                )}
                 strokeWidth={2.25}
             />
         </button>

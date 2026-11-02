@@ -124,7 +124,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <div
                     className={cn(
                         'shrink-0',
-                        'motion-reduce:transition-none transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                        'motion-reduce:transition-none transition-[width] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]',
                         isDesktop && expanded ? 'w-[var(--sidebar-width)]' : 'w-[88px]',
                     )}
                     aria-hidden
@@ -144,7 +144,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <div
                     className={cn(
                         'absolute inset-y-0 left-0 z-[62] overflow-visible',
-                        'motion-reduce:transition-none transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                        'motion-reduce:transition-none transition-[width] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]',
                         expanded
                             ? isDesktop
                                 ? 'w-[var(--sidebar-width)]'
