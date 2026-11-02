@@ -336,8 +336,9 @@ class ServiceRequestApiTest extends TestCase
         $requestData = [
             'user_id' => $user->id,
             'broadband_account_number' => $user->broadband_account_number,
-            'current_package_id' => $currentPackage->id,
-            'new_package_id' => $newPackage->id,
+            'service_type' => 'CG',
+            'current_package_detail' => $currentPackage->changePlanDetail(),
+            'new_package_detail' => $newPackage->changePlanDetail(),
             'preferred_date' => now()->addDays(3)->toDateString(),
             'contact_name' => 'Test Customer',
             'contact_phone' => '95912345678',
@@ -346,8 +347,13 @@ class ServiceRequestApiTest extends TestCase
 
         $response = $this->withToken($token)->postJson('/api/change-plan-requests/create', $requestData)
             ->assertCreated()
+            ->assertJsonPath('code', 'MSG-REQ-002')
+            ->assertJsonPath('level', 'success')
             ->assertJsonPath('data.user_id', $user->id)
-            ->assertJsonPath('data.status', 'under_review');
+            ->assertJsonPath('data.status', 'under_review')
+            ->assertJsonPath('data.service_type', 'CG');
+        $this->assertNotEmpty($response->json('data.ticket_number'));
+        $this->assertStringStartsWith('CPL', (string) $response->json('data.ticket_number'));
         $changePlanRequest = ChangePlanRequest::query()->findOrFail($response->json('data.id'));
 
         $this->withToken($token)
@@ -362,15 +368,17 @@ class ServiceRequestApiTest extends TestCase
         $this->withToken($token)
             ->putJson('/api/change-plan-requests/'.$changePlanRequest->id, [
                 ...$requestData,
-                'new_package_id' => Package::factory()->create()->id,
+                'new_package_detail' => Package::factory()->create()->changePlanDetail(),
                 'note' => 'Please apply the updated package.',
             ])
             ->assertOk()
+            ->assertJsonPath('code', 'MSG-REQ-003')
             ->assertJsonPath('data.note', 'Please apply the updated package.');
 
         $this->withToken($token)
             ->deleteJson('/api/change-plan-requests/'.$changePlanRequest->id)
-            ->assertNoContent();
+            ->assertOk()
+            ->assertJsonPath('code', 'MSG-REQ-001');
 
         $this->assertSoftDeleted('change_plan_requests', ['id' => $changePlanRequest->id]);
     }

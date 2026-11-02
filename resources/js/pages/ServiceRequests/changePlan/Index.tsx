@@ -35,6 +35,7 @@ import { useOpenRequestFromQuery } from '@/hooks/useOpenRequestFromQuery';
 type Filters = {
     search: string;
     status: string;
+    service_type: string;
 };
 
 type Props = {
@@ -48,6 +49,12 @@ type Props = {
         cancelled_requests: number;
     };
 };
+
+function appServiceType(account?: string | null): string {
+    if (account?.startsWith('FTTH')) return 'FTTH';
+    if (account?.startsWith('CG')) return 'CG';
+    return '';
+}
 
 export default function ChangePlanIndex({ requests, filters, statuses, stats }: Props) {
     const { t } = useTranslation();
@@ -96,6 +103,7 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
             {
                 search: (next.search ?? filters.search) || undefined,
                 status: next.status ?? filters.status,
+                service_type: (next.service_type ?? filters.service_type) || undefined,
             },
             { preserveState: true, preserveScroll: true, replace: true },
         );
@@ -129,21 +137,49 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                     onView={(row) => setSelectedRequest(row)}
                     directActions
                     filters={
-                        <FormControl icon={WifiIcon} compact className="w-full shrink-0 sm:w-48">
-                            <Select value={filters.status || 'all'} onValueChange={(status) => visit({ status })}>
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder={t('common.status')} />
-                                </SelectTrigger>
-                                <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
-                                    <SelectItem value="all">{t('common.all')}</SelectItem>
-                                    {statuses.map((status) => (
-                                        <SelectItem key={status} value={status}>
-                                            {t(`status.${status}`)}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </FormControl>
+                        <>
+                            <FormControl icon={WifiIcon} compact className="w-full shrink-0 sm:w-40">
+                                <Select
+                                    value={filters.service_type || 'all'}
+                                    onValueChange={(serviceType) =>
+                                        visit({
+                                            service_type: serviceType === 'all' ? '' : serviceType,
+                                        })
+                                    }
+                                >
+                                    <SelectTrigger className="w-full rounded-xl border-border/60 bg-background">
+                                        <SelectValue placeholder={t('change_plan.service_type')} />
+                                    </SelectTrigger>
+                                    <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                        <SelectItem value="all">{t('common.all')}</SelectItem>
+                                        <SelectItem value="FTTH">FTTH</SelectItem>
+                                        <SelectItem value="CG">{t('change_plan.cg_router')}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </FormControl>
+                            <FormControl icon={WifiIcon} compact className="w-full shrink-0 sm:w-48">
+                                <Select
+                                    value={filters.status || 'all'}
+                                    onValueChange={(status) =>
+                                        visit({
+                                            status: status === 'all' ? '' : status,
+                                        })
+                                    }
+                                >
+                                    <SelectTrigger className="w-full rounded-xl border-border/60 bg-background">
+                                        <SelectValue placeholder={t('common.status')} />
+                                    </SelectTrigger>
+                                    <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                        <SelectItem value="all">{t('common.all')}</SelectItem>
+                                        {statuses.map((status) => (
+                                            <SelectItem key={status} value={status}>
+                                                {t(`status.${status}`)}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </FormControl>
+                        </>
                     }
                     columns={[
                         {
@@ -166,26 +202,63 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                             searchValue: (request) => `${request.user.name} ${request.broadband_account_number ?? ''}`,
                         },
                         {
+                            id: 'ticket_number',
+                            header: t('change_plan.ticket_number'),
+                            mobile: 'subtitle' as const,
+                            cell: (request) => {
+                                const ticket = request.ticket_number?.trim();
+
+                                return ticket ? (
+                                    <span className="inline-flex max-w-full items-center rounded-md bg-primary/10 px-2 py-0.5 font-mono text-[11px] font-medium text-primary">
+                                        {ticket}
+                                    </span>
+                                ) : (
+                                    <span>—</span>
+                                );
+                            },
+                            searchValue: (request) => request.ticket_number ?? '',
+                        },
+                        {
+                            id: 'service_type',
+                            header: t('change_plan.service_type'),
+                            mobile: false,
+                            cell: (request) => {
+                                const serviceType = appServiceType(request.broadband_account_number);
+
+                                return (
+                                    <span>
+                                        {serviceType === 'CG'
+                                            ? t('change_plan.cg_router')
+                                            : serviceType || '—'}
+                                    </span>
+                                );
+                            },
+                            searchValue: (request) =>
+                                appServiceType(request.broadband_account_number),
+                        },
+                        {
                             id: 'current_plans',
                             header: t('change_plan.current_packages'),
                             mobile: false,
                             cell: (request) => (
                                 <span className="truncate text-xs text-muted-foreground mb-1">
-                                    {packageName(request.current_package)}
+                                    {packageName(request.current_package_detail)}
                                 </span>
                             ),
-                            searchValue: (request) => packageName(request.current_package),
+                            searchValue: (request) => packageName(request.current_package_detail),
                         },
                         {
                             id: 'requested_plans',
                             header: t('change_plan.requested_packages'),
                             mobile: 'subtitle' as const,
                             cell: (request) => {
-                                const currentSpeed = request.current_package.speed?.mbps;
-                                const newSpeed = request.new_package.speed?.mbps;
+                                const currentSpeed = Number(request.current_package_detail?.speed?.mbps);
+                                const newSpeed = Number(request.new_package_detail?.speed?.mbps);
 
                                 const speedChanged =
-                                    currentSpeed !== undefined && newSpeed !== undefined && newSpeed !== currentSpeed;
+                                    Number.isFinite(currentSpeed) &&
+                                    Number.isFinite(newSpeed) &&
+                                    newSpeed !== currentSpeed;
 
                                 const SpeedIcon = speedChanged
                                     ? newSpeed > currentSpeed
@@ -208,11 +281,11 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                                                 aria-hidden="true"
                                             />
                                         )}
-                                        <span className="truncate">{packageName(request.new_package)}</span>
+                                        <span className="truncate">{packageName(request.new_package_detail)}</span>
                                     </span>
                                 );
                             },
-                            searchValue: (request) => packageName(request.new_package),
+                            searchValue: (request) => packageName(request.new_package_detail),
                         },
                         {
                             id: 'preferred_date',

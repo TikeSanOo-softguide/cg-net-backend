@@ -16,6 +16,10 @@ class ChangePlanRequestController extends Controller
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search'));
+        $serviceType = $request->string('service_type')->toString();
+        if (! in_array($serviceType, ['FTTH', 'CG'], true)) {
+            $serviceType = '';
+        }
         $status = $request->has('status')
             ? $request->string('status')->toString()
             : RequestStatus::UnderReview->value;
@@ -24,25 +28,20 @@ class ChangePlanRequestController extends Controller
         $changePlanRequests = ChangePlanRequest::query()
             ->with([
                 'user:id,name,phone',
-                'currentPackage' => function ($query) {
-                    $query
-                        ->select('id', 'price', 'network_id', 'speed_id', 'term_id')
-                        ->with(['network:id,name_en,name_zh,name_my', 'speed:id,mbps', 'term:id,months']);
-                },
-                'newPackage' => function ($query) {
-                    $query
-                        ->select('id', 'price', 'network_id', 'speed_id', 'term_id')
-                        ->with(['network:id,name_en,name_zh,name_my', 'speed:id,mbps', 'term:id,months']);
-                },
                 'admin:id,username',
             ])
             ->when($openRequestId < 1 && $search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
                         ->whereHas('user', fn($user) => $user->whereLike('name', '%' . $search . '%'))
-                        ->orWhereLike('broadband_account_number', '%' . $search . '%');
+                        ->orWhereLike('broadband_account_number', '%' . $search . '%')
+                        ->orWhereLike('ticket_number', '%' . $search . '%');
                 });
             })
+            ->when(
+                $openRequestId < 1 && $serviceType !== '',
+                fn ($query) => $query->where('broadband_account_number', 'like', $serviceType.'%'),
+            )
             ->when(
                 $openRequestId < 1 &&
                     $status !== '' &&
@@ -60,6 +59,7 @@ class ChangePlanRequestController extends Controller
             'filters' => [
                 'search' => $search,
                 'status' => $status,
+                'service_type' => $serviceType,
             ],
             'statuses' => array_column(RequestStatus::cases(), 'value'),
             'stats' => $this->stats(),

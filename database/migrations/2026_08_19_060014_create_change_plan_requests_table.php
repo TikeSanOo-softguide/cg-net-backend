@@ -11,8 +11,10 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('broadband_account_number', 32)->nullable()->index();
-            $table->foreignId('current_package_id')->constrained('packages')->restrictOnDelete();
-            $table->foreignId('new_package_id')->constrained('packages')->restrictOnDelete();
+            $table->string('service_type', 8)->nullable();
+            $table->string('ticket_number', 32)->nullable()->unique();
+            $table->json('current_package_detail');
+            $table->json('new_package_detail');
             $table->date('preferred_date');
             $table->string('contact_name', 255);
             $table->string('contact_phone', 16);

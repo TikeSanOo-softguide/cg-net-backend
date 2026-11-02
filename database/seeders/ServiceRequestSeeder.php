@@ -72,7 +72,7 @@ class ServiceRequestSeeder extends Seeder
             }
 
             $currentPackageId = $customerPackage->package_id;
-            $currentPackage = Package::query()->with('speed')->find($currentPackageId);
+            $currentPackage = Package::query()->with(['network', 'speed', 'term'])->find($currentPackageId);
 
             $condition = $index % 3;
             $status = $index < 10
@@ -116,14 +116,16 @@ class ServiceRequestSeeder extends Seeder
                 [
                     'user_id' => $user->id,
                     'broadband_account_number' => $user->broadband_account_number,
-                    'current_package_id' => $currentPackageId,
-                    'new_package_id' => $newPackage->id,
                     'preferred_date' => now()
                         ->{$index < 2 ? 'subDays' : 'addDays'}($index + 1)
                         ->toDateString(),
                 ],
                 [
                     'broadband_account_number' => $user->broadband_account_number,
+                    'service_type' => str_starts_with((string) $user->broadband_account_number, 'CG') ? 'CG' : 'FTTH',
+                    'ticket_number' => 'CPL'.$user->id.str_pad((string) ($index + 1), 4, '0', STR_PAD_LEFT),
+                    'current_package_detail' => $currentPackage->changePlanDetail(),
+                    'new_package_detail' => $newPackage->loadMissing(['network', 'speed', 'term'])->changePlanDetail(),
                     'contact_name' => $user->name,
                     'contact_phone' => $contactPhone,
                     'note' => 'Seeded change plan request.',

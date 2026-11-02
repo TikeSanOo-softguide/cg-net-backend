@@ -71,13 +71,27 @@ class Package extends Model
         return $this->hasMany(PackageOrder::class, 'package_id');
     }
 
-    public function currentChangePlanRequests(): HasMany
+    /**
+     * @return array<string, mixed>
+     */
+    public function changePlanDetail(): array
     {
-        return $this->hasMany(ChangePlanRequest::class, 'current_package_id');
-    }
+        $this->loadMissing(['network', 'speed', 'term']);
 
-    public function newChangePlanRequests(): HasMany
-    {
-        return $this->hasMany(ChangePlanRequest::class, 'new_package_id');
+        return [
+            'package_id' => $this->id,
+            'price' => $this->price,
+            'network_name' => [
+                'en' => $this->network?->name_en,
+                'zh' => $this->network?->name_zh,
+                'my' => $this->network?->name_my,
+            ],
+            'speed' => [
+                'mbps' => $this->speed?->mbps,
+            ],
+            'term' => [
+                'months' => $this->term?->months,
+            ],
+        ];
     }
 }

@@ -213,12 +213,7 @@ class PackageController extends Controller
     private function packageIsUsed(int $packageId): bool
     {
         return DB::table('package_orders')->where('package_id', $packageId)->exists() ||
-            DB::table('customer_packages')->where('package_id', $packageId)->exists() ||
-            DB::table('change_plan_requests')
-                ->where(function ($query) use ($packageId) {
-                    $query->where('current_package_id', $packageId)->orWhere('new_package_id', $packageId);
-                })
-                ->exists();
+            DB::table('customer_packages')->where('package_id', $packageId)->exists();
     }
 
     public function destroy(Request $request, Package $package): RedirectResponse
@@ -245,9 +240,7 @@ class PackageController extends Controller
             ->where(function ($query) {
                 $query
                     ->whereHas('packageOrders')
-                    ->orWhereHas('customerPackages')
-                    ->orWhereHas('currentChangePlanRequests')
-                    ->orWhereHas('newChangePlanRequests');
+                    ->orWhereHas('customerPackages');
             })
             ->pluck('id');
 
