@@ -5,6 +5,7 @@ namespace App\Http\Controllers\ServiceRequest;
 use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\ChangePasswordRequest;
+use App\Services\AdminNotification\AdminNotificationReadStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Enum;
@@ -13,7 +14,7 @@ use Inertia\Response;
 
 class ChangePasswordRequestController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, AdminNotificationReadStatus $readStatus): Response
     {
         $search = trim((string) $request->string('search'));
         $status = $request->has('status')
@@ -50,6 +51,16 @@ class ChangePasswordRequestController extends Controller
             ->orderBy('id')
             ->paginate(15)
             ->withQueryString();
+
+        $unreadRequestIds = $readStatus->unreadReferenceIds(
+            (int) $request->user()->getAuthIdentifier(),
+            'change_password_request',
+            $requests->getCollection()->pluck('id')->all(),
+        );
+        $requests->through(fn (ChangePasswordRequest $request): array => [
+            ...$request->toArray(),
+            'notification_unread' => in_array($request->id, $unreadRequestIds, true),
+        ]);
 
         return Inertia::render('ServiceRequests/changePassword/Index', [
             'requests' => $requests,

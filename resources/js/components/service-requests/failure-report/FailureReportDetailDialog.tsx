@@ -24,6 +24,7 @@ import { formatPhoneInternational } from '@/lib/phone';
 
 type FailureReport = {
     id: number;
+    ticket_number: string | null;
     label?: string | null;
     status: string;
     customer_name: string;
@@ -96,6 +97,8 @@ export function FailureReportDetailDialog({
     if (!request) {
         return null;
     }
+
+    const ticket = request.ticket_number?.trim() ?? '';
 
     const handleStatusUpdate = () => {
         if (!request || !data.status) return;
@@ -173,6 +176,26 @@ export function FailureReportDetailDialog({
                             </p>
 
                             <div className="space-y-2.5">
+                                <div className="flex items-center justify-between gap-3">
+                                    <span className="text-xs text-muted-foreground">
+                                        {t('broadband_application.ticket_number')}
+                                    </span>
+                                    <span className="inline-flex items-center gap-1">
+                                        {ticket ? (
+                                            <span className="inline-flex max-w-full items-center truncate rounded-md bg-primary/10 px-2 py-0.5 font-mono text-[11px] font-medium text-primary">
+                                                {ticket}
+                                            </span>
+                                        ) : (
+                                            <span className="text-sm text-muted-foreground">—</span>
+                                        )}
+                                        {ticket && (
+                                            <CopyValueButton
+                                                value={ticket}
+                                                label={t('broadband_application.ticket_number')}
+                                            />
+                                        )}
+                                    </span>
+                                </div>
                                 <div className="flex items-center justify-between gap-3">
                                     <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                         <WifiOffIcon className="size-3.5" />

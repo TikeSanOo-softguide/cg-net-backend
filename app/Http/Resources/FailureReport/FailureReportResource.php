@@ -22,6 +22,7 @@ class FailureReportResource extends JsonResource
             'description' => $this->description,
             'contact_name' => $this->contact_name,
             'contact_phone' => $this->contact_phone,
+            'ticket_number' => $this->ticket_number,
             'status' => $this->status?->value,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

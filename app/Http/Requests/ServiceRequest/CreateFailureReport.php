@@ -30,7 +30,7 @@ class CreateFailureReport extends CreateServiceRequest
     private function mergeStoredBroadbandAccount(): void
     {
         $stored = $this->user()?->broadband_account_number;
-        if (! is_string($stored) || $stored === '') {
+        if (!is_string($stored) || $stored === '') {
             return;
         }
 
@@ -66,11 +66,13 @@ class CreateFailureReport extends CreateServiceRequest
             'description' => ['required', 'string', 'max:5000'],
             'contact_name' => ['required', 'string', 'max:255'],
             'contact_phone' => ['required', 'string', 'max:16'],
-            'status' => ['nullable', 'string', 'max:16', Rule::in([
-                RequestStatus::UnderReview->value,
-                RequestStatus::Cancelled->value,
-            ])],
-            'photos' => ['required', 'array', 'size:3'],
+            'status' => [
+                'nullable',
+                'string',
+                'max:16',
+                Rule::in([RequestStatus::UnderReview->value, RequestStatus::Cancelled->value]),
+            ],
+            'photos' => ['nullable', 'array', 'min:1'],
             'photos.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ];
     }

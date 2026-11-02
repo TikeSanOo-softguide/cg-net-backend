@@ -38,8 +38,12 @@ type Filters = {
     service_type: string;
 };
 
+type ChangePlanRequestWithNotification = ChangePlanRequestItem & {
+    notification_unread: boolean;
+};
+
 type Props = {
-    requests: Paginated<ChangePlanRequestItem>;
+    requests: Paginated<ChangePlanRequestWithNotification>;
     filters: Filters;
     statuses: string[];
     stats: {
@@ -58,11 +62,16 @@ function appServiceType(account?: string | null): string {
 
 export default function ChangePlanIndex({ requests, filters, statuses, stats }: Props) {
     const { t } = useTranslation();
-    const [selectedRequest, setSelectedRequest] = useState<ChangePlanRequestItem | null>(null);
+    const [selectedRequest, setSelectedRequest] = useState<ChangePlanRequestWithNotification | null>(null);
     const [search, setSearch] = useState(filters.search);
     const debounce = useRef<number>(0);
 
-    const closeRequestDetails = useOpenRequestFromQuery(requests.data, setSelectedRequest);
+    const closeRequestDetails = useOpenRequestFromQuery(
+        requests.data,
+        selectedRequest,
+        setSelectedRequest,
+        'change_plan_request',
+    );
 
     const cards = [
         {
@@ -189,10 +198,17 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                             cell: (request) => (
                                 <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-2.5">
                                     <div className="row-span-2">
-                                        <StaffListAvatar username={request.user.name} />
+                                        <StaffListAvatar
+                                            username={request.user.name}
+                                            unreadLabel={
+                                                request.notification_unread ? t('admin_notifications.unread') : undefined
+                                            }
+                                        />
                                     </div>
 
-                                    <span className="truncate font-semibold">{request.user.name}</span>
+                                    <span className="truncate font-semibold">
+                                        {request.user.name}
+                                    </span>
 
                                     <p className="truncate font-mono text-xs text-muted-foreground">
                                         {request.broadband_account_number ?? '—'}

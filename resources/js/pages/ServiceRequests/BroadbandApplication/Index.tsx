@@ -20,6 +20,7 @@ import { formatDate, truncateText } from '@/lib/utils';
 
 type BroadbandApplication = {
     id: number;
+    notification_unread: boolean;
     phone: string;
     address: string;
     note: string | null;
@@ -99,7 +100,12 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
     const [selectedRequest, setSelectedRequest] = useState<BroadbandApplication | null>(null);
     const debounce = useRef<number>(0);
 
-    const closeRequestDetails = useOpenRequestFromQuery(requests.data, setSelectedRequest);
+    const closeRequestDetails = useOpenRequestFromQuery(
+        requests.data,
+        selectedRequest,
+        setSelectedRequest,
+        'installation_application',
+    );
 
     const cards = [
         {
@@ -226,7 +232,12 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                             cell: (request) => (
                                 <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-2.5">
                                     <div className="row-span-2">
-                                        <StaffListAvatar username={request.user?.name || '—'} />
+                                        <StaffListAvatar
+                                            username={request.user?.name || '—'}
+                                            unreadLabel={
+                                                request.notification_unread ? t('admin_notifications.unread') : undefined
+                                            }
+                                        />
                                     </div>
                                     <span className="min-w-0 truncate font-medium">
                                         {truncateText(request.user?.name || '—', 20)}

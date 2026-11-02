@@ -3,12 +3,19 @@ import { PageHeader } from '@/components/PageHeader';
 import { ReportCard } from '@/components/Reports/ReportCard';
 import { useTranslation } from '@/hooks/useTranslation';
 import { reports } from '@/lib/navigation';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
+import type { PageProps } from '@/types';
 
 type Props = {};
 
 export default function ReportsIndex({}: Props) {
     const { t } = useTranslation();
+    const { unreadAdminNotificationReferences = [] } = usePage<PageProps>().props;
+    const hasUnreadLedgerHealth = [
+        'ledger_health_snapshot_full',
+        'ledger_health_snapshot_daily',
+        'ledger_health_snapshot_manual',
+    ].some((referenceType) => unreadAdminNotificationReferences.includes(referenceType));
 
     return (
         <>
@@ -24,6 +31,11 @@ export default function ReportsIndex({}: Props) {
                             description={t(report.descriptionKey)}
                             href={report.href}
                             icon={report.icon}
+                            unreadLabel={
+                                report.href === '/reports/ledger-health' && hasUnreadLedgerHealth
+                                    ? t('admin_notifications.unread')
+                                    : undefined
+                            }
                         />
                     ))}
                 </div>

@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
         'description',
         'contact_name',
         'contact_phone',
+        'ticket_number',
         'status',
         'admin_id',
     ]),

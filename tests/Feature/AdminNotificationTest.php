@@ -2,11 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Enums\LedgerHealthScanType;
 use App\Events\AdminNotificationCreated;
 use App\Events\ServiceRequestSubmitted;
 use App\Listeners\CreateAdminNotification;
 use App\Models\Admin;
 use App\Models\AdminNotification;
+use App\Models\ChangePasswordRequest;
+use App\Models\LedgerHealthSnapshot;
 use App\Services\AdminNotification\AdminNotificationDelivery;
 use App\Support\AppPermissions;
 use Database\Seeders\RolePermissionSeeder;
@@ -249,5 +252,125 @@ class AdminNotificationTest extends TestCase
         $this->actingAs($otherAdmin, 'web')
             ->putJson("/dashboard/notifications/{$notification->id}/read")
             ->assertNotFound();
+    }
+
+    public function test_opening_a_request_marks_its_notification_read_for_the_current_admin_only(): void
+    {
+        RolePermissionSeeder::sync();
+        $admin = Admin::factory()->create();
+        $admin->givePermissionTo(['notifications.view', 'service-requests.view']);
+        $otherAdmin = Admin::factory()->create();
+        $notification = AdminNotification::query()->create([
+            'type' => 'request',
+            'title' => 'New Change Password Request',
+            'body' => 'A request was submitted.',
+            'reference_type' => 'change_password_request',
+            'reference_id' => 42,
+        ]);
+        $notification->admins()->attach([
+            $admin->id => ['is_read' => false, 'read_at' => now()],
+            $otherAdmin->id => ['is_read' => false],
+        ]);
+
+        $this->actingAs($admin, 'web')
+            ->putJson('/dashboard/notifications/reference/change_password_request/42/read')
+            ->assertOk()
+            ->assertJsonPath('marked_read', 1);
+
+        $this->assertDatabaseHas('admin_notification_recipients', [
+            'admin_notification_id' => $notification->id,
+            'admin_id' => $admin->id,
+            'is_read' => true,
+        ]);
+        $this->assertDatabaseHas('admin_notification_recipients', [
+            'admin_notification_id' => $notification->id,
+            'admin_id' => $otherAdmin->id,
+            'is_read' => false,
+            'read_at' => null,
+        ]);
+    }
+
+    public function test_opening_a_ledger_snapshot_marks_its_notification_read_for_the_current_admin_only(): void
+    {
+        RolePermissionSeeder::sync();
+        $admin = Admin::factory()->create();
+        $admin->givePermissionTo(['notifications.view', 'reports.view']);
+        $otherAdmin = Admin::factory()->create();
+        $notification = AdminNotification::query()->create([
+            'type' => 'other',
+            'title' => 'Ledger Health Check Completed',
+            'body' => 'The Daily ledger health check completed successfully.',
+            'reference_type' => 'ledger_health_snapshot_daily',
+            'reference_id' => 42,
+        ]);
+        $notification->admins()->attach([
+            $admin->id => ['is_read' => false],
+            $otherAdmin->id => ['is_read' => false],
+        ]);
+
+        $this->actingAs($admin, 'web')
+            ->putJson('/dashboard/notifications/reference/ledger_health_snapshot_daily/42/read')
+            ->assertOk()
+            ->assertJsonPath('marked_read', 1);
+
+        $this->assertDatabaseHas('admin_notification_recipients', [
+            'admin_notification_id' => $notification->id,
+            'admin_id' => $admin->id,
+            'is_read' => true,
+        ]);
+        $this->assertDatabaseHas('admin_notification_recipients', [
+            'admin_notification_id' => $notification->id,
+            'admin_id' => $otherAdmin->id,
+            'is_read' => false,
+            'read_at' => null,
+        ]);
+    }
+
+    public function test_service_request_and_ledger_snapshot_lists_expose_unread_status(): void
+    {
+        RolePermissionSeeder::sync();
+        $admin = Admin::factory()->create();
+        $admin->givePermissionTo(['service-requests.view', 'reports.view']);
+
+        $request = ChangePasswordRequest::factory()->create();
+        $snapshot = LedgerHealthSnapshot::query()->create([
+            'requested_by' => $admin->id,
+            'type' => LedgerHealthScanType::Daily,
+            'status' => 'completed',
+            'results' => [],
+            'checked_at' => now(),
+        ]);
+
+        $requestNotification = AdminNotification::query()->create([
+            'type' => 'request',
+            'title' => 'New Change Password Request',
+            'body' => 'A request was submitted.',
+            'reference_type' => 'change_password_request',
+            'reference_id' => $request->id,
+        ]);
+        $ledgerNotification = AdminNotification::query()->create([
+            'type' => 'other',
+            'title' => 'Ledger Health Check Completed',
+            'body' => 'The Daily ledger health check completed successfully.',
+            'reference_type' => 'ledger_health_snapshot_daily',
+            'reference_id' => $snapshot->id,
+        ]);
+        $requestNotification->admins()->attach($admin->id, ['is_read' => false]);
+        $ledgerNotification->admins()->attach($admin->id, ['is_read' => false]);
+
+        $this->actingAs($admin, 'web')
+            ->get('/service-requests/change-password')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('requests.data.0.notification_unread', true));
+
+        $this->actingAs($admin, 'web')
+            ->get('/reports/ledger-health?type=daily')
+            ->assertOk()
+            ->assertInertia(
+                fn (Assert $page) => $page
+                    ->where('snapshots.0.id', $snapshot->id)
+                    ->where('snapshots.0.notification_unread', true),
+            );
     }
 }
