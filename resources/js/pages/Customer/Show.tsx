@@ -219,7 +219,8 @@ export default function CustomersShow({
         }
 
         bindForm.transform((data) => ({
-            account_number: `${data.service_type}${data.account_number.trim()}`,
+            service_type: data.service_type.trim(),
+            account_number: data.account_number.trim(),
         }));
         bindForm.post(`/customers/${customer.id}/account`, {
             preserveScroll: true,

@@ -28,20 +28,14 @@ class ProfileResource extends JsonResource
         $wallet = $this->resource['wallet'];
         /** @var Collection<int, CustomerPackage> $packages */
         $packages = $this->resource['packages'];
-        $accountNumber = $user->broadband_account_number;
-        $serviceType = null;
         $account = null;
 
-        if (is_string($accountNumber) && str_starts_with($accountNumber, 'FTTH')) {
-            $serviceType = 'FTTH';
-        } elseif (is_string($accountNumber) && str_starts_with($accountNumber, 'CG')) {
-            $serviceType = 'CG';
-        }
-
-        if ($serviceType !== null) {
-            $accountNumber = substr($accountNumber, strlen($serviceType));
+        if ($user->service_type !== null && $user->broadband_account_number !== null) {
             try {
-                $account = app(AccountInfoService::class)->findAccount($user->broadband_account_number);
+                $account = app(AccountInfoService::class)->findAccount(
+                    $user->service_type,
+                    $user->broadband_account_number,
+                );
             } catch (BroadbandApiException | ConnectionException) {
                 $account = null;
             }
@@ -51,8 +45,8 @@ class ProfileResource extends JsonResource
             'user' => UserResource::make($user),
             'account' => $account !== null ? BroadbandAccountResource::make($account) : null,
             'broadbandAccount' => [
-                'account_number' => $accountNumber,
-                'service_type' => $serviceType,
+                'account_number' => $user->broadband_account_number,
+                'service_type' => $user->service_type,
             ],
             'wallet' => $wallet ? WalletResource::make($wallet) : null,
             'packages' => $packages ? CustomerPackageResource::collection($packages) : null,

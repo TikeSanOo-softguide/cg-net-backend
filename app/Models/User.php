@@ -23,6 +23,7 @@ use LogicException;
         'name',
         'password',
         'status',
+        'service_type',
         'broadband_account_number',
         'lang',
         'announcements_enabled',

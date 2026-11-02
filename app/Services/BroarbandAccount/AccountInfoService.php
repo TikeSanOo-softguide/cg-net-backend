@@ -12,7 +12,7 @@ class AccountInfoService
 {
     public function __construct(private CgApiTokenProvider $tokens) {}
 
-    public function find(string $account, string $serviceType): ?array
+    public function find(string $serviceType, string $account): ?array
     {
         $baseUrl = $this->baseUrl();
 
@@ -37,7 +37,7 @@ class AccountInfoService
             try {
                 $response = Http::withToken($token)
                     ->timeout(10)
-                    ->get($baseUrl.'/AccountInfoAPI', [
+                    ->get($baseUrl . '/AccountInfoAPI', [
                         'Account' => $account,
                         'ServiceType' => $serviceType,
                     ]);
@@ -63,7 +63,7 @@ class AccountInfoService
 
             $data = $response->json();
 
-            if (! is_array($data)) {
+            if (!is_array($data)) {
                 Log::error('Broadband API returned an invalid account response.');
 
                 throw new BroadbandApiException(
@@ -85,7 +85,7 @@ class AccountInfoService
 
             $accountData = $data['Data'] ?? null;
 
-            if (! is_array($accountData)) {
+            if (!is_array($accountData)) {
                 Log::warning('Broadband API account data is missing or invalid.', [
                     'service_type' => $serviceType,
                     'data_type' => gettype($accountData),
@@ -96,7 +96,7 @@ class AccountInfoService
 
             $returnedAccount = $accountData['account'] ?? null;
 
-            if (! is_string($returnedAccount) || trim($returnedAccount) !== $account) {
+            if (!is_string($returnedAccount) || trim($returnedAccount) !== $account) {
                 Log::warning('Broadband API account number mismatch.', [
                     'requested_account' => $account,
                     'returned_account' => $returnedAccount,
@@ -109,32 +109,19 @@ class AccountInfoService
 
             return $accountData;
         } catch (ConnectionException $e) {
-            Log::error('Broadband API connection failed: '.$e->getMessage());
+            Log::error('Broadband API connection failed: ' . $e->getMessage());
 
             throw $e;
         }
     }
 
-    public function findAccount(string $broadbandAccount): ?array
+    public function findAccount(string $serviceType, string $broadbandAccount): ?array
     {
-        $broadbandAccount = trim($broadbandAccount);
-
-        if ($broadbandAccount === '') {
+        if ($serviceType === '' || $broadbandAccount === '') {
             return null;
         }
 
-        if (str_starts_with($broadbandAccount, 'FTTH')) {
-            $serviceType = 'FTTH';
-        } elseif (str_starts_with($broadbandAccount, 'CG')) {
-            $serviceType = 'CG';
-        } else {
-            Log::warning('Invalid broadband account number prefix.');
-
-            return null;
-        }
-        $account = substr($broadbandAccount, strlen($serviceType));
-
-        return $this->find($account, $serviceType);
+        return $this->find($serviceType, $broadbandAccount);
     }
 
     private function baseUrl(): string
@@ -144,8 +131,8 @@ class AccountInfoService
         $parts = parse_url($baseUrl);
 
         if (
-            ! is_array($parts) ||
-            ! in_array(strtolower($parts['scheme'] ?? ''), ['http', 'https'], true) ||
+            !is_array($parts) ||
+            !in_array(strtolower($parts['scheme'] ?? ''), ['http', 'https'], true) ||
             empty($parts['host'])
         ) {
             Log::error('Broadband API URL is not configured or invalid.');

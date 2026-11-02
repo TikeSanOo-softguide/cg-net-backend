@@ -18,46 +18,41 @@ class BroadbandAccountController extends Controller
 
     public function bindAccount(Request $request)
     {
-        $request->validate([
-            'account_number' => ['required', 'string', 'max:25'],
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'account_number' => ['required', 'string', 'max:32'],
             'service_type' => ['required', 'string', 'in:FTTH,CG'],
         ]);
 
+        $serviceType = $validated['service_type'];
+        $accountNumber = $validated['account_number'];
+
         try {
-            $account = $this->accountInfoService->find($request->account_number, $request->service_type);
+            $account = $this->accountInfoService->find($serviceType, $accountNumber);
         } catch (ConnectionException) {
             return $this->result(false, MessageCode::BbConnectionFailed, 502);
         } catch (BroadbandApiException $exception) {
-            return $this->result(false, MessageCode::BbUpstreamFailed, 502, [
-                'message' => $exception->errorCode,
-            ]);
+            return $this->result(false, MessageCode::BbUpstreamFailed, 502, ['message' => $exception->errorCode]);
         }
 
         if (!$account) {
             return $this->result(false, MessageCode::BbNotMatch, 404);
         }
 
-        $user = $request->user();
-        $broadbandAccount = $request->service_type . $request->account_number;
-
-        if ($user->broadband_account_number === $broadbandAccount) {
-            return $this->result(true, MessageCode::BbAlreadyConnected, 200);
-        }
-
-        if (isset($user->broadband_account_number) && $user->broadband_account_number !== $broadbandAccount) {
-            return $this->result(false, MessageCode::BbDifferentAccount, 409);
-        }
-
-        $alreadyUsed = User::where('broadband_account_number', $broadbandAccount)
+        $alreadyBound = User::query()
             ->where('id', '!=', $user->id)
+            ->where('broadband_account_number', $accountNumber)
+            ->where('service_type', $serviceType)
             ->exists();
 
-        if ($alreadyUsed) {
-            return $this->result(false, MessageCode::BbInUse, 409);
+        if ($alreadyBound) {
+            return $this->result(false, MessageCode::BbAlreadyBound, 409);
         }
 
         $user->update([
-            'broadband_account_number' => $broadbandAccount,
+            'service_type' => $serviceType,
+            'broadband_account_number' => $accountNumber,
         ]);
 
         return $this->result(true, MessageCode::BbConnected, 200);
@@ -66,13 +61,19 @@ class BroadbandAccountController extends Controller
     public function unbindAccount(Request $request)
     {
         $user = $request->user();
-        $accountNumber = $request->account_number;
+        $serviceType = $request->input('service_type');
+        $accountNumber = $request->input('account_number');
 
-        if ($accountNumber === null) {
+        if (
+            !is_string($accountNumber) ||
+            $user->broadband_account_number !== $accountNumber ||
+            ($serviceType !== null && $user->service_type !== $serviceType)
+        ) {
             abort(404);
         }
 
         $user->update([
+            'service_type' => null,
             'broadband_account_number' => null,
         ]);
 

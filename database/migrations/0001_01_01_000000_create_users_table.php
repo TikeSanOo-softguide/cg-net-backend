@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->string('name');
             $table->string('password');
             $table->string('lang', 5)->default('en');
+            $table->string('service_type', 8)->nullable();
             $table->string('broadband_account_number', 32)->nullable()->unique();
             $table->string('status', 16)->default('active')->index();
             $table->boolean('announcements_enabled')->default(true)->index();
