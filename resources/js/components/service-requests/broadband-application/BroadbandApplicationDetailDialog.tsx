@@ -50,6 +50,7 @@ export type BroadbandApplicationDetail = {
         id: number;
         name: string;
         phone: string;
+        broadband_account_number: string | null;
     } | null;
     area: {
         id: number;
@@ -173,7 +174,7 @@ export function BroadbandApplicationDetailDialog({
 
     const detail = request.package_detail;
     const ticket = request.ticket_number?.trim() || '';
-    const appPhone = request.user?.phone ? formatPhoneInternational(request.user.phone) : '';
+    const accountNumber = request.user?.broadband_account_number?.trim() || '';
     const contactPhone = request.phone ? formatPhoneInternational(request.phone) : '';
     const serviceLabel =
         request.service_type === 'CG'
@@ -227,10 +228,10 @@ export function BroadbandApplicationDetailDialog({
                         <div className="space-y-3">
                             <Field label={t('customers.name')} value={request.user?.name || '—'} />
                             <Field
-                                label={t('requests.phone')}
-                                value={appPhone || '—'}
-                                copy={appPhone}
-                                copyLabel={t('requests.copy_phone')}
+                                label={t('requests.broadband_account')}
+                                value={accountNumber || '—'}
+                                copy={accountNumber}
+                                copyLabel={t('requests.broadband_account')}
                             />
                         </div>
                     </Section>

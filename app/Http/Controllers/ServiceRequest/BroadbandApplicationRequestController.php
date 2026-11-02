@@ -29,7 +29,7 @@ class BroadbandApplicationRequestController extends Controller
 
         $broadbandApplication = InstallationApplication::query()
             ->with([
-                'user:id,name,phone',
+                'user:id,name,phone,broadband_account_number',
                 'admin:id,username',
                 'area:id,name_en,name_zh,name_my,region_id',
                 'area.region:id,name_en,name_zh,name_my,state_id',
@@ -43,8 +43,13 @@ class BroadbandApplicationRequestController extends Controller
                         ->whereLike('phone', $search)
                         ->orWhereLike('name', $search)
                         ->orWhereLike('ticket_number', $search)
-                        ->orWhereHas('user', fn($q) => $q->whereLike('name', $search))
-                        ->orWhereHas('user', fn($q) => $q->whereLike('phone', $search));
+                        ->orWhereHas(
+                            'user',
+                            fn ($q) => $q
+                                ->whereLike('name', $search)
+                                ->orWhereLike('phone', $search)
+                                ->orWhereLike('broadband_account_number', $search),
+                        );
                 });
             })
             ->when(

@@ -13,6 +13,7 @@ use App\Models\InstallationApplication;
 use App\Services\Package\CgNetProductCatalog;
 use App\Services\Telegram\TelegramService;
 use App\Support\ApiMessage;
+use App\Support\GeneratesTicketNumber;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -78,7 +79,11 @@ class BroadbandApplicationRequestController extends Controller
 
             $application = InstallationApplication::query()->create([
                 ...$validated,
-                'ticket_number' => $this->nextTicketNumber(),
+                'ticket_number' => GeneratesTicketNumber::next(
+                    InstallationApplication::class,
+                    'ticket_number',
+                    'INT'.now()->format('md'),
+                ),
                 'user_id' => $request->user()->id,
                 'status' => RequestStatus::UnderReview->value,
             ]);
@@ -178,19 +183,4 @@ class BroadbandApplicationRequestController extends Controller
         }
     }
 
-    private function nextTicketNumber(): string
-    {
-        $prefix = 'INT'.now()->format('md');
-        $max = InstallationApplication::withTrashed()
-            ->where('ticket_number', 'like', $prefix.'%')
-            ->lockForUpdate()
-            ->pluck('ticket_number')
-            ->reduce(function (int $highest, ?string $number) use ($prefix): int {
-                $sequence = (int) substr((string) $number, strlen($prefix));
-
-                return max($highest, $sequence);
-            }, 0);
-
-        return $prefix.str_pad((string) ($max + 1), 4, '0', STR_PAD_LEFT);
-    }
 }

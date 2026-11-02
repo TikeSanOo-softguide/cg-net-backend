@@ -42,6 +42,7 @@ type BroadbandApplication = {
         id: number;
         name: string;
         phone: string;
+        broadband_account_number: string | null;
     } | null;
     area: {
         id: number;
@@ -232,14 +233,12 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                                     </span>
 
                                     <p className="mt-1 truncate font-mono text-muted-foreground">
-                                        {request.user?.phone
-                                            ? formatPhoneInternational(request.user.phone)
-                                            : '—'}
+                                        {request.user?.broadband_account_number ?? '—'}
                                     </p>
                                 </div>
                             ),
                             searchValue: (request) =>
-                                `${request.user?.name ?? ''} ${request.user?.phone ?? ''}`,
+                                `${request.user?.name ?? ''} ${request.user?.broadband_account_number ?? ''} ${request.user?.phone ?? ''}`,
                         },
                         {
                             id: 'ticket_number',

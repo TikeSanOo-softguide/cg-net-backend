@@ -124,7 +124,7 @@
         "package": "套餐",
         "package_price": "套餐价格",
         "region": "县/区",
-        "search_placeholder": "搜索应用用户、电话或工单号",
+        "search_placeholder": "搜索应用用户、账户号或工单号",
         "service_type": "服务类型",
         "speed": "网速",
         "state": "州/省",

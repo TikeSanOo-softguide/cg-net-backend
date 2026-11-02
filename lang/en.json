@@ -124,7 +124,7 @@
         "package": "Package",
         "package_price": "Package price",
         "region": "Region",
-        "search_placeholder": "Search app user, phone, or ticket",
+        "search_placeholder": "Search app user, account no, or ticket",
         "service_type": "Service type",
         "speed": "Speed",
         "state": "State",
