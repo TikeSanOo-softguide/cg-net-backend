@@ -57,10 +57,12 @@ class ChangePasswordRequestController extends Controller
             'change_password_request',
             $requests->getCollection()->pluck('id')->all(),
         );
-        $requests->through(fn (ChangePasswordRequest $request): array => [
-            ...$request->toArray(),
-            'notification_unread' => in_array($request->id, $unreadRequestIds, true),
-        ]);
+        $requests->through(
+            fn(ChangePasswordRequest $request): array => [
+                ...$request->toArray(),
+                'notification_unread' => in_array($request->id, $unreadRequestIds, true),
+            ],
+        );
 
         return Inertia::render('ServiceRequests/changePassword/Index', [
             'requests' => $requests,
@@ -78,7 +80,7 @@ class ChangePasswordRequestController extends Controller
             ->causedBy($request->user())
             ->performedOn($changePasswordRequest)
             ->event('status_updated')
-            ->log('change_password_status_updated');
+            ->log($validated['status']);
 
         $changePasswordRequest->update([
             'status' => $validated['status'],
@@ -95,12 +97,8 @@ class ChangePasswordRequestController extends Controller
             'under_reviews_requests' => ChangePasswordRequest::query()
                 ->where('status', RequestStatus::UnderReview)
                 ->count(),
-            'approved_requests' => ChangePasswordRequest::query()
-                ->where('status', RequestStatus::Approved)
-                ->count(),
-            'cancelled_requests' => ChangePasswordRequest::query()
-                ->where('status', RequestStatus::Cancelled)
-                ->count(),
+            'approved_requests' => ChangePasswordRequest::query()->where('status', RequestStatus::Approved)->count(),
+            'cancelled_requests' => ChangePasswordRequest::query()->where('status', RequestStatus::Cancelled)->count(),
         ];
     }
 }

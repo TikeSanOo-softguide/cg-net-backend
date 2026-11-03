@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Events\LedgerHealthScanFinished;
+use App\Models\Admin;
 use App\Models\LedgerHealthSnapshot;
 use App\Services\Reports\LedgerHealthReportService;
 use Illuminate\Bus\Queueable;
@@ -30,7 +31,7 @@ class GenerateLedgerHealthSnapshot implements ShouldQueue
     {
         $snapshot = LedgerHealthSnapshot::query()->find($this->snapshotId);
 
-        if (! $snapshot || $snapshot->status !== 'queued') {
+        if (!$snapshot || $snapshot->status !== 'queued') {
             return;
         }
 
@@ -48,12 +49,14 @@ class GenerateLedgerHealthSnapshot implements ShouldQueue
                 'error' => null,
                 'checked_at' => now(),
             ]);
+            $this->logActivity($snapshot, $results['health'] ?? []);
             $this->notifyAdmins($snapshot, $this->hasDiscrepancies($results));
         } catch (Throwable $exception) {
             $snapshot->update([
                 'status' => 'failed',
                 'error' => $exception->getMessage(),
             ]);
+            $this->logActivity($snapshot);
 
             Log::error('Ledger health snapshot failed.', [
                 'snapshot_id' => $snapshot->id,
@@ -91,13 +94,16 @@ class GenerateLedgerHealthSnapshot implements ShouldQueue
     {
         $health = $results['health'] ?? [];
 
-        foreach ([
-            'balance_mismatches',
-            'completed_without_entry',
-            'unbalanced_transactions',
-            'duplicate_entry_transactions',
-            'source_mismatches',
-        ] as $counter) {
+        foreach (
+            [
+                'balance_mismatches',
+                'completed_without_entry',
+                'unbalanced_transactions',
+                'duplicate_entry_transactions',
+                'source_mismatches',
+            ]
+            as $counter
+        ) {
             if (($health[$counter] ?? 0) > 0) {
                 return true;
             }
@@ -122,5 +128,33 @@ class GenerateLedgerHealthSnapshot implements ShouldQueue
                 'exception' => $exception->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $health
+     */
+    private function logActivity(LedgerHealthSnapshot $snapshot, array $health = []): void
+    {
+        if ($snapshot->requested_by === null) {
+            return;
+        }
+
+        $admin = Admin::query()->find($snapshot->requested_by);
+        if (!$admin) {
+            return;
+        }
+
+        activity('reports')
+            ->causedBy($admin)
+            ->performedOn($snapshot)
+            ->event($snapshot->status)
+            ->withProperties([
+                'type' => $snapshot->type->value,
+                'status' => $snapshot->status,
+                'window_start' => $snapshot->window_start?->toISOString(),
+                'window_end' => $snapshot->window_end?->toISOString(),
+                'health' => $health,
+            ])
+            ->log('ledger_health_check_' . $snapshot->status);
     }
 }

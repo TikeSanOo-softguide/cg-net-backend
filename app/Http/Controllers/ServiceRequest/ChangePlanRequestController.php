@@ -83,6 +83,12 @@ class ChangePlanRequestController extends Controller
             'status' => ['required', new Enum(RequestStatus::class)],
         ]);
 
+        activity('change_plan_request')
+            ->causedBy($request->user())
+            ->performedOn($changePlanRequest)
+            ->event('status_updated')
+            ->log($validated['status']);
+
         $changePlanRequest->update([
             'status' => $validated['status'],
             'admin_id' => $request->user()->id,

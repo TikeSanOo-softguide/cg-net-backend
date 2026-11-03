@@ -97,6 +97,12 @@ class BroadbandApplicationRequestController extends Controller
             'status' => ['required', new Enum(RequestStatus::class)],
         ]);
 
+        activity('installation_application')
+            ->causedBy($request->user())
+            ->performedOn($installationApplication)
+            ->event('status_updated')
+            ->log($validated['status']);
+
         $installationApplication->update([
             'status' => $validated['status'],
             'admin_id' => $request->user()->id,

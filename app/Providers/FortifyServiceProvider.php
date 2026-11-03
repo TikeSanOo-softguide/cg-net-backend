@@ -113,17 +113,6 @@ class FortifyServiceProvider extends ServiceProvider
                 ]);
             }
 
-            activity('admin')
-                ->causedBy($admin)
-                ->performedOn($admin)
-                ->event('logged_in')
-                ->withProperties([
-                    'username' => $admin->username,
-                    'ip' => $request->ip(),
-                    'user_agent' => $request->userAgent(),
-                ])
-                ->log('admin_logged_in');
-
             app(SecurityLogService::class)->clearLoginFailures('admin', $admin->username);
 
             return $admin;

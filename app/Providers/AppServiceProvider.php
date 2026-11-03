@@ -13,6 +13,7 @@ use App\Services\PackageActivation\RealPackageActivationService;
 use App\Support\AppPermissions;
 use App\Support\JsonTranslations;
 use App\Support\Like;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
@@ -70,6 +71,23 @@ class AppServiceProvider extends ServiceProvider
             TokenAuthenticated::class,
             fn(TokenAuthenticated $event) => $this->app->make(ApiTokenService::class)->slide($event->token),
         );
+
+        Event::listen(Login::class, function (Login $event): void {
+            if ($event->guard !== 'web' || !$event->user instanceof Admin) {
+                return;
+            }
+
+            activity('admin')
+                ->causedBy($event->user)
+                ->performedOn($event->user)
+                ->event('logged_in')
+                ->withProperties([
+                    'username' => $event->user->username,
+                    'ip' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ])
+                ->log('admin_logged_in');
+        });
 
         Gate::before(function ($user, string $ability): ?bool {
             if ($user instanceof Admin && $user->hasRole(AppPermissions::SuperAdmin)) {

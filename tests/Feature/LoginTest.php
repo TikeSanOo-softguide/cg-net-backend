@@ -31,6 +31,17 @@ class LoginTest extends TestCase
 
         $response->assertRedirect('/dashboard');
         $this->assertAuthenticatedAs($admin, 'web');
+
+        $this->assertDatabaseCount('activity_log', 1);
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => 'admin',
+            'description' => 'admin_logged_in',
+            'event' => 'logged_in',
+            'causer_type' => Admin::class,
+            'causer_id' => $admin->id,
+            'subject_type' => Admin::class,
+            'subject_id' => $admin->id,
+        ]);
     }
 
     public function test_admin_session_login_is_not_exposed_through_the_customer_api(): void

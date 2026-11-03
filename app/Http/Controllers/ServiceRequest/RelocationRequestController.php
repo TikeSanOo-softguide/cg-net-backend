@@ -72,6 +72,12 @@ class RelocationRequestController extends Controller
             'status' => ['required', new Enum(RequestStatus::class)],
         ]);
 
+        activity('relocation_request')
+            ->causedBy($request->user())
+            ->performedOn($relocationRequest)
+            ->event('status_updated')
+            ->log($validated['status']);
+
         $relocationRequest->update([
             'status' => $validated['status'],
             'admin_id' => $request->user()->id,

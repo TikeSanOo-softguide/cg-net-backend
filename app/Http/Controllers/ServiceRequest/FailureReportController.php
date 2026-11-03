@@ -157,11 +157,17 @@ class FailureReportController extends Controller
             'status' => ['required', Rule::enum(RequestStatus::class)],
         ])['status'];
 
+        activity('failure_report')
+            ->causedBy($request->user())
+            ->performedOn($failureReport)
+            ->event('status_updated')
+            ->log($status);
+
         if ($failureReport->status !== $status) {
             $failureReport->update(['status' => $status]);
         }
 
-        return back()->with('success', 'common.update');
+        return back()->with('success', 'requests.status_updated');
     }
 
     public function destroy(FailureReport $failureReport): RedirectResponse
