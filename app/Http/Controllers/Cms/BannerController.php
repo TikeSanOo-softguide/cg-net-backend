@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Cms;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Enums\BannerType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Cms\StoreBannerRequest;
@@ -69,7 +72,7 @@ class BannerController extends Controller
             ),
         );
 
-        activity('cms')->causedBy($request->user())->performedOn($banner)->event('created')->log('banner_created');
+        activity(ActivityLogName::Banner->value)->causedBy($request->user())->performedOn($banner)->event(ActivityLogEvent::Created->value)->log('banner_created');
 
         return redirect()->route('cms.banners.index')->with('success', 'cms.banner.created');
     }
@@ -94,7 +97,7 @@ class BannerController extends Controller
             ),
         );
 
-        activity('cms')->causedBy($request->user())->performedOn($banner)->event('updated')->log('banner_updated');
+        activity(ActivityLogName::Banner->value)->causedBy($request->user())->performedOn($banner)->event(ActivityLogEvent::Updated->value)->log('banner_updated');
 
         return redirect()->route('cms.banners.index')->with('success', 'cms.banner.updated');
     }
@@ -106,7 +109,7 @@ class BannerController extends Controller
         StoresPublicImage::delete($banner->image_url_my);
         $banner->delete();
 
-        activity('cms')->causedBy($request->user())->performedOn($banner)->event('deleted')->log('banner_deleted');
+        activity(ActivityLogName::Banner->value)->causedBy($request->user())->performedOn($banner)->event(ActivityLogEvent::Deleted->value)->log('banner_deleted');
 
         return redirect()->route('cms.banners.index')->with('success', 'cms.banner.deleted');
     }
@@ -118,6 +121,7 @@ class BannerController extends Controller
             Banner::query(),
             'cms.banners.index',
             'banner_deleted',
+            ActivityLogName::Banner,
             beforeDelete: fn(Banner $banner) => StoresPublicImage::delete($banner->image_path),
         );
     }

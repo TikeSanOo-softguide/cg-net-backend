@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\TopUpCard;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Enums\TopUpCardStatus;
 use App\Jobs\GenerateTopUpCardsJob;
 use App\Http\Controllers\Controller;
@@ -597,10 +600,10 @@ class TopUpCardController extends Controller
         $metadata = is_array($cardBatch->metadata) ? $cardBatch->metadata : [];
         $items = is_array($metadata['items'] ?? null) ? $metadata['items'] : [];
 
-        activity('top_up_cards')
+        activity(ActivityLogName::TopUpCards->value)
             ->causedBy($causer)
             ->performedOn($cardBatch)
-            ->event($status)
+            ->event(ActivityLogEvent::from($status)->value)
             ->withProperties([
                 'status' => $status,
                 'batch_id' => $cardBatch->id,
@@ -671,10 +674,10 @@ class TopUpCardController extends Controller
 
         $topUpCard->update(['status' => TopUpCardStatus::Blocked]);
 
-        activity('top-up-cards')
+        activity(ActivityLogName::TopUpCards->value)
             ->causedBy($request->user())
             ->performedOn($topUpCard)
-            ->event('voided')
+            ->event(ActivityLogEvent::Voided->value)
             ->log('top_up_card_voided');
 
         return back()->with('success', 'top_up_cards.voided');

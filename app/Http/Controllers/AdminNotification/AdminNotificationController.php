@@ -48,6 +48,20 @@ class AdminNotificationController extends Controller
         'relocation_request' => 'relocation_requests',
     ];
 
+    /**
+     * @var array<string, string>
+     */
+    private const REFERENCE_PERMISSIONS = [
+        'installation_application' => 'service-requests.view',
+        'change_password_request' => 'service-requests.view',
+        'change_plan_request' => 'service-requests.view',
+        'failure_report' => 'service-requests.view',
+        'relocation_request' => 'service-requests.view',
+        'ledger_health_snapshot_full' => 'reports.view',
+        'ledger_health_snapshot_daily' => 'reports.view',
+        'ledger_health_snapshot_manual' => 'reports.view',
+    ];
+
     public function index(Request $request): JsonResponse|Response
     {
         $admin = $this->adminUser($request);
@@ -239,6 +253,36 @@ class AdminNotificationController extends Controller
             ? response()->json([
                 'data' => $notification->toDropdownArray($readAt instanceof Carbon ? $readAt : Carbon::parse($readAt)),
             ])
+            : back();
+    }
+
+    public function markReferenceRead(
+        Request $request,
+        string $referenceType,
+        int $referenceId,
+    ): JsonResponse|RedirectResponse {
+        abort_unless(isset(self::REFERENCE_PERMISSIONS[$referenceType]), 404);
+
+        $admin = $this->adminUser($request);
+        abort_unless($admin->can(self::REFERENCE_PERMISSIONS[$referenceType]), 403);
+
+        $notifications = AdminNotification::query()
+            ->where('reference_type', $referenceType)
+            ->where('reference_id', $referenceId)
+            ->whereHas('admins', fn (Builder $query) => $query
+                ->whereKey($admin->getKey())
+                ->where('admin_notification_recipients.is_read', false))
+            ->get();
+
+        foreach ($notifications as $notification) {
+            $notification->admins()->updateExistingPivot($admin->getKey(), [
+                'read_at' => now(),
+                'is_read' => true,
+            ]);
+        }
+
+        return $request->expectsJson()
+            ? response()->json(['marked_read' => $notifications->count()])
             : back();
     }
 

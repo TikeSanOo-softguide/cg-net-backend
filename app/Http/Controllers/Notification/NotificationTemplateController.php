@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Notification;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Enums\NotificationTemplateType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Notification\UpdateNotificationTemplateRequest;
@@ -36,10 +39,10 @@ class NotificationTemplateController extends Controller
         abort_unless($notificationTemplate->type instanceof NotificationTemplateType, 404);
         $notificationTemplate->update($request->validated());
 
-        activity('notifications')
+        activity(ActivityLogName::NotificationTemplate->value)
             ->causedBy($request->user())
             ->performedOn($notificationTemplate)
-            ->event('updated')
+            ->event(ActivityLogEvent::Updated->value)
             ->log('notification_template_updated');
 
         return redirect()

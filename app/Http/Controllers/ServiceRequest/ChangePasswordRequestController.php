@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers\ServiceRequest;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\ChangePasswordRequest;
+use App\Services\AdminNotification\AdminNotificationReadStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Enum;
@@ -13,7 +17,7 @@ use Inertia\Response;
 
 class ChangePasswordRequestController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, AdminNotificationReadStatus $readStatus): Response
     {
         $search = trim((string) $request->string('search'));
         $status = $request->has('status')
@@ -51,6 +55,18 @@ class ChangePasswordRequestController extends Controller
             ->paginate(15)
             ->withQueryString();
 
+        $unreadRequestIds = $readStatus->unreadReferenceIds(
+            (int) $request->user()->getAuthIdentifier(),
+            'change_password_request',
+            $requests->getCollection()->pluck('id')->all(),
+        );
+        $requests->through(
+            fn(ChangePasswordRequest $request): array => [
+                ...$request->toArray(),
+                'notification_unread' => in_array($request->id, $unreadRequestIds, true),
+            ],
+        );
+
         return Inertia::render('ServiceRequests/changePassword/Index', [
             'requests' => $requests,
             'filters' => ['search' => $search, 'status' => $status],
@@ -63,11 +79,11 @@ class ChangePasswordRequestController extends Controller
     {
         $validated = $request->validate(['status' => ['required', new Enum(RequestStatus::class)]]);
 
-        activity('change_password_request')
+        activity(ActivityLogName::ChangePasswordRequest->value)
             ->causedBy($request->user())
             ->performedOn($changePasswordRequest)
-            ->event('status_updated')
-            ->log('change_password_status_updated');
+            ->event(ActivityLogEvent::StatusUpdated->value)
+            ->log($validated['status']);
 
         $changePasswordRequest->update([
             'status' => $validated['status'],
@@ -84,12 +100,8 @@ class ChangePasswordRequestController extends Controller
             'under_reviews_requests' => ChangePasswordRequest::query()
                 ->where('status', RequestStatus::UnderReview)
                 ->count(),
-            'approved_requests' => ChangePasswordRequest::query()
-                ->where('status', RequestStatus::Approved)
-                ->count(),
-            'cancelled_requests' => ChangePasswordRequest::query()
-                ->where('status', RequestStatus::Cancelled)
-                ->count(),
+            'approved_requests' => ChangePasswordRequest::query()->where('status', RequestStatus::Approved)->count(),
+            'cancelled_requests' => ChangePasswordRequest::query()->where('status', RequestStatus::Cancelled)->count(),
         ];
     }
 }

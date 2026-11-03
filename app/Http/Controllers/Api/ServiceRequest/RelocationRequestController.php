@@ -28,6 +28,7 @@ class RelocationRequestController extends Controller
                     'relocation_requests.broadband_account_number',
                 ),
             )
+            ->latest()
             ->get();
 
         return RelocationRequestResource::collection($relocations);

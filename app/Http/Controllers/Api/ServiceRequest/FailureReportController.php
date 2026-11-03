@@ -9,6 +9,7 @@ use App\Http\Requests\ServiceRequest\UpdateFailureReport;
 use App\Http\Resources\FailureReport\FailureReportResource;
 use App\Events\ServiceRequestSubmitted;
 use App\Models\FailureReport;
+use App\Support\GeneratesTicketNumber;
 use App\Support\StoresPublicImage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -24,10 +25,14 @@ class FailureReportController extends Controller
             ->with('photos')
             ->where('user_id', $request->user()->id)
             ->whereNull('failure_reports.deleted_at')
-            ->whereHas('user', fn ($query) => $query->whereColumn(
-                'users.broadband_account_number',
-                'failure_reports.broadband_account_number',
-            ))
+            ->whereHas(
+                'user',
+                fn($query) => $query->whereColumn(
+                    'users.broadband_account_number',
+                    'failure_reports.broadband_account_number',
+                ),
+            )
+            ->latest()
             ->get();
 
         return FailureReportResource::collection($failureReports);
@@ -51,11 +56,16 @@ class FailureReportController extends Controller
                 'description' => $validated['description'],
                 'contact_name' => $validated['contact_name'],
                 'contact_phone' => $validated['contact_phone'],
+                'ticket_number' => GeneratesTicketNumber::next(
+                    FailureReport::class,
+                    'ticket_number',
+                    'FLR'.now()->format('md'),
+                ),
                 'status' => 'under_review',
             ]);
             ServiceRequestSubmitted::dispatch('failure_report', $failureReport->id);
 
-            foreach ($request->file('photos') as $photo) {
+            foreach ($request->file('photos', []) as $photo) {
                 $imageUrl = StoresPublicImage::store($photo, 'service-request/failure-reports');
 
                 $failureReport->photos()->create([
@@ -106,6 +116,11 @@ class FailureReportController extends Controller
                         ]);
                     }
                 }
+
+                foreach ($existingPhotos->slice(count($photos)) as $existingPhoto) {
+                    StoresPublicImage::delete($existingPhoto->image_url);
+                    $existingPhoto->delete();
+                }
             }
 
             $this->logActivity($request, 'update_failure_report', [
@@ -126,7 +141,7 @@ class FailureReportController extends Controller
             'failure_report_id' => $failureReport->id,
         ]);
 
-        return new FailureReportResource($failureReport->refresh());
+        return new FailureReportResource($failureReport->refresh()->load('photos'));
     }
 
     public function destroy(Request $request, FailureReport $failureReport): Response

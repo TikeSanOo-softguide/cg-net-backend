@@ -9,6 +9,8 @@ class OtpThrottledException extends TooManyRequestsHttpException
 {
     public const REASON_RESEND_COOLDOWN = 'resend_cooldown';
 
+    public const REASON_HOURLY_LIMIT = 'hourly_limit';
+
     public const REASON_RATE_LIMITED = 'rate_limited';
 
     public function __construct(

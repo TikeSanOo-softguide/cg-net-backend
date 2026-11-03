@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ActivityLogName;
 use App\Models\Addon;
 use App\Models\Admin;
 use App\Models\Network;
@@ -9,6 +10,7 @@ use App\Models\Package;
 use App\Models\Speed;
 use App\Models\Term;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Activitylog\Models\Activity;
 use Tests\TestCase;
 
 class PackagePageTest extends TestCase
@@ -36,6 +38,25 @@ class PackagePageTest extends TestCase
             'is_active' => true,
             'recommended' => false,
             'sort_order' => 10,
+        ]);
+    }
+
+    public function test_deleting_a_package_logs_the_deleted_model(): void
+    {
+        $admin = Admin::factory()->create();
+        $package = Package::factory()->create();
+
+        $this->actingAs($admin, 'web')->delete("/packages/{$package->id}")->assertRedirect('/packages');
+
+        $this->assertSoftDeleted('packages', ['id' => $package->id]);
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => 'package',
+            'description' => 'package_deleted',
+            'subject_type' => Package::class,
+            'subject_id' => $package->id,
+            'causer_type' => Admin::class,
+            'causer_id' => $admin->id,
+            'event' => 'deleted',
         ]);
     }
 
@@ -140,6 +161,136 @@ class PackagePageTest extends TestCase
         $this->assertSoftDeleted('speeds', ['id' => $speed->id]);
         $this->assertSoftDeleted('terms', ['id' => $term->id]);
         $this->assertSoftDeleted('addons', ['id' => $addon->id]);
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => 'addon',
+            'description' => 'addon_created',
+            'subject_type' => Addon::class,
+            'subject_id' => $addon->id,
+            'causer_type' => Admin::class,
+            'causer_id' => $admin->id,
+            'event' => 'created',
+        ]);
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => 'addon',
+            'description' => 'addon_updated',
+            'subject_type' => Addon::class,
+            'subject_id' => $addon->id,
+            'causer_type' => Admin::class,
+            'causer_id' => $admin->id,
+            'event' => 'updated',
+        ]);
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => 'addon',
+            'description' => 'addon_deleted',
+            'subject_type' => Addon::class,
+            'subject_id' => $addon->id,
+            'causer_type' => Admin::class,
+            'causer_id' => $admin->id,
+            'event' => 'deleted',
+        ]);
+
+        $this->assertSame(
+            9,
+            Activity::query()
+                ->whereIn('log_name', [
+                    ActivityLogName::Network->value,
+                    ActivityLogName::Speed->value,
+                    ActivityLogName::Term->value,
+                ])
+                ->where('causer_id', $admin->id)
+                ->whereIn('description', [
+                    'network_created',
+                    'network_updated',
+                    'network_deleted',
+                    'speed_created',
+                    'speed_updated',
+                    'speed_deleted',
+                    'term_created',
+                    'term_updated',
+                    'term_deleted',
+                ])
+                ->count(),
+        );
+    }
+
+    public function test_bulk_deleting_networks_speeds_and_terms_logs_deleted_ids_once(): void
+    {
+        $admin = Admin::factory()->create();
+        $networks = Network::factory()->count(2)->create();
+        $speeds = Speed::factory()->count(2)->create();
+        $terms = collect([
+            Term::factory()->create(['months' => 3]),
+            Term::factory()->create(['months' => 6]),
+        ]);
+
+        $this->actingAs($admin, 'web')->delete('/networks/bulk-destroy', [
+            'ids' => $networks->pluck('id')->all(),
+        ])->assertRedirect('/packages');
+
+        $this->actingAs($admin, 'web')->delete('/speeds/bulk-destroy', [
+            'ids' => $speeds->pluck('id')->all(),
+        ])->assertRedirect('/packages');
+
+        $this->actingAs($admin, 'web')->delete('/terms/bulk-destroy', [
+            'ids' => $terms->pluck('id')->all(),
+        ])->assertRedirect('/packages');
+
+        foreach ([
+            [ActivityLogName::Network, 'networks_bulk_deleted', $networks],
+            [ActivityLogName::Speed, 'speeds_bulk_deleted', $speeds],
+            [ActivityLogName::Term, 'terms_bulk_deleted', $terms],
+        ] as [$logName, $description, $models]) {
+            $activity = Activity::query()
+                ->where('log_name', $logName->value)
+                ->where('causer_id', $admin->id)
+                ->where('description', $description)
+                ->sole();
+
+            $this->assertSame('bulk_deleted', $activity->event);
+            $this->assertEqualsCanonicalizing($models->pluck('id')->all(), $activity->properties->get('ids'));
+        }
+    }
+
+    public function test_bulk_deleting_packages_and_addons_logs_deleted_ids_once(): void
+    {
+        $admin = Admin::factory()->create();
+        $packages = Package::factory()->count(2)->create();
+        $addons = collect([
+            Addon::query()->create([
+                'name_en' => 'First add-on',
+                'name_zh' => '第一個附加項',
+                'name_my' => 'First add-on MM',
+                'price' => 10000,
+            ]),
+            Addon::query()->create([
+                'name_en' => 'Second add-on',
+                'name_zh' => '第二個附加項',
+                'name_my' => 'Second add-on MM',
+                'price' => 15000,
+            ]),
+        ]);
+
+        $this->actingAs($admin, 'web')->delete('/packages/bulk-destroy', [
+            'ids' => $packages->pluck('id')->all(),
+        ])->assertRedirect('/packages');
+
+        $this->actingAs($admin, 'web')->delete('/addons/bulk-destroy', [
+            'ids' => $addons->pluck('id')->all(),
+        ])->assertRedirect('/packages');
+
+        foreach ([
+            ['package', 'packages_bulk_deleted', $packages],
+            ['addon', 'addons_bulk_deleted', $addons],
+        ] as [$logName, $description, $models]) {
+            $activity = Activity::query()
+                ->where('log_name', $logName)
+                ->where('causer_id', $admin->id)
+                ->where('description', $description)
+                ->sole();
+
+            $this->assertSame('bulk_deleted', $activity->event);
+            $this->assertEqualsCanonicalizing($models->pluck('id')->all(), $activity->properties->get('ids'));
+        }
     }
 
     /**

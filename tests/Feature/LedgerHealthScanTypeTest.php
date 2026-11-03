@@ -194,6 +194,7 @@ class LedgerHealthScanTypeTest extends TestCase
 
         $snapshot->refresh();
         $this->assertSame('completed', $snapshot->status);
+        $this->assertSame(0, \Spatie\Activitylog\Models\Activity::query()->count());
 
         $notification = AdminNotification::query()->sole();
         $this->assertSame('Ledger Health Check Completed', $notification->title);
@@ -210,9 +211,10 @@ class LedgerHealthScanTypeTest extends TestCase
 
     public function test_completed_scan_with_discrepancies_marks_admin_notification_as_alert(): void
     {
-        $this->createReportAdmin();
+        $admin = $this->createReportAdmin();
         Event::fake([AdminNotificationCreated::class]);
         $snapshot = LedgerHealthSnapshot::query()->create([
+            'requested_by' => $admin->id,
             'type' => LedgerHealthScanType::Full,
             'status' => 'queued',
         ]);
@@ -229,6 +231,12 @@ class LedgerHealthScanTypeTest extends TestCase
 
         (new GenerateLedgerHealthSnapshot($snapshot->id))->handle($report);
 
+        $activity = \Spatie\Activitylog\Models\Activity::query()->sole();
+        $this->assertSame('ledger_health_check_completed', $activity->description);
+        $this->assertSame(Admin::class, $activity->causer_type);
+        $this->assertSame($admin->id, $activity->causer_id);
+        $this->assertSame(1, $activity->properties['health']['balance_mismatches']);
+
         $notification = AdminNotification::query()->sole();
         $this->assertSame('Ledger Health Check Completed', $notification->title);
         $this->assertSame('The Full ledger health check completed with discrepancies.', $notification->body);
@@ -238,9 +246,10 @@ class LedgerHealthScanTypeTest extends TestCase
 
     public function test_failed_scan_notifies_admin_immediately_without_duplicate_on_failed_callback(): void
     {
-        $this->createReportAdmin();
+        $admin = $this->createReportAdmin();
         Event::fake([AdminNotificationCreated::class]);
         $snapshot = LedgerHealthSnapshot::query()->create([
+            'requested_by' => $admin->id,
             'type' => LedgerHealthScanType::Manual,
             'status' => 'queued',
         ]);
@@ -257,6 +266,15 @@ class LedgerHealthScanTypeTest extends TestCase
 
         $snapshot->refresh();
         $this->assertSame('failed', $snapshot->status);
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => 'reports',
+            'description' => 'ledger_health_check_failed',
+            'event' => 'failed',
+            'subject_type' => LedgerHealthSnapshot::class,
+            'subject_id' => $snapshot->id,
+            'causer_type' => Admin::class,
+            'causer_id' => $admin->id,
+        ]);
 
         $notification = AdminNotification::query()->sole();
         $this->assertSame('Ledger Health Check Failed', $notification->title);
@@ -270,6 +288,7 @@ class LedgerHealthScanTypeTest extends TestCase
         $job->failed(new \RuntimeException('Scan failed.'));
 
         $this->assertSame(1, AdminNotification::query()->count());
+        $this->assertSame(1, \Spatie\Activitylog\Models\Activity::query()->count());
         Event::assertDispatched(AdminNotificationCreated::class);
     }
 

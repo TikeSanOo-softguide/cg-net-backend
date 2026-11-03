@@ -1,25 +1,14 @@
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { useForm } from '@inertiajs/react';
 import {
-    BadgeIcon,
-    CalendarDaysIcon,
-    GaugeIcon,
+    CalendarIcon,
+    FileTextIcon,
     HouseIcon,
-    IdCardIcon,
-    ImageOffIcon,
-    ImagesIcon,
-    LandmarkIcon,
-    MapIcon,
-    NetworkIcon,
-    PackageIcon,
-    SmartphoneIcon,
-    UserRoundIcon,
     MapPinIcon,
+    PackageIcon,
     PhoneIcon,
     UserIcon,
     WifiIcon,
-    FileIcon,
-    KeyRoundIcon,
 } from 'lucide-react';
 
 import { FormDialog } from '@/components/FormDialog';
@@ -29,6 +18,13 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { CopyValueButton } from '@/components/CopyValueButton';
 import { REQUEST_STATUS } from '@/lib/CommonNameConst';
 import { formatPhoneInternational } from '@/lib/phone';
+import { cn, formatDate } from '@/lib/utils';
+
+type LocalizedName = {
+    name_en: string;
+    name_zh: string;
+    name_my: string;
+};
 
 export type BroadbandApplicationDetail = {
     id: number;
@@ -36,59 +32,105 @@ export type BroadbandApplicationDetail = {
     address: string;
     note: string | null;
     status: string;
-    id_type: string;
-    id_name: string;
-    id_number: string;
-    photos: {
-        id: number;
-        image_url: string;
-    }[];
+    name: string;
+    service_type: string | null;
+    ticket_number: string | null;
+    created_at: string;
+    package_detail: {
+        product_id?: string;
+        product_name?: string;
+        product_line?: string;
+        product_speed?: string;
+        product_price?: number | string;
+        installation_fee?: number | string;
+        month_cycle?: number | string;
+        month_cycle_unit?: string;
+    } | null;
     user: {
         id: number;
         name: string;
         phone: string;
+        broadband_account_number: string | null;
     } | null;
     area: {
         id: number;
         name_en: string;
         name_zh: string;
         name_my: string;
-        region?: {
+        region?: (LocalizedName & {
             id: number;
-            name_en: string;
-            name_zh: string;
-            name_my: string;
-            state?: {
-                id: number;
-                name_en: string;
-                name_zh: string;
-                name_my: string;
-            } | null;
-        } | null;
-    } | null;
-    package: {
-        id: number;
-        price?: string | number;
-        network?: {
-            id: number;
-            name_en: string;
-            name_zh: string;
-            name_my: string;
-        } | null;
-        speed?: {
-            id: number;
-            mbps: number;
-        } | null;
-        term?: {
-            id: number;
-            months: number;
-        } | null;
+            state?: (LocalizedName & { id: number }) | null;
+        }) | null;
     } | null;
     admin: {
         id: number;
         username: string;
     } | null;
 };
+
+function localizedName(item: LocalizedName | null | undefined, locale: string): string {
+    if (!item) {
+        return '—';
+    }
+
+    return (
+        item[`name_${locale}` as keyof LocalizedName] ||
+        item.name_en ||
+        item.name_my ||
+        item.name_zh ||
+        '—'
+    );
+}
+
+function Section({
+    icon: Icon,
+    title,
+    children,
+    className,
+}: {
+    icon: typeof UserIcon;
+    title: string;
+    children: ReactNode;
+    className?: string;
+}) {
+    return (
+        <section className={cn('rounded-xl border border-border/60 bg-muted/20 p-4', className)}>
+            <div className="mb-3 flex items-center gap-2">
+                <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
+                    <Icon className="size-3.5 text-primary" />
+                </div>
+                <h3 className="text-xs font-semibold text-foreground">{title}</h3>
+            </div>
+            {children}
+        </section>
+    );
+}
+
+function Field({
+    label,
+    value,
+    copy,
+    copyLabel,
+    mono = false,
+}: {
+    label: string;
+    value: string;
+    copy?: string | null;
+    copyLabel?: string;
+    mono?: boolean;
+}) {
+    const shown = value.trim() || '—';
+
+    return (
+        <div className="min-w-0">
+            <p className="text-[11px] text-muted-foreground">{label}</p>
+            <div className="mt-0.5 flex min-w-0 items-center gap-1">
+                <p className={cn('min-w-0 text-sm font-medium break-words text-foreground', mono && 'font-mono')}>{shown}</p>
+                {copy && copyLabel ? <CopyValueButton value={copy} label={copyLabel} /> : null}
+            </div>
+        </div>
+    );
+}
 
 export function BroadbandApplicationDetailDialog({
     open,
@@ -105,9 +147,7 @@ export function BroadbandApplicationDetailDialog({
 }) {
     const { t, locale } = useTranslation();
     const nextStatus =
-        request?.status === REQUEST_STATUS.UNDER_REVIEW
-            ? REQUEST_STATUS.APPROVED
-            : REQUEST_STATUS.UNDER_REVIEW;
+        request?.status === REQUEST_STATUS.UNDER_REVIEW ? REQUEST_STATUS.APPROVED : REQUEST_STATUS.UNDER_REVIEW;
     const { data, setData, patch } = useForm({ status: nextStatus });
     const nextButton = request?.status === REQUEST_STATUS.UNDER_REVIEW ? 'approve' : 'review';
 
@@ -122,13 +162,24 @@ export function BroadbandApplicationDetailDialog({
     }
 
     const handleStatusUpdate = () => {
-        if (!request || !data.status) return;
+        if (!request || !data.status) {
+            return;
+        }
 
         patch(`/service-requests/installations/${request.id}/status`, {
             preserveScroll: true,
             onSuccess: () => onOpenChange(false),
         });
     };
+
+    const detail = request.package_detail;
+    const ticket = request.ticket_number?.trim() || '';
+    const accountNumber = request.user?.broadband_account_number?.trim() || '';
+    const contactPhone = request.phone ? formatPhoneInternational(request.phone) : '';
+    const serviceLabel =
+        request.service_type === 'CG'
+            ? t('broadband_application.cg_router')
+            : request.service_type?.trim() || '—';
 
     return (
         <FormDialog
@@ -139,223 +190,127 @@ export function BroadbandApplicationDetailDialog({
             icon={WifiIcon}
             size="lg"
         >
-            <div className="mt-1 space-y-4 overflow-y-auto p-2">
-                <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
-                        <div className="mb-3 flex items-center gap-2">
-                            <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
-                                <UserIcon className="size-3.5 text-primary" />
-                            </div>
-
-                            <p className="text-xs font-semibold text-foreground">{t('requests.contact_information')}</p>
-                        </div>
-
-                        <div className="space-y-2.5">
-                            <div className="flex items-center gap-2">
-                                <UserIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                                <span className="text-sm font-semibold text-foreground">
-                                    {request.user?.name ?? request.id_name ?? '—'}
-                                </span>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                                <PhoneIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                                <span className="text-xs text-muted-foreground">
-                                    {formatPhoneInternational(request.user?.phone)}
-                                </span>
-                                {request.user?.phone && (
-                                    <CopyValueButton
-                                        value={request.user.phone}
-                                        label={t('requests.copy_phone')}
-                                        format="phone"
-                                    />
-                                )}
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                                <SmartphoneIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                                <span className="text-xs text-muted-foreground">
-                                    {formatPhoneInternational(request.phone)}
-                                </span>
-                                {request.phone && (
-                                    <CopyValueButton
-                                        value={request.phone}
-                                        label={t('requests.copy_phone')}
-                                        format="phone"
-                                    />
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
-                        <div className="mb-3 flex items-center gap-2">
-                            <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
-                                <MapPinIcon className="size-3.5 text-primary" />
-                            </div>
-                            <p className="text-xs font-semibold text-foreground">
-                                {t('broadband_application.location')}
+            <div className="mt-1 max-h-[70vh] space-y-3 overflow-y-auto p-1">
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                            <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                                {t('broadband_application.ticket_number')}
                             </p>
-                        </div>
-
-                        <div className="space-y-2.5">
-                            <div className="flex items-center gap-2">
-                                <MapPinIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                                <span className="text-sm font-semibold text-foreground">
-                                    {request.area?.[`name_${locale}`] ?? '—'}
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <MapIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                                <span className="text-xs text-muted-foreground">
-                                    {request.area?.region?.[`name_${locale}`] ?? '—'}
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <LandmarkIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                                <span className="text-xs text-muted-foreground">
-                                    {request.area?.region?.state?.[`name_${locale}`] ?? '—'}
-                                </span>
+                            <div className="mt-1 flex items-center gap-1.5">
+                                {ticket ? (
+                                    <span className="inline-flex max-w-full items-center truncate rounded-md bg-primary/10 px-2 py-0.5 font-mono text-[11px] font-medium text-primary">
+                                        {ticket}
+                                    </span>
+                                ) : (
+                                    <span className="text-sm text-muted-foreground">—</span>
+                                )}
+                                {ticket ? (
+                                    <CopyValueButton value={ticket} label={t('broadband_application.ticket_number')} />
+                                ) : null}
                             </div>
                         </div>
+                        <StatusBadge status={request.status} />
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <span className="rounded-full bg-background px-2.5 py-1 font-medium text-foreground">
+                            {serviceLabel}
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                            <CalendarIcon className="size-3.5" />
+                            {formatDate(request.created_at)}
+                        </span>
                     </div>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
-                        <div className="mb-3 flex items-center gap-2">
-                            <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
-                                <PackageIcon className="size-3.5 text-primary" />
-                            </div>
-                            <p className="text-xs font-semibold text-foreground">{t('menu.packages')}</p>
+                    <Section icon={UserIcon} title={t('broadband_application.app_user')}>
+                        <div className="space-y-3">
+                            <Field label={t('customers.name')} value={request.user?.name || '—'} />
+                            <Field
+                                label={t('requests.broadband_account')}
+                                value={accountNumber || '—'}
+                                copy={accountNumber}
+                                copyLabel={t('requests.broadband_account')}
+                            />
                         </div>
+                    </Section>
 
-                        <div className="space-y-2.5">
-                            <div className="flex items-center gap-2">
-                                <NetworkIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                                <span className="text-sm font-semibold text-foreground">
-                                    {request.package?.network?.[`name_${locale}`] ?? '—'}
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <GaugeIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                                <span className="text-xs text-muted-foreground">
-                                    {request.package?.speed?.mbps ?? '—'} Mbps
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <CalendarDaysIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                                <span className="text-xs text-muted-foreground">
-                                    {request.package?.term?.months ?? '—'} {t('packages.months')}
-                                </span>
-                            </div>
+                    <Section icon={PhoneIcon} title={t('broadband_application.installation_contact')}>
+                        <div className="space-y-3">
+                            <Field label={t('customers.name')} value={request.name || '—'} />
+                            <Field
+                                label={t('requests.phone')}
+                                value={contactPhone || '—'}
+                                copy={contactPhone}
+                                copyLabel={t('requests.copy_phone')}
+                            />
                         </div>
-                    </div>
-
-                    <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
-                        <div className="mb-3 flex items-center gap-2">
-                            <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
-                                <IdCardIcon className="size-3.5 text-primary" />
-                            </div>
-
-                            <p className="text-xs font-semibold text-foreground">
-                                {t('broadband_application.identity')}
-                            </p>
-                        </div>
-                        <div className="space-y-2.5">
-                            <div className="flex items-center gap-2">
-                                <UserRoundIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                                <span className="text-sm font-semibold text-foreground">{request.id_name ?? '—'}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <KeyRoundIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                                <span className="font-mono text-xs text-muted-foreground">
-                                    {request.id_number ?? '—'}
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <BadgeIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                                <span className="text-xs text-muted-foreground">{request.id_type ?? '—'}</span>
-                            </div>
-                        </div>
-                    </div>
+                    </Section>
                 </div>
 
-                <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
-                    <div className="mb-3 flex items-center gap-2">
-                        <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
-                            <ImagesIcon className="size-3.5 text-primary" />
-                        </div>
-                        <div>
-                            <p className="text-xs font-semibold text-foreground">{t('requests.images')}</p>
-                        </div>
+                <Section icon={PackageIcon} title={t('broadband_application.package')}>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        <Field label={t('broadband_application.package')} value={detail?.product_name?.trim() || '—'} />
+                        <Field
+                            label={t('broadband_application.network_provider')}
+                            value={detail?.product_line?.trim() || '—'}
+                        />
+                        <Field label={t('broadband_application.speed')} value={speedLabel(detail?.product_speed)} />
+                        <Field label={t('broadband_application.billing_period')} value={periodLabel(detail, t)} />
+                        <Field
+                            label={t('broadband_application.package_price')}
+                            value={pointsLabel(detail?.product_price, t('billing_report.points'))}
+                        />
+                        <Field
+                            label={t('broadband_application.installation_fee')}
+                            value={pointsLabel(detail?.installation_fee, t('billing_report.points'))}
+                        />
                     </div>
+                </Section>
 
-                    {request.photos?.length ? (
-                        <div className="flex gap-3 overflow-x-auto pb-1">
-                            {request.photos.map((photo) => (
-                                <div
-                                    key={photo.id}
-                                    className="group relative shrink-0 overflow-hidden rounded-lg border border-border/50 bg-background"
-                                >
-                                    <img
-                                        src={photo.image_url}
-                                        alt=""
-                                        className="h-[200px] w-[320px] object-cover transition-transform duration-200 group-hover:scale-105"
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-border/50 bg-background/40">
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <ImageOffIcon className="size-4" />
-                            </div>
-                        </div>
-                    )}
-                </div>
+                <Section icon={MapPinIcon} title={t('broadband_application.location')}>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                        <Field
+                            label={t('broadband_application.state')}
+                            value={localizedName(request.area?.region?.state, locale)}
+                        />
+                        <Field
+                            label={t('broadband_application.region')}
+                            value={localizedName(request.area?.region, locale)}
+                        />
+                        <Field label={t('broadband_application.area')} value={localizedName(request.area, locale)} />
+                    </div>
+                </Section>
 
-                <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
-                    <div className="mb-3 flex items-center gap-2">
-                        <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
-                            <HouseIcon className="size-3.5 text-primary" />
-                        </div>
-                        <p className="text-xs font-semibold text-foreground">{t('requests.address')}</p>
+                <Section icon={HouseIcon} title={t('requests.address')}>
+                    <div className="flex items-start gap-1">
+                        <p className="text-sm leading-6 text-foreground">{request.address?.trim() || '—'}</p>
+                        {request.address ? (
+                            <CopyValueButton value={request.address} label={t('requests.copy_address')} />
+                        ) : null}
                     </div>
-                    <div className="rounded-lg border border-border/40 bg-background/60 px-3.5 py-3">
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground">{request.address ?? '—'}</span>
-                            {request.address && (
-                                <CopyValueButton value={request.address} label={t('requests.copy_address')} />
-                            )}
-                        </div>
-                    </div>
-                </div>
+                </Section>
 
-                <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
-                    <div className="mb-3 flex items-center gap-2">
-                        <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
-                            <FileIcon className="size-3.5 text-primary" />
-                        </div>
-                        <p className="text-xs font-semibold text-foreground">{t('requests.note')}</p>
-                    </div>
-                    <div className="rounded-lg border border-border/40 bg-background/60 px-3.5 py-3">
-                        <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">{request.note || '—'}</p>
-                    </div>
-                </div>
+                {request.note?.trim() ? (
+                    <Section icon={FileTextIcon} title={t('requests.note')}>
+                        <p className="text-sm leading-6 whitespace-pre-wrap text-foreground">{request.note}</p>
+                    </Section>
+                ) : null}
+
                 <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-muted/10 p-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         <span className="text-xs text-muted-foreground">{t('requests.current_status')}:</span>
                         <StatusBadge status={request.status} />
+                        {request.status === 'approved' && request.admin ? (
+                            <span className="text-[11px] text-muted-foreground">
+                                {t('requests.approved_by')}: {request.admin.username}
+                            </span>
+                        ) : null}
                     </div>
 
                     {canUpdate && request.status !== 'cancelled' && (
-                        <Button
-                            type="button"
-                            size="sm"
-                            onClick={handleStatusUpdate}
-                            className="h-9 px-4 text-xs font-semibold"
-                        >
+                        <Button type="button" size="sm" onClick={handleStatusUpdate} className="h-9 px-4 text-xs font-semibold">
                             {t(`status.${nextButton}`)}
                         </Button>
                     )}
@@ -363,4 +318,50 @@ export function BroadbandApplicationDetailDialog({
             </div>
         </FormDialog>
     );
+}
+
+function speedLabel(speed?: string): string {
+    const value = speed?.trim() ?? '';
+    if (!value) {
+        return '—';
+    }
+
+    if (/mbps/i.test(value)) {
+        return value;
+    }
+
+    const digits = value.match(/\d+/)?.[0];
+
+    return digits ? `${digits} Mbps` : value;
+}
+
+function periodLabel(
+    detail: BroadbandApplicationDetail['package_detail'],
+    t: (key: string) => string,
+): string {
+    const cycle = Number(detail?.month_cycle);
+    if (!Number.isFinite(cycle) || cycle <= 0) {
+        return '—';
+    }
+
+    const unit = detail?.month_cycle_unit ?? '';
+    const isDay = unit.includes('天') || /day/i.test(unit);
+    const label = isDay
+        ? t(cycle === 1 ? 'broadband_application.day' : 'broadband_application.days')
+        : t(cycle === 1 ? 'broadband_application.month' : 'broadband_application.months');
+
+    return `${cycle} ${label}`;
+}
+
+function pointsLabel(value: number | string | null | undefined, unit: string): string {
+    if (value == null || value === '') {
+        return '—';
+    }
+
+    const amount = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(amount)) {
+        return '—';
+    }
+
+    return `${new Intl.NumberFormat().format(amount)} ${unit}`;
 }

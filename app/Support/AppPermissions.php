@@ -27,11 +27,6 @@ final class AppPermissions
                 'actions' => ['view', 'create', 'update', 'delete'],
             ],
             [
-                'module' => 'cpe',
-                'labelKey' => 'menu.cpe_management',
-                'actions' => ['view', 'create', 'update', 'delete'],
-            ],
-            [
                 'module' => 'packages',
                 'labelKey' => 'menu.package_management',
                 'actions' => ['view', 'create', 'update', 'delete'],

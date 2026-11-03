@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\ServiceRequest;
 
+use App\Models\ChangePlanRequest;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -24,12 +25,13 @@ class UpdateChangePlanRequest extends FormRequest
                 'max:32',
                 Rule::exists('users', 'broadband_account_number')->where('id', $this->user()->id),
             ],
-            'current_package_id' => ['required', 'integer', Rule::exists('packages', 'id')],
-            'new_package_id' => ['required', 'integer', Rule::exists('packages', 'id')->where('is_active', true)],
+            'service_type' => ['required', 'string', 'in:FTTH,CG'],
+            ...ChangePlanRequest::packageDetailRules('current_package_detail'),
+            ...ChangePlanRequest::packageDetailRules('new_package_detail'),
             'preferred_date' => ['required', 'date'],
             'contact_name' => ['required', 'string', 'max:255'],
             'contact_phone' => ['required', 'string', 'max:16'],
-            'note' => ['nullable', 'string'],
+            'note' => ['nullable', 'string', 'max:5000'],
         ];
     }
 }

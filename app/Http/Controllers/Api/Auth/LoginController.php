@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers\Api\Auth;
 
+use App\Enums\MessageCode;
+use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\LoginRequest;
+use App\Http\Requests\Api\Auth\SessionCheckRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\Auth\ApiAuthenticationService;
 use App\Services\DeviceToken\DeviceTokenService;
 use App\Services\SecurityLog\SecurityLogService;
+use App\Support\ApiMessage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -28,7 +32,8 @@ class LoginController extends Controller
         } catch (ValidationException | HttpExceptionInterface $e) {
             $reason = match (true) {
                 $e instanceof HttpExceptionInterface && $e->getStatusCode() === 429 => 'Too many login attempts',
-                $e instanceof HttpExceptionInterface && $e->getStatusCode() === 409 => 'Account already has an active session',
+                $e instanceof HttpExceptionInterface && $e->getStatusCode() === 409
+                    => 'Account already has an active session',
                 default => 'Invalid credentials or inactive account',
             };
 
@@ -77,6 +82,37 @@ class LoginController extends Controller
             'user_id' => $user->id,
         ]);
 
-        return response()->json(['message' => 'Logged out successfully.']);
+        return response()->json(ApiMessage::attach(MessageCode::AuthLoggedOut));
+    }
+
+    public function checkSession(SessionCheckRequest $request): JsonResponse
+    {
+        $user = User::query()->where('phone', $request->validated('phone'))->first();
+        $showAlert =
+            $user
+                ?->tokens()
+                ->where(fn($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+                ->exists() ?? false;
+
+        if ($user !== null && $user->status == UserStatus::Deactivated) {
+            return response()->json(
+                ApiMessage::attach(MessageCode::UserDeactivated, [
+                    'show_alert' => $showAlert,
+                ]),
+                403,
+            );
+        }
+        if ($user !== null && $user->status == UserStatus::Suspended) {
+            return response()->json(
+                ApiMessage::attach(MessageCode::UserSuspended, [
+                    'show_alert' => $showAlert,
+                ]),
+                403,
+            );
+        }
+
+        return response()->json([
+            'show_alert' => $showAlert,
+        ]);
     }
 }

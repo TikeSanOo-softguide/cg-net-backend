@@ -52,11 +52,7 @@ class CmsSeeder extends Seeder
             ],
         ])->each(fn(array $category) => Category::create($category));
 
-        $this->call([
-            NewsSeeder::class,
-            ServiceSeeder::class,
-            PromotionSeeder::class,
-        ]);
+        $this->call([NewsSeeder::class, ServiceSeeder::class, PromotionSeeder::class]);
 
         collect([
             [
@@ -104,11 +100,12 @@ class CmsSeeder extends Seeder
     private function seedBanners(): void
     {
         foreach (range(1, 7) as $order) {
-            $image = 'seeder_images/banner/banner' . ($order === 1 ? '' : $order - 1) . '.png';
+            $suffix = $order === 1 ? '' : (string) ($order - 1);
+
             Banner::create([
-                'image_url_en' => $image,
-                'image_url_zh' => $image,
-                'image_url_my' => $image,
+                'image_url_en' => "seeder_images/banner/banner_en{$suffix}.png",
+                'image_url_zh' => "seeder_images/banner/banner_zh{$suffix}.png",
+                'image_url_my' => "seeder_images/banner/banner_my{$suffix}.png",
                 'type' => 'web_background',
                 'sort_order' => $order,
                 'is_active' => true,

@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Package;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Package\StorePackageRequest;
 use App\Http\Requests\Package\UpdatePackageRequest;
@@ -142,10 +145,10 @@ class PackageController extends Controller
 
         $package = Package::query()->create($this->attributes($request->validated(), $request->file('image_url')));
 
-        activity('package')
+        activity(ActivityLogName::Package->value)
             ->causedBy($request->user())
             ->performedOn($package)
-            ->event('created')
+            ->event(ActivityLogEvent::Created->value)
             ->log('package_created');
 
         return redirect()->route('packages.index', $request->query())->with('success', 'packages.created');
@@ -201,10 +204,10 @@ class PackageController extends Controller
 
         $package->update($data);
 
-        activity('package')
+        activity(ActivityLogName::Package->value)
             ->causedBy($request->user())
             ->performedOn($package)
-            ->event('updated')
+            ->event(ActivityLogEvent::Updated->value)
             ->log('package_updated');
 
         return redirect()->route('packages.index', $request->query())->with('success', 'packages.updated');
@@ -213,13 +216,7 @@ class PackageController extends Controller
     private function packageIsUsed(int $packageId): bool
     {
         return DB::table('package_orders')->where('package_id', $packageId)->exists() ||
-            DB::table('customer_packages')->where('package_id', $packageId)->exists() ||
-            DB::table('installation_applications')->where('package_id', $packageId)->exists() ||
-            DB::table('change_plan_requests')
-                ->where(function ($query) use ($packageId) {
-                    $query->where('current_package_id', $packageId)->orWhere('new_package_id', $packageId);
-                })
-                ->exists();
+            DB::table('customer_packages')->where('package_id', $packageId)->exists();
     }
 
     public function destroy(Request $request, Package $package): RedirectResponse
@@ -231,6 +228,13 @@ class PackageController extends Controller
         }
 
         $package->delete();
+
+        activity(ActivityLogName::Package->value)
+            ->causedBy($request->user())
+            ->performedOn($package)
+            ->event(ActivityLogEvent::Deleted->value)
+            ->log('package_deleted');
+
         return redirect()->route('packages.index')->with('success', 'packages.deleted');
     }
 
@@ -244,11 +248,7 @@ class PackageController extends Controller
         $usedPackageIds = Package::query()
             ->whereIn('id', $ids)
             ->where(function ($query) {
-                $query
-                    ->whereHas('packageOrders')
-                    ->orWhereHas('customerPackages')
-                    ->orWhereHas('currentChangePlanRequests')
-                    ->orWhereHas('newChangePlanRequests');
+                $query->whereHas('packageOrders')->orWhereHas('customerPackages');
             })
             ->pluck('id');
 
@@ -261,6 +261,13 @@ class PackageController extends Controller
         if ($deleted === 0) {
             return back()->withErrors(['delete' => 'common.bulk_delete_failed']);
         }
+
+        activity(ActivityLogName::Package->value)
+            ->causedBy($request->user())
+            ->event(ActivityLogEvent::BulkDeleted->value)
+            ->withProperties(['ids' => $ids])
+            ->log('packages_bulk_deleted');
+
         return redirect()
             ->route('packages.index')
             ->with('success', 'common.bulk_deleted')

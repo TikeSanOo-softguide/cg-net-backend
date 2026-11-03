@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Customer;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Enums\CustomerPackageStatus;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
@@ -15,7 +18,8 @@ use App\Http\Requests\Customer\UpdateCustomerRequest;
 use App\Http\Requests\Customer\UpdateCustomerStatusRequest;
 use App\Models\User;
 use App\Models\UserLog;
-use App\Services\BroarbandAccount\BroadbandAccountService;
+use App\Services\BroarbandAccount\AccountInfoService;
+use App\Services\BroarbandAccount\BroadbandApiException;
 use App\Services\Customer\WalletAdjustmentService;
 use App\Services\Ledger\LedgerPoster;
 use App\Services\Transaction\TransactionService;
@@ -118,10 +122,10 @@ class CustomerController extends Controller
             return $customer;
         });
 
-        activity('customers')
+        activity(ActivityLogName::Customers->value)
             ->causedBy($request->user())
             ->performedOn($customer)
-            ->event('created')
+            ->event(ActivityLogEvent::Created->value)
             ->withProperties(Arr::except($payload, ['password']))
             ->log('customer_created');
 
@@ -136,10 +140,11 @@ class CustomerController extends Controller
         Request $request,
         User $customer,
         TransactionService $transactions,
-        BroadbandAccountService $broadbandAccountService,
+        AccountInfoService $accountInfoService,
     ): Response {
         $locale = app()->getLocale();
-        $activeToken = $customer->tokens()
+        $activeToken = $customer
+            ->tokens()
             ->where(fn($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
             ->latest('created_at')
             ->first();
@@ -261,33 +266,26 @@ class CustomerController extends Controller
         );
 
         $accountBinding = null;
-        $broadbandPackage = null;
 
-        if ($customer->broadband_account_number !== null) {
+        if ($customer->service_type !== null && $customer->broadband_account_number !== null) {
+            $accountNumber = $customer->broadband_account_number;
+            $serviceType = $customer->service_type;
+
+            $accountBinding = [
+                'account_number' => $accountNumber,
+                'service_type' => $serviceType,
+                'status' => 'unknown',
+            ];
+
             try {
-                $accountBinding = $broadbandAccountService->findByAccountNumber($customer->broadband_account_number);
-            } catch (ConnectionException) {
-                $accountBinding = [
-                    'account_number' => $customer->broadband_account_number,
-                    'status' => 'unknown',
-                ];
+                $accountBinding = $accountInfoService->findAccount($serviceType, $accountNumber) ?? $accountBinding;
+            } catch (ConnectionException | BroadbandApiException) {
+                $accountBinding['status'] = 'unknown';
             }
 
-            if ($accountBinding) {
-                $currentCustomerPackageId = (int) ($accountBinding['current_customer_package_id'] ?? 0);
-
-                $customerPackage = $customer
-                    ->customerPackages()
-                    ->with('package')
-                    ->where('status', 'active')
-                    ->where('starts_at', '<=', now())
-                    ->where(function ($query) {
-                        $query->whereNull('expires_at')->orWhere('expires_at', '>=', now());
-                    })
-                    ->latest('starts_at')
-                    ->first();
-
-                $broadbandPackage = $customerPackage?->package;
+            if ($accountBinding !== null) {
+                $accountBinding['account_number'] = $accountNumber;
+                $accountBinding['service_type'] = $serviceType;
             }
         }
 
@@ -306,14 +304,10 @@ class CustomerController extends Controller
                 : null,
             'accountBinding' => $accountBinding
                 ? [
-                    'account_number' => $accountBinding['account_number'] ?? null,
-                    'customer_name' => $accountBinding['customer_name'] ?? null,
+                    'account_number' => $accountBinding['account'] ?? null,
+                    'service_type' => $accountBinding['service_type'] ?? null,
                     'status' => $accountBinding['status'] ?? null,
-                    'package_name' => [
-                        'en' => PackageLabel::make($broadbandPackage, 'en'),
-                        'my' => PackageLabel::make($broadbandPackage, 'my'),
-                        'zh' => PackageLabel::make($broadbandPackage, 'zh'),
-                    ],
+                    'package_name' => $accountBinding['productName'] ?? null,
                 ]
                 : null,
             'packageHistory' => $packageRows->values(),
@@ -364,10 +358,10 @@ class CustomerController extends Controller
         $payload = CustomerData::payload($request->validated());
         $customer->update($payload);
 
-        activity('customers')
+        activity(ActivityLogName::Customers->value)
             ->causedBy($request->user())
             ->performedOn($customer)
-            ->event('updated')
+            ->event(ActivityLogEvent::Updated->value)
             ->withProperties([
                 ...Arr::except($payload, ['password']),
                 ...isset($payload['password']) ? ['password_reset' => true] : [],
@@ -402,10 +396,10 @@ class CustomerController extends Controller
 
         $customer->update(['status' => $status]);
 
-        activity('customers')
+        activity(ActivityLogName::Customers->value)
             ->causedBy($request->user())
             ->performedOn($customer)
-            ->event('status_changed')
+            ->event(ActivityLogEvent::StatusChanged->value)
             ->withProperties([
                 'from' => $previous->value,
                 'to' => $status->value,
@@ -420,17 +414,18 @@ class CustomerController extends Controller
 
     public function revokeSession(Request $request, User $customer): RedirectResponse
     {
-        $hasActiveSession = $customer->tokens()
+        $hasActiveSession = $customer
+            ->tokens()
             ->where(fn($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
             ->exists();
 
         $customer->revokeSessions();
 
         if ($hasActiveSession) {
-            activity('customers')
+            activity(ActivityLogName::Customers->value)
                 ->causedBy($request->user())
                 ->performedOn($customer)
-                ->event('session_revoked')
+                ->event(ActivityLogEvent::SessionRevoked->value)
                 ->log('customer_session_revoked');
         }
 
@@ -438,17 +433,26 @@ class CustomerController extends Controller
     }
 
     public function bindAccount(
-        BroadbandAccountService $broadbandAccountService,
+        AccountInfoService $accountInfoService,
         BindAccountNumberRequest $request,
         User $customer,
     ): RedirectResponse {
-        $accountNumber = trim($request->validated('account_number'));
+        $validated = $request->validated();
+
+        $serviceType = $validated['service_type'];
+        $accountNumber = $validated['account_number'];
+
+        if ($customer->service_type === $serviceType && $customer->broadband_account_number === $accountNumber) {
+            return back()->with('success', 'customers.account_already_bound');
+        }
 
         try {
-            $account = $broadbandAccountService->findByAccountNumber($accountNumber);
-        } catch (ConnectionException $e) {
+            $account = $accountInfoService->findAccount($serviceType, $accountNumber);
+        } catch (ConnectionException | BroadbandApiException $e) {
+            report($e);
+
             return back()->withErrors([
-                'account_number' => 'customers.account_service_unavailable',
+                'account_number' => 'customers.account_not_found',
             ]);
         }
 
@@ -458,25 +462,17 @@ class CustomerController extends Controller
             ]);
         }
 
-        if ($customer->broadband_account_number === $accountNumber) {
-            return back()->with('success', 'customers.account_already_bound');
-        }
-
-        if ($customer->broadband_account_number !== null) {
-            return back()->withErrors([
-                'account_number' => 'customers.account_bounded',
-            ]);
-        }
-
         $customer->update([
+            'service_type' => $serviceType,
             'broadband_account_number' => $accountNumber,
         ]);
 
-        activity('customers')
+        activity(ActivityLogName::Customers->value)
             ->causedBy($request->user())
             ->performedOn($customer)
-            ->event('account_bound')
+            ->event(ActivityLogEvent::AccountBound->value)
             ->withProperties([
+                'service_type' => $serviceType,
                 'account_number' => $accountNumber,
             ])
             ->log('broadband_account_bound');
@@ -486,19 +482,21 @@ class CustomerController extends Controller
 
     public function unbindAccount(Request $request, User $customer): RedirectResponse
     {
+        $serviceType = $customer->service_type;
         $accountNumber = $customer->broadband_account_number;
 
-        if ($accountNumber === null) {
+        if ($serviceType === null && $accountNumber === null) {
             abort(404);
         }
 
-        $customer->update(['broadband_account_number' => null]);
+        $customer->update(['service_type' => null, 'broadband_account_number' => null]);
 
-        activity('customers')
+        activity(ActivityLogName::Customers->value)
             ->causedBy($request->user())
             ->performedOn($customer)
-            ->event('account_unbound')
+            ->event(ActivityLogEvent::AccountUnbound->value)
             ->withProperties([
+                'service_type' => $serviceType,
                 'account_number' => $accountNumber,
             ])
             ->log('broadband_account_unbound');
@@ -524,10 +522,10 @@ class CustomerController extends Controller
                 : null,
         );
 
-        activity('customers')
+        activity(ActivityLogName::Customers->value)
             ->causedBy($request->user())
             ->performedOn($customer)
-            ->event('wallet_adjusted')
+            ->event(ActivityLogEvent::WalletAdjusted->value)
             ->withProperties([
                 'transaction_no' => $transaction->transaction_no,
                 'direction' => $request->string('direction')->toString(),

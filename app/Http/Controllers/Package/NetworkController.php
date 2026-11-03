@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Package;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Http\Controllers\Controller;
 use App\Models\Network;
 use Illuminate\Http\RedirectResponse;
@@ -18,7 +21,13 @@ class NetworkController extends Controller
             'name_my' => ['required', 'string', 'max:50', Rule::unique('networks', 'name_my')->withoutTrashed()],
         ]);
 
-        Network::query()->create($data);
+        $network = Network::query()->create($data);
+
+        activity(ActivityLogName::Network->value)
+            ->causedBy($request->user())
+            ->performedOn($network)
+            ->event(ActivityLogEvent::Created->value)
+            ->log('network_created');
 
         return redirect()->route('packages.index')->with('success', 'packages.networks.created');
     }
@@ -48,10 +57,16 @@ class NetworkController extends Controller
 
         $network->update($data);
 
+        activity(ActivityLogName::Network->value)
+            ->causedBy($request->user())
+            ->performedOn($network)
+            ->event(ActivityLogEvent::Updated->value)
+            ->log('network_updated');
+
         return redirect()->route('packages.index')->with('success', 'packages.networks.updated');
     }
 
-    public function destroy(Network $network): RedirectResponse
+    public function destroy(Request $request, Network $network): RedirectResponse
     {
         if ($network->packages()->exists()) {
             return back()->withErrors([
@@ -59,6 +74,12 @@ class NetworkController extends Controller
             ]);
         }
         $network->delete();
+
+        activity(ActivityLogName::Network->value)
+            ->causedBy($request->user())
+            ->performedOn($network)
+            ->event(ActivityLogEvent::Deleted->value)
+            ->log('network_deleted');
 
         return redirect()->route('packages.index')->with('success', 'packages.networks.deleted');
     }
@@ -76,6 +97,12 @@ class NetworkController extends Controller
         if ($deletedCount === 0) {
             return back()->with('error', __('common.bulk_delete_failed'));
         }
+
+        activity(ActivityLogName::Network->value)
+            ->causedBy($request->user())
+            ->event(ActivityLogEvent::BulkDeleted->value)
+            ->withProperties(['ids' => $deletableIds])
+            ->log('networks_bulk_deleted');
 
         return redirect()->route('packages.index')->with('success', 'packages.networks.bulk_deleted');
     }

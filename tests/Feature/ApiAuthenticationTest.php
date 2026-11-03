@@ -45,13 +45,15 @@ class ApiAuthenticationTest extends TestCase
             'name' => 'New User',
             'password' => '123456',
             'password_confirmation' => '123456',
+            'lang' => 'my',
         ]);
 
         $response
             ->assertCreated()
             ->assertJsonPath('token_type', 'Bearer')
+            ->assertJsonPath('user.lang', 'my')
             ->assertJsonStructure(['token', 'expires_at', 'user' => ['id', 'phone', 'name']]);
-        $this->assertDatabaseHas('users', ['phone' => self::PHONE, 'name' => 'New User']);
+        $this->assertDatabaseHas('users', ['phone' => self::PHONE, 'name' => 'New User', 'lang' => 'my']);
 
         $user = User::query()->where('phone', self::PHONE)->firstOrFail();
         $this->assertDatabaseHas('wallets', ['user_id' => $user->id, 'balance' => 0]);
@@ -71,7 +73,29 @@ class ApiAuthenticationTest extends TestCase
             'name' => 'New User',
             'password' => '123456',
             'password_confirmation' => '654321',
+            'lang' => 'en',
         ])->assertUnprocessable()->assertJsonValidationErrors('password');
+
+        $this->assertDatabaseMissing('users', ['phone' => self::PHONE]);
+    }
+
+    public function test_registration_requires_a_supported_language(): void
+    {
+        $verify = $this->verifyOtpFor('+95922345678');
+        $data = [
+            'verification_token' => $verify['verification_token'],
+            'name' => 'New User',
+            'password' => '123456',
+            'password_confirmation' => '123456',
+        ];
+
+        $this->postJson('/api/auth/register', $data)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('lang');
+
+        $this->postJson('/api/auth/register', [...$data, 'lang' => 'fr'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('lang');
 
         $this->assertDatabaseMissing('users', ['phone' => self::PHONE]);
     }
@@ -86,6 +110,7 @@ class ApiAuthenticationTest extends TestCase
                 'name' => 'New User',
                 'password' => $password,
                 'password_confirmation' => $password,
+                'lang' => 'en',
             ])->assertUnprocessable()->assertJsonValidationErrors('password');
         }
 
@@ -100,6 +125,7 @@ class ApiAuthenticationTest extends TestCase
             'name' => 'new-user',
             'password' => '123456',
             'password_confirmation' => '123456',
+            'lang' => 'en',
         ];
 
         $this->postJson('/api/auth/register', $data)->assertCreated();
@@ -116,6 +142,7 @@ class ApiAuthenticationTest extends TestCase
             'name' => 'Takeover',
             'password' => '123456',
             'password_confirmation' => '123456',
+            'lang' => 'en',
         ])->assertUnprocessable();
 
         $this->assertDatabaseMissing('users', ['name' => 'Takeover']);
@@ -145,10 +172,12 @@ class ApiAuthenticationTest extends TestCase
             'name' => 'Soft Deleted User',
             'password' => '123456',
             'password_confirmation' => '123456',
+            'lang' => 'zh',
         ])->assertCreated();
 
         $restoredUser = User::withTrashed()->where('phone', self::PHONE)->firstOrFail();
         $this->assertNull($restoredUser->deleted_at);
+        $this->assertSame('zh', $restoredUser->lang);
         $this->assertNull($restoredUser->wallet()->withTrashed()->firstOrFail()->deleted_at);
     }
 
@@ -297,7 +326,12 @@ class ApiAuthenticationTest extends TestCase
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
             'password' => '123456',
-        ])->assertUnprocessable();
+        ])->assertForbidden()
+            ->assertExactJson([
+                'code' => 'MSG-USER-004',
+                'level' => 'error',
+                'message' => 'Account suspended successfully.',
+            ]);
     }
 
     public function test_deactivated_user_gets_password_step_even_when_password_login_is_disabled(): void
@@ -318,23 +352,28 @@ class ApiAuthenticationTest extends TestCase
         $this->assertDatabaseCount('personal_access_tokens', 0);
     }
 
-    public function test_deactivated_user_is_reactivated_after_entering_the_correct_password(): void
+    public function test_deactivated_user_cannot_log_in_and_receives_the_account_status_code(): void
     {
         $user = User::factory()->create([
             'phone' => self::PHONE,
             'password' => '123456',
-            'status' => UserStatus::Deactivated,
+            'status' => UserStatus::Active,
         ]);
         $verify = $this->verifyOtpFor('+95922345678');
+        $user->update(['status' => UserStatus::Deactivated]);
 
-        $response = $this->postJson('/api/auth/login', [
+        $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
             'password' => '123456',
-        ])->assertOk();
+        ])->assertForbidden()
+            ->assertExactJson([
+                'code' => 'MSG-USER-003',
+                'level' => 'success',
+                'message' => 'Account deactivated successfully.',
+            ]);
 
-        $this->assertSame(UserStatus::Active, $user->fresh()->status);
-        $response->assertJsonStructure(['token', 'token_type', 'expires_at', 'user']);
-        $this->assertDatabaseCount('personal_access_tokens', 1);
+        $this->assertSame(UserStatus::Deactivated, $user->fresh()->status);
+        $this->assertDatabaseCount('personal_access_tokens', 0);
     }
 
     public function test_deactivated_user_is_not_reactivated_by_an_incorrect_password(): void
@@ -342,9 +381,10 @@ class ApiAuthenticationTest extends TestCase
         $user = User::factory()->create([
             'phone' => self::PHONE,
             'password' => '123456',
-            'status' => UserStatus::Deactivated,
+            'status' => UserStatus::Active,
         ]);
         $verify = $this->verifyOtpFor('+95922345678');
+        $user->update(['status' => UserStatus::Deactivated]);
 
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
@@ -409,9 +449,11 @@ class ApiAuthenticationTest extends TestCase
             'password' => '123456',
         ])
             ->assertStatus(409)
+            ->assertJsonPath('code', 'MSG-AUTH-012')
+            ->assertJsonPath('level', 'warning')
             ->assertJsonPath(
                 'message',
-                'This account is already signed in on an Android device. Please log out from that device first.',
+                'This account is already signed in on another device.',
             );
 
         $this->assertDatabaseCount('personal_access_tokens', 1);
@@ -596,6 +638,7 @@ class ApiAuthenticationTest extends TestCase
             'name' => 'Device User',
             'password' => '123456',
             'password_confirmation' => '123456',
+            'lang' => 'en',
             'device_token' => 'auto-register-device-token',
             'platform' => 'ios',
         ])->assertCreated();
@@ -620,7 +663,9 @@ class ApiAuthenticationTest extends TestCase
         $this->postJson('/api/auth/otp/verify', [
             'challenge_id' => $challenge['challenge_id'],
             'code' => '000000',
-        ])->assertUnprocessable();
+        ])
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'MSG-AUTH-005');
     }
 
     public function test_expired_otp_challenge_cannot_be_verified(): void
@@ -827,6 +872,7 @@ class ApiAuthenticationTest extends TestCase
             'name' => 'New User',
             'password' => '123456',
             'password_confirmation' => '123456',
+            'lang' => 'en',
         ])->assertCreated();
     }
 }

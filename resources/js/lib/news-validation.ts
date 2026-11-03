@@ -6,14 +6,7 @@ export const NEWS_TITLE_MAX_LENGTH = 120;
 export const NEWS_SLUG_MAX_LENGTH = 120;
 export const NEWS_DESCRIPTION_MAX_LENGTH = 5000;
 export const NEWS_IMAGE_MAX_SIZE_KB = 5120; // 5MB, matches File::image()->max(5120)
-export const NEWS_IMAGE_ACCEPTED_TYPES = [
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/bmp',
-    'image/svg+xml',
-    'image/webp',
-];
+export const NEWS_IMAGE_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 const NEWS_STATUSES = ['draft', 'published', 'archived'] as const;
 export type NewsStatus = (typeof NEWS_STATUSES)[number];

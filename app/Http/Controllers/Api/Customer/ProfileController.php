@@ -2,36 +2,33 @@
 
 namespace App\Http\Controllers\Api\Customer;
 
+use App\Enums\MessageCode;
 use App\Enums\CustomerPackageStatus;
 use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Customer\DeactivateAccountRequest;
 use App\Http\Requests\Api\Customer\UpdateLanguageRequest;
+use App\Http\Requests\Api\Customer\UpdateNotificationPreferencesRequest;
 use App\Http\Requests\Api\Customer\UpdateProfileRequest;
 use App\Http\Resources\Customer\ProfileResource;
 use App\Models\CustomerPackage;
 use App\Models\User;
-use App\Services\BroarbandAccount\BroadbandAccountService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Support\ApiMessage;
 use Illuminate\Support\Facades\Hash;
 
 class ProfileController extends Controller
 {
-    public function show(Request $request, BroadbandAccountService $broadbandAccounts): JsonResponse
+    public function show(Request $request): JsonResponse
     {
         /** @var User $user */
         $user = $request->user()->loadMissing('wallet');
         $customerPackages = $this->activePackages($user);
-        $broadbandAccount =
-            $user->broadband_account_number !== null
-                ? $broadbandAccounts->findByAccountNumber($user->broadband_account_number)
-                : null;
 
         return (new ProfileResource([
             'user' => $user,
-            'broadband_account' => $broadbandAccount,
             'wallet' => $user->wallet,
             'packages' => $customerPackages,
         ]))
@@ -40,13 +37,13 @@ class ProfileController extends Controller
             ->header('Pragma', 'no-cache');
     }
 
-    public function update(UpdateProfileRequest $request, BroadbandAccountService $broadbandAccounts): JsonResponse
+    public function update(UpdateProfileRequest $request): JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
         $user->update(['name' => $request->validated('name')]);
 
-        return $this->show($request, $broadbandAccounts);
+        return $this->show($request);
     }
 
     public function deactivate(DeactivateAccountRequest $request): JsonResponse
@@ -56,17 +53,16 @@ class ProfileController extends Controller
 
         if (!Hash::check($request->validated('password'), $user->getAuthPassword())) {
             return response()->json(
-                [
-                    'message' => 'The provided password is incorrect.',
-                    'errors' => ['password' => ['The provided password is incorrect.']],
-                ],
+                ApiMessage::attach(MessageCode::UserPasswordIncorrect, [
+                    'errors' => ['password' => [MessageCode::UserPasswordIncorrect->message()]],
+                ]),
                 422,
             );
         }
 
         $user->update(['status' => UserStatus::Deactivated]);
 
-        return response()->json(['message' => 'Account deactivated successfully.']);
+        return response()->json(ApiMessage::attach(MessageCode::UserDeactivated));
     }
 
     public function updateLanguage(UpdateLanguageRequest $request): JsonResponse
@@ -82,17 +78,65 @@ class ProfileController extends Controller
         ]);
     }
 
+    public function getNotificationPreferences(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        return response()->json([
+            'announcements_enabled' => $user->announcements_enabled,
+            'system_enabled' => $user->system_enabled,
+            'promotion_enabled' => $user->promotion_enabled,
+            'general_enabled' => $user->general_enabled,
+        ]);
+    }
+
+    public function updateNotificationPreferences(UpdateNotificationPreferencesRequest $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $user->update($request->validated());
+
+        return response()->json([
+            'data' => [
+                'announcements_notifications' => $user->announcements_enabled,
+                'system_notifications' => $user->system_enabled,
+                'promotion_notifications' => $user->promotion_enabled,
+                'general_notifications' => $user->general_enabled,
+            ],
+        ]);
+    }
+
     /** @return Collection<int, CustomerPackage> */
     private function activePackages(User $user): Collection
     {
         return $user
             ->customerPackages()
-            ->with('package.network', 'package.speed', 'package.term')
+            ->with('package.network', 'package.speed', 'package.term', 'packageOrder')
             ->where('status', CustomerPackageStatus::Active)
             ->where(function ($query): void {
                 $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
             })
             ->latest('starts_at')
             ->get();
+    }
+
+    public function packageCredentials(Request $request, int $customerPackageId): JsonResponse
+    {
+        $customerPackage = CustomerPackage::query()
+            ->whereKey($customerPackageId)
+            ->where('user_id', $request->user()->getKey())
+            ->firstOrFail();
+
+        return response()
+            ->json([
+                'data' => [
+                    'credentials' => [
+                        'account' => $customerPackage->username,
+                        'password' => $customerPackage->password,
+                    ],
+                ],
+            ])
+            ->header('Cache-Control', 'private, no-store')
+            ->header('Pragma', 'no-cache');
     }
 }

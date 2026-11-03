@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers\ServiceRequest;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\RelocationRequest;
+use App\Services\AdminNotification\AdminNotificationReadStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Enum;
@@ -13,7 +17,7 @@ use Inertia\Response;
 
 class RelocationRequestController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, AdminNotificationReadStatus $readStatus): Response
     {
         $search = trim((string) $request->string('search'));
         $status = $request->has('status')
@@ -44,6 +48,16 @@ class RelocationRequestController extends Controller
             ->paginate(10)
             ->withQueryString();
 
+        $unreadRequestIds = $readStatus->unreadReferenceIds(
+            (int) $request->user()->getAuthIdentifier(),
+            'relocation_request',
+            $relocationRequests->getCollection()->pluck('id')->all(),
+        );
+        $relocationRequests->through(fn (RelocationRequest $relocationRequest): array => [
+            ...$relocationRequest->toArray(),
+            'notification_unread' => in_array($relocationRequest->id, $unreadRequestIds, true),
+        ]);
+
         return Inertia::render('ServiceRequests/RelocationRequest/Index', [
             'requests' => $relocationRequests,
             'filters' => [
@@ -60,6 +74,12 @@ class RelocationRequestController extends Controller
         $validated = $request->validate([
             'status' => ['required', new Enum(RequestStatus::class)],
         ]);
+
+        activity(ActivityLogName::RelocationRequest->value)
+            ->causedBy($request->user())
+            ->performedOn($relocationRequest)
+            ->event(ActivityLogEvent::StatusUpdated->value)
+            ->log($validated['status']);
 
         $relocationRequest->update([
             'status' => $validated['status'],

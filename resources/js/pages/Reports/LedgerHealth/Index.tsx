@@ -65,6 +65,7 @@ type SnapshotOption = {
     checked_at: string | null;
     window_start: string | null;
     window_end: string | null;
+    notification_unread: boolean;
 };
 
 type Props = {
@@ -140,6 +141,7 @@ export default function LedgerHealthReportIndex({
     const notifiedRunId = useRef<number | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [togglingDaily, setTogglingDaily] = useState(false);
+    const [readSnapshotIds, setReadSnapshotIds] = useState<Set<number>>(() => new Set());
     const [manualFrom, setManualFrom] = useState(defaultWindow.start);
     const [manualTo, setManualTo] = useState(defaultWindow.end);
     const hasActiveRun = run?.status === 'queued' || run?.status === 'running';
@@ -153,6 +155,25 @@ export default function LedgerHealthReportIndex({
         setManualFrom(defaultWindow.start);
         setManualTo(defaultWindow.end);
     }, [scanType, defaultWindow.start, defaultWindow.end]);
+
+    useEffect(() => {
+        if (snapshotId === null) {
+            return;
+        }
+
+        router.put(
+            `/dashboard/notifications/reference/ledger_health_snapshot_${scanType}/${snapshotId}/read`,
+            {},
+            {
+                preserveState: true,
+                preserveScroll: true,
+                onSuccess: () => {
+                    setReadSnapshotIds((current) => new Set(current).add(snapshotId));
+                    router.reload({ only: ['unreadAdminNotificationReferences'] });
+                },
+            },
+        );
+    }, [scanType, snapshotId]);
 
     const health = snapshot?.health;
     const balanceMismatches = snapshot?.balanceMismatches ?? [];
@@ -243,6 +264,9 @@ export default function LedgerHealthReportIndex({
     const snapshotOptions = snapshots.map((item) => ({
         value: item.id.toString(),
         label: snapshotLabel(item),
+        unread: item.notification_unread && !readSnapshotIds.has(item.id),
+        unreadLabel:
+            item.notification_unread && !readSnapshotIds.has(item.id) ? t('admin_notifications.unread') : undefined,
     }));
     const balanceMismatchColumns: DataTableColumn<BalanceMismatch>[] = [
         {

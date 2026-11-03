@@ -27,6 +27,9 @@ type PackageOrder = {
     customer: { id: number | null; name: string | null; phone: string | null };
     package: string | null;
     transaction_no: string | null;
+    order_no: string | null;
+    activation_result_code: number | null;
+    failure_reason: string | null;
     amount: number;
     status: string;
     created_at: string | null;
@@ -119,6 +122,20 @@ export default function PackageOrdersIndex({
     };
 
     const columns: DataTableColumn<PackageOrder>[] = [
+        {
+            id: 'order_no',
+            header: t('package_orders.order_no'),
+            cell: (row) =>
+                row.order_no ? (
+                    <span className="flex items-center gap-1.5 font-mono text-xs">
+                        {row.order_no}
+                        <CopyValueButton value={row.order_no} label={t('package_orders.order_no')} />
+                    </span>
+                ) : (
+                    '—'
+                ),
+            searchValue: (row) => row.order_no ?? '',
+        },
         {
             id: 'transaction',
             header: t('transactions.number'),
@@ -297,6 +314,20 @@ export default function PackageOrdersIndex({
                         <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
                             <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 <DetailItem
+                                    label={t('package_orders.order_no')}
+                                    value={
+                                        selected.order_no ? (
+                                            <span className="flex items-center gap-1.5 font-mono">
+                                                {selected.order_no}
+                                                <CopyValueButton
+                                                    value={selected.order_no}
+                                                    label={t('package_orders.order_no')}
+                                                />
+                                            </span>
+                                        ) : null
+                                    }
+                                />
+                                <DetailItem
                                     label={t('transactions.number')}
                                     value={
                                         selected.transaction_no ? (
@@ -318,6 +349,14 @@ export default function PackageOrdersIndex({
                                 <DetailItem
                                     label={t('common.status')}
                                     value={<StatusBadge status={selected.status} />}
+                                />
+                                <DetailItem
+                                    label={t('package_orders.activation_result_code')}
+                                    value={selected.activation_result_code}
+                                />
+                                <DetailItem
+                                    label={t('package_orders.failure_reason')}
+                                    value={selected.failure_reason}
                                 />
                                 <DetailItem
                                     label={t('transactions.customer')}

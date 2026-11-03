@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Cms;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Cms\StoreNewsRequest;
 use App\Http\Requests\Cms\UpdateNewsRequest;
@@ -62,7 +65,7 @@ class NewsController extends Controller
             'slug' => $data['slug'],
         ]);
 
-        activity('cms')->causedBy($request->user())->performedOn($news)->event('created')->log('news_created');
+        activity(ActivityLogName::News->value)->causedBy($request->user())->performedOn($news)->event(ActivityLogEvent::Created->value)->log('news_created');
 
         return redirect()->route('cms.news.index')->with('success', 'cms.news.created');
     }
@@ -98,7 +101,7 @@ class NewsController extends Controller
             'slug' => $data['slug'],
         ]);
 
-        activity('cms')->causedBy($request->user())->performedOn($news)->event('updated')->log('news_updated');
+        activity(ActivityLogName::News->value)->causedBy($request->user())->performedOn($news)->event(ActivityLogEvent::Updated->value)->log('news_updated');
 
         return redirect()->route('cms.news.index')->with('success', 'cms.news.updated');
     }
@@ -108,7 +111,7 @@ class NewsController extends Controller
         StoresPublicImage::delete($news->image_path);
         $news->delete();
 
-        activity('cms')->causedBy($request->user())->performedOn($news)->event('deleted')->log('news_deleted');
+        activity(ActivityLogName::News->value)->causedBy($request->user())->performedOn($news)->event(ActivityLogEvent::Deleted->value)->log('news_deleted');
 
         return redirect()->route('cms.news.index')->with('success', 'cms.news.deleted');
     }
@@ -120,6 +123,7 @@ class NewsController extends Controller
             News::query(),
             'cms.news.index',
             'news_deleted',
+            ActivityLogName::News,
             beforeDelete: function (News $news): void {
                 StoresPublicImage::delete($news->image_path);
             },

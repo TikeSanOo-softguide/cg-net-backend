@@ -6,14 +6,7 @@ export const SERVICE_TITLE_MAX_LENGTH = 120;
 export const SERVICE_SLUG_MAX_LENGTH = 120;
 export const SERVICE_DESCRIPTION_MAX_LENGTH = 5000;
 export const SERVICE_IMAGE_MAX_SIZE_KB = 5120;
-export const SERVICE_IMAGE_ACCEPTED_TYPES = [
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/bmp',
-    'image/svg+xml',
-    'image/webp',
-];
+export const SERVICE_IMAGE_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 const SERVICE_STATUSES = ['draft', 'published', 'archived'] as const;
 export type ServiceStatus = (typeof SERVICE_STATUSES)[number];

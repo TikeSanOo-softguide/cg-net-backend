@@ -61,6 +61,7 @@ export type PageProps<T extends Record<string, unknown> = Record<string, unknown
     timezone: string;
     translations: TranslationTree;
     unreadNotifications: number;
+    unreadAdminNotificationReferences: string[];
     totalAdminNotifications: number;
     recentNotifications: RecentNotification[];
     flash: {
@@ -84,6 +85,7 @@ declare module '@inertiajs/core' {
             timezone: string;
             translations: TranslationTree;
             unreadNotifications: number;
+            unreadAdminNotificationReferences: string[];
             totalAdminNotifications: number;
             recentNotifications: RecentNotification[];
             flash: {

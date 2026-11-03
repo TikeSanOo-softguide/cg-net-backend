@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Models\Admin;
 use App\Services\Auth\ApiTokenService;
 use App\Services\Auth\Otp\MockOtpProvider;
@@ -13,6 +16,7 @@ use App\Services\PackageActivation\RealPackageActivationService;
 use App\Support\AppPermissions;
 use App\Support\JsonTranslations;
 use App\Support\Like;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
@@ -71,6 +75,23 @@ class AppServiceProvider extends ServiceProvider
             fn(TokenAuthenticated $event) => $this->app->make(ApiTokenService::class)->slide($event->token),
         );
 
+        Event::listen(Login::class, function (Login $event): void {
+            if ($event->guard !== 'web' || !$event->user instanceof Admin) {
+                return;
+            }
+
+            activity(ActivityLogName::Admin->value)
+                ->causedBy($event->user)
+                ->performedOn($event->user)
+                ->event(ActivityLogEvent::LoggedIn->value)
+                ->withProperties([
+                    'username' => $event->user->username,
+                    'ip' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ])
+                ->log('admin_logged_in');
+        });
+
         Gate::before(function ($user, string $ability): ?bool {
             if ($user instanceof Admin && $user->hasRole(AppPermissions::SuperAdmin)) {
                 return true;
@@ -85,7 +106,7 @@ class AppServiceProvider extends ServiceProvider
         $driver = (string) config('services.package_activation.driver', 'unconfigured');
 
         if ($driver !== 'fake') {
-            return new RealPackageActivationService();
+            return $this->app->make(RealPackageActivationService::class);
         }
 
         if (!$this->app->environment('local')) {
@@ -99,6 +120,10 @@ class AppServiceProvider extends ServiceProvider
     {
         RateLimiter::for('serial-check', function (Request $request) {
             return Limit::perMinutes(30, 5)->by((string) ($request->user()?->getAuthIdentifier() ?: $request->ip()));
+        });
+
+        RateLimiter::for('ftth-bill-pay', function (Request $request) {
+            return Limit::perMinute(10)->by((string) ($request->user()?->getAuthIdentifier() ?: $request->ip()));
         });
 
         RateLimiter::for('top-up-card-generation', function (Request $request) {

@@ -30,6 +30,7 @@ import { formatPhoneInternational } from '@/lib/phone';
 
 type RequestItem = {
     id: number;
+    notification_unread: boolean;
     contact_name: string | null;
     contact_phone: string | null;
     new_wifi_name: string | null;
@@ -71,7 +72,12 @@ export default function ChangePasswordIndex({ requests, filters, statuses, stats
     const [search, setSearch] = useState(filters.search);
     const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
     const debounce = useRef<number>(0);
-    const closeRequestDetails = useOpenRequestFromQuery(requests.data, setSelectedRequest);
+    const closeRequestDetails = useOpenRequestFromQuery(
+        requests.data,
+        selectedRequest,
+        setSelectedRequest,
+        'change_password_request',
+    );
 
     const cards = [
         {
@@ -155,9 +161,18 @@ export default function ChangePasswordIndex({ requests, filters, statuses, stats
                                 <span className="flex min-w-0 items-center gap-2.5">
                                     <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-2.5">
                                         <div className="row-span-2">
-                                            <StaffListAvatar username={request.user?.name || ''} />
+                                            <StaffListAvatar
+                                                username={request.user?.name || ''}
+                                                unreadLabel={
+                                                    request.notification_unread
+                                                        ? t('admin_notifications.unread')
+                                                        : undefined
+                                                }
+                                            />
                                         </div>
-                                        <span className="min-w-0 truncate font-medium">{request.user?.name || ''}</span>
+                                        <span className="min-w-0 truncate font-medium">
+                                            {request.user?.name || ''}
+                                        </span>
                                         <p className="truncate font-mono text-xs text-muted-foreground">
                                             {request.broadband_account_number ?? '—'}
                                         </p>

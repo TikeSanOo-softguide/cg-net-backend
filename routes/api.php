@@ -39,14 +39,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('auth')
-    ->middleware('throttle:60,1')
-    ->group(function () {
-        Route::post('/otp/request', [OtpController::class, 'request']);
-        Route::post('/otp/verify', [OtpController::class, 'verify']);
-        Route::post('/login', LoginController::class)->middleware('throttle:30,1');
-        Route::post('/register', RegistrationController::class)->middleware('throttle:30,1');
-    });
+Route::prefix('auth')->group(function () {
+    Route::post('/otp/request', [OtpController::class, 'request'])->middleware('throttle:60,1');
+    Route::post('/otp/verify', [OtpController::class, 'verify'])->middleware('throttle:60,1');
+    Route::post('/session/check', [LoginController::class, 'checkSession'])->middleware('throttle:10,1');
+    Route::post('/login', LoginController::class)->middleware('throttle:30,1');
+    Route::post('/register', RegistrationController::class)->middleware('throttle:30,1');
+});
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -96,7 +95,13 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::get('/profile', [ProfileController::class, 'show']);
         Route::patch('/language', [ProfileController::class, 'updateLanguage']);
         Route::patch('/profile', [ProfileController::class, 'update']);
+        Route::get('/notification-preferences', [ProfileController::class, 'getNotificationPreferences']);
+        Route::patch('/notification-preferences', [ProfileController::class, 'updateNotificationPreferences']);
         Route::post('/deactivate', [ProfileController::class, 'deactivate']);
+        Route::get('/packages/{customerPackageId}/credentials', [
+            ProfileController::class,
+            'packageCredentials',
+        ])->whereNumber('customerPackageId');
         Route::get('/transactions', TransactionHistoryController::class);
     });
 
@@ -125,7 +130,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('/packages/buy', [BuyPackageController::class, 'buy']);
 
     Route::prefix('ftth-bills')->group(function () {
-        Route::post('/pay', [FtthBillController::class, 'pay']);
+        Route::post('/pay', [FtthBillController::class, 'pay'])->middleware('throttle:ftth-bill-pay');
         Route::get('/pending-slip', [FtthBillController::class, 'pendingSlip']);
         Route::get('/paid-slips', [FtthBillController::class, 'paidSlips']);
     });
@@ -163,14 +168,16 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::delete('/{changePasswordRequest}', [ChangePasswordRequestController::class, 'destroy']);
     });
 
-    Route::prefix('broadband-applications')->group(function () {
+    Route::prefix('installation-application')->group(function () {
         Route::get('/', [BroadbandApplicationRequestController::class, 'index']);
+        Route::get('/products', [BroadbandApplicationRequestController::class, 'products']);
         Route::post('/create', [BroadbandApplicationRequestController::class, 'store']);
         Route::get('/{installationApplication}', [BroadbandApplicationRequestController::class, 'show']);
         Route::put('/{installationApplication}', [BroadbandApplicationRequestController::class, 'update']);
         Route::patch('/{installationApplication}/cancel', [BroadbandApplicationRequestController::class, 'cancel']);
         Route::delete('/{installationApplication}', [BroadbandApplicationRequestController::class, 'destroy']);
     });
+    Route::get('/areas', [RegionController::class, 'area']);
 
     Route::prefix('change-password')->group(function () {
         Route::post('/', [ChangePasswordController::class, 'store']);

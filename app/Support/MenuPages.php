@@ -11,25 +11,6 @@ final class MenuPages
      */
     public static function all(): array
     {
-        return [
-            [
-                'path' => '/cpe/inventory',
-                'titleKey' => 'menu.cpe_inventory',
-                'name' => 'cpe.inventory',
-                'permission' => 'cpe.view',
-            ],
-            [
-                'path' => '/cpe/assignment',
-                'titleKey' => 'menu.cpe_assignment',
-                'name' => 'cpe.assignment',
-                'permission' => 'cpe.view',
-            ],
-            [
-                'path' => '/cpe/status',
-                'titleKey' => 'menu.connection_status',
-                'name' => 'cpe.status',
-                'permission' => 'cpe.view',
-            ],
-        ];
+        return [];
     }
 }

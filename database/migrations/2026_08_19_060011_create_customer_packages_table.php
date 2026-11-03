@@ -11,15 +11,16 @@ return new class extends Migration
         Schema::create('customer_packages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->restrictOnDelete();
-            $table->foreignId('package_id')->constrained()->restrictOnDelete();
+            $table->foreignId('package_id')->nullable()->constrained()->restrictOnDelete();
             $table->foreignId('package_order_id')->nullable()->constrained('package_orders')->restrictOnDelete();
             $table->string('username')->nullable();
-            $table->string('password')->nullable();
+            $table->text('password')->nullable();
             $table->timestamp('starts_at')->nullable();
             $table->timestamp('expires_at')->nullable();
             $table->string('status', 16)->default('active');
             $table->timestamps();
             $table->softDeletes();
+            $table->unique('package_order_id');
             $table->index(['user_id', 'status']);
             $table->index(['package_id', 'status']);
             $table->index('expires_at');

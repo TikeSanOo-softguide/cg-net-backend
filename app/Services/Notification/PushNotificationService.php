@@ -222,6 +222,7 @@ class PushNotificationService
 
         $notificationCount = 0;
         $pushCount = 0;
+        $skippedPreference = 0;
 
         try {
             User::query()
@@ -235,6 +236,7 @@ class PushNotificationService
                     $content,
                     &$notificationCount,
                     &$pushCount,
+                    &$skippedPreference,
                 ): void {
                     foreach ($users as $user) {
                         $notification = UserNotification::query()->firstOrCreate(
@@ -253,6 +255,11 @@ class PushNotificationService
                         $notificationCount++;
 
                         if ($notification->sent_at !== null || $user->deviceTokens->isEmpty()) {
+                            continue;
+                        }
+
+                        if (!$user->canReceivePush($category)) {
+                            $skippedPreference++;
                             continue;
                         }
 
@@ -282,7 +289,7 @@ class PushNotificationService
             return false;
         }
 
-        if ($notificationCount === 0 || $pushCount === 0) {
+        if ($notificationCount === 0 || $pushCount === 0 || $skippedPreference > 0) {
             return false;
         }
 
@@ -305,6 +312,7 @@ class PushNotificationService
         $recipients = 0;
 
         User::query()
+            ->where('general_enabled', true)
             ->whereHas('deviceTokens')
             ->orderBy('id')
             ->chunkById(200, function ($users) use ($notification, &$recipients): void {

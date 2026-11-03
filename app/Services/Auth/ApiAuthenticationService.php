@@ -2,8 +2,10 @@
 
 namespace App\Services\Auth;
 
+use App\Enums\MessageCode;
 use App\Enums\UserStatus;
 use App\Enums\WalletStatus;
+use App\Exceptions\ApiMessageException;
 use App\Exceptions\Auth\InvalidCredentialsException;
 use App\Models\User;
 use App\Models\Wallet;
@@ -13,15 +15,14 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
-use Symfony\Component\HttpKernel\Exception\HttpException;
-use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
 /**
  * Customer authentication.
  * requestOtp -> verifyOtp -> next_step=password -> login
  *                         -> next_step=register -> register
  *                         -> next_step=authenticated (password step disabled)
- * Deactivated accounts always receive the password step with account_status=deactivated.
+ * Deactivated accounts receive the password step and are rejected at login
+ * until an administrator reactivates them.
  */
 final class ApiAuthenticationService
 {
@@ -88,8 +89,12 @@ final class ApiAuthenticationService
 
     public function verifiedPhone(string $verificationToken): string
     {
-        return $this->otp->phoneForVerificationToken($verificationToken) ??
-            abort(422, 'The verification token is invalid or expired.');
+        $phone = $this->otp->phoneForVerificationToken($verificationToken);
+        if ($phone === null) {
+            throw new ApiMessageException(MessageCode::AuthVerificationTokenInvalid);
+        }
+
+        return $phone;
     }
 
     /** @return array{user: User, token: string, expires_at: CarbonInterface} */
@@ -111,7 +116,7 @@ final class ApiAuthenticationService
                     $existingUser = User::withTrashed()->where('phone', $phone)->first();
 
                     if ($existingUser && !$existingUser->trashed()) {
-                        abort(422, 'The registration details are already in use.');
+                        throw new ApiMessageException(MessageCode::AuthRegistrationInUse);
                     }
 
                     if ($existingUser) {
@@ -121,7 +126,7 @@ final class ApiAuthenticationService
                     return $this->createNewUser($phone, $data);
                 });
             } catch (UniqueConstraintViolationException) {
-                abort(422, 'The registration details are already in use.');
+                throw new ApiMessageException(MessageCode::AuthRegistrationInUse);
             }
         });
     }
@@ -140,10 +145,9 @@ final class ApiAuthenticationService
             RateLimiter::tooManyAttempts($accountKey, $accountMaxAttempts) ||
             RateLimiter::tooManyAttempts($ipKey, $ipMaxAttempts)
         ) {
-            throw new TooManyRequestsHttpException(
-                max(RateLimiter::availableIn($accountKey), RateLimiter::availableIn($ipKey)),
-                'Too many requests.',
-            );
+            throw new ApiMessageException(MessageCode::AuthLoginTooManyAttempts, 429, [
+                'retry_after' => max(1, RateLimiter::availableIn($accountKey), RateLimiter::availableIn($ipKey)),
+            ]);
         }
 
         RateLimiter::hit($accountKey, $decaySeconds);
@@ -152,19 +156,24 @@ final class ApiAuthenticationService
         $session = DB::transaction(function () use ($phone, $password, $accountKey, $ipKey): array {
             $user = User::query()->where('phone', $phone)->lockForUpdate()->first();
 
-            if (
-                !$user ||
-                !in_array($user->status, [UserStatus::Active, UserStatus::Deactivated], true) ||
-                !Hash::check($password, $user->getAuthPassword())
-            ) {
+            if (!$user || !Hash::check($password, $user->getAuthPassword())) {
                 throw new InvalidCredentialsException();
             }
 
             if ($user->status === UserStatus::Deactivated) {
-                $user->update(['status' => UserStatus::Active]);
+                throw new ApiMessageException(MessageCode::UserDeactivated, 403);
             }
 
-            $hasActiveSession = $user->tokens()
+            if ($user->status === UserStatus::Suspended) {
+                throw new ApiMessageException(MessageCode::UserSuspended, 403);
+            }
+
+            if ($user->status !== UserStatus::Active) {
+                throw new InvalidCredentialsException();
+            }
+
+            $hasActiveSession = $user
+                ->tokens()
                 ->where(fn($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
                 ->exists();
 
@@ -172,21 +181,7 @@ final class ApiAuthenticationService
                 RateLimiter::clear($accountKey);
                 RateLimiter::clear($ipKey);
 
-                $platform = $user->deviceTokens()
-                    ->whereNotNull('platform')
-                    ->orderByDesc('last_used_at')
-                    ->value('platform');
-                $device = match ($platform) {
-                    'android' => 'an Android device',
-                    'ios' => 'an iOS device',
-                    'web' => 'a web browser',
-                    default => 'another device',
-                };
-
-                throw new HttpException(
-                    409,
-                    "This account is already signed in on {$device}. Please log out from that device first.",
-                );
+                throw new ApiMessageException(MessageCode::AuthAlreadySignedIn, 409);
             }
 
             return $this->openSession($user);
@@ -230,13 +225,14 @@ final class ApiAuthenticationService
         $wallet = $existingUser->wallet()->withTrashed()->first();
 
         if ($this->isRestrictedForReRegistration($existingUser, $wallet)) {
-            abort(422, 'This account is restricted and cannot be re-registered.');
+            throw new ApiMessageException(MessageCode::AuthAccountRestricted);
         }
 
         $existingUser->restore();
         $existingUser->fill([
             'name' => $data['name'],
             'password' => $data['password'],
+            'lang' => $data['lang'],
             'status' => UserStatus::Active,
         ]);
         $existingUser->save();
@@ -270,6 +266,7 @@ final class ApiAuthenticationService
             'phone' => $phone,
             'name' => $data['name'],
             'password' => $data['password'],
+            'lang' => $data['lang'],
             'status' => UserStatus::Active,
         ]);
 

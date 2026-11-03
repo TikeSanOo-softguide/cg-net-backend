@@ -14,8 +14,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     Fillable([
         'user_id',
         'broadband_account_number',
-        'current_package_id',
-        'new_package_id',
+        'service_type',
+        'ticket_number',
+        'current_package_detail',
+        'new_package_detail',
         'preferred_date',
         'contact_name',
         'contact_phone',
@@ -34,22 +36,36 @@ class ChangePlanRequest extends Model
         return [
             'preferred_date' => 'date',
             'status' => RequestStatus::class,
+            'current_package_detail' => 'array',
+            'new_package_detail' => 'array',
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function packageDetailRules(string $key): array
+    {
+        return [
+            $key => ['required', 'array'],
+            "{$key}.package_id" => ['nullable', 'integer'],
+            "{$key}.price" => ['required', 'numeric', 'min:0'],
+            "{$key}.network_name" => ['nullable', 'array'],
+            "{$key}.network_name.en" => ['nullable', 'string', 'max:255'],
+            "{$key}.network_name.my" => ['nullable', 'string', 'max:255'],
+            "{$key}.network_name.zh" => ['nullable', 'string', 'max:255'],
+            "{$key}.speed" => ['nullable', 'array'],
+            "{$key}.speed.mbps" => ['nullable', 'numeric', 'min:0'],
+            "{$key}.term" => ['nullable', 'array'],
+            "{$key}.term.months" => ['nullable', 'integer', 'min:1'],
+            "{$key}.term.cycle" => ['nullable'],
+            "{$key}.term.cycle_unit" => ['nullable', 'string', 'max:32'],
         ];
     }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function currentPackage(): BelongsTo
-    {
-        return $this->belongsTo(Package::class, 'current_package_id');
-    }
-
-    public function newPackage(): BelongsTo
-    {
-        return $this->belongsTo(Package::class, 'new_package_id');
     }
 
     public function admin(): BelongsTo

@@ -71,6 +71,12 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         Route::put('/notifications/{notification}/read', [AdminNotificationController::class, 'markRead'])
             ->middleware('can:notifications.view')
             ->name('dashboard.notifications.read');
+        Route::put('/notifications/reference/{referenceType}/{referenceId}/read', [
+            AdminNotificationController::class,
+            'markReferenceRead',
+        ])
+            ->whereNumber('referenceId')
+            ->name('dashboard.notifications.reference.read');
     });
     Route::delete('/dashboard/requests/bulk-destroy', [DashboardController::class, 'bulkDestroy'])
         ->middleware('can:service-requests.delete')
@@ -777,5 +783,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
 });
 
 Route::fallback(function () {
+    if (request()->is('api/*')) {
+        abort(404);
+    }
+
     return Inertia::render('Errors/NotFound')->toResponse(request())->setStatusCode(404);
 });

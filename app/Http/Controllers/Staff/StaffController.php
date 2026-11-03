@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Staff;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Enums\AdminStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\StoreStaffRequest;
@@ -71,7 +74,7 @@ class StaffController extends Controller
         $admin->syncRoles($this->allowedRoles($request->user(), $request->validated('role_ids', [])));
         app(AdminNotificationDelivery::class)->forgetCachedRecipients();
 
-        activity('staff')->causedBy($request->user())->performedOn($admin)->event('created')->log('staff_created');
+        activity(ActivityLogName::Staff->value)->causedBy($request->user())->performedOn($admin)->event(ActivityLogEvent::Created->value)->log('staff_created');
 
         return redirect()->route('staff.index')->with('success', 'staff.created');
     }
@@ -103,7 +106,7 @@ class StaffController extends Controller
         $admin->syncRoles($this->allowedRoles($request->user(), $request->validated('role_ids', []), $admin));
         app(AdminNotificationDelivery::class)->forgetCachedRecipients();
 
-        activity('staff')->causedBy($request->user())->performedOn($admin)->event('updated')->log('staff_updated');
+        activity(ActivityLogName::Staff->value)->causedBy($request->user())->performedOn($admin)->event(ActivityLogEvent::Updated->value)->log('staff_updated');
 
         if ($request->headers->has('X-Modal')) {
             return back()->with('success', 'staff.updated');
@@ -123,7 +126,7 @@ class StaffController extends Controller
         $admin->delete();
         app(AdminNotificationDelivery::class)->forgetCachedRecipients();
 
-        activity('staff')->causedBy($request->user())->performedOn($admin)->event('deleted')->log('staff_deleted');
+        activity(ActivityLogName::Staff->value)->causedBy($request->user())->performedOn($admin)->event(ActivityLogEvent::Deleted->value)->log('staff_deleted');
 
         return redirect()->route('staff.index')->with('success', 'staff.deleted');
     }
@@ -148,7 +151,7 @@ class StaffController extends Controller
             }
 
             $admin->delete();
-            activity('staff')->causedBy($request->user())->performedOn($admin)->event('deleted')->log('staff_deleted');
+            activity(ActivityLogName::Staff->value)->causedBy($request->user())->performedOn($admin)->event(ActivityLogEvent::Deleted->value)->log('staff_deleted');
             $deleted++;
         }
 

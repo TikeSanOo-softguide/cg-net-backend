@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources\ChangePlanRequest;
 
-use App\Http\Resources\Package\PackageResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -17,10 +16,10 @@ class ChangePlanRequestResource extends JsonResource
             'id' => $this->id,
             'user_id' => $this->user_id,
             'broadband_account_number' => $this->broadband_account_number,
-            'current_package_id' => $this->current_package_id,
-            'new_package_id' => $this->new_package_id,
-            'current_package' => PackageResource::make($this->whenLoaded('currentPackage')),
-            'new_package' => PackageResource::make($this->whenLoaded('newPackage')),
+            'service_type' => $this->service_type,
+            'ticket_number' => $this->ticket_number,
+            'current_package_detail' => $this->current_package_detail,
+            'new_package_detail' => $this->new_package_detail,
             'preferred_date' => $this->preferred_date?->toDateString(),
             'contact_name' => $this->contact_name,
             'contact_phone' => $this->contact_phone,

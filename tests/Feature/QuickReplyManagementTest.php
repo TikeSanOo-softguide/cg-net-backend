@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ActivityLogName;
 use App\Enums\ChatConversationStatus;
 use App\Models\Admin;
 use App\Models\ChatConversation;
 use App\Models\QuickReply;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use Spatie\Activitylog\Models\Activity;
 use Tests\TestCase;
 
 class QuickReplyManagementTest extends TestCase
@@ -77,6 +79,7 @@ class QuickReplyManagementTest extends TestCase
 
         $reply = QuickReply::query()->firstOrFail();
         $this->assertSame('Account help', $reply->keyword);
+        $this->assertActivityExists($admin, $reply, 'created', 'quick_reply_created');
 
         $this->actingAs($admin, 'web')
             ->put("/support/quick-replies/replies/{$reply->id}", $this->payload([
@@ -88,6 +91,7 @@ class QuickReplyManagementTest extends TestCase
 
         $reply->refresh();
         $this->assertSame('Updated English reply', $reply->response_en);
+        $this->assertActivityExists($admin, $reply, 'updated', 'quick_reply_updated');
 
         $this->actingAs($admin, 'web')
             ->delete("/support/quick-replies/replies/{$reply->id}")
@@ -95,6 +99,7 @@ class QuickReplyManagementTest extends TestCase
             ->assertSessionHas('success', 'support.quick_replies.deleted');
 
         $this->assertSoftDeleted('quick_replies', ['id' => $reply->id]);
+        $this->assertActivityExists($admin, $reply, 'deleted', 'quick_reply_deleted');
 
         $this->actingAs($admin, 'web')
             ->post('/support/quick-replies/replies', $this->payload())
@@ -132,6 +137,15 @@ class QuickReplyManagementTest extends TestCase
 
         $this->assertSoftDeleted('quick_replies', ['id' => $first->id]);
         $this->assertSoftDeleted('quick_replies', ['id' => $second->id]);
+
+        $activity = Activity::query()
+            ->where('log_name', ActivityLogName::QuickReply->value)
+            ->where('causer_id', $admin->id)
+            ->where('description', 'quick_replies_bulk_deleted')
+            ->sole();
+
+        $this->assertSame('bulk_deleted', $activity->event);
+        $this->assertEqualsCanonicalizing([$first->id, $second->id], $activity->properties->get('ids'));
     }
 
     public function test_chat_panel_hides_deleted_replies_and_inserts_the_requested_language(): void
@@ -222,6 +236,19 @@ class QuickReplyManagementTest extends TestCase
     private function reply(array $overrides = []): QuickReply
     {
         return QuickReply::query()->create($this->payload($overrides));
+    }
+
+    private function assertActivityExists(Admin $admin, QuickReply $quickReply, string $event, string $description): void
+    {
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => ActivityLogName::QuickReply->value,
+            'description' => $description,
+            'subject_type' => QuickReply::class,
+            'subject_id' => $quickReply->id,
+            'causer_type' => Admin::class,
+            'causer_id' => $admin->id,
+            'event' => $event,
+        ]);
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Auth;
 
+use App\Enums\MessageCode;
 use App\Exceptions\Auth\OtpThrottledException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\RequestOtpRequest;
@@ -43,13 +44,21 @@ class OtpController extends Controller
                 request: $request,
             );
 
-            return $this->throttled('Too many OTP requests. Please try again later.', 'hourly_limit', $retryAfter);
+            return $this->throttled(
+                MessageCode::AuthOtpTooManyRequests,
+                OtpThrottledException::REASON_HOURLY_LIMIT,
+                $retryAfter,
+            );
         }
 
         try {
             $result = $service->requestOtp($phone, $request->ip());
         } catch (OtpThrottledException $exception) {
-            return $this->throttled($exception->getMessage(), $exception->reason, $exception->retryAfter);
+            return $this->throttled(
+                $this->otpThrottleCode($exception->reason),
+                $exception->reason,
+                $exception->retryAfter,
+            );
         }
 
         RateLimiter::hit($limiterKey, $decaySeconds);
@@ -72,13 +81,28 @@ class OtpController extends Controller
      * (also sent as the Retry-After header) and `reason` says which limit applies:
      * resend_cooldown (short, per phone), hourly_limit (per phone), rate_limited (per IP).
      */
-    private function throttled(string $message, string $reason, int $retryAfter): JsonResponse
+    private function throttled(MessageCode $code, string $reason, int $retryAfter): JsonResponse
     {
         $retryAfter = max(1, $retryAfter);
 
         return response()
-            ->json(['message' => $message, 'reason' => $reason, 'retry_after' => $retryAfter], 429)
+            ->json([
+                'code' => $code->value,
+                'level' => $code->level(),
+                'message' => $code->message(),
+                'reason' => $reason,
+                'retry_after' => $retryAfter,
+            ], 429)
             ->header('Retry-After', (string) $retryAfter);
+    }
+
+    private function otpThrottleCode(string $reason): MessageCode
+    {
+        return match ($reason) {
+            OtpThrottledException::REASON_RESEND_COOLDOWN => MessageCode::AuthOtpResendCooldown,
+            OtpThrottledException::REASON_HOURLY_LIMIT => MessageCode::AuthOtpTooManyRequests,
+            default => MessageCode::AuthOtpTooManyRequests,
+        };
     }
 
     /**

@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Package;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Http\Controllers\Controller;
 use App\Models\Speed;
 use Illuminate\Http\RedirectResponse;
@@ -22,7 +25,9 @@ class SpeedController extends Controller
             ],
         ]);
 
-        Speed::query()->create($data);
+        $speed = Speed::query()->create($data);
+
+        activity(ActivityLogName::Speed->value)->causedBy($request->user())->performedOn($speed)->event(ActivityLogEvent::Created->value)->log('speed_created');
 
         return redirect()->route('packages.index')->with('success', 'packages.speeds.created');
     }
@@ -41,10 +46,12 @@ class SpeedController extends Controller
 
         $speed->update($data);
 
+        activity(ActivityLogName::Speed->value)->causedBy($request->user())->performedOn($speed)->event(ActivityLogEvent::Updated->value)->log('speed_updated');
+
         return redirect()->route('packages.index')->with('success', 'packages.speeds.updated');
     }
 
-    public function destroy(Speed $speed): RedirectResponse
+    public function destroy(Request $request, Speed $speed): RedirectResponse
     {
         if ($speed->packages()->exists()) {
             return back()->withErrors([
@@ -52,6 +59,8 @@ class SpeedController extends Controller
             ]);
         }
         $speed->delete();
+
+        activity(ActivityLogName::Speed->value)->causedBy($request->user())->performedOn($speed)->event(ActivityLogEvent::Deleted->value)->log('speed_deleted');
 
         return redirect()->route('packages.index')->with('success', 'packages.speeds.deleted');
     }
@@ -69,6 +78,12 @@ class SpeedController extends Controller
         if ($deletedCount === 0) {
             return back()->with('error', __('common.bulk_delete_failed'));
         }
+
+        activity(ActivityLogName::Speed->value)
+            ->causedBy($request->user())
+            ->event(ActivityLogEvent::BulkDeleted->value)
+            ->withProperties(['ids' => $deletableIds])
+            ->log('speeds_bulk_deleted');
 
         return redirect()->route('packages.index')->with('success', 'packages.speeds.bulk_deleted');
     }

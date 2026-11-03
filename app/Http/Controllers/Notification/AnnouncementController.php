@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Notification;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Enums\AnnouncementStatus;
 use App\Enums\AnnouncementType;
 use App\Http\Controllers\Controller;
@@ -98,10 +101,10 @@ class AnnouncementController extends Controller
         $data['end_date'] = DateTimeInput::normalizeToApplicationTimezone($data['end_date'] ?? null);
         $announcement = Announcement::query()->create($data);
 
-        activity('notifications')
+        activity(ActivityLogName::Announcement->value)
             ->causedBy($request->user())
             ->performedOn($announcement)
-            ->event('created')
+            ->event(ActivityLogEvent::Created->value)
             ->log('announcement_created');
 
         return redirect()
@@ -116,10 +119,10 @@ class AnnouncementController extends Controller
         $data['end_date'] = DateTimeInput::normalizeToApplicationTimezone($data['end_date'] ?? null);
         $announcement->update($data);
 
-        activity('notifications')
+        activity(ActivityLogName::Announcement->value)
             ->causedBy($request->user())
             ->performedOn($announcement)
-            ->event('updated')
+            ->event(ActivityLogEvent::Updated->value)
             ->log('announcement_updated');
 
         return redirect()
@@ -131,10 +134,10 @@ class AnnouncementController extends Controller
     {
         $announcement->delete();
 
-        activity('notifications')
+        activity(ActivityLogName::Announcement->value)
             ->causedBy($request->user())
             ->performedOn($announcement)
-            ->event('deleted')
+            ->event(ActivityLogEvent::Deleted->value)
             ->log('announcement_deleted');
 
         return redirect()
@@ -153,10 +156,10 @@ class AnnouncementController extends Controller
 
         foreach (Announcement::query()->whereIn('id', $ids)->get() as $announcement) {
             $announcement->delete();
-            activity('announcement')
+            activity(ActivityLogName::Announcement->value)
                 ->causedBy($request->user())
                 ->performedOn($announcement)
-                ->event('deleted')
+                ->event(ActivityLogEvent::Deleted->value)
                 ->log('announcement_deleted');
             $deleted++;
         }

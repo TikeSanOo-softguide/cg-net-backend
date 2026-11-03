@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -17,8 +16,13 @@ return new class extends Migration
             $table->string('name');
             $table->string('password');
             $table->string('lang', 5)->default('en');
+            $table->string('service_type', 8)->nullable();
             $table->string('broadband_account_number', 32)->nullable()->unique();
             $table->string('status', 16)->default('active')->index();
+            $table->boolean('announcements_enabled')->default(true)->index();
+            $table->boolean('system_enabled')->default(true)->index();
+            $table->boolean('promotion_enabled')->default(true)->index();
+            $table->boolean('general_enabled')->default(true)->index();
             $table->timestamps();
             $table->softDeletes();
         });

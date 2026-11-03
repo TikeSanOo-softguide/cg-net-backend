@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Settings\GeneralSettings;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\GeneralSettings\StoreFaqRequest;
 use App\Http\Requests\Settings\GeneralSettings\UpdateFaqRequest;
@@ -15,7 +18,7 @@ class FaqController extends Controller
     {
         $faq = Faq::create($request->validated());
 
-        activity('settings')->causedBy($request->user())->performedOn($faq)->event('created')->log('faq_created');
+        activity(ActivityLogName::Faq->value)->causedBy($request->user())->performedOn($faq)->event(ActivityLogEvent::Created->value)->log('faq_created');
 
         return redirect()->route('settings.general.index')->with('success', 'settings.general_settings.faq_created');
     }
@@ -24,14 +27,14 @@ class FaqController extends Controller
     {
         $faq->update($request->validated());
 
-        activity('settings')->causedBy($request->user())->performedOn($faq)->event('updated')->log('faq_updated');
+        activity(ActivityLogName::Faq->value)->causedBy($request->user())->performedOn($faq)->event(ActivityLogEvent::Updated->value)->log('faq_updated');
 
         return redirect()->route('settings.general.index')->with('success', 'settings.general_settings.faq_updated');
     }
 
     public function destroy(Request $request, Faq $faq): RedirectResponse
     {
-        activity('settings')->causedBy($request->user())->performedOn($faq)->event('deleted')->log('faq_deleted');
+        activity(ActivityLogName::Faq->value)->causedBy($request->user())->performedOn($faq)->event(ActivityLogEvent::Deleted->value)->log('faq_deleted');
 
         $faq->forceDelete();
 

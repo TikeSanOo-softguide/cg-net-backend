@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\TopUpCard;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Enums\BatchStatus;
 use App\Enums\TopUpCardStatus;
 use App\Http\Controllers\Controller;
@@ -269,10 +272,10 @@ class OfficeController extends Controller
     public function store(StoreOfficeRequest $request): RedirectResponse
     {
         $office = Office::query()->create($request->validated());
-        activity('top-up-cards')
+        activity(ActivityLogName::TopUpCardOffice->value)
             ->causedBy($request->user())
             ->performedOn($office)
-            ->event('created')
+            ->event(ActivityLogEvent::Created->value)
             ->log('office_created');
 
         return back()->with('success', 'top_up_cards.office.created');

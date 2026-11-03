@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Enums\NotificationCategory;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -30,7 +31,9 @@ class AdminPushNotification extends Notification implements ShouldQueue
      */
     public function via(User $notifiable): array
     {
-        return $notifiable->deviceTokens()->exists() ? [FcmChannel::class] : [];
+        return $notifiable->canReceivePush(NotificationCategory::General) && $notifiable->deviceTokens()->exists()
+            ? [FcmChannel::class]
+            : [];
     }
 
     public function toFcm(User $notifiable): FcmMessage

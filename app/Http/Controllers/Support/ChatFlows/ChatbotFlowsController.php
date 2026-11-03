@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Support\ChatFlows;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Enums\ChatFlowOptionAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Support\ChatFlows\StoreChatFlowOptionRequest;
@@ -45,7 +48,7 @@ class ChatbotFlowsController extends Controller
     {
         $validated = $request->validated();
 
-        DB::transaction(function () use ($validated) {
+        DB::transaction(function () use ($request, $validated) {
             $hasStartStep = ChatFlowStep::query()->where('is_start', true)->exists();
             $isStart = !$hasStartStep || ($validated['is_start'] ?? false);
 
@@ -57,13 +60,19 @@ class ChatbotFlowsController extends Controller
                     ]);
             }
 
-            ChatFlowStep::create([
+            $step = ChatFlowStep::create([
                 'name' => $validated['name'],
                 'message_en' => $validated['message_en'],
                 'message_my' => $validated['message_my'],
                 'message_zh' => $validated['message_zh'],
                 'is_start' => $isStart,
             ]);
+
+            activity(ActivityLogName::ChatbotFlow->value)
+                ->causedBy($request->user())
+                ->performedOn($step)
+                ->event(ActivityLogEvent::Created->value)
+                ->log('chat_flow_step_created');
         });
 
         return back()->with('success', 'support.chatbot_flows.step_created');
@@ -76,14 +85,11 @@ class ChatbotFlowsController extends Controller
     {
         $validated = $request->validated();
 
-        $cannotUnsetStart = DB::transaction(function () use ($step, $validated) {
-            $currentStart = ChatFlowStep::query()
-                ->where('is_start', true)
-                ->lockForUpdate()
-                ->first();
+        $cannotUnsetStart = DB::transaction(function () use ($request, $step, $validated) {
+            $currentStart = ChatFlowStep::query()->where('is_start', true)->lockForUpdate()->first();
             $isStart = $validated['is_start'] ?? false;
 
-            if (! $isStart && $currentStart?->is($step)) {
+            if (!$isStart && $currentStart?->is($step)) {
                 return true;
             }
 
@@ -103,6 +109,12 @@ class ChatbotFlowsController extends Controller
                 'is_start' => $isStart,
             ]);
 
+            activity(ActivityLogName::ChatbotFlow->value)
+                ->causedBy($request->user())
+                ->performedOn($step)
+                ->event(ActivityLogEvent::Updated->value)
+                ->log('chat_flow_step_updated');
+
             return false;
         });
 
@@ -118,12 +130,10 @@ class ChatbotFlowsController extends Controller
     /**
      * Delete a chatbot step.
      */
-    public function destroyStep(ChatFlowStep $step)
+    public function destroyStep(Request $request, ChatFlowStep $step)
     {
         $isUsed = ChatFlowOption::query()
-            ->where(fn($query) => $query
-                ->where('next_step_id', $step->id)
-                ->orWhere('step_id', $step->id))
+            ->where(fn($query) => $query->where('next_step_id', $step->id)->orWhere('step_id', $step->id))
             ->exists();
 
         if ($isUsed) {
@@ -131,6 +141,12 @@ class ChatbotFlowsController extends Controller
         }
 
         $step->delete();
+
+        activity(ActivityLogName::ChatbotFlow->value)
+            ->causedBy($request->user())
+            ->performedOn($step)
+            ->event(ActivityLogEvent::Deleted->value)
+            ->log('chat_flow_step_deleted');
 
         return back()->with('success', 'support.chatbot_flows.step_deleted');
     }
@@ -142,8 +158,8 @@ class ChatbotFlowsController extends Controller
     {
         $validated = $request->validated();
 
-        DB::transaction(function () use ($step, $validated) {
-            $step->options()->create([
+        DB::transaction(function () use ($request, $step, $validated) {
+            $option = $step->options()->create([
                 'option_en' => $validated['option_en'],
                 'option_my' => $validated['option_my'],
                 'option_zh' => $validated['option_zh'],
@@ -156,6 +172,12 @@ class ChatbotFlowsController extends Controller
                 'sort_order' => $validated['sort_order'],
                 'is_active' => $validated['is_active'],
             ]);
+
+            activity(ActivityLogName::ChatbotFlow->value)
+                ->causedBy($request->user())
+                ->performedOn($option)
+                ->event(ActivityLogEvent::Created->value)
+                ->log('chat_flow_option_created');
         });
 
         return back()->with('success', 'support.chatbot_flows.option_created');
@@ -170,7 +192,7 @@ class ChatbotFlowsController extends Controller
 
         $validated = $request->validated();
 
-        DB::transaction(function () use ($option, $validated) {
+        DB::transaction(function () use ($request, $option, $validated) {
             $nextStepId = null;
             $url = null;
             $replyTextEn = null;
@@ -204,6 +226,12 @@ class ChatbotFlowsController extends Controller
                 'sort_order' => $validated['sort_order'],
                 'is_active' => $validated['is_active'],
             ]);
+
+            activity(ActivityLogName::ChatbotFlow->value)
+                ->causedBy($request->user())
+                ->performedOn($option)
+                ->event(ActivityLogEvent::Updated->value)
+                ->log('chat_flow_option_updated');
         });
 
         return back()->with('success', 'support.chatbot_flows.option_updated');
@@ -212,11 +240,17 @@ class ChatbotFlowsController extends Controller
     /**
      * Delete chatbot option.
      */
-    public function destroyOption(ChatFlowStep $step, ChatFlowOption $option)
+    public function destroyOption(Request $request, ChatFlowStep $step, ChatFlowOption $option)
     {
         abort_unless($option->step_id === $step->id, 404);
 
         $option->delete();
+
+        activity(ActivityLogName::ChatbotFlow->value)
+            ->causedBy($request->user())
+            ->performedOn($option)
+            ->event(ActivityLogEvent::Deleted->value)
+            ->log('chat_flow_option_deleted');
 
         return back()->with('success', 'support.chatbot_flows.option_deleted');
     }

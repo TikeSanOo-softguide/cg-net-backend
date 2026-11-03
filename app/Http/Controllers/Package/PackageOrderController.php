@@ -32,27 +32,28 @@ class PackageOrderController extends Controller
                 'ledgerTransaction:id,transaction_no,amount',
                 'customerPackage:id,package_order_id,status,starts_at,expires_at',
             ])
-            ->when($openOrderId, fn(Builder $query) => $query->whereKey($openOrderId))
-            ->when(!$openOrderId && $packageId, fn(Builder $query) => $query->where('package_id', $packageId))
-            ->when(!$openOrderId && $status, fn(Builder $query) => $query->where('status', $status->value))
-            ->when(!$openOrderId && $search !== '', function (Builder $query) use ($search): void {
+            ->when($openOrderId, fn (Builder $query) => $query->whereKey($openOrderId))
+            ->when(! $openOrderId && $packageId, fn (Builder $query) => $query->where('package_id', $packageId))
+            ->when(! $openOrderId && $status, fn (Builder $query) => $query->where('status', $status->value))
+            ->when(! $openOrderId && $search !== '', function (Builder $query) use ($search): void {
                 $query->where(function (Builder $searchQuery) use ($search): void {
                     $searchQuery
                         ->where('package_orders.id', is_numeric($search) ? (int) $search : -1)
+                        ->orWhereLike('package_orders.order_no', "%{$search}%")
                         ->orWhere('package_orders.status', 'like', "%{$search}%")
                         ->orWhereHas('user', function (Builder $userQuery) use ($search): void {
                             $userQuery->where('name', 'like', "%{$search}%")->orWhere('phone', 'like', "%{$search}%");
                         })
                         ->orWhereHas(
                             'package',
-                            fn(Builder $packageQuery) => $packageQuery->where(
+                            fn (Builder $packageQuery) => $packageQuery->where(
                                 'id',
                                 is_numeric($search) ? (int) $search : -1,
                             ),
                         )
                         ->orWhereHas(
                             'ledgerTransaction',
-                            fn(Builder $transactionQuery) => $transactionQuery->whereLike(
+                            fn (Builder $transactionQuery) => $transactionQuery->whereLike(
                                 'transaction_no',
                                 "%{$search}%",
                             ),
@@ -63,8 +64,9 @@ class PackageOrderController extends Controller
             ->paginate(15)
             ->withQueryString()
             ->through(
-                fn(PackageOrder $order): array => [
+                fn (PackageOrder $order): array => [
                     'id' => $order->id,
+                    'order_no' => $order->order_no,
                     'customer' => [
                         'id' => $order->user?->id,
                         'name' => $order->user?->name,
@@ -94,10 +96,9 @@ class PackageOrderController extends Controller
             ->orderBy('id')
             ->get()
             ->map(
-                fn(Package $package): array => [
+                fn (Package $package): array => [
                     'id' => $package->id,
-                    'label' =>
-                        PackageLabel::make($package, app()->getLocale()) ?? __('menu.packages') . ' #' . $package->id,
+                    'label' => PackageLabel::make($package, app()->getLocale()) ?? __('menu.packages').' #'.$package->id,
                 ],
             )
             ->values();
@@ -112,7 +113,7 @@ class PackageOrderController extends Controller
             'filter_options' => [
                 'packages' => $packages,
                 'statuses' => array_map(
-                    fn(PackageOrderStatus $status): string => $status->value,
+                    fn (PackageOrderStatus $status): string => $status->value,
                     PackageOrderStatus::cases(),
                 ),
             ],

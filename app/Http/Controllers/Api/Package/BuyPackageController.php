@@ -17,7 +17,7 @@ class BuyPackageController extends Controller
     {
         $result = $this->buyPackageService->buy(
             user: $request->user(),
-            packageId: (int) $request->validated('package_id'),
+            productId: (string) $request->validated('product_id'),
             idempotencyKey: (string) $request->validated('idempotency_key'),
             ipAddress: $request->ip(),
             userAgent: $request->userAgent(),

@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Api\Redeem;
 
+use App\Enums\MessageCode;
 use App\Enums\TopUpCardStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Redeem\SerialNoCheckRequest;
 use App\Http\Requests\Api\Redeem\TopUpAccountRequest;
 use App\Models\TopUpCard;
 use App\Services\TopUpCard\TopUpCardRedemptionService;
+use App\Support\ApiMessage;
 use Illuminate\Http\JsonResponse;
 
 class RedeemController extends Controller
@@ -25,15 +27,14 @@ class RedeemController extends Controller
             default => 'invalid_card',
         };
 
+        $code = match ($result) {
+            'valid' => MessageCode::TopupValid,
+            'already_used' => MessageCode::TopupAlreadyUsed,
+            default => MessageCode::TopupInvalid,
+        };
+
         return response()->json(
-            [
-                'result' => $result,
-                'message' => match ($result) {
-                    'valid' => 'This top-up card is valid.',
-                    'already_used' => 'This top-up card has already been used.',
-                    default => 'Invalid top-up card.',
-                },
-            ],
+            ApiMessage::attach($code, ['result' => $result]),
             $result === 'valid' ? 200 : 400,
         );
     }
