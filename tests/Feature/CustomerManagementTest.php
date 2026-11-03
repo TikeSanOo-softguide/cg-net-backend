@@ -85,7 +85,10 @@ class CustomerManagementTest extends TestCase
         $this->fakeCgAccountInfo('12345678');
 
         $admin = Admin::factory()->create();
-        $customer = User::factory()->create(['broadband_account_number' => 'CG12345678']);
+        $customer = User::factory()->create([
+            'service_type' => 'CG',
+            'broadband_account_number' => '12345678',
+        ]);
         $token = $customer->createToken('flutter');
         UserLog::query()->create([
             'user_id' => $customer->id,
@@ -176,7 +179,10 @@ class CustomerManagementTest extends TestCase
         Http::fake(fn() => throw new ConnectionException('DNS lookup failed.'));
 
         $admin = Admin::factory()->create();
-        $customer = User::factory()->create(['broadband_account_number' => 'CG0000007']);
+        $customer = User::factory()->create([
+            'service_type' => 'CG',
+            'broadband_account_number' => '0000007',
+        ]);
 
         $this->actingAs($admin, 'web')
             ->get('/customers/' . $customer->id)
@@ -184,7 +190,7 @@ class CustomerManagementTest extends TestCase
             ->assertInertia(
                 fn(Assert $page) => $page
                     ->component('Customer/Show')
-                    ->where('accountBinding.account_number', '0000007')
+                    ->where('accountBinding.account_number', null)
                     ->where('accountBinding.status', 'unknown'),
             );
     }
@@ -379,20 +385,33 @@ class CustomerManagementTest extends TestCase
         $customer = User::factory()->create();
 
         $this->actingAs($admin, 'web')
-            ->post('/customers/' . $customer->id . '/account', ['account_number' => 'CG99999999'])
+            ->post('/customers/' . $customer->id . '/account', [
+                'service_type' => 'CG',
+                'account_number' => '99999999',
+            ])
             ->assertRedirect();
 
-        $this->assertSame('CG99999999', $customer->fresh()->broadband_account_number);
+        $this->assertSame('99999999', $customer->fresh()->broadband_account_number);
+        $this->assertSame('CG', $customer->fresh()->service_type);
         $this->assertDatabaseHas('activity_log', [
             'description' => 'broadband_account_bound',
             'subject_id' => $customer->id,
         ]);
 
         $this->actingAs($admin, 'web')
+            ->get('/customers/' . $customer->id)
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->where('accountBinding.account_number', '99999999')
+                    ->where('accountBinding.service_type', 'CG'),
+            );
+
+        $this->actingAs($admin, 'web')
             ->delete('/customers/' . $customer->id . '/accounts')
             ->assertRedirect();
 
         $this->assertNull($customer->fresh()->broadband_account_number);
+        $this->assertNull($customer->fresh()->service_type);
         $this->assertDatabaseHas('activity_log', [
             'description' => 'broadband_account_unbound',
             'subject_id' => $customer->id,
@@ -403,14 +422,55 @@ class CustomerManagementTest extends TestCase
     {
         $admin = Admin::factory()->create();
         $customer = User::factory()->create();
-        $other = User::factory()->create(['broadband_account_number' => 'CG88888888']);
+        $other = User::factory()->create([
+            'service_type' => 'CG',
+            'broadband_account_number' => '88888888',
+        ]);
 
         $this->actingAs($admin, 'web')
-            ->post('/customers/' . $customer->id . '/account', ['account_number' => 'CG88888888'])
+            ->post('/customers/' . $customer->id . '/account', [
+                'service_type' => 'CG',
+                'account_number' => '88888888',
+            ])
             ->assertRedirect()
             ->assertSessionHasErrors('account_number');
 
-        $this->assertSame('CG88888888', $other->fresh()->broadband_account_number);
+        $this->assertSame('88888888', $other->fresh()->broadband_account_number);
+    }
+
+    public function test_admin_can_replace_a_customers_existing_broadband_account(): void
+    {
+        $this->fakeCgAccountInfo('99999999');
+
+        $admin = Admin::factory()->create();
+        $customer = User::factory()->create([
+            'service_type' => 'CG',
+            'broadband_account_number' => '11111111',
+        ]);
+
+        $this->actingAs($admin, 'web')
+            ->post('/customers/' . $customer->id . '/account', [
+                'service_type' => 'CG',
+                'account_number' => '99999999',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('99999999', $customer->fresh()->broadband_account_number);
+        $this->assertSame('CG', $customer->fresh()->service_type);
+    }
+
+    public function test_admin_can_unbind_a_legacy_account_without_a_service_type(): void
+    {
+        $admin = Admin::factory()->create();
+        $customer = User::factory()->create(['broadband_account_number' => 'CG88888888']);
+
+        $this->actingAs($admin, 'web')
+            ->delete('/customers/' . $customer->id . '/accounts')
+            ->assertRedirect();
+
+        $this->assertNull($customer->fresh()->broadband_account_number);
+        $this->assertNull($customer->fresh()->service_type);
     }
 
     public function test_admins_can_create_a_customer(): void

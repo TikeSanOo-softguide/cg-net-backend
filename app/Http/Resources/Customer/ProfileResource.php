@@ -28,26 +28,28 @@ class ProfileResource extends JsonResource
         $wallet = $this->resource['wallet'];
         /** @var Collection<int, CustomerPackage> $packages */
         $packages = $this->resource['packages'];
+        $serviceType = $user->service_type;
+        $accountNumber = $user->broadband_account_number;
         $account = null;
 
-        if ($user->service_type !== null && $user->broadband_account_number !== null) {
+        if ($serviceType !== null && $accountNumber !== null && $accountNumber !== '') {
             try {
-                $account = app(AccountInfoService::class)->findAccount(
-                    $user->service_type,
-                    $user->broadband_account_number,
-                );
-            } catch (BroadbandApiException | ConnectionException) {
-                $account = null;
+                $account = app(AccountInfoService::class)->findAccount($serviceType, $accountNumber);
+            } catch (BroadbandApiException | ConnectionException $exception) {
+                report($exception);
             }
         }
 
         return [
             'user' => UserResource::make($user),
             'account' => $account !== null ? BroadbandAccountResource::make($account) : null,
-            'broadbandAccount' => [
-                'account_number' => $user->broadband_account_number,
-                'service_type' => $user->service_type,
-            ],
+            'broadbandAccount' =>
+                $accountNumber !== null
+                    ? [
+                        'account_number' => $accountNumber,
+                        'service_type' => $serviceType,
+                    ]
+                    : null,
             'wallet' => $wallet ? WalletResource::make($wallet) : null,
             'packages' => $packages ? CustomerPackageResource::collection($packages) : null,
         ];
