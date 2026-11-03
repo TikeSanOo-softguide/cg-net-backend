@@ -48,6 +48,7 @@ enum MessageCode: string
     case BbDisconnected = 'MSG-BB-007';
     case BbFound = 'MSG-BB-008';
     case BbUpstreamFailed = 'MSG-BB-009';
+    case BbAlreadyBound = 'MSG-BB-010';
 
     case TopupValid = 'MSG-TOPUP-001';
     case TopupAlreadyUsed = 'MSG-TOPUP-002';
@@ -141,8 +142,7 @@ enum MessageCode: string
             self::ChatLive,
             self::ChatClosed,
             self::ChatSelectOption,
-            self::ChatWaitForJoin
-                => 'warning',
+            self::ChatWaitForJoin => 'warning',
             self::AuthLoggedOut,
             self::BbConnected,
             self::BbDisconnected,
@@ -159,8 +159,7 @@ enum MessageCode: string
             self::UserDeactivated,
             self::FtthPendingSlip,
             self::FtthPaidSlips,
-            self::FtthPaid
-                => 'success',
+            self::FtthPaid => 'success',
             default => 'error',
         };
     }
@@ -195,6 +194,7 @@ enum MessageCode: string
             self::BbConnectionFailed => 'broadband_api_connection_failed',
             self::BbNotMatch => 'broadband_account_not_match',
             self::BbAlreadyConnected => 'broadband_already_connected',
+            self::BbAlreadyBound => 'broadband_account_already_bound',
             self::BbDifferentAccount => 'broadband_different_account',
             self::BbInUse => 'broadband_account_in_use',
             self::BbConnected => 'Successfully connected',
@@ -224,8 +224,7 @@ enum MessageCode: string
             self::PkgAlreadyProcessed => 'Package purchase already processed.',
             self::PkgActivationRefunded => 'Package activation failed. Wallet was refunded.',
             self::PkgProcessing => 'This package purchase is already being processed.',
-            self::PkgReconciliationPending
-                => 'Package activation is awaiting provider reconciliation. The wallet debit remains on hold.',
+            self::PkgReconciliationPending => 'Package activation is awaiting provider reconciliation. The wallet debit remains on hold.',
             self::PkgInsufficientBalance => 'Insufficient wallet balance.',
             self::PkgKeyUsed => 'This idempotency key was already used.',
             self::PkgKeyMismatch => 'This idempotency key was already used for a different package.',
@@ -263,8 +262,7 @@ enum MessageCode: string
             self::ChatLanguageInvalid => 'The language must be one of: en, my, zh.',
             self::ChatCustomersOnly => 'Only customers can use the chat API.',
             self::ChatForbidden => 'You do not have access to this conversation.',
-            self::ChatWaitingForAgent
-                => 'Conversation is waiting for an agent. Chat flow options are no longer available.',
+            self::ChatWaitingForAgent => 'Conversation is waiting for an agent. Chat flow options are no longer available.',
             self::ChatLive => 'Conversation is in live chat. Chat flow options are no longer available.',
             self::ChatClosed => 'Conversation is closed. Please start a new conversation.',
             self::ChatSelectOption => 'Please select a chat flow option. Free-text messages are not available yet.',

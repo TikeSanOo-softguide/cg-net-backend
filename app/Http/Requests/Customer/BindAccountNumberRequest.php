@@ -18,11 +18,13 @@ class BindAccountNumberRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'service_type' => ['required', 'string', 'in:FTTH,CG'],
             'account_number' => [
                 'required',
                 'string',
                 'max:32',
-                Rule::unique('users', 'broadband_account_number')->ignore($this->route('customer')),
+                Rule::unique('users', 'broadband_account_number')
+                    ->ignore($this->route('customer')),
             ],
         ];
     }

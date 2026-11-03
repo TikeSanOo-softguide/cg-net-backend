@@ -264,29 +264,24 @@ class CustomerController extends Controller
 
         $accountBinding = null;
 
-        if ($customer->broadband_account_number !== null) {
+        if ($customer->service_type !== null && $customer->broadband_account_number !== null) {
+            $accountNumber = $customer->broadband_account_number;
+            $serviceType = $customer->service_type;
+
+            $accountBinding = [
+                'account_number' => $accountNumber,
+                'service_type' => $serviceType,
+                'status' => 'unknown',
+            ];
+
             try {
-                $accountBinding = $accountInfoService->findAccount($customer->broadband_account_number);
-            } catch (ConnectionException) {
-                $accountBinding = [
-                    'account_number' => $customer->broadband_account_number,
-                    'status' => 'unknown',
-                ];
-            } catch (BroadbandApiException) {
-                $accountBinding = null;
+                $accountBinding = $accountInfoService->findAccount($serviceType, $accountNumber) ?? $accountBinding;
+            } catch (ConnectionException | BroadbandApiException) {
+                $accountBinding['status'] = 'unknown';
             }
 
-            if ($accountBinding) {
-                if (str_starts_with($customer->broadband_account_number, 'FTTH')) {
-                    $serviceType = 'FTTH';
-                } elseif (str_starts_with($customer->broadband_account_number, 'CG')) {
-                    $serviceType = 'CG';
-                } else {
-                    $serviceType = '';
-                }
-                $account = substr($customer->broadband_account_number, strlen($serviceType));
-
-                $accountBinding['account_number'] = $account;
+            if ($accountBinding !== null) {
+                $accountBinding['account_number'] = $accountNumber;
                 $accountBinding['service_type'] = $serviceType;
             }
         }
@@ -306,7 +301,7 @@ class CustomerController extends Controller
                 : null,
             'accountBinding' => $accountBinding
                 ? [
-                    'account_number' => $account ?? null,
+                    'account_number' => $accountBinding['account'] ?? null,
                     'service_type' => $accountBinding['service_type'] ?? null,
                     'status' => $accountBinding['status'] ?? null,
                     'package_name' => $accountBinding['productName'] ?? null,
@@ -439,15 +434,20 @@ class CustomerController extends Controller
         BindAccountNumberRequest $request,
         User $customer,
     ): RedirectResponse {
-        $accountNumber = trim($request->validated('account_number'));
+        $validated = $request->validated();
+
+        $serviceType = $validated['service_type'];
+        $accountNumber = $validated['account_number'];
+
+        if ($customer->service_type === $serviceType && $customer->broadband_account_number === $accountNumber) {
+            return back()->with('success', 'customers.account_already_bound');
+        }
 
         try {
-            $account = $accountInfoService->findAccount($accountNumber);
-        } catch (ConnectionException $e) {
-            return back()->withErrors([
-                'account_number' => 'customers.account_not_found',
-            ]);
-        } catch (BroadbandApiException) {
+            $account = $accountInfoService->findAccount($serviceType, $accountNumber);
+        } catch (ConnectionException | BroadbandApiException $e) {
+            report($e);
+
             return back()->withErrors([
                 'account_number' => 'customers.account_not_found',
             ]);
@@ -459,17 +459,8 @@ class CustomerController extends Controller
             ]);
         }
 
-        if ($customer->broadband_account_number === $accountNumber) {
-            return back()->with('success', 'customers.account_already_bound');
-        }
-
-        if ($customer->broadband_account_number !== null) {
-            return back()->withErrors([
-                'account_number' => 'customers.account_bounded',
-            ]);
-        }
-
         $customer->update([
+            'service_type' => $serviceType,
             'broadband_account_number' => $accountNumber,
         ]);
 
@@ -478,6 +469,7 @@ class CustomerController extends Controller
             ->performedOn($customer)
             ->event('account_bound')
             ->withProperties([
+                'service_type' => $serviceType,
                 'account_number' => $accountNumber,
             ])
             ->log('broadband_account_bound');
@@ -487,19 +479,21 @@ class CustomerController extends Controller
 
     public function unbindAccount(Request $request, User $customer): RedirectResponse
     {
+        $serviceType = $customer->service_type;
         $accountNumber = $customer->broadband_account_number;
 
-        if ($accountNumber === null) {
+        if ($serviceType === null && $accountNumber === null) {
             abort(404);
         }
 
-        $customer->update(['broadband_account_number' => null]);
+        $customer->update(['service_type' => null, 'broadband_account_number' => null]);
 
         activity('customers')
             ->causedBy($request->user())
             ->performedOn($customer)
             ->event('account_unbound')
             ->withProperties([
+                'service_type' => $serviceType,
                 'account_number' => $accountNumber,
             ])
             ->log('broadband_account_unbound');
