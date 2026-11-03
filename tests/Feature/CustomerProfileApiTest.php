@@ -8,6 +8,7 @@ use App\Models\Package;
 use App\Models\User;
 use App\Models\Wallet;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -22,12 +23,17 @@ class CustomerProfileApiTest extends TestCase
 
     public function test_customer_profile_returns_broadband_account_details(): void
     {
-        $user = User::factory()->create(['broadband_account_number' => 'CG12345678']);
+        $user = User::factory()->create([
+            'service_type' => 'CG',
+            'broadband_account_number' => '12345678',
+        ]);
+
         config([
             'services.cg_api.url' => 'https://provider.test/WalletApp/ServerCommand',
             'services.cg_api.client_id' => 'profile-client',
             'services.cg_api.client_secret' => 'profile-secret',
         ]);
+
         Http::fake([
             'provider.test/WalletApp/ServerCommand/GetTokenAPI*' => Http::response([
                 'ErrCode' => 0,
@@ -43,16 +49,24 @@ class CustomerProfileApiTest extends TestCase
             ]),
         ]);
 
-        $this->withToken($user->createToken('profile')->plainTextToken)
-            ->getJson('/api/customer/profile')
-            ->assertOk()
-            ->assertJsonPath('data.account.account', '12345678')
-            ->assertJsonPath('data.account.name', 'Profile Customer')
-            ->assertJsonPath('data.account.mobile', '95912345678')
-            ->assertJsonPath('data.broadbandAccount.account_number', '12345678')
-            ->assertJsonPath('data.broadbandAccount.service_type', 'CG');
+        $response = $this->withToken($user->createToken('profile')->plainTextToken)->getJson('/api/customer/profile');
+
+        $response->assertOk();
+
+        $response->assertJsonPath('data.account.account', '12345678');
+        $response->assertJsonPath('data.account.name', 'Profile Customer');
+        $response->assertJsonPath('data.account.mobile', '95912345678');
+
+        $response->assertJsonPath('data.broadbandAccount.account_number', '12345678');
+        $response->assertJsonPath('data.broadbandAccount.service_type', 'CG');
 
         Http::assertSentCount(2);
+        Http::assertSent(
+            fn(Request $request): bool => str_ends_with(
+                (string) parse_url($request->url(), PHP_URL_PATH),
+                '/AccountInfoAPI',
+            ),
+        );
     }
 
     public function test_customer_profile_succeeds_when_account_number_has_an_unsupported_prefix(): void
@@ -71,7 +85,10 @@ class CustomerProfileApiTest extends TestCase
 
     public function test_customer_profile_succeeds_when_broadband_account_lookup_fails(): void
     {
-        $user = User::factory()->create(['broadband_account_number' => 'CG12345678']);
+        $user = User::factory()->create([
+            'service_type' => 'CG',
+            'broadband_account_number' => 'CG12345678',
+        ]);
         config([
             'services.cg_api.url' => 'https://provider.test/WalletApp/ServerCommand',
             'services.cg_api.client_id' => 'profile-client',
@@ -92,7 +109,7 @@ class CustomerProfileApiTest extends TestCase
             ->getJson('/api/customer/profile')
             ->assertOk()
             ->assertJsonPath('data.account', null)
-            ->assertJsonPath('data.broadbandAccount.account_number', '12345678')
+            ->assertJsonPath('data.broadbandAccount.account_number', 'CG12345678')
             ->assertJsonPath('data.broadbandAccount.service_type', 'CG');
     }
 
@@ -255,7 +272,8 @@ class CustomerProfileApiTest extends TestCase
     {
         $user = User::factory()->create([
             'phone' => '95912345678',
-            'broadband_account_number' => 'CG12345678',
+            'service_type' => 'CG',
+            'broadband_account_number' => '12345678',
         ]);
         Wallet::factory()->create(['user_id' => $user->id, 'balance' => 12500]);
         $package = Package::factory()->create(['network_id' => Network::factory()->create()->id]);
@@ -306,7 +324,7 @@ class CustomerProfileApiTest extends TestCase
             ->assertJsonPath('data.user.id', $user->id)
             ->assertJsonPath('data.user.name', $user->name)
             ->assertJsonPath('data.user.phone', '95912345678')
-            ->assertJsonPath('data.user.broadband_account_number', 'CG12345678')
+            ->assertJsonPath('data.user.broadband_account_number', '12345678')
             ->assertJsonPath('data.account.account', '12345678')
             ->assertJsonPath('data.account.name', 'Profile Customer')
             ->assertJsonPath('data.broadbandAccount.account_number', '12345678')

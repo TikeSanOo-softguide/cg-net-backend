@@ -39,7 +39,7 @@ class CgApiTokenProviderTest extends TestCase
         ]);
 
         app(CgNetApiClient::class)->get('CGNETProductInfoListAPI');
-        $account = app(AccountInfoService::class)->find('123456', 'CG');
+        $account = app(AccountInfoService::class)->find('CG', '123456');
 
         $this->assertSame('123456', $account['account']);
         Http::assertSentCount(3);
