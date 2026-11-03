@@ -13,6 +13,8 @@ return new class extends Migration {
             $table->string('pin', 64)->unique();
             $table->integer('amount');
             $table->string('status', 16)->default('active')->index();
+            $table->date('generate_date');
+            $table->date('activated_at');
             $table->date('expires_at')->index();
             $table->timestamp('redeemed_at')->nullable();
             $table->foreignId('redeemed_by')->nullable()->constrained('users')->restrictOnDelete();

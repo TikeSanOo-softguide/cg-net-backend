@@ -24,7 +24,7 @@ final class TopUpCardOffices
 
     public static function officeCodeFromSerialNo(string $serialNo): ?string
     {
-        if (preg_match('/^\d{10}(\d{2})\d+$/', $serialNo, $matches) !== 1) {
+        if (preg_match('/^\d{10}(\d{2})\d{4}$/', $serialNo, $matches) !== 1) {
             return null;
         }
 

@@ -75,15 +75,17 @@ class TopUpCardChunkGenerationTest extends TestCase
             $job->handle();
         }
 
-        $this->assertDatabaseCount('top_up_card', 2500);
-        $this->assertSame(
-            [$office->id],
-            TopUpCard::query()->distinct()->pluck('office_id')->all(),
-        );
+        $this->assertDatabaseCount('top_up_card', 0);
+        $cards = collect(range(0, count($jobs) - 1))
+            ->flatMap(fn(int $index): array => Cache::get(
+                'top_up_card_generation:' . session('top_up_card_generation_token') . ':chunk:' . $index,
+                [],
+            )['cards'] ?? [])
+            ->values();
+        $this->assertCount(2500, $cards);
         $this->assertSame(
             range(1001, 3500),
-            TopUpCard::query()
-                ->orderBy('id')
+            $cards
                 ->pluck('serial_no')
                 ->map(fn(string $serial): int => (int) substr($serial, 12))
                 ->all(),
@@ -190,6 +192,30 @@ class TopUpCardChunkGenerationTest extends TestCase
             ->assertSessionHasErrors('amounts');
     }
 
+    public function test_generation_rejects_quantities_above_the_daily_counter_capacity(): void
+    {
+        $actor = Admin::factory()->create();
+        $actor->assignRole(AppPermissions::SuperAdmin);
+
+        Office::query()->create([
+            'name' => 'Default Office',
+            'address' => 'Main Street',
+            'cd' => '88',
+        ]);
+
+        Queue::fake();
+
+        $this->actingAs($actor, 'web')
+            ->from('/top-up-cards/batch')
+            ->post('/top-up-cards/batch', [
+                'amounts' => [['value' => 50, 'quantity' => 9000]],
+                'expires_at' => now()->addDays(30)->toDateString(),
+            ])
+            ->assertSessionHasErrors('amounts');
+
+        Queue::assertNothingPushed();
+    }
+
     public function test_office_specific_generation_is_grouped_by_office_code_and_amount(): void
     {
         $actor = Admin::factory()->create();
@@ -268,9 +294,37 @@ class TopUpCardChunkGenerationTest extends TestCase
         $this->assertTrue(str_contains($serials[1], '24'));
     }
 
-    public function test_office_code_is_parsed_with_a_five_digit_daily_counter(): void
+    public function test_office_code_is_parsed_from_a_sixteen_digit_serial(): void
     {
-        $this->assertSame('31', TopUpCardOffices::officeCodeFromSerialNo('26091501283110000'));
+        $this->assertSame('31', TopUpCardOffices::officeCodeFromSerialNo('2609111115311001'));
+        $this->assertNull(TopUpCardOffices::officeCodeFromSerialNo('26091111153110000'));
+    }
+
+    public function test_serial_uses_the_sixteen_digit_layout_and_configured_batch_codes(): void
+    {
+        $productionDate = \Carbon\Carbon::create(2026, 9, 15);
+
+        $serialNo = GeneratesTopUpCards::serialNo('50', 1001, $productionDate, '88');
+
+        $this->assertSame('2609110115881001', $serialNo);
+        $this->assertSame(16, strlen($serialNo));
+        $this->assertSame('1101', GeneratesTopUpCards::batchCodeForAmount('50'));
+        $this->assertSame('1201', GeneratesTopUpCards::batchCodeForAmount('100'));
+        $this->assertSame('1501', GeneratesTopUpCards::batchCodeForAmount('250'));
+        $this->assertSame('1111', GeneratesTopUpCards::batchCodeForAmount('500'));
+        $this->assertSame('9005', GeneratesTopUpCards::batchCodeForAmount('5'));
+        $this->assertSame('9010', GeneratesTopUpCards::batchCodeForAmount('10'));
+        $this->assertSame('9020', GeneratesTopUpCards::batchCodeForAmount('20'));
+        $this->assertSame('9030', GeneratesTopUpCards::batchCodeForAmount('30'));
+        $this->assertSame('9035', GeneratesTopUpCards::batchCodeForAmount('35'));
+    }
+
+    public function test_daily_serial_counter_stops_at_9999(): void
+    {
+        $this->assertSame(1001, GeneratesTopUpCards::allocateSerialRange(8999, now()));
+
+        $this->expectException(\RuntimeException::class);
+        GeneratesTopUpCards::allocateSerialRange(1, now());
     }
 
     public function test_disjoint_serial_ranges_are_allocated_from_sequence_counter(): void
@@ -330,7 +384,7 @@ class TopUpCardChunkGenerationTest extends TestCase
             ->assertSessionHas('error', 'top_up_cards.generation_in_progress');
     }
 
-    public function test_job_retry_after_successful_insert_is_idempotent(): void
+    public function test_job_retry_reuses_completed_export_without_persisting_cards(): void
     {
         if (!Office::query()->where('cd', '88')->exists()) {
             Office::query()->create([
@@ -343,12 +397,6 @@ class TopUpCardChunkGenerationTest extends TestCase
         $actor = Admin::factory()->create();
         $token = (string) Str::uuid();
         $expiresAt = now()->addDays(30)->toDateString();
-        $cardBatch = GeneratesTopUpCards::createGenerationBatch($expiresAt, 5, 2500, [
-            'items' => [
-                ['office_cd' => '88', 'amount' => 500, 'quantity' => 5],
-            ],
-        ], $token);
-
         $job = new GenerateTopUpCardsJob(
             [['value' => 500, 'quantity' => 5]],
             $expiresAt,
@@ -358,16 +406,12 @@ class TopUpCardChunkGenerationTest extends TestCase
             '88',
             0,
             1,
-            (int) $cardBatch->id,
         );
 
         $job->handle();
 
-        $this->assertDatabaseCount('top_up_card', 5);
-        $this->assertSame(1, Batch::query()->count());
-        $this->assertTrue(
-            TopUpCard::query()->where('batch_id', $cardBatch->id)->count() === 5,
-        );
+        $this->assertDatabaseCount('top_up_card', 0);
+        $this->assertDatabaseCount('batches', 0);
 
         $chunkKey = 'top_up_card_generation:' . $token . ':chunk:0';
         $completed = Cache::get($chunkKey);
@@ -375,22 +419,19 @@ class TopUpCardChunkGenerationTest extends TestCase
         $this->assertSame('completed', $completed['status']);
         $this->assertCount(5, $completed['cards']);
 
-        $serials = TopUpCard::query()->orderBy('id')->pluck('serial_no')->all();
-
-        // Crash after insert + PIN cache write, before completed ack.
         Cache::put($chunkKey, [...$completed, 'status' => 'inserting'], now()->addDay());
 
         $job->handle();
 
-        $this->assertDatabaseCount('top_up_card', 5);
-        $this->assertSame($serials, TopUpCard::query()->orderBy('id')->pluck('serial_no')->all());
+        $this->assertDatabaseCount('top_up_card', 0);
+        $this->assertDatabaseCount('batches', 0);
 
         $retry = Cache::get($chunkKey);
         $this->assertSame('completed', $retry['status']);
         $this->assertSame($completed['cards'], $retry['cards']);
     }
 
-    public function test_generation_uses_one_batch_for_all_chunks(): void
+    public function test_generation_chunks_only_create_export_data(): void
     {
         if (!Office::query()->where('cd', '88')->exists()) {
             Office::query()->create([
@@ -403,12 +444,6 @@ class TopUpCardChunkGenerationTest extends TestCase
         $actor = Admin::factory()->create();
         $expiresAt = now()->addDays(30)->toDateString();
         $token = (string) Str::uuid();
-        $cardBatch = GeneratesTopUpCards::createGenerationBatch($expiresAt, 7, 3500, [
-            'items' => [
-                ['office_cd' => '88', 'amount' => 500, 'quantity' => 7],
-            ],
-        ], $token);
-
         $first = new GenerateTopUpCardsJob(
             [['value' => 500, 'quantity' => 4]],
             $expiresAt,
@@ -418,7 +453,6 @@ class TopUpCardChunkGenerationTest extends TestCase
             '88',
             0,
             2,
-            (int) $cardBatch->id,
         );
         $second = new GenerateTopUpCardsJob(
             [['value' => 500, 'quantity' => 3]],
@@ -429,16 +463,15 @@ class TopUpCardChunkGenerationTest extends TestCase
             '88',
             1,
             2,
-            (int) $cardBatch->id,
         );
 
         $first->handle();
         $second->handle();
 
-        $this->assertDatabaseCount('batches', 1);
-        $this->assertDatabaseCount('top_up_card', 7);
-        $this->assertSame(7, TopUpCard::query()->where('batch_id', $cardBatch->id)->count());
-        $this->assertSame($cardBatch->batch_no, Batch::query()->value('batch_no'));
+        $this->assertDatabaseCount('batches', 0);
+        $this->assertDatabaseCount('top_up_card', 0);
+        $this->assertCount(4, Cache::get('top_up_card_generation:' . $token . ':chunk:0')['cards']);
+        $this->assertCount(3, Cache::get('top_up_card_generation:' . $token . ':chunk:1')['cards']);
     }
 
     public function test_activity_is_logged_with_succeeded_or_failed_status(): void
@@ -454,18 +487,6 @@ class TopUpCardChunkGenerationTest extends TestCase
         $actor = Admin::factory()->create();
         $token = (string) Str::uuid();
         $expiresAt = now()->addDays(30)->toDateString();
-        $cardBatch = GeneratesTopUpCards::createGenerationBatch(
-            $expiresAt,
-            5,
-            2500,
-            [
-                'items' => [
-                    ['office_cd' => '88', 'amount' => 500, 'quantity' => 5],
-                ],
-            ],
-            $token,
-        );
-
         Cache::put(
             'top_up_card_generation:' . $token,
             [
@@ -473,8 +494,7 @@ class TopUpCardChunkGenerationTest extends TestCase
                 'total_cards' => 5,
                 'total_value' => 2500,
                 'expires_at' => $expiresAt,
-                'top_up_batch_id' => $cardBatch->id,
-                'top_up_batch_no' => $cardBatch->batch_no,
+                'items' => [['office_cd' => '88', 'amount' => 500, 'quantity' => 5]],
                 'user_id' => $actor->id,
             ],
             now()->addDay(),
@@ -492,8 +512,7 @@ class TopUpCardChunkGenerationTest extends TestCase
             'description' => 'top_up_cards_generation_succeeded',
             'event' => 'succeeded',
             'causer_id' => $actor->id,
-            'subject_type' => $cardBatch->getMorphClass(),
-            'subject_id' => $cardBatch->id,
+            'subject_id' => null,
         ]);
 
         $activity = \Spatie\Activitylog\Models\Activity::query()
@@ -502,28 +521,15 @@ class TopUpCardChunkGenerationTest extends TestCase
             ->first();
 
         $this->assertNotNull($activity);
-        $this->assertSame($cardBatch->batch_no, $activity->properties['batch_no']);
         $this->assertSame(2500, $activity->properties['total_value']);
         $this->assertSame(5, $activity->properties['quantity']);
-        $this->assertSame($cardBatch->id, $activity->properties['batch_id']);
+        $this->assertSame($token, $activity->properties['generation_token']);
         $this->assertEquals(
             [['office_cd' => '88', 'amount' => 500, 'quantity' => 5]],
             collect($activity->properties['items'])->all(),
         );
 
         $failedToken = (string) Str::uuid();
-        $failedBatchModel = GeneratesTopUpCards::createGenerationBatch(
-            $expiresAt,
-            5,
-            2500,
-            [
-                'items' => [
-                    ['office_cd' => '88', 'amount' => 500, 'quantity' => 5],
-                ],
-            ],
-            $failedToken,
-        );
-
         Cache::put(
             'top_up_card_generation:' . $failedToken,
             [
@@ -531,8 +537,7 @@ class TopUpCardChunkGenerationTest extends TestCase
                 'total_cards' => 5,
                 'total_value' => 2500,
                 'expires_at' => $expiresAt,
-                'top_up_batch_id' => $failedBatchModel->id,
-                'top_up_batch_no' => $failedBatchModel->batch_no,
+                'items' => [['office_cd' => '88', 'amount' => 500, 'quantity' => 5]],
                 'user_id' => $actor->id,
             ],
             now()->addDay(),

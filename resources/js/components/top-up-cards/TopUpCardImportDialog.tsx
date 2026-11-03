@@ -15,6 +15,8 @@ export type TopUpCardCsvPreview = {
         count_250: number;
         count_500: number;
         total_points: number;
+        generate_date: string | null;
+        activated_at: string;
         expires_at: string;
     }[];
     total_rows: number;
@@ -332,6 +334,8 @@ export function TopUpCardImportDialog({ open, onOpenChange, onCheck, onImport }:
                                             <th className="px-3 py-2 text-right font-medium">
                                                 {t('top_up_cards.total_points')}
                                             </th>
+                                            <th className="px-3 py-2 font-medium">{t('top_up_cards.generate_date')}</th>
+                                            <th className="px-3 py-2 font-medium">{t('top_up_cards.activated_at')}</th>
                                             <th className="px-3 py-2 font-medium">{t('top_up_cards.expires_at')}</th>
                                         </tr>
                                     </thead>
@@ -355,6 +359,8 @@ export function TopUpCardImportDialog({ open, onOpenChange, onCheck, onImport }:
                                                 <td className="px-3 py-2 text-right font-medium tabular-nums">
                                                     {row.total_points.toLocaleString()}
                                                 </td>
+                                                <td className="px-3 py-2">{row.generate_date ?? '—'}</td>
+                                                <td className="px-3 py-2">{row.activated_at}</td>
                                                 <td className="px-3 py-2">{row.expires_at}</td>
                                             </tr>
                                         ))}

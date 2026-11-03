@@ -26,6 +26,8 @@ class TopUpCardFactory extends Factory
             'serial_no' => $serialNo,
             'pin' => TopUpCardPin::hash($pin),
             'amount' => (int) $amount,
+            'generate_date' => now()->toDateString(),
+            'activated_at' => now()->toDateString(),
             'expires_at' => now()->addYears(2),
             'redeemed_at' => null,
             'redeemed_by' => null,

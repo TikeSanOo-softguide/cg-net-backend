@@ -13,6 +13,12 @@ use RuntimeException;
 
 final class GeneratesTopUpCards
 {
+    public const DAILY_COUNTER_START = 1001;
+
+    public const DAILY_COUNTER_END = 9999;
+
+    public const DAILY_COUNTER_CAPACITY = self::DAILY_COUNTER_END - self::DAILY_COUNTER_START + 1;
+
     /**
      * @param  list<array{value: int|string, quantity: int}>  $amounts
      * @return list<array<string, mixed>>
@@ -29,64 +35,24 @@ final class GeneratesTopUpCards
         $productionDate ??= now();
         $officeCode ??= '88';
 
-        $execute = function () use (
+        $materialized = self::materialize(
             $amounts,
             $expiresAt,
             $startingCounter,
             $productionDate,
             $officeCode,
-            $batchId,
-        ): array {
-            $resolvedBatchId = $batchId;
+            batchId: null,
+        );
 
-            if ($resolvedBatchId === null) {
-                $quantity = 0;
-                $totalValue = 0;
-                $items = [];
-
-                foreach ($amounts as $tier) {
-                    $tierAmount = (int) $tier['value'];
-                    $tierQuantity = (int) $tier['quantity'];
-                    $quantity += $tierQuantity;
-                    $totalValue += $tierAmount * $tierQuantity;
-                    $items[] = [
-                        'office_cd' => $officeCode,
-                        'amount' => $tierAmount,
-                        'quantity' => $tierQuantity,
-                    ];
-                }
-
-                $resolvedBatchId = self::createGenerationBatch(
-                    $expiresAt,
-                    $quantity,
-                    $totalValue,
-                    ['items' => $items],
-                )->id;
-            }
-
-            $materialized = self::materialize(
-                $amounts,
-                $expiresAt,
-                $startingCounter,
-                $productionDate,
-                $officeCode,
-                $resolvedBatchId,
-            );
-
-            self::insertRows($materialized['rows']);
-
-            return $materialized['cards'];
-        };
-
-        return DB::transactionLevel() > 0 ? $execute() : DB::transaction($execute);
+        return $materialized['cards'];
     }
 
     /**
-     * Build insert rows and plaintext card payloads for a reserved serial range.
+     * Build card payloads for CSV export and optional rows for a reserved serial range.
      *
      * @param  list<array{value: int|string, quantity: int}>  $amounts
      * @return array{
-     *     batch_id: int,
+     *     batch_id: int|null,
      *     starting_counter: int,
      *     cards: list<array<string, mixed>>,
      *     rows: list<array<string, mixed>>
@@ -100,10 +66,6 @@ final class GeneratesTopUpCards
         ?string $officeCode = null,
         ?int $batchId = null,
     ): array {
-        if ($batchId === null || $batchId < 1) {
-            throw new RuntimeException('A shared batch id is required to materialize top-up cards.');
-        }
-
         $productionDate ??= now();
         $officeCode ??= '88';
         $dailyCounter = $startingCounter;
@@ -134,42 +96,6 @@ final class GeneratesTopUpCards
             'cards' => $cards,
             'rows' => $rows,
         ];
-    }
-
-    /**
-     * Rebuild hashed insert rows from cached plaintext card payloads.
-     *
-     * @param  list<array<string, mixed>>  $cards
-     * @return list<array<string, mixed>>
-     */
-    public static function rowsFromCards(array $cards, int $batchId): array
-    {
-        $now = now();
-        $rows = [];
-        $officeIdsBySerial = TopUpCardOffices::resolveIdsBySerialNumbers(array_column($cards, 'serial_no'));
-
-        foreach ($cards as $card) {
-            $pin = (string) ($card['pin'] ?? '');
-            $serialNo = (string) ($card['serial_no'] ?? '');
-
-            if ($pin === '' || $serialNo === '') {
-                throw new RuntimeException('Cached top-up card payload is missing serial or PIN.');
-            }
-
-            $rows[] = [
-                'serial_no' => $serialNo,
-                'pin' => TopUpCardPin::hash($pin),
-                'amount' => (string) ($card['amount'] ?? ''),
-                'expires_at' => $card['expires_at'] ?? null,
-                'status' => TopUpCardStatus::Pending->value,
-                'office_id' => $officeIdsBySerial[$serialNo] ?? null,
-                'batch_id' => $batchId,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ];
-        }
-
-        return $rows;
     }
 
     /**
@@ -216,13 +142,15 @@ final class GeneratesTopUpCards
         string $amount,
         string $expiresAt,
         int &$dailyCounter,
-        int $batchId,
+        ?int $batchId,
         CarbonInterface $productionDate,
         int $quantity,
         string $officeCode = '88',
     ): array {
         $rangeStart = $dailyCounter;
-        $officeId = TopUpCardOffices::resolveIdsByCodes([$officeCode])[$officeCode] ?? null;
+        $officeId = $batchId === null
+            ? null
+            : (TopUpCardOffices::resolveIdsByCodes([$officeCode])[$officeCode] ?? null);
 
         for ($attempt = 0; $attempt < 5; $attempt++) {
             $rows = [];
@@ -237,17 +165,21 @@ final class GeneratesTopUpCards
                 $pinHash = TopUpCardPin::hash($pin);
                 $usedPinHashes[$pinHash] = true;
 
-                $rows[] = [
-                    'serial_no' => $serialNo,
-                    'pin' => $pinHash,
-                    'amount' => $amount,
-                    'expires_at' => $expiresAt,
-                    'status' => TopUpCardStatus::Pending->value,
-                    'office_id' => $officeId,
-                    'batch_id' => $batchId,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
+                if ($batchId !== null) {
+                    $rows[] = [
+                        'serial_no' => $serialNo,
+                        'pin' => $pinHash,
+                        'amount' => $amount,
+                        'activated_at' => $now->toDateString(),
+                        'expires_at' => $expiresAt,
+                        'status' => TopUpCardStatus::Pending->value,
+                        'generate_date' => $now->toDateString(),
+                        'office_id' => $officeId,
+                        'batch_id' => $batchId,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
 
                 $cards[] = [
                     'id' => null,
@@ -255,6 +187,8 @@ final class GeneratesTopUpCards
                     'pin' => $pin,
                     'amount' => $amount,
                     'expires_at' => $expiresAt,
+                    'activated_at' => null,
+                    'generate_date' => $now->toDateString(),
                     'redeemed_at' => null,
                     'redeemed_by' => null,
                     'status' => TopUpCardStatus::Pending->value,
@@ -324,7 +258,7 @@ final class GeneratesTopUpCards
                 'sequence_date' => $sequenceDate,
                 'office_code' => $officeCode,
                 'batch_code' => $batchCode,
-                'next_counter' => 1001,
+                'next_counter' => self::DAILY_COUNTER_START,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -343,7 +277,7 @@ final class GeneratesTopUpCards
             $startingCounter = (int) $sequence->next_counter;
             $endingCounter = $startingCounter + $quantity - 1;
 
-            if ($endingCounter > 999999) {
+            if ($endingCounter > self::DAILY_COUNTER_END) {
                 throw new RuntimeException('The daily top-up card serial range is exhausted.');
             }
 
@@ -378,10 +312,18 @@ final class GeneratesTopUpCards
         string $officeCode = '88',
     ): string {
         $productionDate ??= now();
-        $dailyCounter ??= random_int(1001, 9999);
+        $dailyCounter ??= random_int(self::DAILY_COUNTER_START, self::DAILY_COUNTER_END);
+
+        if ($dailyCounter < self::DAILY_COUNTER_START || $dailyCounter > self::DAILY_COUNTER_END) {
+            throw new RuntimeException('The daily top-up card counter must be between 1001 and 9999.');
+        }
+
+        if (preg_match('/^\d{2}$/', $officeCode) !== 1) {
+            throw new RuntimeException('The top-up card office code must contain exactly two digits.');
+        }
 
         return sprintf(
-            '%s%s%02d%02d%d',
+            '%s%s%02d%s%04d',
             $productionDate->format('ym'),
             self::batchCodeForAmount($amount),
             (int) $productionDate->format('d'),
@@ -447,6 +389,19 @@ final class GeneratesTopUpCards
     {
         $normalized = (int) round((float) $amount);
 
-        return str_pad((string) abs($normalized % 10000), 4, '0', STR_PAD_LEFT);
+        $batchCode = match ($normalized) {
+            50 => '1101',
+            100 => '1201',
+            250 => '1501',
+            500 => '1111',
+            5 => '9005',
+            10 => '9010',
+            20 => '9020',
+            30 => '9030',
+            35 => '9035',
+            default => str_pad((string) abs($normalized % 10000), 4, '0', STR_PAD_LEFT),
+        };
+
+        return $batchCode;
     }
 }

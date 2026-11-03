@@ -8,14 +8,14 @@ use App\Enums\ActivityLogName;
 use App\Enums\BatchStatus;
 use App\Enums\TopUpCardStatus;
 use App\Http\Controllers\Controller;
-use App\Jobs\ImportGeneratedTopUpCardsJob;
 use App\Http\Requests\TopUpCard\StoreOfficeRequest;
 use App\Http\Requests\TopUpCard\UpdateOfficeRequest;
-use App\Models\Office;
+use App\Jobs\ImportGeneratedTopUpCardsJob;
 use App\Models\Batch;
+use App\Models\Office;
 use App\Support\CsvImportException;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -36,6 +36,7 @@ class OfficeController extends Controller
             ->orderBy('name');
         $offices = $officeQuery->paginate(15)->withQueryString();
         $officeCds = Office::query()->pluck('cd')->map(fn($cd): string => (string) $cd)->values();
+
         return Inertia::render('TopUpCards/Office', [
             'offices' => $offices,
             'officeCds' => $officeCds,
@@ -177,7 +178,7 @@ class OfficeController extends Controller
                 ->onConnection('redis')
                 ->onQueue('top-up-cards');
 
-            return redirect()->route('top-up-cards.card-import')->with('info', 'top_up_cards.generation_started');
+            return redirect()->route('top-up-cards.card-import')->with('success', 'top_up_cards.generation_started');
         } catch (\Throwable $exception) {
             if (is_string($path)) {
                 Storage::disk('local')->delete($path);
@@ -224,13 +225,6 @@ class OfficeController extends Controller
                         'key' => $exception->translationKey,
                         'replace' => $exception->replace,
                     ],
-                ],
-                422,
-            );
-        } catch (\RuntimeException) {
-            return response()->json(
-                [
-                    'error' => ['key' => 'csv.import_errors.read_failed', 'replace' => []],
                 ],
                 422,
             );
@@ -284,7 +278,6 @@ class OfficeController extends Controller
     public function update(UpdateOfficeRequest $request, Office $office): RedirectResponse
     {
         $office->update($request->validated());
-        Cache::forget('top_up_cards.office_options');
 
         return back()->with('success', 'top_up_cards.office.updated');
     }
@@ -296,7 +289,6 @@ class OfficeController extends Controller
         }
 
         $office->delete();
-        Cache::forget('top_up_cards.office_options');
 
         return back()->with('success', __('top_up_cards.office.deleted'));
     }

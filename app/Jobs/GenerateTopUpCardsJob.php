@@ -8,13 +8,10 @@ use Carbon\Carbon;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
-use RuntimeException;
 use Throwable;
 
 class GenerateTopUpCardsJob implements ShouldQueue
@@ -42,7 +39,6 @@ class GenerateTopUpCardsJob implements ShouldQueue
         public readonly string $officeCode,
         public readonly int $chunkIndex,
         public readonly int $totalChunks,
-        public readonly int $cardBatchId,
     ) {
         $this->timeout = (int) config('horizon.top_up_cards.timeout', 300);
         $this->onQueue('top-up-cards');
@@ -63,7 +59,7 @@ class GenerateTopUpCardsJob implements ShouldQueue
 
         $cards = is_array($cached['cards'] ?? null) ? $cached['cards'] : [];
 
-        if ($cards !== [] && GeneratesTopUpCards::allSerialsExist($cards)) {
+        if ($cards !== []) {
             $this->markChunkCompleted($cached, $cards);
 
             return;
@@ -76,8 +72,7 @@ class GenerateTopUpCardsJob implements ShouldQueue
         $amount = (string) ($this->amounts[0]['value'] ?? 0);
         $batchCode = GeneratesTopUpCards::batchCodeForAmount($amount);
 
-        // Commit the serial reservation before insert so a rolled-back insert does not
-        // release the range while this chunk still owns starting_counter in cache.
+        // Keep reserved ranges across retries so generated serials cannot overlap.
         if (!array_key_exists('starting_counter', $cached)) {
             $cached['starting_counter'] = GeneratesTopUpCards::allocateSerialRange(
                 $quantity,
@@ -90,8 +85,6 @@ class GenerateTopUpCardsJob implements ShouldQueue
         }
 
         $startingCounter = (int) $cached['starting_counter'];
-        $cached['batch_id'] = $this->cardBatchId;
-
         if ($cards === []) {
             $materialized = GeneratesTopUpCards::materialize(
                 $this->amounts,
@@ -99,83 +92,12 @@ class GenerateTopUpCardsJob implements ShouldQueue
                 $startingCounter,
                 $productionDate,
                 $this->officeCode,
-                $this->cardBatchId,
             );
 
             $cards = $materialized['cards'];
             $cached['cards'] = $cards;
-            $cached['batch_id'] = $this->cardBatchId;
-            $cached['status'] = 'inserting';
-            // Persist plaintext PINs before insert so a crash after commit remains recoverable.
+            $cached['status'] = 'completed';
             Cache::put($this->cacheKey(), $cached, now()->addDay());
-        }
-
-        if (GeneratesTopUpCards::allSerialsExist($cards)) {
-            $this->markChunkCompleted($cached, $cards);
-
-            return;
-        }
-
-        $batchId = (int) ($cached['batch_id'] ?? $this->cardBatchId);
-
-        if ($batchId < 1) {
-            throw new RuntimeException('Cached top-up card chunk is missing batch_id.');
-        }
-
-        $rows = GeneratesTopUpCards::rowsFromCards($cards, $batchId);
-
-        try {
-            DB::transaction(function () use ($rows): void {
-                GeneratesTopUpCards::insertRows($rows);
-            });
-        } catch (UniqueConstraintViolationException $exception) {
-            $message = $exception->getMessage();
-
-            if (str_contains($message, 'serial_no') && GeneratesTopUpCards::allSerialsExist($cards)) {
-                $this->markChunkCompleted($cached, $cards);
-
-                return;
-            }
-
-            if (str_contains($message, 'pin')) {
-                $materialized = GeneratesTopUpCards::materialize(
-                    $this->amounts,
-                    $this->expiresAt,
-                    $startingCounter,
-                    $productionDate,
-                    $this->officeCode,
-                    $batchId,
-                );
-
-                $cards = $materialized['cards'];
-                $cached['cards'] = $cards;
-                $cached['status'] = 'inserting';
-                Cache::put($this->cacheKey(), $cached, now()->addDay());
-
-                if (GeneratesTopUpCards::allSerialsExist($cards)) {
-                    $this->markChunkCompleted($cached, $cards);
-
-                    return;
-                }
-
-                DB::transaction(function () use ($materialized): void {
-                    GeneratesTopUpCards::insertRows($materialized['rows']);
-                });
-
-                $this->markChunkCompleted($cached, $cards);
-
-                return;
-            }
-
-            if (str_contains($message, 'serial_no')) {
-                throw new RuntimeException(
-                    'Serial range overlap detected for this job; please re-dispatch with a non-overlapping range.',
-                    0,
-                    $exception,
-                );
-            }
-
-            throw $exception;
         }
 
         $this->markChunkCompleted($cached, $cards);

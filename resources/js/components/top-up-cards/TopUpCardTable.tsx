@@ -137,6 +137,12 @@ export const TopUpCardTable = memo(function TopUpCardTable({
                         cell: (row) => <StatusBadge status={row.status} />,
                     },
                     {
+                        id: 'activated_at',
+                        header: t('top_up_cards.activated_at'),
+                        className: 'text-muted-foreground',
+                        cell: (row) => formatDate(row.activated_at) ?? '—',
+                    },
+                    {
                         id: 'expires_at',
                         header: t('top_up_cards.expires_at'),
                         className: 'text-muted-foreground',
@@ -232,10 +238,16 @@ export const TopUpCardTable = memo(function TopUpCardTable({
                         </div>
 
                         <div className="space-y-4">
-                            <dl className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4 text-[13px]">
+                            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-[13px]">
                                 <div className="space-y-1">
                                     <dt className="text-muted-foreground">{t('top_up_cards.serial_no')}</dt>
                                     <dd className="font-mono font-medium text-foreground">{viewing.serial_no}</dd>
+                                </div>
+                                <div className="space-y-1">
+                                    <dt className="text-muted-foreground">{t('top_up_cards.activated_at')}</dt>
+                                    <dd className="font-medium text-foreground">
+                                        {formatDate(viewing.activated_at) ?? '—'}
+                                    </dd>
                                 </div>
                                 <div className="space-y-1">
                                     <dt className="text-muted-foreground">{t('top_up_cards.expires_at')}</dt>
