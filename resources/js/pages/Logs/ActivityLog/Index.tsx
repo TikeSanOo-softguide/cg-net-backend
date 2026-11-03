@@ -11,7 +11,6 @@ import { PageHeader } from '@/components/PageHeader';
 import { TableActionButton } from '@/components/TableActionButton';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCan } from '@/hooks/useCan';
 import { formControlStateClass } from '@/lib/form-control';
@@ -51,7 +50,7 @@ type ActivityLogProps = {
     filterOptions: {
         admins: string[];
         event: string[];
-        log: string[];
+        log: { group: string; options: string[] }[];
     };
 };
 
@@ -184,45 +183,46 @@ export default function ActivityLogIndex({ logs, filters, filterOptions }: Activ
                             <FormField
                                 label={t('activity_logs.event')}
                                 htmlFor="activity-log-event"
-                                className="w-full shrink-0 sm:w-40 mr-3"
+                                className="w-full shrink-0 sm:w-60 mr-3"
                                 labelClassName="text-[13px]"
                             >
-                                <Select
-                                    value={event || 'all'}
+                                <SearchableSelect
+                                    id="activity-log-event"
+                                    value={event}
                                     onValueChange={(value) => onFilterSelect('event', value)}
-                                >
-                                    <SelectTrigger id="activity-log-event" className="h-8 w-full text-sm">
-                                        <SelectValue placeholder={t('common.all')} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">{t('common.all')}</SelectItem>
-                                        {filterOptions.event.map((option) => (
-                                            <SelectItem key={option} value={option}>
-                                                {option}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                    options={[
+                                        { value: '', label: t('common.all') },
+                                        ...filterOptions.event.map((option) => ({ value: option, label: option })),
+                                    ]}
+                                    placeholder={t('common.all')}
+                                    searchPlaceholder={t('common.search')}
+                                    triggerClassName="text-[12px]"
+                                />
                             </FormField>
                             <FormField
                                 label={t('activity_logs.log')}
                                 htmlFor="activity-log-name"
-                                className="w-full shrink-0 sm:w-40 mr-3"
+                                className="w-full shrink-0 sm:w-60 mr-3"
                                 labelClassName="text-[13px]"
                             >
-                                <Select value={log || 'all'} onValueChange={(value) => onFilterSelect('log', value)}>
-                                    <SelectTrigger id="activity-log-name" className="h-8 w-full text-sm">
-                                        <SelectValue placeholder={t('common.all')} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">{t('common.all')}</SelectItem>
-                                        {filterOptions.log.map((option) => (
-                                            <SelectItem key={option} value={option}>
-                                                {option}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <SearchableSelect
+                                    id="activity-log-name"
+                                    value={log}
+                                    onValueChange={(value) => onFilterSelect('log', value)}
+                                    options={[
+                                        { value: '', label: t('common.all') },
+                                        ...filterOptions.log.flatMap(({ group, options }) =>
+                                            options.map((option) => ({
+                                                value: option,
+                                                label: option,
+                                                group: t(group),
+                                            })),
+                                        ),
+                                    ]}
+                                    placeholder={t('common.all')}
+                                    searchPlaceholder={t('common.search')}
+                                    triggerClassName="text-[12px]"
+                                />
                             </FormField>
                             <FormField
                                 label={t('common.start_date')}

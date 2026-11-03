@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 export type SearchableSelectOption = {
     value: string;
     label: string;
+    group?: string;
     unread?: boolean;
     unreadLabel?: string;
 };
@@ -255,40 +256,51 @@ function SearchableSelect({
                                     {noResultsMessage}
                                 </div>
                             ) : (
-                                filteredOptions.map((option) => {
+                                filteredOptions.map((option, index) => {
                                     const isSelected = option.value === value;
+                                    const showGroup =
+                                        option.group && filteredOptions[index - 1]?.group !== option.group;
+
                                     return (
-                                        <button
-                                            key={option.value}
-                                            type="button"
-                                            onClick={() => handleSelect(option.value)}
-                                            className={cn(
-                                                'relative flex w-full',
-                                                'cursor-default',
-                                                'items-center gap-2',
-                                                'rounded-[6px]',
-                                                'py-1.5 pr-8 pl-2',
-                                                'text-sm text-foreground',
-                                                'outline-hidden',
-                                                'select-none',
-                                                'transition-colors',
-                                                'hover:bg-accent',
-                                                'hover:text-accent-foreground',
-                                                isSelected && 'bg-accent text-accent-foreground',
+                                        <React.Fragment key={option.value}>
+                                            {showGroup && (
+                                                <div className="flex items-center gap-2 px-2 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                                    <span className="h-px flex-1 bg-border" />
+                                                    <span className="shrink-0">{option.group}</span>
+                                                    <span className="h-px flex-1 bg-border" />
+                                                </div>
                                             )}
-                                        >
-                                            <span className="min-w-0 truncate">{option.label}</span>
-                                            <span className="absolute right-2 flex size-3.5 items-center justify-center">
-                                                {option.unread && option.unreadLabel ? (
-                                                    <UnreadNotificationDot
-                                                        label={option.unreadLabel}
-                                                        className="size-1.5 ring-2 ring-background"
-                                                    />
-                                                ) : (
-                                                    isSelected && <CheckIcon className="size-4" />
-                                                )}{' '}
-                                            </span>
-                                        </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleSelect(option.value)}
+                                                className={cn(
+                                                    'relative flex w-full',
+                                                    'cursor-default',
+                                                    'items-center gap-2',
+                                                    'rounded-[6px]',
+                                                    'py-1.5 pr-8 pl-2',
+                                                    'text-sm text-foreground',
+                                                    'outline-hidden',
+                                                    'select-none',
+                                                    'transition-colors',
+                                                    'hover:bg-accent',
+                                                    'hover:text-accent-foreground',
+                                                    isSelected && 'bg-accent text-accent-foreground',
+                                                )}
+                                            >
+                                                <span className="min-w-0 truncate">{option.label}</span>
+                                                <span className="absolute right-2 flex size-3.5 items-center justify-center">
+                                                    {option.unread && option.unreadLabel ? (
+                                                        <UnreadNotificationDot
+                                                            label={option.unreadLabel}
+                                                            className="size-1.5 ring-2 ring-background"
+                                                        />
+                                                    ) : (
+                                                        isSelected && <CheckIcon className="size-4" />
+                                                    )}{' '}
+                                                </span>
+                                            </button>
+                                        </React.Fragment>
                                     );
                                 })
                             )}

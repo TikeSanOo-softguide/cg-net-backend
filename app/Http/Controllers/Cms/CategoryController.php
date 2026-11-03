@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Cms;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Cms\StoreCategoryRequest;
 use App\Http\Requests\Cms\UpdateCategoryRequest;
@@ -45,7 +48,7 @@ class CategoryController extends Controller
             'slug' => $data['slug'],
         ]);
 
-        activity('cms')->causedBy($request->user())->performedOn($category)->event('created')->log('category_created');
+        activity(ActivityLogName::Category->value)->causedBy($request->user())->performedOn($category)->event(ActivityLogEvent::Created->value)->log('category_created');
 
         return redirect()->route('cms.categories.index')->with('success', 'cms.category.created');
     }
@@ -65,7 +68,7 @@ class CategoryController extends Controller
             'slug' => $data['slug'],
         ]);
 
-        activity('cms')->causedBy($request->user())->performedOn($category)->event('updated')->log('category_updated');
+        activity(ActivityLogName::Category->value)->causedBy($request->user())->performedOn($category)->event(ActivityLogEvent::Updated->value)->log('category_updated');
 
         return redirect()->route('cms.categories.index')->with('success', 'cms.category.updated');
     }
@@ -78,7 +81,7 @@ class CategoryController extends Controller
 
         $category->delete();
 
-        activity('cms')->causedBy($request->user())->performedOn($category)->event('deleted')->log('category_deleted');
+        activity(ActivityLogName::Category->value)->causedBy($request->user())->performedOn($category)->event(ActivityLogEvent::Deleted->value)->log('category_deleted');
 
         return redirect()->route('cms.categories.index')->with('success', 'cms.category.deleted');
     }
@@ -90,6 +93,7 @@ class CategoryController extends Controller
             Category::query(),
             'cms.categories.index',
             'category_deleted',
+            ActivityLogName::Category,
             deletionError: fn(Category $category) => $category->news()->exists() ? 'cms.category.in_use' : null,
         );
     }

@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Region;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Region\StoreAreaRequest;
 use App\Http\Requests\Region\StoreRegionRequest;
@@ -154,7 +157,9 @@ class RegionManagementController extends Controller
      */
     public function storeState(StoreStateRequest $request): RedirectResponse
     {
-        State::create($request->validated());
+        $state = State::create($request->validated());
+
+        activity(ActivityLogName::State->value)->causedBy($request->user())->performedOn($state)->event(ActivityLogEvent::Created->value)->log('state_created');
 
         return redirect()->route('regions.index')->with('success', 'regions.state_created');
     }
@@ -166,19 +171,23 @@ class RegionManagementController extends Controller
     {
         $state->update($request->validated());
 
+        activity(ActivityLogName::State->value)->causedBy($request->user())->performedOn($state)->event(ActivityLogEvent::Updated->value)->log('state_updated');
+
         return redirect()->route('regions.index')->with('success', 'regions.state_updated');
     }
 
     /**
      * Delete a state.
      */
-    public function destroyState(State $state): RedirectResponse
+    public function destroyState(Request $request, State $state): RedirectResponse
     {
         if ($state->regions()->exists()) {
             return back()->withErrors(['delete' => 'regions.state_delete_failed']);
         }
 
         $state->delete();
+
+        activity(ActivityLogName::State->value)->causedBy($request->user())->performedOn($state)->event(ActivityLogEvent::Deleted->value)->log('state_deleted');
 
         return redirect()->route('regions.index')->with('success', 'regions.state_deleted');
     }
@@ -190,18 +199,19 @@ class RegionManagementController extends Controller
             'ids.*' => ['integer', 'distinct', 'exists:states,id'],
         ])['ids'];
 
-        $deletableIds = State::query()
-            ->whereIn('id', $ids)
-            ->whereDoesntHave('regions')
-            ->pluck('id');
+        $deletableIds = State::query()->whereIn('id', $ids)->whereDoesntHave('regions')->pluck('id');
 
-        $deletedCount = State::query()
-            ->whereIn('id', $deletableIds)
-            ->delete();
+        $deletedCount = State::query()->whereIn('id', $deletableIds)->delete();
 
         if ($deletedCount === 0) {
             return back()->with('error', __('common.bulk_delete_failed'));
         }
+
+        activity(ActivityLogName::State->value)
+            ->causedBy($request->user())
+            ->event(ActivityLogEvent::BulkDeleted->value)
+            ->withProperties(['ids' => $deletableIds])
+            ->log('states_bulk_deleted');
 
         return redirect()
             ->route('regions.index')
@@ -214,7 +224,9 @@ class RegionManagementController extends Controller
      */
     public function storeRegion(StoreRegionRequest $request): RedirectResponse
     {
-        Region::create($request->validated());
+        $region = Region::create($request->validated());
+
+        activity(ActivityLogName::Region->value)->causedBy($request->user())->performedOn($region)->event(ActivityLogEvent::Created->value)->log('region_created');
 
         return redirect()->route('regions.index')->with('success', 'regions.region_created');
     }
@@ -226,19 +238,23 @@ class RegionManagementController extends Controller
     {
         $region->update($request->validated());
 
+        activity(ActivityLogName::Region->value)->causedBy($request->user())->performedOn($region)->event(ActivityLogEvent::Updated->value)->log('region_updated');
+
         return redirect()->route('regions.index')->with('success', 'regions.region_updated');
     }
 
     /**
      * Delete a region.
      */
-    public function destroyRegion(Region $region): RedirectResponse
+    public function destroyRegion(Request $request, Region $region): RedirectResponse
     {
         if ($region->areas()->exists()) {
             return back()->withErrors(['delete' => 'regions.region_delete_failed']);
         }
 
         $region->delete();
+
+        activity(ActivityLogName::Region->value)->causedBy($request->user())->performedOn($region)->event(ActivityLogEvent::Deleted->value)->log('region_deleted');
 
         return redirect()->route('regions.index')->with('success', 'regions.region_deleted');
     }
@@ -253,18 +269,19 @@ class RegionManagementController extends Controller
             'ids.*' => ['integer', 'exists:regions,id'],
         ])['ids'];
 
-        $deletableIds = Region::query()
-            ->whereIn('id', $ids)
-            ->whereDoesntHave('areas')
-            ->pluck('id');
+        $deletableIds = Region::query()->whereIn('id', $ids)->whereDoesntHave('areas')->pluck('id');
 
-        $deletedCount = Region::query()
-            ->whereIn('id', $deletableIds)
-            ->delete();
+        $deletedCount = Region::query()->whereIn('id', $deletableIds)->delete();
 
         if ($deletedCount === 0) {
             return back()->with('error', __('common.bulk_delete_failed'));
         }
+
+        activity(ActivityLogName::Region->value)
+            ->causedBy($request->user())
+            ->event(ActivityLogEvent::BulkDeleted->value)
+            ->withProperties(['ids' => $deletableIds])
+            ->log('regions_bulk_deleted');
 
         return redirect()
             ->route('regions.index')
@@ -277,7 +294,9 @@ class RegionManagementController extends Controller
      */
     public function storeArea(StoreAreaRequest $request): RedirectResponse
     {
-        Area::create($request->validated());
+        $area = Area::create($request->validated());
+
+        activity(ActivityLogName::Area->value)->causedBy($request->user())->performedOn($area)->event(ActivityLogEvent::Created->value)->log('area_created');
 
         return redirect()->route('regions.index')->with('success', 'regions.area_created');
     }
@@ -289,15 +308,19 @@ class RegionManagementController extends Controller
     {
         $area->update($request->validated());
 
+        activity(ActivityLogName::Area->value)->causedBy($request->user())->performedOn($area)->event(ActivityLogEvent::Updated->value)->log('area_updated');
+
         return redirect()->route('regions.index')->with('success', 'regions.area_updated');
     }
 
     /**
      * Delete an area.
      */
-    public function destroyArea(Area $area): RedirectResponse
+    public function destroyArea(Request $request, Area $area): RedirectResponse
     {
         $area->delete();
+
+        activity(ActivityLogName::Area->value)->causedBy($request->user())->performedOn($area)->event(ActivityLogEvent::Deleted->value)->log('area_deleted');
 
         return redirect()->route('regions.index')->with('success', 'regions.area_deleted');
     }
@@ -312,12 +335,21 @@ class RegionManagementController extends Controller
             'ids.*' => ['integer', 'distinct', 'exists:areas,id'],
         ])['ids'];
 
-        $deleted = Area::whereIn('id', $ids)->delete();
+        $deleted = Area::query()->whereIn('id', $ids)->delete();
 
         if ($deleted === 0) {
             return back()->with('error', __('common.bulk_delete_failed'));
         }
 
-        return redirect()->route('regions.index')->with('success', 'common.bulk_deleted')->with('deleted_count', $deleted);
+        activity(ActivityLogName::Area->value)
+            ->causedBy($request->user())
+            ->event(ActivityLogEvent::BulkDeleted->value)
+            ->withProperties(['ids' => $ids])
+            ->log('areas_bulk_deleted');
+
+        return redirect()
+            ->route('regions.index')
+            ->with('success', 'common.bulk_deleted')
+            ->with('deleted_count', $deleted);
     }
 }

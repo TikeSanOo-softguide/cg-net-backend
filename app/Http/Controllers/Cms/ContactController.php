@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Cms;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Cms\StoreContactRequest;
 use App\Http\Requests\Cms\UpdateContactRequest;
@@ -39,7 +42,7 @@ class ContactController extends Controller
     {
         $contact = Contact::query()->create($request->validated());
 
-        activity('cms')->causedBy($request->user())->performedOn($contact)->event('created')->log('contact_created');
+        activity(ActivityLogName::Contact->value)->causedBy($request->user())->performedOn($contact)->event(ActivityLogEvent::Created->value)->log('contact_created');
 
         return redirect()->route('cms.contacts.index')->with('success', 'cms.contact.created');
     }
@@ -54,7 +57,7 @@ class ContactController extends Controller
         $contact = Contact::findOrFail($contact->id);
         $contact->update($request->validated());
 
-        activity('cms')->causedBy($request->user())->performedOn($contact)->event('updated')->log('contact_updated');
+        activity(ActivityLogName::Contact->value)->causedBy($request->user())->performedOn($contact)->event(ActivityLogEvent::Updated->value)->log('contact_updated');
 
         return redirect()->route('cms.contacts.index')->with('success', 'cms.contact.updated');
     }
@@ -63,14 +66,20 @@ class ContactController extends Controller
     {
         $contact->delete();
 
-        activity('cms')->causedBy($request->user())->performedOn($contact)->event('deleted')->log('contact_deleted');
+        activity(ActivityLogName::Contact->value)->causedBy($request->user())->performedOn($contact)->event(ActivityLogEvent::Deleted->value)->log('contact_deleted');
 
         return redirect()->route('cms.contacts.index')->with('success', 'cms.contact.deleted');
     }
 
     public function bulkDestroy(Request $request): RedirectResponse
     {
-        return CmsBulkDelete::run($request, Contact::query(), 'cms.contacts.index', 'contact_deleted');
+        return CmsBulkDelete::run(
+            $request,
+            Contact::query(),
+            'cms.contacts.index',
+            'contact_deleted',
+            ActivityLogName::Contact,
+        );
     }
 
     /**

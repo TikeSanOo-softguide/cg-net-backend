@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Notification;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Enums\PushScheduleStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Notification\StorePushNotificationRequest;
@@ -39,9 +42,9 @@ class PushNotificationController extends Controller
 
         $recipients = $service->pushNow($data);
 
-        activity('notifications')
+        activity(ActivityLogName::PushNotification->value)
             ->causedBy($request->user())
-            ->event('pushed')
+            ->event(ActivityLogEvent::Pushed->value)
             ->withProperties([...$data, 'recipients' => $recipients])
             ->log('push_sent_now');
 
@@ -69,10 +72,10 @@ class PushNotificationController extends Controller
             'created_by' => $request->user()?->id,
         ]);
 
-        activity('notifications')
+        activity(ActivityLogName::PushNotification->value)
             ->causedBy($request->user())
             ->performedOn($schedule)
-            ->event('scheduled')
+            ->event(ActivityLogEvent::Scheduled->value)
             ->log('push_scheduled');
 
         return redirect()
@@ -92,10 +95,10 @@ class PushNotificationController extends Controller
             'status' => PushScheduleStatus::Cancelled,
         ]);
 
-        activity('notifications')
+        activity(ActivityLogName::PushNotification->value)
             ->causedBy($request->user())
             ->performedOn($schedule)
-            ->event('cancelled')
+            ->event(ActivityLogEvent::Cancelled->value)
             ->log('push_cancelled');
 
         return redirect()

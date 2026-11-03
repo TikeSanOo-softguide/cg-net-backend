@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Models\Admin;
 use App\Services\Auth\ApiTokenService;
 use App\Services\Auth\Otp\MockOtpProvider;
@@ -77,10 +80,10 @@ class AppServiceProvider extends ServiceProvider
                 return;
             }
 
-            activity('admin')
+            activity(ActivityLogName::Admin->value)
                 ->causedBy($event->user)
                 ->performedOn($event->user)
-                ->event('logged_in')
+                ->event(ActivityLogEvent::LoggedIn->value)
                 ->withProperties([
                     'username' => $event->user->username,
                     'ip' => request()->ip(),

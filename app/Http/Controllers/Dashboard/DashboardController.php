@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Dashboard;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Enums\CustomerPackageStatus;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
@@ -77,10 +80,10 @@ class DashboardController extends Controller
             }
 
             $item->delete();
-            activity('service-requests')
+            activity(ActivityLogName::ServiceRequests->value)
                 ->causedBy($request->user())
                 ->performedOn($item)
-                ->event('deleted')
+                ->event(ActivityLogEvent::Deleted->value)
                 ->log($type . '_deleted');
             $deleted++;
         }

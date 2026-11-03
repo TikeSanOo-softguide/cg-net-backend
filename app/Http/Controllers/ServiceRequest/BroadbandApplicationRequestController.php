@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\ServiceRequest;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\InstallationApplication;
@@ -97,10 +100,10 @@ class BroadbandApplicationRequestController extends Controller
             'status' => ['required', new Enum(RequestStatus::class)],
         ]);
 
-        activity('installation_application')
+        activity(ActivityLogName::InstallationApplication->value)
             ->causedBy($request->user())
             ->performedOn($installationApplication)
-            ->event('status_updated')
+            ->event(ActivityLogEvent::StatusUpdated->value)
             ->log($validated['status']);
 
         $installationApplication->update([

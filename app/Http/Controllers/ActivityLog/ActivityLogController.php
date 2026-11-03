@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\ActivityLog;
 
+use App\Enums\ActivityLogEvent;
+use App\Enums\ActivityLogName;
 use App\Exports\ActivityLogExport;
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
@@ -28,8 +30,8 @@ class ActivityLogController extends Controller
             'filters' => $filters,
             'filterOptions' => [
                 'admins' => Admin::query()->orderBy('username')->pluck('username')->all(),
-                'event' => $this->distinctValues('event'),
-                'log' => $this->distinctValues('log_name'),
+                'event' => ActivityLogEvent::values(),
+                'log' => ActivityLogName::groupedValues(),
             ],
         ]);
     }
@@ -115,19 +117,6 @@ class ActivityLogController extends Controller
                 fn($query) => $query->orderBy($filters['sort'], $filters['direction']),
             )
             ->orderBy('id', 'desc');
-    }
-
-    private function distinctValues(string $column): array
-    {
-        return Activity::query()
-            ->whereNotNull($column)
-            ->where($column, '!=', '')
-            ->distinct()
-            ->orderBy($column)
-            ->pluck($column)
-            ->filter(fn($value) => $value !== null && $value !== '')
-            ->values()
-            ->all();
     }
 
     /** @return array<string, mixed> */

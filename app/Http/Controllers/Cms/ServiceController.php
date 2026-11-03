@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Cms;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Cms\StoreServiceRequest;
 use App\Http\Requests\Cms\UpdateServiceRequest;
@@ -59,7 +62,7 @@ class ServiceController extends Controller
             'slug' => $data['slug'],
         ]);
 
-        activity('cms')->causedBy($request->user())->performedOn($service)->event('created')->log('service_created');
+        activity(ActivityLogName::Service->value)->causedBy($request->user())->performedOn($service)->event(ActivityLogEvent::Created->value)->log('service_created');
 
         return redirect()->route('cms.services.index')->with('success', 'cms.service.created');
     }
@@ -94,7 +97,7 @@ class ServiceController extends Controller
             'slug' => $data['slug'],
         ]);
 
-        activity('cms')->causedBy($request->user())->performedOn($service)->event('updated')->log('service_updated');
+        activity(ActivityLogName::Service->value)->causedBy($request->user())->performedOn($service)->event(ActivityLogEvent::Updated->value)->log('service_updated');
 
         return redirect()->route('cms.services.index')->with('success', 'cms.service.updated');
     }
@@ -104,7 +107,7 @@ class ServiceController extends Controller
         StoresPublicImage::delete($service->image_url);
         $service->delete();
 
-        activity('cms')->causedBy($request->user())->performedOn($service)->event('deleted')->log('service_deleted');
+        activity(ActivityLogName::Service->value)->causedBy($request->user())->performedOn($service)->event(ActivityLogEvent::Deleted->value)->log('service_deleted');
 
         return redirect()->route('cms.services.index')->with('success', 'cms.service.deleted');
     }
@@ -116,6 +119,7 @@ class ServiceController extends Controller
             Service::query(),
             'cms.services.index',
             'service_deleted',
+            ActivityLogName::Service,
             beforeDelete: fn(Service $service) => StoresPublicImage::delete($service->image_url),
         );
     }

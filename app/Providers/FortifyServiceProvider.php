@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
@@ -57,8 +60,8 @@ class FortifyServiceProvider extends ServiceProvider
             $admin = Admin::query()->where('username', $username)->first();
 
             if (!$admin || !Hash::check((string) $request->password, $admin->getAuthPassword())) {
-                $failedLoginActivity = activity('admin')
-                    ->event('login_failed')
+                $failedLoginActivity = activity(ActivityLogName::Admin->value)
+                    ->event(ActivityLogEvent::LoginFailed->value)
                     ->withProperties([
                         'username' => $username,
                         'ip' => $request->ip(),
@@ -86,9 +89,9 @@ class FortifyServiceProvider extends ServiceProvider
             }
 
             if ($admin->status !== AdminStatus::Active) {
-                activity('admin')
+                activity(ActivityLogName::Admin->value)
                     ->causedBy($admin)
-                    ->event('login_blocked')
+                    ->event(ActivityLogEvent::LoginBlocked->value)
                     ->withProperties([
                         'username' => $admin->username,
                         'ip' => $request->ip(),

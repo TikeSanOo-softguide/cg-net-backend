@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\ServiceRequest;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\FailureReport;
@@ -157,22 +160,28 @@ class FailureReportController extends Controller
             'status' => ['required', Rule::enum(RequestStatus::class)],
         ])['status'];
 
-        activity('failure_report')
-            ->causedBy($request->user())
-            ->performedOn($failureReport)
-            ->event('status_updated')
-            ->log($status);
-
         if ($failureReport->status !== $status) {
             $failureReport->update(['status' => $status]);
         }
 
+        activity(ActivityLogName::FailureReport->value)
+            ->causedBy($request->user())
+            ->performedOn($failureReport)
+            ->event(ActivityLogEvent::StatusUpdated->value)
+            ->log($status);
+
         return back()->with('success', 'requests.status_updated');
     }
 
-    public function destroy(FailureReport $failureReport): RedirectResponse
+    public function destroy(Request $request, FailureReport $failureReport): RedirectResponse
     {
         $failureReport->delete();
+
+        activity(ActivityLogName::FailureReport->value)
+            ->causedBy($request->user())
+            ->performedOn($failureReport)
+            ->event(ActivityLogEvent::Deleted->value)
+            ->log('failure_report_deleted');
 
         return back()->with('success', 'common.delete');
     }

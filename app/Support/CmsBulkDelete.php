@@ -2,6 +2,9 @@
 
 namespace App\Support;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
@@ -22,6 +25,7 @@ final class CmsBulkDelete
         Builder $query,
         string $indexRoute,
         string $logEvent,
+        ActivityLogName $activityLogName,
         ?callable $deletionError = null,
         ?callable $beforeDelete = null,
         ?callable $afterDelete = null,
@@ -47,9 +51,9 @@ final class CmsBulkDelete
                 $beforeDelete($item);
             }
 
-            DB::transaction(function () use ($item, $logEvent, $request): void {
+            DB::transaction(function () use ($item, $logEvent, $request, $activityLogName): void {
                 $item->delete();
-                activity('cms')->causedBy($request->user())->performedOn($item)->event('deleted')->log($logEvent);
+                activity($activityLogName->value)->causedBy($request->user())->performedOn($item)->event(ActivityLogEvent::Deleted->value)->log($logEvent);
             });
 
             if ($afterDelete) {

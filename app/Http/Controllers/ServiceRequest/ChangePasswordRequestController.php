@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\ServiceRequest;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\ChangePasswordRequest;
@@ -76,10 +79,10 @@ class ChangePasswordRequestController extends Controller
     {
         $validated = $request->validate(['status' => ['required', new Enum(RequestStatus::class)]]);
 
-        activity('change_password_request')
+        activity(ActivityLogName::ChangePasswordRequest->value)
             ->causedBy($request->user())
             ->performedOn($changePasswordRequest)
-            ->event('status_updated')
+            ->event(ActivityLogEvent::StatusUpdated->value)
             ->log($validated['status']);
 
         $changePasswordRequest->update([

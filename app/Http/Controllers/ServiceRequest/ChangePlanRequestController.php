@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\ServiceRequest;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\ChangePlanRequest;
@@ -83,10 +86,10 @@ class ChangePlanRequestController extends Controller
             'status' => ['required', new Enum(RequestStatus::class)],
         ]);
 
-        activity('change_plan_request')
+        activity(ActivityLogName::ChangePlanRequest->value)
             ->causedBy($request->user())
             ->performedOn($changePlanRequest)
-            ->event('status_updated')
+            ->event(ActivityLogEvent::StatusUpdated->value)
             ->log($validated['status']);
 
         $changePlanRequest->update([

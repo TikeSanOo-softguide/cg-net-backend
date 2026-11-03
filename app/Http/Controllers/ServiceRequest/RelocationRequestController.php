@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\ServiceRequest;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\RelocationRequest;
@@ -72,10 +75,10 @@ class RelocationRequestController extends Controller
             'status' => ['required', new Enum(RequestStatus::class)],
         ]);
 
-        activity('relocation_request')
+        activity(ActivityLogName::RelocationRequest->value)
             ->causedBy($request->user())
             ->performedOn($relocationRequest)
-            ->event('status_updated')
+            ->event(ActivityLogEvent::StatusUpdated->value)
             ->log($validated['status']);
 
         $relocationRequest->update([

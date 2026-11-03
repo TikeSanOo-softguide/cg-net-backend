@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Cms;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Cms\StoreGalleryRequest;
 use App\Http\Requests\Cms\UpdateGalleryRequest;
@@ -45,7 +48,7 @@ class GalleryController extends Controller
             'image_url' => StoresPublicImage::store($request->file('image'), 'cms/gallery'),
         ]);
 
-        activity('cms')->causedBy($request->user())->performedOn($gallery)->event('created')->log('gallery_created');
+        activity(ActivityLogName::Gallery->value)->causedBy($request->user())->performedOn($gallery)->event(ActivityLogEvent::Created->value)->log('gallery_created');
 
         return redirect()->route('cms.gallery.index')->with('success', 'cms.gallery.created');
     }
@@ -69,7 +72,7 @@ class GalleryController extends Controller
 
         $gallery->update($data);
 
-        activity('cms')->causedBy($request->user())->performedOn($gallery)->event('updated')->log('gallery_updated');
+        activity(ActivityLogName::Gallery->value)->causedBy($request->user())->performedOn($gallery)->event(ActivityLogEvent::Updated->value)->log('gallery_updated');
 
         return redirect()->route('cms.gallery.index')->with('success', 'cms.gallery.updated');
     }
@@ -79,7 +82,7 @@ class GalleryController extends Controller
         StoresPublicImage::delete($gallery->image_url);
         $gallery->delete();
 
-        activity('cms')->causedBy($request->user())->performedOn($gallery)->event('deleted')->log('gallery_deleted');
+        activity(ActivityLogName::Gallery->value)->causedBy($request->user())->performedOn($gallery)->event(ActivityLogEvent::Deleted->value)->log('gallery_deleted');
 
         return redirect()->route('cms.gallery.index')->with('success', 'cms.gallery.deleted');
     }
@@ -91,6 +94,7 @@ class GalleryController extends Controller
             Gallery::query(),
             'cms.gallery.index',
             'gallery_deleted',
+            ActivityLogName::Gallery,
             beforeDelete: fn(Gallery $gallery) => StoresPublicImage::delete($gallery->image_url),
         );
     }

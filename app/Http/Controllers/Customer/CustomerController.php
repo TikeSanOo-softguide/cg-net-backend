@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Customer;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Enums\CustomerPackageStatus;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
@@ -119,10 +122,10 @@ class CustomerController extends Controller
             return $customer;
         });
 
-        activity('customers')
+        activity(ActivityLogName::Customers->value)
             ->causedBy($request->user())
             ->performedOn($customer)
-            ->event('created')
+            ->event(ActivityLogEvent::Created->value)
             ->withProperties(Arr::except($payload, ['password']))
             ->log('customer_created');
 
@@ -355,10 +358,10 @@ class CustomerController extends Controller
         $payload = CustomerData::payload($request->validated());
         $customer->update($payload);
 
-        activity('customers')
+        activity(ActivityLogName::Customers->value)
             ->causedBy($request->user())
             ->performedOn($customer)
-            ->event('updated')
+            ->event(ActivityLogEvent::Updated->value)
             ->withProperties([
                 ...Arr::except($payload, ['password']),
                 ...isset($payload['password']) ? ['password_reset' => true] : [],
@@ -393,10 +396,10 @@ class CustomerController extends Controller
 
         $customer->update(['status' => $status]);
 
-        activity('customers')
+        activity(ActivityLogName::Customers->value)
             ->causedBy($request->user())
             ->performedOn($customer)
-            ->event('status_changed')
+            ->event(ActivityLogEvent::StatusChanged->value)
             ->withProperties([
                 'from' => $previous->value,
                 'to' => $status->value,
@@ -419,10 +422,10 @@ class CustomerController extends Controller
         $customer->revokeSessions();
 
         if ($hasActiveSession) {
-            activity('customers')
+            activity(ActivityLogName::Customers->value)
                 ->causedBy($request->user())
                 ->performedOn($customer)
-                ->event('session_revoked')
+                ->event(ActivityLogEvent::SessionRevoked->value)
                 ->log('customer_session_revoked');
         }
 
@@ -464,10 +467,10 @@ class CustomerController extends Controller
             'broadband_account_number' => $accountNumber,
         ]);
 
-        activity('customers')
+        activity(ActivityLogName::Customers->value)
             ->causedBy($request->user())
             ->performedOn($customer)
-            ->event('account_bound')
+            ->event(ActivityLogEvent::AccountBound->value)
             ->withProperties([
                 'service_type' => $serviceType,
                 'account_number' => $accountNumber,
@@ -488,10 +491,10 @@ class CustomerController extends Controller
 
         $customer->update(['service_type' => null, 'broadband_account_number' => null]);
 
-        activity('customers')
+        activity(ActivityLogName::Customers->value)
             ->causedBy($request->user())
             ->performedOn($customer)
-            ->event('account_unbound')
+            ->event(ActivityLogEvent::AccountUnbound->value)
             ->withProperties([
                 'service_type' => $serviceType,
                 'account_number' => $accountNumber,
@@ -519,10 +522,10 @@ class CustomerController extends Controller
                 : null,
         );
 
-        activity('customers')
+        activity(ActivityLogName::Customers->value)
             ->causedBy($request->user())
             ->performedOn($customer)
-            ->event('wallet_adjusted')
+            ->event(ActivityLogEvent::WalletAdjusted->value)
             ->withProperties([
                 'transaction_no' => $transaction->transaction_no,
                 'direction' => $request->string('direction')->toString(),

@@ -2,6 +2,8 @@
 
 namespace App\Jobs;
 
+use App\Enums\ActivityLogEvent;
+use App\Enums\ActivityLogName;
 use App\Events\LedgerHealthScanFinished;
 use App\Models\Admin;
 use App\Models\LedgerHealthSnapshot;
@@ -144,10 +146,10 @@ class GenerateLedgerHealthSnapshot implements ShouldQueue
             return;
         }
 
-        activity('reports')
+        activity(ActivityLogName::Reports->value)
             ->causedBy($admin)
             ->performedOn($snapshot)
-            ->event($snapshot->status)
+            ->event(ActivityLogEvent::from($snapshot->status)->value)
             ->withProperties([
                 'type' => $snapshot->type->value,
                 'status' => $snapshot->status,

@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Settings\GeneralSettings;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\GeneralSettings\StoreSupportContactRequest;
 use App\Http\Requests\Settings\GeneralSettings\UpdateSupportContactRequest;
@@ -15,10 +18,10 @@ class SupportContactController extends Controller
     {
         $supportContact = SupportContact::query()->create($request->validated());
 
-        activity('settings')
+        activity(ActivityLogName::SupportContact->value)
             ->causedBy($request->user())
             ->performedOn($supportContact)
-            ->event('created')
+            ->event(ActivityLogEvent::Created->value)
             ->log('support_contact_created');
 
         return redirect()
@@ -30,10 +33,10 @@ class SupportContactController extends Controller
     {
         $supportContact->update($request->validated());
 
-        activity('settings')
+        activity(ActivityLogName::SupportContact->value)
             ->causedBy($request->user())
             ->performedOn($supportContact)
-            ->event('updated')
+            ->event(ActivityLogEvent::Updated->value)
             ->log('support_contact_updated');
 
         return redirect()
@@ -43,10 +46,10 @@ class SupportContactController extends Controller
 
     public function destroy(Request $request, SupportContact $supportContact): RedirectResponse
     {
-        activity('settings')
+        activity(ActivityLogName::SupportContact->value)
             ->causedBy($request->user())
             ->performedOn($supportContact)
-            ->event('deleted')
+            ->event(ActivityLogEvent::Deleted->value)
             ->log('support_contact_deleted');
 
         $supportContact->forceDelete();

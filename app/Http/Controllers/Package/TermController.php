@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Package;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Http\Controllers\Controller;
 use App\Models\Term;
 use Illuminate\Http\RedirectResponse;
@@ -22,7 +25,9 @@ class TermController extends Controller
             ],
         ]);
 
-        Term::query()->create($data);
+        $term = Term::query()->create($data);
+
+        activity(ActivityLogName::Term->value)->causedBy($request->user())->performedOn($term)->event(ActivityLogEvent::Created->value)->log('term_created');
 
         return redirect()->route('packages.index')->with('success', 'packages.terms.created');
     }
@@ -41,10 +46,12 @@ class TermController extends Controller
 
         $term->update($data);
 
+        activity(ActivityLogName::Term->value)->causedBy($request->user())->performedOn($term)->event(ActivityLogEvent::Updated->value)->log('term_updated');
+
         return redirect()->route('packages.index')->with('success', 'packages.terms.updated');
     }
 
-    public function destroy(Term $term): RedirectResponse
+    public function destroy(Request $request, Term $term): RedirectResponse
     {
         if ($term->packages()->exists()) {
             return back()->withErrors([
@@ -53,6 +60,8 @@ class TermController extends Controller
         }
 
         $term->delete();
+
+        activity(ActivityLogName::Term->value)->causedBy($request->user())->performedOn($term)->event(ActivityLogEvent::Deleted->value)->log('term_deleted');
 
         return redirect()->route('packages.index')->with('success', 'packages.terms.deleted');
     }
@@ -70,6 +79,13 @@ class TermController extends Controller
         if ($deletedCount === 0) {
             return back()->with('error', __('common.bulk_delete_failed'));
         }
+
+        activity(ActivityLogName::Term->value)
+            ->causedBy($request->user())
+            ->event(ActivityLogEvent::BulkDeleted->value)
+            ->withProperties(['ids' => $deletableIds])
+            ->log('terms_bulk_deleted');
+
         return redirect()->route('packages.index')->with('success', 'packages.terms.bulk_deleted');
     }
 }

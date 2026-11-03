@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Staff;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\StoreRoleRequest;
 use App\Http\Requests\Staff\UpdateRoleRequest;
@@ -51,7 +54,7 @@ class RoleController extends Controller
         app(PermissionRegistrar::class)->forgetCachedPermissions();
         app(AdminNotificationDelivery::class)->forgetCachedRecipients();
 
-        activity('staff')->causedBy($request->user())->performedOn($role)->event('created')->log('role_created');
+        activity(ActivityLogName::Role->value)->causedBy($request->user())->performedOn($role)->event(ActivityLogEvent::Created->value)->log('role_created');
 
         return redirect()->route('roles.index')->with('success', 'staff.role_created');
     }
@@ -80,7 +83,7 @@ class RoleController extends Controller
         app(PermissionRegistrar::class)->forgetCachedPermissions();
         app(AdminNotificationDelivery::class)->forgetCachedRecipients();
 
-        activity('staff')->causedBy($request->user())->performedOn($role)->event('updated')->log('role_updated');
+        activity(ActivityLogName::Role->value)->causedBy($request->user())->performedOn($role)->event(ActivityLogEvent::Updated->value)->log('role_updated');
 
         return redirect()->route('roles.index')->with('success', 'staff.role_updated');
     }
@@ -99,7 +102,7 @@ class RoleController extends Controller
         app(PermissionRegistrar::class)->forgetCachedPermissions();
         app(AdminNotificationDelivery::class)->forgetCachedRecipients();
 
-        activity('staff')->causedBy($request->user())->performedOn($role)->event('deleted')->log('role_deleted');
+        activity(ActivityLogName::Role->value)->causedBy($request->user())->performedOn($role)->event(ActivityLogEvent::Deleted->value)->log('role_deleted');
 
         return redirect()->route('roles.index')->with('success', 'staff.role_deleted');
     }
@@ -124,7 +127,7 @@ class RoleController extends Controller
             }
 
             $role->delete();
-            activity('staff')->causedBy($request->user())->performedOn($role)->event('deleted')->log('role_deleted');
+            activity(ActivityLogName::Role->value)->causedBy($request->user())->performedOn($role)->event(ActivityLogEvent::Deleted->value)->log('role_deleted');
             $deleted++;
         }
 

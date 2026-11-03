@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Support\QuickReplies;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Enums\QuickReplyCategory;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Support\QuickReplyRequest;
@@ -24,10 +27,7 @@ class QuickRepliesController extends Controller
             $category = '';
         }
 
-        $query = QuickReply::query()->when(
-            $category !== '',
-            fn($builder) => $builder->where('category', $category),
-        );
+        $query = QuickReply::query()->when($category !== '', fn($builder) => $builder->where('category', $category));
 
         $listing = CmsListing::paginate(
             $request,
@@ -40,10 +40,7 @@ class QuickRepliesController extends Controller
         return Inertia::render('Support/quickReplies/Index', [
             'items' => $listing['paginator']->through(fn(QuickReply $reply) => $this->payload($reply)),
             'existingKeywords' => QuickReply::query()->pluck('keyword')->all(),
-            'filters' => [
-                ...$listing['filters'],
-                'category' => $category,
-            ],
+            'filters' => [...$listing['filters'], 'category' => $category],
             'categories' => array_map(
                 fn(QuickReplyCategory $category) => [
                     'value' => $category->value,
@@ -56,29 +53,42 @@ class QuickRepliesController extends Controller
 
     public function store(QuickReplyRequest $request): RedirectResponse
     {
-        $this->saveReply(new QuickReply, $request->validated());
+        $quickReply = new QuickReply();
+        $this->saveReply($quickReply, $request->validated());
 
-        return redirect()
-            ->route('support.quick-replies.index')
-            ->with('success', 'support.quick_replies.created');
+        activity(ActivityLogName::QuickReply->value)
+            ->causedBy($request->user())
+            ->performedOn($quickReply)
+            ->event(ActivityLogEvent::Created->value)
+            ->log('quick_reply_created');
+
+        return redirect()->route('support.quick-replies.index')->with('success', 'support.quick_replies.created');
     }
 
     public function update(QuickReplyRequest $request, QuickReply $quickReply): RedirectResponse
     {
         $this->saveReply($quickReply, $request->validated());
 
-        return redirect()
-            ->route('support.quick-replies.index')
-            ->with('success', 'support.quick_replies.updated');
+        activity(ActivityLogName::QuickReply->value)
+            ->causedBy($request->user())
+            ->performedOn($quickReply)
+            ->event(ActivityLogEvent::Updated->value)
+            ->log('quick_reply_updated');
+
+        return redirect()->route('support.quick-replies.index')->with('success', 'support.quick_replies.updated');
     }
 
-    public function destroy(QuickReply $quickReply): RedirectResponse
+    public function destroy(Request $request, QuickReply $quickReply): RedirectResponse
     {
         $quickReply->delete();
 
-        return redirect()
-            ->route('support.quick-replies.index')
-            ->with('success', 'support.quick_replies.deleted');
+        activity(ActivityLogName::QuickReply->value)
+            ->causedBy($request->user())
+            ->performedOn($quickReply)
+            ->event(ActivityLogEvent::Deleted->value)
+            ->log('quick_reply_deleted');
+
+        return redirect()->route('support.quick-replies.index')->with('success', 'support.quick_replies.deleted');
     }
 
     public function bulkDestroy(Request $request): RedirectResponse
@@ -94,6 +104,12 @@ class QuickRepliesController extends Controller
             return back()->withErrors(['delete' => 'support.quick_replies.bulk_delete_failed']);
         }
 
+        activity(ActivityLogName::QuickReply->value)
+            ->causedBy($request->user())
+            ->event(ActivityLogEvent::BulkDeleted->value)
+            ->withProperties(['ids' => $validated['ids']])
+            ->log('quick_replies_bulk_deleted');
+
         return redirect()
             ->route('support.quick-replies.index')
             ->with('success', 'support.quick_replies.bulk_deleted')
@@ -108,7 +124,7 @@ class QuickRepliesController extends Controller
         try {
             $reply->fill($attributes)->save();
         } catch (QueryException $exception) {
-            if (! $this->isKeywordConflict($exception)) {
+            if (!$this->isKeywordConflict($exception)) {
                 throw $exception;
             }
 
@@ -122,8 +138,8 @@ class QuickRepliesController extends Controller
     {
         $sqlState = (string) $exception->getCode();
 
-        return in_array($sqlState, ['23000', '23505'], true)
-            && str_contains(strtolower($exception->getMessage()), 'keyword');
+        return in_array($sqlState, ['23000', '23505'], true) &&
+            str_contains(strtolower($exception->getMessage()), 'keyword');
     }
 
     /**

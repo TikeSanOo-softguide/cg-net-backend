@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ActivityLogName;
 use App\Enums\ChatFlowOptionAction;
 use App\Models\Admin;
 use App\Models\ChatFlowOption;
@@ -72,11 +73,72 @@ class ChatFlowManagementTest extends TestCase
 
     public function test_creating_the_first_step_configures_it_as_the_start(): void
     {
-        $this->actingAs($this->admin(), 'web')
+        $admin = $this->admin();
+
+        $this->actingAs($admin, 'web')
             ->post('/support/chatbot-flows/steps', $this->stepData())
             ->assertRedirect();
 
-        $this->assertSame(1, ChatFlowStep::query()->where('is_start', true)->count());
+        $step = ChatFlowStep::query()->sole();
+        $this->assertTrue($step->is_start);
+        $this->assertActivityExists($admin, $step, 'created', 'chat_flow_step_created');
+    }
+
+    public function test_chat_flow_mutations_log_the_affected_models(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin, 'web');
+
+        $this->post('/support/chatbot-flows/steps', $this->stepData([
+            'name' => 'Main Menu',
+            'is_start' => true,
+        ]))->assertRedirect();
+        $start = ChatFlowStep::query()->sole();
+
+        $this->post('/support/chatbot-flows/steps', $this->stepData([
+            'name' => 'Internet',
+        ]))->assertRedirect();
+        $step = ChatFlowStep::query()->where('name', 'Internet')->sole();
+
+        $this->post("/support/chatbot-flows/steps/{$step->id}/options", [
+            'action' => ChatFlowOptionAction::GoToStep->value,
+            'option_en' => 'Go back',
+            'option_my' => 'နောက်သို့',
+            'option_zh' => '返回',
+            'next_step_id' => $start->id,
+            'sort_order' => 1,
+            'is_active' => true,
+        ])->assertRedirect();
+        $option = ChatFlowOption::query()->sole();
+
+        $this->put("/support/chatbot-flows/steps/{$step->id}/options/{$option->id}", [
+            'action' => ChatFlowOptionAction::GoToStep->value,
+            'option_en' => 'Return',
+            'option_my' => 'ပြန်သွားရန်',
+            'option_zh' => '返回',
+            'next_step_id' => $start->id,
+            'sort_order' => 1,
+            'is_active' => true,
+        ])->assertRedirect();
+
+        $this->put("/support/chatbot-flows/steps/{$step->id}", $this->stepData([
+            'name' => 'Internet',
+            'is_start' => true,
+        ]))->assertRedirect();
+
+        $this->delete("/support/chatbot-flows/steps/{$step->id}/options/{$option->id}")->assertRedirect();
+        $this->delete("/support/chatbot-flows/steps/{$step->id}")->assertRedirect();
+
+        $this->assertActivityExists($admin, $step, 'created', 'chat_flow_step_created');
+        $this->assertActivityExists($admin, $step, 'updated', 'chat_flow_step_updated');
+        $this->assertActivityExists($admin, $step, 'deleted', 'chat_flow_step_deleted');
+        $this->assertDatabaseHas('chat_flow_steps', [
+            'id' => $start->id,
+            'is_start' => false,
+        ]);
+        $this->assertActivityExists($admin, $option, 'created', 'chat_flow_option_created');
+        $this->assertActivityExists($admin, $option, 'updated', 'chat_flow_option_updated');
+        $this->assertActivityExists($admin, $option, 'deleted', 'chat_flow_option_deleted');
     }
 
     public function test_step_referenced_by_options_cannot_be_deleted(): void
@@ -159,5 +221,22 @@ class ChatFlowManagementTest extends TestCase
             'message_my' => 'မြန်မာစာ',
             'message_zh' => '中文提示',
         ], $overrides);
+    }
+
+    private function assertActivityExists(
+        Admin $admin,
+        ChatFlowStep|ChatFlowOption $model,
+        string $event,
+        string $description,
+    ): void {
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => ActivityLogName::ChatbotFlow->value,
+            'description' => $description,
+            'subject_type' => $model::class,
+            'subject_id' => $model->id,
+            'causer_type' => Admin::class,
+            'causer_id' => $admin->id,
+            'event' => $event,
+        ]);
     }
 }

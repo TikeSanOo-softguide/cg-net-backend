@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Settings\GeneralSettings;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\GeneralSettings\StoreTermAndConditionRequest;
 use App\Http\Requests\Settings\GeneralSettings\UpdateTermAndConditionRequest;
@@ -15,10 +18,10 @@ class TermAndConditionController extends Controller
     {
         $termAndCondition = TermAndCondition::query()->create($request->validated());
 
-        activity('settings')
+        activity(ActivityLogName::TermsAndConditions->value)
             ->causedBy($request->user())
             ->performedOn($termAndCondition)
-            ->event('created')
+            ->event(ActivityLogEvent::Created->value)
             ->log('term_and_condition_created');
 
         return redirect()->route('settings.general.index')->with('success', 'settings.general_settings.terms_created');
@@ -28,10 +31,10 @@ class TermAndConditionController extends Controller
     {
         $termAndCondition->update($request->validated());
 
-        activity('settings')
+        activity(ActivityLogName::TermsAndConditions->value)
             ->causedBy($request->user())
             ->performedOn($termAndCondition)
-            ->event('updated')
+            ->event(ActivityLogEvent::Updated->value)
             ->log('term_and_condition_updated');
 
         return redirect()->route('settings.general.index')->with('success', 'settings.general_settings.terms_updated');
@@ -39,10 +42,10 @@ class TermAndConditionController extends Controller
 
     public function destroy(Request $request, TermAndCondition $termAndCondition): RedirectResponse
     {
-        activity('settings')
+        activity(ActivityLogName::TermsAndConditions->value)
             ->causedBy($request->user())
             ->performedOn($termAndCondition)
-            ->event('deleted')
+            ->event(ActivityLogEvent::Deleted->value)
             ->log('term_and_condition_deleted');
 
         $termAndCondition->forceDelete();

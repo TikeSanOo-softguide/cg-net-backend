@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Cms;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Cms\StorePromotionRequest;
 use App\Http\Requests\Cms\UpdatePromotionRequest;
@@ -50,10 +53,10 @@ class PromotionController extends Controller
 
         $promotion = Promotion::query()->create($data);
 
-        activity('cms')
+        activity(ActivityLogName::Promotion->value)
             ->causedBy($request->user())
             ->performedOn($promotion)
-            ->event('created')
+            ->event(ActivityLogEvent::Created->value)
             ->log('promotion_created');
 
         return redirect()->route($this->promotionsIndexRoute())->with('success', 'cms.promotions.created');
@@ -83,10 +86,10 @@ class PromotionController extends Controller
 
         $promotion->update($data);
 
-        activity('cms')
+        activity(ActivityLogName::Promotion->value)
             ->causedBy($request->user())
             ->performedOn($promotion)
-            ->event('updated')
+            ->event(ActivityLogEvent::Updated->value)
             ->log('promotion_updated');
 
         return redirect()->route($this->promotionsIndexRoute())->with('success', 'cms.promotions.updated');
@@ -97,10 +100,10 @@ class PromotionController extends Controller
         StoresPublicImage::delete($promotion->image_url);
         $promotion->delete();
 
-        activity('cms')
+        activity(ActivityLogName::Promotion->value)
             ->causedBy($request->user())
             ->performedOn($promotion)
-            ->event('deleted')
+            ->event(ActivityLogEvent::Deleted->value)
             ->log('promotion_deleted');
 
         return redirect()->route($this->promotionsIndexRoute())->with('success', 'cms.promotions.deleted');
@@ -113,6 +116,7 @@ class PromotionController extends Controller
             Promotion::query(),
             $this->promotionsIndexRoute(),
             'promotion_deleted',
+            ActivityLogName::Promotion,
             beforeDelete: fn(Promotion $promotion) => StoresPublicImage::delete($promotion->image_url),
         );
     }

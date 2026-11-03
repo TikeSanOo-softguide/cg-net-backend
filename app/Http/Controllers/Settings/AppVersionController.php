@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Settings;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\StoreAppVersionRequest;
 use App\Http\Requests\Settings\UpdateAppVersionRequest;
@@ -60,10 +63,10 @@ class AppVersionController extends Controller
             'created_by' => $request->user()->getAuthIdentifier(),
         ]);
 
-        activity('settings')
+        activity(ActivityLogName::AppVersion->value)
             ->causedBy($request->user())
             ->performedOn($version)
-            ->event('created')
+            ->event(ActivityLogEvent::Created->value)
             ->log('app_version_created');
 
         return redirect()->route('settings.app-version.index')->with('success', 'settings.app_version.created');
@@ -73,10 +76,10 @@ class AppVersionController extends Controller
     {
         $appVersion->update([...$request->validated(), 'updated_by' => $request->user()->getAuthIdentifier()]);
 
-        activity('settings')
+        activity(ActivityLogName::AppVersion->value)
             ->causedBy($request->user())
             ->performedOn($appVersion)
-            ->event('updated')
+            ->event(ActivityLogEvent::Updated->value)
             ->log('app_version_updated');
 
         return redirect()->route('settings.app-version.index')->with('success', 'settings.app_version.updated');
@@ -86,10 +89,10 @@ class AppVersionController extends Controller
     {
         $appVersion->delete();
 
-        activity('settings')
+        activity(ActivityLogName::AppVersion->value)
             ->causedBy($request->user())
             ->performedOn($appVersion)
-            ->event('deleted')
+            ->event(ActivityLogEvent::Deleted->value)
             ->log('app_version_deleted');
 
         return redirect()->route('settings.app-version.index')->with('success', 'settings.app_version.deleted');
@@ -104,10 +107,10 @@ class AppVersionController extends Controller
             ->get()
             ->each(function (AppVersion $version) use ($request): void {
                 $version->delete();
-                activity('settings')
+                activity(ActivityLogName::AppVersion->value)
                     ->causedBy($request->user())
                     ->performedOn($version)
-                    ->event('deleted')
+                    ->event(ActivityLogEvent::Deleted->value)
                     ->log('app_version_deleted');
             });
 

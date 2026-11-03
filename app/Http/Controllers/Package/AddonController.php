@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Package;
 
+use App\Enums\ActivityLogEvent;
+
+use App\Enums\ActivityLogName;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Package\StoreAddonsRequest;
 use App\Http\Requests\Package\UpdateAddonsRequest;
@@ -30,7 +33,7 @@ class AddonController extends Controller
             'price' => $data['price'],
             'image_url' => $data['image_url'],
         ]);
-        activity('addon')->causedBy($request->user())->performedOn($addon)->event('created')->log('addon_created');
+        activity(ActivityLogName::Addon->value)->causedBy($request->user())->performedOn($addon)->event(ActivityLogEvent::Created->value)->log('addon_created');
 
         return redirect()->route('packages.index')->with('success', 'packages.addons.created');
     }
@@ -56,7 +59,7 @@ class AddonController extends Controller
             'image_url' => $data['image_url'],
         ]);
 
-        activity('addon')->causedBy($request->user())->performedOn($addon)->event('updated')->log('addon_updated');
+        activity(ActivityLogName::Addon->value)->causedBy($request->user())->performedOn($addon)->event(ActivityLogEvent::Updated->value)->log('addon_updated');
 
         return redirect()->route('packages.index')->with('success', 'packages.addons.updated');
     }
@@ -64,6 +67,13 @@ class AddonController extends Controller
     public function destroy(Request $request, Addon $addon): RedirectResponse
     {
         $addon->delete();
+
+        activity(ActivityLogName::Addon->value)
+            ->causedBy($request->user())
+            ->performedOn($addon)
+            ->event(ActivityLogEvent::Deleted->value)
+            ->log('addon_deleted');
+
         return redirect()->route('packages.index')->with('success', 'packages.addons.deleted');
     }
 
@@ -74,8 +84,17 @@ class AddonController extends Controller
             'ids.*' => ['integer', 'distinct', 'exists:addons,id'],
         ])['ids'];
         $deleted = Addon::query()->whereIn('id', $ids)->delete();
-        return $deleted === 0
-            ? back()->withErrors(['delete' => 'common.bulk_delete_failed'])
-            : redirect()->route('packages.index')->with('success', 'packages.addons.bulk_deleted');
+
+        if ($deleted === 0) {
+            return back()->withErrors(['delete' => 'common.bulk_delete_failed']);
+        }
+
+        activity(ActivityLogName::Addon->value)
+            ->causedBy($request->user())
+            ->event(ActivityLogEvent::BulkDeleted->value)
+            ->withProperties(['ids' => $ids])
+            ->log('addons_bulk_deleted');
+
+        return redirect()->route('packages.index')->with('success', 'packages.addons.bulk_deleted');
     }
 }
