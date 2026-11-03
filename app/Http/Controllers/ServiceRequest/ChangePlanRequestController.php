@@ -44,7 +44,7 @@ class ChangePlanRequestController extends Controller
             })
             ->when(
                 $openRequestId < 1 && $serviceType !== '',
-                fn ($query) => $query->where('broadband_account_number', 'like', $serviceType.'%'),
+                fn ($query) => $query->where('service_type', $serviceType),
             )
             ->when(
                 $openRequestId < 1 &&

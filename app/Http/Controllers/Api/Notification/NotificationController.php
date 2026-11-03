@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Notification;
 
 use App\Http\Controllers\Controller;
 use App\Models\Notification;
+use App\Services\Notification\PushNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -12,7 +13,9 @@ class NotificationController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $notifications = $user->appNotifications()->with('templateable')->latest('id')->paginate(30);
+        app(PushNotificationService::class)->materializeInboxFor($user);
+        $visible = $user->appNotifications()->withoutDeletedSources();
+        $notifications = $visible->with('templateable')->latest('id')->paginate(30);
         $locale = $user->lang;
 
         return response()->json([
@@ -33,7 +36,7 @@ class NotificationController extends Controller
                     ];
                 })
                 ->values(),
-            'unread_count' => $user->appNotifications()->where('is_read', false)->count(),
+            'unread_count' => $user->appNotifications()->withoutDeletedSources()->where('is_read', false)->count(),
             'current_page' => $notifications->currentPage(),
             'last_page' => $notifications->lastPage(),
         ]);

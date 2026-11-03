@@ -157,6 +157,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::post('/create', [ChangePlanRequestController::class, 'store']);
         Route::get('/{changePlanRequest}', [ChangePlanRequestController::class, 'show']);
         Route::put('/{changePlanRequest}', [ChangePlanRequestController::class, 'update']);
+        Route::patch('/{changePlanRequest}/cancel', [ChangePlanRequestController::class, 'cancel']);
         Route::delete('/{changePlanRequest}', [ChangePlanRequestController::class, 'destroy']);
     });
 
