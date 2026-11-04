@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\Notification\InboxController;
 use App\Http\Controllers\Api\Notification\NotificationController;
 use App\Http\Controllers\Api\Package\AddonController;
 use App\Http\Controllers\Api\Package\BuyPackageController;
+use App\Http\Controllers\Api\Package\CgNetProductController;
 use App\Http\Controllers\Api\Package\NetworkController;
 use App\Http\Controllers\Api\Package\PackageController;
 use App\Http\Controllers\Api\Package\SpeedController;
@@ -64,6 +65,7 @@ Route::middleware('throttle:60,1')->group(function () {
         Route::get('/gallery', [GalleryController::class, 'index']);
         Route::get('/promotions', [PromotionController::class, 'index']);
         Route::get('/promotions/{slug}', [PromotionController::class, 'show']);
+        Route::get('/cg-net-products', [CgNetProductController::class, 'index']);
         Route::get('/packages', [PackageController::class, 'index']);
         Route::get('/packages/recommended', [PackageController::class, 'recommended']);
         Route::get('/packages/{id}', [PackageController::class, 'show']);
