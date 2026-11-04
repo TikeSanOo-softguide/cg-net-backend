@@ -9,6 +9,7 @@ use App\Http\Requests\ServiceRequest\UpdateRelocationRequest;
 use App\Http\Resources\RelocationRequest\RelocationRequestResource;
 use App\Events\ServiceRequestSubmitted;
 use App\Models\RelocationRequest;
+use App\Support\GeneratesTicketNumber;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -42,6 +43,11 @@ class RelocationRequestController extends Controller
             ...$validated,
             'user_id' => $request->user()->id,
             'status' => 'under_review',
+            'ticket_number' => GeneratesTicketNumber::next(
+                RelocationRequest::class,
+                'ticket_number',
+                'RLC' . now()->format('md'),
+            ),
         ]);
         ServiceRequestSubmitted::dispatch('relocation_request', $relocation->id);
         $this->logActivity($request, 'create_relocation_request', [
