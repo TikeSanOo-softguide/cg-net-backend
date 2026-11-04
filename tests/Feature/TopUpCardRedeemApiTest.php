@@ -38,7 +38,6 @@ class TopUpCardRedeemApiTest extends TestCase
         $usedCard = TopUpCard::factory()->create(['status' => TopUpCardStatus::Used]);
         $expiredCard = TopUpCard::factory()->create(['status' => TopUpCardStatus::Expired]);
         $blockedCard = TopUpCard::factory()->create(['status' => TopUpCardStatus::Blocked]);
-        $pendingCard = TopUpCard::factory()->create(['status' => TopUpCardStatus::Pending]);
 
         $this->withToken($token)
             ->postJson('/api/redeem/check-serial-no', ['serial_no' => $activeCard->serial_no])
@@ -59,7 +58,7 @@ class TopUpCardRedeemApiTest extends TestCase
                 'message' => 'This top-up card has already been used.',
             ]);
 
-        foreach ([$expiredCard, $blockedCard, $pendingCard] as $card) {
+        foreach ([$expiredCard, $blockedCard] as $card) {
             $this->postJson('/api/redeem/check-serial-no', ['serial_no' => $card->serial_no])
                 ->assertStatus(400)
                 ->assertExactJson([
@@ -560,7 +559,7 @@ class TopUpCardRedeemApiTest extends TestCase
             ]);
     }
 
-    public function test_used_blocked_pending_and_expired_cards_cannot_be_redeemed(): void
+    public function test_used_blocked_and_expired_cards_cannot_be_redeemed(): void
     {
         $user = User::factory()->create();
         $token = $user->createToken('top-up')->plainTextToken;
@@ -568,7 +567,6 @@ class TopUpCardRedeemApiTest extends TestCase
         $cardCases = [
             ['status' => TopUpCardStatus::Used],
             ['status' => TopUpCardStatus::Blocked],
-            ['status' => TopUpCardStatus::Pending],
             ['status' => TopUpCardStatus::Active, 'expires_at' => now()->subDay()->toDateString()],
         ];
 

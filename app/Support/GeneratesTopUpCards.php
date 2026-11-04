@@ -172,7 +172,7 @@ final class GeneratesTopUpCards
                         'amount' => $amount,
                         'activated_at' => $now->toDateString(),
                         'expires_at' => $expiresAt,
-                        'status' => TopUpCardStatus::Pending->value,
+                        'status' => TopUpCardStatus::Active->value,
                         'generate_date' => $now->toDateString(),
                         'office_id' => $officeId,
                         'batch_id' => $batchId,
@@ -187,11 +187,11 @@ final class GeneratesTopUpCards
                     'pin' => $pin,
                     'amount' => $amount,
                     'expires_at' => $expiresAt,
-                    'activated_at' => null,
+                    'activated_at' => $now->toDateString(),
                     'generate_date' => $now->toDateString(),
                     'redeemed_at' => null,
                     'redeemed_by' => null,
-                    'status' => TopUpCardStatus::Pending->value,
+                    'status' => TopUpCardStatus::Active->value,
                 ];
 
                 $counter = self::nextDailyCounter($counter);

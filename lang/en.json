@@ -517,7 +517,6 @@
             "required_field": "The CSV field ':field' is required at line :line.",
             "serial_not_found": "The CSV serial number ':serial' at line :line was not found.",
             "serial_already_exists": "The serial number on line :line already exists in top-up cards.",
-            "serial_not_pending": "The CSV serial number ':serial' at line :line is no longer pending.",
             "title": "CSV import failed",
             "too_many_cards": "The CSV contains more than :max cards."
         }
@@ -1440,7 +1439,6 @@
                 "required_field": "The CSV field \":field\" on line :line is required.",
                 "serial_not_found": "The CSV serial number ':serial' at line :line was not found.",
                 "serial_already_exists": "The serial number on line :line already exists in top-up cards.",
-                "serial_not_pending": "The CSV serial number ':serial' at line :line is no longer pending.",
                 "title": "CSV import failed",
                 "too_many_cards": "The CSV contains more than :max cards."
             }
@@ -1932,6 +1930,7 @@
         "empty_batch_title": "No cards generated yet",
         "empty_table": "No top-up cards match these filters.",
         "activated_at": "Activated at",
+        "generate_date": "Generate date",
         "expires_at": "Expiry date",
         "expires_in_days": ":days days",
         "from_date": "From Date",
@@ -1950,12 +1949,17 @@
         "history_empty_title": "No redemptions yet",
         "history_search_placeholder": "Search serial, customer, or phone",
         "import_csv": {
+            "amount_points": ":amount Points",
+            "browse_csv": "Browse CSV",
             "check": "Check CSV",
             "checked": "CSV is valid. :count rows checked.",
             "checking": "Checking…",
             "csv_file": "CSV file (up to 30 MB)",
+            "csv_only": "CSV files only",
             "csv_import_title": "Import cards from CSV",
-            "description": "Upload a CSV with serial_no, pin, amount, expire_at columns. Imports run in the background.",
+            "description": "Upload a CSV with serial number, PIN, amount, and expiry date or generate date columns. Imports run in the background.",
+            "drag_drop_csv": "Drag & drop your CSV file here",
+            "drop_csv_here": "Drop your CSV file here",
             "import": "Import",
             "importing_csv": "Importing CSV…",
             "label": "Import CSV",
@@ -2022,7 +2026,7 @@
         "summary_value": ":value total",
         "to_date": "To Date",
         "total": "Top-up-card Total",
-        "total_points": "Total Points",
+        "total_cards": "Total cards",
         "total_value": "Total value",
         "transaction_no": "Transaction Number",
         "validation": {

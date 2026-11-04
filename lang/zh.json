@@ -517,7 +517,6 @@
             "required_field": "CSV 字段“:field”在第 :line 行不能为空。",
             "serial_not_found": "未找到第 :line 行的 CSV 序列号“:serial”。",
             "serial_already_exists": "第 :line 行的序列号已存在于充值卡中。",
-            "serial_not_pending": "第 :line 行的 CSV 序列号“:serial”已不再处于待处理状态。",
             "title": "CSV 导入失败",
             "too_many_cards": "CSV 中的卡片数量超过 :max 张。"
         }
@@ -1440,7 +1439,6 @@
                 "required_field": "第 :line 行的 CSV 字段“:field”为必填项。",
                 "serial_not_found": "未找到第 :line 行的 CSV 序列号“:serial”。",
                 "serial_already_exists": "第 :line 行的序列号已存在于充值卡中。",
-                "serial_not_pending": "第 :line 行的 CSV 序列号“:serial”已不再处于待处理状态。",
                 "title": "CSV 导入失败",
                 "too_many_cards": "CSV 中的卡片数量超过 :max 张。"
             }
@@ -1932,6 +1930,7 @@
         "empty_batch_title": "尚未生成卡片",
         "empty_table": "没有符合筛选条件的充值卡。",
         "activated_at": "激活日期",
+        "generate_date": "生成日期",
         "expires_at": "有效期",
         "expires_in_days": ":days 天",
         "from_date": "开始日期",
@@ -1950,12 +1949,17 @@
         "history_empty_title": "尚无兑换记录",
         "history_search_placeholder": "搜索序列号、客户或手机号",
         "import_csv": {
+            "amount_points": ":amount 积分",
+            "browse_csv": "浏览 CSV",
             "check": "检查 CSV",
             "checked": "CSV 有效，已检查 :count 行。",
             "checking": "正在检查…",
             "csv_file": "CSV 文件（最大 30 MB）",
+            "csv_only": "仅限 CSV 文件",
             "csv_import_title": "从 CSV 导入卡片",
-            "description": "请上传包含 serial_no、pin、amount、expire_at 字段的 CSV 文件。导入任务将在后台执行。",
+            "description": "请上传包含序列号、PIN、金额以及有效期或生成日期字段的 CSV 文件。导入任务将在后台执行。",
+            "drag_drop_csv": "拖放 CSV 文件到此处",
+            "drop_csv_here": "在此处放下 CSV 文件",
             "import": "导入",
             "importing_csv": "正在导入 CSV…",
             "label": "导入 CSV",
@@ -2022,7 +2026,7 @@
         "summary_value": "合计 :value",
         "to_date": "结束日期",
         "total": "充值卡总数",
-        "total_points": "总积分",
+        "total_cards": "卡片总数",
         "total_value": "总价值",
         "transaction_no": "交易编号",
         "validation": {

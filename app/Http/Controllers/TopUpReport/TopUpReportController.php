@@ -43,7 +43,7 @@ class TopUpReportController extends Controller
         $totalCards = (clone $cards)->count();
         $usedCards = (clone $cards)->where('status', TopUpCardStatus::Used)->count();
         $availableCards = (clone $cards)
-            ->whereIn('status', [TopUpCardStatus::Pending, TopUpCardStatus::Active])
+            ->where('status', TopUpCardStatus::Active)
             ->whereDate('expires_at', '>=', today())
             ->count();
 
