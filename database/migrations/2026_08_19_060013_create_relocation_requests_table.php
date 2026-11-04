@@ -11,6 +11,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('broadband_account_number', 32)->nullable()->index();
+            $table->string('ticket_number', 32)->nullable()->unique();
             $table->text('current_address');
             $table->text('new_address');
             $table->date('preferred_date')->nullable();
