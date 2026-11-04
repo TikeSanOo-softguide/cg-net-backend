@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Enums\NotificationActionType;
 use App\Enums\NotificationCategory;
 use Database\Factories\NotificationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -45,6 +47,43 @@ class Notification extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Campaign copies stay after an announcement or promotion is deleted.
+     * Hide those copies so the inbox matches the current CMS records.
+     */
+    public function scopeWithoutDeletedSources(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query): void {
+            $query->where(function (Builder $query): void {
+                $query->where('action_type', NotificationActionType::Announcement->value)
+                    ->whereExists(fn ($exists) => $this->whereSourceExists($exists, 'announcements'));
+            })->orWhere(function (Builder $query): void {
+                $query->where('action_type', NotificationActionType::Promotion->value)
+                    ->whereExists(fn ($exists) => $this->whereSourceExists($exists, 'promotions'));
+            })->orWhere(function (Builder $query): void {
+                $query->whereNull('action_type')
+                    ->orWhereNotIn('action_type', [
+                        NotificationActionType::Announcement->value,
+                        NotificationActionType::Promotion->value,
+                    ]);
+            });
+        });
+    }
+
+    private function whereSourceExists($exists, string $table): void
+    {
+        $id = match ($exists->getConnection()->getDriverName()) {
+            'pgsql' => "{$table}.id::text",
+            'sqlite' => "CAST({$table}.id AS TEXT)",
+            default => "CAST({$table}.id AS CHAR)",
+        };
+
+        $exists->selectRaw('1')
+            ->from($table)
+            ->whereRaw("{$id} = notifications.action_id")
+            ->whereNull("{$table}.deleted_at");
     }
 
     /**

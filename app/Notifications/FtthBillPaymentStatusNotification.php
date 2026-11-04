@@ -43,6 +43,7 @@ class FtthBillPaymentStatusNotification extends Notification implements ShouldQu
     public function toFcm(User $notifiable): FcmMessage
     {
         $content = $this->content($notifiable);
+        $unreadCount = $notifiable->unreadAppNotificationCount();
         $data = array_filter(
             [
                 'type' => 'ftth_bill_payment',
@@ -54,6 +55,7 @@ class FtthBillPaymentStatusNotification extends Notification implements ShouldQu
                 'amount' => (string) $this->amount,
                 'broadband_account_number' => $this->accountNumber,
                 'refund_transaction_no' => $this->refundTransactionNo,
+                'unread_count' => (string) $unreadCount,
             ],
             fn($value) => $value !== null,
         );
@@ -73,7 +75,7 @@ class FtthBillPaymentStatusNotification extends Notification implements ShouldQu
                 ],
             ])
             ->android(['priority' => 'high'])
-            ->ios(['payload' => ['aps' => ['sound' => 'default']]]);
+            ->ios(['payload' => ['aps' => ['sound' => 'default', 'badge' => $unreadCount]]]);
     }
 
     /**

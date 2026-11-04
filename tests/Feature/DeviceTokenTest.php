@@ -152,6 +152,7 @@ class DeviceTokenTest extends TestCase
                 'amount' => '1500',
                 'broadband_account_number' => 'CG12345678',
                 'refund_transaction_no' => 'REFUND-1',
+                'unread_count' => '0',
             ],
             $message['data'],
         );

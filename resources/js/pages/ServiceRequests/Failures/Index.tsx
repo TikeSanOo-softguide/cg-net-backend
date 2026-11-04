@@ -43,31 +43,6 @@ type FailureReportPhoto = {
     label: string | null;
 };
 
-type CustomerPackage = {
-    id: number;
-    package_id: number;
-    expiry_date: string | null;
-    start_date: string | null;
-    package: {
-        id: number;
-        price: string;
-        network: {
-            id: number;
-            name_en: string;
-            name_zh: string;
-            name_my: string;
-        } | null;
-        speed: {
-            id: number;
-            mbps: number;
-        } | null;
-        term: {
-            id: number;
-            months: number;
-        } | null;
-    } | null;
-};
-
 type FailureReportRow = {
     id: number;
     notification_unread: boolean;
@@ -84,7 +59,6 @@ type FailureReportRow = {
     created_at: string;
     admin_name: string;
     photos: FailureReportPhoto[];
-    customer_packages: CustomerPackage[];
 };
 
 type Filters = {

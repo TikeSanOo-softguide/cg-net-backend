@@ -27,10 +27,12 @@ class FtthBillDueNotification extends Notification
 
     public function toFcm(User $notifiable): FcmMessage
     {
+        $unreadCount = $notifiable->unreadAppNotificationCount();
         $data = [
             'type' => 'user_notification',
             'action_type' => NotificationActionType::FtthBill->value,
             'action_id' => $this->actionId,
+            'unread_count' => (string) $unreadCount,
         ];
 
         return (new FcmMessage(notification: new FcmNotification(title: $this->title, body: $this->body)))
@@ -46,6 +48,6 @@ class FtthBillDueNotification extends Notification
                 ],
             ])
             ->android(['priority' => 'high'])
-            ->ios(['payload' => ['aps' => ['sound' => 'default']]]);
+            ->ios(['payload' => ['aps' => ['sound' => 'default', 'badge' => $unreadCount]]]);
     }
 }

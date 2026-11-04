@@ -2,11 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AnnouncementType;
 use App\Enums\NotificationCategory;
 use App\Jobs\SendFtthBillDueNotificationJob;
+use App\Models\Announcement;
 use App\Models\DeviceToken;
 use App\Models\Notification;
 use App\Models\NotificationTemplate;
+use App\Models\Promotion;
 use App\Models\User;
 use App\Enums\NotificationTemplateType;
 use App\Notifications\FtthBillDueNotification;
@@ -201,6 +204,85 @@ class DueFtthBillNotificationTest extends TestCase
 
         $this->assertDatabaseHas('notifications', ['id' => $notification->id, 'is_read' => true]);
         $this->assertFalse((bool) Notification::query()->findOrFail($otherNotification->id)->is_read);
+    }
+
+    public function test_deleted_announcements_and_promotions_stay_out_of_the_inbox(): void
+    {
+        $user = User::factory()->create();
+        $announcement = Announcement::factory()->create();
+        $promotion = Promotion::factory()->create();
+        $kept = Notification::factory()->create([
+            'user_id' => $user->id,
+            'category' => NotificationCategory::BillAlert,
+            'is_read' => false,
+            'action_type' => 'ftth_bill',
+            'action_id' => 'bill-kept',
+        ]);
+        Notification::factory()->create([
+            'user_id' => $user->id,
+            'category' => NotificationCategory::Announcement,
+            'is_read' => false,
+            'action_type' => 'announcement',
+            'action_id' => (string) $announcement->id,
+            'templateable_type' => Announcement::class,
+            'templateable_id' => $announcement->id,
+            'template_data' => [
+                'title_en' => 'Deleted announcement',
+                'body_en' => 'This announcement was removed.',
+            ],
+        ]);
+        Notification::factory()->create([
+            'user_id' => $user->id,
+            'category' => NotificationCategory::Promotion,
+            'is_read' => false,
+            'action_type' => 'promotion',
+            'action_id' => (string) $promotion->id,
+            'templateable_type' => Promotion::class,
+            'templateable_id' => $promotion->id,
+            'template_data' => [
+                'title_en' => 'Deleted promotion',
+                'body_en' => 'This promotion was removed.',
+            ],
+        ]);
+        $announcement->delete();
+        $promotion->delete();
+
+        $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
+            ->getJson('/api/notifications')
+            ->assertOk()
+            ->assertJsonPath('unread_count', 1)
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $kept->id);
+    }
+
+    public function test_a_new_system_announcement_appears_in_the_inbox_before_it_is_pushed(): void
+    {
+        $user = User::factory()->create(['lang' => 'en']);
+        $announcement = Announcement::factory()->create([
+            'type' => AnnouncementType::System,
+            'title_en' => 'System notice',
+            'content_en' => 'Network work tonight.',
+            'is_active' => true,
+            'start_date' => now()->subHour(),
+            'end_date' => now()->addDay(),
+        ]);
+        Announcement::factory()->inactive()->create([
+            'type' => AnnouncementType::System,
+            'title_en' => 'Hidden notice',
+        ]);
+
+        $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
+            ->getJson('/api/notifications')
+            ->assertOk()
+            ->assertJsonFragment([
+                'title' => 'System notice',
+                'body' => 'Network work tonight.',
+                'category' => 'system',
+                'action_type' => 'announcement',
+                'action_id' => (string) $announcement->id,
+                'is_read' => false,
+            ])
+            ->assertJsonMissing(['title' => 'Hidden notice']);
     }
 
     public function test_fcm_data_contains_action_metadata_for_deep_linking(): void

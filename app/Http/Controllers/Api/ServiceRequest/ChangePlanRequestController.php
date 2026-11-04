@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Api\ServiceRequest;
 
 use App\Enums\MessageCode;
+use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ServiceRequest\CreateChangePlanRequest;
 use App\Http\Requests\ServiceRequest\UpdateChangePlanRequest;
 use App\Http\Resources\ChangePlanRequest\ChangePlanRequestResource;
 use App\Events\ServiceRequestSubmitted;
 use App\Models\ChangePlanRequest;
+use App\Models\Package;
 use App\Support\ApiMessage;
 use App\Support\GeneratesTicketNumber;
 use Illuminate\Http\JsonResponse;
@@ -39,8 +41,10 @@ class ChangePlanRequestController extends Controller
     public function store(CreateChangePlanRequest $request): ChangePlanRequestResource
     {
         $changePlanRequest = DB::transaction(function () use ($request) {
+            $validated = $this->fillPackageDetails($request->validated());
+
             $changePlanRequest = ChangePlanRequest::query()->create([
-                ...$request->validated(),
+                ...$validated,
                 'ticket_number' => GeneratesTicketNumber::next(
                     ChangePlanRequest::class,
                     'ticket_number',
@@ -75,7 +79,10 @@ class ChangePlanRequestController extends Controller
         ChangePlanRequest $changePlanRequest,
     ): ChangePlanRequestResource {
         $this->ensureOwner($request, $changePlanRequest);
-        $changePlanRequest->update($request->validated());
+        $this->ensureUnderReview($changePlanRequest);
+
+        $validated = $this->fillPackageDetails($request->validated());
+        $changePlanRequest->update($validated);
         $this->logActivity($request, 'update_change_plan_request', [
             'change_plan_request_id' => $changePlanRequest->id,
         ]);
@@ -84,9 +91,30 @@ class ChangePlanRequestController extends Controller
             ->additional(ApiMessage::attach(MessageCode::ReqUpdated));
     }
 
+    public function cancel(
+        Request $request,
+        ChangePlanRequest $changePlanRequest,
+    ): ChangePlanRequestResource {
+        $this->ensureOwner($request, $changePlanRequest);
+        $this->ensureUnderReview($changePlanRequest);
+
+        $changePlanRequest->update([
+            'status' => RequestStatus::Cancelled,
+        ]);
+
+        $this->logActivity($request, 'cancel_change_plan_request', [
+            'change_plan_request_id' => $changePlanRequest->id,
+        ]);
+
+        return (new ChangePlanRequestResource($changePlanRequest->refresh()))
+            ->additional(ApiMessage::attach(MessageCode::ReqCancelled));
+    }
+
     public function destroy(Request $request, ChangePlanRequest $changePlanRequest): JsonResponse
     {
         $this->ensureOwner($request, $changePlanRequest);
+        $this->ensureUnderReview($changePlanRequest);
+
         $changePlanRequest->delete();
         $this->logActivity($request, 'delete_change_plan_request', [
             'change_plan_request_id' => $changePlanRequest->id,
@@ -95,10 +123,38 @@ class ChangePlanRequestController extends Controller
         return response()->json(ApiMessage::attach(MessageCode::ReqCancelled));
     }
 
+    /**
+     * Prefer server-authored package snapshots when package_id is present.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function fillPackageDetails(array $validated): array
+    {
+        foreach (['current_package_detail', 'new_package_detail'] as $key) {
+            $packageId = data_get($validated, "{$key}.package_id");
+            if ($packageId === null || $packageId === '') {
+                continue;
+            }
+
+            $package = Package::query()->find($packageId);
+            if ($package !== null) {
+                $validated[$key] = $package->changePlanDetail();
+            }
+        }
+
+        return $validated;
+    }
+
     private function ensureOwner(Request $request, ChangePlanRequest $changePlanRequest): void
     {
         if ($changePlanRequest->user_id !== $request->user()->id) {
             throw new AccessDeniedHttpException();
         }
+    }
+
+    private function ensureUnderReview(ChangePlanRequest $changePlanRequest): void
+    {
+        abort_unless($changePlanRequest->status === RequestStatus::UnderReview, 409);
     }
 }

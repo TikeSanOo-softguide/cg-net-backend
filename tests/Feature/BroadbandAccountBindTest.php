@@ -95,6 +95,25 @@ class BroadbandAccountBindTest extends TestCase
         $this->assertNull($user->fresh()->service_type);
     }
 
+    public function test_unbind_accepts_an_unprefixed_account_for_a_prefixed_binding(): void
+    {
+        $user = User::factory()->create([
+            'service_type' => 'CG',
+            'broadband_account_number' => 'CG12345678',
+        ]);
+
+        $this->withToken($user->createToken('unbind')->plainTextToken)
+            ->postJson('/api/broadband-account/unbind', [
+                'account_number' => '12345678',
+                'service_type' => 'CG',
+            ])
+            ->assertOk()
+            ->assertJsonPath('success', true);
+
+        $this->assertNull($user->fresh()->broadband_account_number);
+        $this->assertNull($user->fresh()->service_type);
+    }
+
     public function test_unbind_rejects_an_account_that_does_not_match_the_current_binding(): void
     {
         $user = User::factory()->create([
