@@ -38,6 +38,7 @@ class InboxApiTest extends TestCase
             'is_active' => true,
             'start_date' => now()->toDateString(),
             'end_date' => now()->toDateString(),
+            'image_url' => 'cms/promotions/promo.png',
         ]);
         Promotion::factory()->create([
             'title_en' => 'Old promo',
@@ -46,13 +47,22 @@ class InboxApiTest extends TestCase
             'end_date' => now()->subDay()->toDateString(),
         ]);
 
-        $titles = collect($this->getJson('/api/inbox')->assertOk()->json('data'))
-            ->pluck('title.en');
+        $items = collect($this->getJson('/api/inbox')->assertOk()->json('data'));
+        $titles = $items->pluck('title.en');
 
         $this->assertTrue($titles->contains('Announce title'));
         $this->assertTrue($titles->contains('System title'));
         $this->assertTrue($titles->contains('Promo title'));
         $this->assertFalse($titles->contains('Hidden announcement'));
         $this->assertFalse($titles->contains('Old promo'));
+
+        $promo = $items->first(
+            fn (array $item): bool => ($item['title']['en'] ?? null) === 'Promo title',
+        );
+        $announce = $items->first(
+            fn (array $item): bool => ($item['title']['en'] ?? null) === 'Announce title',
+        );
+        $this->assertSame('cms/promotions/promo.png', $promo['image_url']);
+        $this->assertArrayNotHasKey('image_url', $announce);
     }
 }

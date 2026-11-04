@@ -65,9 +65,8 @@ class BroadbandAccountController extends Controller
         $accountNumber = $request->input('account_number');
 
         if (
-            !is_string($accountNumber) ||
-            $user->broadband_account_number !== $accountNumber ||
-            ($serviceType !== null && $user->service_type !== $serviceType)
+            ! is_string($accountNumber) ||
+            ! $this->accountMatches($user, $accountNumber, is_string($serviceType) ? $serviceType : null)
         ) {
             abort(404);
         }
@@ -78,6 +77,32 @@ class BroadbandAccountController extends Controller
         ]);
 
         return $this->result(true, MessageCode::BbDisconnected, 200);
+    }
+
+    private function accountMatches(User $user, string $given, ?string $serviceType): bool
+    {
+        $stored = $user->broadband_account_number;
+        if (! is_string($stored) || $stored === '') {
+            return false;
+        }
+
+        $type = is_string($user->service_type) && $user->service_type !== ''
+            ? $user->service_type
+            : $serviceType;
+
+        if ($serviceType !== null && $user->service_type !== null && $user->service_type !== $serviceType) {
+            return false;
+        }
+
+        if ($given === $stored) {
+            return true;
+        }
+
+        if (is_string($type) && $type !== '') {
+            return $stored === $type.$given || $given === $type.$stored;
+        }
+
+        return false;
     }
 
     public function findAccount(Request $request, AccountInfoService $accountInfo)

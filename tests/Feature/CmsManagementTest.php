@@ -544,6 +544,7 @@ class CmsManagementTest extends TestCase
                 'action_type' => 'promotion',
                 'action_id' => (string) $promotion->id,
                 'is_read' => false,
+                'image_url' => $promotion->image_url,
             ]);
         $this->assertSame(3, Announcement::query()->whereNull('push_sent_at')->count());
         $this->assertSame(3, Promotion::query()->whereNull('push_sent_at')->count());

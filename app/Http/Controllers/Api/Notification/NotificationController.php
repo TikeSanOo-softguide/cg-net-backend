@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Notification;
 
 use App\Http\Controllers\Controller;
 use App\Models\Notification;
+use App\Models\Promotion;
 use App\Services\Notification\PushNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,8 +24,7 @@ class NotificationController extends Controller
                 ->getCollection()
                 ->map(function (Notification $notification) use ($locale): array {
                     $content = $notification->renderedContent($locale);
-
-                    return [
+                    $payload = [
                         'id' => $notification->id,
                         'title' => $content['title'],
                         'body' => $content['description'],
@@ -34,9 +34,16 @@ class NotificationController extends Controller
                         'action_id' => $notification->action_id,
                         'created_at' => $notification->created_at?->toIso8601String(),
                     ];
+
+                    $source = $notification->templateable;
+                    if ($source instanceof Promotion && is_string($source->image_url) && $source->image_url !== '') {
+                        $payload['image_url'] = $source->image_url;
+                    }
+
+                    return $payload;
                 })
                 ->values(),
-            'unread_count' => $user->appNotifications()->withoutDeletedSources()->where('is_read', false)->count(),
+            'unread_count' => $user->unreadAppNotificationCount(),
             'current_page' => $notifications->currentPage(),
             'last_page' => $notifications->lastPage(),
         ]);
