@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\ServiceRequest;
 
+use App\Enums\MessageCode;
 use App\Enums\RequestStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ServiceRequest\CreateFailureReport;
@@ -9,6 +10,7 @@ use App\Http\Requests\ServiceRequest\UpdateFailureReport;
 use App\Http\Resources\FailureReport\FailureReportResource;
 use App\Events\ServiceRequestSubmitted;
 use App\Models\FailureReport;
+use App\Support\ApiMessage;
 use App\Support\GeneratesTicketNumber;
 use App\Support\StoresPublicImage;
 use Illuminate\Http\Request;
@@ -78,7 +80,8 @@ class FailureReportController extends Controller
                 'failure_type' => $failureReport->failure_type,
             ]);
 
-            return new FailureReportResource($failureReport->load('photos'));
+            return (new FailureReportResource($failureReport->load('photos')))
+                ->additional(ApiMessage::attach(MessageCode::ReqSubmitted));
         });
     }
 
@@ -126,7 +129,8 @@ class FailureReportController extends Controller
             $this->logActivity($request, 'update_failure_report', [
                 'failure_report_id' => $failureReport->id,
             ]);
-            return new FailureReportResource($failureReport->load('photos'));
+            return (new FailureReportResource($failureReport->load('photos')))
+                ->additional(ApiMessage::attach(MessageCode::ReqUpdated));
         });
     }
 
@@ -141,7 +145,8 @@ class FailureReportController extends Controller
             'failure_report_id' => $failureReport->id,
         ]);
 
-        return new FailureReportResource($failureReport->refresh()->load('photos'));
+        return (new FailureReportResource($failureReport->refresh()->load('photos')))
+            ->additional(ApiMessage::attach(MessageCode::ReqCancelled));
     }
 
     public function destroy(Request $request, FailureReport $failureReport): Response

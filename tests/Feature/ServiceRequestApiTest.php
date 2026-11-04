@@ -303,6 +303,8 @@ class ServiceRequestApiTest extends TestCase
         $response = $this->withToken($token)
             ->post('/api/failure-reports/create', $createData, ['Accept' => 'application/json'])
             ->assertCreated()
+            ->assertJsonPath('code', 'MSG-REQ-002')
+            ->assertJsonPath('level', 'success')
             ->assertJsonPath('data.user_id', $user->id)
             ->assertJsonPath('data.broadband_account_number', $user->broadband_account_number)
             ->assertJsonPath('data.ticket_number', 'FLR' . now()->format('md') . '0001')
@@ -327,6 +329,8 @@ class ServiceRequestApiTest extends TestCase
                 'description' => 'The connection is slow.',
             ])
             ->assertOk()
+            ->assertJsonPath('code', 'MSG-REQ-003')
+            ->assertJsonPath('level', 'success')
             ->assertJsonPath('data.failure_type', FailureType::Slow->value)
             ->assertJsonPath('data.description', 'The connection is slow.');
 
@@ -336,6 +340,8 @@ class ServiceRequestApiTest extends TestCase
         $this->withToken($token)
             ->patchJson('/api/failure-reports/' . $failureReport->id . '/cancel')
             ->assertOk()
+            ->assertJsonPath('code', 'MSG-REQ-001')
+            ->assertJsonPath('level', 'success')
             ->assertJsonPath('data.status', 'cancelled')
             ->assertJsonCount(3, 'data.photos');
 

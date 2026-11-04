@@ -42,11 +42,6 @@ class FailureReportController extends Controller
                 'user:id,name,phone',
                 'photos:id,failure_report_id,image_url',
                 'admin:id,username',
-                'user.customerPackages:id,user_id,package_id,starts_at,expires_at',
-                'user.customerPackages.package:id,network_id,speed_id,term_id,price',
-                'user.customerPackages.package.network:id,name_en,name_zh,name_my',
-                'user.customerPackages.package.speed:id,mbps',
-                'user.customerPackages.package.term:id,months',
             ])
             ->when($openRequestId < 1 && $search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
@@ -103,42 +98,6 @@ class FailureReportController extends Controller
                             'label' => $photo->label ?? null,
                         ],
                     )
-                    ->all(),
-                'customer_packages' => $report->user?->customerPackages
-                    ->map(
-                        fn($customerPackage) => [
-                            'id' => $customerPackage->id,
-                            'package_id' => $customerPackage->package_id,
-                            'start_date' => $customerPackage->starts_at,
-                            'expiry_date' => $customerPackage->expires_at,
-                            'package' => $customerPackage->package
-                                ? [
-                                    'id' => $customerPackage->package->id,
-                                    'network' => $customerPackage->package->network
-                                        ? [
-                                            'id' => $customerPackage->package->network->id,
-                                            'name_en' => $customerPackage->package->network->name_en,
-                                            'name_zh' => $customerPackage->package->network->name_zh,
-                                            'name_my' => $customerPackage->package->network->name_my,
-                                        ]
-                                        : null,
-                                    'speed' => $customerPackage->package->speed
-                                        ? [
-                                            'id' => $customerPackage->package->speed->id,
-                                            'mbps' => $customerPackage->package->speed->mbps,
-                                        ]
-                                        : null,
-                                    'term' => $customerPackage->package->term
-                                        ? [
-                                            'id' => $customerPackage->package->term->id,
-                                            'months' => $customerPackage->package->term->months,
-                                        ]
-                                        : null,
-                                ]
-                                : null,
-                        ],
-                    )
-                    ->values()
                     ->all(),
             ],
         );
