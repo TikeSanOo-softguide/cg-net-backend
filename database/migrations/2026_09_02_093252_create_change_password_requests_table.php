@@ -17,7 +17,7 @@ return new class extends Migration {
             $table->string('contact_name');
             $table->string('contact_phone');
             $table->string('new_wifi_name')->nullable();
-            $table->string('new_password')->nullable();
+            $table->string('new_password', 255)->nullable();
             $table->string('status', 16)->default('under_review');
             $table->foreignId('admin_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
