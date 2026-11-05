@@ -31,6 +31,7 @@ import { formatPhoneInternational } from '@/lib/phone';
 type RequestItem = {
     id: number;
     notification_unread: boolean;
+    ticket_number: string | null;
     contact_name: string | null;
     contact_phone: string | null;
     new_wifi_name: string | null;
@@ -182,6 +183,23 @@ export default function ChangePasswordIndex({ requests, filters, statuses, stats
                             searchValue: (request) => `${request.broadband_account_number} ${request.user?.name ?? ''}`,
                         },
                         {
+                            id: 'ticket_number',
+                            header: t('broadband_application.ticket_number'),
+                            mobile: 'subtitle',
+                            cell: (request) => {
+                                const ticket = request.ticket_number?.trim();
+
+                                return ticket ? (
+                                    <span className="inline-flex max-w-full items-center rounded-md bg-primary/10 px-2 py-0.5 font-mono text-[11px] font-medium text-primary">
+                                        {ticket}
+                                    </span>
+                                ) : (
+                                    <span>—</span>
+                                );
+                            },
+                            searchValue: (request) => request.ticket_number ?? '',
+                        },
+                        {
                             id: 'contact',
                             header: t('change_password.contact'),
                             mobile: 'subtitle',
@@ -266,6 +284,20 @@ function ChangePasswordDetailDialog({
             size="lg"
         >
             <div className="space-y-3 p-2">
+                <div className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/10 p-3">
+                    <span className="text-xs font-medium text-muted-foreground">
+                        {t('broadband_application.ticket_number')}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                        <span className="font-mono text-sm font-medium">{request.ticket_number || '—'}</span>
+                        {request.ticket_number && (
+                            <CopyValueButton
+                                value={request.ticket_number}
+                                label={t('broadband_application.ticket_number')}
+                            />
+                        )}
+                    </span>
+                </div>
                 {/* Customer & Account Details Grid */}
                 <div className="grid gap-3 sm:grid-cols-2">
                     <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5 space-y-1">

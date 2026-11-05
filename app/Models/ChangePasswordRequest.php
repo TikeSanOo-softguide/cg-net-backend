@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     Fillable([
         'user_id',
         'broadband_account_number',
+        'ticket_number',
         'contact_name',
         'contact_phone',
         'new_wifi_name',

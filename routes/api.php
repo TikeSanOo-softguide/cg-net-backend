@@ -168,6 +168,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::post('/create', [ChangePasswordRequestController::class, 'store']);
         Route::get('/{changePasswordRequest}', [ChangePasswordRequestController::class, 'show']);
         Route::put('/{changePasswordRequest}', [ChangePasswordRequestController::class, 'update']);
+        Route::patch('/{changePasswordRequest}/cancel', [ChangePasswordRequestController::class, 'cancel']);
         Route::delete('/{changePasswordRequest}', [ChangePasswordRequestController::class, 'destroy']);
     });
 

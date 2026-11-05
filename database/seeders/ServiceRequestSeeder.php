@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Enums\CustomerPackageStatus;
 use App\Enums\RequestStatus;
 use App\Models\Admin;
-use App\Models\ChangePasswordRequest;
 use App\Models\ChangePlanRequest;
 use App\Models\Package;
 use App\Models\RelocationRequest;
@@ -127,9 +126,5 @@ class ServiceRequestSeeder extends Seeder
                 ],
             );
         }
-
-        ChangePasswordRequest::factory()->count(10)->underReview()->create();
-        ChangePasswordRequest::factory()->count(6)->approved()->create();
-        ChangePasswordRequest::factory()->count(4)->cancelled()->create();
     }
 }
