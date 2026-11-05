@@ -25,6 +25,8 @@ export type Conversation = ConversationSummary & {
     messages: ChatMessage[];
     current_step?: { name?: string | null } | null;
     language?: string | null;
+    notification_unread?: boolean;
+    notification_reference_id?: number;
 };
 
 export type QuickReply = {

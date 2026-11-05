@@ -12,6 +12,7 @@ use App\Models\Admin;
 use App\Models\ChatConversation;
 use App\Models\ChatMessage;
 use App\Models\QuickReply;
+use App\Services\AdminNotification\AdminNotificationReadStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -19,7 +20,7 @@ use Inertia\Inertia;
 
 class ChatConversationsController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, AdminNotificationReadStatus $readStatus)
     {
         $search = $request->string('search')->trim()->toString();
         $status = $request->string('status')->toString();
@@ -109,6 +110,20 @@ class ChatConversationsController extends Controller
                 $this->markHistoryAsRead($selectedConversation);
                 $this->loadConversationHistory($selectedConversation);
             }
+        }
+
+        if ($selectedConversation) {
+            $notificationConversationId = $selectedId ?: $selectedConversation->id;
+            $unreadNotificationIds = $readStatus->unreadReferenceIds(
+                (int) $request->user()->getAuthIdentifier(),
+                'chat_conversation',
+                [$notificationConversationId],
+            );
+            $selectedConversation->setAttribute(
+                'notification_unread',
+                in_array($notificationConversationId, $unreadNotificationIds, true),
+            );
+            $selectedConversation->setAttribute('notification_reference_id', $notificationConversationId);
         }
 
         $userIds = $conversations->pluck('user_id')->filter()->unique();

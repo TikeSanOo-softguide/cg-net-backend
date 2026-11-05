@@ -2,14 +2,18 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ChatConversationStatus;
 use App\Enums\LedgerHealthScanType;
 use App\Events\AdminNotificationCreated;
+use App\Events\LiveChatRequested;
 use App\Events\ServiceRequestSubmitted;
 use App\Listeners\CreateAdminNotification;
 use App\Models\Admin;
 use App\Models\AdminNotification;
+use App\Models\ChatConversation;
 use App\Models\ChangePasswordRequest;
 use App\Models\LedgerHealthSnapshot;
+use App\Models\User;
 use App\Services\AdminNotification\AdminNotificationDelivery;
 use App\Support\AppPermissions;
 use Database\Seeders\RolePermissionSeeder;
@@ -24,6 +28,46 @@ use Tests\TestCase;
 class AdminNotificationTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_live_chat_request_creates_bell_notification_for_support_admins(): void
+    {
+        RolePermissionSeeder::sync();
+        Event::fake([AdminNotificationCreated::class]);
+
+        $supportAdmin = Admin::factory()->create();
+        $supportAdmin->givePermissionTo(['notifications.view', 'support.view']);
+
+        $unrelatedAdmin = Admin::factory()->create();
+        $unrelatedAdmin->givePermissionTo(['notifications.view', 'service-requests.view']);
+
+        $user = User::factory()->create();
+        $conversation = ChatConversation::query()->create([
+            'user_id' => $user->id,
+            'status' => ChatConversationStatus::WaitingAgent,
+        ]);
+
+        LiveChatRequested::dispatch($conversation);
+
+        $notification = AdminNotification::query()->sole();
+        $this->assertSame('Live Chat Requested', $notification->title);
+        $this->assertSame('A customer is requesting to chat with a staff member.', $notification->body);
+        $this->assertSame('chat_conversation', $notification->reference_type);
+        $this->assertSame($conversation->id, $notification->reference_id);
+        $this->assertSame(
+            '/support/conversations?conversation='.$conversation->id,
+            $notification->toDropdownArray()['href'],
+        );
+        $this->assertSame([$supportAdmin->id], $notification->admins()->pluck('admins.id')->all());
+        $this->assertDatabaseHas('admin_notification_recipients', [
+            'admin_notification_id' => $notification->id,
+            'admin_id' => $supportAdmin->id,
+            'is_read' => false,
+        ]);
+        Event::assertDispatched(
+            AdminNotificationCreated::class,
+            fn (AdminNotificationCreated $event): bool => $event->admin->is($supportAdmin),
+        );
+    }
 
     public function test_service_request_notifications_only_go_to_active_admins_with_related_permissions(): void
     {

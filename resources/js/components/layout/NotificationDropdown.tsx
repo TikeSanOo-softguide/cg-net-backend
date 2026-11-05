@@ -1,7 +1,15 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, router, usePage } from '@inertiajs/react';
-import { BellIcon, CalendarIcon, CommandIcon, LayoutGridIcon, SettingsIcon, type LucideIcon } from 'lucide-react';
+import {
+    BellIcon,
+    CalendarIcon,
+    CommandIcon,
+    LayoutGridIcon,
+    MessageCircleIcon,
+    SettingsIcon,
+    type LucideIcon,
+} from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -66,7 +74,10 @@ const requestHrefByType = {
     failure_report: '/service-requests/failures',
     relocation_request: '/service-requests/relocations',
 } satisfies Record<
-    Exclude<AdminNotification['reference_type'], null | `ledger_health_snapshot_${'full' | 'daily' | 'manual'}`>,
+    Exclude<
+        AdminNotification['reference_type'],
+        null | 'chat_conversation' | `ledger_health_snapshot_${'full' | 'daily' | 'manual'}`
+    >,
     string
 >;
 
@@ -85,6 +96,10 @@ function isLedgerHealthNotification(item: AdminNotification | RecentNotification
 }
 
 function notificationIcon(item: AdminNotification | RecentNotification): LucideIcon {
+    if ('reference_type' in item && item.reference_type === 'chat_conversation') {
+        return MessageCircleIcon;
+    }
+
     if ('reference_type' in item && isServiceRequestReference(item.reference_type)) {
         const href = requestHrefByType[item.reference_type];
         return serviceRequestNavigationItems.find((navItem) => navItem.href === href)?.icon ?? fallbackLook.icon;

@@ -58,6 +58,7 @@ class AdminNotification extends Model
                 'change_plan_request' => '/service-requests/change-plan',
                 'failure_report' => '/service-requests/failures',
                 'relocation_request' => '/service-requests/relocations',
+                'chat_conversation' => '/support/conversations?conversation='.$this->reference_id,
                 'ledger_health_snapshot_full' => '/reports/ledger-health?type=full&snapshot='.$this->reference_id,
                 'ledger_health_snapshot_daily' => '/reports/ledger-health?type=daily&snapshot='.$this->reference_id,
                 'ledger_health_snapshot_manual' => '/reports/ledger-health?type=manual&snapshot='.$this->reference_id,
