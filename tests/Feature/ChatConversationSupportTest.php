@@ -5,10 +5,12 @@ namespace Tests\Feature;
 use App\Enums\ChatConversationStatus;
 use App\Enums\ChatFlowOptionAction;
 use App\Models\Admin;
+use App\Models\AdminNotification;
 use App\Models\ChatConversation;
 use App\Models\ChatFlowOption;
 use App\Models\ChatFlowStep;
 use App\Models\User;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -49,6 +51,61 @@ class ChatConversationSupportTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Support/chatConversations/Index')
                 ->where('selectedConversation.current_step.options.0.option_en', 'Internet'));
+    }
+
+    public function test_opening_chat_directly_marks_its_notification_read_for_current_admin_only(): void
+    {
+        RolePermissionSeeder::sync();
+        $admin = Admin::factory()->create();
+        $admin->givePermissionTo(['notifications.view', 'support.view']);
+        $otherAdmin = Admin::factory()->create();
+        $otherAdmin->givePermissionTo(['notifications.view', 'support.view']);
+        $user = User::factory()->create();
+        $conversation = ChatConversation::query()->create([
+            'user_id' => $user->id,
+            'status' => ChatConversationStatus::WaitingAgent,
+        ]);
+        $notification = AdminNotification::query()->create([
+            'type' => 'request',
+            'title' => 'Live Chat Requested',
+            'body' => 'A customer is requesting to chat with a staff member.',
+            'reference_type' => 'chat_conversation',
+            'reference_id' => $conversation->id,
+        ]);
+        $notification->admins()->attach([
+            $admin->id => ['is_read' => false],
+            $otherAdmin->id => ['is_read' => false],
+        ]);
+
+        $this->actingAs($admin, 'web')
+            ->get('/support/conversations?conversation='.$conversation->id)
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('selectedConversation.notification_unread', true)
+                ->where('selectedConversation.notification_reference_id', $conversation->id));
+
+        $this->assertDatabaseHas('admin_notification_recipients', [
+            'admin_notification_id' => $notification->id,
+            'admin_id' => $admin->id,
+            'is_read' => false,
+        ]);
+
+        $this->actingAs($admin, 'web')
+            ->putJson("/dashboard/notifications/reference/chat_conversation/{$conversation->id}/read")
+            ->assertOk()
+            ->assertJsonPath('marked_read', 1);
+
+        $this->assertDatabaseHas('admin_notification_recipients', [
+            'admin_notification_id' => $notification->id,
+            'admin_id' => $admin->id,
+            'is_read' => true,
+        ]);
+        $this->assertDatabaseHas('admin_notification_recipients', [
+            'admin_notification_id' => $notification->id,
+            'admin_id' => $otherAdmin->id,
+            'is_read' => false,
+            'read_at' => null,
+        ]);
     }
 
     public function test_support_groups_a_customers_conversation_records_under_the_latest_status(): void

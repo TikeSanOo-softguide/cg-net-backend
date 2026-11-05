@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useCan } from '@/hooks/useCan';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
@@ -31,6 +31,29 @@ export default function Index({
     const canManage = can('support.update');
     const showQuickReplies = canReply;
     const [message, setMessage] = useState('');
+    const markingReadConversationIds = useRef(new Set<number>());
+
+    useEffect(() => {
+        if (
+            !selectedConversation?.notification_unread ||
+            !selectedConversation.notification_reference_id ||
+            markingReadConversationIds.current.has(selectedConversation.notification_reference_id)
+        ) {
+            return;
+        }
+
+        const conversationId = selectedConversation.notification_reference_id;
+        markingReadConversationIds.current.add(conversationId);
+        router.put(
+            `/dashboard/notifications/reference/chat_conversation/${conversationId}/read`,
+            {},
+            {
+                preserveState: true,
+                preserveScroll: true,
+                onFinish: () => markingReadConversationIds.current.delete(conversationId),
+            },
+        );
+    }, [selectedConversation?.notification_reference_id, selectedConversation?.notification_unread]);
 
     useEffect(() => {
         if (!selectedConversation) return;

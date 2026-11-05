@@ -21,6 +21,7 @@ export type AdminNotification = {
         | 'change_plan_request'
         | 'failure_report'
         | 'relocation_request'
+        | 'chat_conversation'
         | 'ledger_health_snapshot_full'
         | 'ledger_health_snapshot_daily'
         | 'ledger_health_snapshot_manual'
