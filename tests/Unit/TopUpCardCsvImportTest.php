@@ -2,10 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Enums\TopUpCardStatus;
-use App\Http\Controllers\InOutManagement\CSV\TopUpCard as TopUpCardCsv;
 use App\Jobs\ImportGeneratedTopUpCardsJob;
-use App\Models\Batch;
 use App\Models\Office;
 use App\Models\TopUpCard;
 use App\Support\CsvImportException;
@@ -19,30 +16,12 @@ class TopUpCardCsvImportTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_invalid_headers_are_reported_before_database_lookup(): void
+    public function test_preview_rejects_the_removed_status_column(): void
     {
-        $this->assertImportError(
-            "wrong_serial_no,pin,amount,expires_at,status\nSERIAL-1,1234,1000,2030-12-31,pending\n",
+        $this->assertPreviewError(
+            "serial_no,pin,amount,expires_at,status\n2609111128316006,1234567890123456,1000,2030-12-31,active\n",
             'csv.import_errors.invalid_headers',
             [],
-        );
-    }
-
-    public function test_null_serial_is_reported_as_an_invalid_row(): void
-    {
-        $this->assertImportError(
-            "serial_no,pin,amount,expires_at,status\n,1234,1000,2030-12-31,pending\n",
-            'csv.import_errors.invalid_row',
-            ['line' => 1],
-        );
-    }
-
-    public function test_literal_null_serial_is_reported_as_an_invalid_row(): void
-    {
-        $this->assertImportError(
-            "serial_no,pin,amount,expires_at,status\nnull,1234,1000,2030-12-31,pending\n",
-            'csv.import_errors.invalid_row',
-            ['line' => 1],
         );
     }
 
@@ -64,11 +43,8 @@ class TopUpCardCsvImportTest extends TestCase
             [
                 [
                     'office' => 'Office 31',
-                    'count_50' => 0,
-                    'count_100' => 0,
-                    'count_250' => 0,
-                    'count_500' => 0,
-                    'total_points' => 1,
+                    'amount_counts' => [['amount' => 1000, 'count' => 1]],
+                    'total_cards' => 1,
                     'generate_date' => null,
                     'activated_at' => '2026-11-03',
                     'expires_at' => '2028-11-03',
@@ -76,7 +52,38 @@ class TopUpCardCsvImportTest extends TestCase
             ],
             $preview['rows'],
         );
+        $this->assertSame([1000], $preview['denominations']);
         $this->assertSame(1, $preview['total_summaries']);
+    }
+
+    public function test_preview_discovers_all_csv_denominations_and_counts_cards(): void
+    {
+        Storage::fake('local');
+        Office::query()->create(['name' => 'Office 31', 'address' => 'Main Street', 'cd' => '31']);
+        $file = UploadedFile::fake()->createWithContent(
+            'cards.csv',
+            implode("\n", [
+                'serial_no,pin,amount,expires_at',
+                '2609111128316006,1234567890123456,5,2030-12-31',
+                '2609111128316007,2234567890123456,10,2030-12-31',
+                '2609111128316008,3234567890123456,15,2030-12-31',
+                '2609111128316009,4234567890123456,5,2030-12-31',
+            ]),
+        );
+        $path = $file->store('imports/top-up-cards/validation', 'local');
+
+        $preview = ImportGeneratedTopUpCardsJob::previewCsv($path);
+
+        $this->assertSame([5, 10, 15], $preview['denominations']);
+        $this->assertSame(
+            [
+                ['amount' => 5, 'count' => 2],
+                ['amount' => 10, 'count' => 1],
+                ['amount' => 15, 'count' => 1],
+            ],
+            $preview['rows'][0]['amount_counts'],
+        );
+        $this->assertSame(4, $preview['rows'][0]['total_cards']);
     }
 
     public function test_csv_import_uses_activation_date_for_card_expiry(): void
@@ -100,29 +107,6 @@ class TopUpCardCsvImportTest extends TestCase
         $this->assertSame('2028-11-03', $card->expires_at->toDateString());
         $this->assertSame(50, $card->amount);
         $this->assertSame('2028-11-03', $card->batch->expires_at->toDateString());
-    }
-
-    public function test_pending_card_activation_resets_expiry_from_activation_date(): void
-    {
-        $this->travelTo(now()->setDate(2026, 11, 3)->startOfDay());
-        $batch = Batch::factory()->create(['expires_at' => '2028-10-03']);
-        $card = TopUpCard::factory()->create([
-            'status' => TopUpCardStatus::Pending,
-            'expires_at' => '2028-10-03',
-            'batch_id' => $batch->id,
-        ]);
-        $csv = implode("\n", [
-            'serial_no,pin,amount,expires_at,status',
-            "{$card->serial_no},1234567890123456,{$card->amount},2028-10-03,pending",
-        ]);
-
-        TopUpCardCsv::import(UploadedFile::fake()->createWithContent('cards.csv', $csv));
-
-        $card->refresh();
-        $this->assertSame(TopUpCardStatus::Active, $card->status);
-        $this->assertSame('2026-11-03', $card->activated_at->toDateString());
-        $this->assertSame('2028-11-03', $card->expires_at->toDateString());
-        $this->assertSame('2028-11-03', $batch->fresh()->expires_at->toDateString());
     }
 
     public function test_preview_accepts_generated_card_csv_without_expire_date_column(): void
@@ -171,7 +155,8 @@ class TopUpCardCsvImportTest extends TestCase
 
         $this->assertSame(1, $preview['total_rows']);
         $this->assertSame('2026-10-23', $preview['rows'][0]['generate_date']);
-        $this->assertSame(1, $preview['rows'][0]['count_50']);
+        $this->assertSame([50], $preview['denominations']);
+        $this->assertSame([['amount' => 50, 'count' => 1]], $preview['rows'][0]['amount_counts']);
     }
 
     public function test_preview_rejects_timestamp_generate_date_values(): void
@@ -190,25 +175,6 @@ class TopUpCardCsvImportTest extends TestCase
             'csv.import_errors.invalid_headers',
             [],
         );
-    }
-
-    public function test_preview_reports_invalid_row_for_unsupported_status(): void
-    {
-        Storage::fake('local');
-        \App\Models\Office::query()->create(['name' => 'Office 31', 'address' => 'Main Street', 'cd' => '31']);
-        $file = UploadedFile::fake()->createWithContent(
-            'cards.csv',
-            "serial_no,pin,amount,expires_at,status\n2609111128316006,1234567890123456,1000,2030-12-31,active\n",
-        );
-        $path = $file->store('imports/top-up-cards/validation', 'local');
-
-        try {
-            ImportGeneratedTopUpCardsJob::previewCsv($path);
-            $this->fail('The unsupported status should be rejected.');
-        } catch (CsvImportException $exception) {
-            $this->assertSame('csv.import_errors.invalid_row', $exception->translationKey);
-            $this->assertSame(['line' => 2], $exception->replace);
-        }
     }
 
     public function test_preview_rejects_serial_numbers_that_are_not_16_digits(): void
@@ -255,20 +221,6 @@ class TopUpCardCsvImportTest extends TestCase
             'csv.import_errors.invalid_office_code',
             ['line' => 2, 'office_code' => '99'],
         );
-    }
-
-    /**
-     * @param array<string, string|int> $replace
-     */
-    private function assertImportError(string $contents, string $key, array $replace): void
-    {
-        try {
-            TopUpCardCsv::import(UploadedFile::fake()->createWithContent('cards.csv', $contents));
-            $this->fail('The CSV import should have been rejected.');
-        } catch (CsvImportException $exception) {
-            $this->assertSame($key, $exception->translationKey);
-            $this->assertSame($replace, $exception->replace);
-        }
     }
 
     /**

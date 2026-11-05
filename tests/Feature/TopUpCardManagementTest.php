@@ -297,8 +297,7 @@ class TopUpCardManagementTest extends TestCase
         $actor->assignRole(AppPermissions::SuperAdmin);
         Storage::fake('local');
         Queue::fake();
-        $csv =
-            "serial_no,pin,amount,expires_at,status\nTOPUP-BLANK-COLUMN-0001,4234567890123456789012345678901234567890123456789012345678901234,1000,2030-12-31,\n";
+        $csv = "serial_no,pin,amount,expires_at\nTOPUP-BLANK-COLUMN-0001,1234567890123456,1000,\n";
 
         $this->actingAs($actor, 'web')
             ->post('/top-up-cards/cards/import', [
@@ -410,7 +409,7 @@ class TopUpCardManagementTest extends TestCase
         $match = TopUpCard::factory()->create([
             'serial_no' => 'TOPUP-AAAA-BBBB-CCCC',
             'amount' => 5000,
-            'status' => TopUpCardStatus::Pending,
+            'status' => TopUpCardStatus::Active,
         ]);
         TopUpCard::factory()->create([
             'serial_no' => 'TOPUP-DDDD-EEEE-FFFF',
@@ -527,11 +526,11 @@ class TopUpCardManagementTest extends TestCase
         $this->assertStringNotContainsString('*', $csvLines[0]);
     }
 
-    public function test_office_assignment_lists_batches_with_cards_and_excludes_pending_only_batches(): void
+    public function test_office_assignment_lists_batches_with_cards_regardless_of_status(): void
     {
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
-        $pending = TopUpCard::factory()->create(['status' => TopUpCardStatus::Pending]);
+        $blocked = TopUpCard::factory()->create(['status' => TopUpCardStatus::Blocked]);
         $active = TopUpCard::factory()->create(['status' => TopUpCardStatus::Active]);
 
         $this->actingAs($actor, 'web')
@@ -540,13 +539,11 @@ class TopUpCardManagementTest extends TestCase
             ->assertInertia(
                 fn(Assert $page) => $page
                     ->component('TopUpCards/CardImport')
-                    ->has('batchPage.data', 1)
+                    ->has('batchPage.data', 2)
                     ->where('batchPage.data.0.id', $active->batch_id)
-                    ->where('batchPage.data.0.batch_no', $active->batch->batch_no)
+                    ->where('batchPage.data.1.id', $blocked->batch_id)
                     ->where('filters.status', ''),
             );
-
-        $this->assertNotSame($pending->id, $active->id);
     }
 
     public function test_office_assignment_filters_by_batch_status(): void
@@ -586,7 +583,7 @@ class TopUpCardManagementTest extends TestCase
         ]);
     }
 
-    public function test_office_assign_csv_import_does_not_activate_existing_pending_cards(): void
+    public function test_office_assign_csv_import_rejects_existing_active_cards(): void
     {
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
@@ -605,11 +602,11 @@ class TopUpCardManagementTest extends TestCase
         Office::query()->create(['name' => 'Office 88', 'address' => 'Main Street', 'cd' => '88']);
         $card = TopUpCard::factory()->create([
             'serial_no' => '2609111128886006',
-            'status' => TopUpCardStatus::Pending,
+            'status' => TopUpCardStatus::Active,
             'batch_id' => $batch->id,
         ]);
 
-        $csv = "serial_no,pin,amount,expires_at,status\n2609111128886006,1234567890123456,1000,{$card->expires_at->toDateString()},pending\n";
+        $csv = "serial_no,pin,amount,expires_at\n2609111128886006,1234567890123456,1000,{$card->expires_at->toDateString()}\n";
 
         $this->actingAs($actor, 'web')
             ->post('/top-up-cards/cards/import', [
@@ -630,7 +627,7 @@ class TopUpCardManagementTest extends TestCase
             $job->failed($exception);
         }
 
-        $this->assertSame(TopUpCardStatus::Pending, $card->fresh()->status);
+        $this->assertSame(TopUpCardStatus::Active, $card->fresh()->status);
     }
 
     public function test_admins_can_view_redeem_history(): void
@@ -689,6 +686,29 @@ class TopUpCardManagementTest extends TestCase
                     ->where('cards.per_page', 100)
                     ->where('offices.0.code', '31')
                     ->where('filters.office', (string) $office->id),
+            );
+    }
+
+    public function test_card_history_stats_do_not_include_a_pending_status(): void
+    {
+        $actor = Admin::factory()->create();
+        $actor->assignRole(AppPermissions::SuperAdmin);
+        TopUpCard::factory()->create(['status' => TopUpCardStatus::Active]);
+
+        $this->actingAs($actor, 'web')
+            ->get('/top-up-cards/card-history?status=pending')
+            ->assertOk()
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->component('TopUpCards/CardHistory')
+                    ->where('filters.status', '')
+                    ->where('stats', [
+                        'total' => 1,
+                        'active' => 1,
+                        'used' => 0,
+                        'expired' => 0,
+                        'blocked' => 0,
+                    ]),
             );
     }
 }

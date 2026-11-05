@@ -53,7 +53,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
     }
 
     /**
-     * @return array{rows: list<array{office: string, count_50: int, count_100: int, count_250: int, count_500: int, total_points: int, generate_date: ?string, activated_at: string, expires_at: string}>, total_rows: int, total_summaries: int}
+     * @return array{denominations: list<int>, rows: list<array{office: string, amount_counts: list<array{amount: int, count: int}>, total_cards: int, generate_date: ?string, activated_at: string, expires_at: string}>, total_rows: int, total_summaries: int}
      */
     public static function previewCsv(string $path): array
     {
@@ -61,7 +61,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
     }
 
     /**
-     * @return array{rows: list<array{office: string, count_50: int, count_100: int, count_250: int, count_500: int, total_points: int, generate_date: ?string, activated_at: string, expires_at: string}>, total_rows: int, total_summaries: int}
+     * @return array{denominations: list<int>, rows: list<array{office: string, amount_counts: list<array{amount: int, count: int}>, total_cards: int, generate_date: ?string, activated_at: string, expires_at: string}>, total_rows: int, total_summaries: int}
      */
     private function readCsvPreview(): array
     {
@@ -71,6 +71,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
         $activationExpiresAt = $activationDate->copy()->addYears(2)->toDateString();
         $totalRows = 0;
         $summaries = [];
+        $denominations = [];
         $seenSerials = [];
         $seenPins = [];
 
@@ -93,32 +94,21 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                 $seenSerials[$card['serial_no']] = true;
                 $seenPins[$pinHash] = true;
                 $totalRows++;
+                $denominations[$card['amount']] = true;
                 $officeCode = TopUpCardOffices::officeCodeFromSerialNo($card['serial_no']);
                 $summaryKey = ($officeCode ?? '').':'.$card['generate_date'];
                 $summaries[$summaryKey] ??= [
                     'office_code' => $officeCode,
-                    'count_50' => 0,
-                    'count_100' => 0,
-                    'count_250' => 0,
-                    'count_500' => 0,
-                    'total_points' => 0,
+                    'amount_counts' => [],
+                    'total_cards' => 0,
                     'generate_date' => $card['generate_date'],
                     'activated_at' => $activatedAt,
                     'expires_at' => $activationExpiresAt,
                 ];
 
-                $countKey = match ($card['amount']) {
-                    50 => 'count_50',
-                    100 => 'count_100',
-                    250 => 'count_250',
-                    500 => 'count_500',
-                    default => null,
-                };
-
-                if ($countKey !== null) {
-                    $summaries[$summaryKey][$countKey]++;
-                }
-                $summaries[$summaryKey]['total_points']++;
+                $summaries[$summaryKey]['amount_counts'][$card['amount']] =
+                    ($summaries[$summaryKey]['amount_counts'][$card['amount']] ?? 0) + 1;
+                $summaries[$summaryKey]['total_cards']++;
 
                 if ($totalRows > (int) config('top_up_cards.max_cards', 100000)) {
                     throw new CsvImportException('csv.import_errors.too_many_cards', [
@@ -134,6 +124,8 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
             throw new CsvImportException('csv.import_errors.no_cards');
         }
 
+        $denominations = array_map('intval', array_keys($denominations));
+        sort($denominations, SORT_NUMERIC);
         $totalSummaries = count($summaries);
         $previewLimit = min(200, max(1, (int) config('top_up_cards.preview_limit', 100)));
         $summaries = array_slice(array_values($summaries), 0, $previewLimit);
@@ -145,14 +137,17 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
         $rows = array_map(function (array $summary) use ($officesByCode): array {
             $officeCode = $summary['office_code'];
             $office = $officeCode === null ? null : $officesByCode->get($officeCode);
+            $amountCounts = [];
+
+            foreach ($summary['amount_counts'] as $amount => $count) {
+                $amountCounts[] = ['amount' => (int) $amount, 'count' => $count];
+            }
+            usort($amountCounts, static fn(array $left, array $right): int => $left['amount'] <=> $right['amount']);
 
             return [
                 'office' => $office ? $office->name : '—',
-                'count_50' => $summary['count_50'],
-                'count_100' => $summary['count_100'],
-                'count_250' => $summary['count_250'],
-                'count_500' => $summary['count_500'],
-                'total_points' => $summary['total_points'],
+                'amount_counts' => $amountCounts,
+                'total_cards' => $summary['total_cards'],
                 'generate_date' => $summary['generate_date'],
                 'activated_at' => $summary['activated_at'],
                 'expires_at' => $summary['expires_at'],
@@ -160,6 +155,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
         }, array_values($summaries));
 
         return [
+            'denominations' => $denominations,
             'rows' => $rows,
             'total_rows' => $totalRows,
             'total_summaries' => $totalSummaries,
@@ -512,7 +508,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
 
     /**
      * @param  resource  $stream
-     * @return array{delimiter: string, indexes: array{serial_no: int, pin: int, amount: int, generate_date: int, status?: int}, headers: list<string>, columns: int}
+     * @return array{delimiter: string, indexes: array{serial_no: int, pin: int, amount: int, generate_date: int}, headers: list<string>, columns: int}
      */
     private function readHeaders($stream): array
     {
@@ -551,7 +547,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
             };
         }, $headers);
 
-        $allowedHeaders = ['serial_no', 'pin', 'amount', 'generate_date', 'expires_at', 'status'];
+        $allowedHeaders = ['serial_no', 'pin', 'amount', 'generate_date', 'expires_at'];
         $required = ['serial_no', 'pin', 'amount'];
 
         if (
@@ -576,7 +572,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
             'delimiter' => $delimiter,
             'indexes' => array_intersect_key(
                 $indexes,
-                array_flip([...$required, 'generate_date', 'expires_at', 'status']),
+                array_flip([...$required, 'generate_date', 'expires_at']),
             ),
             'headers' => array_values($headers),
             'columns' => count($headers),
@@ -629,12 +625,6 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
 
         if (preg_match('/^\d{16}$/', $pin) !== 1) {
             throw new CsvImportException('csv.import_errors.invalid_pin', ['line' => $line]);
-        }
-
-        $status = isset($format['indexes']['status']) ? trim((string) $row[$format['indexes']['status']]) : null;
-
-        if ($status !== null && $status !== TopUpCardStatus::Pending->value) {
-            throw new CsvImportException('csv.import_errors.invalid_row', ['line' => $line]);
         }
 
         $dateToValidate = $generateDate ?? trim((string) $row[$format['indexes']['expires_at']]);

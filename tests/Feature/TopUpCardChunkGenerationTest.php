@@ -34,6 +34,30 @@ class TopUpCardChunkGenerationTest extends TestCase
         $this->seed(\Database\Seeders\RolePermissionSeeder::class);
     }
 
+    public function test_generated_cards_are_active_immediately(): void
+    {
+        $productionDate = now();
+        $office = Office::query()->create([
+            'name' => 'Default Office',
+            'address' => 'Main Street',
+            'cd' => '88',
+        ]);
+        $batch = Batch::factory()->create();
+        $generated = GeneratesTopUpCards::materialize(
+            [['value' => 500, 'quantity' => 1]],
+            now()->addYears(2)->toDateString(),
+            1001,
+            $productionDate,
+            '88',
+            $batch->id,
+        );
+
+        $this->assertSame('active', $generated['cards'][0]['status']);
+        $this->assertSame($productionDate->toDateString(), $generated['cards'][0]['activated_at']);
+        $this->assertSame('active', $generated['rows'][0]['status']);
+        $this->assertSame($office->id, $generated['rows'][0]['office_id']);
+    }
+
     public function test_large_generation_is_split_into_sequential_serial_chunks(): void
     {
         $actor = Admin::factory()->create();

@@ -53,13 +53,11 @@ class OfficeController extends Controller
         $batchStatus = BatchStatus::tryFrom($status);
 
         $batchPage = Batch::query()
-            ->whereHas('topUpCards', fn($query) => $query->where('status', '!=', TopUpCardStatus::Pending->value))
+            ->whereHas('topUpCards')
             ->when($batchStatus, fn($query) => $query->where('status', $batchStatus))
             ->when($batch !== '' && is_numeric($batch), fn($query) => $query->whereKey((int) $batch))
             ->withCount([
-                'topUpCards as assigned_cards_count' => fn($query) => $query
-                    ->where('status', '!=', TopUpCardStatus::Pending->value)
-                    ->whereNotNull('office_id'),
+                'topUpCards as assigned_cards_count' => fn($query) => $query->whereNotNull('office_id'),
             ])
             ->latest('id')
             ->paginate(100)
@@ -78,7 +76,7 @@ class OfficeController extends Controller
 
         $batches = Batch::query()
             ->select(['id', 'batch_no', 'expires_at'])
-            ->whereHas('topUpCards', fn($query) => $query->where('status', '!=', TopUpCardStatus::Pending->value))
+            ->whereHas('topUpCards')
             ->latest('id')
             ->get()
             ->map(

@@ -34,7 +34,7 @@ class TopUpCardSeeder extends Seeder
         TopUpCard::factory()
             ->count(15)
             ->create([
-                'status' => TopUpCardStatus::Pending,
+                'status' => TopUpCardStatus::Active,
                 'batch_id' => $batch->id,
                 'office_id' => $office->id,
             ]);
