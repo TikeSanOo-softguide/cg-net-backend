@@ -37,7 +37,8 @@ class ChangePasswordRequestController extends Controller
             ->when($openRequestId < 1 && $search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
-                        ->whereLike('contact_name', '%' . $search . '%')
+                        ->whereLike('ticket_number', '%' . $search . '%')
+                        ->orWhereLike('contact_name', '%' . $search . '%')
                         ->orWhereLike('contact_phone', '%' . $search . '%')
                         ->orWhereLike('new_wifi_name', '%' . $search . '%')
                         ->orWhereHas('user', fn($query) => $query->whereLike('name', '%' . $search . '%'))

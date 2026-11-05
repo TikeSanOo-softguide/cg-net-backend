@@ -533,7 +533,10 @@ class ServiceRequestApiTest extends TestCase
         $response = $this->withToken($token)
             ->postJson('/api/change-password-requests/create', $requestData)
             ->assertCreated()
+            ->assertJsonPath('code', 'MSG-REQ-002')
+            ->assertJsonPath('level', 'success')
             ->assertJsonPath('data.user_id', $user->id)
+            ->assertJsonPath('data.ticket_number', 'CWP' . now()->format('md') . '0001')
             ->assertJsonPath('data.status', 'under_review');
         $changePasswordRequest = ChangePasswordRequest::query()->findOrFail($response->json('data.id'));
 
@@ -541,7 +544,8 @@ class ServiceRequestApiTest extends TestCase
         $this->withToken($token)
             ->getJson('/api/change-password-requests/' . $changePasswordRequest->id)
             ->assertOk()
-            ->assertJsonPath('data.id', $changePasswordRequest->id);
+            ->assertJsonPath('data.id', $changePasswordRequest->id)
+            ->assertJsonPath('data.ticket_number', $changePasswordRequest->ticket_number);
 
         $this->withToken($token)
             ->putJson('/api/change-password-requests/' . $changePasswordRequest->id, [
@@ -562,8 +566,21 @@ class ServiceRequestApiTest extends TestCase
                 'status' => 'under_review',
             ])
             ->assertOk()
+            ->assertJsonPath('code', 'MSG-REQ-003')
+            ->assertJsonPath('level', 'success')
             ->assertJsonPath('data.new_wifi_name', 'NewWifi')
             ->assertJsonPath('data.status', 'under_review');
+
+        $this->withToken($token)
+            ->patchJson('/api/change-password-requests/' . $changePasswordRequest->id . '/cancel')
+            ->assertOk()
+            ->assertJsonPath('code', 'MSG-REQ-001')
+            ->assertJsonPath('level', 'success')
+            ->assertJsonPath('data.status', 'cancelled');
+
+        $this->withToken($token)
+            ->patchJson('/api/change-password-requests/' . $changePasswordRequest->id . '/cancel')
+            ->assertConflict();
 
         $this->withToken($token)
             ->deleteJson('/api/change-password-requests/' . $changePasswordRequest->id)
@@ -607,7 +624,7 @@ class ServiceRequestApiTest extends TestCase
         $this->assertSame(str_repeat('x', 30), $changePasswordRequest->refresh()->new_password);
     }
 
-    public function test_ftth_customers_cannot_create_or_update_change_password_requests(): void
+    public function test_ftth_customers_can_create_and_update_change_password_requests(): void
     {
         $user = User::factory()->create(['broadband_account_number' => 'FTTH12345678']);
         $token = $user->createToken('service-requests')->plainTextToken;
@@ -622,9 +639,9 @@ class ServiceRequestApiTest extends TestCase
 
         $this->withToken($token)
             ->postJson('/api/change-password-requests/create', $requestData)
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors('broadband_account_number');
-        $this->assertDatabaseCount('change_password_requests', 0);
+            ->assertCreated()
+            ->assertJsonPath('data.broadband_account_number', $user->broadband_account_number);
+        $this->assertDatabaseCount('change_password_requests', 1);
 
         $changePasswordRequest = ChangePasswordRequest::factory()->create([
             'user_id' => $user->id,
@@ -635,8 +652,9 @@ class ServiceRequestApiTest extends TestCase
                 ...$requestData,
                 'status' => 'under_review',
             ])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors('broadband_account_number');
+            ->assertOk()
+            ->assertJsonPath('data.broadband_account_number', $user->broadband_account_number)
+            ->assertJsonPath('data.status', 'under_review');
         $this->assertSame('under_review', $changePasswordRequest->refresh()->status->value);
     }
 
