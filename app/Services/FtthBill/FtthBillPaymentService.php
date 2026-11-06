@@ -33,6 +33,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Throwable;
 
 class FtthBillPaymentService
 {
@@ -314,8 +315,7 @@ class FtthBillPaymentService
         $accountNumber =
             (string) ($transaction->billPayment?->broadband_account_number ??
                 ($transaction->billPayment?->external_response['broadband_account_number'] ??
-                    ($transaction->billPayment?->external_response['account_number'] ??
-                        ($transaction->wallet?->user?->broadband_account_number ?? ''))));
+                    ($transaction->wallet?->user?->broadband_account_number ?? '')));
 
         $payment = $transaction->billPayment;
         try {
@@ -403,9 +403,37 @@ class FtthBillPaymentService
             return;
         }
 
-        $retrySeconds = (int) config('services.billing.processing_retry_seconds', 300);
+        $retrySeconds = (int) config('services.billing.processing_retry_seconds', 60);
 
         ReconcileStuckFtthBillPaymentsJob::dispatch($transaction->id)->delay(now()->addSeconds(max(1, $retrySeconds)));
+    }
+
+    public function handleReconciliationFailure(LedgerTransaction $transaction, Throwable $exception): void
+    {
+        Log::error('Failed to reconcile FTTH bill payment.', [
+            'ledger_transaction_id' => $transaction->id,
+            'transaction_no' => $transaction->transaction_no,
+            'exception' => $exception->getMessage(),
+        ]);
+
+        $transaction->refresh()->loadMissing(['billPayment', 'wallet.user']);
+
+        if ($transaction->status !== LedgerTransactionStatus::Processing) {
+            return;
+        }
+
+        $accountNumber =
+            (string) ($transaction->billPayment?->broadband_account_number ??
+                ($transaction->billPayment?->external_response['broadband_account_number'] ??
+                    ($transaction->wallet?->user?->broadband_account_number ?? '')));
+        $status = [
+            'outcome' => 'unknown',
+            'message' => self::RECONCILIATION_STATUS_UNAVAILABLE_MESSAGE,
+            'exception' => $exception->getMessage(),
+            'manual_review_reason' => 'reconciliation_failed',
+        ];
+
+        $this->markPaymentForReview($transaction, $accountNumber, $status);
     }
 
     /**
