@@ -2,6 +2,7 @@
 
 namespace App\Services\Auth\Otp;
 
+use App\Enums\OtpVerificationResult;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
@@ -24,18 +25,18 @@ final class MockOtpProvider implements OtpProviderInterface
         return new OtpChallenge(providerReference: $reference, debugCode: $exposeCode ? $code : null);
     }
 
-    public function verify(string $providerReference, string $code): bool
+    public function verify(string $providerReference, string $code): OtpVerificationResult
     {
         $store = Cache::store(config('otp.cache_store', 'redis'));
         $hash = $store->get($this->key($providerReference));
 
         if (!is_string($hash) || !hash_equals($hash, hash_hmac('sha256', $code, (string) config('app.key')))) {
-            return false;
+            return OtpVerificationResult::Invalid;
         }
 
         $store->forget($this->key($providerReference));
 
-        return true;
+        return OtpVerificationResult::Valid;
     }
 
     private function key(string $reference): string

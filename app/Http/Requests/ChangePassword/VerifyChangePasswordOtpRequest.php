@@ -15,7 +15,7 @@ class VerifyChangePasswordOtpRequest extends FormRequest
     {
         return [
             'challenge_id' => ['required', 'string', 'size:64'],
-            'code' => ['required', 'digits:6'],
+            'code' => ['required', 'digits:' . (int) config('otp.telegram.code_length', 6)],
         ];
     }
 }

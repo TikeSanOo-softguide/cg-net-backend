@@ -15,6 +15,13 @@ enum MessageCode: string
     case AuthIncorrectPassword = 'MSG-AUTH-001';
     case AuthAccountLocked = 'MSG-AUTH-004';
     case AuthOtpFailed = 'MSG-AUTH-005';
+    case AuthOtpPhoneNotOnTelegram = 'MSG-AUTH-020';
+    case AuthOtpPhoneInvalid = 'MSG-AUTH-021';
+    case AuthOtpProviderRateLimited = 'MSG-AUTH-022';
+    case AuthOtpProviderUnavailable = 'MSG-AUTH-023';
+    case AuthOtpGatewayBalanceUnavailable = 'MSG-AUTH-024';
+    case AuthOtpGatewayTimeout = 'MSG-AUTH-025';
+    case AuthOtpGatewayNetwork = 'MSG-AUTH-026';
     case AuthPhoneUnsupported = 'MSG-AUTH-006';
     case AuthPhoneRequired = 'MSG-AUTH-007';
     case AuthOtpResendCooldown = 'MSG-AUTH-008';
@@ -142,7 +149,8 @@ enum MessageCode: string
             self::ChatLive,
             self::ChatClosed,
             self::ChatSelectOption,
-            self::ChatWaitForJoin => 'warning',
+            self::ChatWaitForJoin
+                => 'warning',
             self::AuthLoggedOut,
             self::BbConnected,
             self::BbDisconnected,
@@ -159,7 +167,8 @@ enum MessageCode: string
             self::UserDeactivated,
             self::FtthPendingSlip,
             self::FtthPaidSlips,
-            self::FtthPaid => 'success',
+            self::FtthPaid
+                => 'success',
             default => 'error',
         };
     }
@@ -170,6 +179,14 @@ enum MessageCode: string
             self::AuthIncorrectPassword => 'Incorrect password',
             self::AuthAccountLocked => 'Account locked',
             self::AuthOtpFailed => 'OTP verification failed',
+            self::AuthOtpPhoneNotOnTelegram => 'This number cannot receive Telegram verification codes.',
+            self::AuthOtpPhoneInvalid => 'This phone number is invalid.',
+            self::AuthOtpProviderRateLimited => 'Too many verification requests. Please try again shortly.',
+            self::AuthOtpProviderUnavailable => 'Verification is temporarily unavailable. Please try again later.',
+            self::AuthOtpGatewayBalanceUnavailable
+                => 'Verification is temporarily unavailable. Please try again later.',
+            self::AuthOtpGatewayTimeout => 'The verification request timed out. Please try again.',
+            self::AuthOtpGatewayNetwork => 'Unable to reach the verification service. Please try again.',
             self::AuthPhoneUnsupported => 'This phone number is not supported.',
             self::AuthPhoneRequired => 'Enter your mobile number.',
             self::AuthOtpResendCooldown => 'Please wait before requesting another code.',
@@ -224,7 +241,8 @@ enum MessageCode: string
             self::PkgAlreadyProcessed => 'Package purchase already processed.',
             self::PkgActivationRefunded => 'Package activation failed. Wallet was refunded.',
             self::PkgProcessing => 'This package purchase is already being processed.',
-            self::PkgReconciliationPending => 'Package activation is awaiting provider reconciliation. The wallet debit remains on hold.',
+            self::PkgReconciliationPending
+                => 'Package activation is awaiting provider reconciliation. The wallet debit remains on hold.',
             self::PkgInsufficientBalance => 'Insufficient wallet balance.',
             self::PkgKeyUsed => 'This idempotency key was already used.',
             self::PkgKeyMismatch => 'This idempotency key was already used for a different package.',
@@ -262,7 +280,8 @@ enum MessageCode: string
             self::ChatLanguageInvalid => 'The language must be one of: en, my, zh.',
             self::ChatCustomersOnly => 'Only customers can use the chat API.',
             self::ChatForbidden => 'You do not have access to this conversation.',
-            self::ChatWaitingForAgent => 'Conversation is waiting for an agent. Chat flow options are no longer available.',
+            self::ChatWaitingForAgent
+                => 'Conversation is waiting for an agent. Chat flow options are no longer available.',
             self::ChatLive => 'Conversation is in live chat. Chat flow options are no longer available.',
             self::ChatClosed => 'Conversation is closed. Please start a new conversation.',
             self::ChatSelectOption => 'Please select a chat flow option. Free-text messages are not available yet.',

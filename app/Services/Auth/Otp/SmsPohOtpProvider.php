@@ -2,6 +2,7 @@
 
 namespace App\Services\Auth\Otp;
 
+use App\Enums\OtpVerificationResult;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -31,17 +32,19 @@ final class SmsPohOtpProvider implements OtpProviderInterface
         }
 
         if ($response->failed() || !$response->json('requestId')) {
-            throw new RuntimeException(sprintf(
-                'OTP provider rejected the request (HTTP %d): %s',
-                $response->status(),
-                (string) ($response->json('message') ?? 'no message'),
-            ));
+            throw new RuntimeException(
+                sprintf(
+                    'OTP provider rejected the request (HTTP %d): %s',
+                    $response->status(),
+                    (string) ($response->json('message') ?? 'no message'),
+                ),
+            );
         }
 
         return new OtpChallenge((string) $response->json('requestId'));
     }
 
-    public function verify(string $providerReference, string $code): bool
+    public function verify(string $providerReference, string $code): OtpVerificationResult
     {
         $accessToken = $this->accessToken();
 
@@ -58,7 +61,7 @@ final class SmsPohOtpProvider implements OtpProviderInterface
             throw new RuntimeException('OTP provider is unavailable.', 0, $exception);
         }
 
-        return $response->successful();
+        return $response->successful() ? OtpVerificationResult::Valid : OtpVerificationResult::Invalid;
     }
 
     private function accessToken(): string

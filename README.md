@@ -221,6 +221,16 @@ Password for all seeded admins: `password`
 
 ---
 
+## OTP with Telegram Gateway
+
+OTP requests use Telegram Gateway by default. Configure `TELEGRAM_GATEWAY_TOKEN` in `.env` and set `OTP_PROVIDER=telegram`; keep `OTP_PROVIDER=mock` for local/test flows that need the mock code. Gateway generates and verifies the code, so the API never returns or stores it.
+
+`TELEGRAM_GATEWAY_BASE_URL` defaults to `https://gatewayapi.telegram.org`, `TELEGRAM_GATEWAY_CODE_LENGTH` defaults to `6` (Gateway supports 4-8), and `TELEGRAM_GATEWAY_TIMEOUT` defaults to `10` seconds. `OTP_CHALLENGE_TTL` supplies the Gateway TTL and must be 30-3600 seconds. Existing OTP resend cooldown, request/verify rate limits, and max attempts remain enforced.
+
+For a manual integration check, use your own Telegram-linked phone number; Telegram does not charge for sending to your own number. Other delivered codes cost approximately $0.01 each. Verify that a request returns a `challenge_id` without a code, submit the Telegram code to the verify endpoint, then confirm a verification token is returned only for a valid code. A resend inside the cooldown should return 429 without making another Gateway send.
+
+---
+
 ## Production (Docker + external PostgreSQL)
 
 Production uses `Dockerfile.prod` and `docker-compose.prod.yml`; leave the development

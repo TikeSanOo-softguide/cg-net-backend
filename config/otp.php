@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'provider' => env('OTP_PROVIDER', 'mock'),
+    'provider' => env('OTP_PROVIDER', 'telegram'),
     'cache_store' => env('OTP_CACHE_STORE', 'redis'),
 
     'challenge_ttl' => (int) env('OTP_CHALLENGE_TTL', 300),
@@ -36,12 +36,19 @@ return [
         'expose_code' => (bool) env('OTP_MOCK_EXPOSE_CODE', false),
     ],
 
-    'smspoh' => [
-        'base_url' => env('SMSPOH_BASE_URL', 'https://v3.smspoh.com/api/otp'),
-        'api_key' => env('SMSPOH_API_KEY'),
-        'api_secret' => env('SMSPOH_API_SECRET'),
-        'sender_id' => env('SMSPOH_SENDER_ID'),
-        'brand' => env('SMSPOH_BRAND'),
-        'template' => env('SMSPOH_TEMPLATE', 'Your {brand} verification code is {code}.'),
+    'telegram' => [
+        'base_url' => env('TELEGRAM_GATEWAY_BASE_URL', 'https://gatewayapi.telegram.org'),
+        'token' => env('TELEGRAM_GATEWAY_TOKEN'),
+        'code_length' => (int) env('TELEGRAM_GATEWAY_CODE_LENGTH', 6),
+        'timeout' => (int) env('TELEGRAM_GATEWAY_TIMEOUT', 10),
     ],
+
+    // 'smspoh' => [
+    //     'base_url' => env('SMSPOH_BASE_URL', 'https://v3.smspoh.com/api/otp'),
+    //     'api_key' => env('SMSPOH_API_KEY'),
+    //     'api_secret' => env('SMSPOH_API_SECRET'),
+    //     'sender_id' => env('SMSPOH_SENDER_ID'),
+    //     'brand' => env('SMSPOH_BRAND'),
+    //     'template' => env('SMSPOH_TEMPLATE', 'Your {brand} verification code is {code}.'),
+    // ],
 ];
