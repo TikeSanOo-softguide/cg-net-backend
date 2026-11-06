@@ -68,7 +68,7 @@ class RelocationRequestController extends Controller
         });
 
         $relocation->load(['user:id,name,phone', 'admin:id,username']);
-        $this->sendTelegramStatusNotification($relocation, '📦 New Relocation Request');
+        $this->sendTelegramStatusNotification($relocation, '📍 NEW RELATION REQUEST');
 
         return (new RelocationRequestResource($relocation))->additional(ApiMessage::attach(MessageCode::ReqSubmitted));
     }
@@ -94,7 +94,7 @@ class RelocationRequestController extends Controller
             return $relocationRequest->refresh();
         });
 
-        $this->sendTelegramStatusNotification($relocation, '✏️ RELOCATION REQUEST UPDATED');
+        $this->sendTelegramStatusNotification($relocation, '🔄 RELOCATION REQUEST UPDATED');
 
         return (new RelocationRequestResource($relocation))->additional(ApiMessage::attach(MessageCode::ReqUpdated));
     }
@@ -110,7 +110,7 @@ class RelocationRequestController extends Controller
         ]);
 
         $relocation = $relocationRequest->refresh();
-        $this->sendTelegramStatusNotification($relocation, '❌ RELOCATION REQUEST CANCELLED');
+        $this->sendTelegramStatusNotification($relocation, '🚫 RELOCATION REQUEST CANCELLED');
 
         return (new RelocationRequestResource($relocation))->additional(ApiMessage::attach(MessageCode::ReqCancelled));
     }
@@ -135,15 +135,18 @@ class RelocationRequestController extends Controller
     private function sendTelegramStatusNotification(RelocationRequest $relocation, string $title): void
     {
         $fields = [
-            '🎫 Ticket' => $relocation->ticket_number,
-            '🛜 Broadband Account' => $relocation->broadband_account_number,
-            '👤 Customer' => $relocation->user?->name ?? 'Customer',
-            '📞 Phone' => $relocation->phone,
-            '📍 Current Address' => $relocation->current_address,
-            '🏠 New Address' => $relocation->new_address,
-            '📅 Preferred Date' => $relocation->preferred_date?->format('d M Y') ?? '—',
-            '📝 Note' => $relocation->details ?? '—',
-            '📋 Status' => $relocation->status->value,
+            '• Ticket' => $relocation->ticket_number,
+            '• Service Type' => $relocation->user?->service_type ?? '—',
+            '• Account' => $relocation->broadband_account_number,
+            '• Customer' => $relocation->user?->name ?? 'Customer',
+            '• Phone' => $relocation->phone,
+            '• Current Address' => $relocation->current_address,
+            '• New Address' => $relocation->new_address,
+            ...!empty($relocation->details)
+                ? ['• Preferred Date' => $relocation->preferred_date?->format('d M Y')]
+                : [],
+            ...!empty($relocation->details) ? ['• Note' => $relocation->details] : [],
+            '• Status' => $relocation->status->value,
         ];
         $message = "<b>{$title}</b>\n\n";
 
