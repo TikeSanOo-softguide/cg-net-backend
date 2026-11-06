@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->string('name_en');
             $table->string('name_zh');
             $table->string('name_my');
-            $table->integer('price');
+            $table->decimal('price', 12, 2);
             $table->string('image_url', 500)->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();

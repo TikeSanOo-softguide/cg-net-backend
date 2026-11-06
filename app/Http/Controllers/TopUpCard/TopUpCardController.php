@@ -847,7 +847,7 @@ class TopUpCardController extends Controller
 
         return [
             'total' => $redeemed->clone()->count(),
-            'value' => (string) (int) $redeemed->clone()->sum('amount'),
+            'value' => (string) $redeemed->clone()->sum('amount'),
             'month' => $redeemed->clone()->where('redeemed_at', '>=', now()->startOfMonth())->count(),
             'customers' => (int) $redeemed
                 ->clone()

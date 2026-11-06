@@ -105,7 +105,7 @@ class TopUpCardCsvImportTest extends TestCase
         $this->assertSame('2026-10-23', $card->generate_date->format('Y-m-d'));
         $this->assertSame('2026-11-03', $card->activated_at->toDateString());
         $this->assertSame('2028-11-03', $card->expires_at->toDateString());
-        $this->assertSame(50, $card->amount);
+        $this->assertSame('50.00', $card->amount);
         $this->assertSame('2028-11-03', $card->batch->expires_at->toDateString());
     }
 

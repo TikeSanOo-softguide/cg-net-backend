@@ -99,8 +99,12 @@ export default function AdminNotificationsIndex({ notifications, categories, fil
             return undefined;
         }
 
-        return notification.reference_id === null
-            ? notification.href
+        if (notification.reference_id === null) {
+            return notification.href;
+        }
+
+        return notification.reference_type === 'bill_payment'
+            ? `${notification.href}?status=all&payment_id=${notification.reference_id}`
             : `${notification.href}?status=all&open_request=${notification.reference_id}`;
     };
 

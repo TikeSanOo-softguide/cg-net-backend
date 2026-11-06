@@ -75,7 +75,7 @@ class EodReportController extends Controller
                     'transaction_type' => $entry->ledgerTransaction?->type?->value,
                     'direction' => $entry->isCredit() ? 'credit' : 'debit',
                     'amount' => $entry->amount(),
-                    'balance_after' => (int) $entry->balance_after,
+                    'balance_after' => $entry->balance_after,
                     'created_at' => $entry->created_at,
                     'ledger_entries' => $entry->ledgerTransaction?->entries
                         ->sortBy('line_no')
@@ -86,9 +86,9 @@ class EodReportController extends Controller
                                 'account_code' => $line->ledgerAccount?->code,
                                 'account_name' => $line->ledgerAccount?->name,
                                 'customer' => $line->wallet?->user?->name,
-                                'debit' => (int) $line->debit,
-                                'credit' => (int) $line->credit,
-                                'balance_after' => $line->balance_after === null ? null : (int) $line->balance_after,
+                                'debit' => $line->debit,
+                                'credit' => $line->credit,
+                                'balance_after' => $line->balance_after,
                                 'created_at' => $line->created_at,
                             ],
                         )

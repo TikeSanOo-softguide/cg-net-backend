@@ -11,7 +11,7 @@ return new class extends Migration {
             $table->id();
             $table->string('serial_no', 32)->unique();
             $table->string('pin', 64)->unique();
-            $table->integer('amount');
+            $table->decimal('amount', 12, 2);
             $table->string('status', 16)->default('active')->index();
             $table->date('generate_date');
             $table->date('activated_at');

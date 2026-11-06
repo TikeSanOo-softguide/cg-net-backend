@@ -31,6 +31,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request as ClientRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
@@ -94,7 +95,7 @@ class PackagePurchaseTest extends TestCase
                 'product_price' => 0.01,
                 'user_id' => $otherUser->id,
                 'username' => 'client-user',
-                'password' => 'client-password',
+                'activation_password' => 'client-password',
                 'starts_at' => '2020-01-01 00:00:00',
                 'expires_at' => '2020-02-01 00:00:00',
                 'auto_renew' => true,
@@ -114,7 +115,7 @@ class PackagePurchaseTest extends TestCase
             $this->assertMatchesRegularExpression('/^\d{6}$/', $password);
 
             $wallet->refresh();
-            $this->assertSame(100000, $wallet->balance);
+            $this->assertEquals(100000, $wallet->balance);
 
             $order = PackageOrder::query()->where('user_id', $user->id)->firstOrFail();
             $this->assertSame($order->order_no, $response->json('data.order_no'));
@@ -130,7 +131,7 @@ class PackagePurchaseTest extends TestCase
             $debit = LedgerTransaction::query()->findOrFail($order->ledger_transaction_id);
             $this->assertSame(LedgerTransactionType::WifiPackage, $debit->type);
             $this->assertSame(LedgerTransactionStatus::Completed, $debit->status);
-            $this->assertSame(50000, $debit->amount);
+            $this->assertEquals(50000, $debit->amount);
             $this->assertSame('pkg-success-01', $debit->idempotency_key);
             $this->assertSame($user->id, $debit->actor_id);
 
@@ -224,7 +225,7 @@ class PackagePurchaseTest extends TestCase
         $this->buy($user, $package, 'pkg-inactive-01')->assertStatus(422);
 
         $wallet->refresh();
-        $this->assertSame(150000, $wallet->balance);
+        $this->assertEquals(150000, $wallet->balance);
         $this->assertDatabaseCount('package_orders', 0);
         $this->assertDatabaseCount('customer_packages', 0);
         $this->assertDatabaseCount('ledger_transactions', 0);
@@ -241,7 +242,7 @@ class PackagePurchaseTest extends TestCase
         $this->buy($user, $package, 'pkg-provider-duration')->assertOk();
 
         $wallet->refresh();
-        $this->assertSame(90000, $wallet->balance);
+        $this->assertEquals(90000, $wallet->balance);
         $this->assertDatabaseCount('package_orders', 1);
         $this->assertSame(1, $this->activation->calls);
     }
@@ -257,7 +258,7 @@ class PackagePurchaseTest extends TestCase
             ->assertJsonPath('message', 'Insufficient wallet balance.');
 
         $wallet->refresh();
-        $this->assertSame(30000, $wallet->balance);
+        $this->assertEquals(30000, $wallet->balance);
         $this->assertDatabaseCount('package_orders', 0);
         $this->assertDatabaseCount('customer_packages', 0);
         $this->assertDatabaseCount('ledger_transactions', 0);
@@ -280,14 +281,14 @@ class PackagePurchaseTest extends TestCase
             ->assertJsonPath('data.status', PackageOrderStatus::Failed->value);
 
         $wallet->refresh();
-        $this->assertSame(150000, $wallet->balance);
+        $this->assertEquals(150000, $wallet->balance);
 
         $debit = LedgerTransaction::query()
             ->where('wallet_id', $wallet->id)
             ->where('type', LedgerTransactionType::WifiPackage)
             ->firstOrFail();
         $this->assertSame(LedgerTransactionStatus::Failed, $debit->status);
-        $this->assertSame(60000, $debit->amount);
+        $this->assertEquals(60000, $debit->amount);
 
         $refund = LedgerTransaction::query()
             ->where('wallet_id', $wallet->id)
@@ -295,7 +296,7 @@ class PackagePurchaseTest extends TestCase
             ->firstOrFail();
         $this->assertSame($debit->id, $refund->reversal_of);
         $this->assertSame(LedgerTransactionStatus::Completed, $refund->status);
-        $this->assertSame(60000, $refund->amount);
+        $this->assertEquals(60000, $refund->amount);
         $this->assertSame('refund:'.$key, $refund->idempotency_key);
 
         $this->assertDatabaseHas('ledger_entries', [
@@ -331,7 +332,7 @@ class PackagePurchaseTest extends TestCase
             ->assertJsonPath('data.status', PackageOrderStatus::PendingVerification->value);
 
         $wallet->refresh();
-        $this->assertSame(100000, $wallet->balance);
+        $this->assertEquals(100000, $wallet->balance);
         $this->assertDatabaseHas('package_orders', [
             'user_id' => $user->id,
             'package_id' => null,
@@ -358,7 +359,7 @@ class PackagePurchaseTest extends TestCase
             ->assertJsonPath('data.status', PackageOrderStatus::PendingVerification->value);
 
         $wallet->refresh();
-        $this->assertSame(60000, $wallet->balance);
+        $this->assertEquals(60000, $wallet->balance);
         $this->assertDatabaseCount('customer_packages', 0);
         $this->assertDatabaseHas('package_orders', [
             'user_id' => $user->id,
@@ -380,10 +381,10 @@ class PackagePurchaseTest extends TestCase
             ->assertOk()
             ->assertJsonPath('message', 'Package purchase already processed.')
             ->assertJsonPath('data.transaction_no', $transactionNo)
-            ->assertJsonPath('data.amount', 40000);
+            ->assertJsonPath('data.amount', '40000.00');
 
         $wallet->refresh();
-        $this->assertSame(110000, $wallet->balance);
+        $this->assertEquals(110000, $wallet->balance);
         $this->assertSame(1, $this->activation->calls);
         $this->assertDatabaseCount('customer_packages', 1);
         $this->assertSame(1, LedgerTransaction::query()->where('type', LedgerTransactionType::WifiPackage)->count());
@@ -404,7 +405,7 @@ class PackagePurchaseTest extends TestCase
             ->assertJsonPath('message', 'Package activation failed. Wallet was refunded.');
 
         $wallet->refresh();
-        $this->assertSame(150000, $wallet->balance);
+        $this->assertEquals(150000, $wallet->balance);
         $this->assertSame(1, $this->activation->calls);
         $this->assertSame(1, LedgerTransaction::query()->where('type', LedgerTransactionType::Refund)->count());
         $this->assertDatabaseCount('customer_packages', 0);
@@ -424,7 +425,7 @@ class PackagePurchaseTest extends TestCase
             ->assertJsonPath('message', 'This idempotency key was already used for a different package.');
 
         $wallet->refresh();
-        $this->assertSame(190000, $wallet->balance);
+        $this->assertEquals(190000, $wallet->balance);
         $this->assertDatabaseCount('customer_packages', 1);
         $this->assertSame(1, $this->activation->calls);
     }
@@ -449,8 +450,8 @@ class PackagePurchaseTest extends TestCase
 
         $firstWallet->refresh();
         $secondWallet->refresh();
-        $this->assertSame(190000, $firstWallet->balance);
-        $this->assertSame(200000, $secondWallet->balance);
+        $this->assertSame('190000.00', $firstWallet->balance);
+        $this->assertSame('200000.00', $secondWallet->balance);
         $this->assertSame(1, LedgerTransaction::query()->where('idempotency_key', 'pkg-shared-key1')->count());
     }
 
@@ -488,7 +489,7 @@ class PackagePurchaseTest extends TestCase
             ->assertJsonPath('message', 'This package purchase is already being processed.');
 
         $wallet->refresh();
-        $this->assertSame(100000, $wallet->balance);
+        $this->assertEquals(100000, $wallet->balance);
         $this->assertSame(0, $this->activation->calls);
         $this->assertDatabaseCount('customer_packages', 0);
         $this->assertSame(1, LedgerTransaction::query()->where('type', LedgerTransactionType::WifiPackage)->count());
@@ -512,7 +513,7 @@ class PackagePurchaseTest extends TestCase
             ->assertJsonPath('message', 'Package activation failed. Wallet was refunded.');
 
         $wallet->refresh();
-        $this->assertSame(90000, $wallet->balance);
+        $this->assertEquals(90000, $wallet->balance);
         $this->assertDatabaseCount('customer_packages', 0);
         $this->assertDatabaseMissing('customer_packages', [
             'username' => 'test-user',
@@ -537,7 +538,7 @@ class PackagePurchaseTest extends TestCase
             'product_price' => 0.01,
             'price' => 1,
             'account' => 'G0000000',
-            'password' => '000000',
+            'password' => '123456',
         ])->assertOk();
 
         $order = PackageOrder::query()->firstOrFail();
@@ -622,7 +623,7 @@ class PackagePurchaseTest extends TestCase
         $this->buy($user, $second, 'provider-error-500')->assertStatus(502);
 
         $wallet->refresh();
-        $this->assertSame(100000, $wallet->balance);
+        $this->assertEquals(100000, $wallet->balance);
         $this->assertSame(2, LedgerTransaction::query()->where('type', LedgerTransactionType::Refund)->count());
         $this->assertDatabaseCount('customer_packages', 0);
         $this->assertSame(2, PackageOrder::query()->where('status', PackageOrderStatus::Failed)->count());
@@ -660,7 +661,7 @@ class PackagePurchaseTest extends TestCase
             ->assertStatus(202);
 
         $wallet->refresh();
-        $this->assertSame(50000, $wallet->balance);
+        $this->assertEquals(50000, $wallet->balance);
         $this->assertDatabaseCount('customer_packages', 0);
         $this->assertDatabaseCount('ledger_transactions', 5);
         $this->assertSame(5, PackageOrder::query()->where('status', PackageOrderStatus::PendingVerification)->count());
@@ -692,7 +693,7 @@ class PackagePurchaseTest extends TestCase
             ->assertJsonPath('data.order_no', $orderNo);
 
         $wallet->refresh();
-        $this->assertSame(60000, $wallet->balance);
+        $this->assertEquals(60000, $wallet->balance);
         $this->assertSame(1, PackageOrder::query()->count());
         $this->assertSame(1, LedgerTransaction::query()->where('type', LedgerTransactionType::WifiPackage)->count());
         $this->assertDatabaseMissing('ledger_transactions', ['type' => LedgerTransactionType::Refund->value]);
@@ -729,7 +730,7 @@ class PackagePurchaseTest extends TestCase
             ->assertJsonPath('data.status', PackageOrderStatus::Completed->value);
 
         $wallet->refresh();
-        $this->assertSame(60000, $wallet->balance);
+        $this->assertEquals(60000, $wallet->balance);
         $this->assertDatabaseCount('customer_packages', 1);
         $this->assertDatabaseCount('ledger_transactions', 1);
         Http::assertSentCount(2);
@@ -765,12 +766,15 @@ class PackagePurchaseTest extends TestCase
 
     public function test_idempotency_key_header_is_required(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['password' => '123456']);
         $wallet = $this->wallet($user, 150000);
         $package = $this->makePackage(price: 10000, months: 1);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/packages/buy', ['product_id' => $package->provider_product_id])
+            ->postJson('/api/packages/buy', [
+                'product_id' => $package->provider_product_id,
+                'password' => '123456',
+            ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['idempotency_key']);
 
@@ -778,7 +782,7 @@ class PackagePurchaseTest extends TestCase
         $this->buy($user, $package, 'refund:not-allowed')->assertStatus(422);
 
         $wallet->refresh();
-        $this->assertSame(150000, $wallet->balance);
+        $this->assertEquals(150000, $wallet->balance);
         $this->assertDatabaseCount('package_orders', 0);
         $this->assertSame(0, $this->activation->calls);
     }
@@ -788,6 +792,39 @@ class PackagePurchaseTest extends TestCase
         $this->postJson('/api/packages/buy', ['product_id' => 'any'])
             ->assertUnauthorized();
 
+        $this->assertDatabaseCount('package_orders', 0);
+        $this->assertSame(0, $this->activation->calls);
+    }
+
+    public function test_package_purchase_requires_the_correct_user_password(): void
+    {
+        $user = User::factory()->create(['password' => '123456']);
+        $wallet = $this->wallet($user, 150000);
+        $package = $this->makePackage(price: 10000, months: 1);
+
+        $this->buy($user, $package, 'pkg-wrong-password', ['password' => '654321'])
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'MSG-USER-002')
+            ->assertJsonValidationErrors(['password']);
+
+        $wallet->refresh();
+        $this->assertEquals(150000, $wallet->balance);
+        $this->assertDatabaseCount('package_orders', 0);
+        $this->assertSame(0, $this->activation->calls);
+    }
+
+    public function test_package_purchase_password_must_match_registration_format(): void
+    {
+        $user = User::factory()->create(['password' => '123456']);
+        $wallet = $this->wallet($user, 150000);
+        $package = $this->makePackage(price: 10000, months: 1);
+
+        $this->buy($user, $package, 'pkg-invalid-password', ['password' => '12345'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['password']);
+
+        $wallet->refresh();
+        $this->assertEquals(150000, $wallet->balance);
         $this->assertDatabaseCount('package_orders', 0);
         $this->assertSame(0, $this->activation->calls);
     }
@@ -816,7 +853,7 @@ class PackagePurchaseTest extends TestCase
             ->assertJsonPath('message', 'Wallet is not active.');
 
         $wallet->refresh();
-        $this->assertSame(150000, $wallet->balance);
+        $this->assertEquals(150000, $wallet->balance);
         $this->assertDatabaseCount('package_orders', 0);
         $this->assertSame(0, $this->activation->calls);
     }
@@ -891,6 +928,12 @@ class PackagePurchaseTest extends TestCase
      */
     private function buyRaw(User $user, array $payload, string $key): TestResponse
     {
+        if (!Hash::check('123456', $user->getAuthPassword())) {
+            $user->forceFill(['password' => '123456'])->save();
+        }
+
+        $payload['password'] ??= '123456';
+
         return $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->withHeader('Idempotency-Key', $key)
             ->postJson('/api/packages/buy', $payload);

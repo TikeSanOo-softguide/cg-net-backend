@@ -16,7 +16,7 @@ class Addon extends Model
     protected function casts(): array
     {
         return [
-            'price' => 'integer',
+            'price' => 'decimal:2',
             'is_active' => 'boolean',
         ];
     }

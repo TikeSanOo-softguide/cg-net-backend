@@ -73,7 +73,7 @@ class PackageOrderController extends Controller
                         'phone' => $order->user?->phone,
                     ],
                     'package' => PackageLabel::make($order->package, app()->getLocale()),
-                    'amount' => (int) ($order->snapshot['price'] ?? ($order->ledgerTransaction?->amount ?? 0)),
+                    'amount' => (string) ($order->snapshot['price'] ?? ($order->ledgerTransaction?->amount ?? '0.00')),
                     'status' => (string) $order->getRawOriginal('status'),
                     'transaction_no' => $order->ledgerTransaction?->transaction_no,
                     'created_at' => $order->created_at,

@@ -5,21 +5,22 @@ namespace App\Jobs;
 use App\Models\LedgerTransaction;
 use App\Services\FtthBill\FtthBillPaymentService;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
+use Illuminate\Contracts\Queue\ShouldBeUniqueUntilProcessing;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Log;
 use Throwable;
 
-class ReconcileStuckFtthBillPaymentsJob implements ShouldBeUnique, ShouldQueue
+class ReconcileStuckFtthBillPaymentsJob implements ShouldBeUniqueUntilProcessing, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries = 1;
+    public int $tries = 3;
 
     public int $uniqueFor = 120;
+
+    public array $backoff = [10, 30, 60];
 
     public function __construct(
         public readonly int $ledgerTransactionId,
@@ -43,13 +44,7 @@ class ReconcileStuckFtthBillPaymentsJob implements ShouldBeUnique, ShouldQueue
         try {
             $payments->reconcile($transaction);
         } catch (Throwable $throwable) {
-            Log::error('Failed to reconcile FTTH bill payment.', [
-                'ledger_transaction_id' => $transaction->id,
-                'transaction_no' => $transaction->transaction_no,
-                'exception' => $throwable->getMessage(),
-            ]);
-
-            throw $throwable;
+            $payments->handleReconciliationFailure($transaction, $throwable);
         }
     }
 }

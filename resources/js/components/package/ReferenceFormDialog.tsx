@@ -218,8 +218,9 @@ const validateDigitNumber = (
         return t(`packages.validation.${field}_required`);
     }
 
-    if (!/^\d+$/.test(value)) {
-        return t(`packages.validation.${field}_integer`);
+    const pattern = field === 'price' ? /^\d+(\.\d{1,2})?$/ : /^\d+$/;
+    if (!pattern.test(value)) {
+        return t(field === 'price' ? 'packages.validation.price_numeric' : `packages.validation.${field}_integer`);
     }
 
     if (Number(value) < 0) {
@@ -302,14 +303,17 @@ function ReferenceFormDialogBody({
         price: false,
     });
 
-    const preventInvalidNumberKeys = (event: React.KeyboardEvent<HTMLInputElement>) => {
-        if (['e', 'E', '+', '-', '.'].includes(event.key)) {
+    const preventInvalidNumberKeys = (event: React.KeyboardEvent<HTMLInputElement>, decimal = false) => {
+        if (['e', 'E', '+', '-'].includes(event.key) || (!decimal && event.key === '.')) {
             event.preventDefault();
         }
     };
 
     const handleNumberChange = (field: 'price' | 'months' | 'mbps', value: string) => {
-        if (!/^\d*$/.test(value)) {
+        const decimal = field === 'price';
+        const pattern = decimal ? /^\d*(\.\d{0,2})?$/ : /^\d*$/;
+
+        if (!pattern.test(value)) {
             return;
         }
         const normalizedValue = value.replace(/^0+(?=\d)/, '');
@@ -318,7 +322,7 @@ function ReferenceFormDialogBody({
             [field]: true,
         }));
 
-        form.setData(field, normalizedValue === '' ? '' : Number(normalizedValue));
+        form.setData(field, normalizedValue === '' ? '' : decimal ? normalizedValue : Number(normalizedValue));
         form.clearErrors(field);
     };
 
@@ -576,8 +580,9 @@ function ReferenceFormDialogBody({
                                     <Input
                                         id="addon-price"
                                         type="number"
+                                        step="0.01"
                                         value={String(form.data.price ?? '')}
-                                        onKeyDown={preventInvalidNumberKeys}
+                                        onKeyDown={(event) => preventInvalidNumberKeys(event, true)}
                                         onChange={(event) => handleNumberChange('price', event.target.value)}
                                         placeholder={t('packages.price_placeholder')}
                                     />

@@ -14,9 +14,13 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('ledger_transaction_id')->unique()->constrained('ledger_transactions')->restrictOnDelete();
             $table->string('broadband_account_number', 32)->nullable()->index();
+            $table->string('order_no')->nullable()->unique();
+            $table->string('service_type', 16)->nullable();
+            $table->string('product_id', 100)->nullable();
+            $table->decimal('product_price', 12, 2)->nullable();
+            $table->json('snapshot')->nullable();
+            $table->text('remark')->nullable();
             $table->string('status', 16)->default('pending');
-            $table->string('external_bill_ref', 100)->nullable();
-            $table->string('external_payment_ref', 100)->nullable();
             $table->json('external_response')->nullable();
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('confirmed_at')->nullable();
