@@ -897,6 +897,91 @@ class FtthBillPaymentTest extends TestCase
         );
     }
 
+    public function test_reconciliation_exception_moves_payment_to_review_before_max_age_without_retrying(): void
+    {
+        Queue::fake();
+
+        [$user, $wallet] = $this->makePayer(balance: 500);
+        $transaction = LedgerTransaction::factory()->create([
+            'wallet_id' => $wallet->id,
+            'type' => LedgerTransactionType::FtthBill,
+            'status' => LedgerTransactionStatus::Processing,
+            'amount' => 1000,
+            'idempotency_key' => 'ftth-reconcile-exception-retry',
+            'transaction_no' => 'FTTH-RECON-EXCEPTION-RETRY',
+            'created_at' => now()->subMinutes(5),
+            'updated_at' => now()->subMinutes(5),
+        ]);
+        BillPayment::query()->create([
+            'ledger_transaction_id' => $transaction->id,
+            'broadband_account_number' => $user->broadband_account_number,
+            'order_no' => 'FTTH-RECON-EXCEPTION-RETRY',
+            'service_type' => 'FTTH',
+            'product_id' => 'ftth-product-1',
+            'product_price' => 1000,
+            'status' => BillPaymentStatus::Processing,
+        ]);
+
+        $this->accountInfo
+            ->shouldReceive('find')
+            ->once()
+            ->andThrow(new \Error('Temporary reconciliation failure.'));
+
+        (new ReconcileStuckFtthBillPaymentsJob($transaction->id))->handle(app(FtthBillPaymentService::class));
+
+        $this->assertSame(LedgerTransactionStatus::Review, $transaction->fresh()->status);
+        $this->assertSame(
+            'reconciliation_failed',
+            $transaction->fresh()->billPayment->external_response['manual_review_reason'],
+        );
+        Queue::assertNotPushed(ReconcileStuckFtthBillPaymentsJob::class);
+    }
+
+    public function test_reconciliation_exception_moves_overage_payment_to_review(): void
+    {
+        Notification::fake();
+        Queue::fake();
+
+        [$user, $wallet] = $this->makePayer(balance: 500);
+        $transaction = LedgerTransaction::factory()->create([
+            'wallet_id' => $wallet->id,
+            'type' => LedgerTransactionType::FtthBill,
+            'status' => LedgerTransactionStatus::Processing,
+            'amount' => 1000,
+            'idempotency_key' => 'ftth-reconcile-exception-review',
+            'transaction_no' => 'FTTH-RECON-EXCEPTION-REVIEW',
+            'created_at' => now()->subSeconds((int) config('services.billing.processing_max_age_seconds', 900) + 60),
+            'updated_at' => now()->subSeconds((int) config('services.billing.processing_max_age_seconds', 900) + 60),
+        ]);
+        BillPayment::query()->create([
+            'ledger_transaction_id' => $transaction->id,
+            'broadband_account_number' => $user->broadband_account_number,
+            'order_no' => 'FTTH-RECON-EXCEPTION-REVIEW',
+            'service_type' => 'FTTH',
+            'product_id' => 'ftth-product-1',
+            'product_price' => 1000,
+            'status' => BillPaymentStatus::Processing,
+        ]);
+
+        $this->accountInfo
+            ->shouldReceive('find')
+            ->once()
+            ->andThrow(new \Error('Repeated reconciliation failure.'));
+
+        (new ReconcileStuckFtthBillPaymentsJob($transaction->id))->handle(app(FtthBillPaymentService::class));
+
+        $this->assertSame(LedgerTransactionStatus::Review, $transaction->fresh()->status);
+        $this->assertDatabaseHas('bill_payments', [
+            'ledger_transaction_id' => $transaction->id,
+            'status' => BillPaymentStatus::Review->value,
+        ]);
+        $this->assertSame(
+            'reconciliation_failed',
+            $transaction->fresh()->billPayment->external_response['manual_review_reason'],
+        );
+        Queue::assertNotPushed(ReconcileStuckFtthBillPaymentsJob::class);
+    }
+
     public function test_user_can_pay_another_broadband_account(): void
     {
         Notification::fake();

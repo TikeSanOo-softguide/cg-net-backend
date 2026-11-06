@@ -111,7 +111,7 @@ class BroadbandApplicationRequestController extends Controller
             return $installationApplication->refresh();
         });
 
-        $this->sendTelegramStatusNotification($application, '✏️ BROADBAND INSTALLATION UPDATED');
+        $this->sendTelegramStatusNotification($application, '🔄 BROADBAND INSTALLATION UPDATED');
 
         return (new BroadbandApplicationResource($application))->additional(
             ApiMessage::attach(MessageCode::ReqUpdated),
@@ -144,7 +144,7 @@ class BroadbandApplicationRequestController extends Controller
         ]);
 
         $application = $installationApplication->refresh();
-        $this->sendTelegramStatusNotification($application, '❌ BROADBAND INSTALLATION CANCELLED');
+        $this->sendTelegramStatusNotification($application, '🚫 BROADBAND INSTALLATION CANCELLED');
 
         return (new BroadbandApplicationResource($application))->additional(
             ApiMessage::attach(MessageCode::ReqCancelled),
@@ -155,19 +155,18 @@ class BroadbandApplicationRequestController extends Controller
     {
         $detail = $application->package_detail ?? [];
         $fields = [
-            '🔖 Service Type' => $application->service_type,
-            '🎫 Ticket' => $application->ticket_number,
-            '🗓️ Date' => $application->created_at?->format('d M Y, h:i A') ?? '—',
-            '👤 Customer' => $application->name,
-            '📞 Phone' => $application->phone,
-            '📍 Address' => $application->address,
-            '📦 Package' => (string) ($detail['product_line'] ?? ($detail['product_name'] ?? '—')),
-            '⚡ Speed' => (string) ($detail['product_speed'] ?? '—'),
-            '📅 Term' => trim(
+            '• Ticket' => $application->ticket_number,
+            '• Customer' => $application->name,
+            '• Phone' => $application->phone,
+            '• Address' => $application->address,
+            '• Date' => $application->created_at?->format('d M Y') ?? '—',
+            '• Package' => (string) ($detail['product_line'] ?? ($detail['product_name'] ?? '—')),
+            '• Speed' => (string) ($detail['product_speed'] ?? '—'),
+            '• Term' => trim(
                 (string) ($detail['month_cycle'] ?? '—') . ' ' . (string) ($detail['month_cycle_unit'] ?? ''),
             ),
-            '📝 Note' => $application->note ?? '—',
-            '📋 Status' => $application->status->value,
+            ...!empty($application->note) ? ['• Note' => $application->note] : [],
+            '• Status' => $application->status->value,
         ];
         $message = "<b>{$title}</b>\n\n";
 
