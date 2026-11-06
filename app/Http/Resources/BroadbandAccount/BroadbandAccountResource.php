@@ -26,7 +26,7 @@ class BroadbandAccountResource extends JsonResource
             'productSpeed' => data_get($this->resource, 'productSpeed'),
             'productPrice' => data_get($this->resource, 'productPrice'),
             'starttime' => data_get($this->resource, 'starttime'),
-            'endtime' => data_get($this->resource, 'endtime') ?? data_get($this->resource, 'finishTime'),
+            'endtime' => data_get($this->resource, 'endtime'),
             'status' => data_get($this->resource, 'status'),
             'onlineStatus' => data_get($this->resource, 'onlineStatus'),
         ];
