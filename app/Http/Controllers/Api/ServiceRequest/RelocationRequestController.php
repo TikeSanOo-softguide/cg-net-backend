@@ -98,7 +98,9 @@ class RelocationRequestController extends Controller
             'relocation_request_id' => $relocationRequest->id,
         ]);
 
-        return new RelocationRequestResource($relocationRequest->refresh());
+        return (new RelocationRequestResource($relocationRequest->refresh()))->additional(
+            ApiMessage::attach(MessageCode::ReqCancelled),
+        );
     }
 
     public function destroy(Request $request, RelocationRequest $relocationRequest): JsonResponse
