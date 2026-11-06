@@ -85,6 +85,7 @@ class BroadbandApplicationRequestController extends Controller
 
             return $application;
         });
+        ServiceRequestSubmitted::dispatch('installation_application', $application->id);
 
         $this->sendTelegramStatusNotification($application, '📡 NEW BROADBAND INSTALLATION');
 
@@ -162,7 +163,9 @@ class BroadbandApplicationRequestController extends Controller
             '📍 Address' => $application->address,
             '📦 Package' => (string) ($detail['product_line'] ?? ($detail['product_name'] ?? '—')),
             '⚡ Speed' => (string) ($detail['product_speed'] ?? '—'),
-            '📅 Term' => trim((string) ($detail['month_cycle'] ?? '—') . ' ' . (string) ($detail['month_cycle_unit'] ?? '')),
+            '📅 Term' => trim(
+                (string) ($detail['month_cycle'] ?? '—') . ' ' . (string) ($detail['month_cycle_unit'] ?? ''),
+            ),
             '📝 Note' => $application->note ?? '—',
             '📋 Status' => $application->status->value,
         ];
