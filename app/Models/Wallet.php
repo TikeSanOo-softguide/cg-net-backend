@@ -34,7 +34,7 @@ class Wallet extends Model
     protected function casts(): array
     {
         return [
-            'balance' => 'integer',
+            'balance' => 'decimal:2',
             'version' => 'integer',
             'status' => WalletStatus::class,
         ];

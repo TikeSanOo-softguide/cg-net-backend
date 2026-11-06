@@ -53,7 +53,7 @@ class TopUpCardRedeemConcurrencyTest extends TestCase
         ));
 
         $this->assertCount(1, $successes);
-        $this->assertSame(1500, $wallet->fresh()->balance);
+        $this->assertEquals(1500, $wallet->fresh()->balance);
         $this->assertSame(TopUpCardStatus::Used, $card->fresh()->status);
         $this->assertNotNull($card->fresh()->ledger_transaction_id);
         $this->assertDatabaseCount('ledger_transactions', 1);
@@ -87,7 +87,7 @@ class TopUpCardRedeemConcurrencyTest extends TestCase
             1,
             array_filter($results, static fn (array $result): bool => $result['http_status'] === 200),
         );
-        $this->assertSame(2750, $wallet->fresh()->balance);
+        $this->assertEquals(2750, $wallet->fresh()->balance);
         $this->assertSame(TopUpCardStatus::Used, $card->fresh()->status);
         $this->assertDatabaseCount('ledger_transactions', 1);
     }
@@ -127,7 +127,7 @@ class TopUpCardRedeemConcurrencyTest extends TestCase
         ));
         $this->assertCount(1, collect($ok)->pluck('body.transaction_no')->unique()->filter());
         $this->assertSame(0, collect($results)->where('http_status', 409)->count());
-        $this->assertSame(1500, $wallet->fresh()->balance);
+        $this->assertEquals(1500, $wallet->fresh()->balance);
         $this->assertSame(TopUpCardStatus::Used, $card->fresh()->status);
         $this->assertDatabaseCount('ledger_transactions', 1);
         $this->assertDatabaseCount('ledger_entries', 2);
@@ -174,7 +174,7 @@ class TopUpCardRedeemConcurrencyTest extends TestCase
         $this->assertTrue(collect($results)->every(
             static fn (array $result): bool => $result['http_status'] === 409,
         ));
-        $this->assertSame(1500, $wallet->fresh()->balance);
+        $this->assertEquals(1500, $wallet->fresh()->balance);
         $this->assertSame(TopUpCardStatus::Used, $cardA->fresh()->status);
         $this->assertSame(TopUpCardStatus::Active, $cardB->fresh()->status);
         $this->assertDatabaseCount('ledger_transactions', 1);
@@ -235,8 +235,8 @@ class TopUpCardRedeemConcurrencyTest extends TestCase
         $this->assertSame(200, $loser['http_status']);
         $this->assertSame('Top-up already processed.', $loser['body']['message']);
         $this->assertSame($winner['body']['transaction_no'], $loser['body']['transaction_no']);
-        $this->assertSame(1500, $loser['body']['balance']);
-        $this->assertSame(1500, $wallet->fresh()->balance);
+        $this->assertSame('1500.00', $loser['body']['balance']);
+        $this->assertEquals(1500, $wallet->fresh()->balance);
         $this->assertDatabaseCount('ledger_transactions', 1);
         $this->assertDatabaseCount('ledger_entries', 2);
     }

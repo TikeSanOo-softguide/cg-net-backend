@@ -7,9 +7,12 @@ use App\Enums\LedgerTransactionType;
 use App\Enums\WalletActorType;
 use App\Exports\TransactionExport;
 use App\Http\Controllers\Controller;
+use App\Models\LedgerTransaction;
 use App\Models\User;
+use App\Services\FtthBill\FtthBillPaymentService;
 use App\Services\Transaction\TransactionService;
 use App\Support\NavigationStack;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -51,6 +54,30 @@ class TransactionController extends Controller
         $filters['customer_id'] = $customer->id;
 
         return $this->download($transactions, $filters, 'customer-transactions.xlsx');
+    }
+
+    public function resolveReview(
+        Request $request,
+        LedgerTransaction $transaction,
+        FtthBillPaymentService $payments,
+    ): RedirectResponse {
+        $payments->resolveReviewSuccessfully($transaction, (int) $request->user()->getAuthIdentifier());
+
+        return back()->with('success', 'transactions.review_completed');
+    }
+
+    public function refundReview(
+        Request $request,
+        LedgerTransaction $transaction,
+        FtthBillPaymentService $payments,
+    ): RedirectResponse {
+        $payments->refundReviewPayment(
+            $transaction,
+            $transaction->wallet->user,
+            (int) $request->user()->getAuthIdentifier(),
+        );
+
+        return back()->with('success', 'transactions.review_refunded');
     }
 
     private function download(TransactionService $transactions, array $filters, ?string $filename = null)

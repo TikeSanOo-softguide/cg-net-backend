@@ -191,6 +191,7 @@ export function TransactionsTable({
     const [dateError, setDateError] = useState<string>();
     const debounce = useRef<number>(0);
     const transactionToOpen = new URLSearchParams(window.location.search).get('open_transaction');
+    const transactionIdToOpen = new URLSearchParams(window.location.search).get('open_transaction_id');
     const canExport = can('system.export') && can(embeddedCustomer ? 'customers.view' : 'billing.view');
     const canAdjust = can('customers.update') || (!embeddedCustomer && can('billing.update'));
 
@@ -198,9 +199,13 @@ export function TransactionsTable({
     useEffect(() => setFrom(filters.from), [filters.from]);
     useEffect(() => setTo(filters.to), [filters.to]);
     useEffect(() => {
-        const transaction = transactions.data.find((row) => row.transaction_no === transactionToOpen);
+        const transaction = transactions.data.find(
+            (row) =>
+                row.transaction_no === transactionToOpen ||
+                (transactionIdToOpen !== null && String(row.id) === transactionIdToOpen),
+        );
         if (transaction) setSelected(transaction);
-    }, [transactionToOpen, transactions.data]);
+    }, [transactionIdToOpen, transactionToOpen, transactions.data]);
     useEffect(() => () => window.clearTimeout(debounce.current), []);
 
     const updateSearch = (value: string) => {

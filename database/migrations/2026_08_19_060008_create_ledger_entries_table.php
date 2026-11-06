@@ -12,11 +12,11 @@ return new class extends Migration {
             $table->foreignId('ledger_transaction_id')->constrained('ledger_transactions')->restrictOnDelete();
             $table->foreignId('ledger_account_id')->constrained('ledger_accounts')->restrictOnDelete();
             $table->foreignId('wallet_id')->nullable()->constrained('wallets')->restrictOnDelete();
-            $table->unsignedBigInteger('debit')->default(0);
-            $table->unsignedBigInteger('credit')->default(0);
+            $table->decimal('debit', 12, 2)->default(0);
+            $table->decimal('credit', 12, 2)->default(0);
             $table->unsignedSmallInteger('line_no');
-            $table->bigInteger('balance_before')->nullable();
-            $table->bigInteger('balance_after')->nullable();
+            $table->decimal('balance_before', 12, 2)->nullable();
+            $table->decimal('balance_after', 12, 2)->nullable();
             $table->timestamp('created_at')->useCurrent();
 
             $table->unique(['ledger_transaction_id', 'line_no']);

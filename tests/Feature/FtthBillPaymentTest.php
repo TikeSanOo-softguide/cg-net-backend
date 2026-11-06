@@ -13,16 +13,86 @@ use App\Models\User;
 use App\Models\Wallet;
 use App\Models\LedgerTransaction;
 use App\Notifications\FtthBillPaymentStatusNotification;
+use App\Services\BroarbandAccount\AccountInfoService;
+use App\Services\CgNetApiClient;
 use App\Services\FtthBill\FtthBillPaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
+use Mockery;
+use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class FtthBillPaymentTest extends TestCase
 {
     use RefreshDatabase;
+
+    private MockInterface $accountInfo;
+
+    private MockInterface $cgNet;
+
+    private bool $accountNotFound = false;
+
+    private array $rechargeResponse = ['ErrCode' => 0, 'Message' => 'success', 'billing_ref' => 'BILL-1001'];
+
+    private int $rechargeStatus = 200;
+
+    /** @var list<array{command: string, payload: array<string, mixed>}> */
+    private array $rechargeRequests = [];
+
+    /** @var list<array{service_type: string, account: string}> */
+    private array $accountLookups = [];
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Notification::fake();
+
+        $this->accountInfo = Mockery::mock(AccountInfoService::class);
+        $this->accountInfo
+            ->shouldReceive('find')
+            ->byDefault()
+            ->andReturnUsing(function (string $serviceType, string $account): ?array {
+                $this->accountLookups[] = ['service_type' => $serviceType, 'account' => $account];
+
+                if ($this->accountNotFound) {
+                    return null;
+                }
+
+                return [
+                    'account' => $account,
+                    'productID' => 'ftth-product-1',
+                    'productName' => 'FTTH 100M',
+                    'productPrice' => 1000,
+                    'productLine' => 'FTTH',
+                    'productSpeed' => '100M',
+                    'monthCycle' => 1,
+                    'monthCycleUnit' => '月',
+                    'installationFee' => 0,
+                ];
+            });
+        $this->app->instance(AccountInfoService::class, $this->accountInfo);
+
+        $this->cgNet = Mockery::mock(CgNetApiClient::class);
+        $this->cgNet
+            ->shouldReceive('post')
+            ->byDefault()
+            ->withArgs(function (string $command, array $payload): bool {
+                $this->rechargeRequests[] = ['command' => $command, 'payload' => $payload];
+
+                return $command === 'RechargeAPI';
+            })
+            ->andReturnUsing(
+                fn() => new Response(
+                    Http::response($this->rechargeResponse, $this->rechargeStatus)->wait(),
+                ),
+            );
+        $this->app->instance(CgNetApiClient::class, $this->cgNet);
+    }
 
     public function test_pending_slip_returns_bill_month_from_billing_server(): void
     {
@@ -270,36 +340,74 @@ class FtthBillPaymentTest extends TestCase
         );
     }
 
-    public function test_user_can_pay_ftth_bill_when_wallet_has_enough_balance(): void
+    public function test_ftth_bill_payment_requires_the_correct_user_password(): void
     {
-        Notification::fake();
-
-        Http::fake([
-            'billing-server.test/bill-details*' => Http::response(['amount' => 1000], 200),
-            'billing-server.test/extend-plan' => Http::response(
-                [
-                    'success' => true,
-                    'billing_ref' => 'BILL-1001',
-                    'payment_ref' => 'PAY-1001',
-                ],
-                200,
-            ),
-        ]);
+        Http::fake();
 
         [$user, $wallet] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->postJson('/api/ftth-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
+                'service_type' => 'FTTH',
+                'idempotency_key' => 'ftth-pay-wrong-password',
+                'password' => '654321',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'MSG-USER-002')
+            ->assertJsonValidationErrors(['password']);
+
+        $wallet->refresh();
+        $this->assertEquals(1500, $wallet->balance);
+        $this->assertDatabaseCount('ledger_transactions', 0);
+        Http::assertNothingSent();
+    }
+
+    public function test_ftth_bill_payment_password_must_match_registration_format(): void
+    {
+        Http::fake();
+
+        [$user, $wallet] = $this->makePayer(balance: 1500);
+
+        $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
+            ->postJson('/api/ftth-bills/pay', [
+                'broadband_account_number' => $user->broadband_account_number,
+                'service_type' => 'FTTH',
+                'idempotency_key' => 'ftth-pay-invalid-password-format',
+                'password' => '12345',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['password']);
+
+        $wallet->refresh();
+        $this->assertEquals(1500, $wallet->balance);
+        $this->assertDatabaseCount('ledger_transactions', 0);
+        Http::assertNothingSent();
+    }
+
+    public function test_user_can_pay_ftth_bill_when_wallet_has_enough_balance(): void
+    {
+        Notification::fake();
+
+        Http::fake();
+
+        [$user, $wallet] = $this->makePayer(balance: 1500);
+
+        $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
+            ->postJson('/api/ftth-bills/pay', [
+                'broadband_account_number' => $user->broadband_account_number,
+                'service_type' => 'FTTH',
                 'idempotency_key' => 'ftth-pay-success-1',
+                'password' => '123456',
+                'remark' => 'monthly bill',
             ])
             ->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.amount', 1000)
+            ->assertJsonPath('data.amount', '1000.00')
             ->assertJsonPath('data.billing_status', 'completed');
 
         $wallet->refresh();
-        $this->assertSame(500, $wallet->balance);
+        $this->assertEquals(500, $wallet->balance);
         $this->assertDatabaseHas('ledger_transactions', [
             'wallet_id' => $wallet->id,
             'type' => LedgerTransactionType::FtthBill->value,
@@ -309,8 +417,6 @@ class FtthBillPaymentTest extends TestCase
         $this->assertDatabaseHas('bill_payments', [
             'status' => BillPaymentStatus::Completed->value,
             'broadband_account_number' => $user->broadband_account_number,
-            'external_bill_ref' => 'BILL-1001',
-            'external_payment_ref' => 'PAY-1001',
         ]);
 
         $billPayment = BillPayment::query()
@@ -320,9 +426,23 @@ class FtthBillPaymentTest extends TestCase
             ->firstOrFail();
 
         $this->assertIsArray($billPayment->external_response);
+        $this->assertNotEmpty($billPayment->order_no);
+        $this->assertSame('FTTH', $billPayment->service_type);
+        $this->assertSame('ftth-product-1', $billPayment->product_id);
+        $this->assertSame('1000.00', $billPayment->product_price);
+        $this->assertSame('monthly bill', $billPayment->remark);
+        $this->assertSame([
+            'product_id' => 'ftth-product-1',
+            'product_name' => 'FTTH 100M',
+            'product_price' => 1000,
+            'month_cycle' => 1,
+            'month_cycle_unit' => '月',
+            'product_line' => 'FTTH',
+            'product_speed' => '100M',
+        ], $billPayment->snapshot);
         $this->assertSame($user->broadband_account_number, $billPayment->external_response['broadband_account_number']);
         $this->assertSame('success', $billPayment->external_response['outcome'] ?? null);
-        $this->assertSame('BILL-1001', $billPayment->external_response['billing_ref'] ?? null);
+        $this->assertSame('BILL-1001', $billPayment->external_response['payload']['billing_ref'] ?? null);
         $this->assertNotNull($billPayment->confirmed_at);
         $this->assertDatabaseHas('ledger_entries', [
             'wallet_id' => $wallet->id,
@@ -330,11 +450,18 @@ class FtthBillPaymentTest extends TestCase
             'credit' => 0,
         ]);
 
-        Http::assertSent(function ($request) {
-            return str_contains($request->url(), '/extend-plan') &&
-                isset($request['payment_ref']) &&
-                isset($request['idempotency_key']);
-        });
+        $this->assertCount(1, $this->rechargeRequests);
+        $this->assertSame('RechargeAPI', $this->rechargeRequests[0]['command']);
+        $this->assertSame($billPayment->order_no, $this->rechargeRequests[0]['payload']['OrderNo']);
+        $this->assertSame($user->broadband_account_number, $this->rechargeRequests[0]['payload']['Account']);
+        $this->assertSame('FTTH', $this->rechargeRequests[0]['payload']['ServiceType']);
+        $this->assertSame('ftth-product-1', $this->rechargeRequests[0]['payload']['ProductID']);
+        $this->assertSame(1000.0, $this->rechargeRequests[0]['payload']['ProductPrice']);
+        $this->assertSame('monthly bill', $this->rechargeRequests[0]['payload']['Remark']);
+        $this->assertSame(
+            [['service_type' => 'FTTH', 'account' => $user->broadband_account_number]],
+            $this->accountLookups,
+        );
 
         Notification::assertSentToTimes($user, FtthBillPaymentStatusNotification::class, 1);
         Notification::assertSentTo(
@@ -345,34 +472,69 @@ class FtthBillPaymentTest extends TestCase
         );
     }
 
+    public function test_bill_payment_submits_expected_payload_through_mocked_cg_net_client(): void
+    {
+        [$user] = $this->makePayer(balance: 1500);
+
+        $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
+            ->postJson('/api/ftth-bills/pay', [
+                'broadband_account_number' => $user->broadband_account_number,
+                'service_type' => 'FTTH',
+                'idempotency_key' => 'ftth-mocked-cg-api',
+                'password' => '123456',
+                'remark' => 'customer note',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.billing_status', 'completed');
+
+        $orderNo = BillPayment::query()->value('order_no');
+        $this->assertNotEmpty($orderNo);
+
+        $this->assertSame(
+            [['service_type' => 'FTTH', 'account' => $user->broadband_account_number]],
+            $this->accountLookups,
+        );
+        $this->assertCount(1, $this->rechargeRequests);
+        $this->assertSame('RechargeAPI', $this->rechargeRequests[0]['command']);
+        $this->assertSame([
+            'OrderNo' => $orderNo,
+            'Account' => $user->broadband_account_number,
+            'ServiceType' => 'FTTH',
+            'ProductID' => 'ftth-product-1',
+            'ProductPrice' => 1000.0,
+            'Remark' => 'customer note',
+        ], $this->rechargeRequests[0]['payload']);
+
+        $snapshot = BillPayment::query()->firstOrFail()->snapshot;
+        $this->assertSame('FTTH 100M', $snapshot['product_name']);
+        $this->assertSame('FTTH', $snapshot['product_line']);
+        $this->assertSame('100M', $snapshot['product_speed']);
+        $this->assertSame('ftth-product-1', $snapshot['product_id']);
+        $this->assertSame(1000, $snapshot['product_price']);
+    }
+
     public function test_wallet_is_refunded_when_external_billing_rejects_payment(): void
     {
         Notification::fake();
 
-        Http::fake([
-            'billing-server.test/bill-details*' => Http::response(['amount' => 1000], 200),
-            'billing-server.test/extend-plan' => Http::response(
-                [
-                    'success' => false,
-                    'message' => 'Billing API rejected the request.',
-                ],
-                422,
-            ),
-        ]);
+        Http::fake();
+        $this->rechargeResponse = ['ErrCode' => 100, 'Message' => 'Billing API rejected the request.'];
 
         [$user, $wallet] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->postJson('/api/ftth-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
+                'service_type' => 'FTTH',
                 'idempotency_key' => 'ftth-pay-fail-1',
+                'password' => '123456',
             ])
             ->assertStatus(502)
             ->assertJsonPath('success', false)
             ->assertJsonPath('message', 'External billing payment failed. Wallet was refunded.');
 
         $wallet->refresh();
-        $this->assertSame(1500, $wallet->balance);
+        $this->assertEquals(1500, $wallet->balance);
         $this->assertDatabaseHas('ledger_transactions', [
             'wallet_id' => $wallet->id,
             'type' => LedgerTransactionType::Refund->value,
@@ -399,33 +561,98 @@ class FtthBillPaymentTest extends TestCase
         );
     }
 
-    public function test_unknown_billing_outcome_leaves_payment_processing(): void
+    #[DataProvider('providerRejectionCodes')]
+    public function test_account_and_product_rejection_codes_refund_the_payment(int $errorCode): void
     {
-        Queue::fake();
         Notification::fake();
 
-        Http::fake([
-            'billing-server.test/bill-details*' => Http::response(['amount' => 1000], 200),
-            'billing-server.test/extend-plan' => Http::response(
-                [
-                    'message' => 'Gateway timeout',
-                ],
-                504,
-            ),
-        ]);
+        $this->rechargeResponse = [
+            'ErrCode' => $errorCode,
+            'Message' => 'The account or product does not exist.',
+        ];
 
         [$user, $wallet] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->postJson('/api/ftth-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
+                'service_type' => 'FTTH',
+                'idempotency_key' => 'ftth-reject-code-' . $errorCode,
+                'password' => '123456',
+            ])
+            ->assertStatus(502)
+            ->assertJsonPath('success', false);
+
+        $this->assertEquals(1500, $wallet->fresh()->balance);
+        $this->assertDatabaseHas('ledger_transactions', [
+            'wallet_id' => $wallet->id,
+            'type' => LedgerTransactionType::FtthBill->value,
+            'status' => LedgerTransactionStatus::Failed->value,
+        ]);
+    }
+
+    public static function providerRejectionCodes(): array
+    {
+        return [
+            'account does not exist' => [2],
+            'product does not exist' => [500],
+        ];
+    }
+
+    public function test_duplicate_recharge_order_is_treated_as_success_and_sends_all_required_fields(): void
+    {
+        Notification::fake();
+        $this->rechargeResponse = [
+            'ErrCode' => 1,
+            'Message' => 'The order has already been renewed.',
+        ];
+
+        [$user, $wallet] = $this->makePayer(balance: 1500);
+
+        $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
+            ->postJson('/api/ftth-bills/pay', [
+                'broadband_account_number' => $user->broadband_account_number,
+                'service_type' => 'FTTH',
+                'idempotency_key' => 'ftth-recharge-duplicate-1',
+                'password' => '123456',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.billing_status', 'completed');
+
+        $wallet->refresh();
+        $this->assertEquals(500, $wallet->balance);
+        $this->assertSame('RechargeAPI', $this->rechargeRequests[0]['command']);
+        $this->assertArrayHasKey('Remark', $this->rechargeRequests[0]['payload']);
+        $this->assertSame('', $this->rechargeRequests[0]['payload']['Remark']);
+        $this->assertDatabaseMissing('ledger_transactions', [
+            'wallet_id' => $wallet->id,
+            'type' => LedgerTransactionType::Refund->value,
+        ]);
+    }
+
+    public function test_unknown_billing_outcome_leaves_payment_processing(): void
+    {
+        Queue::fake();
+        Notification::fake();
+
+        Http::fake();
+        $this->rechargeResponse = ['Message' => 'Gateway timeout'];
+        $this->rechargeStatus = 504;
+
+        [$user, $wallet] = $this->makePayer(balance: 1500);
+
+        $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
+            ->postJson('/api/ftth-bills/pay', [
+                'broadband_account_number' => $user->broadband_account_number,
+                'service_type' => 'FTTH',
                 'idempotency_key' => 'ftth-pay-unknown-1',
+                'password' => '123456',
             ])
             ->assertStatus(202)
             ->assertJsonPath('data.billing_status', 'processing');
 
         $wallet->refresh();
-        $this->assertSame(500, $wallet->balance);
+        $this->assertEquals(500, $wallet->balance);
         $this->assertDatabaseHas('ledger_transactions', [
             'wallet_id' => $wallet->id,
             'type' => LedgerTransactionType::FtthBill->value,
@@ -457,46 +684,39 @@ class FtthBillPaymentTest extends TestCase
 
     public function test_wallet_balance_must_be_sufficient_before_payments_are_attempted(): void
     {
-        Http::fake([
-            'billing-server.test/bill-details*' => Http::response(['amount' => 1000], 200),
-        ]);
+        Http::fake();
 
         [$user, $wallet] = $this->makePayer(balance: 500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->postJson('/api/ftth-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
+                'service_type' => 'FTTH',
                 'idempotency_key' => 'ftth-pay-insufficient-1',
+                'password' => '123456',
             ])
             ->assertUnprocessable()
             ->assertJsonPath('message', 'Insufficient wallet balance.');
 
         $wallet->refresh();
-        $this->assertSame(500, $wallet->balance);
-        Http::assertSentCount(1);
-        Http::assertNotSent(fn($request) => str_contains($request->url(), '/extend-plan'));
+        $this->assertEquals(500, $wallet->balance);
+        Http::assertNothingSent();
+        $this->assertSame([], $this->rechargeRequests);
     }
 
     public function test_idempotent_replay_returns_completed_payment(): void
     {
         Notification::fake();
 
-        Http::fake([
-            'billing-server.test/bill-details*' => Http::response(['amount' => 1000], 200),
-            'billing-server.test/extend-plan' => Http::response(
-                [
-                    'success' => true,
-                    'billing_ref' => 'BILL-1001',
-                ],
-                200,
-            ),
-        ]);
+        Http::fake();
 
         [$user, $wallet] = $this->makePayer(balance: 1500);
 
         $payload = [
             'broadband_account_number' => $user->broadband_account_number,
+            'service_type' => 'FTTH',
             'idempotency_key' => 'ftth-pay-idempotent-1',
+            'password' => '123456',
         ];
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
@@ -509,7 +729,7 @@ class FtthBillPaymentTest extends TestCase
             ->assertJsonPath('message', 'FTTH bill payment already processed.');
 
         $wallet->refresh();
-        $this->assertSame(500, $wallet->balance);
+        $this->assertEquals(500, $wallet->balance);
         $this->assertSame(
             1,
             LedgerTransaction::query()
@@ -525,22 +745,16 @@ class FtthBillPaymentTest extends TestCase
     {
         Notification::fake();
 
-        Http::fake([
-            'billing-server.test/bill-details*' => Http::response(['amount' => 1000], 200),
-            'billing-server.test/extend-plan' => Http::response(
-                [
-                    'success' => false,
-                    'message' => 'Rejected',
-                ],
-                422,
-            ),
-        ]);
+        Http::fake();
+        $this->rechargeResponse = ['ErrCode' => 100, 'Message' => 'Rejected'];
 
         [$user] = $this->makePayer(balance: 1500);
 
         $payload = [
             'broadband_account_number' => $user->broadband_account_number,
+            'service_type' => 'FTTH',
             'idempotency_key' => 'ftth-pay-fail-replay-1',
+            'password' => '123456',
         ];
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
@@ -559,16 +773,13 @@ class FtthBillPaymentTest extends TestCase
     {
         Notification::fake();
 
-        Http::fake([
-            'billing-server.test/payment-status*' => Http::response(
-                [
-                    'status' => 'completed',
-                    'billing_ref' => 'BILL-RECON-1',
-                    'payment_ref' => 'PAY-RECON-1',
-                ],
-                200,
-            ),
-        ]);
+        Http::fake();
+        $this->rechargeResponse = [
+            'ErrCode' => 0,
+            'Message' => 'success',
+            'billing_ref' => 'BILL-RECON-1',
+            'OrderNo' => 'PAY-RECON-1',
+        ];
 
         [$user, $wallet] = $this->makePayer(balance: 500);
 
@@ -586,6 +797,19 @@ class FtthBillPaymentTest extends TestCase
         BillPayment::query()->create([
             'ledger_transaction_id' => $transaction->id,
             'broadband_account_number' => $user->broadband_account_number,
+            'order_no' => 'FTTH-RECON-1',
+            'service_type' => 'FTTH',
+            'product_id' => 'ftth-product-1',
+            'product_price' => 1000,
+            'snapshot' => [
+                'product_id' => 'ftth-product-1',
+                'product_name' => 'FTTH 100M',
+                'product_price' => 1000,
+                'month_cycle' => 1,
+                'month_cycle_unit' => '月',
+                'product_line' => 'FTTH',
+                'product_speed' => '100M',
+            ],
             'status' => BillPaymentStatus::Processing,
             'external_response' => [
                 'broadband_account_number' => $user->broadband_account_number,
@@ -599,9 +823,9 @@ class FtthBillPaymentTest extends TestCase
         $this->assertDatabaseHas('bill_payments', [
             'ledger_transaction_id' => $transaction->id,
             'status' => BillPaymentStatus::Completed->value,
-            'external_bill_ref' => 'BILL-RECON-1',
-            'external_payment_ref' => 'PAY-RECON-1',
         ]);
+        $this->assertSame('FTTH-RECON-1', $this->rechargeRequests[0]['payload']['OrderNo']);
+        $this->assertSame($user->broadband_account_number, $this->accountLookups[0]['account']);
 
         $billPayment = BillPayment::query()->where('ledger_transaction_id', $transaction->id)->firstOrFail();
         $this->assertIsArray($billPayment->external_response);
@@ -624,9 +848,8 @@ class FtthBillPaymentTest extends TestCase
     {
         Notification::fake();
 
-        Http::fake([
-            'billing-server.test/payment-status*' => Http::response([], 404),
-        ]);
+        Http::fake();
+        $this->rechargeResponse = ['ErrCode' => 100, 'Message' => 'Recharge rejected.'];
 
         [$user, $wallet] = $this->makePayer(balance: 500);
 
@@ -644,6 +867,10 @@ class FtthBillPaymentTest extends TestCase
         BillPayment::query()->create([
             'ledger_transaction_id' => $transaction->id,
             'broadband_account_number' => $user->broadband_account_number,
+            'order_no' => 'FTTH-RECON-REFUND-1',
+            'service_type' => 'FTTH',
+            'product_id' => 'ftth-product-1',
+            'product_price' => 1000,
             'status' => BillPaymentStatus::Processing,
             'external_response' => [
                 'broadband_account_number' => $user->broadband_account_number,
@@ -654,7 +881,7 @@ class FtthBillPaymentTest extends TestCase
 
         $wallet->refresh();
         $transaction->refresh();
-        $this->assertSame(1500, $wallet->balance);
+        $this->assertEquals(1500, $wallet->balance);
         $this->assertSame(LedgerTransactionStatus::Failed, $transaction->status);
         $this->assertDatabaseHas('ledger_transactions', [
             'wallet_id' => $wallet->id,
@@ -674,14 +901,7 @@ class FtthBillPaymentTest extends TestCase
     {
         Notification::fake();
 
-        Http::fake([
-            'billing-server.test/bill-details*' => Http::response(['amount' => 1000], 200),
-            'billing-server.test/extend-plan' => Http::response([
-                'success' => true,
-                'billing_ref' => 'BILL-2002',
-                'payment_ref' => 'PAY-2002',
-            ], 200),
-        ]);
+        Http::fake();
 
         [$user, $wallet] = $this->makePayer(balance: 1500);
         $user->forceFill(['broadband_account_number' => null])->save();
@@ -689,15 +909,17 @@ class FtthBillPaymentTest extends TestCase
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->postJson('/api/ftth-bills/pay', [
                 'broadband_account_number' => 'CG00000000',
+                'service_type' => 'FTTH',
                 'idempotency_key' => 'ftth-pay-other-acct',
+                'password' => '123456',
             ])
             ->assertOk()
             ->assertJsonPath('code', 'MSG-FTTH-008')
-            ->assertJsonPath('data.amount', 1000);
+            ->assertJsonPath('data.amount', '1000.00');
 
         $wallet->refresh();
         $user->refresh();
-        $this->assertSame(500, $wallet->balance);
+        $this->assertEquals(500, $wallet->balance);
         $this->assertNull($user->broadband_account_number);
         $this->assertDatabaseHas('bill_payments', [
             'broadband_account_number' => 'CG00000000',
@@ -714,57 +936,90 @@ class FtthBillPaymentTest extends TestCase
     {
         Notification::fake();
 
-        Http::fake([
-            'billing-server.test/bill-details*' => Http::response(['amount' => 1000], 200),
-            'billing-server.test/extend-plan' => Http::response([
-                'success' => true,
-                'billing_ref' => 'BILL-2003',
-                'payment_ref' => 'PAY-2003',
-            ], 200),
-        ]);
+        Http::fake();
 
         [$user, $wallet] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->postJson('/api/ftth-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
+                'service_type' => 'FTTH',
                 'idempotency_key' => 'ftth-pay-one-account',
+                'password' => '123456',
             ])
             ->assertOk();
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->postJson('/api/ftth-bills/pay', [
                 'broadband_account_number' => 'CG00000000',
+                'service_type' => 'FTTH',
                 'idempotency_key' => 'ftth-pay-one-account',
+                'password' => '123456',
             ])
             ->assertStatus(409)
             ->assertJsonPath('code', 'MSG-FTTH-013')
             ->assertJsonPath('message', 'This payment request cannot be replayed.');
 
         $wallet->refresh();
-        $this->assertSame(500, $wallet->balance);
+        $this->assertEquals(500, $wallet->balance);
+        $this->assertSame(1, LedgerTransaction::query()->where('type', LedgerTransactionType::FtthBill)->count());
+    }
+
+    public function test_same_idempotency_key_cannot_be_reused_by_another_wallet(): void
+    {
+        Notification::fake();
+
+        Http::fake();
+
+        [$firstUser] = $this->makePayer(balance: 1500);
+        [$secondUser, $secondWallet] = $this->makePayer(balance: 1500);
+        $idempotencyKey = 'ftth-pay-global-key';
+
+        $this->withToken($firstUser->createToken('test')->plainTextToken, 'Bearer')
+            ->postJson('/api/ftth-bills/pay', [
+                'broadband_account_number' => $firstUser->broadband_account_number,
+                'service_type' => 'FTTH',
+                'idempotency_key' => $idempotencyKey,
+                'password' => '123456',
+            ])
+            ->assertOk();
+
+        $this->withToken($secondUser->createToken('test')->plainTextToken, 'Bearer')
+            ->postJson('/api/ftth-bills/pay', [
+                'broadband_account_number' => $secondUser->broadband_account_number,
+                'service_type' => 'FTTH',
+                'idempotency_key' => $idempotencyKey,
+                'password' => '123456',
+            ])
+            ->assertStatus(409)
+            ->assertJsonPath('code', 'MSG-FTTH-013')
+            ->assertJsonPath('message', 'This payment request cannot be replayed.');
+
+        $secondWallet->refresh();
+        $this->assertEquals(1500, $secondWallet->balance);
         $this->assertSame(1, LedgerTransaction::query()->where('type', LedgerTransactionType::FtthBill)->count());
     }
 
     public function test_unknown_bill_does_not_debit_the_wallet(): void
     {
-        Http::fake([
-            'billing-server.test/bill-details*' => Http::response([], 404),
-        ]);
+        Http::fake();
+        $this->accountNotFound = true;
 
         [$user, $wallet] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->postJson('/api/ftth-bills/pay', [
                 'broadband_account_number' => 'CG00000000',
+                'service_type' => 'FTTH',
                 'idempotency_key' => 'ftth-pay-missing-bill',
+                'password' => '123456',
             ])
             ->assertUnprocessable()
             ->assertJsonPath('code', 'MSG-FTTH-004')
             ->assertJsonPath('message', 'Broadband account number not found.');
 
         $wallet->refresh();
-        $this->assertSame(1500, $wallet->balance);
+        $this->assertEquals(1500, $wallet->balance);
         $this->assertDatabaseCount('ledger_transactions', 0);
     }
 
@@ -775,7 +1030,9 @@ class FtthBillPaymentTest extends TestCase
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->postJson('/api/ftth-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
+                'service_type' => 'FTTH',
                 'idempotency_key' => str_repeat('a', 94),
+                'password' => '123456',
             ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['idempotency_key']);
@@ -788,9 +1045,24 @@ class FtthBillPaymentTest extends TestCase
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->postJson('/api/ftth-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
+                'service_type' => 'FTTH',
+                'password' => '123456',
             ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['idempotency_key']);
+    }
+
+    public function test_service_type_is_required(): void
+    {
+        [$user] = $this->makePayer(balance: 1500);
+
+        $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
+            ->postJson('/api/ftth-bills/pay', [
+                'broadband_account_number' => $user->broadband_account_number,
+                'password' => '123456',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['service_type']);
     }
 
     /**
@@ -802,7 +1074,7 @@ class FtthBillPaymentTest extends TestCase
 
         $user = User::factory()->create([
             'phone' => '959' . fake()->unique()->numerify('########'),
-            'password' => 'password123',
+            'password' => '123456',
             'broadband_account_number' => $accountNumber,
         ]);
 

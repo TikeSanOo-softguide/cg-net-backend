@@ -13,7 +13,7 @@ return new class extends Migration {
             $table->string('transaction_no', 255)->unique();
             $table->string('type', 24);
             $table->string('status', 16)->default('pending');
-            $table->bigInteger('amount');
+            $table->decimal('amount', 12, 2);
             $table->string('idempotency_key', 100)->unique();
             $table->foreignId('reversal_of')->nullable()->constrained('ledger_transactions')->restrictOnDelete();
             $table->foreignId('related_transaction_id')

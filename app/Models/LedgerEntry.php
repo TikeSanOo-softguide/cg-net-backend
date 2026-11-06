@@ -35,11 +35,11 @@ class LedgerEntry extends Model
     protected function casts(): array
     {
         return [
-            'debit' => 'integer',
-            'credit' => 'integer',
+            'debit' => 'decimal:2',
+            'credit' => 'decimal:2',
             'line_no' => 'integer',
-            'balance_before' => 'integer',
-            'balance_after' => 'integer',
+            'balance_before' => 'decimal:2',
+            'balance_after' => 'decimal:2',
             'created_at' => 'datetime',
         ];
     }
@@ -69,8 +69,10 @@ class LedgerEntry extends Model
         return (int) $this->credit > 0;
     }
 
-    public function amount(): int
+    public function amount(): string
     {
-        return (int) max($this->debit, $this->credit);
+        return (float) $this->debit >= (float) $this->credit
+            ? $this->debit
+            : $this->credit;
     }
 }

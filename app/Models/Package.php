@@ -32,8 +32,8 @@ class Package extends Model
     protected function casts(): array
     {
         return [
-            'price' => 'integer',
-            'installation_fee' => 'integer',
+            'price' => 'decimal:2',
+            'installation_fee' => 'decimal:2',
             'includes_free_iptv' => 'boolean',
             'is_active' => 'boolean',
             'recommended' => 'boolean',

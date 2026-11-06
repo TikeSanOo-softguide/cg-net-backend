@@ -634,8 +634,9 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
         if (
             strlen($serial) > 32 ||
             filter_var($amount, FILTER_VALIDATE_INT) === false ||
-            (int) $amount < 1 ||
-            (int) $amount > 1000000 ||
+            ! is_numeric($amount) ||
+            (float) $amount < 1 ||
+            (float) $amount > 1000000 ||
             $parsedDate === false ||
             $parsedDate->format('Y-m-d') !== $dateToValidate ||
             ($dateErrors !== false && ($dateErrors['warning_count'] > 0 || $dateErrors['error_count'] > 0))
@@ -655,7 +656,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
         return [
             'serial_no' => $serial,
             'pin' => $pin,
-            'amount' => (int) $amount,
+            'amount' => round((float) $amount, 2),
             'generate_date' => $generateDate,
         ];
     }

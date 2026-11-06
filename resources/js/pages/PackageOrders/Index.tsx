@@ -30,7 +30,7 @@ type PackageOrder = {
     order_no: string | null;
     activation_result_code: number | null;
     failure_reason: string | null;
-    amount: number;
+    amount: string;
     status: string;
     created_at: string | null;
     completed_at: string | null;
@@ -123,20 +123,6 @@ export default function PackageOrdersIndex({
 
     const columns: DataTableColumn<PackageOrder>[] = [
         {
-            id: 'order_no',
-            header: t('package_orders.order_no'),
-            cell: (row) =>
-                row.order_no ? (
-                    <span className="flex items-center gap-1.5 font-mono text-xs">
-                        {row.order_no}
-                        <CopyValueButton value={row.order_no} label={t('package_orders.order_no')} />
-                    </span>
-                ) : (
-                    '—'
-                ),
-            searchValue: (row) => row.order_no ?? '',
-        },
-        {
             id: 'transaction',
             header: t('transactions.number'),
             cell: (row) =>
@@ -151,6 +137,20 @@ export default function PackageOrdersIndex({
                     '—'
                 ),
             searchValue: (row) => row.transaction_no ?? '',
+        },
+        {
+            id: 'order_no',
+            header: t('transactions.order_no'),
+            cell: (row) =>
+                row.order_no ? (
+                    <span className="flex items-center gap-1.5 font-mono text-xs">
+                        {row.order_no}
+                        <CopyValueButton value={row.order_no} label={t('package_orders.order_no')} />
+                    </span>
+                ) : (
+                    '—'
+                ),
+            searchValue: (row) => row.order_no ?? '',
         },
         {
             id: 'customer',

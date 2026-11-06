@@ -65,7 +65,7 @@ class LedgerPoster
      */
     public function debitWallet(
         Wallet $wallet,
-        int $amount,
+        float $amount,
         LedgerAccountCode $contraAccount,
         LedgerTransactionType $type,
         LedgerTransactionStatus $status,
@@ -105,7 +105,7 @@ class LedgerPoster
      */
     public function creditWallet(
         Wallet $wallet,
-        int $amount,
+        float $amount,
         LedgerAccountCode $contraAccount,
         LedgerTransactionType $type,
         LedgerTransactionStatus $status,
@@ -141,11 +141,11 @@ class LedgerPoster
     }
 
     /**
-     * @param  list<array{account: LedgerAccountCode|'customer'|LedgerAccount, debit?: int, credit?: int}>  $lines
+     * @param  list<array{account: LedgerAccountCode|'customer'|LedgerAccount, debit?: float, credit?: float}>  $lines
      */
     public function post(
         Wallet $wallet,
-        int $amount,
+        float $amount,
         LedgerTransactionType $type,
         LedgerTransactionStatus $status,
         string $idempotencyKey,
@@ -199,13 +199,13 @@ class LedgerPoster
 
             $customerAccount = $this->ensureCustomerLiabilityAccount($locked);
             $resolvedLines = [];
-            $totalDebit = 0;
-            $totalCredit = 0;
-            $walletDelta = 0;
+            $totalDebit = 0.0;
+            $totalCredit = 0.0;
+            $walletDelta = 0.0;
 
             foreach ($lines as $index => $line) {
-                $debit = (int) ($line['debit'] ?? 0);
-                $credit = (int) ($line['credit'] ?? 0);
+                $debit = round((float) ($line['debit'] ?? 0), 2);
+                $credit = round((float) ($line['credit'] ?? 0), 2);
 
                 if ($debit < 0 || $credit < 0 || ($debit > 0 && $credit > 0) || ($debit === 0 && $credit === 0)) {
                     throw new InvalidArgumentException(
@@ -234,11 +234,14 @@ class LedgerPoster
                 ];
             }
 
-            if ($totalDebit !== $totalCredit || $totalDebit !== $amount) {
+            if (
+                round($totalDebit, 2) !== round($totalCredit, 2) ||
+                round($totalDebit, 2) !== round($amount, 2)
+            ) {
                 throw new RuntimeException('Ledger posting is unbalanced or does not match the transaction amount.');
             }
 
-            $before = (int) $locked->balance;
+            $before = (float) $locked->balance;
             $after = $before + $walletDelta;
 
             if ($after < 0) {

@@ -387,9 +387,20 @@ class WalletSeeder extends Seeder
         return BillPayment::query()->create([
             'ledger_transaction_id' => $transaction->id,
             'broadband_account_number' => $accountNumber,
+            'order_no' => 'FTTH-SEED-'.$transaction->id,
+            'service_type' => 'FTTH',
+            'product_id' => 'seed-ftth-product',
+            'product_price' => $transaction->amount,
+            'snapshot' => [
+                'product_id' => 'seed-ftth-product',
+                'product_name' => 'Seed FTTH package',
+                'product_price' => $transaction->amount,
+                'month_cycle' => 1,
+                'month_cycle_unit' => '月',
+                'product_line' => 'FTTH',
+                'product_speed' => '100M',
+            ],
             'status' => $status,
-            'external_bill_ref' => 'BILL-'.fake()->numerify('####'),
-            'external_payment_ref' => 'PAY-'.fake()->numerify('####'),
             'external_response' => ['broadband_account_number' => $accountNumber],
         ]);
     }
@@ -404,6 +415,7 @@ class WalletSeeder extends Seeder
             'user_id' => $user->id,
             'package_id' => $package->id,
             'ledger_transaction_id' => $transaction->id,
+            'order_no' => 'PKG-SEED-'.$transaction->id,
             'status' => $status,
             'snapshot' => [
                 'package_id' => $package->id,

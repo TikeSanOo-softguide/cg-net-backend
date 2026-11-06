@@ -120,7 +120,7 @@ class CustomerManagementTest extends TestCase
                     ->where('accountBinding.account_number', '12345678')
                     ->where('accountBinding.service_type', 'CG')
                     ->has('packageHistory', 1)
-                    ->where('wallet.balance', '15000')
+                    ->where('wallet.balance', '15000.00')
                     ->has('wallet.transactions', 1),
             );
     }
@@ -226,9 +226,9 @@ class CustomerManagementTest extends TestCase
             ->assertInertia(
                 fn(Assert $page) => $page
                     ->where('wallet.transaction_overview.adjustment.credit.count', 1)
-                    ->where('wallet.transaction_overview.adjustment.credit.amount', '500')
+                    ->where('wallet.transaction_overview.adjustment.credit.amount', '500.00')
                     ->where('wallet.transaction_overview.adjustment.debit.count', 1)
-                    ->where('wallet.transaction_overview.adjustment.debit.amount', '200'),
+                    ->where('wallet.transaction_overview.adjustment.debit.amount', '200.00'),
             );
     }
 

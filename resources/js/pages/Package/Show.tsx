@@ -52,7 +52,7 @@ type PackageShowProps = {
 };
 
 function formatMmk(value: string): string {
-    return `${Number(value).toLocaleString()} MMK`;
+    return `${String(value)} MMK`;
 }
 
 export default function PackageShow({

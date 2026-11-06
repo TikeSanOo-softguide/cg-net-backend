@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import { CalendarIcon, CircleDotIcon, EyeIcon, ReceiptIcon } from 'lucide-react';
+import { CalendarIcon, CheckCircle2Icon, CircleDotIcon, EyeIcon, ReceiptIcon, RotateCcwIcon } from 'lucide-react';
 
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import { BackButton } from '@/components/BackButton';
@@ -15,6 +15,7 @@ import { CopyValueButton } from '@/components/CopyValueButton';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCan } from '@/hooks/useCan';
@@ -25,6 +26,7 @@ import { formatPhoneInternational } from '@/lib/phone';
 
 type BillPaymentRow = {
     id: number;
+    notification_unread: boolean;
     ledger_transaction_id: number;
     transaction_no: string | null;
     amount: number | null;
@@ -32,9 +34,13 @@ type BillPaymentRow = {
     customer_name: string | null;
     customer_phone: string | null;
     broadband_account_number: string | null;
+    order_no: string | null;
+    service_type: string | null;
+    product_id: string | null;
+    product_price: string | null;
+    snapshot: Record<string, unknown> | null;
+    remark: string | null;
     status: string;
-    external_bill_ref: string | null;
-    external_payment_ref: string | null;
     external_response: unknown;
     created_at: string | null;
     confirmed_at: string | null;
@@ -72,15 +78,50 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
     const [search, setSearch] = useState(filters.search);
     const [selectedPayment, setSelectedPayment] = useState<BillPaymentRow | null>(null);
     const debounce = useRef<number>(0);
+    const markedReadPaymentIds = useRef(new Set<number>());
 
     useEffect(() => setSearch(filters.search), [filters.search]);
     useEffect(() => {
         if (filters.payment_id <= 0) return;
 
         const payment = payments.data.find((row) => row.id === filters.payment_id);
-        if (payment) setSelectedPayment(payment);
+        if (!payment) return;
+
+        setSelectedPayment(payment);
     }, [filters.payment_id, payments.data]);
+    useEffect(() => {
+        if (!selectedPayment?.notification_unread || markedReadPaymentIds.current.has(selectedPayment.id)) {
+            return;
+        }
+
+        markedReadPaymentIds.current.add(selectedPayment.id);
+        router.put(
+            `/dashboard/notifications/reference/bill_payment/${selectedPayment.id}/read`,
+            {},
+            {
+                preserveState: true,
+                preserveScroll: true,
+                onFinish: () => markedReadPaymentIds.current.delete(selectedPayment.id),
+            },
+        );
+    }, [selectedPayment?.id, selectedPayment?.notification_unread]);
     useEffect(() => () => window.clearTimeout(debounce.current), []);
+
+    const closePaymentDetails = () => {
+        setSelectedPayment(null);
+
+        const currentUrl = new URL(window.location.href);
+        if (!currentUrl.searchParams.has('payment_id')) {
+            return;
+        }
+
+        currentUrl.searchParams.delete('payment_id');
+        router.visit(`${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
+    };
 
     const visit = (next: Partial<Filters>) => {
         window.clearTimeout(debounce.current);
@@ -89,7 +130,7 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
             {
                 search: (next.search ?? search) || undefined,
                 status: (next.status ?? filters.status) || undefined,
-                payment_id: filters.payment_id || undefined,
+                payment_id: next.payment_id || undefined,
                 from: (next.from ?? filters.from) || undefined,
                 to: (next.to ?? filters.to) || undefined,
                 return_to: returnTo || undefined,
@@ -129,14 +170,17 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                 ),
         },
         {
-            id: 'external_bill_ref',
-            header: t('bill_payments.external_bill_ref'),
-            cell: (payment) => payment.external_bill_ref || '—',
-        },
-        {
-            id: 'external_payment_ref',
-            header: t('bill_payments.external_payment_ref'),
-            cell: (payment) => payment.external_payment_ref || '—',
+            id: 'order_no',
+            header: t('transactions.order_no'),
+            cell: (payment) =>
+                payment.order_no ? (
+                    <span className="flex items-center gap-1.5 font-mono text-xs">
+                        {payment.order_no}
+                        <CopyValueButton value={payment.order_no} label={t('transactions.order_no')} />
+                    </span>
+                ) : (
+                    '—'
+                ),
         },
 
         {
@@ -284,7 +328,7 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                 payment={selectedPayment}
                 open={selectedPayment !== null}
                 onOpenChange={(open) => {
-                    if (!open) setSelectedPayment(null);
+                    if (!open) closePaymentDetails();
                 }}
             />
         </>
@@ -301,6 +345,8 @@ function BillPaymentDetailDialog({
     onOpenChange: (open: boolean) => void;
 }) {
     const { t } = useTranslation();
+    const can = useCan();
+    const canResolveReview = can('billing.update');
 
     if (!payment) return null;
 
@@ -322,14 +368,14 @@ function BillPaymentDetailDialog({
                         href={payment.transaction_no ? transactionHref(payment.transaction_no) : undefined}
                         copyable
                     />
-                    <PaymentInfo label={t('bill_payments.external_bill_ref')} value={payment.external_bill_ref} />
-                    <PaymentInfo label={t('bill_payments.external_payment_ref')} value={payment.external_payment_ref} />
+                    <PaymentInfo label={t('bill_payments.order_no')} value={payment.order_no} copyable />
                     <PaymentInfo
                         label={t('bill_payments.ledger_transaction_id')}
                         value={payment.ledger_transaction_id}
                     />
 
                     <PaymentInfo label={t('bill_payments.account_number')} value={payment.broadband_account_number} />
+                    <PaymentInfo label={t('bill_payments.service_type')} value={payment.service_type} />
                     <PaymentInfo label={t('transactions.customer')} value={payment.customer_name} />
                     <PaymentInfo label={t('customers.phone')} value={payment.customer_phone} format="phone" copyable />
                     <PaymentInfo
@@ -347,8 +393,52 @@ function BillPaymentDetailDialog({
                     />
                 </div>
                 <div className="mt-5">
+                    <JsonDetails title={t('bill_payments.product_snapshot')} value={payment.snapshot} />
+                </div>
+                <div className="mt-5">
                     <JsonDetails title={t('bill_payments.external_response')} value={payment.external_response} />
                 </div>
+                {canResolveReview && payment.status === 'review' ? (
+                    <div className="flex justify-end gap-2 border-t border-border/70 pt-4">
+                        <Button
+                            type="button"
+                            size="sm"
+                            className="h-8 gap-1 rounded-[6px] px-2.5 text-[11px]"
+                            onClick={() =>
+                                router.post(
+                                    `/billing/transactions/${payment.ledger_transaction_id}/review/complete`,
+                                    {},
+                                    {
+                                        preserveScroll: true,
+                                        onSuccess: () => onOpenChange(false),
+                                    },
+                                )
+                            }
+                        >
+                            <CheckCircle2Icon className="size-3.5" />
+                            {t('transactions.review.complete')}
+                        </Button>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-8 gap-1 rounded-[6px] px-2.5 text-[11px]"
+                            onClick={() =>
+                                router.post(
+                                    `/billing/transactions/${payment.ledger_transaction_id}/review/refund`,
+                                    {},
+                                    {
+                                        preserveScroll: true,
+                                        onSuccess: () => onOpenChange(false),
+                                    },
+                                )
+                            }
+                        >
+                            <RotateCcwIcon className="size-3.5" />
+                            {t('transactions.review.refund')}
+                        </Button>
+                    </div>
+                ) : null}
             </div>
         </FormDialog>
     );

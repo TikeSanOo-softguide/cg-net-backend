@@ -329,7 +329,7 @@ class CustomerProfileApiTest extends TestCase
             ->assertJsonPath('data.account.name', 'Profile Customer')
             ->assertJsonPath('data.broadbandAccount.account_number', '12345678')
             ->assertJsonPath('data.broadbandAccount.service_type', 'CG')
-            ->assertJsonPath('data.wallet.balance', 12500)
+            ->assertJsonPath('data.wallet.balance', '12500.00')
             ->assertJsonCount(2, 'data.packages')
             ->assertJsonPath('data.packages.0.id', $customerPackage->id)
             ->assertJsonPath('data.packages.0.details.network_name.en', $package->network->name_en)

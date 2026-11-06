@@ -82,8 +82,8 @@ class BuyPackageService
             ]);
         }
 
-        $productPrice = (float) $product['productPrice'];
-        $amount = (int) $productPrice;
+        $productPrice = round((float) $product['productPrice'], 2);
+        $amount = $productPrice;
         $termCycle = (int) $product['monthCycle'];
         $termCycleUnit = (string) $product['monthCycleUnit'];
 
@@ -91,7 +91,7 @@ class BuyPackageService
             $amount < 1
             || $termCycle < 1
             || ! in_array($termCycleUnit, ['月', '天'], true)
-            || $productPrice !== (float) $amount
+            || $productPrice !== round((float) $amount, 2)
         ) {
             throw ValidationException::withMessages([
                 'product_id' => ['The selected product has invalid purchase details.'],
@@ -194,7 +194,7 @@ class BuyPackageService
         Wallet $wallet,
         User $user,
         array $product,
-        int $amount,
+        float $amount,
         int $termCycle,
         string $termCycleUnit,
         string $idempotencyKey,
@@ -419,7 +419,7 @@ class BuyPackageService
             try {
                 $refundTransaction = $this->ledger->creditWallet(
                     wallet: $wallet,
-                    amount: (int) $lockedDebit->amount,
+                    amount: (float) $lockedDebit->amount,
                     contraAccount: LedgerAccountCode::PackageRevenue,
                     type: LedgerTransactionType::Refund,
                     status: LedgerTransactionStatus::Completed,
@@ -563,7 +563,7 @@ class BuyPackageService
             }
 
             return $this->coded(200, MessageCode::PkgAlreadyProcessed, [
-                'data' => $this->successData($productId, (int) $existing->amount, $order, $existing, $customerPackage),
+                'data' => $this->successData($productId, $existing->amount, $order, $existing, $customerPackage),
             ]);
         }
 
@@ -582,10 +582,10 @@ class BuyPackageService
                 $existing->refresh();
 
                 return $this->coded(200, MessageCode::PkgAlreadyProcessed, [
-                    'data' => $this->successData($productId, (int) $existing->amount, $order, $existing, $customerPackage),
+                    'data' => $this->successData($productId, $existing->amount, $order, $existing, $customerPackage),
                 ]);
             } catch (Throwable) {
-                return $this->pendingOrderResponse($productId, (int) $existing->amount, $order, $existing);
+                return $this->pendingOrderResponse($productId, $existing->amount, $order, $existing);
             }
         }
 
@@ -595,7 +595,7 @@ class BuyPackageService
         ) {
             $this->refundDebit($order, $wallet, $user, $existing);
 
-            return $this->failureResponse($productId, (int) $existing->amount, $order, $existing);
+            return $this->failureResponse($productId, $existing->amount, $order, $existing);
         }
 
         if (
@@ -610,7 +610,7 @@ class BuyPackageService
             return $this->coded(502, MessageCode::PkgActivationRefunded, [
                 'data' => [
                     'product_id' => $productId,
-                    'amount' => (int) $existing->amount,
+                    'amount' => $existing->amount,
                     'status' => PackageOrderStatus::Failed->value,
                     'order_id' => $order->id,
                     'transaction_no' => $existing->transaction_no,
@@ -623,7 +623,7 @@ class BuyPackageService
             $existing->status === LedgerTransactionStatus::Processing
             && in_array($order->status, [PackageOrderStatus::Processing, PackageOrderStatus::PendingVerification], true)
         ) {
-            return $this->pendingOrderResponse($productId, (int) $existing->amount, $order, $existing);
+            return $this->pendingOrderResponse($productId, $existing->amount, $order, $existing);
         }
 
         return $this->coded(409, MessageCode::PkgCannotReplay);
@@ -634,7 +634,7 @@ class BuyPackageService
      */
     protected function successData(
         string $productId,
-        int $amount,
+        string|int|float $amount,
         PackageOrder $order,
         LedgerTransaction $transaction,
         CustomerPackage $customerPackage,
@@ -670,7 +670,7 @@ class BuyPackageService
      */
     protected function failureResponse(
         string $productId,
-        int $amount,
+        string|int|float $amount,
         PackageOrder $order,
         LedgerTransaction $debitTransaction,
     ): array {
@@ -699,7 +699,7 @@ class BuyPackageService
      */
     protected function pendingResponse(
         string $productId,
-        int $amount,
+        string|int|float $amount,
         PackageOrder $order,
         LedgerTransaction $debitTransaction,
     ): array {
@@ -711,7 +711,7 @@ class BuyPackageService
      */
     protected function pendingOrderResponse(
         string $productId,
-        int $amount,
+        float $amount,
         PackageOrder $order,
         LedgerTransaction $debitTransaction,
     ): array {
@@ -736,7 +736,7 @@ class BuyPackageService
     /**
      * @return array{http_status: int, body: array<string, mixed>}
      */
-    protected function insufficientBalanceResponse(string $productId, int $amount): array
+    protected function insufficientBalanceResponse(string $productId, float $amount): array
     {
         return $this->coded(422, MessageCode::PkgInsufficientBalance, [
             'errors' => [
@@ -764,7 +764,7 @@ class BuyPackageService
      * @param  array<string, mixed>  $product
      * @return array<string, mixed>
      */
-    protected function snapshot(array $product, int $amount, int $termCycle, string $termCycleUnit): array
+    protected function snapshot(array $product, float $amount, int $termCycle, string $termCycleUnit): array
     {
         return [
             'price' => $amount,

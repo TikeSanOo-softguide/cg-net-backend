@@ -128,7 +128,7 @@ class TransactionService
             'type' => $transaction->type->value,
             'status' => $transaction->status->value,
             'direction' => $direction,
-            'amount' => number_format((float) $transaction->amount, 0, '.', ''),
+            'amount' => $transaction->amount,
             'created_at' => $transaction->created_at?->toISOString(),
             'wallet_id' => $transaction->wallet_id,
             'customer' => $transaction->wallet?->user
