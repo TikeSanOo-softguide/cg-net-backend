@@ -21,7 +21,7 @@ class BroadbandApplicationRequestController extends Controller
     {
         $search = trim((string) $request->string('search'));
         $serviceType = $request->string('service_type')->toString();
-        if (! in_array($serviceType, ['FTTH', 'CG'], true)) {
+        if (!in_array($serviceType, ['FTTH', 'CG'], true)) {
             $serviceType = '';
         }
         $status = $request->has('status')
@@ -32,13 +32,7 @@ class BroadbandApplicationRequestController extends Controller
         $openRequestId = $request->integer('open_request');
 
         $broadbandApplication = InstallationApplication::query()
-            ->with([
-                'user:id,name,phone,broadband_account_number',
-                'admin:id,username',
-                'area:id,name_en,name_zh,name_my,region_id',
-                'area.region:id,name_en,name_zh,name_my,state_id',
-                'area.region.state:id,name_en,name_zh,name_my',
-            ])
+            ->with(['user:id,name,phone,broadband_account_number', 'admin:id,username'])
             ->when($openRequestId < 1 && $search !== '', function ($query) use ($search): void {
                 $search = "%{$search}%";
 
@@ -49,17 +43,14 @@ class BroadbandApplicationRequestController extends Controller
                         ->orWhereLike('ticket_number', $search)
                         ->orWhereHas(
                             'user',
-                            fn ($q) => $q
+                            fn($q) => $q
                                 ->whereLike('name', $search)
                                 ->orWhereLike('phone', $search)
                                 ->orWhereLike('broadband_account_number', $search),
                         );
                 });
             })
-            ->when(
-                $openRequestId < 1 && $serviceType !== '',
-                fn ($query) => $query->where('service_type', $serviceType),
-            )
+            ->when($openRequestId < 1 && $serviceType !== '', fn($query) => $query->where('service_type', $serviceType))
             ->when(
                 $openRequestId < 1 &&
                     $status !== '' &&
@@ -77,10 +68,12 @@ class BroadbandApplicationRequestController extends Controller
             'installation_application',
             $broadbandApplication->getCollection()->pluck('id')->all(),
         );
-        $broadbandApplication->through(fn (InstallationApplication $application): array => [
-            ...$application->toArray(),
-            'notification_unread' => in_array($application->id, $unreadRequestIds, true),
-        ]);
+        $broadbandApplication->through(
+            fn(InstallationApplication $application): array => [
+                ...$application->toArray(),
+                'notification_unread' => in_array($application->id, $unreadRequestIds, true),
+            ],
+        );
 
         return Inertia::render('ServiceRequests/BroadbandApplication/Index', [
             'requests' => $broadbandApplication,

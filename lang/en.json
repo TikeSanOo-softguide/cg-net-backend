@@ -680,6 +680,8 @@
         "image_upload_examples": "Image upload",
         "image_upload_examples_description": "Two upload designs with different width and height.",
         "image_upload_tile": "Filled square",
+        "installation_service_type": "Installation service type",
+        "installations_by_service_type": "Installations by service type",
         "installations_by_region": "Installations by region",
         "last_30_days": "Last 30 days",
         "new_signups": "New signups",

@@ -9,7 +9,6 @@ return new class extends Migration {
     {
         Schema::create('installation_applications', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('area_id')->constrained('areas')->cascadeOnDelete();
             $table->string('name');
             $table->string('service_type', 8)->nullable();
             $table->string('ticket_number', 32)->nullable()->unique();

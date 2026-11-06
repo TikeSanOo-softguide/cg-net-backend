@@ -10,25 +10,24 @@ use RuntimeException;
 
 class TelegramService
 {
-    public function broadbandApplicaiton(string $message, ?string $chatId = null): ?Response
+    public function sendMessage(string $message, ?string $chatId = null): ?Response
     {
         $chatId ??= config('services.telegram.chat_id');
         $botToken = config('services.telegram.bot_token');
 
-        if (! is_string($chatId) || trim($chatId) === '' || ! is_string($botToken) || trim($botToken) === '') {
+        if (!is_string($chatId) || trim($chatId) === '' || !is_string($botToken) || trim($botToken) === '') {
             Log::info('Telegram notification skipped because bot credentials are not configured.');
 
             return null;
         }
 
         try {
-            $response = Http::timeout(5)->post(
-                'https://api.telegram.org/bot'.$botToken.'/sendMessage',
-                [
-                    'chat_id' => trim($chatId),
-                    'text' => $message,
-                ],
-            );
+            $response = Http::timeout(5)->post('https://api.telegram.org/bot' . $botToken . '/sendMessage', [
+                'chat_id' => trim($chatId),
+                'text' => $message,
+                'parse_mode' => 'HTML',
+                'disable_web_page_preview' => true,
+            ]);
         } catch (ConnectionException $exception) {
             Log::warning('Telegram notification could not be delivered.', [
                 'exception' => $exception::class,
@@ -54,13 +53,13 @@ class TelegramService
         $chatId = config('services.telegram.chat_id');
         $botToken = config('services.telegram.bot_token');
 
-        if (! is_string($chatId) || trim($chatId) === '' || ! is_string($botToken) || trim($botToken) === '') {
-            $this->broadbandApplicaiton($message);
+        if (!is_string($chatId) || trim($chatId) === '' || !is_string($botToken) || trim($botToken) === '') {
+            $this->sendMessage($message);
 
             return;
         }
 
-        if ($this->broadbandApplicaiton($message) === null) {
+        if ($this->sendMessage($message) === null) {
             throw new RuntimeException('Telegram rejected or could not deliver the chat notification.');
         }
     }

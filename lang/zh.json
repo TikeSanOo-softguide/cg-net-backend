@@ -680,6 +680,8 @@
         "image_upload_examples": "图片上传",
         "image_upload_examples_description": "两种不同宽高的上传样式。",
         "image_upload_tile": "填充方框",
+        "installation_service_type": "安装服务类型",
+        "installations_by_service_type": "按服务类型统计的安装申请",
         "installations_by_region": "按区域统计的安装申请",
         "last_30_days": "近30天",
         "new_signups": "新注册",
