@@ -128,7 +128,7 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonPath('data.address', 'Updated customer address')
             ->assertJsonMissingPath('data.photos');
         Http::assertSentCount(2);
-        Http::assertSent(fn($request) => str_contains($request['text'], '✏️ BROADBAND INSTALLATION UPDATED'));
+        Http::assertSent(fn($request) => str_contains($request['text'], '🔄 BROADBAND INSTALLATION UPDATED'));
 
         $this->withToken($token)
             ->patchJson('/api/installation-application/' . $application->id . '/cancel')
@@ -137,7 +137,7 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonPath('level', 'success')
             ->assertJsonPath('data.status', 'cancelled');
         Http::assertSentCount(3);
-        Http::assertSent(fn($request) => str_contains($request['text'], '❌ BROADBAND INSTALLATION CANCELLED'));
+        Http::assertSent(fn($request) => str_contains($request['text'], '🚫 BROADBAND INSTALLATION CANCELLED'));
 
         $this->withToken($token)
             ->deleteJson('/api/installation-application/' . $application->id)
@@ -280,14 +280,14 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonPath('data.new_address', 'Updated new address')
             ->assertJsonPath('data.details', 'Updated relocation details.');
         Http::assertSentCount(2);
-        Http::assertSent(fn($request) => str_contains($request['text'], '✏️ RELOCATION REQUEST UPDATED'));
+        Http::assertSent(fn($request) => str_contains($request['text'], '🔄 RELOCATION REQUEST UPDATED'));
 
         $this->withToken($token)
             ->patchJson('/api/relocation-requests/' . $relocationRequest->id . '/cancel')
             ->assertOk()
             ->assertJsonPath('data.status', 'cancelled');
         Http::assertSentCount(3);
-        Http::assertSent(fn($request) => str_contains($request['text'], '❌ RELOCATION REQUEST CANCELLED'));
+        Http::assertSent(fn($request) => str_contains($request['text'], '🚫 RELOCATION REQUEST CANCELLED'));
 
         $this->withToken($token)
             ->deleteJson('/api/relocation-requests/' . $relocationRequest->id)
