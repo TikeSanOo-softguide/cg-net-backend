@@ -29,6 +29,8 @@ enum MessageCode: string
     case AuthSessionExpired = 'MSG-AUTH-017';
     case AuthTooManyRequests = 'MSG-AUTH-018';
     case AuthLoggedOut = 'MSG-AUTH-019';
+    case AuthRegistered = 'MSG-AUTH-020';
+    case AuthOtpVerified = 'MSG-AUTH-021';
 
     case ApiNetworkFailed = 'MSG-API-001';
     case ApiTimeout = 'MSG-API-002';
@@ -144,6 +146,8 @@ enum MessageCode: string
             self::ChatSelectOption,
             self::ChatWaitForJoin => 'warning',
             self::AuthLoggedOut,
+            self::AuthRegistered,
+            self::AuthOtpVerified,
             self::BbConnected,
             self::BbDisconnected,
             self::BbFound,
@@ -169,7 +173,7 @@ enum MessageCode: string
         return match ($this) {
             self::AuthIncorrectPassword => 'Incorrect password',
             self::AuthAccountLocked => 'Account locked',
-            self::AuthOtpFailed => 'OTP verification failed',
+            self::AuthOtpFailed => 'Invalid OTP. Please try again.',
             self::AuthPhoneUnsupported => 'This phone number is not supported.',
             self::AuthPhoneRequired => 'Enter your mobile number.',
             self::AuthOtpResendCooldown => 'Please wait before requesting another code.',
@@ -191,6 +195,8 @@ enum MessageCode: string
             self::SysForbidden => 'This action is unauthorized.',
             self::SysNotFound => 'The requested resource was not found.',
             self::AuthLoggedOut => 'Logged out successfully.',
+            self::AuthRegistered => 'Account created successfully.',
+            self::AuthOtpVerified => 'Your phone number has been verified successfully.',
             self::BbConnectionFailed => 'broadband_api_connection_failed',
             self::BbNotMatch => 'broadband_account_not_match',
             self::BbAlreadyConnected => 'broadband_already_connected',

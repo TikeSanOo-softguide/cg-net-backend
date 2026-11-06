@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Api\Auth;
 
+use App\Enums\MessageCode;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\CompleteRegistrationRequest;
 use App\Http\Resources\UserResource;
 use App\Services\Auth\ApiAuthenticationService;
 use App\Services\DeviceToken\DeviceTokenService;
+use App\Support\ApiMessage;
 use Illuminate\Http\JsonResponse;
 
 class RegistrationController extends Controller
@@ -31,12 +33,12 @@ class RegistrationController extends Controller
         ]);
 
         return response()->json(
-            [
+            ApiMessage::attach(MessageCode::AuthRegistered, [
                 'token' => $result['token'],
                 'token_type' => 'Bearer',
                 'expires_at' => $result['expires_at']->toIso8601String(),
                 'user' => new UserResource($result['user']),
-            ],
+            ]),
             201,
         );
     }

@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\Auth\ApiAuthenticationService;
 use App\Services\DeviceToken\DeviceTokenService;
 use App\Services\SecurityLog\SecurityLogService;
+use App\Support\ApiMessage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\RateLimiter;
 
@@ -127,7 +128,7 @@ class OtpController extends Controller
         if (isset($result['verification_token'])) {
             $payload['verification_token'] = $result['verification_token'];
 
-            return response()->json($payload);
+            return response()->json(ApiMessage::attach(MessageCode::AuthOtpVerified, $payload));
         }
 
         DeviceTokenService::register(
@@ -142,12 +143,12 @@ class OtpController extends Controller
             'method' => 'otp',
         ]);
 
-        return response()->json([
+        return response()->json(ApiMessage::attach(MessageCode::AuthOtpVerified, [
             ...$payload,
             'token' => $result['token'],
             'token_type' => 'Bearer',
             'expires_at' => $result['expires_at']->toIso8601String(),
             'user' => new UserResource($result['user']),
-        ]);
+        ]));
     }
 }
