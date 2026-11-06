@@ -49,6 +49,7 @@ class TopUpCard extends Model
     protected function casts(): array
     {
         return [
+            'amount' => 'decimal:2',
             'expires_at' => 'date',
             'generate_date' => 'date',
             'activated_at' => 'date',

@@ -28,6 +28,7 @@ class BuyPackageRequest extends FormRequest
         return [
             'product_id' => ['required', 'string', 'max:255'],
             'idempotency_key' => ['required', 'string', 'min:8', 'max:93', 'not_regex:/^refund:/i'],
+            'password' => ['required', 'string', 'regex:/^\d{6}$/'],
         ];
     }
 }

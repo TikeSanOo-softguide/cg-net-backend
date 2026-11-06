@@ -36,9 +36,9 @@ class LedgerHealthReportService
      *         duplicate_entry_transactions: int,
      *         source_mismatches: int
      *     },
-     *     balanceMismatches: list<array{wallet_id: int, customer_id: int, customer: string|null, wallet_balance: int, ledger_balance: int|null}>,
-     *     missingEntries: list<array{transaction_no: string, wallet_id: int, customer: string|null, type: string, amount: int, created_at: string|null}>,
-     *     unbalancedTransactions: list<array{transaction_no: string, wallet_id: int, debit_total: int, credit_total: int, created_at: string|null}>,
+     *     balanceMismatches: list<array{wallet_id: int, customer_id: int, customer: string|null, wallet_balance: string, ledger_balance: string|null}>,
+     *     missingEntries: list<array{transaction_no: string, wallet_id: int, customer: string|null, type: string, amount: string, created_at: string|null}>,
+     *     unbalancedTransactions: list<array{transaction_no: string, wallet_id: int, debit_total: string, credit_total: string, created_at: string|null}>,
      *     sourceMismatches: list<array{
      *         id: string,
      *         source: string,
@@ -92,8 +92,8 @@ class LedgerHealthReportService
                     'wallet_id' => $wallet->id,
                     'customer_id' => (int) $wallet->user_id,
                     'customer' => $wallet->user?->name,
-                    'wallet_balance' => (int) $wallet->balance,
-                    'ledger_balance' => $wallet->ledger_balance !== null ? (int) $wallet->ledger_balance : null,
+                    'wallet_balance' => $wallet->balance,
+                    'ledger_balance' => $wallet->ledger_balance,
                 ],
             )
             ->values()
@@ -101,6 +101,7 @@ class LedgerHealthReportService
 
         $postedStatuses = [
             LedgerTransactionStatus::Processing->value,
+            LedgerTransactionStatus::Review->value,
             LedgerTransactionStatus::Completed->value,
             LedgerTransactionStatus::Failed->value,
         ];
@@ -121,7 +122,7 @@ class LedgerHealthReportService
                     'wallet_id' => $transaction->wallet_id,
                     'customer' => $transaction->wallet?->user?->name,
                     'type' => $transaction->type->value,
-                    'amount' => (int) $transaction->amount,
+                    'amount' => $transaction->amount,
                     'created_at' => $transaction->created_at?->toISOString(),
                 ],
             )
@@ -146,8 +147,8 @@ class LedgerHealthReportService
                 fn (LedgerTransaction $transaction): array => [
                     'transaction_no' => $transaction->transaction_no,
                     'wallet_id' => $transaction->wallet_id,
-                    'debit_total' => (int) $transaction->debit_total,
-                    'credit_total' => (int) $transaction->credit_total,
+                    'debit_total' => number_format((float) $transaction->debit_total, 2, '.', ''),
+                    'credit_total' => number_format((float) $transaction->credit_total, 2, '.', ''),
                     'created_at' => $transaction->created_at?->toISOString(),
                 ],
             )
@@ -322,7 +323,7 @@ class LedgerHealthReportService
                 );
             }
 
-            if ((int) $transaction->amount !== (int) $card->amount) {
+            if ((float) $transaction->amount !== (float) $card->amount) {
                 $rows[] = $this->mismatchRow(
                     id: 'topup-card-'.$card->id.'-amount',
                     source: 'topup_card',
@@ -331,7 +332,7 @@ class LedgerHealthReportService
                     customerId: $customerId,
                     customer: $customer,
                     issue: 'amount_mismatch',
-                    detail: (int) $card->amount.' vs '.(int) $transaction->amount,
+                    detail: $card->amount.' vs '.$transaction->amount,
                     createdAt: $createdAt,
                 );
             }
@@ -523,7 +524,7 @@ class LedgerHealthReportService
             $customer = $order->user?->name;
             $createdAt = $this->toIso($order->completed_at ?? $order->created_at);
             $label = 'order-'.$order->id;
-            $expectedAmount = isset($order->snapshot['price']) ? (int) $order->snapshot['price'] : null;
+            $expectedAmount = isset($order->snapshot['price']) ? round((float) $order->snapshot['price'], 2) : null;
 
             if (
                 in_array($order->status, [PackageOrderStatus::Processing, PackageOrderStatus::Completed], true)
@@ -564,7 +565,7 @@ class LedgerHealthReportService
                 );
             }
 
-            if ($expectedAmount !== null && (int) $transaction->amount !== $expectedAmount) {
+            if ($expectedAmount !== null && (float) $transaction->amount !== $expectedAmount) {
                 $rows[] = $this->mismatchRow(
                     id: 'package-'.$order->id.'-amount',
                     source: 'package_order',
@@ -573,7 +574,7 @@ class LedgerHealthReportService
                     customerId: $customerId,
                     customer: $customer,
                     issue: 'amount_mismatch',
-                    detail: $expectedAmount.' vs '.(int) $transaction->amount,
+                    detail: (string) $expectedAmount.' vs '.$transaction->amount,
                     createdAt: $createdAt,
                 );
             }
@@ -631,6 +632,7 @@ class LedgerHealthReportService
 
         $orphanStatuses = [
             LedgerTransactionStatus::Processing->value,
+            LedgerTransactionStatus::Review->value,
             LedgerTransactionStatus::Completed->value,
         ];
 
@@ -709,9 +711,10 @@ class LedgerHealthReportService
             BillPaymentStatus::Completed => $ledgerStatus !== LedgerTransactionStatus::Completed,
             BillPaymentStatus::Processing => ! in_array(
                 $ledgerStatus,
-                [LedgerTransactionStatus::Processing, LedgerTransactionStatus::Pending],
+                [LedgerTransactionStatus::Processing, LedgerTransactionStatus::Pending, LedgerTransactionStatus::Review],
                 true,
             ),
+            BillPaymentStatus::Review => $ledgerStatus !== LedgerTransactionStatus::Review,
             BillPaymentStatus::Failed => $ledgerStatus === LedgerTransactionStatus::Completed,
         };
     }

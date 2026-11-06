@@ -79,7 +79,7 @@ export type BatchFilters = {
 };
 
 export function formatTopUpNumber(value: string | number): string {
-    return Number(value).toLocaleString();
+    return String(value);
 }
 
 export function formatTopUpAmount(value: string | number): string {

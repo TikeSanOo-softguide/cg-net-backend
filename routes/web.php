@@ -130,6 +130,12 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         ->middleware('can:billing.view')
         ->group(function () {
             Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions');
+            Route::post('/transactions/{transaction}/review/complete', [TransactionController::class, 'resolveReview'])
+                ->middleware('can:billing.update')
+                ->name('transactions.review.complete');
+            Route::post('/transactions/{transaction}/review/refund', [TransactionController::class, 'refundReview'])
+                ->middleware('can:billing.update')
+                ->name('transactions.review.refund');
             Route::get('/bill-payments', [BillPaymentController::class, 'index'])->name('bill-payments');
             Route::get('/bill-payments/export', [BillPaymentController::class, 'export'])
                 ->middleware('can:' . AppPermissions::SystemExport)

@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Support\ApiMessage;
-use Illuminate\Support\Facades\Hash;
+use App\Support\CustomerPassword;
 
 class ProfileController extends Controller
 {
@@ -51,14 +51,7 @@ class ProfileController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        if (!Hash::check($request->validated('password'), $user->getAuthPassword())) {
-            return response()->json(
-                ApiMessage::attach(MessageCode::UserPasswordIncorrect, [
-                    'errors' => ['password' => [MessageCode::UserPasswordIncorrect->message()]],
-                ]),
-                422,
-            );
-        }
+        CustomerPassword::verify($user, $request->validated('password'));
 
         $user->update(['status' => UserStatus::Deactivated]);
 

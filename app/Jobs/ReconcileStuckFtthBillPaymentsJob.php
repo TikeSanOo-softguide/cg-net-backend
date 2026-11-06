@@ -5,7 +5,7 @@ namespace App\Jobs;
 use App\Models\LedgerTransaction;
 use App\Services\FtthBill\FtthBillPaymentService;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
+use Illuminate\Contracts\Queue\ShouldBeUniqueUntilProcessing;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -13,7 +13,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-class ReconcileStuckFtthBillPaymentsJob implements ShouldBeUnique, ShouldQueue
+class ReconcileStuckFtthBillPaymentsJob implements ShouldBeUniqueUntilProcessing, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 

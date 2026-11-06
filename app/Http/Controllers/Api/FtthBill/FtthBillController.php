@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api\FtthBill;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\FtthBill\PayFtthBillRequest;
+use App\Models\User;
 use App\Services\FtthBill\FtthBillPaymentService;
+use App\Support\CustomerPassword;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -15,11 +17,17 @@ class FtthBillController extends Controller
     public function pay(PayFtthBillRequest $request): JsonResponse
     {
         $validated = $request->validated();
+        /** @var User $user */
+        $user = $request->user();
+
+        CustomerPassword::verify($user, (string) $validated['password']);
 
         $result = $this->payments->pay(
-            user: $request->user(),
+            user: $user,
             accountNumber: (string) $validated['broadband_account_number'],
+            serviceType: (string) $validated['service_type'],
             idempotencyKey: (string) $validated['idempotency_key'],
+            remark: isset($validated['remark']) ? (string) $validated['remark'] : null,
             ipAddress: $request->ip(),
             userAgent: $request->userAgent(),
         );

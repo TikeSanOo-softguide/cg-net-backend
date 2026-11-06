@@ -12,6 +12,7 @@ function dotClass(status: string): string {
         case 'completed':
         case 'sent':
             return 'bg-emerald-500';
+        case 'review':
         case 'under_review':
         case 'draft':
         case 'pending':

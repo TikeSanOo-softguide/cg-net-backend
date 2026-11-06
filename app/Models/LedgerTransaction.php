@@ -50,7 +50,7 @@ class LedgerTransaction extends Model
     {
         return [
             'type' => LedgerTransactionType::class,
-            'amount' => 'integer',
+            'amount' => 'decimal:2',
             'status' => LedgerTransactionStatus::class,
             'actor_type' => WalletActorType::class,
             'posted_at' => 'datetime',

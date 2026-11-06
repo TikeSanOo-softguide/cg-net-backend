@@ -28,7 +28,7 @@ class StoreAddonsRequest extends FormRequest
             'name_en' => ['required', 'string', 'max:255', Rule::unique('addons', 'name_en')->withoutTrashed()],
             'name_zh' => ['required', 'string', 'max:255', Rule::unique('addons', 'name_zh')->withoutTrashed()],
             'name_my' => ['required', 'string', 'max:255', Rule::unique('addons', 'name_my')->withoutTrashed()],
-            'price' => ['required', 'numeric', 'min:0', 'max:999999999'],
+            'price' => ['required', 'numeric', 'decimal:0,2', 'min:0', 'max:999999999.99'],
             'image_url' => CmsRules::image(false),
         ];
     }

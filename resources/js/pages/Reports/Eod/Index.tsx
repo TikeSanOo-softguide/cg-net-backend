@@ -72,8 +72,8 @@ const localeTags: Record<SupportedLocale, string> = {
     zh: 'zh-CN',
 };
 
-function amount(value: number, locale: SupportedLocale): string {
-    return `${new Intl.NumberFormat(localeTags[locale]).format(value)} ${TOP_UP_CARD_CURRENCY}`;
+function amount(value: number, _locale: SupportedLocale): string {
+    return `${String(value)} ${TOP_UP_CARD_CURRENCY}`;
 }
 
 function failedTransactionsHref(date: string): string {

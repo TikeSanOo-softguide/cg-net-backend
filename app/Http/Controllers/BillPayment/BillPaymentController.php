@@ -7,6 +7,7 @@ use App\Enums\LedgerTransactionType;
 use App\Exports\BillPaymentExport;
 use App\Http\Controllers\Controller;
 use App\Models\BillPayment;
+use App\Services\AdminNotification\AdminNotificationReadStatus;
 use App\Support\NavigationStack;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -16,33 +17,43 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class BillPaymentController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, AdminNotificationReadStatus $readStatus): Response
     {
         $filters = $this->filters($request);
         $payments = $this->query($filters)
             ->paginate(15)
-            ->withQueryString()
-            ->through(function (BillPayment $payment): array {
-                $transaction = $payment->ledgerTransaction;
-                $customer = $transaction?->wallet?->user;
+            ->withQueryString();
+        $unreadPaymentIds = $readStatus->unreadReferenceIds(
+            (int) $request->user()->getAuthIdentifier(),
+            'bill_payment',
+            $payments->getCollection()->pluck('id')->all(),
+        );
+        $payments->through(function (BillPayment $payment) use ($unreadPaymentIds): array {
+            $transaction = $payment->ledgerTransaction;
+            $customer = $transaction?->wallet?->user;
 
-                return [
-                    'id' => $payment->id,
-                    'ledger_transaction_id' => $payment->ledger_transaction_id,
-                    'transaction_no' => $transaction?->transaction_no,
-                    'amount' => $transaction?->amount,
-                    'customer_id' => $customer?->id,
-                    'customer_name' => $customer?->name,
-                    'customer_phone' => $customer?->phone,
-                    'broadband_account_number' => $payment->broadband_account_number,
-                    'status' => $payment->status->value,
-                    'external_bill_ref' => $payment->external_bill_ref,
-                    'external_payment_ref' => $payment->external_payment_ref,
-                    'external_response' => $payment->external_response,
-                    'created_at' => $payment->created_at?->toIso8601String(),
-                    'confirmed_at' => $payment->confirmed_at?->toIso8601String(),
-                ];
-            });
+            return [
+                'id' => $payment->id,
+                'notification_unread' => in_array($payment->id, $unreadPaymentIds, true),
+                'ledger_transaction_id' => $payment->ledger_transaction_id,
+                'transaction_no' => $transaction?->transaction_no,
+                'amount' => $transaction?->amount,
+                'customer_id' => $customer?->id,
+                'customer_name' => $customer?->name,
+                'customer_phone' => $customer?->phone,
+                'broadband_account_number' => $payment->broadband_account_number,
+                'order_no' => $payment->order_no,
+                'service_type' => $payment->service_type,
+                'product_id' => $payment->product_id,
+                'product_price' => $payment->product_price,
+                'snapshot' => $payment->snapshot,
+                'remark' => $payment->remark,
+                'status' => $payment->status->value,
+                'external_response' => $payment->external_response,
+                'created_at' => $payment->created_at?->toIso8601String(),
+                'confirmed_at' => $payment->confirmed_at?->toIso8601String(),
+            ];
+        });
 
         $props = [
             'payments' => $payments,
@@ -95,8 +106,8 @@ class BillPaymentController extends Controller
                     $search = $filters['search'];
                     $query
                         ->whereLike('broadband_account_number', '%' . $search . '%')
-                        ->orWhereLike('external_bill_ref', '%' . $search . '%')
-                        ->orWhereLike('external_payment_ref', '%' . $search . '%')
+                        ->orWhereLike('order_no', '%' . $search . '%')
+                        ->orWhereLike('product_id', '%' . $search . '%')
                         ->orWhereHas('ledgerTransaction', function (Builder $transaction) use ($search): void {
                             $transaction
                                 ->whereLike('transaction_no', '%' . $search . '%')

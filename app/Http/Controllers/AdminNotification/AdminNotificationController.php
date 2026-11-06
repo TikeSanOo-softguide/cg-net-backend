@@ -61,6 +61,7 @@ class AdminNotificationController extends Controller
         'ledger_health_snapshot_full' => 'reports.view',
         'ledger_health_snapshot_daily' => 'reports.view',
         'ledger_health_snapshot_manual' => 'reports.view',
+        'bill_payment' => 'billing.view',
     ];
 
     public function index(Request $request): JsonResponse|Response

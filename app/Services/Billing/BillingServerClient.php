@@ -80,7 +80,7 @@ class BillingServerClient
             throw new RuntimeException('Unable to determine the FTTH bill amount for this account.');
         }
 
-        $amount = (int) $amount;
+        $amount = round((float) $amount, 2);
 
         if ($amount < 1) {
             throw new RuntimeException('FTTH bill amount must be at least 1.');

@@ -358,10 +358,9 @@ function pointsLabel(value: number | string | null | undefined, unit: string): s
         return '—';
     }
 
-    const amount = typeof value === 'number' ? value : Number(value);
-    if (!Number.isFinite(amount)) {
+    if (typeof value !== 'number' && typeof value !== 'string') {
         return '—';
     }
 
-    return `${new Intl.NumberFormat().format(amount)} ${unit}`;
+    return `${String(value)} ${unit}`;
 }

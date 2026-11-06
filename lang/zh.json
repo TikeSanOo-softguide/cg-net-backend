@@ -65,12 +65,13 @@
         "details": "账单支付详情",
         "details_description": "只读账单支付详情。",
         "empty": "没有账单支付记录。",
-        "external_bill_ref": "账单参考号",
-        "external_payment_ref": "支付参考号",
         "external_response": "外部响应",
         "ledger_transaction_id": "账本交易 ID",
+        "order_no": "订单号",
         "payment_reference": "支付参考号",
-        "search_placeholder": "搜索宽带或客户"
+        "product_snapshot": "产品快照",
+        "search_placeholder": "搜索宽带、客户或订单",
+        "service_type": "服务类型"
     },
     "billing_report": {
         "apply_filters": "应用筛选",
@@ -1144,7 +1145,7 @@
         "external_response": "外部服务响应",
         "failure_reason": "失败 / 对账备注",
         "order_details": "套餐订单详情",
-        "order_no": "CG-Net 订单号",
+        "order_no": "订单号",
         "search_placeholder": "搜索订单编号、客户或交易",
         "service_details": "已开通的服务",
         "snapshot": "订单快照",
@@ -2118,6 +2119,13 @@
         "empty": "未找到钱包交易记录。",
         "invalid_date_range": "结束日期不能早于开始日期。",
         "number": "交易编号",
+        "order_no": "订单号",
+        "review": {
+            "complete": "标记为成功",
+            "refund": "退款"
+        },
+        "review_completed": "FTTH 支付已标记为成功。",
+        "review_refunded": "FTTH 支付已退款。",
         "search": "搜索",
         "search_placeholder": "搜索交易或客户",
         "type": "交易类型",

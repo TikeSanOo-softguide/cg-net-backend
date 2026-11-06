@@ -73,6 +73,7 @@ const requestHrefByType = {
     change_plan_request: '/service-requests/change-plan',
     failure_report: '/service-requests/failures',
     relocation_request: '/service-requests/relocations',
+    bill_payment: '/billing/bill-payments',
 } satisfies Record<
     Exclude<
         AdminNotification['reference_type'],
@@ -83,8 +84,14 @@ const requestHrefByType = {
 
 function isServiceRequestReference(
     referenceType: AdminNotification['reference_type'],
-): referenceType is keyof typeof requestHrefByType {
-    return referenceType !== null && Object.hasOwn(requestHrefByType, referenceType);
+): referenceType is Exclude<keyof typeof requestHrefByType, 'bill_payment'> {
+    return (
+        referenceType !== null && referenceType !== 'bill_payment' && Object.hasOwn(requestHrefByType, referenceType)
+    );
+}
+
+function isBillPaymentReference(referenceType: AdminNotification['reference_type']): referenceType is 'bill_payment' {
+    return referenceType === 'bill_payment';
 }
 
 const serviceRequestNavigationItems = navigation.flatMap((group) => group.children ?? []);
@@ -329,7 +336,10 @@ export function NotificationDropdown({ unread }: NotificationDropdownProps) {
                                                                   item.reference_id !== null &&
                                                                   isServiceRequestReference(item.reference_type)
                                                                       ? `${item.href}?status=all&open_request=${item.reference_id}`
-                                                                      : item.href!;
+                                                                      : item.reference_id !== null &&
+                                                                          isBillPaymentReference(item.reference_type)
+                                                                        ? `${item.href}?status=all&payment_id=${item.reference_id}`
+                                                                        : item.href!;
 
                                                               if (item.read_at === null) {
                                                                   router.put(

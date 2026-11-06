@@ -53,7 +53,7 @@ type Props = {
 };
 
 const formatPoints = (points: number, pointsLabel: string) =>
-    `${new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(points)} ${pointsLabel}`;
+    `${String(points)} ${pointsLabel}`;
 
 export default function BillingReportsIndex({
     filters: reportFilters,
