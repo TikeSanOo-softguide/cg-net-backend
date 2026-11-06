@@ -680,6 +680,8 @@
         "image_upload_examples": "ပုံ တင်ရန်",
         "image_upload_examples_description": "အကျယ်နှင့် အမြင့် မတူသော ပုံတင် ဒီဇိုင်း နှစ်မျိုး။",
         "image_upload_tile": "အရောင်ဖြည့် စတုရန်း",
+        "installation_service_type": "တပ်ဆင်မှု ဝန်ဆောင်မှုအမျိုးအစား",
+        "installations_by_service_type": "ဝန်ဆောင်မှုအမျိုးအစားအလိုက် တပ်ဆင်မှုများ",
         "installations_by_region": "ဒေသအလိုက် တပ်ဆင်မှုများ",
         "last_30_days": "လွန်ခဲ့သော ၃၀ ရက်",
         "new_signups": "အသစ်စာရင်းသွင်းမှု",

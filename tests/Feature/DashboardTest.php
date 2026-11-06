@@ -10,7 +10,6 @@ use App\Enums\RequestStatus;
 use App\Enums\WalletActorType;
 use App\Models\Admin;
 use App\Models\AdminNotification;
-use App\Models\Area;
 use App\Models\BillPayment;
 use App\Models\FailureReport;
 use App\Models\InstallationApplication;
@@ -18,7 +17,6 @@ use App\Models\LedgerTransaction;
 use App\Models\Network;
 use App\Models\Package;
 use App\Models\PackageOrder;
-use App\Models\Region;
 use App\Models\RelocationRequest;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
@@ -88,7 +86,7 @@ class DashboardTest extends TestCase
                     ->has('chart', 30)
                     ->where('chart.29.ftth_bill_payments', 15000)
                     ->where('chart.29.wifi_package_orders', 25000)
-                    ->has('regionChart')
+                    ->has('installationTypeChart')
                     ->has('requestTypeChart')
                     ->has('recentRequests')
                     ->has('unreadNotifications')
@@ -98,53 +96,25 @@ class DashboardTest extends TestCase
             );
     }
 
-    public function test_dashboard_groups_installations_by_region(): void
+    public function test_dashboard_groups_installations_by_service_type(): void
     {
         $admin = Admin::factory()->create();
-        $yangon = Region::factory()->create(['name_en' => 'Yangon']);
-        $mandalay = Region::factory()->create(['name_en' => 'Mandalay']);
-        $yangonArea = Area::factory()->create(['region_id' => $yangon->id]);
-        $mandalayArea = Area::factory()->create(['region_id' => $mandalay->id]);
 
         InstallationApplication::factory()
             ->count(3)
-            ->create(['area_id' => $yangonArea->id]);
-        InstallationApplication::factory()->create(['area_id' => $mandalayArea->id]);
+            ->create(['service_type' => 'FTTH']);
+        InstallationApplication::factory()->create(['service_type' => 'CG']);
 
         $this->actingAs($admin, 'web')
             ->get('/dashboard')
             ->assertOk()
             ->assertInertia(
                 fn(Assert $page) => $page
-                    ->has('regionChart', 2)
-                    ->where('regionChart.0.name_en', 'Yangon')
-                    ->where('regionChart.0.value', 3)
-                    ->where('regionChart.1.name_en', 'Mandalay')
-                    ->where('regionChart.1.value', 1),
-            );
-    }
-
-    public function test_dashboard_rolls_extra_regions_into_other(): void
-    {
-        $admin = Admin::factory()->create();
-
-        foreach (range(1, 6) as $index) {
-            $region = Region::factory()->create(['name_en' => "Region {$index}"]);
-            $area = Area::factory()->create(['region_id' => $region->id]);
-            InstallationApplication::factory()
-                ->count(7 - $index)
-                ->create(['area_id' => $area->id]);
-        }
-
-        $this->actingAs($admin, 'web')
-            ->get('/dashboard')
-            ->assertOk()
-            ->assertInertia(
-                fn(Assert $page) => $page
-                    ->has('regionChart', 5)
-                    ->where('regionChart.4.id', null)
-                    ->where('regionChart.4.name_en', 'Other')
-                    ->where('regionChart.4.value', 3),
+                    ->has('installationTypeChart', 2)
+                    ->where('installationTypeChart.0.service_type', 'FTTH')
+                    ->where('installationTypeChart.0.value', 3)
+                    ->where('installationTypeChart.1.service_type', 'CG')
+                    ->where('installationTypeChart.1.value', 1),
             );
     }
 

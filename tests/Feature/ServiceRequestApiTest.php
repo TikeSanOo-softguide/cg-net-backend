@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Enums\FailureType;
-use App\Models\Area;
 use App\Models\ChangePasswordRequest;
 use App\Models\ChangePlanRequest;
 use App\Models\FailureReport;
@@ -63,11 +62,9 @@ class ServiceRequestApiTest extends TestCase
 
         $user = User::factory()->create();
         $token = $user->createToken('service-requests')->plainTextToken;
-        $area = Area::factory()->create();
         $applicationData = [
             'name' => 'Test Customer',
             'service_type' => 'FTTH',
-            'area_id' => $area->id,
             'package_detail' => [
                 'product_id' => '249',
                 'product_name' => '100M office',
@@ -97,10 +94,11 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonPath('data.service_type', 'FTTH')
             ->assertJsonPath('data.ticket_number', 'INT' . now()->format('md') . '0001')
             ->assertJsonPath('data.package_detail.product_id', '249')
-            ->assertJsonPath('data.area_id', $area->id)
             ->assertJsonPath('data.phone', '959922345678')
             ->assertJsonPath('data.status', 'under_review')
             ->assertJsonMissingPath('data.photos');
+        Http::assertSentCount(1);
+        Http::assertSent(fn($request) => str_contains($request['text'], '📡 NEW BROADBAND INSTALLATION'));
         $application = InstallationApplication::query()->findOrFail($response->json('data.id'));
 
         $this->withToken($token)->getJson('/api/installation-application')->assertOk()->assertJsonCount(1, 'data');
@@ -129,6 +127,8 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonPath('data.name', 'Updated Customer')
             ->assertJsonPath('data.address', 'Updated customer address')
             ->assertJsonMissingPath('data.photos');
+        Http::assertSentCount(2);
+        Http::assertSent(fn($request) => str_contains($request['text'], '✏️ BROADBAND INSTALLATION UPDATED'));
 
         $this->withToken($token)
             ->patchJson('/api/installation-application/' . $application->id . '/cancel')
@@ -136,6 +136,8 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonPath('code', 'MSG-REQ-001')
             ->assertJsonPath('level', 'success')
             ->assertJsonPath('data.status', 'cancelled');
+        Http::assertSentCount(3);
+        Http::assertSent(fn($request) => str_contains($request['text'], '❌ BROADBAND INSTALLATION CANCELLED'));
 
         $this->withToken($token)
             ->deleteJson('/api/installation-application/' . $application->id)
@@ -238,6 +240,14 @@ class ServiceRequestApiTest extends TestCase
 
     public function test_customer_can_create_update_cancel_and_delete_a_relocation_request(): void
     {
+        config([
+            'services.telegram.bot_token' => 'test-bot-token',
+            'services.telegram.chat_id' => 'test-chat-id',
+        ]);
+        Http::fake([
+            'https://api.telegram.org/*' => Http::response(['ok' => true], 200),
+        ]);
+
         $user = User::factory()->create(['broadband_account_number' => 'CG62345678']);
         $token = $user->createToken('service-requests')->plainTextToken;
         $requestData = [
@@ -255,6 +265,7 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonPath('data.user_id', $user->id)
             ->assertJsonPath('data.broadband_account_number', $user->broadband_account_number)
             ->assertJsonPath('data.status', 'under_review');
+        Http::assertSentCount(1);
         $relocationRequest = RelocationRequest::query()->findOrFail($response->json('data.id'));
 
         $this->withToken($token)->getJson('/api/relocation-requests')->assertOk()->assertJsonCount(1, 'data');
@@ -268,11 +279,15 @@ class ServiceRequestApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.new_address', 'Updated new address')
             ->assertJsonPath('data.details', 'Updated relocation details.');
+        Http::assertSentCount(2);
+        Http::assertSent(fn($request) => str_contains($request['text'], '✏️ RELOCATION REQUEST UPDATED'));
 
         $this->withToken($token)
             ->patchJson('/api/relocation-requests/' . $relocationRequest->id . '/cancel')
             ->assertOk()
             ->assertJsonPath('data.status', 'cancelled');
+        Http::assertSentCount(3);
+        Http::assertSent(fn($request) => str_contains($request['text'], '❌ RELOCATION REQUEST CANCELLED'));
 
         $this->withToken($token)
             ->deleteJson('/api/relocation-requests/' . $relocationRequest->id)
@@ -727,7 +742,6 @@ class ServiceRequestApiTest extends TestCase
 
         $user = User::factory()->create();
         $token = $user->createToken('service-requests')->plainTextToken;
-        $area = Area::factory()->create();
         $packageDetail = [
             'product_id' => '249',
             'product_name' => '100M office',
@@ -744,7 +758,6 @@ class ServiceRequestApiTest extends TestCase
                 [
                     'name' => 'Test Customer',
                     'service_type' => 'FTTH',
-                    'area_id' => $area->id,
                     'package_detail' => $packageDetail,
                     'address' => 'Customer address',
                     'phone' => '95922345678',
@@ -758,7 +771,6 @@ class ServiceRequestApiTest extends TestCase
             ->putJson('/api/installation-application/' . $created->json('data.id'), [
                 'name' => 'Edited Without New Photos',
                 'service_type' => 'FTTH',
-                'area_id' => $area->id,
                 'package_detail' => $packageDetail,
                 'address' => 'Customer address',
                 'phone' => '95922345678',
@@ -778,13 +790,10 @@ class ServiceRequestApiTest extends TestCase
     {
         $user = User::factory()->create();
         $token = $user->createToken('service-requests')->plainTextToken;
-        $area = Area::factory()->create();
-
         $this->withToken($token)
             ->postJson('/api/installation-application/create', [
                 'name' => 'Test Customer',
                 'service_type' => 'FTTH',
-                'area_id' => $area->id,
                 'package_detail' => [
                     'product_id' => '249',
                     'product_name' => '100M office',

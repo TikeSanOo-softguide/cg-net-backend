@@ -1,7 +1,10 @@
 import { Head } from '@inertiajs/react';
 import { UsersIcon, UserPlusIcon, PackageIcon, CoinsIcon, ClipboardListIcon } from 'lucide-react';
 
-import { DashboardRegionChart, type RegionChartSlice } from '@/components/dashboard/DashboardRegionChart';
+import {
+    DashboardInstallationTypeChart,
+    type InstallationTypeChartSlice,
+} from '@/components/dashboard/DashboardInstallationTypeChart';
 import { DashboardRequestLevels, type RequestTypeChart } from '@/components/dashboard/DashboardRequestLevels';
 import { DashboardTrendChart, type TrendPoint } from '@/components/dashboard/DashboardTrendChart';
 import { DataTable } from '@/components/DataTable';
@@ -30,7 +33,7 @@ type DashboardProps = {
     };
     chart: TrendPoint[];
     topupUsageChange: number | null;
-    regionChart: RegionChartSlice[];
+    installationTypeChart: InstallationTypeChartSlice[];
     requestTypeChart: RequestTypeChart;
     recentRequests: RecentRequest[];
 };
@@ -39,7 +42,7 @@ export default function DashboardIndex({
     stats,
     chart,
     topupUsageChange,
-    regionChart,
+    installationTypeChart,
     requestTypeChart,
     recentRequests,
 }: DashboardProps) {
@@ -144,7 +147,7 @@ export default function DashboardIndex({
                             },
                         ]}
                     />
-                    <DashboardRegionChart data={regionChart} />
+                    <DashboardInstallationTypeChart data={installationTypeChart} />
                     <DashboardRequestLevels data={requestTypeChart} />
                 </div>
 

@@ -24,7 +24,6 @@ use Carbon\CarbonPeriod;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -49,7 +48,7 @@ class DashboardController extends Controller
             'stats' => $this->stats(),
             'chart' => $this->chartSeries($start, $end),
             'topupUsageChange' => $this->topupUsageChange($start, $end),
-            'regionChart' => $this->regionChart($start, $end),
+            'installationTypeChart' => $this->installationTypeChart($start, $end),
             'requestTypeChart' => $this->requestTypeChart($start, $end),
             'recentRequests' => $this->recentRequests(),
         ]);
@@ -197,53 +196,24 @@ class DashboardController extends Controller
     }
 
     /**
-     * @return list<array{id: int|null, name_en: string, name_zh: string, name_my: string, value: int}>
+     * @return list<array{service_type: string, value: int}>
      */
-    private function regionChart(Carbon $start, Carbon $end): array
+    private function installationTypeChart(Carbon $start, Carbon $end): array
     {
-        $counts = InstallationApplication::query()
-            ->join('areas', 'areas.id', '=', 'installation_applications.area_id')
-            ->join('regions', 'regions.id', '=', 'areas.region_id')
-            ->whereNull('areas.deleted_at')
-            ->whereNull('regions.deleted_at')
+        $serviceType = "COALESCE(NULLIF(service_type, ''), 'other')";
+
+        return InstallationApplication::query()
             ->whereBetween('installation_applications.created_at', [$start, $end])
-            ->select([
-                'regions.id',
-                'regions.name_en',
-                'regions.name_zh',
-                'regions.name_my',
-                DB::raw('COUNT(*) as total'),
-            ])
-            ->groupBy('regions.id', 'regions.name_en', 'regions.name_zh', 'regions.name_my')
+            ->selectRaw("{$serviceType} as service_type, COUNT(*) as total")
+            ->groupByRaw($serviceType)
             ->orderByDesc('total')
-            ->get();
-
-        $toSlice = static fn($row): array => [
-            'id' => (int) $row->id,
-            'name_en' => (string) $row->name_en,
-            'name_zh' => (string) $row->name_zh,
-            'name_my' => (string) $row->name_my,
-            'value' => (int) $row->total,
-        ];
-
-        if ($counts->count() <= 5) {
-            return $counts->map($toSlice)->values()->all();
-        }
-
-        $items = $counts->take(4)->map($toSlice)->values()->all();
-        $otherCount = (int) $counts->slice(4)->sum('total');
-
-        if ($otherCount > 0) {
-            $items[] = [
-                'id' => null,
-                'name_en' => 'Other',
-                'name_zh' => 'Other',
-                'name_my' => 'Other',
-                'value' => $otherCount,
-            ];
-        }
-
-        return $items;
+            ->get()
+            ->map(fn($row): array => [
+                'service_type' => (string) $row->service_type,
+                'value' => (int) $row->total,
+            ])
+            ->values()
+            ->all();
     }
 
     /**

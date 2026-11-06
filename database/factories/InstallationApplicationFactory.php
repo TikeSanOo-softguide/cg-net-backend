@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Enums\RequestStatus;
-use App\Models\Area;
 use App\Models\InstallationApplication;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -16,7 +15,6 @@ class InstallationApplicationFactory extends Factory
     public function definition(): array
     {
         return [
-            'area_id' => Area::factory(),
             'name' => fake()->name(),
             'service_type' => 'FTTH',
             'ticket_number' => 'INT'.now()->format('md').str_pad((string) fake()->unique()->numberBetween(1, 9999), 4, '0', STR_PAD_LEFT),
