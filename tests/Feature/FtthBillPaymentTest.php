@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Mockery;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class FtthBillPaymentTest extends TestCase
@@ -64,13 +65,11 @@ class FtthBillPaymentTest extends TestCase
 
                 return [
                     'account' => $account,
-                    'product_id' => 'ftth-product-1',
-                    'product_name' => 'FTTH 100M',
-                    'product_price' => 1000,
-                    'month_cycle' => 1,
-                    'month_cycle_unit' => '月',
-                    'product_line' => 'FTTH',
-                    'product_speed' => '100M',
+                    'productID' => 'ftth-product-1',
+                    'productName' => 'FTTH 100M',
+                    'productPrice' => 1000,
+                    'productLine' => 'FTTH',
+                    'productSpeed' => '100M',
                     'monthCycle' => 1,
                     'monthCycleUnit' => '月',
                     'installationFee' => 0,
@@ -433,11 +432,13 @@ class FtthBillPaymentTest extends TestCase
         $this->assertSame('1000.00', $billPayment->product_price);
         $this->assertSame('monthly bill', $billPayment->remark);
         $this->assertSame([
-            'productID' => 'ftth-product-1',
-            'productName' => 'FTTH 100M',
-            'productPrice' => 1000,
-            'productLine' => 'FTTH',
-            'productSpeed' => '100M',
+            'product_id' => 'ftth-product-1',
+            'product_name' => 'FTTH 100M',
+            'product_price' => 1000,
+            'month_cycle' => 1,
+            'month_cycle_unit' => '月',
+            'product_line' => 'FTTH',
+            'product_speed' => '100M',
         ], $billPayment->snapshot);
         $this->assertSame($user->broadband_account_number, $billPayment->external_response['broadband_account_number']);
         $this->assertSame('success', $billPayment->external_response['outcome'] ?? null);
@@ -471,78 +472,44 @@ class FtthBillPaymentTest extends TestCase
         );
     }
 
-    public function test_bill_payment_uses_cg_account_info_and_recharge_apis(): void
+    public function test_bill_payment_submits_expected_payload_through_mocked_cg_net_client(): void
     {
-        $this->app->forgetInstance(AccountInfoService::class);
-        $this->app->forgetInstance(CgNetApiClient::class);
-        config([
-            'services.cg_api.url' => 'https://provider.test/WalletApp/ServerCommand',
-            'services.cg_api.client_id' => 'bill-test-client',
-            'services.cg_api.client_secret' => 'bill-test-secret',
-        ]);
-
-        Http::fake([
-            'provider.test/WalletApp/ServerCommand/GetTokenAPI*' => Http::response([
-                'ErrCode' => 0,
-                'token' => 'bill-test-token',
-            ]),
-            'provider.test/WalletApp/ServerCommand/AccountInfoAPI*' => fn($request) => Http::response([
-                'ErrCode' => 0,
-                'Data' => [
-                    'account' => $request['Account'],
-                    'productID' => 'ftth-api-product',
-                    'productName' => 'CG-Net FTTH 100M',
-                    'productPrice' => 1000,
-                    'productLine' => 'FTTH',
-                    'productSpeed' => '100M',
-                    'monthCycle' => 1,
-                    'monthCycleUnit' => '月',
-                    'installationFee' => 0,
-                ],
-            ]),
-            'provider.test/WalletApp/ServerCommand/RechargeAPI' => Http::response([
-                'ErrCode' => 0,
-                'Message' => 'success',
-            ]),
-        ]);
-
         [$user] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->postJson('/api/ftth-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
                 'service_type' => 'FTTH',
-                'idempotency_key' => 'ftth-cg-api-integration',
+                'idempotency_key' => 'ftth-mocked-cg-api',
                 'password' => '123456',
                 'remark' => 'customer note',
             ])
-            ->assertOk();
+            ->assertOk()
+            ->assertJsonPath('data.billing_status', 'completed');
 
         $orderNo = BillPayment::query()->value('order_no');
         $this->assertNotEmpty($orderNo);
 
-        Http::assertSent(fn($request) => str_ends_with(
-            (string) parse_url($request->url(), PHP_URL_PATH),
-            '/AccountInfoAPI',
-        ) && $request->method() === 'GET'
-            && $request['Account'] === $user->broadband_account_number
-            && $request['ServiceType'] === 'FTTH');
-        Http::assertSent(fn($request) => str_ends_with(
-            (string) parse_url($request->url(), PHP_URL_PATH),
-            '/RechargeAPI',
-        ) && $request->method() === 'POST'
-            && $request['OrderNo'] === $orderNo
-            && $request['Account'] === $user->broadband_account_number
-            && $request['ServiceType'] === 'FTTH'
-            && $request['ProductID'] === 'ftth-api-product'
-            && (float) $request['ProductPrice'] === 1000.0
-            && $request['Remark'] === 'customer note');
+        $this->assertSame(
+            [['service_type' => 'FTTH', 'account' => $user->broadband_account_number]],
+            $this->accountLookups,
+        );
+        $this->assertCount(1, $this->rechargeRequests);
+        $this->assertSame('RechargeAPI', $this->rechargeRequests[0]['command']);
+        $this->assertSame([
+            'OrderNo' => $orderNo,
+            'Account' => $user->broadband_account_number,
+            'ServiceType' => 'FTTH',
+            'ProductID' => 'ftth-product-1',
+            'ProductPrice' => 1000.0,
+            'Remark' => 'customer note',
+        ], $this->rechargeRequests[0]['payload']);
 
         $snapshot = BillPayment::query()->firstOrFail()->snapshot;
-        $this->assertSame('CG-Net FTTH 100M', $snapshot['product_name']);
+        $this->assertSame('FTTH 100M', $snapshot['product_name']);
         $this->assertSame('FTTH', $snapshot['product_line']);
         $this->assertSame('100M', $snapshot['product_speed']);
-        $this->assertSame('ftth-api-product', $snapshot['product_id']);
+        $this->assertSame('ftth-product-1', $snapshot['product_id']);
         $this->assertSame(1000, $snapshot['product_price']);
     }
 
@@ -592,6 +559,44 @@ class FtthBillPaymentTest extends TestCase
                 BillPaymentNotificationEvent::Refunded &&
                 $notification->refundTransactionNo === $refund->transaction_no,
         );
+    }
+
+    #[DataProvider('providerRejectionCodes')]
+    public function test_account_and_product_rejection_codes_refund_the_payment(int $errorCode): void
+    {
+        Notification::fake();
+
+        $this->rechargeResponse = [
+            'ErrCode' => $errorCode,
+            'Message' => 'The account or product does not exist.',
+        ];
+
+        [$user, $wallet] = $this->makePayer(balance: 1500);
+
+        $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
+            ->postJson('/api/ftth-bills/pay', [
+                'broadband_account_number' => $user->broadband_account_number,
+                'service_type' => 'FTTH',
+                'idempotency_key' => 'ftth-reject-code-' . $errorCode,
+                'password' => '123456',
+            ])
+            ->assertStatus(502)
+            ->assertJsonPath('success', false);
+
+        $this->assertEquals(1500, $wallet->fresh()->balance);
+        $this->assertDatabaseHas('ledger_transactions', [
+            'wallet_id' => $wallet->id,
+            'type' => LedgerTransactionType::FtthBill->value,
+            'status' => LedgerTransactionStatus::Failed->value,
+        ]);
+    }
+
+    public static function providerRejectionCodes(): array
+    {
+        return [
+            'account does not exist' => [2],
+            'product does not exist' => [500],
+        ];
     }
 
     public function test_duplicate_recharge_order_is_treated_as_success_and_sends_all_required_fields(): void
