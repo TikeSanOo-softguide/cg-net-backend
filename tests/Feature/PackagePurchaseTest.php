@@ -107,7 +107,14 @@ class PackagePurchaseTest extends TestCase
                 ->assertJsonPath('message', 'Package purchased successfully.')
                 ->assertJsonPath('data.amount', 50000)
                 ->assertJsonPath('data.product_id', $package->provider_product_id)
-                ->assertJsonPath('data.status', PackageOrderStatus::Completed->value);
+                ->assertJsonPath('data.status', PackageOrderStatus::Completed->value)
+                ->assertJsonPath('data.package.product_id', $package->provider_product_id)
+                ->assertJsonPath('data.package.product_name', 'Provider package '.$package->provider_product_id)
+                ->assertJsonPath('data.package.product_price', number_format($package->price, 2, '.', ''))
+                ->assertJsonPath('data.package.product_line', 'test-line')
+                ->assertJsonPath('data.package.product_speed', (string) $this->mbps)
+                ->assertJsonPath('data.package.month_cycle', 6)
+                ->assertJsonPath('data.package.month_cycle_unit', '月');
 
             $account = $response->json('data.credentials.account');
             $password = $response->json('data.credentials.password');
@@ -545,7 +552,12 @@ class PackagePurchaseTest extends TestCase
         $response
             ->assertJsonPath('data.order_no', $order->order_no)
             ->assertJsonPath('data.package.product_id', $package->provider_product_id)
-            ->assertJsonPath('data.package.price', number_format($package->price, 2, '.', ''));
+            ->assertJsonPath('data.package.product_name', 'Provider package '.$package->provider_product_id)
+            ->assertJsonPath('data.package.product_price', number_format($package->price, 2, '.', ''))
+            ->assertJsonPath('data.package.product_line', 'test-line')
+            ->assertJsonPath('data.package.product_speed', (string) $this->mbps)
+            ->assertJsonPath('data.package.month_cycle', 3)
+            ->assertJsonPath('data.package.month_cycle_unit', '月');
 
         $this->assertMatchesRegularExpression('/^CGN-[A-F0-9-]{36}$/', $order->order_no);
         $this->assertMatchesRegularExpression('/^G\d{7}$/', $order->account);

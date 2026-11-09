@@ -2,36 +2,36 @@
 
 namespace App\Services\FtthBill;
 
-use App\Enums\MessageCode;
 use App\Enums\BillPaymentNotificationEvent;
 use App\Enums\BillPaymentStatus;
 use App\Enums\LedgerAccountCode;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
+use App\Enums\MessageCode;
 use App\Enums\WalletActorType;
 use App\Enums\WalletStatus;
 use App\Jobs\ReconcileStuckFtthBillPaymentsJob;
-use App\Models\BillPayment;
 use App\Models\AdminNotification;
+use App\Models\BillPayment;
 use App\Models\LedgerTransaction;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Notifications\FtthBillPaymentStatusNotification;
+use App\Services\AdminNotification\AdminNotificationDelivery;
 use App\Services\Billing\BillingServerClient;
 use App\Services\BroarbandAccount\AccountInfoService;
 use App\Services\BroarbandAccount\BroadbandAccountService;
 use App\Services\CgApiTokenException;
 use App\Services\CgNetApiClient;
 use App\Services\Ledger\LedgerPoster;
-use App\Services\AdminNotification\AdminNotificationDelivery;
 use App\Support\ApiMessage;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use RuntimeException;
 use Throwable;
 
@@ -86,10 +86,7 @@ class FtthBillPaymentService
             return $this->accountMissing();
         }
 
-        $existing = LedgerTransaction::query()
-            ->with('billPayment')
-            ->where('idempotency_key', $idempotencyKey)
-            ->first();
+        $existing = LedgerTransaction::query()->with('billPayment')->where('idempotency_key', $idempotencyKey)->first();
 
         if ($existing) {
             if (
@@ -259,7 +256,7 @@ class FtthBillPaymentService
     }
 
     /**
-     * @param array<string, mixed> $paidSlip
+     * @param  array<string, mixed>  $paidSlip
      * @return array<string, mixed>
      */
     protected function formatPaidSlip(array $paidSlip, string $accountNumber, ?string $customerName): array
@@ -379,15 +376,11 @@ class FtthBillPaymentService
                     'billing_response' => $status,
                 ]);
 
-                $this->markPaymentForReview(
-                    $transaction,
-                    $accountNumber,
-                    [
-                        ...$status,
-                        'message' => 'The payment was rejected, but its wallet owner could not be resolved for refund.',
-                        'manual_review_reason' => 'refund_owner_unavailable',
-                    ],
-                );
+                $this->markPaymentForReview($transaction, $accountNumber, [
+                    ...$status,
+                    'message' => 'The payment was rejected, but its wallet owner could not be resolved for refund.',
+                    'manual_review_reason' => 'refund_owner_unavailable',
+                ]);
 
                 return;
             }
@@ -568,11 +561,11 @@ class FtthBillPaymentService
         }
 
         return $this->coded(200, MessageCode::FtthPaid, [
-            'data' => [
-                'amount' => $completedTransaction->amount,
-                'billing_status' => LedgerTransactionStatus::Completed->value,
-                'transaction_no' => $completedTransaction->transaction_no,
-            ],
+            'data' => $this->paymentResponseData(
+                $completedTransaction,
+                $accountNumber,
+                LedgerTransactionStatus::Completed->value,
+            ),
         ]);
     }
 
@@ -589,13 +582,11 @@ class FtthBillPaymentService
     ): array {
         $refundTransaction = $this->refundWalletBalance($transaction, $wallet, $user, $accountNumber, $billingResponse);
 
+        $data = $this->paymentResponseData($transaction, $accountNumber, LedgerTransactionStatus::Failed->value);
+        $data['refund_transaction_no'] = $refundTransaction->transaction_no;
+
         return $this->coded(502, MessageCode::FtthRefunded, [
-            'data' => [
-                'amount' => $transaction->amount,
-                'billing_status' => LedgerTransactionStatus::Failed->value,
-                'transaction_no' => $transaction->transaction_no,
-                'refund_transaction_no' => $refundTransaction->transaction_no,
-            ],
+            'data' => $data,
         ]);
     }
 
@@ -630,11 +621,11 @@ class FtthBillPaymentService
 
         return $this->coded(202, MessageCode::FtthProcessing, [
             'success' => true,
-            'data' => [
-                'amount' => $transaction->amount,
-                'billing_status' => LedgerTransactionStatus::Processing->value,
-                'transaction_no' => $transaction->transaction_no,
-            ],
+            'data' => $this->paymentResponseData(
+                $transaction,
+                $accountNumber,
+                LedgerTransactionStatus::Processing->value,
+            ),
         ]);
     }
 
@@ -660,7 +651,7 @@ class FtthBillPaymentService
                 'message' => self::RECHARGE_NO_RESPONSE_MESSAGE,
                 'exception' => $exception->getMessage(),
             ];
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             Log::error('Unexpected FTTH recharge submission failure.', [
                 'bill_payment_id' => $payment->id,
                 'ledger_transaction_id' => $payment->ledger_transaction_id,
@@ -726,6 +717,43 @@ class FtthBillPaymentService
     protected function providerMessage(mixed $payload, string $fallback): string
     {
         return is_array($payload) && is_string($payload['Message'] ?? null) ? $payload['Message'] : $fallback;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function paymentResponseData(
+        LedgerTransaction $transaction,
+        ?string $accountNumber = null,
+        ?string $statusOverride = null,
+    ): array {
+        $billPayment = $transaction->billPayment()->first();
+        $snapshot = is_array($billPayment?->snapshot) ? $billPayment->snapshot : [];
+        $status = $statusOverride ?? ($billPayment?->status?->value ?? $transaction->status->value);
+
+        return [
+            'transaction_no' => $transaction->transaction_no,
+            'order_no' => $billPayment?->order_no,
+            'account' => $accountNumber ?? $billPayment?->broadband_account_number,
+            'service_type' => $billPayment?->service_type,
+            'customer_name' => $transaction->wallet?->user?->name,
+            'amount' => $transaction->amount,
+            'package' => [
+                'product_id' => $billPayment?->product_id ?? ($snapshot['product_id'] ?? null),
+                'product_name' => $snapshot['product_name'] ?? null,
+                'product_price' => $billPayment?->product_price ?? ($snapshot['product_price'] ?? null),
+                'product_line' => $snapshot['product_line'] ?? null,
+                'product_speed' => $snapshot['product_speed'] ?? null,
+                'month_cycle' => $snapshot['month_cycle'] ?? null,
+                'month_cycle_unit' => $snapshot['month_cycle_unit'] ?? null,
+            ],
+            'remark' => $billPayment?->remark,
+            'status' => $status,
+            'created_at' =>
+                $billPayment?->created_at?->format('Y-m-d H:i:s') ?? $transaction->created_at?->format('Y-m-d H:i:s'),
+            'confirmed_at' => $billPayment?->confirmed_at?->format('Y-m-d H:i:s'),
+            'billing_status' => $status,
+        ];
     }
 
     /**
@@ -1083,11 +1111,11 @@ class FtthBillPaymentService
         if ($existing->type === LedgerTransactionType::FtthBill && $status === LedgerTransactionStatus::Completed) {
             return $this->coded(200, MessageCode::FtthAlreadyProcessed, [
                 'success' => true,
-                'data' => [
-                    'amount' => $existing->amount,
-                    'billing_status' => LedgerTransactionStatus::Completed->value,
-                    'transaction_no' => $existing->transaction_no,
-                ],
+                'data' => $this->paymentResponseData(
+                    $existing,
+                    $accountNumber,
+                    LedgerTransactionStatus::Completed->value,
+                ),
             ]);
         }
 
@@ -1097,35 +1125,29 @@ class FtthBillPaymentService
                 ->where('type', LedgerTransactionType::Refund)
                 ->first();
 
+            $data = $this->paymentResponseData($existing, $accountNumber, LedgerTransactionStatus::Failed->value);
+            $data['refund_transaction_no'] = $refund?->transaction_no;
+
             return $this->coded(502, MessageCode::FtthRefunded, [
-                'data' => [
-                    'amount' => $existing->amount,
-                    'billing_status' => LedgerTransactionStatus::Failed->value,
-                    'transaction_no' => $existing->transaction_no,
-                    'refund_transaction_no' => $refund?->transaction_no,
-                ],
+                'data' => $data,
             ]);
         }
 
         if ($existing->type === LedgerTransactionType::FtthBill && $status === LedgerTransactionStatus::Processing) {
             return $this->coded(202, MessageCode::FtthAlreadyProcessing, [
                 'success' => true,
-                'data' => [
-                    'amount' => $existing->amount,
-                    'billing_status' => LedgerTransactionStatus::Processing->value,
-                    'transaction_no' => $existing->transaction_no,
-                ],
+                'data' => $this->paymentResponseData(
+                    $existing,
+                    $accountNumber,
+                    LedgerTransactionStatus::Processing->value,
+                ),
             ]);
         }
 
         if ($existing->type === LedgerTransactionType::FtthBill && $status === LedgerTransactionStatus::Review) {
             return $this->coded(202, MessageCode::FtthProcessing, [
                 'success' => true,
-                'data' => [
-                    'amount' => $existing->amount,
-                    'billing_status' => LedgerTransactionStatus::Review->value,
-                    'transaction_no' => $existing->transaction_no,
-                ],
+                'data' => $this->paymentResponseData($existing, $accountNumber, LedgerTransactionStatus::Review->value),
             ]);
         }
 

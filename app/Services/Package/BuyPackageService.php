@@ -647,8 +647,8 @@ class BuyPackageService
             'order_no' => $order->order_no,
             'package' => [
                 'product_id' => $productId,
-                'name' => $order->snapshot['product_name'] ?? null,
-                'price' => $order->product_price,
+                'product_name' => $order->snapshot['product_name'] ?? null,
+                'product_price' => $order->product_price,
                 'product_line' => $order->snapshot['product_line'] ?? null,
                 'product_speed' => $order->snapshot['product_speed'] ?? null,
                 'month_cycle' => $order->snapshot['term_cycle'] ?? $order->snapshot['term_months'] ?? null,

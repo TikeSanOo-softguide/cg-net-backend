@@ -4,14 +4,14 @@ namespace Tests\Feature;
 
 use App\Enums\BillPaymentNotificationEvent;
 use App\Enums\BillPaymentStatus;
-use App\Enums\WalletStatus;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
+use App\Enums\WalletStatus;
 use App\Jobs\ReconcileStuckFtthBillPaymentsJob;
 use App\Models\BillPayment;
+use App\Models\LedgerTransaction;
 use App\Models\User;
 use App\Models\Wallet;
-use App\Models\LedgerTransaction;
 use App\Notifications\FtthBillPaymentStatusNotification;
 use App\Services\BroarbandAccount\AccountInfoService;
 use App\Services\CgNetApiClient;
@@ -87,9 +87,7 @@ class FtthBillPaymentTest extends TestCase
                 return $command === 'RechargeAPI';
             })
             ->andReturnUsing(
-                fn() => new Response(
-                    Http::response($this->rechargeResponse, $this->rechargeStatus)->wait(),
-                ),
+                fn() => new Response(Http::response($this->rechargeResponse, $this->rechargeStatus)->wait()),
             );
         $this->app->instance(CgNetApiClient::class, $this->cgNet);
     }
@@ -163,12 +161,15 @@ class FtthBillPaymentTest extends TestCase
         $this->travelTo(now()->setDate(2026, 12, 2)->startOfDay());
 
         Http::fake([
-            'billing-server.test/bill-details*' => Http::response([
-                'amount' => 1000,
-                'bill_month' => '2027-01',
-                'bill_month_label' => 'Jan 2027',
-                'slip_url' => 'https://billing-server.test/slips/january',
-            ], 200),
+            'billing-server.test/bill-details*' => Http::response(
+                [
+                    'amount' => 1000,
+                    'bill_month' => '2027-01',
+                    'bill_month_label' => 'Jan 2027',
+                    'slip_url' => 'https://billing-server.test/slips/january',
+                ],
+                200,
+            ),
             ...$this->broadbandAccountFake(),
         ]);
 
@@ -215,12 +216,15 @@ class FtthBillPaymentTest extends TestCase
         $this->travelTo(now()->setDate(2026, 10, 5)->startOfDay());
 
         Http::fake([
-            'billing-server.test/bill-details*' => Http::response([
-                'amount' => 250,
-                'bill_month' => '2026-10',
-                'bill_month_label' => 'Oct 2026',
-                'slip_url' => 'https://billing-server.test/slips/october',
-            ], 200),
+            'billing-server.test/bill-details*' => Http::response(
+                [
+                    'amount' => 250,
+                    'bill_month' => '2026-10',
+                    'bill_month_label' => 'Oct 2026',
+                    'slip_url' => 'https://billing-server.test/slips/october',
+                ],
+                200,
+            ),
             ...$this->broadbandAccountFake(),
         ]);
 
@@ -252,12 +256,15 @@ class FtthBillPaymentTest extends TestCase
         $this->travelTo(now()->setDate(2026, 10, 5)->startOfDay());
 
         Http::fake([
-            'billing-server.test/bill-details*' => Http::response([
-                'amount' => 250,
-                'bill_month' => '2026-10',
-                'bill_month_label' => 'Oct 2026',
-                'slip_url' => 'https://billing-server.test/slips/october',
-            ], 200),
+            'billing-server.test/bill-details*' => Http::response(
+                [
+                    'amount' => 250,
+                    'bill_month' => '2026-10',
+                    'bill_month_label' => 'Oct 2026',
+                    'slip_url' => 'https://billing-server.test/slips/october',
+                ],
+                200,
+            ),
             ...$this->broadbandAccountFake(),
         ]);
 
@@ -296,11 +303,14 @@ class FtthBillPaymentTest extends TestCase
         ];
 
         Http::fake([
-            'billing-server.test/bill-details*' => Http::response([
-                'amount' => 250,
-                'bill_month' => '2026-10',
-                'paid_slips' => $billingPaidSlips,
-            ], 200),
+            'billing-server.test/bill-details*' => Http::response(
+                [
+                    'amount' => 250,
+                    'bill_month' => '2026-10',
+                    'paid_slips' => $billingPaidSlips,
+                ],
+                200,
+            ),
             ...$this->broadbandAccountFake(),
         ]);
 
@@ -404,7 +414,29 @@ class FtthBillPaymentTest extends TestCase
             ->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.amount', '1000.00')
-            ->assertJsonPath('data.billing_status', 'completed');
+            ->assertJsonPath('data.billing_status', 'completed')
+            ->assertJsonPath('data.transaction_no', fn(string $transactionNo) => !empty($transactionNo))
+            ->assertJsonPath('data.order_no', fn(string $orderNo) => !empty($orderNo))
+            ->assertJsonPath('data.account', $user->broadband_account_number)
+            ->assertJsonPath('data.service_type', 'FTTH')
+            ->assertJsonPath('data.customer_name', $user->name)
+            ->assertJsonPath('data.package.product_id', 'ftth-product-1')
+            ->assertJsonPath('data.package.product_name', 'FTTH 100M')
+            ->assertJsonPath('data.package.product_line', 'FTTH')
+            ->assertJsonPath('data.package.product_price', '1000.00')
+            ->assertJsonPath('data.package.product_speed', '100M')
+            ->assertJsonPath('data.package.month_cycle', 1)
+            ->assertJsonPath('data.package.month_cycle_unit', '月')
+            ->assertJsonPath('data.remark', 'monthly bill')
+            ->assertJsonPath('data.status', 'completed')
+            ->assertJsonPath(
+                'data.created_at',
+                fn(string $createdAt) => preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $createdAt) === 1,
+            )
+            ->assertJsonPath(
+                'data.confirmed_at',
+                fn(string $confirmedAt) => preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $confirmedAt) === 1,
+            );
 
         $wallet->refresh();
         $this->assertEquals(500, $wallet->balance);
@@ -431,15 +463,18 @@ class FtthBillPaymentTest extends TestCase
         $this->assertSame('ftth-product-1', $billPayment->product_id);
         $this->assertSame('1000.00', $billPayment->product_price);
         $this->assertSame('monthly bill', $billPayment->remark);
-        $this->assertSame([
-            'product_id' => 'ftth-product-1',
-            'product_name' => 'FTTH 100M',
-            'product_price' => 1000,
-            'month_cycle' => 1,
-            'month_cycle_unit' => '月',
-            'product_line' => 'FTTH',
-            'product_speed' => '100M',
-        ], $billPayment->snapshot);
+        $this->assertSame(
+            [
+                'product_id' => 'ftth-product-1',
+                'product_name' => 'FTTH 100M',
+                'product_price' => 1000,
+                'month_cycle' => 1,
+                'month_cycle_unit' => '月',
+                'product_line' => 'FTTH',
+                'product_speed' => '100M',
+            ],
+            $billPayment->snapshot,
+        );
         $this->assertSame($user->broadband_account_number, $billPayment->external_response['broadband_account_number']);
         $this->assertSame('success', $billPayment->external_response['outcome'] ?? null);
         $this->assertSame('BILL-1001', $billPayment->external_response['payload']['billing_ref'] ?? null);
@@ -496,14 +531,17 @@ class FtthBillPaymentTest extends TestCase
         );
         $this->assertCount(1, $this->rechargeRequests);
         $this->assertSame('RechargeAPI', $this->rechargeRequests[0]['command']);
-        $this->assertSame([
-            'OrderNo' => $orderNo,
-            'Account' => $user->broadband_account_number,
-            'ServiceType' => 'FTTH',
-            'ProductID' => 'ftth-product-1',
-            'ProductPrice' => 1000.0,
-            'Remark' => 'customer note',
-        ], $this->rechargeRequests[0]['payload']);
+        $this->assertSame(
+            [
+                'OrderNo' => $orderNo,
+                'Account' => $user->broadband_account_number,
+                'ServiceType' => 'FTTH',
+                'ProductID' => 'ftth-product-1',
+                'ProductPrice' => 1000.0,
+                'Remark' => 'customer note',
+            ],
+            $this->rechargeRequests[0]['payload'],
+        );
 
         $snapshot = BillPayment::query()->firstOrFail()->snapshot;
         $this->assertSame('FTTH 100M', $snapshot['product_name']);
@@ -531,7 +569,37 @@ class FtthBillPaymentTest extends TestCase
             ])
             ->assertStatus(502)
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'External billing payment failed. Wallet was refunded.');
+            ->assertJsonPath('message', 'External billing payment failed. Wallet was refunded.')
+            ->assertJsonPath('data.account', $user->broadband_account_number)
+            ->assertJsonPath('data.customer_name', $user->name)
+            ->assertJsonPath('data.status', 'failed')
+            ->assertJsonPath('data.billing_status', 'failed')
+            ->assertJsonPath('data.created_at', fn(string $createdAt) => !empty($createdAt))
+            ->assertJsonPath('data.confirmed_at', fn(string $confirmedAt) => !empty($confirmedAt))
+            ->assertJsonPath('data.refund_transaction_no', fn(string $transactionNo) => !empty($transactionNo))
+            ->assertJsonStructure([
+                'data' => [
+                    'transaction_no',
+                    'order_no',
+                    'account',
+                    'service_type',
+                    'customer_name',
+                    'amount',
+                    'package' => [
+                        'product_id',
+                        'product_name',
+                        'product_price',
+                        'product_line',
+                        'product_speed',
+                        'month_cycle',
+                        'month_cycle_unit',
+                    ],
+                    'remark',
+                    'status',
+                    'created_at',
+                    'confirmed_at',
+                ],
+            ]);
 
         $wallet->refresh();
         $this->assertEquals(1500, $wallet->balance);
@@ -649,7 +717,38 @@ class FtthBillPaymentTest extends TestCase
                 'password' => '123456',
             ])
             ->assertStatus(202)
-            ->assertJsonPath('data.billing_status', 'processing');
+            ->assertJsonPath('data.billing_status', 'processing')
+            ->assertJsonPath('data.status', 'processing')
+            ->assertJsonPath('data.account', $user->broadband_account_number)
+            ->assertJsonPath('data.service_type', 'FTTH')
+            ->assertJsonPath('data.customer_name', $user->name)
+            ->assertJsonPath('data.package.product_name', 'FTTH 100M')
+            ->assertJsonPath('data.package.product_speed', '100M')
+            ->assertJsonPath('data.created_at', fn(string $createdAt) => !empty($createdAt))
+            ->assertJsonPath('data.confirmed_at', null)
+            ->assertJsonStructure([
+                'data' => [
+                    'transaction_no',
+                    'order_no',
+                    'account',
+                    'service_type',
+                    'customer_name',
+                    'amount',
+                    'package' => [
+                        'product_id',
+                        'product_name',
+                        'product_price',
+                        'product_line',
+                        'product_speed',
+                        'month_cycle',
+                        'month_cycle_unit',
+                    ],
+                    'remark',
+                    'status',
+                    'created_at',
+                    'confirmed_at',
+                ],
+            ]);
 
         $wallet->refresh();
         $this->assertEquals(500, $wallet->balance);
@@ -726,7 +825,34 @@ class FtthBillPaymentTest extends TestCase
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->postJson('/api/ftth-bills/pay', $payload)
             ->assertOk()
-            ->assertJsonPath('message', 'FTTH bill payment already processed.');
+            ->assertJsonPath('message', 'FTTH bill payment already processed.')
+            ->assertJsonPath('data.status', 'completed')
+            ->assertJsonPath('data.account', $user->broadband_account_number)
+            ->assertJsonPath('data.customer_name', $user->name)
+            ->assertJsonPath('data.confirmed_at', fn(string $confirmedAt) => !empty($confirmedAt))
+            ->assertJsonStructure([
+                'data' => [
+                    'transaction_no',
+                    'order_no',
+                    'account',
+                    'service_type',
+                    'customer_name',
+                    'amount',
+                    'package' => [
+                        'product_id',
+                        'product_name',
+                        'product_price',
+                        'product_line',
+                        'product_speed',
+                        'month_cycle',
+                        'month_cycle_unit',
+                    ],
+                    'remark',
+                    'status',
+                    'created_at',
+                    'confirmed_at',
+                ],
+            ]);
 
         $wallet->refresh();
         $this->assertEquals(500, $wallet->balance);
@@ -764,7 +890,35 @@ class FtthBillPaymentTest extends TestCase
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->postJson('/api/ftth-bills/pay', $payload)
             ->assertStatus(502)
-            ->assertJsonPath('data.billing_status', 'failed');
+            ->assertJsonPath('data.billing_status', 'failed')
+            ->assertJsonPath('data.status', 'failed')
+            ->assertJsonPath('data.account', $user->broadband_account_number)
+            ->assertJsonPath('data.customer_name', $user->name)
+            ->assertJsonPath('data.confirmed_at', fn(string $confirmedAt) => !empty($confirmedAt))
+            ->assertJsonPath('data.refund_transaction_no', fn(string $transactionNo) => !empty($transactionNo))
+            ->assertJsonStructure([
+                'data' => [
+                    'transaction_no',
+                    'order_no',
+                    'account',
+                    'service_type',
+                    'customer_name',
+                    'amount',
+                    'package' => [
+                        'product_id',
+                        'product_name',
+                        'product_price',
+                        'product_line',
+                        'product_speed',
+                        'month_cycle',
+                        'month_cycle_unit',
+                    ],
+                    'remark',
+                    'status',
+                    'created_at',
+                    'confirmed_at',
+                ],
+            ]);
 
         Notification::assertSentToTimes($user, FtthBillPaymentStatusNotification::class, 1);
     }
@@ -922,10 +1076,7 @@ class FtthBillPaymentTest extends TestCase
             'status' => BillPaymentStatus::Processing,
         ]);
 
-        $this->accountInfo
-            ->shouldReceive('find')
-            ->once()
-            ->andThrow(new \Error('Temporary reconciliation failure.'));
+        $this->accountInfo->shouldReceive('find')->once()->andThrow(new \Error('Temporary reconciliation failure.'));
 
         (new ReconcileStuckFtthBillPaymentsJob($transaction->id))->handle(app(FtthBillPaymentService::class));
 
@@ -963,10 +1114,7 @@ class FtthBillPaymentTest extends TestCase
             'status' => BillPaymentStatus::Processing,
         ]);
 
-        $this->accountInfo
-            ->shouldReceive('find')
-            ->once()
-            ->andThrow(new \Error('Repeated reconciliation failure.'));
+        $this->accountInfo->shouldReceive('find')->once()->andThrow(new \Error('Repeated reconciliation failure.'));
 
         (new ReconcileStuckFtthBillPaymentsJob($transaction->id))->handle(app(FtthBillPaymentService::class));
 
@@ -1174,7 +1322,7 @@ class FtthBillPaymentTest extends TestCase
         return [$user, $wallet];
     }
 
-    /** @return array<string, \Illuminate\Http\Client\Response> */
+    /** @return array<string, Response> */
     private function broadbandAccountFake(): array
     {
         return [
@@ -1182,12 +1330,15 @@ class FtthBillPaymentTest extends TestCase
                 parse_str(parse_url($request->url(), PHP_URL_QUERY) ?: '', $query);
                 $accountNumber = $query['account_number'] ?? ($request['account_number'] ?? 'CG00000000');
 
-                return Http::response([
+                return Http::response(
                     [
-                        'account_number' => $accountNumber,
-                        'customer_name' => 'Broadband Account Holder',
+                        [
+                            'account_number' => $accountNumber,
+                            'customer_name' => 'Broadband Account Holder',
+                        ],
                     ],
-                ], 200);
+                    200,
+                );
             },
         ];
     }
