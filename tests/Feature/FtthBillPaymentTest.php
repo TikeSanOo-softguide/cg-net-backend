@@ -6,6 +6,7 @@ use App\Enums\BillPaymentNotificationEvent;
 use App\Enums\BillPaymentStatus;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
+use App\Enums\TransactionIdPrefix;
 use App\Enums\WalletStatus;
 use App\Jobs\ReconcileStuckFtthBillPaymentsJob;
 use App\Models\BillPayment;
@@ -16,6 +17,8 @@ use App\Notifications\FtthBillPaymentStatusNotification;
 use App\Services\BroarbandAccount\AccountInfoService;
 use App\Services\CgNetApiClient;
 use App\Services\FtthBill\FtthBillPaymentService;
+use App\Services\Ledger\TransactionIdGenerator;
+use App\Services\Order\OrderNumberGenerator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -415,8 +418,15 @@ class FtthBillPaymentTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.amount', '1000.00')
             ->assertJsonPath('data.billing_status', 'completed')
-            ->assertJsonPath('data.transaction_no', fn(string $transactionNo) => !empty($transactionNo))
-            ->assertJsonPath('data.order_no', fn(string $orderNo) => !empty($orderNo))
+            ->assertJsonPath(
+                'data.transaction_no',
+                fn (string $transactionNo) => app(TransactionIdGenerator::class)
+                    ->matches($transactionNo, TransactionIdPrefix::PayBillFtth),
+            )
+            ->assertJsonPath(
+                'data.order_no',
+                fn (string $orderNo) => app(OrderNumberGenerator::class)->matches($orderNo),
+            )
             ->assertJsonPath('data.account', $user->broadband_account_number)
             ->assertJsonPath('data.service_type', 'FTTH')
             ->assertJsonPath('data.customer_name', $user->name)
@@ -505,6 +515,32 @@ class FtthBillPaymentTest extends TestCase
             fn(FtthBillPaymentStatusNotification $notification) => $notification->event ===
                 BillPaymentNotificationEvent::Completed && $notification->amount === 1000,
         );
+    }
+
+    public function test_user_can_pay_cg_bill_with_pbcg_transaction_id(): void
+    {
+        Http::fake();
+
+        [$user, $wallet] = $this->makePayer(balance: 1500);
+
+        $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
+            ->postJson('/api/ftth-bills/pay', [
+                'broadband_account_number' => $user->broadband_account_number,
+                'service_type' => 'CG',
+                'idempotency_key' => 'cg-pay-success-1',
+                'password' => '123456',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.service_type', 'CG')
+            ->assertJsonPath(
+                'data.transaction_no',
+                fn (string $transactionNo) => app(TransactionIdGenerator::class)
+                    ->matches($transactionNo, TransactionIdPrefix::PayBillCg),
+            );
+
+        $this->assertEquals(500, $wallet->fresh()->balance);
+        $this->assertSame('CG', BillPayment::query()->value('service_type'));
+        $this->assertTrue(app(OrderNumberGenerator::class)->matches((string) BillPayment::query()->value('order_no')));
     }
 
     public function test_bill_payment_submits_expected_payload_through_mocked_cg_net_client(): void
@@ -818,13 +854,17 @@ class FtthBillPaymentTest extends TestCase
             'password' => '123456',
         ];
 
-        $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
+        $first = $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->postJson('/api/ftth-bills/pay', $payload)
             ->assertOk();
+        $orderNo = $first->json('data.order_no');
+        $transactionNo = $first->json('data.transaction_no');
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->postJson('/api/ftth-bills/pay', $payload)
             ->assertOk()
+            ->assertJsonPath('data.order_no', $orderNo)
+            ->assertJsonPath('data.transaction_no', $transactionNo)
             ->assertJsonPath('message', 'FTTH bill payment already processed.')
             ->assertJsonPath('data.status', 'completed')
             ->assertJsonPath('data.account', $user->broadband_account_number)

@@ -46,7 +46,12 @@ class PromotionController extends Controller
         $today = today();
 
         $promotion = Promotion::query()
-            ->where('slug', $slug)
+            ->where(function ($query) use ($slug) {
+                $query->where('slug', $slug);
+                if (ctype_digit($slug)) {
+                    $query->orWhere('id', (int) $slug);
+                }
+            })
             ->where('is_active', true)
             ->where(function ($query) use ($today) {
                 $query->whereNull('start_date')->orWhereDate('start_date', '<=', $today);

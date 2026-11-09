@@ -5,6 +5,7 @@ namespace App\Services\Package;
 use App\Enums\MessageCode;
 use App\Enums\CustomerPackageStatus;
 use App\Enums\LedgerAccountCode;
+use App\Enums\TransactionIdPrefix;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
 use App\Enums\PackageOrderStatus;
@@ -17,12 +18,12 @@ use App\Models\PackageOrder;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Services\Ledger\LedgerPoster;
+use App\Services\Order\OrderNumberGenerator;
 use App\Services\PackageActivation\PackageActivationResult;
 use App\Support\ApiMessage;
 use App\Services\PackageActivation\PackageActivationServiceInterface;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
 use Throwable;
@@ -33,6 +34,7 @@ class BuyPackageService
         protected PackageActivationServiceInterface $activationService,
         protected LedgerPoster $ledger,
         protected CgNetProductCatalog $catalog,
+        protected OrderNumberGenerator $orderNumbers,
     ) {}
 
     /**
@@ -225,6 +227,7 @@ class BuyPackageService
                         actorId: $user->id,
                         ipAddress: $ipAddress,
                         userAgent: $userAgent,
+                        transactionIdPrefix: TransactionIdPrefix::BuyPackage,
                     );
 
                     $ownsThisPurchase = (int) $transaction->wallet_id === (int) $wallet->id
@@ -241,7 +244,7 @@ class BuyPackageService
                     }
 
                     $account = $this->newUniqueAccount();
-                    $orderNo = 'CGN-'.strtoupper((string) Str::uuid());
+                    $orderNo = $this->orderNumbers->generate();
                     $password = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
                     if (preg_match('/^G\d{7}$/D', $account) !== 1 || preg_match('/^\d{6}$/D', $password) !== 1) {

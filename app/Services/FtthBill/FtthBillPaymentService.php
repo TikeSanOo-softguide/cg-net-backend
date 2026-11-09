@@ -8,6 +8,7 @@ use App\Enums\LedgerAccountCode;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
 use App\Enums\MessageCode;
+use App\Enums\TransactionIdPrefix;
 use App\Enums\WalletActorType;
 use App\Enums\WalletStatus;
 use App\Jobs\ReconcileStuckFtthBillPaymentsJob;
@@ -24,13 +25,13 @@ use App\Services\BroarbandAccount\BroadbandAccountService;
 use App\Services\CgApiTokenException;
 use App\Services\CgNetApiClient;
 use App\Services\Ledger\LedgerPoster;
+use App\Services\Order\OrderNumberGenerator;
 use App\Support\ApiMessage;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
 use Throwable;
@@ -51,6 +52,7 @@ class FtthBillPaymentService
         protected AccountInfoService $accountInfo,
         protected BillingServerClient $billing,
         protected LedgerPoster $ledger,
+        protected OrderNumberGenerator $orderNumbers,
         protected BroadbandAccountService $broadbandAccounts,
         protected AdminNotificationDelivery $adminNotificationDelivery,
     ) {}
@@ -119,7 +121,6 @@ class FtthBillPaymentService
 
         $productId = $product['product_id'];
         $amount = $product['product_price'];
-        $orderNo = 'FTTH-' . strtoupper((string) Str::uuid());
 
         if ($wallet->balance < $amount) {
             return $this->coded(422, MessageCode::FtthInsufficientBalance, [
@@ -138,7 +139,6 @@ class FtthBillPaymentService
                 productId: $productId,
                 productPrice: $amount,
                 snapshot: $this->productSnapshot($accountInfo),
-                orderNo: $orderNo,
                 remark: $remark,
                 idempotencyKey: $idempotencyKey,
                 accountNumber: $accountNumber,
@@ -458,7 +458,6 @@ class FtthBillPaymentService
         string $productId,
         float $productPrice,
         array $snapshot,
-        string $orderNo,
         ?string $remark,
         string $idempotencyKey,
         string $accountNumber,
@@ -473,7 +472,6 @@ class FtthBillPaymentService
             $productId,
             $productPrice,
             $snapshot,
-            $orderNo,
             $remark,
             $idempotencyKey,
             $accountNumber,
@@ -515,12 +513,13 @@ class FtthBillPaymentService
                 ipAddress: $ipAddress,
                 userAgent: $userAgent,
                 note: 'FTTH bill ' . $accountNumber,
+                transactionIdPrefix: TransactionIdPrefix::forPayBill($serviceType),
             );
 
             BillPayment::query()->create([
                 'ledger_transaction_id' => $transaction->id,
                 'broadband_account_number' => $accountNumber,
-                'order_no' => $orderNo,
+                'order_no' => $this->orderNumbers->generate(),
                 'service_type' => $serviceType,
                 'product_id' => $productId,
                 'product_price' => $productPrice,

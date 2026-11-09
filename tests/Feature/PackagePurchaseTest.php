@@ -7,6 +7,7 @@ use App\Enums\LedgerAccountCode;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
 use App\Enums\PackageOrderStatus;
+use App\Enums\TransactionIdPrefix;
 use App\Enums\WalletActorType;
 use App\Enums\WalletStatus;
 use App\Models\CustomerPackage;
@@ -20,6 +21,8 @@ use App\Models\User;
 use App\Models\Wallet;
 use App\Services\CgNetApiClient;
 use App\Services\Ledger\LedgerPoster;
+use App\Services\Ledger\TransactionIdGenerator;
+use App\Services\Order\OrderNumberGenerator;
 use App\Services\Package\BuyPackageService;
 use App\Services\Package\CgNetProductCatalog;
 use App\Services\PackageActivation\FakePackageActivationService;
@@ -140,6 +143,14 @@ class PackagePurchaseTest extends TestCase
             $this->assertSame(LedgerTransactionStatus::Completed, $debit->status);
             $this->assertEquals(50000, $debit->amount);
             $this->assertSame('pkg-success-01', $debit->idempotency_key);
+            $this->assertTrue(app(TransactionIdGenerator::class)->matches(
+                $debit->transaction_no,
+                TransactionIdPrefix::BuyPackage,
+            ));
+            $this->assertSame('260115', substr($debit->transaction_no, 3, 6));
+            $this->assertTrue(app(OrderNumberGenerator::class)->matches($order->order_no));
+            $this->assertSame('ORD2601150000001', $order->order_no);
+            $this->assertNotSame($order->order_no, $debit->transaction_no);
             $this->assertSame($user->id, $debit->actor_id);
 
             $this->assertDatabaseHas('ledger_entries', [
@@ -559,7 +570,7 @@ class PackagePurchaseTest extends TestCase
             ->assertJsonPath('data.package.month_cycle', 3)
             ->assertJsonPath('data.package.month_cycle_unit', '月');
 
-        $this->assertMatchesRegularExpression('/^CGN-[A-F0-9-]{36}$/', $order->order_no);
+        $this->assertTrue(app(OrderNumberGenerator::class)->matches($order->order_no));
         $this->assertMatchesRegularExpression('/^G\d{7}$/', $order->account);
         $this->assertMatchesRegularExpression('/^\d{6}$/', $order->activation_password);
         $this->assertSame($order->account, $response->json('data.credentials.account'));
