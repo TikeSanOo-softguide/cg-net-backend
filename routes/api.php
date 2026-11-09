@@ -136,6 +136,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::prefix('ftth-bills')->group(function () {
         Route::post('/check', [FtthBillController::class, 'check']);
         Route::post('/pay', [FtthBillController::class, 'pay'])->middleware('throttle:ftth-bill-pay');
+        Route::get('/history', [FtthBillController::class, 'history']);
         Route::get('/pending-slip', [FtthBillController::class, 'pendingSlip']);
         Route::get('/paid-slips', [FtthBillController::class, 'paidSlips']);
     });

@@ -2,17 +2,22 @@
 
 namespace App\Http\Controllers\Api\FtthBill;
 
+use App\Enums\LedgerTransactionType;
 use App\Enums\MessageCode;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\FtthBill\PayFtthBillRequest;
+use App\Http\Resources\FtthBillPaymentHistoryResource;
+use App\Models\LedgerTransaction;
 use App\Models\User;
 use App\Services\BroarbandAccount\AccountInfoService;
 use App\Services\BroarbandAccount\BroadbandApiException;
 use App\Services\FtthBill\FtthBillPaymentService;
 use App\Support\ApiMessage;
 use App\Support\CustomerPassword;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Request;
 
 class FtthBillController extends Controller
@@ -101,6 +106,34 @@ class FtthBillController extends Controller
         );
 
         return response()->json($result['body'], $result['http_status']);
+    }
+
+    public function history(Request $request): AnonymousResourceCollection|JsonResponse
+    {
+        $validated = $request->validate([
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+        ]);
+        $accountNumber = trim((string) $request->user()->broadband_account_number);
+
+        if ($accountNumber === '') {
+            return response()->json(
+                ApiMessage::attach(MessageCode::FtthAccountMissing, ['success' => false]),
+                422,
+            );
+        }
+
+        $payments = LedgerTransaction::query()
+            ->where('type', LedgerTransactionType::FtthBill->value)
+            ->whereHas('billPayment', fn (Builder $query) => $query->where(
+                'broadband_account_number',
+                $accountNumber,
+            ))
+            ->with('billPayment')
+            ->latest('created_at')
+            ->latest('id')
+            ->cursorPaginate($validated['per_page'] ?? 20);
+
+        return FtthBillPaymentHistoryResource::collection($payments);
     }
 
     /**

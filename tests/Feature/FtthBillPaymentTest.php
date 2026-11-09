@@ -350,6 +350,88 @@ class FtthBillPaymentTest extends TestCase
         );
     }
 
+    public function test_bill_payment_history_includes_payments_for_the_bound_account_from_any_wallet(): void
+    {
+        [$user, $wallet] = $this->makePayer(balance: 1500);
+        [$otherUser, $otherWallet] = $this->makePayer(balance: 1500);
+
+        $otherAccountTransaction = LedgerTransaction::factory()->create([
+            'wallet_id' => $wallet->id,
+            'type' => LedgerTransactionType::FtthBill,
+            'status' => LedgerTransactionStatus::Completed,
+            'amount' => 1000,
+        ]);
+        BillPayment::query()->create([
+            'ledger_transaction_id' => $otherAccountTransaction->id,
+            'broadband_account_number' => $otherUser->broadband_account_number,
+            'order_no' => 'FTTH-HISTORY-OTHER',
+            'status' => BillPaymentStatus::Completed,
+        ]);
+
+        $boundAccountTransaction = LedgerTransaction::factory()->create([
+            'wallet_id' => $otherWallet->id,
+            'type' => LedgerTransactionType::FtthBill,
+            'status' => LedgerTransactionStatus::Completed,
+            'amount' => 1000,
+        ]);
+        $boundBillPayment = BillPayment::query()->create([
+            'ledger_transaction_id' => $boundAccountTransaction->id,
+            'broadband_account_number' => $user->broadband_account_number,
+            'order_no' => 'FTTH-HISTORY-BOUND',
+            'service_type' => 'FTTH',
+            'product_id' => 'ftth-product-1',
+            'product_price' => 1000,
+            'snapshot' => [
+                'product_name' => 'FTTH 100M',
+                'product_line' => 'FTTH',
+                'product_speed' => '100M',
+                'month_cycle' => 1,
+                'month_cycle_unit' => 'month',
+            ],
+            'status' => BillPaymentStatus::Completed,
+            'confirmed_at' => now(),
+        ]);
+
+        $olderBoundAccountTransaction = LedgerTransaction::factory()->create([
+            'wallet_id' => $otherWallet->id,
+            'type' => LedgerTransactionType::FtthBill,
+            'status' => LedgerTransactionStatus::Completed,
+            'created_at' => now()->subDay(),
+            'updated_at' => now()->subDay(),
+        ]);
+        BillPayment::query()->create([
+            'ledger_transaction_id' => $olderBoundAccountTransaction->id,
+            'broadband_account_number' => $user->broadband_account_number,
+            'order_no' => 'FTTH-HISTORY-OLDER',
+            'status' => BillPaymentStatus::Completed,
+            'created_at' => now()->subDay(),
+        ]);
+
+        $token = $user->createToken('test')->plainTextToken;
+        $firstPage = $this->withToken($token, 'Bearer')
+            ->getJson('/api/ftth-bills/history?per_page=1')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $boundBillPayment->id)
+            ->assertJsonPath('data.0.transaction_no', $boundAccountTransaction->transaction_no)
+            ->assertJsonPath('data.0.order_no', 'FTTH-HISTORY-BOUND')
+            ->assertJsonPath('data.0.account', $user->broadband_account_number)
+            ->assertJsonPath('data.0.service_type', 'FTTH')
+            ->assertJsonPath('data.0.package.product_name', 'FTTH 100M')
+            ->assertJsonPath('data.0.status', BillPaymentStatus::Completed->value);
+
+        $nextPageUrl = $firstPage->json('links.next');
+        $this->assertIsString($nextPageUrl);
+        parse_str((string) parse_url($nextPageUrl, PHP_URL_QUERY), $query);
+
+        $this->withToken($token, 'Bearer')
+            ->getJson('/api/ftth-bills/history?' . http_build_query($query))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.transaction_no', $olderBoundAccountTransaction->transaction_no)
+            ->assertJsonPath('data.0.order_no', 'FTTH-HISTORY-OLDER');
+    }
+
     public function test_ftth_bill_payment_requires_the_correct_user_password(): void
     {
         Http::fake();
@@ -1101,8 +1183,8 @@ class FtthBillPaymentTest extends TestCase
             'amount' => 1000,
             'idempotency_key' => 'ftth-reconcile-exception-review',
             'transaction_no' => 'FTTH-RECON-EXCEPTION-REVIEW',
-            'created_at' => now()->subSeconds((int) config('services.billing.processing_max_age_seconds', 900) + 60),
-            'updated_at' => now()->subSeconds((int) config('services.billing.processing_max_age_seconds', 900) + 60),
+            'created_at' => now()->subSeconds((int) config('services.cg_api.processing_max_age_seconds', 900) + 60),
+            'updated_at' => now()->subSeconds((int) config('services.cg_api.processing_max_age_seconds', 900) + 60),
         ]);
         BillPayment::query()->create([
             'ledger_transaction_id' => $transaction->id,
