@@ -3,6 +3,7 @@
 namespace Tests;
 
 use App\Models\Admin;
+use App\Models\Office;
 use App\Support\AppPermissions;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
@@ -46,5 +47,19 @@ abstract class TestCase extends BaseTestCase
         }
 
         return parent::actingAs($user, $guard);
+    }
+
+    protected function makeOffice(string $name, string $address, string $cd): Office
+    {
+        return Office::query()->create([
+            'name_en' => $name,
+            'name_mm' => $name,
+            'name_zh' => $name,
+            'cd' => $cd,
+            'address_en' => $address,
+            'address_mm' => $address,
+            'address_zh' => $address,
+            'phone_num1' => '09123456789',
+        ]);
     }
 }

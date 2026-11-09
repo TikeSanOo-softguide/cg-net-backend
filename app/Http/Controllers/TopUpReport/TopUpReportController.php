@@ -58,7 +58,7 @@ class TopUpReportController extends Controller
         $trend = $this->activitySeries($dailyActivity, $start, $end);
 
         $officeDistribution = (clone $cards)
-            ->with('office:id,name,cd')
+            ->with('office:id,name_en,name_mm,name_zh,cd')
             ->selectRaw('office_id, COUNT(*) as cards')
             ->groupBy('office_id')
             ->get()
@@ -66,7 +66,7 @@ class TopUpReportController extends Controller
                 $office = $card->office;
 
                 return [
-                    'name' => $office?->name,
+                    'name' => $office?->localizedName(),
                     'code' => $office?->cd,
                     'cards' => (int) $card->cards,
                     'percentage' => $totalCards > 0 ? round(((int) $card->cards / $totalCards) * 100, 1) : 0,
@@ -96,12 +96,12 @@ class TopUpReportController extends Controller
             'officeDistribution' => $officeDistribution,
             'offices' => Office::query()
                 ->orderBy('cd')
-                ->orderBy('name')
-                ->get(['id', 'name', 'cd'])
+                ->orderBy('name_en')
+                ->get(['id', 'name_en', 'name_mm', 'name_zh', 'cd'])
                 ->map(
                     fn(Office $office) => [
                         'value' => (string) $office->id,
-                        'label' => $office->name,
+                        'label' => $office->localizedName(),
                         'code' => $office->cd,
                     ],
                 )
