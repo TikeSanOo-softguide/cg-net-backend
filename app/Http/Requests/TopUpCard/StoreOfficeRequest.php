@@ -15,9 +15,19 @@ class StoreOfficeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:50'],
-            'cd' => ['required', 'integer', 'digits:2', Rule::unique('offices', 'cd')->whereNull('deleted_at')],
-            'address' => ['required', 'string', 'max:255'],
+            'name_en' => ['required', 'string', 'max:50'],
+            'name_mm' => ['required', 'string', 'max:50'],
+            'name_zh' => ['required', 'string', 'max:50'],
+            'cd' => ['required', 'regex:/^\d{2}$/', Rule::unique('offices', 'cd')->whereNull('deleted_at')],
+            'address_en' => ['required', 'string', 'max:255'],
+            'address_mm' => ['required', 'string', 'max:255'],
+            'address_zh' => ['required', 'string', 'max:255'],
+            'phone_num1' => ['required', 'string', 'max:16'],
+            'phone_num2' => ['nullable', 'string', 'max:16'],
+            'phone_num3' => ['nullable', 'string', 'max:16'],
+            'telegram_link' => ['nullable', 'string', 'max:255'],
+            'wechat_link' => ['nullable', 'string', 'max:255'],
+            'viber_link' => ['nullable', 'string', 'max:255'],
         ];
     }
 

@@ -24,10 +24,17 @@ class OfficeFactory extends Factory
             }
 
             $codes[$cd] = true;
+            $name = fake()->company().' Office';
+            $address = fake()->streetAddress();
 
             return [
-                'name' => fake()->company() . ' Office',
-                'address' => fake()->streetAddress(),
+                'name_en' => $name,
+                'name_mm' => $name,
+                'name_zh' => $name,
+                'address_en' => $address,
+                'address_mm' => $address,
+                'address_zh' => $address,
+                'phone_num1' => fake()->phoneNumber(),
                 'cd' => $cd,
             ];
         }

@@ -21,7 +21,7 @@ class TopUpCardSeeder extends Seeder
             return;
         }
 
-        $office = Office::query()->where('name', 'Yangon Central Office')->first();
+        $office = Office::query()->where('name_en', 'Yangon Central Office')->first();
 
         if (!$office) {
             return;

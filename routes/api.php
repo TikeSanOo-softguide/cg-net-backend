@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\News\NewsController;
 use App\Http\Controllers\Api\Notification\AnnouncementController;
 use App\Http\Controllers\Api\Notification\InboxController;
 use App\Http\Controllers\Api\Notification\NotificationController;
+use App\Http\Controllers\Api\Office\OfficeController;
 use App\Http\Controllers\Api\Package\AddonController;
 use App\Http\Controllers\Api\Package\BuyPackageController;
 use App\Http\Controllers\Api\Package\CgNetProductController;
@@ -75,6 +76,7 @@ Route::middleware('throttle:60,1')->group(function () {
         Route::get('/addons', [AddonController::class, 'index']);
     });
 
+    Route::get('/offices', [OfficeController::class, 'index']);
     Route::get('/locations', [RegionController::class, 'locations']);
     Route::get('/states', [RegionController::class, 'states']);
     Route::get('/states/{stateId}/regions', [RegionController::class, 'regions']);
@@ -134,6 +136,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::prefix('ftth-bills')->group(function () {
         Route::post('/check', [FtthBillController::class, 'check']);
         Route::post('/pay', [FtthBillController::class, 'pay'])->middleware('throttle:ftth-bill-pay');
+        Route::get('/history', [FtthBillController::class, 'history']);
         Route::get('/pending-slip', [FtthBillController::class, 'pendingSlip']);
         Route::get('/paid-slips', [FtthBillController::class, 'paidSlips']);
     });
