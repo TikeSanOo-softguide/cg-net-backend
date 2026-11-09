@@ -132,7 +132,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
         $officeCodes = array_values(array_unique(array_filter(array_column($summaries, 'office_code'))));
         $officesByCode = Office::query()
             ->whereIn('cd', $officeCodes)
-            ->get(['name', 'cd'])
+            ->get(['name_en', 'name_mm', 'name_zh', 'cd'])
             ->keyBy(fn (Office $office): string => (string) $office->cd);
         $rows = array_map(function (array $summary) use ($officesByCode): array {
             $officeCode = $summary['office_code'];
@@ -145,7 +145,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
             usort($amountCounts, static fn(array $left, array $right): int => $left['amount'] <=> $right['amount']);
 
             return [
-                'office' => $office ? $office->name : '—',
+                'office' => $office?->localizedName() ?? '—',
                 'amount_counts' => $amountCounts,
                 'total_cards' => $summary['total_cards'],
                 'generate_date' => $summary['generate_date'],

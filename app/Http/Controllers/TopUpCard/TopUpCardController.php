@@ -505,13 +505,13 @@ class TopUpCardController extends Controller
     private function officeOptions(): array
     {
         return Office::query()
-            ->select(['id', 'name', 'cd'])
-            ->orderBy('name')
+            ->select(['id', 'name_en', 'name_mm', 'name_zh', 'cd'])
+            ->orderBy('name_en')
             ->get()
             ->map(
                 fn(Office $office): array => [
                     'id' => (int) $office->id,
-                    'name' => (string) $office->name,
+                    'name' => $office->localizedName(),
                     'code' => (string) $office->cd,
                 ],
             )
@@ -747,7 +747,7 @@ class TopUpCardController extends Controller
             ->with([
                 'redeemedBy:id,name,phone',
                 'batch:id,batch_no,status',
-                'office:id,name,cd',
+                'office:id,name_en,name_mm,name_zh,cd',
                 'ledgerTransaction:id,transaction_no',
             ])
             ->when($search !== '', function ($query) use ($search): void {
@@ -829,7 +829,7 @@ class TopUpCardController extends Controller
             'batch_status' => $card->batch?->status,
             'office' => $card->office
                 ? [
-                    'name' => $card->office->name,
+                    'name' => $card->office->localizedName(),
                     'code' => (string) $card->office->cd,
                 ]
                 : null,

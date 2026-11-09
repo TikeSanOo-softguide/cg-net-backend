@@ -68,11 +68,7 @@ class TopUpCardManagementTest extends TestCase
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
 
-        Office::query()->create([
-            'name' => 'Default Office',
-            'address' => 'Main Street',
-            'cd' => 88,
-        ]);
+        $this->makeOffice('Default Office', 'Main Street', '88');
 
         Queue::fake();
 
@@ -155,7 +151,7 @@ class TopUpCardManagementTest extends TestCase
         $actor->assignRole(AppPermissions::SuperAdmin);
         Storage::fake('local');
         Queue::fake();
-        $office = Office::query()->create(['name' => 'Office 31', 'address' => 'Main Street', 'cd' => '31']);
+        $office = $this->makeOffice('Office 31', 'Main Street', '31');
         $serialNo = '2609111128316006';
 
         $this->actingAs($actor, 'web')
@@ -187,8 +183,8 @@ class TopUpCardManagementTest extends TestCase
         $actor->assignRole(AppPermissions::SuperAdmin);
         Storage::fake('local');
         Queue::fake();
-        $office31 = Office::query()->create(['name' => 'Office 31', 'address' => 'Main Street', 'cd' => '31']);
-        $office11 = Office::query()->create(['name' => 'Office 11', 'address' => 'Second Street', 'cd' => '11']);
+        $office31 = $this->makeOffice('Office 31', 'Main Street', '31');
+        $office11 = $this->makeOffice('Office 11', 'Second Street', '11');
 
         $csv = implode("\n", [
             'serial_no , pin , amount, expires_at',
@@ -259,7 +255,7 @@ class TopUpCardManagementTest extends TestCase
         $actor->assignRole(AppPermissions::SuperAdmin);
         Storage::fake('local');
         Queue::fake();
-        Office::query()->create(['name' => 'Office 31', 'address' => 'Main Street', 'cd' => '31']);
+        $this->makeOffice('Office 31', 'Main Street', '31');
         $duplicatePin = '1234567890123456';
         TopUpCard::factory()->create(['pin' => TopUpCardPin::hash($duplicatePin)]);
         $initialBatchCount = Batch::query()->count();
@@ -326,7 +322,7 @@ class TopUpCardManagementTest extends TestCase
         $actor->assignRole(AppPermissions::SuperAdmin);
         Storage::fake('local');
         Queue::fake();
-        Office::query()->create(['name' => 'Office 31', 'address' => 'Main Street', 'cd' => '31']);
+        $this->makeOffice('Office 31', 'Main Street', '31');
         TopUpCard::factory()->create(['serial_no' => '2609111128316006']);
         $initialBatchCount = Batch::query()->count();
         $csv = implode("\n", [
@@ -361,7 +357,7 @@ class TopUpCardManagementTest extends TestCase
         $actor->assignRole(AppPermissions::SuperAdmin);
         Storage::fake('local');
         Queue::fake();
-        Office::query()->create(['name' => 'Office 31', 'address' => 'Main Street', 'cd' => '31']);
+        $this->makeOffice('Office 31', 'Main Street', '31');
         $csv = "serial_no,pin,amount,expires_at\n2609111128316008,3234567890123456,1000,2030-12-31\n";
 
         $this->actingAs($actor, 'web')
@@ -433,21 +429,28 @@ class TopUpCardManagementTest extends TestCase
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
 
-        $existingOffice = Office::query()->create([
-            'name' => 'Existing Office',
-            'address' => 'Main Street',
-            'cd' => '11',
-        ]);
+        $existingOffice = $this->makeOffice('Existing Office', 'Main Street', '11');
 
         $this->actingAs($actor, 'web')
             ->post('/top-up-cards/offices', [
-                'name' => 'New Office',
-                'address' => 'Second Street',
+                'name_en' => 'New Office',
+                'name_mm' => 'ရုံးအသစ်',
+                'name_zh' => '新办公室',
                 'cd' => '22',
+                'address_en' => 'Second Street',
+                'address_mm' => 'လိပ်စာအသစ်',
+                'address_zh' => '第二街',
+                'phone_num1' => '09123456780',
+                'telegram_link' => 'https://t.me/new-office',
+                'wechat_link' => 'https://wechat.example/new-office',
+                'viber_link' => 'viber://chat?number=09123456780',
             ])
             ->assertSessionHasNoErrors();
 
         $newOffice = Office::query()->where('cd', '22')->firstOrFail();
+        $this->assertSame('https://t.me/new-office', $newOffice->telegram_link);
+        $this->assertSame('https://wechat.example/new-office', $newOffice->wechat_link);
+        $this->assertSame('viber://chat?number=09123456780', $newOffice->viber_link);
 
         $this->actingAs($actor, 'web')
             ->get('/top-up-cards/batch')
@@ -460,6 +463,62 @@ class TopUpCardManagementTest extends TestCase
                         ['id' => $newOffice->id, 'name' => 'New Office', 'code' => '22'],
                     ]),
             );
+    }
+
+    public function test_office_crud_uses_localized_fields_and_contact_details(): void
+    {
+        $actor = Admin::factory()->create();
+        $actor->assignRole(AppPermissions::SuperAdmin);
+        $office = $this->makeOffice('Old office', 'Old street', '41');
+
+        $this->actingAs($actor, 'web')
+            ->get('/top-up-cards/offices')
+            ->assertOk()
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->component('TopUpCards/Office')
+                    ->where('offices.data.0.name_en', 'Old office')
+                    ->where('offices.data.0.address_en', 'Old street')
+                    ->where('offices.data.0.phone_num1', '09123456789')
+                    ->where('offices.data.0.telegram_link', null)
+                    ->where('offices.data.0.wechat_link', null)
+                    ->where('offices.data.0.viber_link', null),
+            );
+
+        $this->actingAs($actor, 'web')
+            ->put("/top-up-cards/offices/{$office->id}", [
+                'name_en' => 'Updated Office',
+                'name_mm' => 'ပြင်ဆင်ထားသော ရုံး',
+                'name_zh' => '更新后的办公室',
+                'cd' => '42',
+                'address_en' => 'Updated Street',
+                'address_mm' => 'ပြင်ဆင်ထားသော လိပ်စာ',
+                'address_zh' => '更新后的地址',
+                'phone_num1' => '09123456780',
+                'phone_num2' => '09123456781',
+                'phone_num3' => null,
+                'telegram_link' => 'https://t.me/updated-office',
+                'wechat_link' => 'https://wechat.example/updated-office',
+                'viber_link' => 'viber://chat?number=09123456780',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('offices', [
+            'id' => $office->id,
+            'name_en' => 'Updated Office',
+            'name_mm' => 'ပြင်ဆင်ထားသော ရုံး',
+            'name_zh' => '更新后的办公室',
+            'address_en' => 'Updated Street',
+            'address_mm' => 'ပြင်ဆင်ထားသော လိပ်စာ',
+            'address_zh' => '更新后的地址',
+            'cd' => '42',
+            'phone_num1' => '09123456780',
+            'phone_num2' => '09123456781',
+            'phone_num3' => null,
+            'telegram_link' => 'https://t.me/updated-office',
+            'wechat_link' => 'https://wechat.example/updated-office',
+            'viber_link' => 'viber://chat?number=09123456780',
+        ]);
     }
 
     public function test_admins_can_void_a_valid_card(): void
@@ -487,11 +546,7 @@ class TopUpCardManagementTest extends TestCase
 
         Queue::fake();
 
-        Office::query()->create([
-            'name' => 'Default Office',
-            'address' => 'Main Street',
-            'cd' => 88,
-        ]);
+        $this->makeOffice('Default Office', 'Main Street', '88');
 
         $this->actingAs($actor, 'web')->get('/top-up-cards/export')->assertNotFound();
 
@@ -599,7 +654,7 @@ class TopUpCardManagementTest extends TestCase
                 'items' => [['office_cd' => '88', 'amount' => 1000, 'quantity' => 1]],
             ],
         ]);
-        Office::query()->create(['name' => 'Office 88', 'address' => 'Main Street', 'cd' => '88']);
+        $this->makeOffice('Office 88', 'Main Street', '88');
         $card = TopUpCard::factory()->create([
             'serial_no' => '2609111128886006',
             'status' => TopUpCardStatus::Active,
@@ -668,8 +723,8 @@ class TopUpCardManagementTest extends TestCase
     {
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
-        $office = Office::query()->create(['name' => 'Central Office', 'address' => 'Main Street', 'cd' => '31']);
-        $otherOffice = Office::query()->create(['name' => 'North Office', 'address' => 'North Street', 'cd' => '11']);
+        $office = $this->makeOffice('Central Office', 'Main Street', '31');
+        $otherOffice = $this->makeOffice('North Office', 'North Street', '11');
         $matchingCard = TopUpCard::factory()->create(['office_id' => $office->id]);
         TopUpCard::factory()->create(['office_id' => $otherOffice->id]);
 

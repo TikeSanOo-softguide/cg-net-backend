@@ -3,7 +3,6 @@
 namespace Tests\Unit;
 
 use App\Jobs\ImportGeneratedTopUpCardsJob;
-use App\Models\Office;
 use App\Models\TopUpCard;
 use App\Support\CsvImportException;
 use App\Support\TopUpCardPin;
@@ -29,7 +28,7 @@ class TopUpCardCsvImportTest extends TestCase
     {
         $this->travelTo(now()->setDate(2026, 11, 3)->startOfDay());
         Storage::fake('local');
-        \App\Models\Office::query()->create(['name' => 'Office 31', 'address' => 'Main Street', 'cd' => '31']);
+        $this->makeOffice('Office 31', 'Main Street', '31');
         $file = UploadedFile::fake()->createWithContent(
             'cards.csv',
             "serial_no,pin,amount,expires_at\n2609111128316006,1234567890123456,1000,2030-12-31\n",
@@ -59,7 +58,7 @@ class TopUpCardCsvImportTest extends TestCase
     public function test_preview_discovers_all_csv_denominations_and_counts_cards(): void
     {
         Storage::fake('local');
-        Office::query()->create(['name' => 'Office 31', 'address' => 'Main Street', 'cd' => '31']);
+        $this->makeOffice('Office 31', 'Main Street', '31');
         $file = UploadedFile::fake()->createWithContent(
             'cards.csv',
             implode("\n", [
@@ -90,7 +89,7 @@ class TopUpCardCsvImportTest extends TestCase
     {
         $this->travelTo(now()->setDate(2026, 11, 3)->startOfDay());
         Storage::fake('local');
-        Office::query()->create(['name' => 'Office 88', 'address' => 'Main Street', 'cd' => '88']);
+        $this->makeOffice('Office 88', 'Main Street', '88');
         $file = UploadedFile::fake()->createWithContent(
             'cards.csv',
             "SerialNumber,PIN_Code,PointValue,GenerateDate\n2610110123881001,1341-8663-1662-1366,50,2026-10-23\n",
@@ -112,7 +111,7 @@ class TopUpCardCsvImportTest extends TestCase
     public function test_preview_accepts_generated_card_csv_without_expire_date_column(): void
     {
         Storage::fake('local');
-        Office::query()->create(['name' => 'Office 88', 'address' => 'Main Street', 'cd' => '88']);
+        $this->makeOffice('Office 88', 'Main Street', '88');
         $file = UploadedFile::fake()->createWithContent(
             'cards.csv',
             "SerialNumber,PIN_Code,PointValue,GenerateDate\n2610110123881001,1341-8663-1662-1366,50,2026-10-23\n",
@@ -128,7 +127,7 @@ class TopUpCardCsvImportTest extends TestCase
     public function test_preview_accepts_spaced_headers_and_pipe_delimited_csv(): void
     {
         Storage::fake('local');
-        Office::query()->create(['name' => 'Office 88', 'address' => 'Main Street', 'cd' => '88']);
+        $this->makeOffice('Office 88', 'Main Street', '88');
         $file = UploadedFile::fake()->createWithContent(
             'cards.csv',
             "Serial Number|PIN Code|Point Value|Generate Date\n2610110123881001|1341-8663-1662-1366|50|2026-10-23\n",
@@ -144,7 +143,7 @@ class TopUpCardCsvImportTest extends TestCase
     public function test_preview_accepts_space_delimited_csv_with_generate_date(): void
     {
         Storage::fake('local');
-        Office::query()->create(['name' => 'Office 88', 'address' => 'Main Street', 'cd' => '88']);
+        $this->makeOffice('Office 88', 'Main Street', '88');
         $file = UploadedFile::fake()->createWithContent(
             'cards.csv',
             "SerialNumber PIN_Code PointValue GenerateDate\n2610110123881001 1341-8663-1662-1366 50 2026-10-23\n",
@@ -189,7 +188,7 @@ class TopUpCardCsvImportTest extends TestCase
     public function test_preview_reports_duplicate_serials_within_the_csv(): void
     {
         Storage::fake('local');
-        \App\Models\Office::query()->create(['name' => 'Office 31', 'address' => 'Main Street', 'cd' => '31']);
+        $this->makeOffice('Office 31', 'Main Street', '31');
         $file = UploadedFile::fake()->createWithContent(
             'cards.csv',
             "serial_no,pin,amount,expires_at\n2609111128316006,1234567890123456,1000,2030-12-31\n2609111128316006,2234567890123456,1000,2030-12-31\n",

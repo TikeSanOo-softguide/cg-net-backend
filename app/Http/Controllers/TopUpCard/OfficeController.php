@@ -31,9 +31,30 @@ class OfficeController extends Controller
         $officeQuery = Office::query()
             ->withCount('topUpCards')
             ->when($search !== '', function ($query) use ($search): void {
-                $query->whereLike('name', '%' . $search . '%')->orWhereLike('address', '%' . $search . '%');
+                $query->where(function ($query) use ($search): void {
+                    foreach (
+                        [
+                            'name_en',
+                            'name_mm',
+                            'name_zh',
+                            'cd',
+                            'address_en',
+                            'address_mm',
+                            'address_zh',
+                            'phone_num1',
+                            'phone_num2',
+                            'phone_num3',
+                            'telegram_link',
+                            'wechat_link',
+                            'viber_link',
+                        ]
+                        as $column
+                    ) {
+                        $query->orWhereLike($column, "%{$search}%");
+                    }
+                });
             })
-            ->orderBy('name');
+            ->orderBy('created_at');
         $offices = $officeQuery->paginate(15)->withQueryString();
         $officeCds = Office::query()->pluck('cd')->map(fn($cd): string => (string) $cd)->values();
 
