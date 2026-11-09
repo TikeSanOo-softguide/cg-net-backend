@@ -96,7 +96,6 @@ class TopUpReportController extends Controller
             'officeDistribution' => $officeDistribution,
             'offices' => Office::query()
                 ->orderBy('cd')
-                ->orderBy('name_en')
                 ->get(['id', 'name_en', 'name_mm', 'name_zh', 'cd'])
                 ->map(
                     fn(Office $office) => [
