@@ -5,6 +5,7 @@ namespace App\Http\Requests\ServiceRequest;
 use App\Enums\FailureType;
 use App\Enums\RequestStatus;
 use App\Models\FailureReport;
+use App\Support\PhoneNumber;
 use Illuminate\Validation\Rule;
 
 class CreateFailureReport extends CreateServiceRequest
@@ -63,9 +64,9 @@ class CreateFailureReport extends CreateServiceRequest
                 Rule::exists('users', 'broadband_account_number')->where('id', $this->user()->id),
             ],
             'failure_type' => ['required', Rule::enum(FailureType::class)],
-            'description' => ['required', 'string', 'max:5000'],
-            'contact_name' => ['required', 'string', 'max:255'],
-            'contact_phone' => ['required', 'string', 'max:16'],
+            'description' => ['required', 'string', 'max:255'],
+            'contact_name' => ['required', 'string', 'max:30'],
+            'contact_phone' => ['required', 'string', 'max:16', 'regex:' . PhoneNumber::SUPPORTED_PATTERN],
             'status' => [
                 'nullable',
                 'string',

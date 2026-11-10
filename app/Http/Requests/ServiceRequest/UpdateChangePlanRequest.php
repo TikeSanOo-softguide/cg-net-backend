@@ -3,6 +3,7 @@
 namespace App\Http\Requests\ServiceRequest;
 
 use App\Models\ChangePlanRequest;
+use App\Support\PhoneNumber;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -29,8 +30,8 @@ class UpdateChangePlanRequest extends FormRequest
             ...ChangePlanRequest::packageDetailRules('current_package_detail'),
             ...ChangePlanRequest::packageDetailRules('new_package_detail'),
             'preferred_date' => ['required', 'date'],
-            'contact_name' => ['required', 'string', 'max:255'],
-            'contact_phone' => ['required', 'string', 'max:16'],
+            'contact_name' => ['required', 'string', 'max:30'],
+            'contact_phone' => ['required', 'string', 'max:16', 'regex:' . PhoneNumber::SUPPORTED_PATTERN],
             'note' => ['nullable', 'string', 'max:5000'],
         ];
     }

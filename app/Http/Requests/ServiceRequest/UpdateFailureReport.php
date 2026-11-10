@@ -4,6 +4,7 @@ namespace App\Http\Requests\ServiceRequest;
 
 use App\Enums\FailureType;
 use App\Enums\RequestStatus;
+use App\Support\PhoneNumber;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -55,8 +56,8 @@ class UpdateFailureReport extends FormRequest
             ],
             'failure_type' => ['required', Rule::enum(FailureType::class)],
             'description' => ['required', 'string', 'max:5000'],
-            'contact_name' => ['required', 'string', 'max:255'],
-            'contact_phone' => ['required', 'string', 'max:16'],
+            'contact_name' => ['required', 'string', 'max:30'],
+            'contact_phone' => ['required', 'string', 'max:16', 'regex:' . PhoneNumber::SUPPORTED_PATTERN],
             'photos' => ['nullable', 'array', 'min:1'],
             'photos.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'status' => ['nullable', Rule::in([RequestStatus::UnderReview->value, RequestStatus::Cancelled->value])],

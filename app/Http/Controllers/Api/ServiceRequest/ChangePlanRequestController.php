@@ -11,6 +11,7 @@ use App\Http\Resources\ChangePlanRequest\ChangePlanRequestResource;
 use App\Events\ServiceRequestSubmitted;
 use App\Models\ChangePlanRequest;
 use App\Models\Package;
+use App\Services\Telegram\TelegramService;
 use App\Support\ApiMessage;
 use App\Support\GeneratesTicketNumber;
 use Illuminate\Http\JsonResponse;
@@ -21,6 +22,8 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class ChangePlanRequestController extends Controller
 {
+    public function __construct(private TelegramService $telegram) {}
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $requests = ChangePlanRequest::query()
@@ -48,7 +51,7 @@ class ChangePlanRequestController extends Controller
                 'ticket_number' => GeneratesTicketNumber::next(
                     ChangePlanRequest::class,
                     'ticket_number',
-                    'CPL'.now()->format('md'),
+                    'CPL' . now()->format('md'),
                 ),
                 'user_id' => $request->user()->id,
                 'status' => 'under_review',
@@ -63,8 +66,12 @@ class ChangePlanRequestController extends Controller
             return $changePlanRequest;
         });
 
-        return (new ChangePlanRequestResource($changePlanRequest))
-            ->additional(ApiMessage::attach(MessageCode::ReqSubmitted));
+        $changePlanRequest->load('user');
+        $this->sendTelegramStatusNotification($changePlanRequest, '📦 NEW CHANGE PLAN REQUEST');
+
+        return (new ChangePlanRequestResource($changePlanRequest))->additional(
+            ApiMessage::attach(MessageCode::ReqSubmitted),
+        );
     }
 
     public function show(Request $request, ChangePlanRequest $changePlanRequest): ChangePlanRequestResource
@@ -87,14 +94,16 @@ class ChangePlanRequestController extends Controller
             'change_plan_request_id' => $changePlanRequest->id,
         ]);
 
-        return (new ChangePlanRequestResource($changePlanRequest->refresh()))
-            ->additional(ApiMessage::attach(MessageCode::ReqUpdated));
+        $changePlanRequest->refresh()->load('user');
+        $this->sendTelegramStatusNotification($changePlanRequest, '🔄 CHANGE PLAN REQUEST UPDATED');
+
+        return (new ChangePlanRequestResource($changePlanRequest))->additional(
+            ApiMessage::attach(MessageCode::ReqUpdated),
+        );
     }
 
-    public function cancel(
-        Request $request,
-        ChangePlanRequest $changePlanRequest,
-    ): ChangePlanRequestResource {
+    public function cancel(Request $request, ChangePlanRequest $changePlanRequest): ChangePlanRequestResource
+    {
         $this->ensureOwner($request, $changePlanRequest);
         $this->ensureUnderReview($changePlanRequest);
 
@@ -106,8 +115,12 @@ class ChangePlanRequestController extends Controller
             'change_plan_request_id' => $changePlanRequest->id,
         ]);
 
-        return (new ChangePlanRequestResource($changePlanRequest->refresh()))
-            ->additional(ApiMessage::attach(MessageCode::ReqCancelled));
+        $changePlanRequest->refresh()->load('user');
+        $this->sendTelegramStatusNotification($changePlanRequest, '🚫 CHANGE PLAN REQUEST CANCELLED');
+
+        return (new ChangePlanRequestResource($changePlanRequest))->additional(
+            ApiMessage::attach(MessageCode::ReqCancelled),
+        );
     }
 
     public function destroy(Request $request, ChangePlanRequest $changePlanRequest): JsonResponse
@@ -156,5 +169,66 @@ class ChangePlanRequestController extends Controller
     private function ensureUnderReview(ChangePlanRequest $changePlanRequest): void
     {
         abort_unless($changePlanRequest->status === RequestStatus::UnderReview, 409);
+    }
+
+    private function sendTelegramStatusNotification(ChangePlanRequest $changePlanRequest, string $title): void
+    {
+        $currentPackage = $changePlanRequest->current_package_detail ?? [];
+        $newPackage = $changePlanRequest->new_package_detail ?? [];
+        $fields = [
+            '• Ticket' => $changePlanRequest->ticket_number,
+            '• Service Type' => $changePlanRequest->service_type ?? '—',
+            '• Account' => $changePlanRequest->broadband_account_number,
+            '• Customer' => $changePlanRequest->user?->name ?? 'Customer',
+            '• Phone' => $changePlanRequest->contact_phone,
+            '• Current Package' => data_get($currentPackage, 'network_name.en') ?? '—',
+            '• Current Speed' =>
+                data_get($currentPackage, 'speed.mbps') !== null
+                    ? data_get($currentPackage, 'speed.mbps') . ' Mbps'
+                    : '—',
+            '• Current Price' => data_get($currentPackage, 'price') ?? '—',
+            '• Current Billing Period' => $this->billingPeriodLabel($currentPackage),
+            '• New Package' => data_get($newPackage, 'network_name.en') ?? '—',
+            '• New Speed' =>
+                data_get($newPackage, 'speed.mbps') !== null ? data_get($newPackage, 'speed.mbps') . ' Mbps' : '—',
+            '• New Price' => data_get($newPackage, 'price') ?? '—',
+            '• New Billing Period' => $this->billingPeriodLabel($newPackage),
+            '• Preferred Date' => $changePlanRequest->preferred_date?->format('d M Y') ?? '—',
+            '• Note' => $changePlanRequest->note ?? '—',
+            '• Status' => $changePlanRequest->status->value,
+        ];
+        $message = "<b>{$title}</b>\n\n";
+
+        foreach ($fields as $label => $value) {
+            $message .= $label . ': ' . htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . "\n";
+        }
+
+        try {
+            $this->telegram->sendMessage($message);
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $package
+     */
+    private function billingPeriodLabel(array $package): string
+    {
+        $term = data_get($package, 'term');
+        if (!is_array($term)) {
+            return '—';
+        }
+
+        $cycle = $term['cycle'] ?? null;
+        $months = $term['months'] ?? null;
+        $unit = $term['cycle_unit'] ?? ($months !== null ? 'months' : null);
+        $period = $cycle ?? $months;
+
+        if ($period === null || $period === '') {
+            return '—';
+        }
+
+        return trim((string) $period . ' ' . (string) ($unit ?? ''));
     }
 }
