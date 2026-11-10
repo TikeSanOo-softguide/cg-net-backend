@@ -50,7 +50,6 @@ const navIconTones: Record<string, string> = {
     dashboard: 'text-[#3B82F6]',
     customers: 'text-[#0EA5E9]',
     billing: 'text-[#F59E0B]',
-    '/billing/invoices': 'text-[#6366F1]',
     '/billing/transactions': 'text-[#10B981]',
     '/billing/package-orders': 'text-[#8B5CF6]',
     '/billing/bill-payments': 'text-[#14B8A6]',
@@ -143,12 +142,6 @@ export const navigation: NavGroup[] = [
         labelKey: 'menu.billing',
         icon: CreditCard,
         children: [
-            {
-                labelKey: 'menu.invoices',
-                descriptionKey: 'menu.invoices_description',
-                href: '/billing/invoices',
-                icon: FileText,
-            },
             {
                 labelKey: 'menu.transactions',
                 descriptionKey: 'menu.transactions_description',
@@ -433,7 +426,7 @@ export const navigation: NavGroup[] = [
 export const bottomNavItems: { id: string; labelKey: string; href: string; icon: LucideIcon }[] = [
     { id: 'dashboard', labelKey: 'menu.dashboard', href: '/dashboard', icon: LayoutDashboard },
     { id: 'customers', labelKey: 'menu.customer_management', href: '/customers', icon: Users },
-    { id: 'billing', labelKey: 'menu.billing', href: '/billing/invoices', icon: Wallet },
+    { id: 'billing', labelKey: 'menu.billing', href: '/billing/transactions', icon: Wallet },
     {
         id: 'service-requests',
         labelKey: 'menu.service_requests',
@@ -644,11 +637,5 @@ export const reports = [
         descriptionKey: 'menu.service_request_reports_description',
         href: '/reports/service-requests',
         icon: ClipboardList,
-    },
-    {
-        labelKey: 'menu.app_usage_reports',
-        descriptionKey: 'menu.app_usage_reports_description',
-        href: '/reports/app-usage',
-        icon: Smartphone,
     },
 ];

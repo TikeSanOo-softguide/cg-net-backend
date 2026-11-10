@@ -870,8 +870,6 @@
         "admin_activity_logs_description": "အက်ဒမင် လုပ်ဆောင်ချက်များနှင့် စနစ် audit မှတ်တမ်းများကို စစ်ဆေးပါ။",
         "announcement": "ကြေညာချက်များ",
         "announcement_description": "ဖောက်သည်များအတွက် ကြေညာချက်နှင့် စနစ်စာများကို ရေးသားပါ။",
-        "app_usage_reports": "အက်ပ် အသုံးပြုမှု",
-        "app_usage_reports_description": "မိုဘိုင်းအက်ပ် အသုံးပြုမှုနှင့် လုပ်ဆောင်ချက်ဆိုင်ရာ အစီရင်ခံစာများကို ကြည့်ရှုရန်။",
         "app_version": "အက်ပ်ဗားရှင်းနှင့် လုပ်ဆောင်ချက်များ",
         "app_version_description": "အက်ပ်ဗားရှင်းများနှင့် feature flags များကို စီမံပါ။",
         "areas": "ဧရိယာများ",
@@ -928,8 +926,6 @@
         "general_settings_description": "အထွေထွေ အက်ပ်လီကေးရှင်း ဆက်တင်များကို သတ်မှတ်ပါ။",
         "installation_applications": "ဘရော့ဒ်ဘန်း လျှောက်လွှာများ",
         "installation_applications_description": "ဘရော့်ဒ်ဘန်း တပ်ဆင်ရန် လျှောက်လွှာများကို စစ်ဆေးပါ။",
-        "invoices": "ငွေတောင်းခံလွှာများ",
-        "invoices_description": "ဖောက်သည်ငွေတောင်းခံလွှာများကို ရှာဖွေ၊ စစ်ထုတ်၊ စီမံပါ။",
         "ledger_health": "လယ်ဂျာ ကျန်းမာရေး",
         "ledger_health_description": "ပိုက်ဆံအိတ် လက်ကျန်နှင့် လယ်ဂျာ မှတ်တမ်းများကို စစ်ဆေးပါ။",
         "logs": "မှတ်တမ်းများ",
@@ -1115,7 +1111,10 @@
                 "bill_alert": "အသုံးပြုနိုင်သော စာသားအစားထိုးများ: {account_number}, {due_date}။",
                 "ftth_bill_payment_completed": "အသုံးပြုနိုင်သော စာသားအစားထိုးများ: {amount}, {account_number}, {transaction_no}။",
                 "ftth_bill_payment_processing": "အသုံးပြုနိုင်သော စာသားအစားထိုးများ: {amount}, {account_number}, {transaction_no}။",
-                "ftth_bill_payment_refunded": "အသုံးပြုနိုင်သော စာသားအစားထိုးများ: {amount}, {account_number}, {transaction_no}, {refund_transaction_no}။"
+                "ftth_bill_payment_refunded": "အသုံးပြုနိုင်သော စာသားအစားထိုးများ: {amount}, {account_number}, {transaction_no}, {refund_transaction_no}။",
+                "package_order_completed": "အသုံးပြုနိုင်သော စာသားအစားထိုးများ: {amount}, {order_no}, {product_name}, {transaction_no}။",
+                "package_order_processing": "အသုံးပြုနိုင်သော စာသားအစားထိုးများ: {amount}, {order_no}, {product_name}, {transaction_no}။",
+                "package_order_refunded": "အသုံးပြုနိုင်သော စာသားအစားထိုးများ: {amount}, {order_no}, {product_name}, {transaction_no}, {refund_transaction_no}။"
             },
             "title_en": "ခေါင်းစဉ် (အင်္ဂလိပ်)",
             "title_my": "ခေါင်းစဉ် (မြန်မာ)",
@@ -1124,7 +1123,10 @@
                 "bill_alert": "FTTH ဘေလ်ပေးချေရန် သတိပေးချက်",
                 "ftth_bill_payment_completed": "FTTH ဘေလ်ပေးချေမှု အောင်မြင်",
                 "ftth_bill_payment_processing": "FTTH ဘေလ်ပေးချေမှု လုပ်ဆောင်နေဆဲ",
-                "ftth_bill_payment_refunded": "FTTH ဘေလ်ပေးချေမှု ပြန်အမ်းပြီး"
+                "ftth_bill_payment_refunded": "FTTH ဘေလ်ပေးချေမှု ပြန်အမ်းပြီး",
+                "package_order_completed": "ပက်ကေ့ချ်ဝယ်ယူမှု အောင်မြင်",
+                "package_order_processing": "ပက်ကေ့ချ်ဝယ်ယူမှု လုပ်ဆောင်နေဆဲ",
+                "package_order_refunded": "ပက်ကေ့ချ်ဝယ်ယူမှု ငွေပြန်အမ်းပြီး"
             },
             "updated": "အကြောင်းကြားစာ ပုံစံကို ပြင်ဆင်ပြီးပါပြီ။",
             "validation": {

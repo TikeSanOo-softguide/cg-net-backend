@@ -870,8 +870,6 @@
         "admin_activity_logs_description": "查看管理员操作和系统审计日志。",
         "announcement": "公告",
         "announcement_description": "为客户编写公告和系统消息。",
-        "app_usage_reports": "应用使用情况",
-        "app_usage_reports_description": "查看移动应用使用情况和活动报表。",
         "app_version": "应用版本与功能",
         "app_version_description": "管理应用版本和功能开关。",
         "areas": "区域",
@@ -928,8 +926,6 @@
         "general_settings_description": "配置常规应用设置。",
         "installation_applications": "宽带申请",
         "installation_applications_description": "审核和处理宽带安装申请。",
-        "invoices": "发票",
-        "invoices_description": "搜索、筛选并管理客户发票。",
         "ledger_health": "账本健康状况",
         "ledger_health_description": "检查钱包余额与账本记录的一致性。",
         "logs": "日志",
@@ -1115,7 +1111,10 @@
                 "bill_alert": "可用占位符：{account_number}、{due_date}。",
                 "ftth_bill_payment_completed": "可用占位符：{amount}、{account_number}、{transaction_no}。",
                 "ftth_bill_payment_processing": "可用占位符：{amount}、{account_number}、{transaction_no}。",
-                "ftth_bill_payment_refunded": "可用占位符：{amount}、{account_number}、{transaction_no}、{refund_transaction_no}。"
+                "ftth_bill_payment_refunded": "可用占位符：{amount}、{account_number}、{transaction_no}、{refund_transaction_no}。",
+                "package_order_completed": "可用占位符：{amount}、{order_no}、{product_name}、{transaction_no}。",
+                "package_order_processing": "可用占位符：{amount}、{order_no}、{product_name}、{transaction_no}。",
+                "package_order_refunded": "可用占位符：{amount}、{order_no}、{product_name}、{transaction_no}、{refund_transaction_no}。"
             },
             "title_en": "标题（英文）",
             "title_my": "标题（缅甸文）",
@@ -1124,7 +1123,10 @@
                 "bill_alert": "FTTH 账单到期提醒",
                 "ftth_bill_payment_completed": "FTTH 账单支付成功",
                 "ftth_bill_payment_processing": "FTTH 账单支付处理中",
-                "ftth_bill_payment_refunded": "FTTH 账单支付已退款"
+                "ftth_bill_payment_refunded": "FTTH 账单支付已退款",
+                "package_order_completed": "套餐购买成功",
+                "package_order_processing": "套餐购买处理中",
+                "package_order_refunded": "套餐购买已退款"
             },
             "updated": "通知模板已更新。",
             "validation": {

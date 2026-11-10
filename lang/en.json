@@ -870,8 +870,6 @@
         "admin_activity_logs_description": "Review administrator actions and system audit logs.",
         "announcement": "Announcements",
         "announcement_description": "Write announce and system messages for customers.",
-        "app_usage_reports": "App Usage",
-        "app_usage_reports_description": "View mobile app usage and activity reports.",
         "app_version": "App Version & Features",
         "app_version_description": "Manage app versions and feature flags.",
         "areas": "Areas",
@@ -928,8 +926,6 @@
         "general_settings_description": "Configure general application settings.",
         "installation_applications": "Broadband Applications",
         "installation_applications_description": "Review and process broadband installation applications.",
-        "invoices": "Invoices",
-        "invoices_description": "Search, filter, and manage customer invoices.",
         "ledger_health": "Ledger Health",
         "ledger_health_description": "Review wallet balance and ledger integrity.",
         "logs": "Logs",
@@ -1115,7 +1111,10 @@
                 "bill_alert": "Available placeholders: {account_number}, {due_date}.",
                 "ftth_bill_payment_completed": "Available placeholders: {amount}, {account_number}, {transaction_no}.",
                 "ftth_bill_payment_processing": "Available placeholders: {amount}, {account_number}, {transaction_no}.",
-                "ftth_bill_payment_refunded": "Available placeholders: {amount}, {account_number}, {transaction_no}, {refund_transaction_no}."
+                "ftth_bill_payment_refunded": "Available placeholders: {amount}, {account_number}, {transaction_no}, {refund_transaction_no}.",
+                "package_order_completed": "Available placeholders: {amount}, {order_no}, {product_name}, {transaction_no}.",
+                "package_order_processing": "Available placeholders: {amount}, {order_no}, {product_name}, {transaction_no}.",
+                "package_order_refunded": "Available placeholders: {amount}, {order_no}, {product_name}, {transaction_no}, {refund_transaction_no}."
             },
             "title_en": "Title (English)",
             "title_my": "Title (Myanmar)",
@@ -1124,7 +1123,10 @@
                 "bill_alert": "FTTH bill due alert",
                 "ftth_bill_payment_completed": "FTTH payment successful",
                 "ftth_bill_payment_processing": "FTTH payment processing",
-                "ftth_bill_payment_refunded": "FTTH payment refunded"
+                "ftth_bill_payment_refunded": "FTTH payment refunded",
+                "package_order_completed": "Package purchase successful",
+                "package_order_processing": "Package purchase processing",
+                "package_order_refunded": "Package purchase refunded"
             },
             "updated": "Notification template updated.",
             "validation": {
