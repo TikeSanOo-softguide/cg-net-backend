@@ -19,6 +19,7 @@ class RelocationRequestAccountNumberTest extends TestCase
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->postJson('/api/relocation-requests/create', [
                 'broadband_account_number' => $user->broadband_account_number,
+                'contact_name' => 'Test Customer',
                 'current_address' => 'Current address',
                 'new_address' => 'New address',
                 'phone' => '+95912345678',
@@ -40,6 +41,7 @@ class RelocationRequestAccountNumberTest extends TestCase
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->postJson('/api/relocation-requests/create', [
                 'broadband_account_number' => 'CG87654321',
+                'contact_name' => 'Test Customer',
                 'current_address' => 'Current address',
                 'new_address' => 'New address',
                 'phone' => '+95912345678',
@@ -62,6 +64,7 @@ class RelocationRequestAccountNumberTest extends TestCase
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->postJson('/api/relocation-requests/create', [
                 'broadband_account_number' => $user->broadband_account_number,
+                'contact_name' => 'Test Customer',
                 'current_address' => 'Current address',
                 'new_address' => 'New address',
                 'phone' => '+95912345678',
@@ -84,6 +87,7 @@ class RelocationRequestAccountNumberTest extends TestCase
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->postJson('/api/relocation-requests/create', [
                 'broadband_account_number' => $user->broadband_account_number,
+                'contact_name' => 'Test Customer',
                 'current_address' => 'Current address',
                 'new_address' => 'New address',
                 'phone' => '+95912345678',
@@ -105,6 +109,7 @@ class RelocationRequestAccountNumberTest extends TestCase
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->postJson('/api/relocation-requests/create', [
                 'broadband_account_number' => $user->broadband_account_number,
+                'contact_name' => 'Test Customer',
                 'current_address' => 'Current address',
                 'new_address' => 'New address',
                 'phone' => '+95912345678',
