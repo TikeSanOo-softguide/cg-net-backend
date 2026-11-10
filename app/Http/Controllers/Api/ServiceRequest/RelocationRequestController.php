@@ -138,7 +138,7 @@ class RelocationRequestController extends Controller
             '• Ticket' => $relocation->ticket_number,
             '• Service Type' => $relocation->user?->service_type ?? '—',
             '• Account' => $relocation->broadband_account_number,
-            '• Customer' => $relocation->user?->name ?? 'Customer',
+            '• Customer' => $relocation->contact_name,
             '• Phone' => $relocation->phone,
             '• Current Address' => $relocation->current_address,
             '• New Address' => $relocation->new_address,

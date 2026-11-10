@@ -252,6 +252,7 @@ class ServiceRequestApiTest extends TestCase
         $token = $user->createToken('service-requests')->plainTextToken;
         $requestData = [
             'broadband_account_number' => $user->broadband_account_number,
+            'contact_name' => 'Test Customer',
             'current_address' => 'Current address',
             'new_address' => 'New address',
             'preferred_date' => now()->addDays(5)->toDateString(),
@@ -718,6 +719,7 @@ class ServiceRequestApiTest extends TestCase
         $this->withToken($token)
             ->putJson('/api/relocation-requests/' . $relocationRequest->id, [
                 'broadband_account_number' => $user->broadband_account_number,
+                'contact_name' => 'Test Customer',
                 'current_address' => 'Current address',
                 'new_address' => 'Updated address',
                 'preferred_date' => now()->addDays(5)->toDateString(),

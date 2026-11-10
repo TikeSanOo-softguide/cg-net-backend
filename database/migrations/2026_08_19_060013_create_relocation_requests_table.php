@@ -15,6 +15,7 @@ return new class extends Migration {
             $table->text('current_address');
             $table->text('new_address');
             $table->date('preferred_date')->nullable();
+            $table->string('contact_name', 30);
             $table->string('phone', 16);
             $table->text('details')->nullable();
             $table->string('status', 16)->default('under_review')->index();
