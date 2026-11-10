@@ -10,6 +10,7 @@ use App\Http\Requests\ServiceRequest\UpdateFailureReport;
 use App\Http\Resources\FailureReport\FailureReportResource;
 use App\Events\ServiceRequestSubmitted;
 use App\Models\FailureReport;
+use App\Services\Telegram\TelegramService;
 use App\Support\ApiMessage;
 use App\Support\GeneratesTicketNumber;
 use App\Support\StoresPublicImage;
@@ -21,6 +22,8 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class FailureReportController extends Controller
 {
+    public function __construct(private TelegramService $telegram) {}
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $failureReports = FailureReport::query()
@@ -48,7 +51,7 @@ class FailureReportController extends Controller
 
     public function store(CreateFailureReport $request): FailureReportResource
     {
-        return DB::transaction(function () use ($request) {
+        $failureReport = DB::transaction(function () use ($request) {
             $validated = $request->validated();
 
             $failureReport = FailureReport::query()->create([
@@ -61,7 +64,7 @@ class FailureReportController extends Controller
                 'ticket_number' => GeneratesTicketNumber::next(
                     FailureReport::class,
                     'ticket_number',
-                    'FLR'.now()->format('md'),
+                    'FLR' . now()->format('md'),
                 ),
                 'status' => 'under_review',
             ]);
@@ -80,15 +83,21 @@ class FailureReportController extends Controller
                 'failure_type' => $failureReport->failure_type,
             ]);
 
-            return (new FailureReportResource($failureReport->load('photos')))
-                ->additional(ApiMessage::attach(MessageCode::ReqSubmitted));
+            return $failureReport;
         });
+
+        $failureReport->load('user');
+        $this->sendTelegramStatusNotification($failureReport, '🛠️ NEW FAILURE REPORT');
+
+        return (new FailureReportResource($failureReport->load('photos')))->additional(
+            ApiMessage::attach(MessageCode::ReqSubmitted),
+        );
     }
 
     public function update(UpdateFailureReport $request, FailureReport $failureReport): FailureReportResource
     {
         $this->ensureOwner($request, $failureReport);
-        return DB::transaction(function () use ($request, $failureReport) {
+        $failureReport = DB::transaction(function () use ($request, $failureReport) {
             $validated = $request->validated();
             $failureReport->update([
                 'broadband_account_number' =>
@@ -129,14 +138,21 @@ class FailureReportController extends Controller
             $this->logActivity($request, 'update_failure_report', [
                 'failure_report_id' => $failureReport->id,
             ]);
-            return (new FailureReportResource($failureReport->load('photos')))
-                ->additional(ApiMessage::attach(MessageCode::ReqUpdated));
+            return $failureReport;
         });
+
+        $failureReport->load('user');
+        $this->sendTelegramStatusNotification($failureReport, '🔄 FAILURE REPORT UPDATED');
+
+        return (new FailureReportResource($failureReport->load('photos')))->additional(
+            ApiMessage::attach(MessageCode::ReqUpdated),
+        );
     }
 
     public function cancel(Request $request, FailureReport $failureReport): FailureReportResource
     {
         $this->ensureOwner($request, $failureReport);
+        $this->ensureUnderReview($failureReport);
         $failureReport->update([
             'status' => RequestStatus::Cancelled,
         ]);
@@ -145,8 +161,12 @@ class FailureReportController extends Controller
             'failure_report_id' => $failureReport->id,
         ]);
 
-        return (new FailureReportResource($failureReport->refresh()->load('photos')))
-            ->additional(ApiMessage::attach(MessageCode::ReqCancelled));
+        $failureReport->refresh()->load('user');
+        $this->sendTelegramStatusNotification($failureReport, '🚫 FAILURE REPORT CANCELLED');
+
+        return (new FailureReportResource($failureReport->load('photos')))->additional(
+            ApiMessage::attach(MessageCode::ReqCancelled),
+        );
     }
 
     public function destroy(Request $request, FailureReport $failureReport): Response
@@ -170,6 +190,35 @@ class FailureReportController extends Controller
     {
         if ($failureReport->user_id !== $request->user()->id) {
             throw new AccessDeniedHttpException();
+        }
+    }
+
+    private function ensureUnderReview(FailureReport $failureReport): void
+    {
+        abort_unless($failureReport->status === RequestStatus::UnderReview, 409);
+    }
+
+    private function sendTelegramStatusNotification(FailureReport $failureReport, string $title): void
+    {
+        $fields = [
+            '• Ticket' => $failureReport->ticket_number,
+            '• Account' => $failureReport->broadband_account_number,
+            '• Customer' => $failureReport->user?->name ?? 'Customer',
+            '• Phone' => $failureReport->contact_phone,
+            '• Failure' => $failureReport->failure_type->value,
+            '• Note' => $failureReport->description,
+            '• Status' => $failureReport->status->value,
+        ];
+        $message = "<b>{$title}</b>\n\n";
+
+        foreach ($fields as $label => $value) {
+            $message .= $label . ': ' . htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . "\n";
+        }
+
+        try {
+            $this->telegram->sendMessage($message);
+        } catch (\Throwable $exception) {
+            report($exception);
         }
     }
 }

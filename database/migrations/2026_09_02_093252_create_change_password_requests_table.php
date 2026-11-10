@@ -15,10 +15,10 @@ return new class extends Migration {
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('broadband_account_number', 32)->nullable()->index();
             $table->string('ticket_number', 32)->nullable()->unique();
-            $table->string('contact_name');
-            $table->string('contact_phone');
+            $table->string('contact_name', 30);
+            $table->string('contact_phone', 16);
             $table->string('new_wifi_name')->nullable();
-            $table->string('new_password', 255)->nullable();
+            $table->string('new_password', 255);
             $table->string('status', 16)->default('under_review');
             $table->foreignId('admin_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

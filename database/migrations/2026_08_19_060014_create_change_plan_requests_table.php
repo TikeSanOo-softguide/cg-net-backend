@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->json('current_package_detail');
             $table->json('new_package_detail');
             $table->date('preferred_date');
-            $table->string('contact_name', 255);
+            $table->string('contact_name', 30);
             $table->string('contact_phone', 16);
             $table->text('note')->nullable();
             $table->string('status', 16)->default('under_review')->index();
