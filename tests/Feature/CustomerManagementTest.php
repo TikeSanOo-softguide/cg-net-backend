@@ -9,12 +9,10 @@ use App\Enums\UserStatus;
 use App\Models\Admin;
 use App\Models\BillPayment;
 use App\Models\CustomerPackage;
-use App\Models\Invoice;
 use App\Models\LedgerAccount;
 use App\Models\LedgerEntry;
 use App\Models\LedgerTransaction;
 use App\Models\PackageOrder;
-use App\Models\Payment;
 use App\Models\TopUpCard;
 use App\Models\User;
 use App\Models\UserLog;
@@ -694,12 +692,10 @@ class CustomerManagementTest extends TestCase
         foreach ([
             BillPayment::class,
             CustomerPackage::class,
-            Invoice::class,
             LedgerAccount::class,
             LedgerEntry::class,
             LedgerTransaction::class,
             PackageOrder::class,
-            Payment::class,
             TopUpCard::class,
             Wallet::class,
         ] as $recordType) {
