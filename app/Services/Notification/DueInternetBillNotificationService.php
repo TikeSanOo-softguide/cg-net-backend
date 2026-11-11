@@ -4,7 +4,7 @@ namespace App\Services\Notification;
 
 use App\Enums\NotificationActionType;
 use App\Enums\UserStatus;
-use App\Jobs\SendFtthBillDueNotificationJob;
+use App\Jobs\SendInternetBillDueNotificationJob;
 use App\Models\Notification;
 use App\Models\User;
 use App\Services\Billing\BillingServerClient;
@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Throwable;
 
-class DueFtthBillNotificationService
+class DueInternetBillNotificationService
 {
     public function __construct(private readonly BillingServerClient $billing) {}
 
@@ -33,7 +33,7 @@ class DueFtthBillNotificationService
                         $accountNumber = (string) $user->broadband_account_number;
 
                         foreach ($billsByAccount[$accountNumber] as $bill) {
-                            SendFtthBillDueNotificationJob::dispatch(
+                            SendInternetBillDueNotificationJob::dispatch(
                                 userId: (int) $user->id,
                                 accountNumber: $accountNumber,
                                 dueDate: $bill['due_date'],
@@ -149,7 +149,7 @@ class DueFtthBillNotificationService
             return false;
         }
 
-        SendFtthBillDueNotificationJob::dispatch(
+        SendInternetBillDueNotificationJob::dispatch(
             userId: (int) $user->id,
             accountNumber: $accountNumber,
             dueDate: $dueDate,
@@ -227,7 +227,7 @@ class DueFtthBillNotificationService
             try {
                 $dueDate = $this->dueDate($bill);
             } catch (RuntimeException $exception) {
-                Log::warning('Billing server returned an invalid FTTH bill due date.', [
+                Log::warning('Billing server returned an invalid Internet bill due date.', [
                     'account_number' => $accountNumber,
                     'exception' => $exception->getMessage(),
                 ]);

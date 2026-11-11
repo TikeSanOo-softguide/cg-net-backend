@@ -6,13 +6,13 @@ use App\Enums\BillPaymentStatus;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
 use App\Enums\WalletStatus;
-use App\Jobs\ReconcileStuckFtthBillPaymentsJob;
+use App\Jobs\ReconcileStuckInternetBillPaymentsJob;
 use App\Models\LedgerTransaction;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Services\BroarbandAccount\AccountInfoService;
 use App\Services\CgNetApiClient;
-use App\Services\FtthBill\FtthBillPaymentService;
+use App\Services\InternetBill\InternetBillPaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
@@ -126,8 +126,8 @@ class BillPaymentScenariosTest extends TestCase
         $this->assertSame('500.00', $wallet->fresh()->balance);
         $this->assertSame(LedgerTransactionStatus::Processing, $transaction->status);
         Queue::assertPushed(
-            ReconcileStuckFtthBillPaymentsJob::class,
-            fn(ReconcileStuckFtthBillPaymentsJob $job): bool => $job->ledgerTransactionId === $transaction->id,
+            ReconcileStuckInternetBillPaymentsJob::class,
+            fn(ReconcileStuckInternetBillPaymentsJob $job): bool => $job->ledgerTransactionId === $transaction->id,
         );
     }
 
@@ -153,8 +153,8 @@ class BillPaymentScenariosTest extends TestCase
 
         $this->timeoutRecharge = false;
 
-        (new ReconcileStuckFtthBillPaymentsJob($transaction->id))
-            ->handle(app(FtthBillPaymentService::class));
+        (new ReconcileStuckInternetBillPaymentsJob($transaction->id))
+            ->handle(app(InternetBillPaymentService::class));
 
         $transaction->refresh();
         $this->assertSame(LedgerTransactionStatus::Completed, $transaction->status);
@@ -169,7 +169,7 @@ class BillPaymentScenariosTest extends TestCase
     private function pay(User $user, string $idempotencyKey)
     {
         return $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', [
+            ->postJson('/api/internet-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
                 'service_type' => 'FTTH',
                 'idempotency_key' => $idempotencyKey,

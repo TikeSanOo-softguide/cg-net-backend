@@ -215,6 +215,7 @@ class CustomerController extends Controller
         $transactionOverview = collect([
             ['key' => 'topup', 'type' => LedgerTransactionType::Topup],
             ['key' => 'ftth_bill', 'type' => LedgerTransactionType::FtthBill],
+            ['key' => 'cg_bill', 'type' => LedgerTransactionType::CgBill],
             ['key' => 'wifi_package', 'type' => LedgerTransactionType::WifiPackage],
             ['key' => 'refund', 'type' => LedgerTransactionType::Refund],
         ])

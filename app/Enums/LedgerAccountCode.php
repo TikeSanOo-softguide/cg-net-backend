@@ -22,7 +22,7 @@ enum LedgerAccountCode: string
     {
         return match ($this) {
             self::CashTopup => 'Top-up clearing',
-            self::FtthClearing => 'FTTH billing clearing',
+            self::FtthClearing => 'Internet billing clearing',
             self::PackageRevenue => 'Package revenue',
             self::AdjustmentExpense => 'Wallet adjustments',
         };

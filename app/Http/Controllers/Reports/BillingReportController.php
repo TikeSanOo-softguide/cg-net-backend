@@ -26,6 +26,7 @@ class BillingReportController extends Controller
     private const PAYMENT_TYPES = [
         LedgerTransactionType::Topup,
         LedgerTransactionType::FtthBill,
+        LedgerTransactionType::CgBill,
         LedgerTransactionType::WifiPackage,
     ];
 
@@ -42,6 +43,7 @@ class BillingReportController extends Controller
                 Rule::in([
                     LedgerTransactionType::Topup->value,
                     LedgerTransactionType::FtthBill->value,
+                    LedgerTransactionType::CgBill->value,
                     LedgerTransactionType::WifiPackage->value,
                 ]),
             ],
@@ -57,7 +59,7 @@ class BillingReportController extends Controller
         $scoped = $this->filteredTransactions($filters, $fromDate, $toDate);
         $payments = (clone $scoped)->whereIn('type', self::PAYMENT_TYPES);
 
-        // Collected points = completed top-up + FTTH bill + Wi-Fi package amounts.
+        // Collected points = completed top-up + Internet bill + Wi-Fi package amounts.
         $collectedPoints = (int) (clone $payments)->where('status', LedgerTransactionStatus::Completed)->sum('amount');
 
         // Outstanding points = pending + processing payment amounts still in flight.
@@ -123,6 +125,7 @@ class BillingReportController extends Controller
                     'name' => match ($type) {
                         LedgerTransactionType::Topup => 'Top-up',
                         LedgerTransactionType::FtthBill => 'FTTH bill',
+                        LedgerTransactionType::CgBill => 'CG bill',
                         LedgerTransactionType::WifiPackage => 'Wi-Fi package',
                     },
                     'points' => $points,
@@ -161,6 +164,7 @@ class BillingReportController extends Controller
             'paymentMethods' => [
                 ['value' => LedgerTransactionType::Topup->value, 'label' => 'Top-up'],
                 ['value' => LedgerTransactionType::FtthBill->value, 'label' => 'FTTH bill'],
+                ['value' => LedgerTransactionType::CgBill->value, 'label' => 'CG bill'],
                 ['value' => LedgerTransactionType::WifiPackage->value, 'label' => 'Wi-Fi package'],
             ],
             'packages' => Package::query()

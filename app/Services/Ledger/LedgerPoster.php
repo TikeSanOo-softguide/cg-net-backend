@@ -425,6 +425,7 @@ class LedgerPoster
         $resolved = $prefix ?? match ($type) {
             LedgerTransactionType::WifiPackage => TransactionIdPrefix::BuyPackage,
             LedgerTransactionType::FtthBill => TransactionIdPrefix::PayBillFtth,
+            LedgerTransactionType::CgBill => TransactionIdPrefix::PayBillCg,
             default => null,
         };
 

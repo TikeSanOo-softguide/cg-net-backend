@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests\Api\FtthBill;
+namespace App\Http\Requests\Api\InternetBill;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class PayFtthBillRequest extends FormRequest
+class PayInternetBillRequest extends FormRequest
 {
     public function authorize(): bool
     {

@@ -1,17 +1,18 @@
 <?php
 
-namespace App\Http\Controllers\Api\FtthBill;
+namespace App\Http\Controllers\Api\InternetBill;
 
 use App\Enums\LedgerTransactionType;
 use App\Enums\MessageCode;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\FtthBill\PayFtthBillRequest;
-use App\Http\Resources\FtthBillPaymentHistoryResource;
+use App\Http\Requests\Api\InternetBill\PayInternetBillRequest;
+use App\Http\Resources\InternetBillPaymentHistoryDetailResource;
+use App\Http\Resources\InternetBillPaymentHistoryResource;
 use App\Models\LedgerTransaction;
 use App\Models\User;
 use App\Services\BroarbandAccount\AccountInfoService;
 use App\Services\BroarbandAccount\BroadbandApiException;
-use App\Services\FtthBill\FtthBillPaymentService;
+use App\Services\InternetBill\InternetBillPaymentService;
 use App\Support\ApiMessage;
 use App\Support\CustomerPassword;
 use Illuminate\Database\Eloquent\Builder;
@@ -20,10 +21,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Request;
 
-class FtthBillController extends Controller
+class InternetBillController extends Controller
 {
     public function __construct(
-        protected FtthBillPaymentService $payments,
+        protected InternetBillPaymentService $payments,
         protected AccountInfoService $accountInfo,
     ) {}
 
@@ -87,7 +88,7 @@ class FtthBillController extends Controller
         ]));
     }
 
-    public function pay(PayFtthBillRequest $request): JsonResponse
+    public function pay(PayInternetBillRequest $request): JsonResponse
     {
         $validated = $request->validated();
         /** @var User $user */
@@ -113,27 +114,69 @@ class FtthBillController extends Controller
         $validated = $request->validate([
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
         ]);
-        $accountNumber = trim((string) $request->user()->broadband_account_number);
+        $accountNumber = $this->boundAccountNumber($request);
 
-        if ($accountNumber === '') {
-            return response()->json(
-                ApiMessage::attach(MessageCode::FtthAccountMissing, ['success' => false]),
-                422,
-            );
+        if ($accountNumber === null) {
+            return $this->missingAccountResponse();
         }
 
-        $payments = LedgerTransaction::query()
-            ->where('type', LedgerTransactionType::FtthBill->value)
-            ->whereHas('billPayment', fn (Builder $query) => $query->where(
-                'broadband_account_number',
-                $accountNumber,
-            ))
-            ->with('billPayment')
+        $payments = $this->historyQuery($accountNumber)
             ->latest('created_at')
             ->latest('id')
             ->cursorPaginate($validated['per_page'] ?? 20);
 
-        return FtthBillPaymentHistoryResource::collection($payments);
+        return InternetBillPaymentHistoryResource::collection($payments);
+    }
+
+    public function show(Request $request, int $id): InternetBillPaymentHistoryDetailResource|JsonResponse
+    {
+        $accountNumber = $this->boundAccountNumber($request);
+
+        if ($accountNumber === null) {
+            return $this->missingAccountResponse();
+        }
+
+        $transaction = $this->historyQuery($accountNumber)
+            ->whereHas('billPayment', fn (Builder $query) => $query->whereKey($id))
+            ->first();
+
+        if ($transaction === null) {
+            return response()->json(
+                ApiMessage::attach(MessageCode::SysNotFound, ['success' => false]),
+                404,
+            );
+        }
+
+        return new InternetBillPaymentHistoryDetailResource($transaction);
+    }
+
+    private function boundAccountNumber(Request $request): ?string
+    {
+        $accountNumber = trim((string) $request->user()->broadband_account_number);
+
+        return $accountNumber === '' ? null : $accountNumber;
+    }
+
+    private function missingAccountResponse(): JsonResponse
+    {
+        return response()->json(
+            ApiMessage::attach(MessageCode::FtthAccountMissing, ['success' => false]),
+            422,
+        );
+    }
+
+    /**
+     * @return Builder<LedgerTransaction>
+     */
+    private function historyQuery(string $accountNumber): Builder
+    {
+        return LedgerTransaction::query()
+            ->whereIn('type', LedgerTransactionType::internetBillValues())
+            ->whereHas('billPayment', fn (Builder $query) => $query->where(
+                'broadband_account_number',
+                $accountNumber,
+            ))
+            ->with('billPayment');
     }
 
     /**

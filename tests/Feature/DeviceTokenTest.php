@@ -11,8 +11,8 @@ use App\Enums\BillPaymentNotificationEvent;
 use App\Listeners\PruneInvalidFcmTokens;
 use App\Models\DeviceToken;
 use App\Models\User;
-use App\Notifications\FtthBillPaymentStatusNotification;
-use App\Notifications\FtthBillDueNotification;
+use App\Notifications\InternetBillPaymentStatusNotification;
+use App\Notifications\InternetBillDueNotification;
 use App\Notifications\PackageOrderStatusNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\Events\NotificationFailed;
@@ -62,7 +62,7 @@ class DeviceTokenTest extends TestCase
             'platform' => 'web',
         ]);
 
-        $notification = new FtthBillDueNotification(
+        $notification = new InternetBillDueNotification(
             title: 'မကြာမီ FTTH ဘေလ်ကျသင့်မည်',
             body: 'အသေးစိတ်ကြည့်ရန် နှိပ်ပါ။',
             actionId: 'bill-123',
@@ -189,8 +189,8 @@ class DeviceTokenTest extends TestCase
     private function makeNotification(
         BillPaymentNotificationEvent $event,
         ?string $refundTransactionNo = null,
-    ): FtthBillPaymentStatusNotification {
-        return new FtthBillPaymentStatusNotification(
+    ): InternetBillPaymentStatusNotification {
+        return new InternetBillPaymentStatusNotification(
             event: $event,
             transactionNo: 'FTTH-1',
             amount: 1500,

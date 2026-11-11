@@ -8,16 +8,16 @@ use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
 use App\Enums\TransactionIdPrefix;
 use App\Enums\WalletStatus;
-use App\Jobs\ReconcileStuckFtthBillPaymentsJob;
+use App\Jobs\ReconcileStuckInternetBillPaymentsJob;
 use App\Models\Admin;
 use App\Models\BillPayment;
 use App\Models\LedgerTransaction;
 use App\Models\User;
 use App\Models\Wallet;
-use App\Notifications\FtthBillPaymentStatusNotification;
+use App\Notifications\InternetBillPaymentStatusNotification;
 use App\Services\BroarbandAccount\AccountInfoService;
 use App\Services\CgNetApiClient;
-use App\Services\FtthBill\FtthBillPaymentService;
+use App\Services\InternetBill\InternetBillPaymentService;
 use App\Services\Ledger\TransactionIdGenerator;
 use App\Services\Order\OrderNumberGenerator;
 use Database\Seeders\RolePermissionSeeder;
@@ -31,7 +31,7 @@ use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
-class FtthBillPaymentTest extends TestCase
+class InternetBillPaymentTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -118,7 +118,7 @@ class FtthBillPaymentTest extends TestCase
         $user->update(['name' => 'App Profile Name']);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->getJson('/api/ftth-bills/pending-slip')
+            ->getJson('/api/internet-bills/pending-slip')
             ->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.bill_month', '2026-11')
@@ -153,7 +153,7 @@ class FtthBillPaymentTest extends TestCase
         [$user] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->getJson('/api/ftth-bills/pending-slip')
+            ->getJson('/api/internet-bills/pending-slip')
             ->assertOk()
             ->assertJsonPath('data.bill_month', '2026-12')
             ->assertJsonPath('data.slip.slip_url', 'https://billing-server.test/slips/december');
@@ -181,7 +181,7 @@ class FtthBillPaymentTest extends TestCase
         [$user] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->getJson('/api/ftth-bills/pending-slip')
+            ->getJson('/api/internet-bills/pending-slip')
             ->assertOk()
             ->assertJsonPath('data.bill_month', '2027-01')
             ->assertJsonPath('data.bill_month_label', 'January 2027');
@@ -207,7 +207,7 @@ class FtthBillPaymentTest extends TestCase
         [$user] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->getJson('/api/ftth-bills/pending-slip')
+            ->getJson('/api/internet-bills/pending-slip')
             ->assertOk()
             ->assertJsonPath('data.bill_month', '2026-10')
             ->assertJsonPath('data.bill_month_label', 'October 2026')
@@ -247,7 +247,7 @@ class FtthBillPaymentTest extends TestCase
         ]);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->getJson('/api/ftth-bills/pending-slip')
+            ->getJson('/api/internet-bills/pending-slip')
             ->assertOk()
             ->assertJsonPath('data.bill_month', '2026-10')
             ->assertJsonPath('data.bill_month_label', 'October 2026')
@@ -287,7 +287,7 @@ class FtthBillPaymentTest extends TestCase
         ]);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->getJson('/api/ftth-bills/pending-slip')
+            ->getJson('/api/internet-bills/pending-slip')
             ->assertOk()
             ->assertJsonPath('data.bill_month', '2026-10');
     }
@@ -344,7 +344,7 @@ class FtthBillPaymentTest extends TestCase
         ];
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->getJson('/api/ftth-bills/paid-slips')
+            ->getJson('/api/internet-bills/paid-slips')
             ->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.paid_slips', $expectedPaidSlips);
@@ -414,27 +414,51 @@ class FtthBillPaymentTest extends TestCase
 
         $token = $user->createToken('test')->plainTextToken;
         $firstPage = $this->withToken($token, 'Bearer')
-            ->getJson('/api/ftth-bills/history?per_page=1')
+            ->getJson('/api/internet-bills/history?per_page=1')
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $boundBillPayment->id)
             ->assertJsonPath('data.0.transaction_no', $boundAccountTransaction->transaction_no)
-            ->assertJsonPath('data.0.order_no', 'FTTH-HISTORY-BOUND')
+            ->assertJsonPath('data.0.type', 'ftth_bill')
             ->assertJsonPath('data.0.account', $user->broadband_account_number)
             ->assertJsonPath('data.0.service_type', 'FTTH')
-            ->assertJsonPath('data.0.package.product_name', 'FTTH 100M')
-            ->assertJsonPath('data.0.status', BillPaymentStatus::Completed->value);
+            ->assertJsonPath('data.0.amount', '1000.00')
+            ->assertJsonPath('data.0.status', BillPaymentStatus::Completed->value)
+            ->assertJsonPath('data.0.title_code', 'MSG-FTTH-008')
+            ->assertJsonPath('data.0.description_code', 'MSG-FTTH-008')
+            ->assertJsonMissingPath('data.0.order_no')
+            ->assertJsonMissingPath('data.0.package');
 
         $nextPageUrl = $firstPage->json('links.next');
         $this->assertIsString($nextPageUrl);
         parse_str((string) parse_url($nextPageUrl, PHP_URL_QUERY), $query);
 
         $this->withToken($token, 'Bearer')
-            ->getJson('/api/ftth-bills/history?' . http_build_query($query))
+            ->getJson('/api/internet-bills/history?' . http_build_query($query))
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.transaction_no', $olderBoundAccountTransaction->transaction_no)
-            ->assertJsonPath('data.0.order_no', 'FTTH-HISTORY-OLDER');
+            ->assertJsonPath('data.0.account', $user->broadband_account_number);
+
+        $this->withToken($token, 'Bearer')
+            ->getJson('/api/internet-bills/history/'.$boundBillPayment->id)
+            ->assertOk()
+            ->assertJsonPath('data.id', $boundBillPayment->id)
+            ->assertJsonPath('data.transaction_no', $boundAccountTransaction->transaction_no)
+            ->assertJsonPath('data.type', 'ftth_bill')
+            ->assertJsonPath('data.order_no', 'FTTH-HISTORY-BOUND')
+            ->assertJsonPath('data.account', $user->broadband_account_number)
+            ->assertJsonPath('data.service_type', 'FTTH')
+            ->assertJsonPath('data.amount', '1000.00')
+            ->assertJsonPath('data.package.product_name', 'FTTH 100M')
+            ->assertJsonPath('data.package.product_speed', '100M')
+            ->assertJsonPath('data.status', BillPaymentStatus::Completed->value)
+            ->assertJsonPath('data.title_code', 'MSG-FTTH-008')
+            ->assertJsonPath('data.description_code', 'MSG-FTTH-008');
+
+        $this->withToken($token, 'Bearer')
+            ->getJson('/api/internet-bills/history/'.$otherAccountTransaction->billPayment->id)
+            ->assertNotFound();
     }
 
     public function test_ftth_bill_payment_requires_the_correct_user_password(): void
@@ -444,7 +468,7 @@ class FtthBillPaymentTest extends TestCase
         [$user, $wallet] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', [
+            ->postJson('/api/internet-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
                 'service_type' => 'FTTH',
                 'idempotency_key' => 'ftth-pay-wrong-password',
@@ -467,7 +491,7 @@ class FtthBillPaymentTest extends TestCase
         [$user, $wallet] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', [
+            ->postJson('/api/internet-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
                 'service_type' => 'FTTH',
                 'idempotency_key' => 'ftth-pay-invalid-password-format',
@@ -491,7 +515,7 @@ class FtthBillPaymentTest extends TestCase
         [$user, $wallet] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', [
+            ->postJson('/api/internet-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
                 'service_type' => 'FTTH',
                 'idempotency_key' => 'ftth-pay-success-1',
@@ -592,11 +616,11 @@ class FtthBillPaymentTest extends TestCase
             $this->accountLookups,
         );
 
-        Notification::assertSentToTimes($user, FtthBillPaymentStatusNotification::class, 1);
+        Notification::assertSentToTimes($user, InternetBillPaymentStatusNotification::class, 1);
         Notification::assertSentTo(
             $user,
-            FtthBillPaymentStatusNotification::class,
-            fn(FtthBillPaymentStatusNotification $notification) => $notification->event ===
+            InternetBillPaymentStatusNotification::class,
+            fn(InternetBillPaymentStatusNotification $notification) => $notification->event ===
                 BillPaymentNotificationEvent::Completed && $notification->amount === 1000,
         );
     }
@@ -608,7 +632,7 @@ class FtthBillPaymentTest extends TestCase
         [$user, $wallet] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', [
+            ->postJson('/api/internet-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
                 'service_type' => 'CG',
                 'idempotency_key' => 'cg-pay-success-1',
@@ -624,6 +648,10 @@ class FtthBillPaymentTest extends TestCase
 
         $this->assertEquals(500, $wallet->fresh()->balance);
         $this->assertSame('CG', BillPayment::query()->value('service_type'));
+        $this->assertDatabaseHas('ledger_transactions', [
+            'wallet_id' => $wallet->id,
+            'type' => LedgerTransactionType::CgBill->value,
+        ]);
         $this->assertTrue(app(OrderNumberGenerator::class)->matches((string) BillPayment::query()->value('order_no')));
     }
 
@@ -632,7 +660,7 @@ class FtthBillPaymentTest extends TestCase
         [$user] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', [
+            ->postJson('/api/internet-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
                 'service_type' => 'FTTH',
                 'idempotency_key' => 'ftth-mocked-cg-api',
@@ -681,7 +709,7 @@ class FtthBillPaymentTest extends TestCase
         [$user, $wallet] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', [
+            ->postJson('/api/internet-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
                 'service_type' => 'FTTH',
                 'idempotency_key' => 'ftth-pay-fail-1',
@@ -739,11 +767,11 @@ class FtthBillPaymentTest extends TestCase
             ->where('type', LedgerTransactionType::Refund)
             ->firstOrFail();
 
-        Notification::assertSentToTimes($user, FtthBillPaymentStatusNotification::class, 1);
+        Notification::assertSentToTimes($user, InternetBillPaymentStatusNotification::class, 1);
         Notification::assertSentTo(
             $user,
-            FtthBillPaymentStatusNotification::class,
-            fn(FtthBillPaymentStatusNotification $notification) => $notification->event ===
+            InternetBillPaymentStatusNotification::class,
+            fn(InternetBillPaymentStatusNotification $notification) => $notification->event ===
                 BillPaymentNotificationEvent::Refunded &&
                 $notification->refundTransactionNo === $refund->transaction_no,
         );
@@ -762,7 +790,7 @@ class FtthBillPaymentTest extends TestCase
         [$user, $wallet] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', [
+            ->postJson('/api/internet-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
                 'service_type' => 'FTTH',
                 'idempotency_key' => 'ftth-reject-code-' . $errorCode,
@@ -798,7 +826,7 @@ class FtthBillPaymentTest extends TestCase
         [$user, $wallet] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', [
+            ->postJson('/api/internet-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
                 'service_type' => 'FTTH',
                 'idempotency_key' => 'ftth-recharge-duplicate-1',
@@ -830,7 +858,7 @@ class FtthBillPaymentTest extends TestCase
         [$user, $wallet] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', [
+            ->postJson('/api/internet-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
                 'service_type' => 'FTTH',
                 'idempotency_key' => 'ftth-pay-unknown-1',
@@ -888,14 +916,14 @@ class FtthBillPaymentTest extends TestCase
             ->firstOrFail();
 
         Queue::assertPushed(
-            ReconcileStuckFtthBillPaymentsJob::class,
-            fn(ReconcileStuckFtthBillPaymentsJob $job) => $job->ledgerTransactionId === $transaction->id,
+            ReconcileStuckInternetBillPaymentsJob::class,
+            fn(ReconcileStuckInternetBillPaymentsJob $job) => $job->ledgerTransactionId === $transaction->id,
         );
 
         Notification::assertSentTo(
             $user,
-            FtthBillPaymentStatusNotification::class,
-            fn(FtthBillPaymentStatusNotification $notification) => $notification->event ===
+            InternetBillPaymentStatusNotification::class,
+            fn(InternetBillPaymentStatusNotification $notification) => $notification->event ===
                 BillPaymentNotificationEvent::Processing &&
                 $notification->transactionNo === $transaction->transaction_no,
         );
@@ -908,7 +936,7 @@ class FtthBillPaymentTest extends TestCase
         [$user, $wallet] = $this->makePayer(balance: 500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', [
+            ->postJson('/api/internet-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
                 'service_type' => 'FTTH',
                 'idempotency_key' => 'ftth-pay-insufficient-1',
@@ -939,17 +967,17 @@ class FtthBillPaymentTest extends TestCase
         ];
 
         $first = $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', $payload)
+            ->postJson('/api/internet-bills/pay', $payload)
             ->assertOk();
         $orderNo = $first->json('data.order_no');
         $transactionNo = $first->json('data.transaction_no');
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', $payload)
+            ->postJson('/api/internet-bills/pay', $payload)
             ->assertOk()
             ->assertJsonPath('data.order_no', $orderNo)
             ->assertJsonPath('data.transaction_no', $transactionNo)
-            ->assertJsonPath('message', 'FTTH bill payment already processed.')
+            ->assertJsonPath('message', 'Internet bill payment already processed.')
             ->assertJsonPath('data.status', 'completed')
             ->assertJsonPath('data.account', $user->broadband_account_number)
             ->assertJsonPath('data.customer_name', $user->name)
@@ -988,7 +1016,7 @@ class FtthBillPaymentTest extends TestCase
                 ->count(),
         );
 
-        Notification::assertSentToTimes($user, FtthBillPaymentStatusNotification::class, 1);
+        Notification::assertSentToTimes($user, InternetBillPaymentStatusNotification::class, 1);
     }
 
     public function test_idempotent_replay_after_failure_returns_refunded_result(): void
@@ -1008,11 +1036,11 @@ class FtthBillPaymentTest extends TestCase
         ];
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', $payload)
+            ->postJson('/api/internet-bills/pay', $payload)
             ->assertStatus(502);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', $payload)
+            ->postJson('/api/internet-bills/pay', $payload)
             ->assertStatus(502)
             ->assertJsonPath('data.billing_status', 'failed')
             ->assertJsonPath('data.status', 'failed')
@@ -1044,7 +1072,7 @@ class FtthBillPaymentTest extends TestCase
                 ],
             ]);
 
-        Notification::assertSentToTimes($user, FtthBillPaymentStatusNotification::class, 1);
+        Notification::assertSentToTimes($user, InternetBillPaymentStatusNotification::class, 1);
     }
 
     public function test_reconcile_job_completes_stuck_processing_payment(): void
@@ -1094,7 +1122,7 @@ class FtthBillPaymentTest extends TestCase
             ],
         ]);
 
-        (new ReconcileStuckFtthBillPaymentsJob($transaction->id))->handle(app(FtthBillPaymentService::class));
+        (new ReconcileStuckInternetBillPaymentsJob($transaction->id))->handle(app(InternetBillPaymentService::class));
 
         $transaction->refresh();
         $this->assertSame(LedgerTransactionStatus::Completed, $transaction->status);
@@ -1112,14 +1140,14 @@ class FtthBillPaymentTest extends TestCase
 
         Notification::assertSentTo(
             $user,
-            FtthBillPaymentStatusNotification::class,
-            fn(FtthBillPaymentStatusNotification $notification) => $notification->event ===
+            InternetBillPaymentStatusNotification::class,
+            fn(InternetBillPaymentStatusNotification $notification) => $notification->event ===
                 BillPaymentNotificationEvent::Completed,
         );
 
-        (new ReconcileStuckFtthBillPaymentsJob($transaction->id))->handle(app(FtthBillPaymentService::class));
+        (new ReconcileStuckInternetBillPaymentsJob($transaction->id))->handle(app(InternetBillPaymentService::class));
 
-        Notification::assertSentToTimes($user, FtthBillPaymentStatusNotification::class, 1);
+        Notification::assertSentToTimes($user, InternetBillPaymentStatusNotification::class, 1);
     }
 
     public function test_reconcile_job_refunds_when_billing_reports_not_found(): void
@@ -1155,7 +1183,7 @@ class FtthBillPaymentTest extends TestCase
             ],
         ]);
 
-        (new ReconcileStuckFtthBillPaymentsJob($transaction->id))->handle(app(FtthBillPaymentService::class));
+        (new ReconcileStuckInternetBillPaymentsJob($transaction->id))->handle(app(InternetBillPaymentService::class));
 
         $wallet->refresh();
         $transaction->refresh();
@@ -1169,8 +1197,8 @@ class FtthBillPaymentTest extends TestCase
 
         Notification::assertSentTo(
             $user,
-            FtthBillPaymentStatusNotification::class,
-            fn(FtthBillPaymentStatusNotification $notification) => $notification->event ===
+            InternetBillPaymentStatusNotification::class,
+            fn(InternetBillPaymentStatusNotification $notification) => $notification->event ===
                 BillPaymentNotificationEvent::Refunded,
         );
     }
@@ -1202,14 +1230,14 @@ class FtthBillPaymentTest extends TestCase
 
         $this->accountInfo->shouldReceive('find')->once()->andThrow(new \Error('Temporary reconciliation failure.'));
 
-        (new ReconcileStuckFtthBillPaymentsJob($transaction->id))->handle(app(FtthBillPaymentService::class));
+        (new ReconcileStuckInternetBillPaymentsJob($transaction->id))->handle(app(InternetBillPaymentService::class));
 
         $this->assertSame(LedgerTransactionStatus::Review, $transaction->fresh()->status);
         $this->assertSame(
             'reconciliation_failed',
             $transaction->fresh()->billPayment->external_response['manual_review_reason'],
         );
-        Queue::assertNotPushed(ReconcileStuckFtthBillPaymentsJob::class);
+        Queue::assertNotPushed(ReconcileStuckInternetBillPaymentsJob::class);
     }
 
     public function test_reconciliation_exception_moves_overage_payment_to_review(): void
@@ -1240,7 +1268,7 @@ class FtthBillPaymentTest extends TestCase
 
         $this->accountInfo->shouldReceive('find')->once()->andThrow(new \Error('Repeated reconciliation failure.'));
 
-        (new ReconcileStuckFtthBillPaymentsJob($transaction->id))->handle(app(FtthBillPaymentService::class));
+        (new ReconcileStuckInternetBillPaymentsJob($transaction->id))->handle(app(InternetBillPaymentService::class));
 
         $this->assertSame(LedgerTransactionStatus::Review, $transaction->fresh()->status);
         $this->assertDatabaseHas('bill_payments', [
@@ -1251,7 +1279,7 @@ class FtthBillPaymentTest extends TestCase
             'reconciliation_failed',
             $transaction->fresh()->billPayment->external_response['manual_review_reason'],
         );
-        Queue::assertNotPushed(ReconcileStuckFtthBillPaymentsJob::class);
+        Queue::assertNotPushed(ReconcileStuckInternetBillPaymentsJob::class);
     }
 
     public function test_admin_sees_a_flash_error_when_refunding_a_payment_that_is_no_longer_under_review(): void
@@ -1299,7 +1327,7 @@ class FtthBillPaymentTest extends TestCase
         $user->forceFill(['broadband_account_number' => null])->save();
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', [
+            ->postJson('/api/internet-bills/pay', [
                 'broadband_account_number' => 'CG00000000',
                 'service_type' => 'FTTH',
                 'idempotency_key' => 'ftth-pay-other-acct',
@@ -1320,7 +1348,7 @@ class FtthBillPaymentTest extends TestCase
         $this->assertDatabaseHas('ledger_transactions', [
             'wallet_id' => $wallet->id,
             'type' => LedgerTransactionType::FtthBill->value,
-            'note' => 'FTTH bill CG00000000',
+            'note' => 'Internet bill CG00000000',
         ]);
     }
 
@@ -1333,7 +1361,7 @@ class FtthBillPaymentTest extends TestCase
         [$user, $wallet] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', [
+            ->postJson('/api/internet-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
                 'service_type' => 'FTTH',
                 'idempotency_key' => 'ftth-pay-one-account',
@@ -1342,7 +1370,7 @@ class FtthBillPaymentTest extends TestCase
             ->assertOk();
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', [
+            ->postJson('/api/internet-bills/pay', [
                 'broadband_account_number' => 'CG00000000',
                 'service_type' => 'FTTH',
                 'idempotency_key' => 'ftth-pay-one-account',
@@ -1368,7 +1396,7 @@ class FtthBillPaymentTest extends TestCase
         $idempotencyKey = 'ftth-pay-global-key';
 
         $this->withToken($firstUser->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', [
+            ->postJson('/api/internet-bills/pay', [
                 'broadband_account_number' => $firstUser->broadband_account_number,
                 'service_type' => 'FTTH',
                 'idempotency_key' => $idempotencyKey,
@@ -1377,7 +1405,7 @@ class FtthBillPaymentTest extends TestCase
             ->assertOk();
 
         $this->withToken($secondUser->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', [
+            ->postJson('/api/internet-bills/pay', [
                 'broadband_account_number' => $secondUser->broadband_account_number,
                 'service_type' => 'FTTH',
                 'idempotency_key' => $idempotencyKey,
@@ -1400,7 +1428,7 @@ class FtthBillPaymentTest extends TestCase
         [$user, $wallet] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', [
+            ->postJson('/api/internet-bills/pay', [
                 'broadband_account_number' => 'CG00000000',
                 'service_type' => 'FTTH',
                 'idempotency_key' => 'ftth-pay-missing-bill',
@@ -1420,7 +1448,7 @@ class FtthBillPaymentTest extends TestCase
         [$user] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', [
+            ->postJson('/api/internet-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
                 'service_type' => 'FTTH',
                 'idempotency_key' => str_repeat('a', 94),
@@ -1435,7 +1463,7 @@ class FtthBillPaymentTest extends TestCase
         [$user] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', [
+            ->postJson('/api/internet-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
                 'service_type' => 'FTTH',
                 'password' => '123456',
@@ -1449,7 +1477,7 @@ class FtthBillPaymentTest extends TestCase
         [$user] = $this->makePayer(balance: 1500);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
-            ->postJson('/api/ftth-bills/pay', [
+            ->postJson('/api/internet-bills/pay', [
                 'broadband_account_number' => $user->broadband_account_number,
                 'password' => '123456',
             ])

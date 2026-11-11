@@ -123,6 +123,19 @@ export default function DashboardIndex({
                     />
                     <DashboardTrendChart
                         data={chart}
+                        titleKey="dashboard.cg_bill_payments"
+                        showLegend={false}
+                        series={[
+                            {
+                                dataKey: 'cg_bill_payments',
+                                labelKey: 'dashboard.cg_bill_payments',
+                                color: '#0E9F8A',
+                                unit: t('dashboard.points'),
+                            },
+                        ]}
+                    />
+                    <DashboardTrendChart
+                        data={chart}
                         titleKey="dashboard.wifi_package_orders"
                         showLegend={false}
                         series={[

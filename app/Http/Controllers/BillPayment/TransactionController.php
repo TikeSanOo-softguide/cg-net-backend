@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\BillPayment;
 
-use App\Exceptions\FtthBillPaymentReviewConflict;
+use App\Exceptions\InternetBillPaymentReviewConflict;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
 use App\Enums\WalletActorType;
@@ -10,7 +10,7 @@ use App\Exports\TransactionExport;
 use App\Http\Controllers\Controller;
 use App\Models\LedgerTransaction;
 use App\Models\User;
-use App\Services\FtthBill\FtthBillPaymentService;
+use App\Services\InternetBill\InternetBillPaymentService;
 use App\Services\Transaction\TransactionService;
 use App\Support\NavigationStack;
 use Illuminate\Http\RedirectResponse;
@@ -60,11 +60,11 @@ class TransactionController extends Controller
     public function resolveReview(
         Request $request,
         LedgerTransaction $transaction,
-        FtthBillPaymentService $payments,
+        InternetBillPaymentService $payments,
     ): RedirectResponse {
         try {
             $payments->resolveReviewSuccessfully($transaction, (int) $request->user()->getAuthIdentifier());
-        } catch (FtthBillPaymentReviewConflict) {
+        } catch (InternetBillPaymentReviewConflict) {
             return back()->with('error', 'transactions.review_unavailable');
         }
 
@@ -74,7 +74,7 @@ class TransactionController extends Controller
     public function refundReview(
         Request $request,
         LedgerTransaction $transaction,
-        FtthBillPaymentService $payments,
+        InternetBillPaymentService $payments,
     ): RedirectResponse {
         try {
             $payments->refundReviewPayment(
@@ -82,7 +82,7 @@ class TransactionController extends Controller
                 $transaction->wallet->user,
                 (int) $request->user()->getAuthIdentifier(),
             );
-        } catch (FtthBillPaymentReviewConflict) {
+        } catch (InternetBillPaymentReviewConflict) {
             return back()->with('error', 'transactions.review_unavailable');
         }
 

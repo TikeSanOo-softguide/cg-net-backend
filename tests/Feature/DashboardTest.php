@@ -85,6 +85,7 @@ class DashboardTest extends TestCase
                     ->where('stats.pending_requests', fn($count) => $count >= 1)
                     ->has('chart', 30)
                     ->where('chart.29.ftth_bill_payments', 15000)
+                    ->where('chart.29.cg_bill_payments', 0)
                     ->where('chart.29.wifi_package_orders', 25000)
                     ->has('installationTypeChart')
                     ->has('requestTypeChart')

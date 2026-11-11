@@ -41,6 +41,16 @@ class LedgerTransactionIdTest extends TestCase
         ));
     }
 
+    public function test_cg_bill_posts_default_to_pbcg_when_no_prefix_is_passed(): void
+    {
+        $transaction = $this->postDebit(LedgerTransactionType::CgBill, 'cg-id-format-default');
+
+        $this->assertTrue(app(TransactionIdGenerator::class)->matches(
+            $transaction->transaction_no,
+            TransactionIdPrefix::PayBillCg,
+        ));
+    }
+
     public function test_pay_bill_cg_prefix_is_used_when_provided(): void
     {
         $transaction = $this->postDebit(
@@ -137,7 +147,7 @@ class LedgerTransactionIdTest extends TestCase
         $poster->ensureSystemAccounts();
         $poster->ensureCustomerLiabilityAccount($wallet);
 
-        $contra = $type === LedgerTransactionType::FtthBill
+        $contra = $type->isInternetBill()
             ? LedgerAccountCode::FtthClearing
             : LedgerAccountCode::PackageRevenue;
 

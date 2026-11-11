@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class FtthBillPaymentHistoryResource extends JsonResource
+class InternetBillPaymentHistoryDetailResource extends JsonResource
 {
     /**
      * @return array<string, mixed>
@@ -14,10 +14,12 @@ class FtthBillPaymentHistoryResource extends JsonResource
     {
         $payment = $this->billPayment;
         $snapshot = is_array($payment->snapshot) ? $payment->snapshot : [];
+        $messageCode = $payment->historyMessageCode()?->value;
 
         return [
             'id' => $payment->id,
             'transaction_no' => $this->transaction_no,
+            'type' => $this->type->value,
             'order_no' => $payment->order_no,
             'account' => $payment->broadband_account_number,
             'service_type' => $payment->service_type,
@@ -33,6 +35,8 @@ class FtthBillPaymentHistoryResource extends JsonResource
             ],
             'remark' => $payment->remark,
             'status' => $payment->status->value,
+            'title_code' => $messageCode,
+            'description_code' => $messageCode,
             'created_at' => $payment->created_at?->toIso8601String()
                 ?? $this->created_at?->toIso8601String(),
             'confirmed_at' => $payment->confirmed_at?->toIso8601String(),

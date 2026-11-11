@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\LedgerTransaction;
-use App\Services\FtthBill\FtthBillPaymentService;
+use App\Services\InternetBill\InternetBillPaymentService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUniqueUntilProcessing;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -12,7 +12,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Throwable;
 
-class ReconcileStuckFtthBillPaymentsJob implements ShouldBeUniqueUntilProcessing, ShouldQueue
+class ReconcileStuckInternetBillPaymentsJob implements ShouldBeUniqueUntilProcessing, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -33,7 +33,7 @@ class ReconcileStuckFtthBillPaymentsJob implements ShouldBeUniqueUntilProcessing
         return (string) $this->ledgerTransactionId;
     }
 
-    public function handle(FtthBillPaymentService $payments): void
+    public function handle(InternetBillPaymentService $payments): void
     {
         $transaction = LedgerTransaction::query()->find($this->ledgerTransactionId);
 

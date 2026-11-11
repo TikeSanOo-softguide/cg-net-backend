@@ -8,7 +8,7 @@ use App\Enums\NotificationTemplateType;
 use App\Models\Notification;
 use App\Models\NotificationTemplate;
 use App\Models\User;
-use App\Notifications\FtthBillDueNotification;
+use App\Notifications\InternetBillDueNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -17,7 +17,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 
-class SendFtthBillDueNotificationJob implements ShouldBeUnique, ShouldQueue
+class SendInternetBillDueNotificationJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -76,7 +76,7 @@ class SendFtthBillDueNotificationJob implements ShouldBeUnique, ShouldQueue
 
         NotificationFacade::sendNow(
             $user,
-            new FtthBillDueNotification(
+            new InternetBillDueNotification(
                 title: $localized['title'],
                 body: $localized['description'],
                 actionId: $this->actionId,

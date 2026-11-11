@@ -9,7 +9,7 @@ use NotificationChannels\Fcm\FcmChannel;
 use NotificationChannels\Fcm\FcmMessage;
 use NotificationChannels\Fcm\Resources\Notification as FcmNotification;
 
-class FtthBillDueNotification extends Notification
+class InternetBillDueNotification extends Notification
 {
     public function __construct(
         public readonly string $title,

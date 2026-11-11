@@ -52,6 +52,8 @@ class BillingSeeder extends Seeder
             $wallet = $wallet->fresh();
             $timestamp = $paidAt->toDateTimeString();
 
+            $serviceType = fake()->randomElement(['FTTH', 'CG']);
+
             if ((int) $wallet->balance < $amount) {
                 $topup = $poster->creditWallet(
                     wallet: $wallet,
@@ -70,7 +72,7 @@ class BillingSeeder extends Seeder
                 wallet: $wallet->fresh(),
                 amount: $amount,
                 contraAccount: LedgerAccountCode::FtthClearing,
-                type: LedgerTransactionType::FtthBill,
+                type: LedgerTransactionType::forInternetServiceType($serviceType),
                 status: LedgerTransactionStatus::Completed,
                 idempotencyKey: 'seed-bill:' . $user->id . ':' . $index,
                 actorType: WalletActorType::System,
@@ -83,7 +85,7 @@ class BillingSeeder extends Seeder
                 'ledger_transaction_id' => $transaction->id,
                 'broadband_account_number' => $user->broadband_account_number,
                 'order_no' => 'FTTH-SEED-' . $transaction->id,
-                'service_type' => 'FTTH',
+                'service_type' => $serviceType,
                 'product_id' => 'seed-ftth-product',
                 'product_price' => $amount,
                 'snapshot' => [
@@ -92,7 +94,7 @@ class BillingSeeder extends Seeder
                     'product_price' => $amount,
                     'month_cycle' => 1,
                     'month_cycle_unit' => '月',
-                    'product_line' => 'FTTH',
+                    'product_line' => $serviceType,
                     'product_speed' => '100M',
                 ],
                 'status' => BillPaymentStatus::Completed,

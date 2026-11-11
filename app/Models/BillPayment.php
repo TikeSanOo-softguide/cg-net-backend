@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\BillPaymentStatus;
+use App\Enums\MessageCode;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -54,5 +55,15 @@ class BillPayment extends Model
     public function ledgerTransaction(): BelongsTo
     {
         return $this->belongsTo(LedgerTransaction::class);
+    }
+
+    public function historyMessageCode(): ?MessageCode
+    {
+        return match ($this->status) {
+            BillPaymentStatus::Completed => MessageCode::FtthPaid,
+            BillPaymentStatus::Processing,
+            BillPaymentStatus::Review => MessageCode::FtthProcessing,
+            default => null,
+        };
     }
 }

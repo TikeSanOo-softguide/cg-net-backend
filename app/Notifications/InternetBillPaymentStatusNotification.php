@@ -15,7 +15,7 @@ use NotificationChannels\Fcm\FcmChannel;
 use NotificationChannels\Fcm\FcmMessage;
 use NotificationChannels\Fcm\Resources\Notification as FcmNotification;
 
-class FtthBillPaymentStatusNotification extends Notification implements ShouldQueue
+class InternetBillPaymentStatusNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
