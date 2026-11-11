@@ -417,11 +417,15 @@ class FtthBillPaymentTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $boundBillPayment->id)
             ->assertJsonPath('data.0.transaction_no', $boundAccountTransaction->transaction_no)
-            ->assertJsonPath('data.0.order_no', 'FTTH-HISTORY-BOUND')
+            ->assertJsonPath('data.0.type', 'ftth_bill')
             ->assertJsonPath('data.0.account', $user->broadband_account_number)
             ->assertJsonPath('data.0.service_type', 'FTTH')
-            ->assertJsonPath('data.0.package.product_name', 'FTTH 100M')
-            ->assertJsonPath('data.0.status', BillPaymentStatus::Completed->value);
+            ->assertJsonPath('data.0.amount', '1000.00')
+            ->assertJsonPath('data.0.status', BillPaymentStatus::Completed->value)
+            ->assertJsonPath('data.0.title_code', 'MSG-FTTH-008')
+            ->assertJsonPath('data.0.description_code', 'MSG-FTTH-008')
+            ->assertJsonMissingPath('data.0.order_no')
+            ->assertJsonMissingPath('data.0.package');
 
         $nextPageUrl = $firstPage->json('links.next');
         $this->assertIsString($nextPageUrl);
@@ -432,7 +436,27 @@ class FtthBillPaymentTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.transaction_no', $olderBoundAccountTransaction->transaction_no)
-            ->assertJsonPath('data.0.order_no', 'FTTH-HISTORY-OLDER');
+            ->assertJsonPath('data.0.account', $user->broadband_account_number);
+
+        $this->withToken($token, 'Bearer')
+            ->getJson('/api/ftth-bills/history/'.$boundBillPayment->id)
+            ->assertOk()
+            ->assertJsonPath('data.id', $boundBillPayment->id)
+            ->assertJsonPath('data.transaction_no', $boundAccountTransaction->transaction_no)
+            ->assertJsonPath('data.type', 'ftth_bill')
+            ->assertJsonPath('data.order_no', 'FTTH-HISTORY-BOUND')
+            ->assertJsonPath('data.account', $user->broadband_account_number)
+            ->assertJsonPath('data.service_type', 'FTTH')
+            ->assertJsonPath('data.amount', '1000.00')
+            ->assertJsonPath('data.package.product_name', 'FTTH 100M')
+            ->assertJsonPath('data.package.product_speed', '100M')
+            ->assertJsonPath('data.status', BillPaymentStatus::Completed->value)
+            ->assertJsonPath('data.title_code', 'MSG-FTTH-008')
+            ->assertJsonPath('data.description_code', 'MSG-FTTH-008');
+
+        $this->withToken($token, 'Bearer')
+            ->getJson('/api/ftth-bills/history/'.$otherAccountTransaction->billPayment->id)
+            ->assertNotFound();
     }
 
     public function test_ftth_bill_payment_requires_the_correct_user_password(): void
