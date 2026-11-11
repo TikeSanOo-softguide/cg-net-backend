@@ -2,14 +2,20 @@
 
 namespace App\Http\Controllers\BillPayment;
 
+use App\Enums\ActivityLogEvent;
+use App\Enums\ActivityLogName;
 use App\Enums\BillPaymentStatus;
+use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
+use App\Exceptions\InternetBillPaymentReviewConflict;
 use App\Exports\BillPaymentExport;
 use App\Http\Controllers\Controller;
 use App\Models\BillPayment;
 use App\Services\AdminNotification\AdminNotificationReadStatus;
+use App\Services\InternetBill\InternetBillPaymentService;
 use App\Support\NavigationStack;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,9 +26,7 @@ class BillPaymentController extends Controller
     public function index(Request $request, AdminNotificationReadStatus $readStatus): Response
     {
         $filters = $this->filters($request);
-        $payments = $this->query($filters)
-            ->paginate(15)
-            ->withQueryString();
+        $payments = $this->query($filters)->paginate(15)->withQueryString();
         $unreadPaymentIds = $readStatus->unreadReferenceIds(
             (int) $request->user()->getAuthIdentifier(),
             'bill_payment',
@@ -76,19 +80,81 @@ class BillPaymentController extends Controller
         return Excel::download(new BillPaymentExport($this->query($filters)), 'bill-payments.xlsx');
     }
 
-    /** @return array{search: string, status: string, payment_id: int, from: string, to: string} */
+    public function resolveReview(
+        Request $request,
+        BillPayment $billPayment,
+        InternetBillPaymentService $payments,
+    ): RedirectResponse {
+        $transaction = $billPayment->ledgerTransaction;
+        if ($transaction === null) {
+            return back()->with('error', 'transactions.review_unavailable');
+        }
+
+        try {
+            $payments->resolveReviewSuccessfully($transaction, (int) $request->user()->getAuthIdentifier());
+        } catch (InternetBillPaymentReviewConflict) {
+            return back()->with('error', 'transactions.review_unavailable');
+        }
+
+        activity(ActivityLogName::BillPayments->value)
+            ->causedBy($request->user())
+            ->performedOn($billPayment)
+            ->event(ActivityLogEvent::Completed->value)
+            ->withProperties([
+                'from_status' => LedgerTransactionStatus::Review->value,
+                'to_status' => LedgerTransactionStatus::Completed->value,
+            ])
+            ->log('bill_payment_completed');
+
+        return back()->with('success', 'transactions.review_completed');
+    }
+
+    public function refundReview(
+        Request $request,
+        BillPayment $billPayment,
+        InternetBillPaymentService $payments,
+    ): RedirectResponse {
+        $transaction = $billPayment->ledgerTransaction;
+        $user = $transaction?->wallet?->user;
+        if ($transaction === null || $user === null) {
+            return back()->with('error', 'transactions.review_unavailable');
+        }
+
+        try {
+            $payments->refundReviewPayment($transaction, $user, (int) $request->user()->getAuthIdentifier());
+        } catch (InternetBillPaymentReviewConflict) {
+            return back()->with('error', 'transactions.review_unavailable');
+        }
+
+        activity(ActivityLogName::BillPayments->value)
+            ->causedBy($request->user())
+            ->performedOn($billPayment)
+            ->event(ActivityLogEvent::Refunded->value)
+            ->withProperties([
+                'from_status' => LedgerTransactionStatus::Review->value,
+                'to_status' => LedgerTransactionStatus::Failed->value,
+            ])
+            ->log('bill_payment_refunded');
+
+        return back()->with('success', 'transactions.review_refunded');
+    }
+
+    /** @return array{search: string, status: string, service_type: string, payment_id: int, from: string, to: string} */
     private function filters(Request $request): array
     {
+        $serviceType = $request->string('service_type')->toString();
+
         return [
             'search' => trim($request->string('search')->toString()),
             'status' => $request->string('status')->toString(),
+            'service_type' => in_array($serviceType, ['FTTH', 'CG'], true) ? $serviceType : '',
             'payment_id' => max(0, $request->integer('payment_id')),
             'from' => $request->query('from') === '' ? '' : $request->date('from')?->toDateString() ?? '',
             'to' => $request->query('to') === '' ? '' : $request->date('to')?->toDateString() ?? '',
         ];
     }
 
-    /** @param array{search: string, status: string, payment_id: int, from: string, to: string} $filters */
+    /** @param array{search: string, status: string, service_type: string, payment_id: int, from: string, to: string} $filters */
     private function query(array $filters): Builder
     {
         return BillPayment::query()
@@ -99,6 +165,10 @@ class BillPaymentController extends Controller
             ->when(
                 in_array($filters['status'], array_column(BillPaymentStatus::cases(), 'value'), true),
                 fn(Builder $query) => $query->where('status', $filters['status']),
+            )
+            ->when(
+                $filters['service_type'] !== '',
+                fn(Builder $query) => $query->where('service_type', $filters['service_type']),
             )
             ->when($filters['payment_id'] > 0, fn(Builder $query) => $query->whereKey($filters['payment_id']))
             ->when($filters['search'] !== '', function (Builder $query) use ($filters): void {

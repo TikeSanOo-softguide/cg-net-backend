@@ -10,6 +10,7 @@ enum ActivityLogName: string
     case AppVersion = 'app_version';
     case Area = 'area';
     case Banner = 'banner';
+    case BillPayments = 'bill_payments';
     case Category = 'category';
     case ChatbotFlow = 'chatbot_flow';
     case ChangePasswordRequest = 'change_password_request';
@@ -24,6 +25,7 @@ enum ActivityLogName: string
     case News = 'news';
     case NotificationTemplate = 'notification_template';
     case Package = 'package';
+    case PackageOrders = 'package_orders';
     case Promotion = 'promotion';
     case PushNotification = 'push_notification';
     case QuickReply = 'quick_reply';
@@ -65,6 +67,8 @@ enum ActivityLogName: string
             self::Package,
             self::Speed,
             self::Term => 'menu.packages',
+            self::PackageOrders => 'menu.package_orders',
+            self::BillPayments => 'menu.bill_payment',
             self::Area,
             self::Region,
             self::State => 'menu.region_management',
@@ -108,6 +112,8 @@ enum ActivityLogName: string
             'menu.notifications',
             'menu.support',
             'menu.packages',
+            'menu.package_orders',
+            'menu.bill_payment',
             'menu.region_management',
             'menu.reports',
             'menu.cms',

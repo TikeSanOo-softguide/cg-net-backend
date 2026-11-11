@@ -137,6 +137,7 @@ function DetailItem({
     format,
     className,
     secondary,
+    status,
 }: {
     label: string;
     value: string | number | null | undefined;
@@ -145,13 +146,16 @@ function DetailItem({
     format?: 'phone';
     className?: string;
     secondary?: string | null;
+    status?: string;
 }) {
     return (
         <div className={cn('rounded-xl border border-border/60 bg-muted/20 p-3.5', className)}>
             <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
             <dd className="mt-1 break-words text-sm font-semibold text-foreground">
                 <span className="flex items-center gap-1.5">
-                    {href && value !== null && value !== undefined && value !== '' ? (
+                    {status ? (
+                        <StatusBadge status={status} />
+                    ) : href && value !== null && value !== undefined && value !== '' ? (
                         <Link href={href} className="text-primary underline-offset-4 hover:underline">
                             {value}
                         </Link>
@@ -606,7 +610,7 @@ export function TransactionsTable({
                                     label={t('transactions.detail_fields.balance_after')}
                                     value={formatTopUpAmount(selected.wallet_entry?.balance_after ?? '')}
                                 />
-                                <DetailItem label={t('common.status')} value={t(`status.${selected.status}`)} />
+                                <DetailItem label={t('common.status')} value={null} status={selected.status} />
                                 <DetailItem
                                     label={t('transactions.detail_fields.idempotency_key')}
                                     value={selected.idempotency_key}

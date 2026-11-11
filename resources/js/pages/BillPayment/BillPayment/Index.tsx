@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import { CalendarIcon, CheckCircle2Icon, CircleDotIcon, EyeIcon, ReceiptIcon, RotateCcwIcon } from 'lucide-react';
+import { CalendarIcon, CheckCircle2Icon, EyeIcon, ReceiptIcon, RotateCcwIcon } from 'lucide-react';
 
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import { BackButton } from '@/components/BackButton';
@@ -49,6 +49,7 @@ type BillPaymentRow = {
 type Filters = {
     search: string;
     status: string;
+    service_type: string;
     payment_id: number;
     from: string;
     to: string;
@@ -130,6 +131,7 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
             {
                 search: (next.search ?? search) || undefined,
                 status: (next.status ?? filters.status) || undefined,
+                service_type: (next.service_type ?? filters.service_type) || undefined,
                 payment_id: next.payment_id || undefined,
                 from: (next.from ?? filters.from) || undefined,
                 to: (next.to ?? filters.to) || undefined,
@@ -161,7 +163,7 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                 payment.transaction_no ? (
                     <Link
                         href={transactionHref(payment.transaction_no)}
-                        className="text-primary underline-offset-4 hover:underline"
+                        className="font-mono text-xs text-primary underline-offset-4 hover:underline"
                     >
                         {payment.transaction_no}
                     </Link>
@@ -184,11 +186,6 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
         },
 
         {
-            id: 'account',
-            header: t('bill_payments.account_number'),
-            cell: (payment) => payment.broadband_account_number || '—',
-        },
-        {
             id: 'customer',
             header: t('transactions.customer'),
             cell: (payment) =>
@@ -202,6 +199,11 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                 ) : (
                     payment.customer_name || '—'
                 ),
+        },
+        {
+            id: 'account',
+            header: t('bill_payments.account_number'),
+            cell: (payment) => payment.broadband_account_number || '—',
         },
         {
             id: 'amount',
@@ -269,7 +271,6 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                             <FormField
                                 label={t('common.status')}
                                 htmlFor="bill-payment-status"
-                                icon={CircleDotIcon}
                                 className="w-full shrink-0 sm:w-40"
                                 labelClassName="text-[13px]"
                             >
@@ -287,6 +288,26 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                                                 {t(`status.${status}`)}
                                             </SelectItem>
                                         ))}
+                                    </SelectContent>
+                                </Select>
+                            </FormField>
+                            <FormField
+                                label={t('bill_payments.service_type')}
+                                htmlFor="bill-payment-service-type"
+                                className="w-full shrink-0 sm:w-40"
+                                labelClassName="text-[13px]"
+                            >
+                                <Select
+                                    value={filters.service_type || 'all'}
+                                    onValueChange={(value) => visit({ service_type: value === 'all' ? '' : value })}
+                                >
+                                    <SelectTrigger id="bill-payment-service-type">
+                                        <SelectValue placeholder={t('bill_payments.service_type')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">{t('common.all')}</SelectItem>
+                                        <SelectItem value="FTTH">FTTH</SelectItem>
+                                        <SelectItem value="CG">CG</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </FormField>
@@ -361,14 +382,15 @@ function BillPaymentDetailDialog({
         >
             <div className="space-y-3 overflow-y-auto p-4 sm:p-5">
                 <div className="grid gap-3 sm:grid-cols-2">
-                    <PaymentInfo label={t('bill_payments.bill_payment_id')} value={payment.id} />
+                    <PaymentInfo label={t('bill_payments.order_no')} value={payment.order_no} copyable mono />
                     <PaymentInfo
                         label={t('transactions.number')}
                         value={payment.transaction_no}
                         href={payment.transaction_no ? transactionHref(payment.transaction_no) : undefined}
                         copyable
+                        mono
                     />
-                    <PaymentInfo label={t('bill_payments.order_no')} value={payment.order_no} copyable />
+                    <PaymentInfo label={t('bill_payments.bill_payment_id')} value={payment.id} />
                     <PaymentInfo
                         label={t('bill_payments.ledger_transaction_id')}
                         value={payment.ledger_transaction_id}
@@ -382,7 +404,7 @@ function BillPaymentDetailDialog({
                         label={t('transactions.amount')}
                         value={payment.amount === null ? null : formatTopUpAmount(payment.amount)}
                     />
-                    <PaymentInfo label={t('common.status')} value={t(`status.${payment.status}`)} />
+                    <PaymentInfo label={t('common.status')} value={null} status={payment.status} />
                     <PaymentInfo
                         label={t('common.created_at')}
                         value={payment.created_at ? formatDateTime(payment.created_at) : null}
@@ -406,7 +428,7 @@ function BillPaymentDetailDialog({
                             className="h-8 gap-1 rounded-[6px] px-2.5 text-[11px]"
                             onClick={() =>
                                 router.post(
-                                    `/billing/transactions/${payment.ledger_transaction_id}/review/complete`,
+                                    `/billing/bill-payments/${payment.id}/review/complete`,
                                     {},
                                     {
                                         preserveScroll: true,
@@ -427,7 +449,7 @@ function BillPaymentDetailDialog({
                             className="h-8 gap-1 rounded-[6px] px-2.5 text-[11px]"
                             onClick={() =>
                                 router.post(
-                                    `/billing/transactions/${payment.ledger_transaction_id}/review/refund`,
+                                    `/billing/bill-payments/${payment.id}/review/refund`,
                                     {},
                                     {
                                         preserveScroll: true,
@@ -469,12 +491,16 @@ function PaymentInfo({
     href,
     copyable = false,
     format,
+    mono = false,
+    status,
 }: {
     label: string;
     value: string | number | null | undefined;
     href?: string;
     copyable?: boolean;
     format?: 'phone';
+    mono?: boolean;
+    status?: string;
 }) {
     const hasValue = value !== null && value !== undefined && value !== '';
     const displayValue = format === 'phone' && hasValue ? formatPhoneInternational(String(value)) : value;
@@ -482,13 +508,19 @@ function PaymentInfo({
     return (
         <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
             <p className="text-xs font-medium text-muted-foreground">{label}</p>
-            <p className="mt-1 flex items-center gap-1.5 break-words text-sm font-semibold text-foreground">
-                {href && hasValue ? (
-                    <Link href={href} className="min-w-0 text-primary underline-offset-4 hover:underline">
+            <p
+                className={`mt-1 flex items-center gap-1.5 break-words text-sm font-semibold text-foreground ${
+                    mono ? 'font-mono' : ''
+                }`}
+            >
+                {status ? (
+                    <StatusBadge status={status} />
+                ) : href && hasValue ? (
+                    <Link href={href} className="min-w-0 font-semibold text-primary underline-offset-4 hover:underline">
                         {displayValue}
                     </Link>
                 ) : (
-                    <span className="min-w-0 break-words">{hasValue ? displayValue : '—'}</span>
+                    <span className="min-w-0 break-words font-semibold">{hasValue ? displayValue : '—'}</span>
                 )}
                 {copyable && hasValue ? <CopyValueButton value={String(value)} label={label} format={format} /> : null}
             </p>

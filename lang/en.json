@@ -67,7 +67,7 @@
         "empty": "No bill payments found.",
         "external_response": "External response",
         "ledger_transaction_id": "Ledger Transaction ID",
-        "order_no": "Order No.",
+        "order_no": "Order no",
         "payment_reference": "Payment reference",
         "product_snapshot": "Product snapshot",
         "search_placeholder": "Search broadband, customer, or order",
