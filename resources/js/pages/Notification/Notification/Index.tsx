@@ -103,9 +103,15 @@ export default function AdminNotificationsIndex({ notifications, categories, fil
             return notification.href;
         }
 
-        return notification.reference_type === 'bill_payment'
-            ? `${notification.href}?status=all&payment_id=${notification.reference_id}`
-            : `${notification.href}?status=all&open_request=${notification.reference_id}`;
+        if (notification.reference_type === 'bill_payment') {
+            return `${notification.href}?status=all&payment_id=${notification.reference_id}`;
+        }
+
+        if (notification.reference_type === 'package_order') {
+            return `${notification.href}?status=all&open_package_order=${notification.reference_id}`;
+        }
+
+        return `${notification.href}?status=all&open_request=${notification.reference_id}`;
     };
 
     const categoryLabel = (category: string): string => {

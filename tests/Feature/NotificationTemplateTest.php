@@ -4,11 +4,13 @@ namespace Tests\Feature;
 
 use App\Enums\BillPaymentNotificationEvent;
 use App\Enums\NotificationTemplateType;
+use App\Enums\PackageOrderNotificationEvent;
 use App\Models\Admin;
 use App\Models\Notification;
 use App\Models\NotificationTemplate;
 use App\Models\User;
 use App\Notifications\FtthBillPaymentStatusNotification;
+use App\Notifications\PackageOrderStatusNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
@@ -199,6 +201,35 @@ class NotificationTemplateTest extends TestCase
                 $notification->content($user)['title'],
             );
         }
+    }
+
+    public function test_package_order_status_notifications_use_their_language_templates(): void
+    {
+        $user = User::factory()->create(['lang' => 'zh']);
+        $template = NotificationTemplate::query()
+            ->where('type', NotificationTemplateType::PackageOrderCompleted->value)
+            ->firstOrFail();
+        $template->update([
+            'title_zh' => '套餐购买成功',
+            'description_zh' => '订单 {order_no} 的 {product_name} 已购买，金额 {amount}。',
+        ]);
+        $notification = new PackageOrderStatusNotification(
+            event: PackageOrderNotificationEvent::Completed,
+            orderId: 7,
+            orderNo: 'PKG-007',
+            transactionNo: 'TX-007',
+            amount: '1200.00',
+            productId: 'PRODUCT-7',
+            productName: 'Home 100M',
+        );
+
+        $this->assertSame(
+            [
+                'title' => '套餐购买成功',
+                'description' => '订单 PKG-007 的 Home 100M 已购买，金额 1,200 Points。',
+            ],
+            $notification->content($user),
+        );
     }
 
     public function test_mobile_inbox_uses_saved_user_language_and_current_template_content(): void

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\BillPayment;
 
+use App\Exceptions\FtthBillPaymentReviewConflict;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
 use App\Enums\WalletActorType;
@@ -61,7 +62,11 @@ class TransactionController extends Controller
         LedgerTransaction $transaction,
         FtthBillPaymentService $payments,
     ): RedirectResponse {
-        $payments->resolveReviewSuccessfully($transaction, (int) $request->user()->getAuthIdentifier());
+        try {
+            $payments->resolveReviewSuccessfully($transaction, (int) $request->user()->getAuthIdentifier());
+        } catch (FtthBillPaymentReviewConflict) {
+            return back()->with('error', 'transactions.review_unavailable');
+        }
 
         return back()->with('success', 'transactions.review_completed');
     }
@@ -71,11 +76,15 @@ class TransactionController extends Controller
         LedgerTransaction $transaction,
         FtthBillPaymentService $payments,
     ): RedirectResponse {
-        $payments->refundReviewPayment(
-            $transaction,
-            $transaction->wallet->user,
-            (int) $request->user()->getAuthIdentifier(),
-        );
+        try {
+            $payments->refundReviewPayment(
+                $transaction,
+                $transaction->wallet->user,
+                (int) $request->user()->getAuthIdentifier(),
+            );
+        } catch (FtthBillPaymentReviewConflict) {
+            return back()->with('error', 'transactions.review_unavailable');
+        }
 
         return back()->with('success', 'transactions.review_refunded');
     }

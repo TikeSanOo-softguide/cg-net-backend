@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\NotificationTemplateType;
+use App\Enums\PackageOrderNotificationEvent;
 use App\Models\NotificationTemplate;
 use Database\Seeders\NotificationTemplateSeeder;
 
@@ -12,6 +13,7 @@ use App\Models\DeviceToken;
 use App\Models\User;
 use App\Notifications\FtthBillPaymentStatusNotification;
 use App\Notifications\FtthBillDueNotification;
+use App\Notifications\PackageOrderStatusNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\Events\NotificationFailed;
 use Kreait\Firebase\Exception\Messaging\NotFound;
@@ -195,5 +197,29 @@ class DeviceTokenTest extends TestCase
             accountNumber: 'CG12345678',
             refundTransactionNo: $refundTransactionNo,
         );
+    }
+
+    public function test_package_order_notification_builds_fcm_payload(): void
+    {
+        $user = User::factory()->create();
+        $notification = new PackageOrderStatusNotification(
+            event: PackageOrderNotificationEvent::Refunded,
+            orderId: 7,
+            orderNo: 'PKG-7',
+            transactionNo: 'TX-7',
+            amount: '1500.00',
+            productId: 'PRODUCT-7',
+            productName: 'Home 100M',
+            refundTransactionNo: 'REFUND-7',
+        );
+
+        $message = $notification->toFcm($user)->toArray();
+
+        $this->assertSame('Package purchase failed', $message['notification']['title']);
+        $this->assertSame('package_order', $message['data']['type']);
+        $this->assertSame('package_order', $message['data']['action_type']);
+        $this->assertSame('7', $message['data']['action_id']);
+        $this->assertSame('refunded', $message['data']['event']);
+        $this->assertSame('REFUND-7', $message['data']['refund_transaction_no']);
     }
 }

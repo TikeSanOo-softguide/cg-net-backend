@@ -9,6 +9,7 @@ use App\Enums\LedgerTransactionType;
 use App\Enums\TransactionIdPrefix;
 use App\Enums\WalletStatus;
 use App\Jobs\ReconcileStuckFtthBillPaymentsJob;
+use App\Models\Admin;
 use App\Models\BillPayment;
 use App\Models\LedgerTransaction;
 use App\Models\User;
@@ -19,6 +20,7 @@ use App\Services\CgNetApiClient;
 use App\Services\FtthBill\FtthBillPaymentService;
 use App\Services\Ledger\TransactionIdGenerator;
 use App\Services\Order\OrderNumberGenerator;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -1250,6 +1252,41 @@ class FtthBillPaymentTest extends TestCase
             $transaction->fresh()->billPayment->external_response['manual_review_reason'],
         );
         Queue::assertNotPushed(ReconcileStuckFtthBillPaymentsJob::class);
+    }
+
+    public function test_admin_sees_a_flash_error_when_refunding_a_payment_that_is_no_longer_under_review(): void
+    {
+        RolePermissionSeeder::sync();
+        $admin = Admin::factory()->create();
+        $admin->givePermissionTo(['billing.view', 'billing.update']);
+        [$user, $wallet] = $this->makePayer(balance: 500);
+        $transaction = LedgerTransaction::factory()->create([
+            'wallet_id' => $wallet->id,
+            'type' => LedgerTransactionType::FtthBill,
+            'status' => LedgerTransactionStatus::Completed,
+            'amount' => 1000,
+            'idempotency_key' => 'ftth-review-already-completed',
+            'transaction_no' => 'FTTH-REVIEW-ALREADY-COMPLETED',
+        ]);
+        BillPayment::query()->create([
+            'ledger_transaction_id' => $transaction->id,
+            'broadband_account_number' => $user->broadband_account_number,
+            'order_no' => 'FTTH-REVIEW-ALREADY-COMPLETED',
+            'service_type' => 'FTTH',
+            'product_id' => 'ftth-product-1',
+            'product_price' => 1000,
+            'status' => BillPaymentStatus::Completed,
+        ]);
+
+        $this->actingAs($admin, 'web')
+            ->post('/billing/transactions/'.$transaction->id.'/review/refund')
+            ->assertRedirect()
+            ->assertSessionHas('error', 'transactions.review_unavailable');
+
+        $this->assertDatabaseMissing('ledger_transactions', [
+            'reversal_of' => $transaction->id,
+            'type' => LedgerTransactionType::Refund->value,
+        ]);
     }
 
     public function test_user_can_pay_another_broadband_account(): void

@@ -45,9 +45,6 @@ return [
         'amount_lookup_endpoint' => env('BILLING_SERVER_AMOUNT_LOOKUP_ENDPOINT', '/bill-details'),
         'extend_plan_endpoint' => env('BILLING_SERVER_EXTEND_PLAN_ENDPOINT', '/extend-plan'),
         'payment_status_endpoint' => env('BILLING_SERVER_PAYMENT_STATUS_ENDPOINT', '/payment-status'),
-        'processing_grace_seconds' => (int) env('BILLING_PROCESSING_GRACE_SECONDS', 60),
-        'processing_retry_seconds' => (int) env('BILLING_PROCESSING_RETRY_SECONDS', 60),
-        'processing_max_age_seconds' => (int) env('BILLING_PROCESSING_MAX_AGE_SECONDS', 900),
     ],
 
     'broadband' => [
@@ -58,8 +55,11 @@ return [
         'url' => env('CG_API_URL'),
         'client_id' => env('CG_API_CLIENT_ID'),
         'client_secret' => env('CG_API_CLIENT_SECRET'),
-        'timeout' => (int) env('CG_API_TIMEOUT', 15),
-        'connect_timeout' => (int) env('CG_API_CONNECT_TIMEOUT', 5),
+        'timeout' => (int) env('CG_API_TIMEOUT', 30),
+        'connect_timeout' => (int) env('CG_API_CONNECT_TIMEOUT', 15),
+        'processing_grace_seconds' => (int) env('CG_API_PROCESSING_GRACE_SECONDS', 60),
+        'processing_retry_seconds' => (int) env('CG_API_PROCESSING_RETRY_SECONDS', 60),
+        'processing_max_age_seconds' => (int) env('CG_API_PROCESSING_MAX_AGE_SECONDS', 600),
     ],
 
     'package_activation' => [

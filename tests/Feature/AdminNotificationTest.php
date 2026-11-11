@@ -334,6 +334,42 @@ class AdminNotificationTest extends TestCase
         ]);
     }
 
+    public function test_opening_a_package_order_marks_its_notification_read_for_current_billing_admin(): void
+    {
+        RolePermissionSeeder::sync();
+        $admin = Admin::factory()->create();
+        $admin->givePermissionTo(['notifications.view', 'billing.view']);
+        $otherAdmin = Admin::factory()->create();
+        $notification = AdminNotification::query()->create([
+            'type' => 'other',
+            'title' => 'Package order requires manual review',
+            'body' => 'A package order needs attention.',
+            'reference_type' => 'package_order',
+            'reference_id' => 42,
+        ]);
+        $notification->admins()->attach([
+            $admin->id => ['is_read' => false],
+            $otherAdmin->id => ['is_read' => false],
+        ]);
+
+        $this->actingAs($admin, 'web')
+            ->putJson('/dashboard/notifications/reference/package_order/42/read')
+            ->assertOk()
+            ->assertJsonPath('marked_read', 1);
+
+        $this->assertDatabaseHas('admin_notification_recipients', [
+            'admin_notification_id' => $notification->id,
+            'admin_id' => $admin->id,
+            'is_read' => true,
+        ]);
+        $this->assertDatabaseHas('admin_notification_recipients', [
+            'admin_notification_id' => $notification->id,
+            'admin_id' => $otherAdmin->id,
+            'is_read' => false,
+            'read_at' => null,
+        ]);
+    }
+
     public function test_opening_a_ledger_snapshot_marks_its_notification_read_for_the_current_admin_only(): void
     {
         RolePermissionSeeder::sync();

@@ -495,6 +495,7 @@ class LedgerHealthReportService
             ])
             ->whereIn('status', [
                 PackageOrderStatus::Processing->value,
+                PackageOrderStatus::Review->value,
                 PackageOrderStatus::Completed->value,
                 PackageOrderStatus::Failed->value,
             ]);
@@ -726,6 +727,11 @@ class LedgerHealthReportService
             PackageOrderStatus::Processing => ! in_array(
                 $ledgerStatus,
                 [LedgerTransactionStatus::Processing, LedgerTransactionStatus::Pending],
+                true,
+            ),
+            PackageOrderStatus::Review => ! in_array(
+                $ledgerStatus,
+                [LedgerTransactionStatus::Review],
                 true,
             ),
             PackageOrderStatus::Failed => $ledgerStatus === LedgerTransactionStatus::Completed,

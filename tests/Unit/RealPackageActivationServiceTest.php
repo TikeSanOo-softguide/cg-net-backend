@@ -88,7 +88,12 @@ class RealPackageActivationServiceTest extends TestCase
             $this->assertSame($errorCode, $result->errorCode);
         }
 
-        foreach ([1, 2, 99] as $errorCode) {
+        $result = $service->activate(new User, new Package, $order);
+        $this->assertTrue($result->success);
+        $this->assertFalse($result->definitiveFailure);
+        $this->assertSame(1, $result->errorCode);
+
+        foreach ([2, 99] as $errorCode) {
             $result = $service->activate(new User, new Package, $order);
             $this->assertFalse($result->success);
             $this->assertFalse($result->definitiveFailure);

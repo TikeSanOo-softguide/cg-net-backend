@@ -5,7 +5,7 @@ namespace App\Enums;
 enum PackageOrderStatus: string
 {
     case Processing = 'processing';
-    case PendingVerification = 'pending_verification';
+    case Review = 'review';
     case Completed = 'completed';
     case Failed = 'failed';
 }

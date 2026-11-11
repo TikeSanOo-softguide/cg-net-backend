@@ -74,6 +74,7 @@ const requestHrefByType = {
     failure_report: '/service-requests/failures',
     relocation_request: '/service-requests/relocations',
     bill_payment: '/billing/bill-payments',
+    package_order: '/billing/package-orders',
 } satisfies Record<
     Exclude<
         AdminNotification['reference_type'],
@@ -84,14 +85,21 @@ const requestHrefByType = {
 
 function isServiceRequestReference(
     referenceType: AdminNotification['reference_type'],
-): referenceType is Exclude<keyof typeof requestHrefByType, 'bill_payment'> {
+): referenceType is Exclude<keyof typeof requestHrefByType, 'bill_payment' | 'package_order'> {
     return (
-        referenceType !== null && referenceType !== 'bill_payment' && Object.hasOwn(requestHrefByType, referenceType)
+        referenceType !== null &&
+        referenceType !== 'bill_payment' &&
+        referenceType !== 'package_order' &&
+        Object.hasOwn(requestHrefByType, referenceType)
     );
 }
 
 function isBillPaymentReference(referenceType: AdminNotification['reference_type']): referenceType is 'bill_payment' {
     return referenceType === 'bill_payment';
+}
+
+function isPackageOrderReference(referenceType: AdminNotification['reference_type']): referenceType is 'package_order' {
+    return referenceType === 'package_order';
 }
 
 const serviceRequestNavigationItems = navigation.flatMap((group) => group.children ?? []);
@@ -339,7 +347,10 @@ export function NotificationDropdown({ unread }: NotificationDropdownProps) {
                                                                       : item.reference_id !== null &&
                                                                           isBillPaymentReference(item.reference_type)
                                                                         ? `${item.href}?status=all&payment_id=${item.reference_id}`
-                                                                        : item.href!;
+                                                                        : item.reference_id !== null &&
+                                                                            isPackageOrderReference(item.reference_type)
+                                                                          ? `${item.href}?status=all&open_package_order=${item.reference_id}`
+                                                                          : item.href!;
 
                                                               if (item.read_at === null) {
                                                                   router.put(
