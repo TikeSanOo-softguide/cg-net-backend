@@ -131,12 +131,13 @@ class DashboardController extends Controller
     }
 
     /**
-     * @return list<array{date: string, topup_usage: int, signups: int, ftth_bill_payments: int, wifi_package_orders: int}>
+     * @return list<array{date: string, topup_usage: int, signups: int, ftth_bill_payments: int, cg_bill_payments: int, wifi_package_orders: int}>
      */
     private function chartSeries(Carbon $start, Carbon $end): array
     {
         $topupUsage = $this->transactionVolumeByDay(LedgerTransactionType::Topup, $start, $end);
         $ftthBillPayments = $this->transactionVolumeByDay(LedgerTransactionType::FtthBill, $start, $end);
+        $cgBillPayments = $this->transactionVolumeByDay(LedgerTransactionType::CgBill, $start, $end);
         $wifiPackageOrders = $this->transactionVolumeByDay(LedgerTransactionType::WifiPackage, $start, $end);
 
         $signups = User::query()
@@ -146,7 +147,7 @@ class DashboardController extends Controller
             ->map(fn(Collection $rows) => $rows->count());
 
         return collect(CarbonPeriod::create($start, $end))
-            ->map(function (Carbon $day) use ($topupUsage, $signups, $ftthBillPayments, $wifiPackageOrders) {
+            ->map(function (Carbon $day) use ($topupUsage, $signups, $ftthBillPayments, $cgBillPayments, $wifiPackageOrders) {
                 $key = $day->toDateString();
 
                 return [
@@ -154,6 +155,7 @@ class DashboardController extends Controller
                     'topup_usage' => (int) ($topupUsage[$key] ?? 0),
                     'signups' => (int) ($signups[$key] ?? 0),
                     'ftth_bill_payments' => (int) ($ftthBillPayments[$key] ?? 0),
+                    'cg_bill_payments' => (int) ($cgBillPayments[$key] ?? 0),
                     'wifi_package_orders' => (int) ($wifiPackageOrders[$key] ?? 0),
                 ];
             })
@@ -161,10 +163,17 @@ class DashboardController extends Controller
             ->all();
     }
 
-    private function transactionVolumeByDay(LedgerTransactionType $type, Carbon $start, Carbon $end): Collection
+    /**
+     * @param  LedgerTransactionType|list<LedgerTransactionType>  $types
+     */
+    private function transactionVolumeByDay(LedgerTransactionType|array $types, Carbon $start, Carbon $end): Collection
     {
+        $values = is_array($types)
+            ? array_map(fn (LedgerTransactionType $type): string => $type->value, $types)
+            : [$types->value];
+
         return LedgerTransaction::query()
-            ->where('type', $type)
+            ->whereIn('type', $values)
             ->where('status', LedgerTransactionStatus::Completed)
             ->whereBetween('created_at', [$start, $end])
             ->selectRaw('DATE(created_at) as date, SUM(amount) as points')

@@ -8,6 +8,7 @@ export type TrendPoint = {
     topup_usage: number;
     signups: number;
     ftth_bill_payments: number;
+    cg_bill_payments: number;
     wifi_package_orders: number;
 };
 

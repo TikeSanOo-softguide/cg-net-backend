@@ -8,7 +8,7 @@ use App\Services\BroarbandAccount\BroadbandApiException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class FtthBillCheckTest extends TestCase
+class InternetBillCheckTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -32,7 +32,7 @@ class FtthBillCheckTest extends TestCase
         $user = User::factory()->create();
 
         $this->withToken($user->createToken('pay-bill')->plainTextToken)
-            ->postJson('/api/ftth-bills/check', [
+            ->postJson('/api/internet-bills/check', [
                 'account_number' => 'FTTH123456789',
                 'service_type' => 'FTTH',
             ])
@@ -58,7 +58,7 @@ class FtthBillCheckTest extends TestCase
         $user = User::factory()->create();
 
         $this->withToken($user->createToken('pay-bill')->plainTextToken)
-            ->postJson('/api/ftth-bills/check', [
+            ->postJson('/api/internet-bills/check', [
                 'account_number' => 'FTTH000',
                 'service_type' => 'CG',
             ])
@@ -76,7 +76,7 @@ class FtthBillCheckTest extends TestCase
         $user = User::factory()->create();
 
         $this->withToken($user->createToken('pay-bill')->plainTextToken)
-            ->postJson('/api/ftth-bills/check', [
+            ->postJson('/api/internet-bills/check', [
                 'account_number' => 'FTTH000',
                 'service_type' => 'FTTH',
             ])

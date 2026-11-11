@@ -9,7 +9,7 @@ use App\Models\Admin;
 use App\Models\Notification;
 use App\Models\NotificationTemplate;
 use App\Models\User;
-use App\Notifications\FtthBillPaymentStatusNotification;
+use App\Notifications\InternetBillPaymentStatusNotification;
 use App\Notifications\PackageOrderStatusNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -164,7 +164,7 @@ class NotificationTemplateTest extends TestCase
             'description_zh' => '账户 {account_number} 已支付 {amount}。',
         ]);
 
-        $notification = new FtthBillPaymentStatusNotification(
+        $notification = new InternetBillPaymentStatusNotification(
             event: BillPaymentNotificationEvent::Completed,
             transactionNo: 'TX-100',
             amount: 1200,
@@ -189,7 +189,7 @@ class NotificationTemplateTest extends TestCase
             [BillPaymentNotificationEvent::Completed, NotificationTemplateType::FtthBillPaymentCompleted],
             [BillPaymentNotificationEvent::Refunded, NotificationTemplateType::FtthBillPaymentRefunded],
         ] as [$event, $templateType]) {
-            $notification = new FtthBillPaymentStatusNotification(
+            $notification = new InternetBillPaymentStatusNotification(
                 event: $event,
                 transactionNo: 'TX-100',
                 amount: 1200,

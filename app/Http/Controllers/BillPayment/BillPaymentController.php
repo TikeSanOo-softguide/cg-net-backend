@@ -94,7 +94,7 @@ class BillPaymentController extends Controller
         return BillPayment::query()
             ->with(['ledgerTransaction.wallet.user:id,name,phone'])
             ->whereHas('ledgerTransaction', function (Builder $query): void {
-                $query->where('type', LedgerTransactionType::FtthBill->value);
+                $query->whereIn('type', LedgerTransactionType::internetBillValues());
             })
             ->when(
                 in_array($filters['status'], array_column(BillPaymentStatus::cases(), 'value'), true),

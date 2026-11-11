@@ -1,18 +1,18 @@
 <?php
 
-namespace App\Http\Controllers\Api\FtthBill;
+namespace App\Http\Controllers\Api\InternetBill;
 
 use App\Enums\LedgerTransactionType;
 use App\Enums\MessageCode;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\FtthBill\PayFtthBillRequest;
-use App\Http\Resources\FtthBillPaymentHistoryDetailResource;
-use App\Http\Resources\FtthBillPaymentHistoryResource;
+use App\Http\Requests\Api\InternetBill\PayInternetBillRequest;
+use App\Http\Resources\InternetBillPaymentHistoryDetailResource;
+use App\Http\Resources\InternetBillPaymentHistoryResource;
 use App\Models\LedgerTransaction;
 use App\Models\User;
 use App\Services\BroarbandAccount\AccountInfoService;
 use App\Services\BroarbandAccount\BroadbandApiException;
-use App\Services\FtthBill\FtthBillPaymentService;
+use App\Services\InternetBill\InternetBillPaymentService;
 use App\Support\ApiMessage;
 use App\Support\CustomerPassword;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,10 +21,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Request;
 
-class FtthBillController extends Controller
+class InternetBillController extends Controller
 {
     public function __construct(
-        protected FtthBillPaymentService $payments,
+        protected InternetBillPaymentService $payments,
         protected AccountInfoService $accountInfo,
     ) {}
 
@@ -88,7 +88,7 @@ class FtthBillController extends Controller
         ]));
     }
 
-    public function pay(PayFtthBillRequest $request): JsonResponse
+    public function pay(PayInternetBillRequest $request): JsonResponse
     {
         $validated = $request->validated();
         /** @var User $user */
@@ -125,10 +125,10 @@ class FtthBillController extends Controller
             ->latest('id')
             ->cursorPaginate($validated['per_page'] ?? 20);
 
-        return FtthBillPaymentHistoryResource::collection($payments);
+        return InternetBillPaymentHistoryResource::collection($payments);
     }
 
-    public function show(Request $request, int $id): FtthBillPaymentHistoryDetailResource|JsonResponse
+    public function show(Request $request, int $id): InternetBillPaymentHistoryDetailResource|JsonResponse
     {
         $accountNumber = $this->boundAccountNumber($request);
 
@@ -147,7 +147,7 @@ class FtthBillController extends Controller
             );
         }
 
-        return new FtthBillPaymentHistoryDetailResource($transaction);
+        return new InternetBillPaymentHistoryDetailResource($transaction);
     }
 
     private function boundAccountNumber(Request $request): ?string
@@ -171,7 +171,7 @@ class FtthBillController extends Controller
     private function historyQuery(string $accountNumber): Builder
     {
         return LedgerTransaction::query()
-            ->where('type', LedgerTransactionType::FtthBill->value)
+            ->whereIn('type', LedgerTransactionType::internetBillValues())
             ->whereHas('billPayment', fn (Builder $query) => $query->where(
                 'broadband_account_number',
                 $accountNumber,

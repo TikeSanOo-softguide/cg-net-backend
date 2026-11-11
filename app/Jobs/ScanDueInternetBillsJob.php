@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Services\Notification\DueFtthBillNotificationService;
+use App\Services\Notification\DueInternetBillNotificationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -10,7 +10,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-class ScanDueFtthBillsJob implements ShouldBeUnique, ShouldQueue
+class ScanDueInternetBillsJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -28,7 +28,7 @@ class ScanDueFtthBillsJob implements ShouldBeUnique, ShouldQueue
         return 'scan-due-ftth-bills';
     }
 
-    public function handle(DueFtthBillNotificationService $service): void
+    public function handle(DueInternetBillNotificationService $service): void
     {
         $service->dispatchDueBills();
     }

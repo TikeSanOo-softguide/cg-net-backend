@@ -78,6 +78,7 @@ class WalletSeeder extends Seeder
 
         $linkedCounts = [
             LedgerTransactionType::FtthBill->value => 0,
+            LedgerTransactionType::CgBill->value => 0,
             LedgerTransactionType::WifiPackage->value => 0,
         ];
 
@@ -225,7 +226,9 @@ class WalletSeeder extends Seeder
             BillPaymentStatus::Failed,
         ]);
 
-        $linkedCounts[LedgerTransactionType::FtthBill->value]++;
+        $serviceType = fake()->randomElement(['FTTH', 'CG']);
+        $ledgerType = LedgerTransactionType::forInternetServiceType($serviceType);
+        $linkedCounts[$ledgerType->value]++;
 
         $status = match ($billOutcome) {
             BillPaymentStatus::Processing => LedgerTransactionStatus::Processing,
@@ -237,7 +240,7 @@ class WalletSeeder extends Seeder
             wallet: $wallet->fresh(),
             amount: $debitAmount,
             contraAccount: LedgerAccountCode::FtthClearing,
-            type: LedgerTransactionType::FtthBill,
+            type: $ledgerType,
             status: $status,
             idempotencyKey: (string) Str::uuid(),
             actorType: WalletActorType::User,
@@ -245,7 +248,7 @@ class WalletSeeder extends Seeder
             transactionNo: $this->nextTransactionNo($wallet),
         );
 
-        $this->createBillPayment($transaction, $accountNumber, $billOutcome);
+        $this->createBillPayment($transaction, $accountNumber, $billOutcome, $serviceType);
 
         if ($billOutcome === BillPaymentStatus::Failed) {
             $this->refund($wallet->fresh(), $user, $debitAmount, $transaction);
@@ -361,7 +364,7 @@ class WalletSeeder extends Seeder
     private function refund(Wallet $wallet, User $user, int $amount, LedgerTransaction $reversedTransaction): void
     {
         $contra = match ($reversedTransaction->type) {
-            LedgerTransactionType::FtthBill => LedgerAccountCode::FtthClearing,
+            LedgerTransactionType::FtthBill, LedgerTransactionType::CgBill => LedgerAccountCode::FtthClearing,
             LedgerTransactionType::WifiPackage => LedgerAccountCode::PackageRevenue,
             default => LedgerAccountCode::AdjustmentExpense,
         };
@@ -384,12 +387,13 @@ class WalletSeeder extends Seeder
         LedgerTransaction $transaction,
         string $accountNumber,
         BillPaymentStatus $status,
+        string $serviceType = 'FTTH',
     ): BillPayment {
         return BillPayment::query()->create([
             'ledger_transaction_id' => $transaction->id,
             'broadband_account_number' => $accountNumber,
             'order_no' => 'FTTH-SEED-'.$transaction->id,
-            'service_type' => 'FTTH',
+            'service_type' => $serviceType,
             'product_id' => 'seed-ftth-product',
             'product_price' => $transaction->amount,
             'snapshot' => [
@@ -398,7 +402,7 @@ class WalletSeeder extends Seeder
                 'product_price' => $transaction->amount,
                 'month_cycle' => 1,
                 'month_cycle_unit' => '月',
-                'product_line' => 'FTTH',
+                'product_line' => $serviceType,
                 'product_speed' => '100M',
             ],
             'status' => $status,
@@ -428,7 +432,7 @@ class WalletSeeder extends Seeder
     private function pickWeightedType(Collection $available): LedgerTransactionType
     {
         $weight = fn (LedgerTransactionType $type): int => match ($type) {
-            LedgerTransactionType::FtthBill => 4,
+            LedgerTransactionType::FtthBill, LedgerTransactionType::CgBill => 4,
             LedgerTransactionType::WifiPackage => 4,
             LedgerTransactionType::Topup => 2,
             LedgerTransactionType::Adjustment => 1,

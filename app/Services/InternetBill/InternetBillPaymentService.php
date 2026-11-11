@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Services\FtthBill;
+namespace App\Services\InternetBill;
 
-use App\Exceptions\FtthBillPaymentReviewConflict;
+use App\Exceptions\InternetBillPaymentReviewConflict;
 use App\Enums\BillPaymentNotificationEvent;
 use App\Enums\BillPaymentStatus;
 use App\Enums\LedgerAccountCode;
@@ -12,13 +12,13 @@ use App\Enums\MessageCode;
 use App\Enums\TransactionIdPrefix;
 use App\Enums\WalletActorType;
 use App\Enums\WalletStatus;
-use App\Jobs\ReconcileStuckFtthBillPaymentsJob;
+use App\Jobs\ReconcileStuckInternetBillPaymentsJob;
 use App\Models\AdminNotification;
 use App\Models\BillPayment;
 use App\Models\LedgerTransaction;
 use App\Models\User;
 use App\Models\Wallet;
-use App\Notifications\FtthBillPaymentStatusNotification;
+use App\Notifications\InternetBillPaymentStatusNotification;
 use App\Services\AdminNotification\AdminNotificationDelivery;
 use App\Services\Billing\BillingServerClient;
 use App\Services\BroarbandAccount\AccountInfoService;
@@ -37,7 +37,7 @@ use Illuminate\Validation\ValidationException;
 use RuntimeException;
 use Throwable;
 
-class FtthBillPaymentService
+class InternetBillPaymentService
 {
     private const RECHARGE_REJECTED_MESSAGE = 'CG-Net rejected the recharge request.';
     private const RECHARGE_UNKNOWN_MESSAGE = 'CG-Net did not confirm the recharge.';
@@ -94,7 +94,7 @@ class FtthBillPaymentService
         if ($existing) {
             if (
                 (int) $existing->wallet_id !== (int) $wallet->id ||
-                $existing->type !== LedgerTransactionType::FtthBill
+                ! $existing->type?->isInternetBill()
             ) {
                 return $this->coded(409, MessageCode::FtthCannotReplay);
             }
@@ -160,7 +160,7 @@ class FtthBillPaymentService
 
             if (
                 (int) $existing->wallet_id !== (int) $wallet->id ||
-                $existing->type !== LedgerTransactionType::FtthBill
+                ! $existing->type?->isInternetBill()
             ) {
                 return $this->coded(409, MessageCode::FtthCannotReplay);
             }
@@ -172,7 +172,7 @@ class FtthBillPaymentService
 
         $billPayment = $pendingTransaction->billPayment;
         if (!$billPayment) {
-            throw new RuntimeException('FTTH payment details were not saved with the ledger debit.');
+            throw new RuntimeException('Internet payment details were not saved with the ledger debit.');
         }
 
         $billingResponse = $this->submitRecharge($billPayment);
@@ -293,7 +293,7 @@ class FtthBillPaymentService
      */
     public function reconcile(LedgerTransaction $transaction): void
     {
-        if ($transaction->type !== LedgerTransactionType::FtthBill) {
+        if (! $transaction->type?->isInternetBill()) {
             return;
         }
 
@@ -367,7 +367,7 @@ class FtthBillPaymentService
             $user = $wallet?->user;
 
             if (!$wallet || !$user) {
-                Log::error('Unable to refund rejected FTTH bill payment during reconciliation.', [
+                Log::error('Unable to refund rejected Internet bill payment during reconciliation.', [
                     'ledger_transaction_id' => $transaction->id,
                     'transaction_no' => $transaction->transaction_no,
                     'wallet_id' => $transaction->wallet_id,
@@ -399,12 +399,12 @@ class FtthBillPaymentService
 
         $retrySeconds = (int) config('services.cg_api.processing_retry_seconds', 60);
 
-        ReconcileStuckFtthBillPaymentsJob::dispatch($transaction->id)->delay(now()->addSeconds(max(1, $retrySeconds)));
+        ReconcileStuckInternetBillPaymentsJob::dispatch($transaction->id)->delay(now()->addSeconds(max(1, $retrySeconds)));
     }
 
     public function handleReconciliationFailure(LedgerTransaction $transaction, Throwable $exception): void
     {
-        Log::error('Failed to reconcile FTTH bill payment.', [
+        Log::error('Failed to reconcile Internet bill payment.', [
             'ledger_transaction_id' => $transaction->id,
             'transaction_no' => $transaction->transaction_no,
             'exception' => $exception->getMessage(),
@@ -485,7 +485,7 @@ class FtthBillPaymentService
             $processing = LedgerTransaction::query()
                 ->with('billPayment')
                 ->where('wallet_id', $lockedWallet->id)
-                ->where('type', LedgerTransactionType::FtthBill)
+                ->whereIn('type', LedgerTransactionType::internetBillValues())
                 ->whereIn('status', [LedgerTransactionStatus::Processing, LedgerTransactionStatus::Review])
                 ->whereHas('billPayment', function ($query) use ($accountNumber, $serviceType): void {
                     $query
@@ -506,14 +506,14 @@ class FtthBillPaymentService
                 wallet: $lockedWallet,
                 amount: $amount,
                 contraAccount: LedgerAccountCode::FtthClearing,
-                type: LedgerTransactionType::FtthBill,
+                type: LedgerTransactionType::forInternetServiceType($serviceType),
                 status: LedgerTransactionStatus::Processing,
                 idempotencyKey: $idempotencyKey,
                 actorType: WalletActorType::User,
                 actorId: $user->id,
                 ipAddress: $ipAddress,
                 userAgent: $userAgent,
-                note: 'FTTH bill ' . $accountNumber,
+                note: 'Internet bill ' . $accountNumber,
                 transactionIdPrefix: TransactionIdPrefix::forPayBill($serviceType),
             );
 
@@ -610,7 +610,7 @@ class FtthBillPaymentService
 
         $delaySeconds = (int) config('services.cg_api.processing_grace_seconds', 60);
 
-        ReconcileStuckFtthBillPaymentsJob::dispatch($transaction->id)->delay(now()->addSeconds(max(1, $delaySeconds)));
+        ReconcileStuckInternetBillPaymentsJob::dispatch($transaction->id)->delay(now()->addSeconds(max(1, $delaySeconds)));
 
         $this->notifyUser(
             $transaction->wallet?->user,
@@ -652,7 +652,7 @@ class FtthBillPaymentService
                 'exception' => $exception->getMessage(),
             ];
         } catch (Throwable $exception) {
-            Log::error('Unexpected FTTH recharge submission failure.', [
+            Log::error('Unexpected Internet recharge submission failure.', [
                 'bill_payment_id' => $payment->id,
                 'ledger_transaction_id' => $payment->ledger_transaction_id,
                 'order_no' => $payment->order_no,
@@ -808,9 +808,9 @@ class FtthBillPaymentService
 
         $notification = AdminNotification::query()->create([
             'type' => 'other',
-            'title' => 'FTTH payment requires manual review',
+            'title' => 'Internet payment requires manual review',
             'body' => sprintf(
-                'FTTH payment %s for account %s could not be confirmed automatically.',
+                'Internet payment %s for account %s could not be confirmed automatically.',
                 $transaction->transaction_no,
                 $accountNumber,
             ),
@@ -883,15 +883,15 @@ class FtthBillPaymentService
             $locked = LedgerTransaction::query()->whereKey($transaction->id)->lockForUpdate()->firstOrFail();
 
             if (
-                $locked->type !== LedgerTransactionType::FtthBill ||
+                ! $locked->type->isInternetBill() ||
                 $locked->status !== LedgerTransactionStatus::Review
             ) {
-                throw new FtthBillPaymentReviewConflict('The FTTH payment is no longer awaiting review.');
+                throw new InternetBillPaymentReviewConflict('The Internet payment is no longer awaiting review.');
             }
 
             $billPayment = $locked->billPayment()->first();
             if ($billPayment === null) {
-                throw new RuntimeException('The FTTH bill payment record is missing.');
+                throw new RuntimeException('The Internet bill payment record is missing.');
             }
 
             $externalResponse = is_array($billPayment->external_response) ? $billPayment->external_response : [];
@@ -928,11 +928,11 @@ class FtthBillPaymentService
         $transaction->loadMissing(['billPayment', 'wallet.user']);
 
         if (
-            $transaction->type !== LedgerTransactionType::FtthBill ||
+            ! $transaction->type->isInternetBill() ||
             $transaction->status !== LedgerTransactionStatus::Review ||
             $transaction->billPayment === null
         ) {
-            throw new FtthBillPaymentReviewConflict('The FTTH payment is no longer awaiting review.');
+            throw new InternetBillPaymentReviewConflict('The Internet payment is no longer awaiting review.');
         }
 
         $accountNumber = (string) $transaction->billPayment->broadband_account_number;
@@ -989,11 +989,11 @@ class FtthBillPaymentService
             }
 
             if ($requireManualReview && $lockedDebit->status !== LedgerTransactionStatus::Review) {
-                throw new FtthBillPaymentReviewConflict('The FTTH payment is no longer awaiting review.');
+                throw new InternetBillPaymentReviewConflict('The Internet payment is no longer awaiting review.');
             }
 
             if ($lockedDebit->status === LedgerTransactionStatus::Completed) {
-                throw new RuntimeException('Cannot refund a completed FTTH bill payment.');
+                throw new RuntimeException('Cannot refund a completed Internet bill payment.');
             }
 
             if ($lockedDebit->status === LedgerTransactionStatus::Failed) {
@@ -1055,7 +1055,7 @@ class FtthBillPaymentService
         ?string $refundTransactionNo = null,
     ): void {
         $user?->notify(
-            new FtthBillPaymentStatusNotification(
+            new InternetBillPaymentStatusNotification(
                 event: $event,
                 transactionNo: $transaction->transaction_no,
                 amount: (float) $transaction->amount,
@@ -1121,7 +1121,7 @@ class FtthBillPaymentService
 
         $status = $existing->status;
 
-        if ($existing->type === LedgerTransactionType::FtthBill && $status === LedgerTransactionStatus::Completed) {
+        if ($existing->type?->isInternetBill() && $status === LedgerTransactionStatus::Completed) {
             return $this->coded(200, MessageCode::FtthAlreadyProcessed, [
                 'success' => true,
                 'data' => $this->paymentResponseData(
@@ -1132,7 +1132,7 @@ class FtthBillPaymentService
             ]);
         }
 
-        if ($existing->type === LedgerTransactionType::FtthBill && $status === LedgerTransactionStatus::Failed) {
+        if ($existing->type?->isInternetBill() && $status === LedgerTransactionStatus::Failed) {
             $refund = LedgerTransaction::query()
                 ->where('reversal_of', $existing->id)
                 ->where('type', LedgerTransactionType::Refund)
@@ -1146,7 +1146,7 @@ class FtthBillPaymentService
             ]);
         }
 
-        if ($existing->type === LedgerTransactionType::FtthBill && $status === LedgerTransactionStatus::Processing) {
+        if ($existing->type?->isInternetBill() && $status === LedgerTransactionStatus::Processing) {
             return $this->coded(202, MessageCode::FtthAlreadyProcessing, [
                 'success' => true,
                 'data' => $this->paymentResponseData(
@@ -1157,7 +1157,7 @@ class FtthBillPaymentService
             ]);
         }
 
-        if ($existing->type === LedgerTransactionType::FtthBill && $status === LedgerTransactionStatus::Review) {
+        if ($existing->type?->isInternetBill() && $status === LedgerTransactionStatus::Review) {
             return $this->coded(202, MessageCode::FtthProcessing, [
                 'success' => true,
                 'data' => $this->paymentResponseData($existing, $accountNumber, LedgerTransactionStatus::Review->value),

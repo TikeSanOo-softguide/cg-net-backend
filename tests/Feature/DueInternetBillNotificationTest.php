@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\AnnouncementType;
 use App\Enums\NotificationCategory;
-use App\Jobs\SendFtthBillDueNotificationJob;
+use App\Jobs\SendInternetBillDueNotificationJob;
 use App\Models\Announcement;
 use App\Models\DeviceToken;
 use App\Models\Notification;
@@ -12,8 +12,8 @@ use App\Models\NotificationTemplate;
 use App\Models\Promotion;
 use App\Models\User;
 use App\Enums\NotificationTemplateType;
-use App\Notifications\FtthBillDueNotification;
-use App\Services\Notification\DueFtthBillNotificationService;
+use App\Notifications\InternetBillDueNotification;
+use App\Services\Notification\DueInternetBillNotificationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
-class DueFtthBillNotificationTest extends TestCase
+class DueInternetBillNotificationTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -62,17 +62,17 @@ class DueFtthBillNotificationTest extends TestCase
         ]);
         Queue::fake();
 
-        $count = app(DueFtthBillNotificationService::class)->dispatchDueBills();
+        $count = app(DueInternetBillNotificationService::class)->dispatchDueBills();
 
         $this->assertSame(1, $count);
-        Queue::assertPushed(SendFtthBillDueNotificationJob::class, 1);
+        Queue::assertPushed(SendInternetBillDueNotificationJob::class, 1);
         Queue::assertPushed(
-            SendFtthBillDueNotificationJob::class,
-            fn(SendFtthBillDueNotificationJob $job): bool => $job->userId === $firstUser->id,
+            SendInternetBillDueNotificationJob::class,
+            fn(SendInternetBillDueNotificationJob $job): bool => $job->userId === $firstUser->id,
         );
         Queue::assertNotPushed(
-            SendFtthBillDueNotificationJob::class,
-            fn(SendFtthBillDueNotificationJob $job): bool => $job->userId === $outsideWindowUser->id,
+            SendInternetBillDueNotificationJob::class,
+            fn(SendInternetBillDueNotificationJob $job): bool => $job->userId === $outsideWindowUser->id,
         );
         $this->assertCount(1, Http::recorded());
         Http::assertSent(function (Request $request): bool {
@@ -88,7 +88,7 @@ class DueFtthBillNotificationTest extends TestCase
         DeviceToken::query()->create(['user_id' => $user->id, 'token' => 'device-token']);
         NotificationFacade::fake();
 
-        $job = new SendFtthBillDueNotificationJob(
+        $job = new SendInternetBillDueNotificationJob(
             userId: (int) $user->id,
             accountNumber: 'CG12345678',
             dueDate: '2026-10-11',
@@ -109,11 +109,11 @@ class DueFtthBillNotificationTest extends TestCase
         $this->assertSame('bill_alert', $stored->templateable->type->value);
         $this->assertSame('CG12345678', $stored->template_data['account_number']);
         $this->assertSame(1, Notification::query()->where('user_id', $user->id)->count());
-        NotificationFacade::assertSentTo($user, FtthBillDueNotification::class, 1);
+        NotificationFacade::assertSentTo($user, InternetBillDueNotification::class, 1);
         NotificationFacade::assertSentTo(
             $user,
-            FtthBillDueNotification::class,
-            fn(FtthBillDueNotification $sent): bool => $sent->title === 'FTTH 账单即将到期' &&
+            InternetBillDueNotification::class,
+            fn(InternetBillDueNotification $sent): bool => $sent->title === '互联网账单即将到期' &&
                 str_contains($sent->body, 'CG12345678'),
         );
     }
@@ -123,7 +123,7 @@ class DueFtthBillNotificationTest extends TestCase
         $user = User::factory()->create(['broadband_account_number' => 'CG12345678']);
         NotificationFacade::fake();
 
-        (new SendFtthBillDueNotificationJob(
+        (new SendInternetBillDueNotificationJob(
             userId: (int) $user->id,
             accountNumber: 'CG12345678',
             dueDate: '2026-10-11',
@@ -143,7 +143,7 @@ class DueFtthBillNotificationTest extends TestCase
     {
         $user = User::factory()->create(['broadband_account_number' => 'CG12345678']);
         NotificationFacade::fake();
-        $job = new SendFtthBillDueNotificationJob(
+        $job = new SendInternetBillDueNotificationJob(
             userId: (int) $user->id,
             accountNumber: 'CG12345678',
             dueDate: '2026-10-11',
@@ -155,7 +155,7 @@ class DueFtthBillNotificationTest extends TestCase
         $job->handle();
 
         $this->assertNotNull(Notification::query()->where('action_id', 'bill-token-added-later')->value('sent_at'));
-        NotificationFacade::assertSentTo($user, FtthBillDueNotification::class, 1);
+        NotificationFacade::assertSentTo($user, InternetBillDueNotification::class, 1);
     }
 
     public function test_notification_endpoints_are_scoped_to_the_authenticated_user(): void
@@ -182,7 +182,7 @@ class DueFtthBillNotificationTest extends TestCase
             ->assertJsonPath('data.0.category', 'announcement')
             ->assertJsonPath('data.0.action_type', 'ftth_bill')
             ->assertJsonPath('data.0.action_id', 'bill-123')
-            ->assertJsonPath('data.0.title', 'FTTH bill due soon')
+            ->assertJsonPath('data.0.title', 'Internet bill due soon')
             ->assertJsonPath(
                 'data.0.body',
                 'Your bill for account ' .
@@ -288,8 +288,8 @@ class DueFtthBillNotificationTest extends TestCase
     public function test_fcm_data_contains_action_metadata_for_deep_linking(): void
     {
         $user = User::factory()->create();
-        $notification = new FtthBillDueNotification(
-            title: 'FTTH bill due soon',
+        $notification = new InternetBillDueNotification(
+            title: 'Internet bill due soon',
             body: 'Your bill for account CG12345678 is due soon.',
             actionId: 'bill-123',
         );
@@ -298,7 +298,7 @@ class DueFtthBillNotificationTest extends TestCase
 
         $this->assertSame('ftth_bill', $message['data']['action_type']);
         $this->assertSame('bill-123', $message['data']['action_id']);
-        $this->assertSame('FTTH bill due soon', $message['webpush']['notification']['title']);
+        $this->assertSame('Internet bill due soon', $message['webpush']['notification']['title']);
         $this->assertSame('user_notification', $message['webpush']['notification']['data']['type']);
         $this->assertSame('bill-123', $message['webpush']['notification']['data']['action_id']);
     }

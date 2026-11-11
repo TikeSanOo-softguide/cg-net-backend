@@ -86,6 +86,7 @@ type AdjustmentSummary = {
 type TransactionOverview = {
     topup: TransactionSummary;
     ftth_bill: TransactionSummary;
+    cg_bill: TransactionSummary;
     wifi_package: TransactionSummary;
     refund: TransactionSummary;
     adjustment: AdjustmentSummary;
@@ -224,6 +225,9 @@ export function CustomerProfileCard({
                 </Fact>
                 <Fact icon={ReceiptTextIcon} label={t('wallet.ftth_bill')} iconClassName="text-red-600">
                     <TransactionValue summary={transactionOverview.ftth_bill} color="debit" t={t} />
+                </Fact>
+                <Fact icon={ReceiptTextIcon} label={t('wallet.cg_bill')} iconClassName="text-red-600">
+                    <TransactionValue summary={transactionOverview.cg_bill} color="debit" t={t} />
                 </Fact>
                 <Fact icon={WifiIcon} label={t('wallet.wifi_package')} iconClassName="text-red-600">
                     <TransactionValue summary={transactionOverview.wifi_package} color="debit" t={t} />

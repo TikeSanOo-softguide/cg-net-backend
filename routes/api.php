@@ -10,7 +10,7 @@ use App\Http\Controllers\Api\ChatFlow\ChatFlowController;
 use App\Http\Controllers\Api\Contact\ContactController;
 use App\Http\Controllers\Api\Customer\ProfileController;
 use App\Http\Controllers\Api\DeviceToken\DeviceTokenController;
-use App\Http\Controllers\Api\FtthBill\FtthBillController;
+use App\Http\Controllers\Api\InternetBill\InternetBillController;
 use App\Http\Controllers\Api\Gallery\GalleryController;
 use App\Http\Controllers\Api\News\NewsController;
 use App\Http\Controllers\Api\Notification\AnnouncementController;
@@ -133,13 +133,13 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
     Route::post('/packages/buy', [BuyPackageController::class, 'buy']);
 
-    Route::prefix('ftth-bills')->group(function () {
-        Route::post('/check', [FtthBillController::class, 'check']);
-        Route::post('/pay', [FtthBillController::class, 'pay'])->middleware('throttle:ftth-bill-pay');
-        Route::get('/history', [FtthBillController::class, 'history']);
-        Route::get('/history/{id}', [FtthBillController::class, 'show'])->whereNumber('id');
-        Route::get('/pending-slip', [FtthBillController::class, 'pendingSlip']);
-        Route::get('/paid-slips', [FtthBillController::class, 'paidSlips']);
+    Route::prefix('internet-bills')->group(function () {
+        Route::post('/check', [InternetBillController::class, 'check']);
+        Route::post('/pay', [InternetBillController::class, 'pay'])->middleware('throttle:ftth-bill-pay');
+        Route::get('/history', [InternetBillController::class, 'history']);
+        Route::get('/history/{id}', [InternetBillController::class, 'show'])->whereNumber('id');
+        Route::get('/pending-slip', [InternetBillController::class, 'pendingSlip']);
+        Route::get('/paid-slips', [InternetBillController::class, 'paidSlips']);
     });
 
     Route::prefix('relocation-requests')->group(function () {

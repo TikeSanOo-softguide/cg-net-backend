@@ -438,7 +438,8 @@ class LedgerHealthReportService
                 continue;
             }
 
-            if ($transaction->type !== LedgerTransactionType::FtthBill) {
+            $expectedType = LedgerTransactionType::forInternetServiceType((string) ($payment->service_type ?: 'FTTH'));
+            if ($transaction->type !== $expectedType) {
                 $rows[] = $this->mismatchRow(
                     id: 'bill-'.$payment->id.'-type',
                     source: 'bill_payment',
@@ -660,12 +661,12 @@ class LedgerHealthReportService
         }
 
         $billsQuery = LedgerTransaction::query()
-            ->where('type', LedgerTransactionType::FtthBill)
+            ->whereIn('type', LedgerTransactionType::internetBillValues())
             ->whereIn('status', $orphanStatuses)
             ->whereDoesntHave('billPayment')
             ->with('wallet.user:id,name');
         $this->applyWindow($billsQuery, 'ledger_transactions.created_at');
-        $bills = $billsQuery->latest('id')->get(['id', 'wallet_id', 'transaction_no', 'created_at']);
+        $bills = $billsQuery->latest('id')->get(['id', 'wallet_id', 'transaction_no', 'type', 'created_at']);
 
         foreach ($bills as $transaction) {
             $rows[] = $this->mismatchRow(
@@ -676,7 +677,9 @@ class LedgerHealthReportService
                 customerId: $transaction->wallet?->user_id !== null ? (int) $transaction->wallet->user_id : null,
                 customer: $transaction->wallet?->user?->name,
                 issue: 'missing_source',
-                detail: LedgerTransactionType::FtthBill->value,
+                detail: $transaction->type instanceof LedgerTransactionType
+                    ? $transaction->type->value
+                    : (string) $transaction->type,
                 createdAt: $transaction->created_at?->toISOString(),
             );
         }

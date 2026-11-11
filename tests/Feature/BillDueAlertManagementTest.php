@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\NotificationActionType;
 use App\Enums\NotificationCategory;
-use App\Jobs\SendFtthBillDueNotificationJob;
+use App\Jobs\SendInternetBillDueNotificationJob;
 use App\Models\Admin;
 use App\Models\DeviceToken;
 use App\Models\Notification;
@@ -224,8 +224,8 @@ class BillDueAlertManagementTest extends TestCase
             ->assertJsonPath('message', 'Bill due alert queued for delivery.');
 
         Queue::assertPushed(
-            SendFtthBillDueNotificationJob::class,
-            fn (SendFtthBillDueNotificationJob $job): bool => $job->userId === $user->id &&
+            SendInternetBillDueNotificationJob::class,
+            fn (SendInternetBillDueNotificationJob $job): bool => $job->userId === $user->id &&
                 $job->accountNumber === 'ACCOUNT-123' &&
                 $job->actionId === 'ACCOUNT-123:bill-456',
         );
@@ -259,8 +259,8 @@ class BillDueAlertManagementTest extends TestCase
             ->assertJsonPath('message', 'Bill due alert queued for delivery.');
 
         Queue::assertPushed(
-            SendFtthBillDueNotificationJob::class,
-            fn (SendFtthBillDueNotificationJob $job): bool => $job->userId === $user->id &&
+            SendInternetBillDueNotificationJob::class,
+            fn (SendInternetBillDueNotificationJob $job): bool => $job->userId === $user->id &&
                 $job->actionId === 'ACCOUNT-123:bill-456',
         );
     }
