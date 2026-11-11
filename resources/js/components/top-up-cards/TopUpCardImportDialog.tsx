@@ -15,8 +15,8 @@ export type TopUpCardCsvPreview = {
         amount_counts: { amount: number; count: number }[];
         total_cards: number;
         generate_date: string | null;
-        activated_at: string;
-        expires_at: string;
+        activated_at: string | null;
+        expires_at: string | null;
     }[];
     total_rows: number;
     total_summaries: number;

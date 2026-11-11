@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->unsignedInteger('total_value')->default(0);
             $table->unsignedInteger('quantity')->default(0);
             $table->string('status', 16)->default('active')->index();
-            $table->date('expires_at')->index();
+            $table->date('expires_at')->nullable()->index();
             $table->json('metadata')->nullable();
             $table->timestamps();
         });

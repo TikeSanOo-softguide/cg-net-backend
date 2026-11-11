@@ -143,11 +143,27 @@ export default function CardImportPage({ batchPage, batches, importProgress, fil
             }
 
             pollInFlight.current = true;
+            let completedImport = false;
             router.reload({
-                only: ['batchPage', 'batches', 'importProgress'],
+                only: ['importProgress'],
                 preserveUrl: true,
+                onSuccess: (page) => {
+                    const progress = page.props.importProgress;
+                    completedImport =
+                        typeof progress === 'object' &&
+                        progress !== null &&
+                        'status' in progress &&
+                        progress.status === 'completed';
+                },
                 onFinish: () => {
                     pollInFlight.current = false;
+
+                    if (completedImport) {
+                        router.reload({
+                            only: ['batchPage', 'batches'],
+                            preserveUrl: true,
+                        });
+                    }
                 },
             });
         };

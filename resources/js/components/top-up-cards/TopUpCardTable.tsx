@@ -87,6 +87,7 @@ export const TopUpCardTable = memo(function TopUpCardTable({
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">{t('common.all')}</SelectItem>
+                                    <SelectItem value="pending">{t('status.pending')}</SelectItem>
                                     <SelectItem value="active">{t('status.active')}</SelectItem>
                                     <SelectItem value="used">{t('status.used')}</SelectItem>
                                     <SelectItem value="blocked">{t('status.blocked')}</SelectItem>

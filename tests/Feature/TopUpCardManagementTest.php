@@ -7,8 +7,8 @@ use App\Http\Controllers\TopUpCard\TopUpCardController;
 use App\Jobs\GenerateTopUpCardsJob;
 use App\Jobs\ImportGeneratedTopUpCardsJob;
 use App\Models\Admin;
-use App\Models\Office;
 use App\Models\Batch;
+use App\Models\Office;
 use App\Models\TopUpCard;
 use App\Models\User;
 use App\Support\AppPermissions;
@@ -35,7 +35,7 @@ class TopUpCardManagementTest extends TestCase
     {
         parent::setUp();
 
-        \Illuminate\Support\Facades\Cache::flush();
+        Cache::flush();
         RolePermissionSeeder::sync();
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
@@ -76,7 +76,7 @@ class TopUpCardManagementTest extends TestCase
             ->get('/top-up-cards/batch')
             ->assertOk()
             ->assertInertia(
-                fn(Assert $page) => $page
+                fn (Assert $page) => $page
                     ->component('TopUpCards/Generate')
                     ->where('amounts', [50, 100, 150, 500]),
             );
@@ -140,7 +140,12 @@ class TopUpCardManagementTest extends TestCase
         $this->assertSame(5, TopUpCard::query()->where('amount', 3000)->count());
         $this->assertSame(2, TopUpCard::query()->where('amount', 10000)->count());
         $this->assertTrue(
-            $cards->every(fn(TopUpCard $card): bool => $card->generate_date !== null && $card->activated_at !== null),
+            $cards->every(
+                fn (TopUpCard $card): bool => $card->generate_date !== null &&
+                    $card->status === TopUpCardStatus::Pending &&
+                    $card->activated_at === null &&
+                    $card->expires_at === null,
+            ),
         );
         $this->assertSame(1, Batch::query()->count());
     }
@@ -158,7 +163,7 @@ class TopUpCardManagementTest extends TestCase
             ->post('/top-up-cards/cards/import', [
                 'file' => UploadedFile::fake()->createWithContent(
                     'cards.csv',
-                    "serial_no,pin,amount,expires_at\n{$serialNo},1234567890123456,1000,2030-12-31\n",
+                    "serial_no,pin,amount,generate_date\n{$serialNo},1234567890123456,1000,2026-11-03\n",
                 ),
             ])
             ->assertSessionHasNoErrors()
@@ -168,13 +173,78 @@ class TopUpCardManagementTest extends TestCase
         Queue::pushedJobs()[ImportGeneratedTopUpCardsJob::class][0]['job']->handle();
 
         $card = TopUpCard::query()->where('serial_no', $serialNo)->firstOrFail();
-        $this->assertSame(TopUpCardStatus::Active, $card->status);
+        $this->assertSame(TopUpCardStatus::Pending, $card->status);
+        $this->assertNull($card->activated_at);
+        $this->assertNull($card->expires_at);
         $this->assertSame($office->id, $card->office_id);
         $this->assertDatabaseHas('batches', [
             'id' => $card->batch_id,
             'quantity' => 1,
             'total_value' => 1000,
+            'status' => 'pending',
+            'expires_at' => null,
         ]);
+
+        $this->actingAs($actor, 'web')
+            ->get('/top-up-cards/card-import')
+            ->assertOk()
+            ->assertInertia(
+                fn (Assert $page) => $page
+                    ->component('TopUpCards/CardImport')
+                    ->where('batchPage.data.0.id', $card->batch_id)
+                    ->where('batchPage.data.0.batch_no', $card->batch->batch_no),
+            );
+    }
+
+    public function test_pending_import_batch_can_be_activated_with_two_year_validity(): void
+    {
+        $actor = Admin::factory()->create();
+        $actor->assignRole(AppPermissions::SuperAdmin);
+        $this->travelTo(now()->setDate(2026, 11, 10)->startOfDay());
+        $batch = Batch::factory()->create([
+            'status' => 'pending',
+            'expires_at' => null,
+        ]);
+        $cards = TopUpCard::factory()->count(2)->create([
+            'batch_id' => $batch->id,
+            'status' => TopUpCardStatus::Pending,
+            'activated_at' => null,
+            'expires_at' => null,
+        ]);
+
+        $this->actingAs($actor, 'web')
+            ->patch('/top-up-cards/batches/'.$batch->id.'/activate')
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('batches', [
+            'id' => $batch->id,
+            'status' => 'active',
+            'expires_at' => '2028-11-10 00:00:00',
+        ]);
+
+        foreach ($cards as $card) {
+            $this->assertDatabaseHas('top_up_card', [
+                'id' => $card->id,
+                'status' => 'active',
+                'activated_at' => '2026-11-10',
+                'expires_at' => '2028-11-10',
+            ]);
+        }
+
+        $this->actingAs($actor, 'web')
+            ->patch('/top-up-cards/batches/'.$batch->id.'/activate')
+            ->assertRedirect();
+    }
+
+    public function test_blocked_batches_cannot_be_activated(): void
+    {
+        $actor = Admin::factory()->create();
+        $actor->assignRole(AppPermissions::SuperAdmin);
+        $batch = Batch::factory()->create(['status' => 'blocked']);
+
+        $this->actingAs($actor, 'web')
+            ->patch('/top-up-cards/batches/'.$batch->id.'/activate')
+            ->assertStatus(409);
     }
 
     public function test_admins_can_import_csv_cards_while_preserving_generation_flow(): void
@@ -187,9 +257,9 @@ class TopUpCardManagementTest extends TestCase
         $office11 = $this->makeOffice('Office 11', 'Second Street', '11');
 
         $csv = implode("\n", [
-            'serial_no , pin , amount, expires_at',
-            '2609111128316006,1234567890123456,1000,2030-12-31',
-            '2609110128112982,2234567890123456,2500,2031-01-15',
+            'serial_no , pin , amount, generate_date',
+            '2609111128316006,1234567890123456,1000,2026-11-03',
+            '2609110128112982,2234567890123456,2500,2026-11-04',
         ]);
 
         $this->actingAs($actor, 'web')
@@ -209,7 +279,7 @@ class TopUpCardManagementTest extends TestCase
         $this->assertDatabaseHas('top_up_card', [
             'serial_no' => '2609111128316006',
             'amount' => 1000,
-            'status' => TopUpCardStatus::Active,
+            'status' => TopUpCardStatus::Pending,
             'redeemed_at' => null,
             'redeemed_by' => null,
             'office_id' => $office31->id,
@@ -220,7 +290,7 @@ class TopUpCardManagementTest extends TestCase
         $this->assertDatabaseHas('top_up_card', [
             'serial_no' => '2609110128112982',
             'amount' => 2500,
-            'status' => TopUpCardStatus::Active,
+            'status' => TopUpCardStatus::Pending,
             'redeemed_at' => null,
             'redeemed_by' => null,
             'office_id' => $office11->id,
@@ -259,7 +329,7 @@ class TopUpCardManagementTest extends TestCase
         $duplicatePin = '1234567890123456';
         TopUpCard::factory()->create(['pin' => TopUpCardPin::hash($duplicatePin)]);
         $initialBatchCount = Batch::query()->count();
-        $csv = "serial_no,pin,amount,expires_at\n2609111128316007,{$duplicatePin},1000,2030-12-31\n";
+        $csv = "serial_no,pin,amount,generate_date\n2609111128316007,{$duplicatePin},1000,2026-11-03\n";
 
         $this->actingAs($actor, 'web')
             ->post('/top-up-cards/cards/import', [
@@ -282,9 +352,9 @@ class TopUpCardManagementTest extends TestCase
         $this->assertSame($initialBatchCount, Batch::query()->count());
         $this->assertSame(
             'csv.import_errors.duplicate_pin',
-            Cache::get('top_up_card_generation:' . $job->token)['message'],
+            Cache::get('top_up_card_generation:'.$job->token)['message'],
         );
-        $this->assertSame(['line' => 2], Cache::get('top_up_card_generation:' . $job->token)['message_replace']);
+        $this->assertSame(['line' => 2], Cache::get('top_up_card_generation:'.$job->token)['message_replace']);
     }
 
     public function test_csv_import_rejects_blank_values_in_any_column_before_creating_a_batch(): void
@@ -293,7 +363,7 @@ class TopUpCardManagementTest extends TestCase
         $actor->assignRole(AppPermissions::SuperAdmin);
         Storage::fake('local');
         Queue::fake();
-        $csv = "serial_no,pin,amount,expires_at\nTOPUP-BLANK-COLUMN-0001,1234567890123456,1000,\n";
+        $csv = "serial_no,pin,amount,generate_date\nTOPUP-BLANK-COLUMN-0001,1234567890123456,1000,\n";
 
         $this->actingAs($actor, 'web')
             ->post('/top-up-cards/cards/import', [
@@ -326,7 +396,7 @@ class TopUpCardManagementTest extends TestCase
         TopUpCard::factory()->create(['serial_no' => '2609111128316006']);
         $initialBatchCount = Batch::query()->count();
         $csv = implode("\n", [
-            'serial_no,pin,amount,expires_at',
+            'serial_no,pin,amount,generate_date',
             '2609111128316006,5234567890123456,1000,2030-12-31',
             '2609111128316007,6234567890123456,invalid,2030-12-31',
         ]);
@@ -351,14 +421,19 @@ class TopUpCardManagementTest extends TestCase
         $this->assertSame($initialBatchCount, Batch::query()->count());
     }
 
-    public function test_csv_import_rolls_back_batch_when_card_insert_fails(): void
+    public function test_csv_import_rolls_back_batch_and_all_cards_when_any_chunk_fails(): void
     {
+        config(['top_up_cards.chunk_size' => 1]);
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
         Storage::fake('local');
         Queue::fake();
         $this->makeOffice('Office 31', 'Main Street', '31');
-        $csv = "serial_no,pin,amount,expires_at\n2609111128316008,3234567890123456,1000,2030-12-31\n";
+        $csv = implode("\n", [
+            'serial_no,pin,amount,generate_date',
+            '2609111128316008,3234567890123456,1000,2030-12-31',
+            '2609111128316009,4234567890123456,1000,2030-12-31',
+        ]);
 
         $this->actingAs($actor, 'web')
             ->post('/top-up-cards/cards/import', [
@@ -369,13 +444,14 @@ class TopUpCardManagementTest extends TestCase
 
         $job = Queue::pushedJobs()[ImportGeneratedTopUpCardsJob::class][0]['job'];
         DB::unprepared(
-            "CREATE TRIGGER fail_top_up_card_insert BEFORE INSERT ON top_up_card BEGIN SELECT RAISE(ABORT, 'simulated insert failure'); END",
+            "CREATE TRIGGER fail_top_up_card_insert BEFORE INSERT ON top_up_card WHEN NEW.serial_no = '2609111128316009' BEGIN SELECT RAISE(ABORT, 'simulated insert failure'); END",
         );
 
         try {
             $job->handle();
             $this->fail('The simulated card insert failure should abort the import.');
-        } catch (\Throwable) {
+        } catch (\Throwable $exception) {
+            $job->failed($exception);
         }
 
         $this->assertSame(0, Batch::query()->count());
@@ -417,7 +493,7 @@ class TopUpCardManagementTest extends TestCase
             ->get('/top-up-cards/batch?search=AAAA&status=valid&amount=5000')
             ->assertOk()
             ->assertInertia(
-                fn(Assert $page) => $page
+                fn (Assert $page) => $page
                     ->component('TopUpCards/Generate')
                     ->has('cards.data', 1)
                     ->where('cards.data.0.id', $match->id),
@@ -456,7 +532,7 @@ class TopUpCardManagementTest extends TestCase
             ->get('/top-up-cards/batch')
             ->assertOk()
             ->assertInertia(
-                fn(Assert $page) => $page
+                fn (Assert $page) => $page
                     ->component('TopUpCards/Generate')
                     ->where('offices', [
                         ['id' => $existingOffice->id, 'name' => 'Existing Office', 'code' => '11'],
@@ -475,7 +551,7 @@ class TopUpCardManagementTest extends TestCase
             ->get('/top-up-cards/offices')
             ->assertOk()
             ->assertInertia(
-                fn(Assert $page) => $page
+                fn (Assert $page) => $page
                     ->component('TopUpCards/Office')
                     ->where('offices.data.0.name_en', 'Old office')
                     ->where('offices.data.0.address_en', 'Old street')
@@ -528,7 +604,7 @@ class TopUpCardManagementTest extends TestCase
         $card = TopUpCard::factory()->create();
 
         $this->actingAs($actor, 'web')
-            ->patch('/top-up-cards/' . $card->id . '/void')
+            ->patch('/top-up-cards/'.$card->id.'/void')
             ->assertRedirect();
 
         $this->assertSame(TopUpCardStatus::Blocked, $card->fresh()->status);
@@ -592,7 +668,7 @@ class TopUpCardManagementTest extends TestCase
             ->get('/top-up-cards/card-import')
             ->assertOk()
             ->assertInertia(
-                fn(Assert $page) => $page
+                fn (Assert $page) => $page
                     ->component('TopUpCards/CardImport')
                     ->has('batchPage.data', 2)
                     ->where('batchPage.data.0.id', $active->batch_id)
@@ -614,7 +690,7 @@ class TopUpCardManagementTest extends TestCase
             ->get('/top-up-cards/card-import?status=blocked')
             ->assertOk()
             ->assertInertia(
-                fn(Assert $page) => $page
+                fn (Assert $page) => $page
                     ->component('TopUpCards/CardImport')
                     ->has('batchPage.data', 1)
                     ->where('batchPage.data.0.id', $blockedBatch->id)
@@ -629,13 +705,17 @@ class TopUpCardManagementTest extends TestCase
         $batch = Batch::factory()->create(['status' => 'active']);
 
         $this->actingAs($actor, 'web')
-            ->patch('/top-up-cards/batches/' . $batch->id . '/void')
+            ->patch('/top-up-cards/batches/'.$batch->id.'/void')
             ->assertRedirect();
 
         $this->assertDatabaseHas('batches', [
             'id' => $batch->id,
             'status' => 'blocked',
         ]);
+
+        $this->actingAs($actor, 'web')
+            ->patch('/top-up-cards/batches/'.$batch->id.'/void')
+            ->assertRedirect();
     }
 
     public function test_office_assign_csv_import_rejects_existing_active_cards(): void
@@ -661,7 +741,7 @@ class TopUpCardManagementTest extends TestCase
             'batch_id' => $batch->id,
         ]);
 
-        $csv = "serial_no,pin,amount,expires_at\n2609111128886006,1234567890123456,1000,{$card->expires_at->toDateString()}\n";
+        $csv = "serial_no,pin,amount,generate_date\n2609111128886006,1234567890123456,1000,2026-11-03\n";
 
         $this->actingAs($actor, 'web')
             ->post('/top-up-cards/cards/import', [
@@ -705,7 +785,7 @@ class TopUpCardManagementTest extends TestCase
             ->get('/top-up-cards/redeem-history')
             ->assertOk()
             ->assertInertia(
-                fn(Assert $page) => $page
+                fn (Assert $page) => $page
                     ->component('TopUpCards/History')
                     ->has('cards.data', 1)
                     ->where('cards.data.0.id', $redeemed->id)
@@ -716,7 +796,7 @@ class TopUpCardManagementTest extends TestCase
         $this->actingAs($actor, 'web')
             ->get('/top-up-cards/redeem-history?search=Aung')
             ->assertOk()
-            ->assertInertia(fn(Assert $page) => $page->component('TopUpCards/History')->has('cards.data', 1));
+            ->assertInertia(fn (Assert $page) => $page->component('TopUpCards/History')->has('cards.data', 1));
     }
 
     public function test_card_history_can_filter_by_office_and_returns_office_name_and_code(): void
@@ -729,10 +809,10 @@ class TopUpCardManagementTest extends TestCase
         TopUpCard::factory()->create(['office_id' => $otherOffice->id]);
 
         $this->actingAs($actor, 'web')
-            ->get('/top-up-cards/card-history?office=' . $office->id)
+            ->get('/top-up-cards/card-history?office='.$office->id)
             ->assertOk()
             ->assertInertia(
-                fn(Assert $page) => $page
+                fn (Assert $page) => $page
                     ->component('TopUpCards/CardHistory')
                     ->has('cards.data', 1)
                     ->where('cards.data.0.id', $matchingCard->id)
@@ -744,21 +824,25 @@ class TopUpCardManagementTest extends TestCase
             );
     }
 
-    public function test_card_history_stats_do_not_include_a_pending_status(): void
+    public function test_card_history_can_filter_and_count_pending_cards(): void
     {
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
         TopUpCard::factory()->create(['status' => TopUpCardStatus::Active]);
+        $pending = TopUpCard::factory()->create(['status' => TopUpCardStatus::Pending]);
 
         $this->actingAs($actor, 'web')
             ->get('/top-up-cards/card-history?status=pending')
             ->assertOk()
             ->assertInertia(
-                fn(Assert $page) => $page
+                fn (Assert $page) => $page
                     ->component('TopUpCards/CardHistory')
-                    ->where('filters.status', '')
+                    ->where('filters.status', 'pending')
+                    ->has('cards.data', 1)
+                    ->where('cards.data.0.id', $pending->id)
                     ->where('stats', [
-                        'total' => 1,
+                        'total' => 2,
+                        'pending' => 1,
                         'active' => 1,
                         'used' => 0,
                         'expired' => 0,
