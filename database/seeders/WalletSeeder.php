@@ -275,6 +275,7 @@ class WalletSeeder extends Seeder
 
         $orderOutcome = fake()->randomElement([
             PackageOrderStatus::Processing,
+            PackageOrderStatus::Review,
             PackageOrderStatus::Completed,
             PackageOrderStatus::Failed,
         ]);
@@ -282,7 +283,7 @@ class WalletSeeder extends Seeder
         $linkedCounts[LedgerTransactionType::WifiPackage->value]++;
 
         $status = match ($orderOutcome) {
-            PackageOrderStatus::Processing => LedgerTransactionStatus::Processing,
+            PackageOrderStatus::Processing, PackageOrderStatus::Review => LedgerTransactionStatus::Processing,
             PackageOrderStatus::Completed => LedgerTransactionStatus::Completed,
             PackageOrderStatus::Failed => LedgerTransactionStatus::Processing,
         };

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import { EyeIcon, PackageIcon, SearchIcon, XIcon } from 'lucide-react';
+import { CheckCircle2Icon, EyeIcon, PackageIcon, RotateCcwIcon, SearchIcon, XIcon } from 'lucide-react';
 
 import { BackButton } from '@/components/BackButton';
 import { CopyValueButton } from '@/components/CopyValueButton';
@@ -12,18 +12,21 @@ import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useTranslation } from '@/hooks/useTranslation';
+import { useCan } from '@/hooks/useCan';
 import { useReturnTo } from '@/hooks/useReturnTo';
+import { useTranslation } from '@/hooks/useTranslation';
 import { toolbarInputClass } from '@/components/data-table/styles';
 import { formatTopUpAmount } from '@/lib/top-up-cards';
 import { formatDateTime } from '@/lib/utils';
 
 type PackageOrder = {
     id: number;
+    notification_unread: boolean;
     customer: { id: number | null; name: string | null; phone: string | null };
     package: string | null;
     transaction_no: string | null;
@@ -73,12 +76,15 @@ export default function PackageOrdersIndex({
     open_order_id,
 }: Props) {
     const { t } = useTranslation();
+    const can = useCan();
+    const canResolveReview = can('billing.update');
     const returnTo = useReturnTo('');
     const [search, setSearch] = useState(initialSearch);
     const [packageId, setPackageId] = useState(filters.package_id ? String(filters.package_id) : '');
     const [status, setStatus] = useState(filters.status);
     const [selected, setSelected] = useState<PackageOrder | null>(null);
     const debounce = useRef<number>(0);
+    const markingReadOrderIds = useRef(new Set<number>());
 
     useEffect(() => setSearch(initialSearch), [initialSearch]);
     useEffect(() => setPackageId(filters.package_id ? String(filters.package_id) : ''), [filters.package_id]);
@@ -89,6 +95,22 @@ export default function PackageOrdersIndex({
         const order = orders.data.find((row) => row.id === open_order_id);
         if (order) setSelected(order);
     }, [open_order_id, orders.data]);
+    useEffect(() => {
+        if (!selected?.notification_unread || markingReadOrderIds.current.has(selected.id)) {
+            return;
+        }
+
+        markingReadOrderIds.current.add(selected.id);
+        router.put(
+            `/dashboard/notifications/reference/package_order/${selected.id}/read`,
+            {},
+            {
+                preserveState: true,
+                preserveScroll: true,
+                onFinish: () => markingReadOrderIds.current.delete(selected.id),
+            },
+        );
+    }, [selected?.id, selected?.notification_unread]);
     useEffect(() => () => window.clearTimeout(debounce.current), []);
 
     const visitOrders = (nextSearch: string, nextPackageId: string, nextStatus: string) => {
@@ -102,6 +124,20 @@ export default function PackageOrdersIndex({
             },
             { preserveState: true, preserveScroll: true, replace: true },
         );
+    };
+
+    const closeOrderDetails = () => {
+        setSelected(null);
+
+        const currentUrl = new URL(window.location.href);
+        if (!currentUrl.searchParams.has('open_package_order')) return;
+
+        currentUrl.searchParams.delete('open_package_order');
+        router.visit(`${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
     };
 
     const updateFilter = (field: 'package_id' | 'status', value: string) => {
@@ -182,7 +218,14 @@ export default function PackageOrdersIndex({
         {
             id: 'status',
             header: t('common.status'),
-            cell: (row) => <StatusBadge status={row.status} />,
+            cell: (row) => (
+                <span className="inline-flex items-center gap-2">
+                    <StatusBadge status={row.status} />
+                    {row.notification_unread ? (
+                        <span className="size-2 rounded-full bg-danger" title={t('admin_notifications.unread')} />
+                    ) : null}
+                </span>
+            ),
             searchValue: (row) => row.status,
         },
         {
@@ -298,7 +341,7 @@ export default function PackageOrdersIndex({
             <FormDialog
                 open={selected !== null}
                 onOpenChange={(open) => {
-                    if (!open) setSelected(null);
+                    if (!open) closeOrderDetails();
                 }}
                 title={
                     selected
@@ -421,6 +464,51 @@ export default function PackageOrdersIndex({
                                 />
                             </div>
                         </div>
+                        {canResolveReview && selected.status === 'review' ? (
+                            <div className="flex shrink-0 justify-end gap-2 border-t border-border/70 px-4 py-3 sm:px-5">
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    className="h-8 gap-1 rounded-[6px] px-2.5 text-[11px]"
+                                    onClick={() =>
+                                        router.post(
+                                            `/billing/package-orders/${selected.id}/review/complete`,
+                                            {},
+                                            {
+                                                preserveScroll: true,
+                                                onSuccess: (page) => {
+                                                    if (page.props.flash.success) closeOrderDetails();
+                                                },
+                                            },
+                                        )
+                                    }
+                                >
+                                    <CheckCircle2Icon className="size-3.5" />
+                                    {t('transactions.review.complete')}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-8 gap-1 rounded-[6px] px-2.5 text-[11px]"
+                                    onClick={() =>
+                                        router.post(
+                                            `/billing/package-orders/${selected.id}/review/refund`,
+                                            {},
+                                            {
+                                                preserveScroll: true,
+                                                onSuccess: (page) => {
+                                                    if (page.props.flash.success) closeOrderDetails();
+                                                },
+                                            },
+                                        )
+                                    }
+                                >
+                                    <RotateCcwIcon className="size-3.5" />
+                                    {t('transactions.review.refund')}
+                                </Button>
+                            </div>
+                        ) : null}
                     </div>
                 ) : null}
             </FormDialog>

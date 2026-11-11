@@ -21,13 +21,19 @@ class RealPackageActivationService implements PackageActivationServiceInterface
         $productPrice = $packageOrder->product_price;
 
         if (
-            preg_match('/^G\d{7}$/D', $account) !== 1
-            || preg_match('/^\d{6}$/D', $password) !== 1
-            || $productId === ''
-            || ! is_numeric($productPrice)
-            || (float) $productPrice <= 0
+            preg_match('/^G\d{7}$/D', $account) !== 1 ||
+            preg_match('/^\d{6}$/D', $password) !== 1 ||
+            $productId === '' ||
+            !is_numeric($productPrice) ||
+            (float) $productPrice <= 0
         ) {
-            return PackageActivationResult::failed('The package activation request is invalid.');
+            return PackageActivationResult::failed(
+                'The package activation request is invalid.',
+                externalResponse: [
+                    'outcome' => 'rejected',
+                    'message' => 'The package activation request is invalid.',
+                ],
+            );
         }
 
         try {
@@ -38,36 +44,90 @@ class RealPackageActivationService implements PackageActivationServiceInterface
                 'ProductID' => $productId,
                 'ProductPrice' => (float) $productPrice,
             ]);
-        } catch (ConnectionException) {
-            return PackageActivationResult::pending('The provider did not confirm the activation.');
+        } catch (ConnectionException $exception) {
+            return PackageActivationResult::pending(
+                'The provider did not confirm the activation.',
+                externalResponse: [
+                    'outcome' => 'unknown',
+                    'message' => 'The provider did not confirm the activation.',
+                    'exception' => $exception->getMessage(),
+                ],
+            );
         } catch (RuntimeException $exception) {
             report($exception);
 
-            return PackageActivationResult::failed('Package activation is not configured.');
-        }
-
-        if (! $response->successful()) {
-            return PackageActivationResult::pending('The provider did not confirm the activation.');
+            return PackageActivationResult::failed(
+                'Package activation is not configured.',
+                externalResponse: [
+                    'outcome' => 'rejected',
+                    'message' => 'Package activation is not configured.',
+                    'exception' => $exception->getMessage(),
+                ],
+            );
         }
 
         $payload = $response->json();
+        $responseDetails = [
+            'http_status' => $response->status(),
+            'payload' => $payload,
+        ];
 
-        if (
-            ! is_array($payload)
-            || ! array_key_exists('ErrCode', $payload)
-            || ! is_int($payload['ErrCode'])
-            || ! is_string($payload['Message'] ?? null)
-        ) {
-            return PackageActivationResult::pending('The provider returned an invalid activation response.');
+        if (!$response->successful()) {
+            return PackageActivationResult::pending(
+                'The provider did not confirm the activation.',
+                externalResponse: [
+                    'outcome' => 'unknown',
+                    'message' => 'The provider did not confirm the activation.',
+                    ...$responseDetails,
+                ],
+            );
         }
 
+        if (
+            !is_array($payload) ||
+            !array_key_exists('ErrCode', $payload) ||
+            !is_int($payload['ErrCode']) ||
+            !is_string($payload['Message'] ?? null)
+        ) {
+            return PackageActivationResult::pending(
+                'The provider returned an invalid activation response.',
+                externalResponse: [
+                    'outcome' => 'unknown',
+                    'message' => 'The provider returned an invalid activation response.',
+                    ...$responseDetails,
+                ],
+            );
+        }
+
+        $externalResponse = [
+            'outcome' => match ($payload['ErrCode']) {
+                0, 1 => 'success',
+                100, 500 => 'rejected',
+                default => 'unknown',
+            },
+            'http_status' => $response->status(),
+            'payload' => $payload,
+        ];
+
         return match ($payload['ErrCode']) {
-            0 => PackageActivationResult::success($account, $password),
-            100 => PackageActivationResult::failed('The provider rejected the product ID.', 100),
-            500 => PackageActivationResult::failed('The provider rejected the activation request.', 500),
-            1 => PackageActivationResult::pending('The provider reports that this order may already be open.', 1),
-            2 => PackageActivationResult::pending('The provider reports that this account already exists.', 2),
-            default => PackageActivationResult::pending('The provider returned an unrecognized activation result.', $payload['ErrCode']),
+            0 => PackageActivationResult::success($account, $password, externalResponse: $externalResponse),
+            100 => PackageActivationResult::failed('The provider rejected the product ID.', 100, $externalResponse),
+            500 => PackageActivationResult::failed(
+                'The provider rejected the activation request.',
+                500,
+                $externalResponse,
+            ),
+            1 => PackageActivationResult::success($account, $password, 1, $externalResponse),
+            2 => PackageActivationResult::pending(
+                'The provider reports that this account already exists.',
+                2,
+                $externalResponse,
+            ),
+            default => PackageActivationResult::pending(
+                'The provider returned an unrecognized activation result.',
+                $payload['ErrCode'],
+                $externalResponse,
+            ),
         };
     }
 }

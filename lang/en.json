@@ -1150,6 +1150,9 @@
         "failure_reason": "Failure / reconciliation note",
         "order_details": "Package order details",
         "order_no": "Order no",
+        "review_completed": "Package order marked successful.",
+        "review_unavailable": "This package order is no longer awaiting review. Refresh the order and try again.",
+        "review_refunded": "Package order refunded.",
         "search_placeholder": "Search order ID, customer, or transaction",
         "service_details": "Activated service",
         "snapshot": "Order snapshot",
@@ -2149,6 +2152,7 @@
         },
         "review_completed": "FTTH payment marked successful.",
         "review_refunded": "FTTH payment refunded.",
+        "review_unavailable": "This FTTH payment is no longer awaiting review. Refresh the payment and try again.",
         "type": "Transaction type",
         "types": {
             "adjustment": "Adjustment",

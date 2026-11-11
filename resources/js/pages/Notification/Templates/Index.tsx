@@ -15,7 +15,13 @@ import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 
 type NotificationTemplateType =
-    'bill_alert' | 'ftth_bill_payment_processing' | 'ftth_bill_payment_completed' | 'ftth_bill_payment_refunded';
+    | 'bill_alert'
+    | 'ftth_bill_payment_processing'
+    | 'ftth_bill_payment_completed'
+    | 'ftth_bill_payment_refunded'
+    | 'package_order_processing'
+    | 'package_order_completed'
+    | 'package_order_refunded';
 
 type NotificationTemplate = {
     id: number;

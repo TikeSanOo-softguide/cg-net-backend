@@ -2,6 +2,7 @@
 
 namespace App\Services\FtthBill;
 
+use App\Exceptions\FtthBillPaymentReviewConflict;
 use App\Enums\BillPaymentNotificationEvent;
 use App\Enums\BillPaymentStatus;
 use App\Enums\LedgerAccountCode;
@@ -302,8 +303,8 @@ class FtthBillPaymentService
             return;
         }
 
-        $graceSeconds = (int) config('services.billing.processing_grace_seconds', 120);
-        $maxAgeSeconds = (int) config('services.billing.processing_max_age_seconds', 3600);
+        $graceSeconds = (int) config('services.cg_api.processing_grace_seconds', 60);
+        $maxAgeSeconds = (int) config('services.cg_api.processing_max_age_seconds', 900);
 
         if ($transaction->created_at?->gt(now()->subSeconds($graceSeconds))) {
             return;
@@ -396,7 +397,7 @@ class FtthBillPaymentService
             return;
         }
 
-        $retrySeconds = (int) config('services.billing.processing_retry_seconds', 60);
+        $retrySeconds = (int) config('services.cg_api.processing_retry_seconds', 60);
 
         ReconcileStuckFtthBillPaymentsJob::dispatch($transaction->id)->delay(now()->addSeconds(max(1, $retrySeconds)));
     }
@@ -607,7 +608,7 @@ class FtthBillPaymentService
             ],
         );
 
-        $delaySeconds = (int) config('services.billing.processing_grace_seconds', 120);
+        $delaySeconds = (int) config('services.cg_api.processing_grace_seconds', 60);
 
         ReconcileStuckFtthBillPaymentsJob::dispatch($transaction->id)->delay(now()->addSeconds(max(1, $delaySeconds)));
 
@@ -885,7 +886,7 @@ class FtthBillPaymentService
                 $locked->type !== LedgerTransactionType::FtthBill ||
                 $locked->status !== LedgerTransactionStatus::Review
             ) {
-                return false;
+                throw new FtthBillPaymentReviewConflict('The FTTH payment is no longer awaiting review.');
             }
 
             $billPayment = $locked->billPayment()->first();
@@ -931,7 +932,7 @@ class FtthBillPaymentService
             $transaction->status !== LedgerTransactionStatus::Review ||
             $transaction->billPayment === null
         ) {
-            throw new RuntimeException('Only an FTTH payment under review can be refunded.');
+            throw new FtthBillPaymentReviewConflict('The FTTH payment is no longer awaiting review.');
         }
 
         $accountNumber = (string) $transaction->billPayment->broadband_account_number;
@@ -942,7 +943,14 @@ class FtthBillPaymentService
         $billingResponse['resolved_by'] = $adminId;
         $billingResponse['resolved_at'] = now()->toISOString();
 
-        return $this->refundWalletBalance($transaction, $transaction->wallet, $user, $accountNumber, $billingResponse);
+        return $this->refundWalletBalance(
+            $transaction,
+            $transaction->wallet,
+            $user,
+            $accountNumber,
+            $billingResponse,
+            requireManualReview: true,
+        );
     }
 
     /**
@@ -954,6 +962,7 @@ class FtthBillPaymentService
         User $user,
         string $accountNumber,
         array $billingResponse,
+        bool $requireManualReview = false,
     ): LedgerTransaction {
         $refunded = false;
 
@@ -963,6 +972,7 @@ class FtthBillPaymentService
             $user,
             $accountNumber,
             $billingResponse,
+            $requireManualReview,
             &$refunded,
         ) {
             /** @var LedgerTransaction $lockedDebit */
@@ -976,6 +986,10 @@ class FtthBillPaymentService
 
             if ($existingRefund) {
                 return $existingRefund;
+            }
+
+            if ($requireManualReview && $lockedDebit->status !== LedgerTransactionStatus::Review) {
+                throw new FtthBillPaymentReviewConflict('The FTTH payment is no longer awaiting review.');
             }
 
             if ($lockedDebit->status === LedgerTransactionStatus::Completed) {

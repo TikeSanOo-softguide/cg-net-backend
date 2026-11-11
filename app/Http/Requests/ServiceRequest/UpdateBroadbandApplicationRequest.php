@@ -31,7 +31,7 @@ class UpdateBroadbandApplicationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:30'],
             'service_type' => ['required', 'string', 'in:FTTH,CG'],
             'package_detail' => ['required', 'array'],
             'package_detail.product_id' => ['required', 'string', 'max:64'],

@@ -26,6 +26,7 @@ export type AdminNotification = {
         | 'ledger_health_snapshot_daily'
         | 'ledger_health_snapshot_manual'
         | 'bill_payment'
+        | 'package_order'
         | null;
     reference_id: number | null;
     read_at: string | null;

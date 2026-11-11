@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
         'user_id',
         'broadband_account_number',
         'ticket_number',
+        'contact_name',
         'current_address',
         'new_address',
         'preferred_date',

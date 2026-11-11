@@ -144,6 +144,12 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 ->middleware('can:' . AppPermissions::SystemExport)
                 ->name('transactions.export');
             Route::get('/package-orders', [PackageOrderController::class, 'index'])->name('package-orders.index');
+            Route::post('/package-orders/{packageOrder}/review/complete', [PackageOrderController::class, 'resolveReview'])
+                ->middleware('can:billing.update')
+                ->name('package-orders.review.complete');
+            Route::post('/package-orders/{packageOrder}/review/refund', [PackageOrderController::class, 'refundReview'])
+                ->middleware('can:billing.update')
+                ->name('package-orders.review.refund');
         });
 
     Route::prefix('regions')

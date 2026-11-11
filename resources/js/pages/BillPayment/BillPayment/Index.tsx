@@ -410,7 +410,9 @@ function BillPaymentDetailDialog({
                                     {},
                                     {
                                         preserveScroll: true,
-                                        onSuccess: () => onOpenChange(false),
+                                        onSuccess: (page) => {
+                                            if (page.props.flash.success) onOpenChange(false);
+                                        },
                                     },
                                 )
                             }
@@ -429,7 +431,9 @@ function BillPaymentDetailDialog({
                                     {},
                                     {
                                         preserveScroll: true,
-                                        onSuccess: () => onOpenChange(false),
+                                        onSuccess: (page) => {
+                                            if (page.props.flash.success) onOpenChange(false);
+                                        },
                                     },
                                 )
                             }

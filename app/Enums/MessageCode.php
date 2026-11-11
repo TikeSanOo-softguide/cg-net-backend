@@ -81,6 +81,7 @@ enum MessageCode: string
     case PkgKeyUsed = 'MSG-PKG-011';
     case PkgKeyMismatch = 'MSG-PKG-012';
     case PkgCannotReplay = 'MSG-PKG-013';
+    case PkgManualReview = 'MSG-PKG-014';
 
     case PwdChanged = 'MSG-PWD-001';
     case PwdChangeExpired = 'MSG-PWD-002';
@@ -138,6 +139,7 @@ enum MessageCode: string
             self::PkgAlreadyProcessed,
             self::PkgProcessing,
             self::PkgReconciliationPending,
+            self::PkgManualReview,
             self::FtthProcessing,
             self::FtthAlreadyProcessed,
             self::FtthAlreadyProcessing,
@@ -233,6 +235,7 @@ enum MessageCode: string
             self::PkgActivationRefunded => 'Package activation failed. Wallet was refunded.',
             self::PkgProcessing => 'This package purchase is already being processed.',
             self::PkgReconciliationPending => 'Package activation is awaiting provider reconciliation. The wallet debit remains on hold.',
+            self::PkgManualReview => 'Package activation requires manual review. The wallet debit remains on hold.',
             self::PkgInsufficientBalance => 'Insufficient wallet balance.',
             self::PkgKeyUsed => 'This idempotency key was already used.',
             self::PkgKeyMismatch => 'This idempotency key was already used for a different package.',

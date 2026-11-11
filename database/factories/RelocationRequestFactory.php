@@ -23,6 +23,7 @@ class RelocationRequestFactory extends Factory
             'current_address' => MyanmarFake::address(),
             'new_address' => MyanmarFake::address(),
             'preferred_date' => fake()->dateTimeBetween('now', '+30 days'),
+            'contact_name' => MyanmarFake::name(),
             'phone' => MyanmarFake::phone(),
             'details' => fake()->optional()->sentence(),
             'status' => fake()->randomElement(RequestStatus::cases()),

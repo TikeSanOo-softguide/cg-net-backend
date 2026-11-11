@@ -49,6 +49,33 @@ class NotificationTemplateSeeder extends Seeder
                 'description_my' => 'အကောင့် {account_number} အတွက် {amount} ဘေလ်ပေးချေမှု မအောင်မြင်ပါ။ ငွေပမာဏကို သင့်ပိုက်ဆံအိတ်သို့ ပြန်အမ်းပြီးပါပြီ။',
                 'description_zh' => '账户 {account_number} 的 {amount} 付款未能完成，款项已退还至您的钱包。',
             ],
+            [
+                'type' => NotificationTemplateType::PackageOrderProcessing,
+                'title_en' => 'Package purchase processing',
+                'title_my' => 'ပက်ကေ့ချ်ဝယ်ယူမှုကို လုပ်ဆောင်နေပါသည်',
+                'title_zh' => '套餐购买处理中',
+                'description_en' => 'Your purchase of {product_name} ({amount}) is being processed. Order: {order_no}.',
+                'description_my' => '{product_name} ({amount}) ဝယ်ယူမှုကို လုပ်ဆောင်နေပါသည်။ အော်ဒါ: {order_no}။',
+                'description_zh' => '您购买的 {product_name}（{amount}）正在处理中。订单：{order_no}。',
+            ],
+            [
+                'type' => NotificationTemplateType::PackageOrderCompleted,
+                'title_en' => 'Package purchase successful',
+                'title_my' => 'ပက်ကေ့ချ်ဝယ်ယူမှု အောင်မြင်ပါသည်',
+                'title_zh' => '套餐购买成功',
+                'description_en' => 'Your purchase of {product_name} ({amount}) was successful. Order: {order_no}.',
+                'description_my' => '{product_name} ({amount}) ဝယ်ယူမှု အောင်မြင်ပါသည်။ အော်ဒါ: {order_no}။',
+                'description_zh' => '您购买的 {product_name}（{amount}）已成功。订单：{order_no}。',
+            ],
+            [
+                'type' => NotificationTemplateType::PackageOrderRefunded,
+                'title_en' => 'Package purchase failed',
+                'title_my' => 'ပက်ကေ့ချ်ဝယ်ယူမှု မအောင်မြင်ပါ',
+                'title_zh' => '套餐购买失败',
+                'description_en' => 'Your purchase of {product_name} ({amount}) could not be completed. The amount has been refunded to your wallet. Order: {order_no}.',
+                'description_my' => '{product_name} ({amount}) ဝယ်ယူမှု မအောင်မြင်ပါ။ ငွေပမာဏကို သင့်ပိုက်ဆံအိတ်သို့ ပြန်အမ်းပြီးပါပြီ။ အော်ဒါ: {order_no}။',
+                'description_zh' => '您购买的 {product_name}（{amount}）未能完成，款项已退还至您的钱包。订单：{order_no}。',
+            ],
         ] as $template) {
             $type = $template['type'];
             unset($template['type']);
