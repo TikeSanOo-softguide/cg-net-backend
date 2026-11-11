@@ -20,7 +20,7 @@ class TelegramServiceTest extends TestCase
         Http::fake();
         Log::shouldReceive('info')->once();
 
-        $response = app(TelegramService::class)->broadbandApplicaiton('Request submitted.');
+        $response = app(TelegramService::class)->sendMessage('Request submitted.');
 
         $this->assertNull($response);
         Http::assertNothingSent();
@@ -37,7 +37,7 @@ class TelegramServiceTest extends TestCase
         ]);
         Log::shouldReceive('warning')->once();
 
-        $response = app(TelegramService::class)->broadbandApplicaiton('Request submitted.');
+        $response = app(TelegramService::class)->sendMessage('Request submitted.');
 
         $this->assertNull($response);
         Http::assertSentCount(1);
@@ -50,10 +50,13 @@ class TelegramServiceTest extends TestCase
             'services.telegram.chat_id' => 'test-chat-id',
         ]);
         Http::fake([
-            'https://api.telegram.org/*' => Http::response([
-                'ok' => false,
-                'description' => 'Bad Request: chat not found',
-            ], 400),
+            'https://api.telegram.org/*' => Http::response(
+                [
+                    'ok' => false,
+                    'description' => 'Bad Request: chat not found',
+                ],
+                400,
+            ),
         ]);
         Log::shouldReceive('warning')->once();
 
@@ -70,14 +73,17 @@ class TelegramServiceTest extends TestCase
             'services.telegram.chat_id' => 'test-chat-id',
         ]);
         Http::fake([
-            'https://api.telegram.org/*' => Http::response([
-                'ok' => false,
-                'description' => 'Bad Request: chat not found',
-            ], 200),
+            'https://api.telegram.org/*' => Http::response(
+                [
+                    'ok' => false,
+                    'description' => 'Bad Request: chat not found',
+                ],
+                200,
+            ),
         ]);
         Log::shouldReceive('warning')->once();
 
-        $response = app(TelegramService::class)->broadbandApplicaiton('Request submitted.');
+        $response = app(TelegramService::class)->sendMessage('Request submitted.');
 
         $this->assertNull($response);
     }
@@ -95,7 +101,7 @@ class TelegramServiceTest extends TestCase
         ]);
         Log::shouldReceive('warning')->once();
 
-        $response = app(TelegramService::class)->broadbandApplicaiton('Request submitted.');
+        $response = app(TelegramService::class)->sendMessage('Request submitted.');
 
         $this->assertNull($response);
         Http::assertNothingSent();

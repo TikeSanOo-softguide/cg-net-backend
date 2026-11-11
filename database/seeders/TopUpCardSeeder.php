@@ -21,7 +21,7 @@ class TopUpCardSeeder extends Seeder
             return;
         }
 
-        $office = Office::query()->where('name', 'Yangon Central Office')->first();
+        $office = Office::query()->where('name_en', 'Yangon Central Office')->first();
 
         if (!$office) {
             return;
@@ -34,7 +34,7 @@ class TopUpCardSeeder extends Seeder
         TopUpCard::factory()
             ->count(15)
             ->create([
-                'status' => TopUpCardStatus::Pending,
+                'status' => TopUpCardStatus::Active,
                 'batch_id' => $batch->id,
                 'office_id' => $office->id,
             ]);

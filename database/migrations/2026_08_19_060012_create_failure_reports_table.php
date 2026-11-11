@@ -13,7 +13,7 @@ return new class extends Migration {
             $table->string('broadband_account_number', 32)->nullable()->index();
             $table->string('failure_type', 24)->index();
             $table->text('description');
-            $table->string('contact_name');
+            $table->string('contact_name', 30);
             $table->string('contact_phone', 16);
             $table->string('ticket_number', 32)->nullable()->unique();
             $table->string('status', 16)->default('under_review')->index();

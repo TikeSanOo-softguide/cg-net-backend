@@ -25,15 +25,13 @@ class UpdateRelocationRequest extends FormRequest
                 'max:32',
                 Rule::exists('users', 'broadband_account_number')->where('id', $this->user()->id),
             ],
+            'contact_name' => ['required', 'string', 'max:30'],
             'current_address' => ['required', 'string', 'max:5000'],
             'new_address' => ['required', 'string', 'max:5000'],
             'preferred_date' => ['nullable', 'date'],
             'phone' => ['required', 'string', 'max:16'],
             'details' => ['nullable', 'string', 'max:5000'],
-            'status' => ['nullable', Rule::in([
-                RequestStatus::UnderReview->value,
-                RequestStatus::Cancelled->value,
-            ])],
+            'status' => ['nullable', Rule::in([RequestStatus::UnderReview->value, RequestStatus::Cancelled->value])],
         ];
     }
 }

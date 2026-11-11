@@ -16,6 +16,7 @@ class ChangePasswordRequestResource extends JsonResource
             'id' => $this->id,
             'user_id' => $this->user_id,
             'broadband_account_number' => $this->broadband_account_number,
+            'ticket_number' => $this->ticket_number,
             'new_wifi_name' => $this->new_wifi_name,
             'new_password' => $this->new_password,
             'contact_name' => $this->contact_name,

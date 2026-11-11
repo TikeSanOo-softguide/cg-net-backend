@@ -6,16 +6,14 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { FormDialog } from '@/components/FormDialog';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
-import { TopUpCardOfficeForm } from '@/components/top-up-cards/TopUpCardOfficeForm';
+import { TopUpCardOfficeForm, type OfficeRow } from '@/components/top-up-cards/TopUpCardOfficeForm';
 import { TopUpCardOfficeTable } from '@/components/top-up-cards/TopUpCardOfficeTable';
 import type { Paginated } from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
 
-type OfficeRow = { id: number; name: string; cd: number; address: string; top_up_cards_count: number };
-
 type Props = {
     offices: Paginated<OfficeRow>;
-    officeCds: number[];
+    officeCds: string[];
     filters: { search: string };
 };
 

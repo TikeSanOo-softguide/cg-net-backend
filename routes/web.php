@@ -130,14 +130,29 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
         ->middleware('can:billing.view')
         ->group(function () {
             Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions');
+            Route::get('/transactions/export', [TransactionController::class, 'export'])
+                ->middleware('can:' . AppPermissions::SystemExport)
+                ->name('transactions.export');
             Route::get('/bill-payments', [BillPaymentController::class, 'index'])->name('bill-payments');
             Route::get('/bill-payments/export', [BillPaymentController::class, 'export'])
                 ->middleware('can:' . AppPermissions::SystemExport)
                 ->name('bill-payments.export');
-            Route::get('/transactions/export', [TransactionController::class, 'export'])
-                ->middleware('can:' . AppPermissions::SystemExport)
-                ->name('transactions.export');
+            Route::post('/bill-payments/{billPayment}/review/complete', [BillPaymentController::class, 'resolveReview'])
+                ->middleware('can:billing.update')
+                ->name('bill-payments.review.complete');
+            Route::post('/bill-payments/{billPayment}/review/refund', [BillPaymentController::class, 'refundReview'])
+                ->middleware('can:billing.update')
+                ->name('bill-payments.review.refund');
             Route::get('/package-orders', [PackageOrderController::class, 'index'])->name('package-orders.index');
+            Route::post('/package-orders/{packageOrder}/review/complete', [
+                PackageOrderController::class,
+                'resolveReview',
+            ])
+                ->middleware('can:billing.update')
+                ->name('package-orders.review.complete');
+            Route::post('/package-orders/{packageOrder}/review/refund', [PackageOrderController::class, 'refundReview'])
+                ->middleware('can:billing.update')
+                ->name('package-orders.review.refund');
         });
 
     Route::prefix('regions')
@@ -295,21 +310,20 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                         ->name('send');
                 });
 
-            Route::prefix('compose')
-                ->group(function (): void {
-                    Route::get('/', [PushNotificationController::class, 'index'])
-                        ->middleware('can:notifications.view')
-                        ->name('compose');
-                    Route::post('/push-now', [PushNotificationController::class, 'pushNow'])
-                        ->middleware('can:notifications.create')
-                        ->name('compose.push-now');
-                    Route::post('/schedule', [PushNotificationController::class, 'schedule'])
-                        ->middleware('can:notifications.create')
-                        ->name('compose.schedule');
-                    Route::post('/{schedule}/cancel', [PushNotificationController::class, 'cancel'])
-                        ->middleware('can:notifications.update')
-                        ->name('compose.cancel');
-                });
+            Route::prefix('compose')->group(function (): void {
+                Route::get('/', [PushNotificationController::class, 'index'])
+                    ->middleware('can:notifications.view')
+                    ->name('compose');
+                Route::post('/push-now', [PushNotificationController::class, 'pushNow'])
+                    ->middleware('can:notifications.create')
+                    ->name('compose.push-now');
+                Route::post('/schedule', [PushNotificationController::class, 'schedule'])
+                    ->middleware('can:notifications.create')
+                    ->name('compose.schedule');
+                Route::post('/{schedule}/cancel', [PushNotificationController::class, 'cancel'])
+                    ->middleware('can:notifications.update')
+                    ->name('compose.cancel');
+            });
 
             Route::prefix('templates')
                 ->name('templates.')
@@ -432,6 +446,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::patch('/batches/{batch}/void', [OfficeController::class, 'voidBatch'])
                 ->middleware('can:top-up-cards.update')
                 ->name('batches.void');
+            Route::patch('/batches/{batch}/activate', [OfficeController::class, 'activateBatch'])
+                ->middleware('can:top-up-cards.update')
+                ->name('batches.activate');
             Route::get('/export', [TopUpCardController::class, 'export'])
                 ->middleware(['can:top-up-cards.view', 'can:' . AppPermissions::SystemExport])
                 ->name('export');

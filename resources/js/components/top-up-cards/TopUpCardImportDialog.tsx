@@ -6,18 +6,17 @@ import { Input } from '@/components/ui/input';
 import { FormDialog } from '@/components/FormDialog';
 import { FormActionBar, formActionSubmitClass } from '@/components/FormActionBar';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatDate } from '@/lib/utils';
 
 export type TopUpCardCsvPreview = {
+    denominations: number[];
     rows: {
         office: string;
-        count_50: number;
-        count_100: number;
-        count_250: number;
-        count_500: number;
-        total_points: number;
+        amount_counts: { amount: number; count: number }[];
+        total_cards: number;
         generate_date: string | null;
-        activated_at: string;
-        expires_at: string;
+        activated_at: string | null;
+        expires_at: string | null;
     }[];
     total_rows: number;
     total_summaries: number;
@@ -288,12 +287,14 @@ export function TopUpCardImportDialog({ open, onOpenChange, onCheck, onImport }:
                                 </span>
                                 <p className="mt-2.5 text-[12px] font-medium leading-5 text-foreground">
                                     {dragging
-                                        ? 'Drop your CSV file here'
+                                        ? t('top_up_cards.import_csv.drop_csv_here')
                                         : file
                                           ? file.name
-                                          : 'Drag & drop your CSV file here'}
+                                          : t('top_up_cards.import_csv.drag_drop_csv')}
                                 </p>
-                                <p className="mt-0.5 text-[10px] leading-4 text-muted-foreground">CSV files only</p>
+                                <p className="mt-0.5 text-[10px] leading-4 text-muted-foreground">
+                                    {t('top_up_cards.import_csv.csv_only')}
+                                </p>
                                 <span
                                     className={[
                                         'mt-2.5 inline-flex h-7 items-center justify-center',
@@ -301,7 +302,7 @@ export function TopUpCardImportDialog({ open, onOpenChange, onCheck, onImport }:
                                         'text-[11px] font-medium text-primary-foreground shadow-sm',
                                     ].join(' ')}
                                 >
-                                    Browse CSV
+                                    {t('top_up_cards.import_csv.browse_csv')}
                                 </span>
                             </div>
                         </div>
@@ -326,13 +327,16 @@ export function TopUpCardImportDialog({ open, onOpenChange, onCheck, onImport }:
                                     <thead className="sticky top-0 bg-muted text-xs text-muted-foreground">
                                         <tr>
                                             <th className="px-3 py-2 font-medium">{t('top_up_cards.office.name')}</th>
-                                            {[50, 100, 250, 500].map((amount) => (
+                                            {preview.denominations.map((amount) => (
                                                 <th key={amount} className="px-3 py-2 text-right font-medium">
-                                                    {amount} Points
+                                                    {t('top_up_cards.import_csv.amount_points').replace(
+                                                        ':amount',
+                                                        amount.toLocaleString(),
+                                                    )}
                                                 </th>
                                             ))}
                                             <th className="px-3 py-2 text-right font-medium">
-                                                {t('top_up_cards.total_points')}
+                                                {t('top_up_cards.total_cards')}
                                             </th>
                                             <th className="px-3 py-2 font-medium">{t('top_up_cards.generate_date')}</th>
                                             <th className="px-3 py-2 font-medium">{t('top_up_cards.activated_at')}</th>
@@ -340,30 +344,31 @@ export function TopUpCardImportDialog({ open, onOpenChange, onCheck, onImport }:
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {preview.rows.map((row, index) => (
-                                            <tr
-                                                key={`${row.office}-${row.expires_at}-${index}`}
-                                                className="border-t border-border/70"
-                                            >
-                                                <td className="px-3 py-2">{row.office}</td>
-                                                {[row.count_50, row.count_100, row.count_250, row.count_500].map(
-                                                    (count, countIndex) => (
-                                                        <td
-                                                            key={countIndex}
-                                                            className="px-3 py-2 text-right tabular-nums"
-                                                        >
-                                                            {count.toLocaleString()}
+                                        {preview.rows.map((row, index) => {
+                                            const amountCounts = new Map(
+                                                row.amount_counts.map(({ amount, count }) => [amount, count]),
+                                            );
+
+                                            return (
+                                                <tr
+                                                    key={`${row.office}-${row.expires_at}-${index}`}
+                                                    className="border-t border-border/70"
+                                                >
+                                                    <td className="px-3 py-2">{row.office}</td>
+                                                    {preview.denominations.map((amount) => (
+                                                        <td key={amount} className="px-3 py-2 text-right tabular-nums">
+                                                            {(amountCounts.get(amount) ?? 0).toLocaleString()}
                                                         </td>
-                                                    ),
-                                                )}
-                                                <td className="px-3 py-2 text-right font-medium tabular-nums">
-                                                    {row.total_points.toLocaleString()}
-                                                </td>
-                                                <td className="px-3 py-2">{row.generate_date ?? '—'}</td>
-                                                <td className="px-3 py-2">{row.activated_at}</td>
-                                                <td className="px-3 py-2">{row.expires_at}</td>
-                                            </tr>
-                                        ))}
+                                                    ))}
+                                                    <td className="px-3 py-2 text-right font-medium tabular-nums">
+                                                        {row.total_cards.toLocaleString()}
+                                                    </td>
+                                                    <td className="px-3 py-2">{formatDate(row.generate_date)}</td>
+                                                    <td className="px-3 py-2">{formatDate(row.activated_at)}</td>
+                                                    <td className="px-3 py-2">{formatDate(row.expires_at)}</td>
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>

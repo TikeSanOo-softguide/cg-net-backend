@@ -34,16 +34,32 @@ class TopUpCardChunkGenerationTest extends TestCase
         $this->seed(\Database\Seeders\RolePermissionSeeder::class);
     }
 
+    public function test_generated_cards_are_active_immediately(): void
+    {
+        $productionDate = now();
+        $office = $this->makeOffice('Default Office', 'Main Street', '88');
+        $batch = Batch::factory()->create();
+        $generated = GeneratesTopUpCards::materialize(
+            [['value' => 500, 'quantity' => 1]],
+            now()->addYears(2)->toDateString(),
+            1001,
+            $productionDate,
+            '88',
+            $batch->id,
+        );
+
+        $this->assertSame('active', $generated['cards'][0]['status']);
+        $this->assertSame($productionDate->toDateString(), $generated['cards'][0]['activated_at']);
+        $this->assertSame('active', $generated['rows'][0]['status']);
+        $this->assertSame($office->id, $generated['rows'][0]['office_id']);
+    }
+
     public function test_large_generation_is_split_into_sequential_serial_chunks(): void
     {
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
 
-        $office = Office::query()->create([
-            'name' => 'Default Office',
-            'address' => 'Main Street',
-            'cd' => '88',
-        ]);
+        $office = $this->makeOffice('Default Office', 'Main Street', '88');
 
         Queue::fake();
 
@@ -97,21 +113,9 @@ class TopUpCardChunkGenerationTest extends TestCase
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
 
-        Office::query()->create([
-            'name' => 'Alpha Office',
-            'address' => 'Main Street',
-            'cd' => 11,
-        ]);
-        Office::query()->create([
-            'name' => 'Beta Office',
-            'address' => 'Second Street',
-            'cd' => 22,
-        ]);
-        Office::query()->create([
-            'name' => 'Deleted Office',
-            'address' => 'Gone Street',
-            'cd' => 33,
-        ])->delete();
+        $this->makeOffice('Alpha Office', 'Main Street', '11');
+        $this->makeOffice('Beta Office', 'Second Street', '22');
+        $this->makeOffice('Deleted Office', 'Gone Street', '33')->delete();
 
         Queue::fake();
 
@@ -139,13 +143,7 @@ class TopUpCardChunkGenerationTest extends TestCase
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
 
-        $agent = Office::query()->create([
-            'name' => 'Deleted Office',
-            'address' => 'Gone Street',
-            'cd' => 33,
-            'phone' => '09123456791',
-            'status' => 'active',
-        ]);
+        $agent = $this->makeOffice('Deleted Office', 'Gone Street', '33');
         $agent->delete();
 
         $validator = Validator::make(
@@ -168,20 +166,8 @@ class TopUpCardChunkGenerationTest extends TestCase
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
 
-        $first = Office::query()->create([
-            'name' => 'Alpha Office',
-            'address' => 'Main Street',
-            'cd' => 11,
-            'phone' => '09123456789',
-            'status' => 'active',
-        ]);
-        $second = Office::query()->create([
-            'name' => 'Beta Office',
-            'address' => 'Second Street',
-            'cd' => 22,
-            'phone' => '09123456790',
-            'status' => 'active',
-        ]);
+        $first = $this->makeOffice('Alpha Office', 'Main Street', '11');
+        $second = $this->makeOffice('Beta Office', 'Second Street', '22');
 
         $this->actingAs($actor, 'web')
             ->post('/top-up-cards/batch', [
@@ -197,11 +183,7 @@ class TopUpCardChunkGenerationTest extends TestCase
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
 
-        Office::query()->create([
-            'name' => 'Default Office',
-            'address' => 'Main Street',
-            'cd' => '88',
-        ]);
+        $this->makeOffice('Default Office', 'Main Street', '88');
 
         Queue::fake();
 
@@ -221,17 +203,9 @@ class TopUpCardChunkGenerationTest extends TestCase
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
 
-        Office::query()->create([
-            'name' => 'Alpha Office',
-            'address' => 'Main Street',
-            'cd' => '88',
-        ]);
+        $this->makeOffice('Alpha Office', 'Main Street', '88');
 
-        Office::query()->create([
-            'name' => 'Beta Office',
-            'address' => 'Second Street',
-            'cd' => 99,
-        ]);
+        $this->makeOffice('Beta Office', 'Second Street', '99');
 
         Queue::fake();
 
@@ -263,11 +237,7 @@ class TopUpCardChunkGenerationTest extends TestCase
     public function test_serial_reservation_uses_sequence_table_not_existing_cards(): void
     {
         if (!Office::query()->where('cd', '88')->exists()) {
-            Office::query()->create([
-                'name' => 'Default Office',
-                'address' => 'Main Street',
-                'cd' => '88',
-            ]);
+            $this->makeOffice('Default Office', 'Main Street', '88');
         }
 
         TopUpCard::factory()->create([
@@ -330,11 +300,7 @@ class TopUpCardChunkGenerationTest extends TestCase
     public function test_disjoint_serial_ranges_are_allocated_from_sequence_counter(): void
     {
         if (!Office::query()->where('cd', '88')->exists()) {
-            Office::query()->create([
-                'name' => 'Default Office',
-                'address' => 'Main Street',
-                'cd' => '88',
-            ]);
+            $this->makeOffice('Default Office', 'Main Street', '88');
         }
 
         $this->assertSame(1001, GeneratesTopUpCards::allocateSerialRange(1000, now()));
@@ -360,11 +326,7 @@ class TopUpCardChunkGenerationTest extends TestCase
         $other = Admin::factory()->create();
         $other->assignRole(AppPermissions::SuperAdmin);
 
-        Office::query()->create([
-            'name' => 'Default Office',
-            'address' => 'Main Street',
-            'cd' => '88',
-        ]);
+        $this->makeOffice('Default Office', 'Main Street', '88');
 
         $token = 'processing-generation-token';
         Cache::put(
@@ -387,11 +349,7 @@ class TopUpCardChunkGenerationTest extends TestCase
     public function test_job_retry_reuses_completed_export_without_persisting_cards(): void
     {
         if (!Office::query()->where('cd', '88')->exists()) {
-            Office::query()->create([
-                'name' => 'Default Office',
-                'address' => 'Main Street',
-                'cd' => '88',
-            ]);
+            $this->makeOffice('Default Office', 'Main Street', '88');
         }
 
         $actor = Admin::factory()->create();
@@ -434,11 +392,7 @@ class TopUpCardChunkGenerationTest extends TestCase
     public function test_generation_chunks_only_create_export_data(): void
     {
         if (!Office::query()->where('cd', '88')->exists()) {
-            Office::query()->create([
-                'name' => 'Default Office',
-                'address' => 'Main Street',
-                'cd' => '88',
-            ]);
+            $this->makeOffice('Default Office', 'Main Street', '88');
         }
 
         $actor = Admin::factory()->create();
@@ -477,11 +431,7 @@ class TopUpCardChunkGenerationTest extends TestCase
     public function test_activity_is_logged_with_succeeded_or_failed_status(): void
     {
         if (!Office::query()->where('cd', '88')->exists()) {
-            Office::query()->create([
-                'name' => 'Default Office',
-                'address' => 'Main Street',
-                'cd' => '88',
-            ]);
+            $this->makeOffice('Default Office', 'Main Street', '88');
         }
 
         $actor = Admin::factory()->create();
@@ -563,11 +513,7 @@ class TopUpCardChunkGenerationTest extends TestCase
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
 
-        Office::query()->create([
-            'name' => 'Default Office',
-            'address' => 'Main Street',
-            'cd' => '88',
-        ]);
+        $this->makeOffice('Default Office', 'Main Street', '88');
 
         $oldToken = 'old-generation-token';
         Cache::put(

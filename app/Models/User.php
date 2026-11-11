@@ -166,6 +166,11 @@ class User extends Authenticatable
         return $this->hasMany(Notification::class);
     }
 
+    public function unreadAppNotificationCount(): int
+    {
+        return $this->appNotifications()->withoutDeletedSources()->where('is_read', false)->count();
+    }
+
     public function chatConversations(): HasMany
     {
         return $this->hasMany(ChatConversation::class);

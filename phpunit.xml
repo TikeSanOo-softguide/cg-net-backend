@@ -43,13 +43,13 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="BILLING_SERVER_URL" value="https://billing-server.test" force="true"/>
-        <env name="BILLING_PROCESSING_GRACE_SECONDS" value="120" force="true"/>
-        <env name="BILLING_PROCESSING_RETRY_SECONDS" value="300" force="true"/>
-        <env name="BILLING_PROCESSING_MAX_AGE_SECONDS" value="3600" force="true"/>
+        <env name="CG_API_PROCESSING_GRACE_SECONDS" value="120" force="true"/>
+        <env name="CG_API_PROCESSING_RETRY_SECONDS" value="300" force="true"/>
+        <env name="CG_API_PROCESSING_MAX_AGE_SECONDS" value="3600" force="true"/>
         <server name="BILLING_SERVER_URL" value="https://billing-server.test"/>
-        <server name="BILLING_PROCESSING_GRACE_SECONDS" value="120"/>
-        <server name="BILLING_PROCESSING_RETRY_SECONDS" value="300"/>
-        <server name="BILLING_PROCESSING_MAX_AGE_SECONDS" value="3600"/>
+        <server name="CG_API_PROCESSING_GRACE_SECONDS" value="120"/>
+        <server name="CG_API_PROCESSING_RETRY_SECONDS" value="300"/>
+        <server name="CG_API_PROCESSING_MAX_AGE_SECONDS" value="3600"/>
         <server name="CACHE_STORE" value="array"/>
         <server name="DB_CONNECTION" value="sqlite"/>
         <server name="DB_DATABASE" value=":memory:"/>

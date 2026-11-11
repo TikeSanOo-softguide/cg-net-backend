@@ -212,6 +212,43 @@ class LedgerHealthSourceReconciliationTest extends TestCase
         );
     }
 
+    public function test_detects_package_review_order_with_processing_ledger_transaction(): void
+    {
+        $wallet = Wallet::factory()->create(['balance' => 5000]);
+        $package = Package::factory()->create([
+            'network_id' => Network::factory(),
+            'price' => 2000,
+        ]);
+        $poster = app(LedgerPoster::class);
+        $poster->ensureSystemAccounts();
+        $poster->ensureCustomerLiabilityAccount($wallet);
+        $transaction = $poster->debitWallet(
+            wallet: $wallet->fresh(),
+            amount: 2000,
+            contraAccount: LedgerAccountCode::PackageRevenue,
+            type: LedgerTransactionType::WifiPackage,
+            status: LedgerTransactionStatus::Processing,
+            idempotencyKey: 'package-review-status',
+        );
+        PackageOrder::query()->create([
+            'user_id' => $wallet->user_id,
+            'package_id' => $package->id,
+            'ledger_transaction_id' => $transaction->id,
+            'status' => PackageOrderStatus::Review,
+            'snapshot' => ['package_id' => $package->id, 'price' => 2000],
+        ]);
+
+        $report = app(LedgerHealthReportService::class)->generate();
+
+        $this->assertTrue(
+            collect($report['sourceMismatches'])->contains(
+                fn (array $row): bool => $row['source'] === 'package_order'
+                    && $row['issue'] === 'status_mismatch'
+                    && $row['detail'] === 'review / processing',
+            ),
+        );
+    }
+
     public function test_matching_sources_are_not_flagged(): void
     {
         $wallet = Wallet::factory()->create(['balance' => 10000]);

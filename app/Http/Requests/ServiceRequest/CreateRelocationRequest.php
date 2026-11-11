@@ -34,6 +34,7 @@ class CreateRelocationRequest extends CreateServiceRequest
                 'max:32',
                 Rule::exists('users', 'broadband_account_number')->where('id', $this->user()->id),
             ],
+            'contact_name' => ['required', 'string', 'max:30'],
             'current_address' => ['required', 'string', 'max:5000'],
             'new_address' => ['required', 'string', 'max:5000'],
             'preferred_date' => ['nullable', 'date'],

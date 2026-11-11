@@ -21,9 +21,12 @@ export type AdminNotification = {
         | 'change_plan_request'
         | 'failure_report'
         | 'relocation_request'
+        | 'chat_conversation'
         | 'ledger_health_snapshot_full'
         | 'ledger_health_snapshot_daily'
         | 'ledger_health_snapshot_manual'
+        | 'bill_payment'
+        | 'package_order'
         | null;
     reference_id: number | null;
     read_at: string | null;

@@ -65,6 +65,7 @@ class InboxController extends Controller
                 ],
                 'created_at' => $promotion->created_at?->toIso8601String(),
                 'is_read' => false,
+                'image_url' => $promotion->image_url,
             ]);
 
         $items = $announcements

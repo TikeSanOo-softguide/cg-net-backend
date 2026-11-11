@@ -106,15 +106,17 @@ export function ChangePlanDetailDialog({
 
     const nextButton = request?.status === REQUEST_STATUS.UNDER_REVIEW ? 'approve' : 'review';
     const ticket = request?.ticket_number?.trim() || '';
-    const accountServiceType = request?.broadband_account_number?.startsWith('FTTH')
+    // Prefer persisted service_type; fall back to account prefix for older rows.
+    const accountPrefixType = request?.broadband_account_number?.startsWith('FTTH')
         ? 'FTTH'
         : request?.broadband_account_number?.startsWith('CG')
           ? 'CG'
           : '';
+    const resolvedServiceType = request?.service_type?.trim() || accountPrefixType;
     const serviceLabel =
-        accountServiceType === 'CG'
+        resolvedServiceType === 'CG'
             ? t('change_plan.cg_router')
-            : accountServiceType || '—';
+            : resolvedServiceType || '—';
 
     return (
         <FormDialog
@@ -236,7 +238,7 @@ export function ChangePlanDetailDialog({
                                     {packageName(request.current_package_detail)}
                                 </p>
                                 <p className="text-xs font-mono font-medium text-muted-foreground">
-                                    ${request.current_package_detail?.price ?? '—'}
+                                    {pointsLabel(request.current_package_detail?.price, t('billing_report.points'))}
                                 </p>
                             </div>
 
@@ -252,7 +254,7 @@ export function ChangePlanDetailDialog({
                                     {packageName(request.new_package_detail)}
                                 </p>
                                 <p className="text-xs font-mono font-semibold text-primary">
-                                    ${request.new_package_detail?.price ?? '—'}
+                                    {pointsLabel(request.new_package_detail?.price, t('billing_report.points'))}
                                 </p>
                             </div>
                         </div>
@@ -293,4 +295,16 @@ export function ChangePlanDetailDialog({
             ) : null}
         </FormDialog>
     );
+}
+
+function pointsLabel(value: number | string | null | undefined, unit: string): string {
+    if (value == null || value === '') {
+        return '—';
+    }
+
+    if (typeof value !== 'number' && typeof value !== 'string') {
+        return '—';
+    }
+
+    return `${String(value)} ${unit}`;
 }

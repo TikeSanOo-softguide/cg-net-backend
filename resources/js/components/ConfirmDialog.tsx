@@ -51,7 +51,7 @@ export function ConfirmDialog({
                     'z-[101] gap-0 overflow-hidden rounded-[12px] border border-white/60 bg-white p-0',
                     'shadow-[0_10px_28px_rgb(23_50_54/0.16)] dark:border-white/10 dark:bg-[#152628]',
                     'dark:shadow-[0_12px_32px_rgb(0_0_0/0.45)] [&>button.absolute]:hidden',
-                    'fixed top-[50%] left-[50%] w-[min(100%-2rem,340px)] max-w-[340px] translate-x-[-50%] translate-y-[-50%]',
+                    'fixed top-[50%] left-[50%] w-[min(100%-2rem,400px)] max-w-[400px] translate-x-[-50%] translate-y-[-50%]',
                 )}
             >
                 <DialogClose
@@ -84,7 +84,10 @@ export function ConfirmDialog({
                         variant="destructive"
                         size="sm"
                         disabled={processing}
-                        className={formActionCancelClass}
+                        className={cn(
+                            formActionCancelClass,
+                            'h-auto min-h-8 w-auto min-w-0 flex-1 whitespace-normal break-words py-2 text-center leading-tight',
+                        )}
                         onClick={() => onOpenChange(false)}
                     >
                         <CircleXIcon className="size-3.5" strokeWidth={1.9} />
@@ -95,10 +98,17 @@ export function ConfirmDialog({
                         variant="primary"
                         size="sm"
                         disabled={processing}
-                        className={formActionSubmitClass}
+                        className={cn(
+                            formActionSubmitClass,
+                            'h-auto min-h-8 w-auto min-w-0 flex-1 whitespace-normal break-words py-2 text-center leading-tight',
+                        )}
                         onClick={onConfirm}
                     >
-                        {processing ? <Spinner size="xs" className="text-current" /> : <CheckIcon className="size-3.5" strokeWidth={1.85} />}
+                        {processing ? (
+                            <Spinner size="xs" className="text-current" />
+                        ) : (
+                            <CheckIcon className="size-3.5" strokeWidth={1.85} />
+                        )}
                         {confirmText}
                     </Button>
                 </DialogFooter>

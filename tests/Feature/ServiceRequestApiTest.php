@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Enums\FailureType;
-use App\Models\Area;
 use App\Models\ChangePasswordRequest;
 use App\Models\ChangePlanRequest;
 use App\Models\FailureReport;
@@ -63,11 +62,9 @@ class ServiceRequestApiTest extends TestCase
 
         $user = User::factory()->create();
         $token = $user->createToken('service-requests')->plainTextToken;
-        $area = Area::factory()->create();
         $applicationData = [
             'name' => 'Test Customer',
             'service_type' => 'FTTH',
-            'area_id' => $area->id,
             'package_detail' => [
                 'product_id' => '249',
                 'product_name' => '100M office',
@@ -97,10 +94,11 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonPath('data.service_type', 'FTTH')
             ->assertJsonPath('data.ticket_number', 'INT' . now()->format('md') . '0001')
             ->assertJsonPath('data.package_detail.product_id', '249')
-            ->assertJsonPath('data.area_id', $area->id)
             ->assertJsonPath('data.phone', '959922345678')
             ->assertJsonPath('data.status', 'under_review')
             ->assertJsonMissingPath('data.photos');
+        Http::assertSentCount(1);
+        Http::assertSent(fn($request) => str_contains($request['text'], '📡 NEW BROADBAND INSTALLATION'));
         $application = InstallationApplication::query()->findOrFail($response->json('data.id'));
 
         $this->withToken($token)->getJson('/api/installation-application')->assertOk()->assertJsonCount(1, 'data');
@@ -129,6 +127,8 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonPath('data.name', 'Updated Customer')
             ->assertJsonPath('data.address', 'Updated customer address')
             ->assertJsonMissingPath('data.photos');
+        Http::assertSentCount(2);
+        Http::assertSent(fn($request) => str_contains($request['text'], '🔄 BROADBAND INSTALLATION UPDATED'));
 
         $this->withToken($token)
             ->patchJson('/api/installation-application/' . $application->id . '/cancel')
@@ -136,6 +136,8 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonPath('code', 'MSG-REQ-001')
             ->assertJsonPath('level', 'success')
             ->assertJsonPath('data.status', 'cancelled');
+        Http::assertSentCount(3);
+        Http::assertSent(fn($request) => str_contains($request['text'], '🚫 BROADBAND INSTALLATION CANCELLED'));
 
         $this->withToken($token)
             ->deleteJson('/api/installation-application/' . $application->id)
@@ -238,14 +240,23 @@ class ServiceRequestApiTest extends TestCase
 
     public function test_customer_can_create_update_cancel_and_delete_a_relocation_request(): void
     {
+        config([
+            'services.telegram.bot_token' => 'test-bot-token',
+            'services.telegram.chat_id' => 'test-chat-id',
+        ]);
+        Http::fake([
+            'https://api.telegram.org/*' => Http::response(['ok' => true], 200),
+        ]);
+
         $user = User::factory()->create(['broadband_account_number' => 'CG62345678']);
         $token = $user->createToken('service-requests')->plainTextToken;
         $requestData = [
             'broadband_account_number' => $user->broadband_account_number,
+            'contact_name' => 'Test Customer',
             'current_address' => 'Current address',
             'new_address' => 'New address',
             'preferred_date' => now()->addDays(5)->toDateString(),
-            'phone' => '95912345678',
+            'phone' => '95922345678',
             'details' => 'Please call before the relocation.',
         ];
 
@@ -255,6 +266,7 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonPath('data.user_id', $user->id)
             ->assertJsonPath('data.broadband_account_number', $user->broadband_account_number)
             ->assertJsonPath('data.status', 'under_review');
+        Http::assertSentCount(1);
         $relocationRequest = RelocationRequest::query()->findOrFail($response->json('data.id'));
 
         $this->withToken($token)->getJson('/api/relocation-requests')->assertOk()->assertJsonCount(1, 'data');
@@ -268,11 +280,15 @@ class ServiceRequestApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.new_address', 'Updated new address')
             ->assertJsonPath('data.details', 'Updated relocation details.');
+        Http::assertSentCount(2);
+        Http::assertSent(fn($request) => str_contains($request['text'], '🔄 RELOCATION REQUEST UPDATED'));
 
         $this->withToken($token)
             ->patchJson('/api/relocation-requests/' . $relocationRequest->id . '/cancel')
             ->assertOk()
             ->assertJsonPath('data.status', 'cancelled');
+        Http::assertSentCount(3);
+        Http::assertSent(fn($request) => str_contains($request['text'], '🚫 RELOCATION REQUEST CANCELLED'));
 
         $this->withToken($token)
             ->deleteJson('/api/relocation-requests/' . $relocationRequest->id)
@@ -284,6 +300,13 @@ class ServiceRequestApiTest extends TestCase
     public function test_customer_can_create_update_cancel_and_delete_a_failure_report(): void
     {
         Storage::fake('public');
+        config([
+            'services.telegram.bot_token' => 'test-bot-token',
+            'services.telegram.chat_id' => 'test-chat-id',
+        ]);
+        Http::fake([
+            'https://api.telegram.org/*' => Http::response(['ok' => true], 200),
+        ]);
 
         $user = User::factory()->create(['broadband_account_number' => 'CG12345678']);
         $token = $user->createToken('service-requests')->plainTextToken;
@@ -292,7 +315,7 @@ class ServiceRequestApiTest extends TestCase
             'failure_type' => FailureType::NoInternet->value,
             'description' => 'The connection has been unavailable since this morning.',
             'contact_name' => 'Test Customer',
-            'contact_phone' => '95912345678',
+            'contact_phone' => '95922345678',
             'photos' => [
                 UploadedFile::fake()->image('router-1.jpg'),
                 UploadedFile::fake()->image('router-2.jpg'),
@@ -303,12 +326,21 @@ class ServiceRequestApiTest extends TestCase
         $response = $this->withToken($token)
             ->post('/api/failure-reports/create', $createData, ['Accept' => 'application/json'])
             ->assertCreated()
+            ->assertJsonPath('code', 'MSG-REQ-002')
+            ->assertJsonPath('level', 'success')
             ->assertJsonPath('data.user_id', $user->id)
             ->assertJsonPath('data.broadband_account_number', $user->broadband_account_number)
             ->assertJsonPath('data.ticket_number', 'FLR' . now()->format('md') . '0001')
             ->assertJsonPath('data.failure_type', FailureType::NoInternet->value)
             ->assertJsonPath('data.status', 'under_review')
             ->assertJsonCount(3, 'data.photos');
+
+        Http::assertSentCount(1);
+        Http::assertSent(
+            fn($request) => str_contains($request['text'], '🛠️ NEW FAILURE REPORT')
+                && str_contains($request['text'], $user->name)
+                && str_contains($request['text'], 'The connection has been unavailable since this morning.'),
+        );
 
         $failureReport = FailureReport::query()->findOrFail($response->json('data.id'));
         $this->assertDatabaseCount('failure_photos', 3);
@@ -327,8 +359,13 @@ class ServiceRequestApiTest extends TestCase
                 'description' => 'The connection is slow.',
             ])
             ->assertOk()
+            ->assertJsonPath('code', 'MSG-REQ-003')
+            ->assertJsonPath('level', 'success')
             ->assertJsonPath('data.failure_type', FailureType::Slow->value)
             ->assertJsonPath('data.description', 'The connection is slow.');
+
+        Http::assertSentCount(2);
+        Http::assertSent(fn($request) => str_contains($request['text'], '🔄 FAILURE REPORT UPDATED'));
 
         $photos = $failureReport->photos()->get();
         $photoPaths = $photos->pluck('image_url')->all();
@@ -336,8 +373,18 @@ class ServiceRequestApiTest extends TestCase
         $this->withToken($token)
             ->patchJson('/api/failure-reports/' . $failureReport->id . '/cancel')
             ->assertOk()
+            ->assertJsonPath('code', 'MSG-REQ-001')
+            ->assertJsonPath('level', 'success')
             ->assertJsonPath('data.status', 'cancelled')
             ->assertJsonCount(3, 'data.photos');
+
+        Http::assertSentCount(3);
+        Http::assertSent(fn($request) => str_contains($request['text'], '🚫 FAILURE REPORT CANCELLED'));
+
+        $this->withToken($token)
+            ->patchJson('/api/failure-reports/' . $failureReport->id . '/cancel')
+            ->assertConflict();
+        Http::assertSentCount(3);
 
         foreach ($photoPaths as $photoPath) {
             $this->assertTrue(Storage::disk('public')->exists($photoPath));
@@ -367,13 +414,45 @@ class ServiceRequestApiTest extends TestCase
                 'failure_type' => FailureType::NoInternet->value,
                 'description' => 'The connection has been unavailable since this morning.',
                 'contact_name' => 'Test Customer',
-                'contact_phone' => '95912345678',
+                'contact_phone' => '95922345678',
                 'photos' => null,
             ])
             ->assertCreated()
             ->assertJsonCount(0, 'data.photos');
 
         $this->assertDatabaseCount('failure_photos', 0);
+    }
+
+    public function test_failure_report_contact_name_is_limited_to_30_characters(): void
+    {
+        $user = User::factory()->create(['broadband_account_number' => 'CG12345678']);
+        $token = $user->createToken('service-requests')->plainTextToken;
+        $requestData = [
+            'broadband_account_number' => $user->broadband_account_number,
+            'failure_type' => FailureType::NoInternet->value,
+            'description' => 'The connection has been unavailable since this morning.',
+            'contact_name' => str_repeat('x', 31),
+            'contact_phone' => '95922345678',
+            'photos' => null,
+        ];
+
+        $this->withToken($token)
+            ->postJson('/api/failure-reports/create', $requestData)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('contact_name');
+
+        $response = $this->withToken($token)
+            ->postJson('/api/failure-reports/create', [
+                ...$requestData,
+                'contact_name' => 'Test Customer',
+            ])
+            ->assertCreated();
+        $failureReport = FailureReport::query()->findOrFail($response->json('data.id'));
+
+        $this->withToken($token)
+            ->putJson('/api/failure-reports/' . $failureReport->id, $requestData)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('contact_name');
     }
 
     public function test_updating_failure_report_photos_removes_unsubmitted_photos(): void
@@ -387,7 +466,7 @@ class ServiceRequestApiTest extends TestCase
             'failure_type' => FailureType::NoInternet->value,
             'description' => 'The connection has been unavailable since this morning.',
             'contact_name' => 'Test Customer',
-            'contact_phone' => '95912345678',
+            'contact_phone' => '95922345678',
             'photos' => [
                 UploadedFile::fake()->image('router-1.jpg'),
                 UploadedFile::fake()->image('router-2.jpg'),
@@ -437,7 +516,7 @@ class ServiceRequestApiTest extends TestCase
             'failure_type' => FailureType::NoInternet->value,
             'description' => 'The connection has been unavailable since this morning.',
             'contact_name' => 'Test Customer',
-            'contact_phone' => '95912345678',
+            'contact_phone' => '95922345678',
         ];
 
         $this->withToken($token)
@@ -459,6 +538,14 @@ class ServiceRequestApiTest extends TestCase
 
     public function test_customer_can_create_update_and_delete_a_change_plan_request(): void
     {
+        config([
+            'services.telegram.bot_token' => 'test-bot-token',
+            'services.telegram.chat_id' => 'test-chat-id',
+        ]);
+        Http::fake([
+            'https://api.telegram.org/*' => Http::response(['ok' => true], 200),
+        ]);
+
         $user = User::factory()->create(['broadband_account_number' => 'CG22345678']);
         $token = $user->createToken('service-requests')->plainTextToken;
         $currentPackage = Package::factory()->create();
@@ -471,7 +558,7 @@ class ServiceRequestApiTest extends TestCase
             'new_package_detail' => $newPackage->changePlanDetail(),
             'preferred_date' => now()->addDays(3)->toDateString(),
             'contact_name' => 'Test Customer',
-            'contact_phone' => '95912345678',
+            'contact_phone' => '95922345678',
             'note' => 'Please change my package.',
         ];
 
@@ -483,6 +570,43 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonPath('data.user_id', $user->id)
             ->assertJsonPath('data.status', 'under_review')
             ->assertJsonPath('data.service_type', 'CG');
+        Http::assertSentCount(1);
+        Http::assertSent(
+            fn($request) => str_contains($request['text'], '📦 NEW CHANGE PLAN REQUEST')
+                && str_contains($request['text'], $user->name)
+                && str_contains($request['text'], '• Service Type: CG')
+                && str_contains(
+                    $request['text'],
+                    '• Current Package: ' . $requestData['current_package_detail']['network_name']['en'],
+                )
+                && str_contains(
+                    $request['text'],
+                    '• Current Speed: ' . $requestData['current_package_detail']['speed']['mbps'] . ' Mbps',
+                )
+                && str_contains(
+                    $request['text'],
+                    '• Current Price: ' . $requestData['current_package_detail']['price'],
+                )
+                && str_contains(
+                    $request['text'],
+                    '• Current Billing Period: ' . $requestData['current_package_detail']['term']['months'] . ' months',
+                )
+                && str_contains(
+                    $request['text'],
+                    '• New Package: ' . $requestData['new_package_detail']['network_name']['en'],
+                )
+                && str_contains(
+                    $request['text'],
+                    '• New Speed: ' . $requestData['new_package_detail']['speed']['mbps'] . ' Mbps',
+                )
+                && str_contains($request['text'], '• New Price: ' . $requestData['new_package_detail']['price'])
+                && str_contains(
+                    $request['text'],
+                    '• New Billing Period: ' . $requestData['new_package_detail']['term']['months'] . ' months',
+                )
+                && str_contains($request['text'], 'Please change my package.'),
+        );
+
         $this->assertNotEmpty($response->json('data.ticket_number'));
         $this->assertStringStartsWith('CPL', (string) $response->json('data.ticket_number'));
         $changePlanRequest = ChangePlanRequest::query()->findOrFail($response->json('data.id'));
@@ -503,6 +627,12 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonPath('code', 'MSG-REQ-003')
             ->assertJsonPath('data.note', 'Please apply the updated package.');
 
+        Http::assertSentCount(2);
+        Http::assertSent(
+            fn($request) => str_contains($request['text'], '🔄 CHANGE PLAN REQUEST UPDATED')
+                && str_contains($request['text'], 'Please apply the updated package.'),
+        );
+
         $this->withToken($token)
             ->deleteJson('/api/change-plan-requests/' . $changePlanRequest->id)
             ->assertOk()
@@ -511,8 +641,77 @@ class ServiceRequestApiTest extends TestCase
         $this->assertSoftDeleted('change_plan_requests', ['id' => $changePlanRequest->id]);
     }
 
+    public function test_change_plan_request_contact_name_is_limited_to_30_characters(): void
+    {
+        $user = User::factory()->create(['broadband_account_number' => 'CG22345678']);
+        $token = $user->createToken('service-requests')->plainTextToken;
+        $currentPackage = Package::factory()->create();
+        $newPackage = Package::factory()->create();
+        $requestData = [
+            'user_id' => $user->id,
+            'broadband_account_number' => $user->broadband_account_number,
+            'service_type' => 'CG',
+            'current_package_detail' => $currentPackage->changePlanDetail(),
+            'new_package_detail' => $newPackage->changePlanDetail(),
+            'preferred_date' => now()->addDays(3)->toDateString(),
+            'contact_name' => str_repeat('x', 31),
+            'contact_phone' => '95922345678',
+        ];
+
+        $this->withToken($token)
+            ->postJson('/api/change-plan-requests/create', $requestData)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('contact_name');
+
+        $response = $this->withToken($token)
+            ->postJson('/api/change-plan-requests/create', [
+                ...$requestData,
+                'contact_name' => 'Test Customer',
+            ])
+            ->assertCreated();
+        $changePlanRequest = ChangePlanRequest::query()->findOrFail($response->json('data.id'));
+
+        $this->withToken($token)
+            ->putJson('/api/change-plan-requests/' . $changePlanRequest->id, $requestData)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('contact_name');
+    }
+
+    public function test_cancelling_a_change_plan_request_sends_telegram_notification(): void
+    {
+        config([
+            'services.telegram.bot_token' => 'test-bot-token',
+            'services.telegram.chat_id' => 'test-chat-id',
+        ]);
+        Http::fake([
+            'https://api.telegram.org/*' => Http::response(['ok' => true], 200),
+        ]);
+
+        $changePlanRequest = ChangePlanRequest::factory()->create(['status' => 'under_review']);
+        $token = $changePlanRequest->user->createToken('service-requests')->plainTextToken;
+
+        $this->withToken($token)
+            ->patchJson('/api/change-plan-requests/' . $changePlanRequest->id . '/cancel')
+            ->assertOk()
+            ->assertJsonPath('data.status', 'cancelled');
+
+        Http::assertSentCount(1);
+        Http::assertSent(
+            fn($request) => str_contains($request['text'], '🚫 CHANGE PLAN REQUEST CANCELLED')
+                && str_contains($request['text'], $changePlanRequest->ticket_number),
+        );
+    }
+
     public function test_customer_can_create_update_and_delete_a_change_password_request(): void
     {
+        config([
+            'services.telegram.bot_token' => 'test-bot-token',
+            'services.telegram.chat_id' => 'test-chat-id',
+        ]);
+        Http::fake([
+            'https://api.telegram.org/*' => Http::response(['ok' => true], 200),
+        ]);
+
         $user = User::factory()->create(['broadband_account_number' => 'CG32345678']);
         $token = $user->createToken('service-requests')->plainTextToken;
         $requestData = [
@@ -521,21 +720,45 @@ class ServiceRequestApiTest extends TestCase
             'new_wifi_name' => 'UpdatedWifi',
             'new_password' => 'updated-secret',
             'contact_name' => 'Test Customer',
-            'contact_phone' => '95912345678',
+            'contact_phone' => '95922345678',
         ];
 
         $response = $this->withToken($token)
             ->postJson('/api/change-password-requests/create', $requestData)
             ->assertCreated()
+            ->assertJsonPath('code', 'MSG-REQ-002')
+            ->assertJsonPath('level', 'success')
             ->assertJsonPath('data.user_id', $user->id)
+            ->assertJsonPath('data.ticket_number', 'CWP' . now()->format('md') . '0001')
             ->assertJsonPath('data.status', 'under_review');
+
+        Http::assertSentCount(1);
+        Http::assertSent(
+            fn($request) => str_contains($request['text'], '🔐 NEW WI-FI PASSWORD REQUEST')
+                && str_contains($request['text'], $user->name)
+                && str_contains($request['text'], 'Requested (hidden)')
+                && !str_contains($request['text'], 'updated-secret'),
+        );
+
         $changePasswordRequest = ChangePasswordRequest::query()->findOrFail($response->json('data.id'));
 
         $this->withToken($token)->getJson('/api/change-password-requests')->assertOk()->assertJsonCount(1, 'data');
         $this->withToken($token)
             ->getJson('/api/change-password-requests/' . $changePasswordRequest->id)
             ->assertOk()
-            ->assertJsonPath('data.id', $changePasswordRequest->id);
+            ->assertJsonPath('data.id', $changePasswordRequest->id)
+            ->assertJsonPath('data.ticket_number', $changePasswordRequest->ticket_number);
+
+        $this->withToken($token)
+            ->putJson('/api/change-password-requests/' . $changePasswordRequest->id, [
+                ...$requestData,
+                'new_wifi_name' => 'NewWifi',
+                'new_password' => null,
+                'status' => 'under_review',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['new_password']);
+        $this->assertSame('updated-secret', $changePasswordRequest->refresh()->new_password);
 
         $this->withToken($token)
             ->putJson('/api/change-password-requests/' . $changePasswordRequest->id, [
@@ -556,8 +779,32 @@ class ServiceRequestApiTest extends TestCase
                 'status' => 'under_review',
             ])
             ->assertOk()
+            ->assertJsonPath('code', 'MSG-REQ-003')
+            ->assertJsonPath('level', 'success')
             ->assertJsonPath('data.new_wifi_name', 'NewWifi')
             ->assertJsonPath('data.status', 'under_review');
+
+        Http::assertSentCount(2);
+        Http::assertSent(
+            fn($request) => str_contains($request['text'], '🔄 WI-FI PASSWORD REQUEST UPDATED')
+                && str_contains($request['text'], 'NewWifi')
+                && !str_contains($request['text'], 'another-secret'),
+        );
+
+        $this->withToken($token)
+            ->patchJson('/api/change-password-requests/' . $changePasswordRequest->id . '/cancel')
+            ->assertOk()
+            ->assertJsonPath('code', 'MSG-REQ-001')
+            ->assertJsonPath('level', 'success')
+            ->assertJsonPath('data.status', 'cancelled');
+
+        Http::assertSentCount(3);
+        Http::assertSent(fn($request) => str_contains($request['text'], '🚫 WI-FI PASSWORD REQUEST CANCELLED'));
+
+        $this->withToken($token)
+            ->patchJson('/api/change-password-requests/' . $changePasswordRequest->id . '/cancel')
+            ->assertConflict();
+        Http::assertSentCount(3);
 
         $this->withToken($token)
             ->deleteJson('/api/change-password-requests/' . $changePasswordRequest->id)
@@ -576,7 +823,7 @@ class ServiceRequestApiTest extends TestCase
             'new_wifi_name' => 'UpdatedWifi',
             'new_password' => str_repeat('x', 31),
             'contact_name' => 'Test Customer',
-            'contact_phone' => '95912345678',
+            'contact_phone' => '95922345678',
         ];
 
         $this->withToken($token)
@@ -601,7 +848,74 @@ class ServiceRequestApiTest extends TestCase
         $this->assertSame(str_repeat('x', 30), $changePasswordRequest->refresh()->new_password);
     }
 
-    public function test_ftth_customers_cannot_create_or_update_change_password_requests(): void
+    public function test_change_password_requests_reject_contact_names_over_30_characters(): void
+    {
+        $user = User::factory()->create(['broadband_account_number' => 'CG32345678']);
+        $token = $user->createToken('service-requests')->plainTextToken;
+        $requestData = [
+            'user_id' => $user->id,
+            'broadband_account_number' => $user->broadband_account_number,
+            'new_wifi_name' => 'UpdatedWifi',
+            'new_password' => 'updated-secret',
+            'contact_name' => str_repeat('x', 31),
+            'contact_phone' => '95922345678',
+        ];
+
+        $this->withToken($token)
+            ->postJson('/api/change-password-requests/create', $requestData)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('contact_name');
+
+        $response = $this->withToken($token)
+            ->postJson('/api/change-password-requests/create', [
+                ...$requestData,
+                'contact_name' => 'Test Customer',
+            ])
+            ->assertCreated();
+        $changePasswordRequest = ChangePasswordRequest::query()->findOrFail($response->json('data.id'));
+
+        $this->withToken($token)
+            ->putJson('/api/change-password-requests/' . $changePasswordRequest->id, [
+                ...$requestData,
+                'status' => 'under_review',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('contact_name');
+    }
+
+    public function test_change_password_requests_reject_unsupported_contact_phone_numbers(): void
+    {
+        $user = User::factory()->create(['broadband_account_number' => 'CG32345678']);
+        $token = $user->createToken('service-requests')->plainTextToken;
+        $requestData = [
+            'user_id' => $user->id,
+            'broadband_account_number' => $user->broadband_account_number,
+            'new_wifi_name' => 'UpdatedWifi',
+            'new_password' => 'updated-secret',
+            'contact_name' => 'Test Customer',
+            'contact_phone' => '12345',
+        ];
+
+        $this->withToken($token)
+            ->postJson('/api/change-password-requests/create', $requestData)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('contact_phone');
+
+        $changePasswordRequest = ChangePasswordRequest::factory()->create([
+            'user_id' => $user->id,
+            'broadband_account_number' => $user->broadband_account_number,
+        ]);
+        $this->withToken($token)
+            ->putJson('/api/change-password-requests/' . $changePasswordRequest->id, [
+                ...$requestData,
+                'contact_phone' => '12345',
+                'status' => 'under_review',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('contact_phone');
+    }
+
+    public function test_ftth_customers_can_create_and_update_change_password_requests(): void
     {
         $user = User::factory()->create(['broadband_account_number' => 'FTTH12345678']);
         $token = $user->createToken('service-requests')->plainTextToken;
@@ -611,14 +925,14 @@ class ServiceRequestApiTest extends TestCase
             'new_wifi_name' => 'UpdatedWifi',
             'new_password' => 'updated-secret',
             'contact_name' => 'Test Customer',
-            'contact_phone' => '95912345678',
+            'contact_phone' => '95922345678',
         ];
 
         $this->withToken($token)
             ->postJson('/api/change-password-requests/create', $requestData)
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors('broadband_account_number');
-        $this->assertDatabaseCount('change_password_requests', 0);
+            ->assertCreated()
+            ->assertJsonPath('data.broadband_account_number', $user->broadband_account_number);
+        $this->assertDatabaseCount('change_password_requests', 1);
 
         $changePasswordRequest = ChangePasswordRequest::factory()->create([
             'user_id' => $user->id,
@@ -629,8 +943,9 @@ class ServiceRequestApiTest extends TestCase
                 ...$requestData,
                 'status' => 'under_review',
             ])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors('broadband_account_number');
+            ->assertOk()
+            ->assertJsonPath('data.broadband_account_number', $user->broadband_account_number)
+            ->assertJsonPath('data.status', 'under_review');
         $this->assertSame('under_review', $changePasswordRequest->refresh()->status->value);
     }
 
@@ -679,10 +994,11 @@ class ServiceRequestApiTest extends TestCase
         $this->withToken($token)
             ->putJson('/api/relocation-requests/' . $relocationRequest->id, [
                 'broadband_account_number' => $user->broadband_account_number,
+                'contact_name' => 'Test Customer',
                 'current_address' => 'Current address',
                 'new_address' => 'Updated address',
                 'preferred_date' => now()->addDays(5)->toDateString(),
-                'phone' => '95912345678',
+                'phone' => '95922345678',
             ])
             ->assertForbidden();
         $this->withToken($token)
@@ -703,7 +1019,6 @@ class ServiceRequestApiTest extends TestCase
 
         $user = User::factory()->create();
         $token = $user->createToken('service-requests')->plainTextToken;
-        $area = Area::factory()->create();
         $packageDetail = [
             'product_id' => '249',
             'product_name' => '100M office',
@@ -720,7 +1035,6 @@ class ServiceRequestApiTest extends TestCase
                 [
                     'name' => 'Test Customer',
                     'service_type' => 'FTTH',
-                    'area_id' => $area->id,
                     'package_detail' => $packageDetail,
                     'address' => 'Customer address',
                     'phone' => '95922345678',
@@ -734,7 +1048,6 @@ class ServiceRequestApiTest extends TestCase
             ->putJson('/api/installation-application/' . $created->json('data.id'), [
                 'name' => 'Edited Without New Photos',
                 'service_type' => 'FTTH',
-                'area_id' => $area->id,
                 'package_detail' => $packageDetail,
                 'address' => 'Customer address',
                 'phone' => '95922345678',
@@ -754,13 +1067,10 @@ class ServiceRequestApiTest extends TestCase
     {
         $user = User::factory()->create();
         $token = $user->createToken('service-requests')->plainTextToken;
-        $area = Area::factory()->create();
-
         $this->withToken($token)
             ->postJson('/api/installation-application/create', [
                 'name' => 'Test Customer',
                 'service_type' => 'FTTH',
-                'area_id' => $area->id,
                 'package_detail' => [
                     'product_id' => '249',
                     'product_name' => '100M office',
@@ -791,7 +1101,7 @@ class ServiceRequestApiTest extends TestCase
                     'failure_type' => FailureType::NoInternet->value,
                     'description' => 'The connection has been unavailable since this morning.',
                     'contact_name' => 'Test Customer',
-                    'contact_phone' => '95912345678',
+                    'contact_phone' => '95922345678',
                     'status' => 'approved',
                     'photos' => [
                         UploadedFile::fake()->image('router-1.jpg'),
@@ -818,7 +1128,7 @@ class ServiceRequestApiTest extends TestCase
                 'broadband_account_number' => $user->broadband_account_number,
                 'new_wifi_name' => str_repeat('a', 256),
                 'contact_name' => 'Test Customer',
-                'contact_phone' => '95912345678',
+                'contact_phone' => '95922345678',
             ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('new_wifi_name');

@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Enums\CustomerPackageStatus;
 use App\Enums\RequestStatus;
 use App\Models\Admin;
-use App\Models\ChangePasswordRequest;
 use App\Models\ChangePlanRequest;
 use App\Models\Package;
 use App\Models\RelocationRequest;
@@ -49,18 +48,6 @@ class ServiceRequestSeeder extends Seeder
         $sample = $users->take(8)->values();
         $admin = Admin::query()->first();
 
-        $relocUser = $sample[6];
-        RelocationRequest::factory()->create([
-            'user_id' => $relocUser->id,
-            'broadband_account_number' => $relocUser->broadband_account_number,
-            'status' => RequestStatus::UnderReview,
-        ]);
-        RelocationRequest::factory()->create([
-            'user_id' => $sample[7]->id,
-            'broadband_account_number' => $sample[7]->broadband_account_number,
-            'status' => RequestStatus::Approved,
-        ]);
-
         foreach ($users->take(20)->values() as $index => $user) {
             $customerPackage = $user
                 ->customerPackages()
@@ -72,12 +59,17 @@ class ServiceRequestSeeder extends Seeder
             }
 
             $currentPackageId = $customerPackage->package_id;
-            $currentPackage = Package::query()->with(['network', 'speed', 'term'])->find($currentPackageId);
+            $currentPackage = Package::query()
+                ->with(['network', 'speed', 'term'])
+                ->find($currentPackageId);
 
             $condition = $index % 3;
-            $status = $index < 10
-                ? RequestStatus::UnderReview
-                : ($index < 17 ? RequestStatus::Approved : RequestStatus::Cancelled);
+            $status =
+                $index < 10
+                    ? RequestStatus::UnderReview
+                    : ($index < 17
+                        ? RequestStatus::Approved
+                        : RequestStatus::Cancelled);
 
             $newPackage = match ($condition) {
                 0 => $currentPackage?->speed
@@ -123,7 +115,7 @@ class ServiceRequestSeeder extends Seeder
                 [
                     'broadband_account_number' => $user->broadband_account_number,
                     'service_type' => str_starts_with((string) $user->broadband_account_number, 'CG') ? 'CG' : 'FTTH',
-                    'ticket_number' => 'CPL'.$user->id.str_pad((string) ($index + 1), 4, '0', STR_PAD_LEFT),
+                    'ticket_number' => 'CPL' . $user->id . str_pad((string) ($index + 1), 4, '0', STR_PAD_LEFT),
                     'current_package_detail' => $currentPackage->changePlanDetail(),
                     'new_package_detail' => $newPackage->loadMissing(['network', 'speed', 'term'])->changePlanDetail(),
                     'contact_name' => $user->name,
@@ -134,9 +126,5 @@ class ServiceRequestSeeder extends Seeder
                 ],
             );
         }
-
-        ChangePasswordRequest::factory()->count(10)->underReview()->create();
-        ChangePasswordRequest::factory()->count(6)->approved()->create();
-        ChangePasswordRequest::factory()->count(4)->cancelled()->create();
     }
 }

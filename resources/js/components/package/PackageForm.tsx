@@ -33,9 +33,9 @@ export type PackageFormValues = {
     network_id: number | '';
     speed_id: number | '';
     term_id: number | '';
-    price: number | '';
+    price: number | string;
     image_url: File | null;
-    installation_fee: number | '';
+    installation_fee: number | string;
     includes_free_iptv: boolean;
     is_active: boolean;
     sort_order: number | '';
@@ -152,14 +152,17 @@ export function PackageForm({
         return form.errors[field] || validatePackageField(field, form.data, t);
     };
 
-    const preventInvalidNumberKeys = (event: React.KeyboardEvent<HTMLInputElement>) => {
-        if (['e', 'E', '+', '-', '.'].includes(event.key)) {
+    const preventInvalidNumberKeys = (event: React.KeyboardEvent<HTMLInputElement>, decimal = false) => {
+        if (['e', 'E', '+', '-'].includes(event.key) || (!decimal && event.key === '.')) {
             event.preventDefault();
         }
     };
 
     const handleNumberChange = (field: 'price' | 'installation_fee' | 'sort_order', value: string) => {
-        if (!/^\d*$/.test(value)) {
+        const decimal = field === 'price' || field === 'installation_fee';
+        const pattern = decimal ? /^\d*(\.\d{0,2})?$/ : /^\d*$/;
+
+        if (!pattern.test(value)) {
             return;
         }
 
@@ -170,7 +173,7 @@ export function PackageForm({
             [field]: true,
         }));
 
-        form.setData(field, normalizedValue === '' ? '' : Number(normalizedValue));
+        form.setData(field, normalizedValue === '' ? '' : decimal ? normalizedValue : Number(normalizedValue));
         form.clearErrors(field);
     };
 
@@ -319,9 +322,10 @@ export function PackageForm({
                             <Input
                                 id="price"
                                 type="number"
+                                step="0.01"
                                 value={String(form.data.price ?? '')}
                                 className={cn('w-full', formControlStateClass(fieldState('price')))}
-                                onKeyDown={preventInvalidNumberKeys}
+                                onKeyDown={(event) => preventInvalidNumberKeys(event, true)}
                                 onChange={(event) => handleNumberChange('price', event.target.value)}
                                 aria-invalid={Boolean(form.errors.price)}
                             />
@@ -336,9 +340,10 @@ export function PackageForm({
                             <Input
                                 id="installation_fee"
                                 type="number"
+                                step="0.01"
                                 value={String(form.data.installation_fee ?? '')}
                                 className={cn('w-full', formControlStateClass(fieldState('installation_fee')))}
-                                onKeyDown={preventInvalidNumberKeys}
+                                onKeyDown={(event) => preventInvalidNumberKeys(event, true)}
                                 onChange={(event) => handleNumberChange('installation_fee', event.target.value)}
                                 aria-invalid={Boolean(form.errors.installation_fee)}
                             />

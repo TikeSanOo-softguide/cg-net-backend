@@ -1,0 +1,305 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Enums\AnnouncementType;
+use App\Enums\NotificationCategory;
+use App\Jobs\SendInternetBillDueNotificationJob;
+use App\Models\Announcement;
+use App\Models\DeviceToken;
+use App\Models\Notification;
+use App\Models\NotificationTemplate;
+use App\Models\Promotion;
+use App\Models\User;
+use App\Enums\NotificationTemplateType;
+use App\Notifications\InternetBillDueNotification;
+use App\Services\Notification\DueInternetBillNotificationService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
+use Illuminate\Support\Facades\Queue;
+use Tests\TestCase;
+
+class DueInternetBillNotificationTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        NotificationTemplate::factory()->create([
+            'type' => NotificationTemplateType::BillAlert,
+        ]);
+    }
+
+    public function test_scan_queues_notifications_only_for_active_users_with_bills_due_in_seven_days(): void
+    {
+        $firstUser = User::factory()->create(['broadband_account_number' => 'DUE-ACCOUNT']);
+        $outsideWindowUser = User::factory()->create(['broadband_account_number' => 'LATE-ACCOUNT']);
+        User::factory()
+            ->suspended()
+            ->create(['broadband_account_number' => 'DUE-SUSPENDED']);
+
+        Http::fake([
+            'billing-server.test/due-bills*' => Http::response([
+                'data' => [
+                    [
+                        'account_number' => 'DUE-ACCOUNT',
+                        'bill_month' => '2026-10',
+                        'due_date' => now()->addDays(7)->toDateString(),
+                        'bill_id' => 'bill-due',
+                    ],
+                    [
+                        'account_number' => 'LATE-ACCOUNT',
+                        'bill_month' => '2026-10',
+                        'due_date' => now()->addDays(8)->toDateString(),
+                        'bill_id' => 'bill-late',
+                    ],
+                ],
+            ]),
+        ]);
+        Queue::fake();
+
+        $count = app(DueInternetBillNotificationService::class)->dispatchDueBills();
+
+        $this->assertSame(1, $count);
+        Queue::assertPushed(SendInternetBillDueNotificationJob::class, 1);
+        Queue::assertPushed(
+            SendInternetBillDueNotificationJob::class,
+            fn(SendInternetBillDueNotificationJob $job): bool => $job->userId === $firstUser->id,
+        );
+        Queue::assertNotPushed(
+            SendInternetBillDueNotificationJob::class,
+            fn(SendInternetBillDueNotificationJob $job): bool => $job->userId === $outsideWindowUser->id,
+        );
+        $this->assertCount(1, Http::recorded());
+        Http::assertSent(function (Request $request): bool {
+            return str_ends_with(parse_url($request->url(), PHP_URL_PATH), '/due-bills') &&
+                $request['due_date_from'] === now()->toDateString() &&
+                $request['due_date_to'] === now()->addDays(7)->toDateString();
+        });
+    }
+
+    public function test_delivery_creates_a_common_notification_record_and_sends_fcm_once(): void
+    {
+        $user = User::factory()->create(['broadband_account_number' => 'CG12345678', 'lang' => 'zh']);
+        DeviceToken::query()->create(['user_id' => $user->id, 'token' => 'device-token']);
+        NotificationFacade::fake();
+
+        $job = new SendInternetBillDueNotificationJob(
+            userId: (int) $user->id,
+            accountNumber: 'CG12345678',
+            dueDate: '2026-10-11',
+            actionId: 'bill-123',
+        );
+
+        $job->handle();
+        $job->handle();
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $user->id,
+            'category' => NotificationCategory::Announcement->value,
+            'action_type' => 'ftth_bill',
+            'action_id' => 'bill-123',
+            'is_read' => false,
+        ]);
+        $stored = Notification::query()->where('user_id', $user->id)->firstOrFail();
+        $this->assertSame('bill_alert', $stored->templateable->type->value);
+        $this->assertSame('CG12345678', $stored->template_data['account_number']);
+        $this->assertSame(1, Notification::query()->where('user_id', $user->id)->count());
+        NotificationFacade::assertSentTo($user, InternetBillDueNotification::class, 1);
+        NotificationFacade::assertSentTo(
+            $user,
+            InternetBillDueNotification::class,
+            fn(InternetBillDueNotification $sent): bool => $sent->title === '互联网账单即将到期' &&
+                str_contains($sent->body, 'CG12345678'),
+        );
+    }
+
+    public function test_delivery_still_stores_a_notification_when_the_user_has_no_device_token(): void
+    {
+        $user = User::factory()->create(['broadband_account_number' => 'CG12345678']);
+        NotificationFacade::fake();
+
+        (new SendInternetBillDueNotificationJob(
+            userId: (int) $user->id,
+            accountNumber: 'CG12345678',
+            dueDate: '2026-10-11',
+            actionId: 'bill-without-device',
+        ))->handle();
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $user->id,
+            'action_type' => 'ftth_bill',
+            'action_id' => 'bill-without-device',
+        ]);
+        $this->assertNull(Notification::query()->where('action_id', 'bill-without-device')->value('sent_at'));
+        NotificationFacade::assertNothingSent();
+    }
+
+    public function test_delivery_retries_an_existing_notification_after_a_device_token_is_registered(): void
+    {
+        $user = User::factory()->create(['broadband_account_number' => 'CG12345678']);
+        NotificationFacade::fake();
+        $job = new SendInternetBillDueNotificationJob(
+            userId: (int) $user->id,
+            accountNumber: 'CG12345678',
+            dueDate: '2026-10-11',
+            actionId: 'bill-token-added-later',
+        );
+
+        $job->handle();
+        DeviceToken::query()->create(['user_id' => $user->id, 'token' => 'registered-later']);
+        $job->handle();
+
+        $this->assertNotNull(Notification::query()->where('action_id', 'bill-token-added-later')->value('sent_at'));
+        NotificationFacade::assertSentTo($user, InternetBillDueNotification::class, 1);
+    }
+
+    public function test_notification_endpoints_are_scoped_to_the_authenticated_user(): void
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $notification = Notification::factory()->create([
+            'user_id' => $user->id,
+            'category' => NotificationCategory::Announcement,
+            'action_type' => 'ftth_bill',
+            'action_id' => 'bill-123',
+            'is_read' => false,
+        ]);
+        $otherNotification = Notification::factory()->create([
+            'user_id' => $otherUser->id,
+            'is_read' => false,
+        ]);
+        $token = $user->createToken('test')->plainTextToken;
+
+        $this->withToken($token, 'Bearer')
+            ->getJson('/api/notifications')
+            ->assertOk()
+            ->assertJsonPath('unread_count', 1)
+            ->assertJsonPath('data.0.category', 'announcement')
+            ->assertJsonPath('data.0.action_type', 'ftth_bill')
+            ->assertJsonPath('data.0.action_id', 'bill-123')
+            ->assertJsonPath('data.0.title', 'Internet bill due soon')
+            ->assertJsonPath(
+                'data.0.body',
+                'Your bill for account ' .
+                    $notification->template_data['account_number'] .
+                    ' is due on ' .
+                    $notification->template_data['due_date'] .
+                    '. Tap to view details.',
+            )
+            ->assertJsonPath('data.0.is_read', false);
+
+        $this->withToken($token, 'Bearer')
+            ->patchJson("/api/notifications/{$notification->id}/read")
+            ->assertOk()
+            ->assertJsonPath('data.is_read', true);
+
+        $this->withToken($token, 'Bearer')
+            ->patchJson("/api/notifications/{$otherNotification->id}/read")
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('notifications', ['id' => $notification->id, 'is_read' => true]);
+        $this->assertFalse((bool) Notification::query()->findOrFail($otherNotification->id)->is_read);
+    }
+
+    public function test_deleted_announcements_and_promotions_stay_out_of_the_inbox(): void
+    {
+        $user = User::factory()->create();
+        $announcement = Announcement::factory()->create();
+        $promotion = Promotion::factory()->create();
+        $kept = Notification::factory()->create([
+            'user_id' => $user->id,
+            'category' => NotificationCategory::BillAlert,
+            'is_read' => false,
+            'action_type' => 'ftth_bill',
+            'action_id' => 'bill-kept',
+        ]);
+        Notification::factory()->create([
+            'user_id' => $user->id,
+            'category' => NotificationCategory::Announcement,
+            'is_read' => false,
+            'action_type' => 'announcement',
+            'action_id' => (string) $announcement->id,
+            'templateable_type' => Announcement::class,
+            'templateable_id' => $announcement->id,
+            'template_data' => [
+                'title_en' => 'Deleted announcement',
+                'body_en' => 'This announcement was removed.',
+            ],
+        ]);
+        Notification::factory()->create([
+            'user_id' => $user->id,
+            'category' => NotificationCategory::Promotion,
+            'is_read' => false,
+            'action_type' => 'promotion',
+            'action_id' => (string) $promotion->id,
+            'templateable_type' => Promotion::class,
+            'templateable_id' => $promotion->id,
+            'template_data' => [
+                'title_en' => 'Deleted promotion',
+                'body_en' => 'This promotion was removed.',
+            ],
+        ]);
+        $announcement->delete();
+        $promotion->delete();
+
+        $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
+            ->getJson('/api/notifications')
+            ->assertOk()
+            ->assertJsonPath('unread_count', 1)
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $kept->id);
+    }
+
+    public function test_a_new_system_announcement_appears_in_the_inbox_before_it_is_pushed(): void
+    {
+        $user = User::factory()->create(['lang' => 'en']);
+        $announcement = Announcement::factory()->create([
+            'type' => AnnouncementType::System,
+            'title_en' => 'System notice',
+            'content_en' => 'Network work tonight.',
+            'is_active' => true,
+            'start_date' => now()->subHour(),
+            'end_date' => now()->addDay(),
+        ]);
+        Announcement::factory()->inactive()->create([
+            'type' => AnnouncementType::System,
+            'title_en' => 'Hidden notice',
+        ]);
+
+        $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
+            ->getJson('/api/notifications')
+            ->assertOk()
+            ->assertJsonFragment([
+                'title' => 'System notice',
+                'body' => 'Network work tonight.',
+                'category' => 'system',
+                'action_type' => 'announcement',
+                'action_id' => (string) $announcement->id,
+                'is_read' => false,
+            ])
+            ->assertJsonMissing(['title' => 'Hidden notice']);
+    }
+
+    public function test_fcm_data_contains_action_metadata_for_deep_linking(): void
+    {
+        $user = User::factory()->create();
+        $notification = new InternetBillDueNotification(
+            title: 'Internet bill due soon',
+            body: 'Your bill for account CG12345678 is due soon.',
+            actionId: 'bill-123',
+        );
+
+        $message = $notification->toFcm($user)->toArray();
+
+        $this->assertSame('ftth_bill', $message['data']['action_type']);
+        $this->assertSame('bill-123', $message['data']['action_id']);
+        $this->assertSame('Internet bill due soon', $message['webpush']['notification']['title']);
+        $this->assertSame('user_notification', $message['webpush']['notification']['data']['type']);
+        $this->assertSame('bill-123', $message['webpush']['notification']['data']['action_id']);
+    }
+}

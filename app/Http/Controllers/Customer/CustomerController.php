@@ -88,7 +88,7 @@ class CustomerController extends Controller
                     'name' => $customer->name,
                     'phone' => $customer->phone,
                     'status' => $customer->status->value,
-                    'wallet_balance' => number_format((float) ($customer->wallet?->balance ?? 0), 0, '.', ''),
+                    'wallet_balance' => $customer->wallet?->balance ?? '0.00',
                     'broadband_connected' => $customer->broadband_account_number !== null,
                     'created_at' => $customer->created_at?->toDateString(),
                 ];
@@ -170,7 +170,7 @@ class CustomerController extends Controller
                 fn($card) => [
                     'id' => $card->id,
                     'serial_no' => $card->serial_no,
-                    'amount' => (int) $card->amount,
+                    'amount' => $card->amount,
                     'status' => $card->status->value,
                     'redeemed_at' => $card->redeemed_at,
                 ],
@@ -210,11 +210,12 @@ class CustomerController extends Controller
                 ->keyBy('type');
         }
 
-        $formatAmount = fn($amount) => number_format((float) $amount, 0, '.', '');
+        $formatAmount = fn($amount) => number_format((float) ($amount ?? 0), 2, '.', '');
         $adjustmentSummary = $walletTransactionSummaries->get(LedgerTransactionType::Adjustment->value);
         $transactionOverview = collect([
             ['key' => 'topup', 'type' => LedgerTransactionType::Topup],
             ['key' => 'ftth_bill', 'type' => LedgerTransactionType::FtthBill],
+            ['key' => 'cg_bill', 'type' => LedgerTransactionType::CgBill],
             ['key' => 'wifi_package', 'type' => LedgerTransactionType::WifiPackage],
             ['key' => 'refund', 'type' => LedgerTransactionType::Refund],
         ])
@@ -312,7 +313,7 @@ class CustomerController extends Controller
                 : null,
             'packageHistory' => $packageRows->values(),
             'wallet' => [
-                'balance' => number_format((float) ($customer->wallet?->balance ?? 0), 0, '.', ''),
+                'balance' => $customer->wallet?->balance ?? '0.00',
                 'transaction_overview' => $transactionOverview,
                 'transactions' =>
                     $customer->wallet?->transactions
@@ -322,7 +323,7 @@ class CustomerController extends Controller
                                 'transaction_no' => $transaction->transaction_no,
                                 'type' => $transaction->type->value,
                                 'status' => $transaction->status->value,
-                                'amount' => number_format((float) $transaction->amount, 0, '.', ''),
+                                'amount' => $transaction->amount,
                                 'created_at' => $transaction->created_at?->toDateString(),
                             ],
                         )

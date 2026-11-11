@@ -28,7 +28,7 @@ class BillingServerClient
             ]);
 
         if (!$response->successful()) {
-            throw new RuntimeException('Unable to retrieve due FTTH bills from the billing server.');
+            throw new RuntimeException('Unable to retrieve due Internet bills from the billing server.');
         }
 
         $payload = $response->json();
@@ -68,7 +68,7 @@ class BillingServerClient
             ]);
 
         if (!$response->successful()) {
-            throw new RuntimeException('Unable to determine the FTTH bill amount from the billing server.');
+            throw new RuntimeException('Unable to determine the Internet bill amount from the billing server.');
         }
 
         $payload = $response->json() ?? [];
@@ -77,13 +77,13 @@ class BillingServerClient
             ($payload['total_amount'] ?? ($payload['bill_amount'] ?? ($payload['data']['amount'] ?? null)));
 
         if (!is_numeric($amount)) {
-            throw new RuntimeException('Unable to determine the FTTH bill amount for this account.');
+            throw new RuntimeException('Unable to determine the Internet bill amount for this account.');
         }
 
-        $amount = (int) $amount;
+        $amount = round((float) $amount, 2);
 
         if ($amount < 1) {
-            throw new RuntimeException('FTTH bill amount must be at least 1.');
+            throw new RuntimeException('Internet bill amount must be at least 1.');
         }
 
         return $amount;
@@ -142,13 +142,13 @@ class BillingServerClient
             ]);
 
         if (!$response->successful()) {
-            throw new RuntimeException('Unable to retrieve FTTH bill details from the billing server.');
+            throw new RuntimeException('Unable to retrieve Internet bill details from the billing server.');
         }
 
         $payload = $response->json();
 
         if (!is_array($payload)) {
-            throw new RuntimeException('The billing server returned invalid FTTH bill details.');
+            throw new RuntimeException('The billing server returned invalid Internet bill details.');
         }
 
         return $payload;

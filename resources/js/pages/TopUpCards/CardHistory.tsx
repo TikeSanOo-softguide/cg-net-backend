@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/PageHeader';
 import type { Paginated } from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
 import { CardHistoryFilters, type TopUpCardRow } from '@/lib/top-up-cards';
-import { Ban, CalendarX, ClipboardCheck, Clock3, CreditCard, TicketIcon } from 'lucide-react';
+import { Ban, CalendarX, ClipboardCheck, CreditCard, TicketIcon } from 'lucide-react';
 import { StatCard } from '@/components/StatCard';
 import { TopUpCardHistoryTable } from '@/components/top-up-cards/TopUpCardHistoryTable';
 
@@ -85,8 +85,8 @@ export default function CardHistory({ cards, batches, generated = [], amounts, o
         {
             key: 'cards.pending',
             title: t('status.pending'),
-            value: stats.active.toLocaleString(),
-            icon: Clock3,
+            value: stats.pending.toLocaleString(),
+            icon: CreditCard,
         },
         {
             key: 'cards.active',

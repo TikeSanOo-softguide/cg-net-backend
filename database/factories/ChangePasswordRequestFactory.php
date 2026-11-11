@@ -23,6 +23,10 @@ class ChangePasswordRequestFactory extends Factory
         return [
             'user_id' => User::factory()->state(['broadband_account_number' => $accountNumber]),
             'broadband_account_number' => $accountNumber,
+            'ticket_number' =>
+                'CWP' .
+                now()->format('md') .
+                str_pad((string) fake()->unique()->numberBetween(1, 9999), 4, '0', STR_PAD_LEFT),
             'contact_name' => fake()->name(),
             'contact_phone' => fake()->phoneNumber(),
             'new_wifi_name' => fake()->userName() . '_wifi',

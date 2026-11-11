@@ -110,6 +110,7 @@ type TransactionSummary = {
 type TransactionOverview = {
     topup: TransactionSummary;
     ftth_bill: TransactionSummary;
+    cg_bill: TransactionSummary;
     wifi_package: TransactionSummary;
     refund: TransactionSummary;
     adjustment: {

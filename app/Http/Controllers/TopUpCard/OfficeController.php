@@ -18,6 +18,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -31,9 +32,30 @@ class OfficeController extends Controller
         $officeQuery = Office::query()
             ->withCount('topUpCards')
             ->when($search !== '', function ($query) use ($search): void {
-                $query->whereLike('name', '%' . $search . '%')->orWhereLike('address', '%' . $search . '%');
+                $query->where(function ($query) use ($search): void {
+                    foreach (
+                        [
+                            'name_en',
+                            'name_mm',
+                            'name_zh',
+                            'cd',
+                            'address_en',
+                            'address_mm',
+                            'address_zh',
+                            'phone_num1',
+                            'phone_num2',
+                            'phone_num3',
+                            'telegram_link',
+                            'wechat_link',
+                            'viber_link',
+                        ]
+                        as $column
+                    ) {
+                        $query->orWhereLike($column, "%{$search}%");
+                    }
+                });
             })
-            ->orderBy('name');
+            ->orderBy('created_at');
         $offices = $officeQuery->paginate(15)->withQueryString();
         $officeCds = Office::query()->pluck('cd')->map(fn($cd): string => (string) $cd)->values();
 
@@ -53,13 +75,11 @@ class OfficeController extends Controller
         $batchStatus = BatchStatus::tryFrom($status);
 
         $batchPage = Batch::query()
-            ->whereHas('topUpCards', fn($query) => $query->where('status', '!=', TopUpCardStatus::Pending->value))
+            ->whereHas('topUpCards')
             ->when($batchStatus, fn($query) => $query->where('status', $batchStatus))
             ->when($batch !== '' && is_numeric($batch), fn($query) => $query->whereKey((int) $batch))
             ->withCount([
-                'topUpCards as assigned_cards_count' => fn($query) => $query
-                    ->where('status', '!=', TopUpCardStatus::Pending->value)
-                    ->whereNotNull('office_id'),
+                'topUpCards as assigned_cards_count' => fn($query) => $query->whereNotNull('office_id'),
             ])
             ->latest('id')
             ->paginate(100)
@@ -78,7 +98,7 @@ class OfficeController extends Controller
 
         $batches = Batch::query()
             ->select(['id', 'batch_no', 'expires_at'])
-            ->whereHas('topUpCards', fn($query) => $query->where('status', '!=', TopUpCardStatus::Pending->value))
+            ->whereHas('topUpCards')
             ->latest('id')
             ->get()
             ->map(
@@ -101,15 +121,57 @@ class OfficeController extends Controller
 
     public function voidBatch(Batch $batch): RedirectResponse
     {
-        abort_unless($batch->status === BatchStatus::Active, 409);
+        DB::transaction(function () use ($batch): void {
+            $batch = Batch::query()->lockForUpdate()->findOrFail($batch->id);
 
-        $batch->topUpCards()->update([
-            'status' => TopUpCardStatus::Blocked,
-        ]);
+            if ($batch->status === BatchStatus::Blocked) {
+                return;
+            }
 
-        $batch->update(['status' => BatchStatus::Blocked]);
+            abort_unless($batch->status === BatchStatus::Active, 409);
+
+            $batch->topUpCards()->update([
+                'status' => TopUpCardStatus::Blocked,
+            ]);
+
+            $batch->update(['status' => BatchStatus::Blocked]);
+        });
 
         return back()->with('success', 'status.blocked');
+    }
+
+    public function activateBatch(Batch $batch): RedirectResponse
+    {
+        DB::transaction(function () use ($batch): void {
+            $batch = Batch::query()->lockForUpdate()->findOrFail($batch->id);
+
+            if ($batch->status === BatchStatus::Active) {
+                return;
+            }
+
+            abort_unless($batch->status === BatchStatus::Pending, 409);
+
+            $activationDate = now()->startOfDay();
+            $activatedAt = $activationDate->toDateString();
+            $expiresAt = $activationDate->copy()->addYears(2)->toDateString();
+            $activatedCards = $batch->topUpCards()
+                ->where('status', TopUpCardStatus::Pending)
+                ->update([
+                    'status' => TopUpCardStatus::Active->value,
+                    'activated_at' => $activatedAt,
+                    'expires_at' => $expiresAt,
+                    'updated_at' => now(),
+                ]);
+
+            abort_unless($activatedCards > 0, 409);
+
+            $batch->update([
+                'status' => BatchStatus::Active,
+                'expires_at' => $expiresAt,
+            ]);
+        });
+
+        return back()->with('success', 'top_up_cards.batch_activated');
     }
 
     public function import(Request $request): RedirectResponse

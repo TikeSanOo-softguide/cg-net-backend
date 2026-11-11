@@ -50,9 +50,11 @@ class ApiAuthenticationTest extends TestCase
 
         $response
             ->assertCreated()
+            ->assertJsonPath('code', 'MSG-AUTH-020')
+            ->assertJsonPath('level', 'success')
             ->assertJsonPath('token_type', 'Bearer')
             ->assertJsonPath('user.lang', 'my')
-            ->assertJsonStructure(['token', 'expires_at', 'user' => ['id', 'phone', 'name']]);
+            ->assertJsonStructure(['code', 'token', 'expires_at', 'user' => ['id', 'phone', 'name']]);
         $this->assertDatabaseHas('users', ['phone' => self::PHONE, 'name' => 'New User', 'lang' => 'my']);
 
         $user = User::query()->where('phone', self::PHONE)->firstOrFail();
@@ -198,7 +200,11 @@ class ApiAuthenticationTest extends TestCase
             'code' => $challenge['debug_otp'],
         ])->assertOk();
 
-        $verify->assertJsonPath('next_step', 'password')->assertJsonStructure(['verification_token']);
+        $verify
+            ->assertJsonPath('code', 'MSG-AUTH-021')
+            ->assertJsonPath('level', 'success')
+            ->assertJsonPath('next_step', 'password')
+            ->assertJsonStructure(['verification_token']);
         $this->assertArrayNotHasKey('token', $verify->json());
         $this->assertDatabaseCount('personal_access_tokens', 0);
     }

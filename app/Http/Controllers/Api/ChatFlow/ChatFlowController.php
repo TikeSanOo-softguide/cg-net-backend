@@ -8,6 +8,7 @@ use App\Enums\ChatFlowOptionAction;
 use App\Enums\ChatSenderType;
 use App\Events\ChatConversationStatusChanged;
 use App\Events\ChatMessageCreated;
+use App\Events\LiveChatRequested;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Chat\ChatMessageResource;
 use App\Jobs\SendChatWaitingTelegramNotification;
@@ -305,6 +306,7 @@ class ChatFlowController extends Controller
             $this->broadcastStatusChanged($conversation, $previousStatus);
 
             if ($conversation->status->isWaiting() && $selectedOption) {
+                rescue(fn() => LiveChatRequested::dispatch($conversation));
                 $this->notifyAgentsOfWaitingConversation($conversation, $selectedOption, $language);
             }
         }

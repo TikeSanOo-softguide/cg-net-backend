@@ -6,12 +6,14 @@ use App\Enums\LedgerAccountCode;
 use App\Enums\LedgerAccountType;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
+use App\Enums\TransactionIdPrefix;
 use App\Enums\WalletActorType;
 use App\Enums\WalletStatus;
 use App\Models\LedgerAccount;
 use App\Models\LedgerEntry;
 use App\Models\LedgerTransaction;
 use App\Models\Wallet;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -20,6 +22,12 @@ use RuntimeException;
 
 class LedgerPoster
 {
+    private const TRANSACTION_NO_RETRY_LIMIT = 5;
+
+    public function __construct(
+        private readonly TransactionIdGenerator $transactionIds,
+    ) {}
+
     /**
      * Ensure system ledger accounts exist (idempotent).
      */
@@ -65,7 +73,7 @@ class LedgerPoster
      */
     public function debitWallet(
         Wallet $wallet,
-        int $amount,
+        float $amount,
         LedgerAccountCode $contraAccount,
         LedgerTransactionType $type,
         LedgerTransactionStatus $status,
@@ -78,6 +86,7 @@ class LedgerPoster
         ?int $reversalOf = null,
         ?int $relatedTransactionId = null,
         ?string $note = null,
+        ?TransactionIdPrefix $transactionIdPrefix = null,
     ): LedgerTransaction {
         return $this->post(
             wallet: $wallet,
@@ -97,6 +106,7 @@ class LedgerPoster
             reversalOf: $reversalOf,
             relatedTransactionId: $relatedTransactionId,
             note: $note,
+            transactionIdPrefix: $transactionIdPrefix,
         );
     }
 
@@ -105,7 +115,7 @@ class LedgerPoster
      */
     public function creditWallet(
         Wallet $wallet,
-        int $amount,
+        float $amount,
         LedgerAccountCode $contraAccount,
         LedgerTransactionType $type,
         LedgerTransactionStatus $status,
@@ -118,6 +128,7 @@ class LedgerPoster
         ?int $reversalOf = null,
         ?int $relatedTransactionId = null,
         ?string $note = null,
+        ?TransactionIdPrefix $transactionIdPrefix = null,
     ): LedgerTransaction {
         return $this->post(
             wallet: $wallet,
@@ -137,15 +148,16 @@ class LedgerPoster
             reversalOf: $reversalOf,
             relatedTransactionId: $relatedTransactionId,
             note: $note,
+            transactionIdPrefix: $transactionIdPrefix,
         );
     }
 
     /**
-     * @param  list<array{account: LedgerAccountCode|'customer'|LedgerAccount, debit?: int, credit?: int}>  $lines
+     * @param  list<array{account: LedgerAccountCode|'customer'|LedgerAccount, debit?: float, credit?: float}>  $lines
      */
     public function post(
         Wallet $wallet,
-        int $amount,
+        float $amount,
         LedgerTransactionType $type,
         LedgerTransactionStatus $status,
         string $idempotencyKey,
@@ -158,6 +170,7 @@ class LedgerPoster
         ?int $reversalOf = null,
         ?int $relatedTransactionId = null,
         ?string $note = null,
+        ?TransactionIdPrefix $transactionIdPrefix = null,
     ): LedgerTransaction {
         if ($amount < 1) {
             throw new InvalidArgumentException('Ledger amount must be at least 1.');
@@ -187,6 +200,7 @@ class LedgerPoster
             $reversalOf,
             $relatedTransactionId,
             $note,
+            $transactionIdPrefix,
         ) {
             /** @var Wallet $locked */
             $locked = Wallet::query()->whereKey($wallet->id)->lockForUpdate()->firstOrFail();
@@ -199,13 +213,13 @@ class LedgerPoster
 
             $customerAccount = $this->ensureCustomerLiabilityAccount($locked);
             $resolvedLines = [];
-            $totalDebit = 0;
-            $totalCredit = 0;
-            $walletDelta = 0;
+            $totalDebit = 0.0;
+            $totalCredit = 0.0;
+            $walletDelta = 0.0;
 
             foreach ($lines as $index => $line) {
-                $debit = (int) ($line['debit'] ?? 0);
-                $credit = (int) ($line['credit'] ?? 0);
+                $debit = round((float) ($line['debit'] ?? 0), 2);
+                $credit = round((float) ($line['credit'] ?? 0), 2);
 
                 if ($debit < 0 || $credit < 0 || ($debit > 0 && $credit > 0) || ($debit === 0 && $credit === 0)) {
                     throw new InvalidArgumentException(
@@ -234,11 +248,14 @@ class LedgerPoster
                 ];
             }
 
-            if ($totalDebit !== $totalCredit || $totalDebit !== $amount) {
+            if (
+                round($totalDebit, 2) !== round($totalCredit, 2) ||
+                round($totalDebit, 2) !== round($amount, 2)
+            ) {
                 throw new RuntimeException('Ledger posting is unbalanced or does not match the transaction amount.');
             }
 
-            $before = (int) $locked->balance;
+            $before = (float) $locked->balance;
             $after = $before + $walletDelta;
 
             if ($after < 0) {
@@ -251,22 +268,22 @@ class LedgerPoster
             $locked->incrementVersion();
             $locked->save();
 
-            $transaction = LedgerTransaction::query()->create([
-                'wallet_id' => $locked->id,
-                'transaction_no' => $transactionNo ?? $this->transactionNo($type),
-                'type' => $type,
-                'status' => $status,
-                'amount' => $amount,
-                'idempotency_key' => $idempotencyKey,
-                'reversal_of' => $reversalOf,
-                'related_transaction_id' => $relatedTransactionId,
-                'note' => $note,
-                'actor_type' => $actorType,
-                'actor_id' => $actorId,
-                'ip_address' => $ipAddress,
-                'user_agent' => $userAgent,
-                'posted_at' => now(),
-            ]);
+            $transaction = $this->insertLedgerTransaction(
+                walletId: $locked->id,
+                type: $type,
+                status: $status,
+                amount: $amount,
+                idempotencyKey: $idempotencyKey,
+                transactionNo: $transactionNo,
+                transactionIdPrefix: $transactionIdPrefix,
+                reversalOf: $reversalOf,
+                relatedTransactionId: $relatedTransactionId,
+                note: $note,
+                actorType: $actorType,
+                actorId: $actorId,
+                ipAddress: $ipAddress,
+                userAgent: $userAgent,
+            );
 
             foreach ($resolvedLines as $line) {
                 /** @var LedgerAccount $account */
@@ -340,16 +357,109 @@ class LedgerPoster
         return $found;
     }
 
-    private function transactionNo(LedgerTransactionType $type): string
+    private function insertLedgerTransaction(
+        int $walletId,
+        LedgerTransactionType $type,
+        LedgerTransactionStatus $status,
+        float $amount,
+        string $idempotencyKey,
+        ?string $transactionNo,
+        ?TransactionIdPrefix $transactionIdPrefix,
+        ?int $reversalOf,
+        ?int $relatedTransactionId,
+        ?string $note,
+        ?WalletActorType $actorType,
+        ?int $actorId,
+        ?string $ipAddress,
+        ?string $userAgent,
+    ): LedgerTransaction {
+        $attempt = 0;
+
+        while (true) {
+            $attempt++;
+            $assignedNo = $transactionNo ?? $this->transactionNo($type, $transactionIdPrefix);
+
+            try {
+                return DB::transaction(function () use (
+                    $walletId,
+                    $assignedNo,
+                    $type,
+                    $status,
+                    $amount,
+                    $idempotencyKey,
+                    $reversalOf,
+                    $relatedTransactionId,
+                    $note,
+                    $actorType,
+                    $actorId,
+                    $ipAddress,
+                    $userAgent,
+                ) {
+                    return LedgerTransaction::query()->create([
+                        'wallet_id' => $walletId,
+                        'transaction_no' => $assignedNo,
+                        'type' => $type,
+                        'status' => $status,
+                        'amount' => $amount,
+                        'idempotency_key' => $idempotencyKey,
+                        'reversal_of' => $reversalOf,
+                        'related_transaction_id' => $relatedTransactionId,
+                        'note' => $note,
+                        'actor_type' => $actorType,
+                        'actor_id' => $actorId,
+                        'ip_address' => $ipAddress,
+                        'user_agent' => $userAgent,
+                        'posted_at' => now(),
+                    ]);
+                });
+            } catch (QueryException $exception) {
+                if (! $this->shouldRetryTransactionNo($exception, $transactionNo, $attempt)) {
+                    throw $exception;
+                }
+            }
+        }
+    }
+
+    private function transactionNo(LedgerTransactionType $type, ?TransactionIdPrefix $prefix): string
     {
-        $prefix = match ($type) {
-            LedgerTransactionType::FtthBill => 'FTTH',
-            LedgerTransactionType::Refund => 'REFUND',
-            LedgerTransactionType::Topup => 'TOPUP',
-            LedgerTransactionType::WifiPackage => 'WIFI',
-            LedgerTransactionType::Adjustment => 'ADJ',
+        $resolved = $prefix ?? match ($type) {
+            LedgerTransactionType::WifiPackage => TransactionIdPrefix::BuyPackage,
+            LedgerTransactionType::FtthBill => TransactionIdPrefix::PayBillFtth,
+            LedgerTransactionType::CgBill => TransactionIdPrefix::PayBillCg,
+            default => null,
         };
 
-        return $prefix.'-'.Str::ulid();
+        if ($resolved !== null) {
+            return $this->transactionIds->generate($resolved);
+        }
+
+        $legacyPrefix = match ($type) {
+            LedgerTransactionType::Refund => 'REFUND',
+            LedgerTransactionType::Topup => 'TOPUP',
+            LedgerTransactionType::Adjustment => 'ADJ',
+            default => 'TXN',
+        };
+
+        return $legacyPrefix.'-'.Str::ulid();
+    }
+
+    private function shouldRetryTransactionNo(QueryException $exception, ?string $transactionNo, int $attempt): bool
+    {
+        if ($transactionNo !== null || $attempt >= self::TRANSACTION_NO_RETRY_LIMIT) {
+            return false;
+        }
+
+        return $this->uniqueConstraintOn($exception, 'transaction_no')
+            && ! $this->uniqueConstraintOn($exception, 'idempotency_key');
+    }
+
+    private function uniqueConstraintOn(QueryException $exception, string $column): bool
+    {
+        $message = $exception->getMessage();
+
+        return (bool) preg_match(
+            '/UNIQUE constraint failed:\s*(?:[\w.]+\.)?'.$column.'\b|for key [\'"`]?[\w]*'.$column.'[\w]*[\'"`]?/i',
+            $message,
+        );
     }
 }

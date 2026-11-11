@@ -45,24 +45,6 @@ type BroadbandApplication = {
         phone: string;
         broadband_account_number: string | null;
     } | null;
-    area: {
-        id: number;
-        name_en: string;
-        name_zh: string;
-        name_my: string;
-        region?: {
-            id: number;
-            name_en: string;
-            name_zh: string;
-            name_my: string;
-            state?: {
-                id: number;
-                name_en: string;
-                name_zh: string;
-                name_my: string;
-            } | null;
-        } | null;
-    } | null;
     admin: {
         id: number;
         username: string;

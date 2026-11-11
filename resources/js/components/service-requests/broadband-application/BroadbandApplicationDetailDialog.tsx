@@ -4,7 +4,6 @@ import {
     CalendarIcon,
     FileTextIcon,
     HouseIcon,
-    MapPinIcon,
     PackageIcon,
     PhoneIcon,
     UserIcon,
@@ -19,12 +18,6 @@ import { CopyValueButton } from '@/components/CopyValueButton';
 import { REQUEST_STATUS } from '@/lib/CommonNameConst';
 import { formatPhoneInternational } from '@/lib/phone';
 import { cn, formatDate } from '@/lib/utils';
-
-type LocalizedName = {
-    name_en: string;
-    name_zh: string;
-    name_my: string;
-};
 
 export type BroadbandApplicationDetail = {
     id: number;
@@ -52,35 +45,11 @@ export type BroadbandApplicationDetail = {
         phone: string;
         broadband_account_number: string | null;
     } | null;
-    area: {
-        id: number;
-        name_en: string;
-        name_zh: string;
-        name_my: string;
-        region?: (LocalizedName & {
-            id: number;
-            state?: (LocalizedName & { id: number }) | null;
-        }) | null;
-    } | null;
     admin: {
         id: number;
         username: string;
     } | null;
 };
-
-function localizedName(item: LocalizedName | null | undefined, locale: string): string {
-    if (!item) {
-        return '—';
-    }
-
-    return (
-        item[`name_${locale}` as keyof LocalizedName] ||
-        item.name_en ||
-        item.name_my ||
-        item.name_zh ||
-        '—'
-    );
-}
 
 function Section({
     icon: Icon,
@@ -145,7 +114,7 @@ export function BroadbandApplicationDetailDialog({
     statuses: string[];
     canUpdate: boolean;
 }) {
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
     const nextStatus =
         request?.status === REQUEST_STATUS.UNDER_REVIEW ? REQUEST_STATUS.APPROVED : REQUEST_STATUS.UNDER_REVIEW;
     const { data, setData, patch } = useForm({ status: nextStatus });
@@ -269,20 +238,6 @@ export function BroadbandApplicationDetailDialog({
                     </div>
                 </Section>
 
-                <Section icon={MapPinIcon} title={t('broadband_application.location')}>
-                    <div className="grid gap-3 sm:grid-cols-3">
-                        <Field
-                            label={t('broadband_application.state')}
-                            value={localizedName(request.area?.region?.state, locale)}
-                        />
-                        <Field
-                            label={t('broadband_application.region')}
-                            value={localizedName(request.area?.region, locale)}
-                        />
-                        <Field label={t('broadband_application.area')} value={localizedName(request.area, locale)} />
-                    </div>
-                </Section>
-
                 <Section icon={HouseIcon} title={t('requests.address')}>
                     <div className="flex items-start gap-1">
                         <p className="text-sm leading-6 text-foreground">{request.address?.trim() || '—'}</p>
@@ -358,10 +313,9 @@ function pointsLabel(value: number | string | null | undefined, unit: string): s
         return '—';
     }
 
-    const amount = typeof value === 'number' ? value : Number(value);
-    if (!Number.isFinite(amount)) {
+    if (typeof value !== 'number' && typeof value !== 'string') {
         return '—';
     }
 
-    return `${new Intl.NumberFormat().format(amount)} ${unit}`;
+    return `${String(value)} ${unit}`;
 }

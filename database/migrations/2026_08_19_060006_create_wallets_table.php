@@ -10,7 +10,7 @@ return new class extends Migration {
         Schema::create('wallets', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->unique()->constrained()->restrictOnDelete();
-            $table->bigInteger('balance')->default(0);
+            $table->decimal('balance', 12, 2)->default(0);
             $table->string('status', 16)->default('active');
             $table->unsignedInteger('version')->default(0);
             $table->foreignId('created_by')->nullable()->constrained('users')->restrictOnDelete();

@@ -15,7 +15,7 @@ class AdminNotificationDelivery
 {
     private const RECIPIENT_PERMISSION_CACHE_KEY = 'admin-notifications.eligible-admin-ids';
 
-    private const RECIPIENT_PERMISSIONS = ['reports.view', 'service-requests.view'];
+    private const RECIPIENT_PERMISSIONS = ['billing.view', 'reports.view', 'service-requests.view', 'support.view'];
 
     public function deliver(AdminNotification $notification, string $permission): void
     {

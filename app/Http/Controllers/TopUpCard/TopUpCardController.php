@@ -3,27 +3,25 @@
 namespace App\Http\Controllers\TopUpCard;
 
 use App\Enums\ActivityLogEvent;
-
 use App\Enums\ActivityLogName;
 use App\Enums\TopUpCardStatus;
-use App\Jobs\GenerateTopUpCardsJob;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\TopUpCard\GenerateTopUpCardsRequest;
-use App\Models\Admin;
-use App\Models\Office;
-use App\Models\Batch;
-use App\Models\TopUpCard;
-use App\Support\GeneratesTopUpCards;
-use App\Support\TopUpCardOffices;
-use App\Support\TopUpCardGenerationStatus;
 use App\Http\Controllers\InOutManagement\CSV\TopUpCard as TopUpCardCsv;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use App\Http\Requests\TopUpCard\GenerateTopUpCardsRequest;
+use App\Jobs\GenerateTopUpCardsJob;
+use App\Models\Admin;
+use App\Models\Batch;
+use App\Models\Office;
+use App\Models\TopUpCard;
+use App\Support\TopUpCardGenerationStatus;
+use App\Support\TopUpCardOffices;
 use Illuminate\Bus\Batch as QueueBatch;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -37,6 +35,10 @@ class TopUpCardController extends Controller
     {
         $search = trim((string) $request->string('search'));
         $status = $request->string('status')->toString();
+        $validStatuses = array_column(TopUpCardStatus::cases(), 'value');
+        if (!in_array($status, $validStatuses, true)) {
+            $status = '';
+        }
         $amount = $request->string('amount')->toString();
         $from = $request->string('from')->toString();
         $to = $request->string('to')->toString();
@@ -71,12 +73,9 @@ class TopUpCardController extends Controller
             ->when($search !== '', function ($query) use ($search): void {
                 $query->whereLike('serial_no', '%' . $search . '%');
             })
-            ->when(
-                $status !== '' && in_array($status, array_column(TopUpCardStatus::cases(), 'value'), true),
-                function ($query) use ($status): void {
-                    $query->where('status', $status);
-                },
-            )
+            ->when($status !== '', function ($query) use ($status): void {
+                $query->where('status', $status);
+            })
             ->when($amount !== '' && is_numeric($amount), function ($query) use ($amount): void {
                 $query->where('amount', $amount);
             })
@@ -506,13 +505,13 @@ class TopUpCardController extends Controller
     private function officeOptions(): array
     {
         return Office::query()
-            ->select(['id', 'name', 'cd'])
-            ->orderBy('name')
+            ->select(['id', 'name_en', 'name_mm', 'name_zh', 'cd'])
+            ->orderBy('name_en')
             ->get()
             ->map(
                 fn(Office $office): array => [
                     'id' => (int) $office->id,
-                    'name' => (string) $office->name,
+                    'name' => $office->localizedName(),
                     'code' => (string) $office->cd,
                 ],
             )
@@ -634,7 +633,7 @@ class TopUpCardController extends Controller
 
     public function void(Request $request, TopUpCard $topUpCard): RedirectResponse
     {
-        if ($topUpCard->status !== TopUpCardStatus::Pending && $topUpCard->status !== TopUpCardStatus::Active) {
+        if ($topUpCard->status !== TopUpCardStatus::Active) {
             return back()->with('error', 'top_up_cards.cannot_void');
         }
 
@@ -735,6 +734,9 @@ class TopUpCardController extends Controller
         }
 
         $validStatuses = array_column(TopUpCardStatus::cases(), 'value');
+        if (!in_array($status, $validStatuses, true)) {
+            $status = '';
+        }
 
         $batches = Batch::query()
             ->select(['id', 'batch_no'])
@@ -745,13 +747,13 @@ class TopUpCardController extends Controller
             ->with([
                 'redeemedBy:id,name,phone',
                 'batch:id,batch_no,status',
-                'office:id,name,cd',
+                'office:id,name_en,name_mm,name_zh,cd',
                 'ledgerTransaction:id,transaction_no',
             ])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->whereLike('serial_no', "%{$search}%");
             })
-            ->when(in_array($status, $validStatuses, true), function ($query) use ($status): void {
+            ->when($status !== '', function ($query) use ($status): void {
                 $query->where('status', $status);
             })
             ->when($amount !== '' && is_numeric($amount), function ($query) use ($amount): void {
@@ -827,7 +829,7 @@ class TopUpCardController extends Controller
             'batch_status' => $card->batch?->status,
             'office' => $card->office
                 ? [
-                    'name' => $card->office->name,
+                    'name' => $card->office->localizedName(),
                     'code' => (string) $card->office->cd,
                 ]
                 : null,
@@ -845,7 +847,7 @@ class TopUpCardController extends Controller
 
         return [
             'total' => $redeemed->clone()->count(),
-            'value' => (string) (int) $redeemed->clone()->sum('amount'),
+            'value' => (string) $redeemed->clone()->sum('amount'),
             'month' => $redeemed->clone()->where('redeemed_at', '>=', now()->startOfMonth())->count(),
             'customers' => (int) $redeemed
                 ->clone()

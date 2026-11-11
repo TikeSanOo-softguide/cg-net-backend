@@ -12,7 +12,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[
     Fillable([
-        'area_id',
         'name',
         'service_type',
         'ticket_number',
@@ -22,7 +21,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
         'note',
         'status',
         'user_id',
-        'admin_id'
+        'admin_id',
     ]),
 ]
 class InstallationApplication extends Model
@@ -37,11 +36,6 @@ class InstallationApplication extends Model
         ];
     }
 
-    public function area(): BelongsTo
-    {
-        return $this->belongsTo(Area::class);
-    }
-
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -50,10 +44,5 @@ class InstallationApplication extends Model
     public function admin(): BelongsTo
     {
         return $this->belongsTo(Admin::class, 'admin_id');
-    }
-
-    public function photos(): HasMany
-    {
-        return $this->hasMany(IdPhoto::class);
     }
 }

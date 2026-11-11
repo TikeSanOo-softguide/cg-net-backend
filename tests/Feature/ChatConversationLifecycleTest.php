@@ -6,6 +6,7 @@ use App\Enums\ChatConversationStatus;
 use App\Enums\ChatFlowOptionAction;
 use App\Events\ChatConversationStatusChanged;
 use App\Events\ChatMessageCreated;
+use App\Events\LiveChatRequested;
 use App\Models\Admin;
 use App\Models\ChatConversation;
 use App\Models\ChatFlowOption;
@@ -243,7 +244,7 @@ class ChatConversationLifecycleTest extends TestCase
 
     public function test_customer_can_send_message_during_live_chat(): void
     {
-        Event::fake([ChatMessageCreated::class]);
+        Event::fake([ChatMessageCreated::class, LiveChatRequested::class]);
         $user = User::factory()->create();
         $conversation = $this->conversation($user, ChatConversationStatus::Open, ['agent_id' => Admin::factory()->create()->id]);
 
@@ -263,6 +264,7 @@ class ChatConversationLifecycleTest extends TestCase
             'message' => 'Hello agent',
         ]);
         Event::assertDispatched(ChatMessageCreated::class, fn ($event) => $event->message->message === 'Hello agent');
+        Event::assertNotDispatched(LiveChatRequested::class);
     }
 
     public function test_message_content_is_validated(): void
@@ -375,7 +377,7 @@ class ChatConversationLifecycleTest extends TestCase
 
     public function test_talk_to_admin_moves_chat_flow_to_waiting_and_notifies_telegram_once(): void
     {
-        Event::fake([ChatConversationStatusChanged::class]);
+        Event::fake([ChatConversationStatusChanged::class, LiveChatRequested::class]);
         $user = User::factory()->create();
         $conversation = $this->conversation($user, ChatConversationStatus::Bot);
 
@@ -393,6 +395,10 @@ class ChatConversationLifecycleTest extends TestCase
             fn ($event) => $event->conversation->id === $conversation->id
                 && $event->previousStatus === ChatConversationStatus::Bot
                 && $event->conversation->status === ChatConversationStatus::WaitingAgent,
+        );
+        Event::assertDispatched(
+            LiveChatRequested::class,
+            fn ($event) => $event->conversation->id === $conversation->id,
         );
 
         $this->selectTalkToAdmin($user, $conversation)->assertStatus(409);

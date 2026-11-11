@@ -6,7 +6,6 @@ import {
     ImageIcon,
     ImageOffIcon,
     NavigationIcon,
-    PackageIcon,
     PhoneIcon,
     UserIcon,
     WifiIcon,
@@ -17,7 +16,7 @@ import { FormDialog } from '@/components/FormDialog';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
-import { cn, formatDate, todayInTimezone } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { CopyValueButton } from '@/components/CopyValueButton';
 import { REQUEST_STATUS } from '@/lib/CommonNameConst';
 import { formatPhoneInternational } from '@/lib/phone';
@@ -42,30 +41,6 @@ type FailureReport = {
         image_url: string;
         label: string | null;
     }[];
-    customer_packages: {
-        id: number;
-        package_id: number;
-        expiry_date: string | null;
-        start_date: string | null;
-        package: {
-            id: number;
-            price: string;
-            network: {
-                id: number;
-                name_en: string;
-                name_zh: string;
-                name_my: string;
-            } | null;
-            speed: {
-                id: number;
-                mbps: number;
-            } | null;
-            term: {
-                id: number;
-                months: number;
-            } | null;
-        } | null;
-    }[];
 };
 
 export function FailureReportDetailDialog({
@@ -81,7 +56,7 @@ export function FailureReportDetailDialog({
     statuses: string[];
     canUpdate: boolean;
 }) {
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
     const nextStatus =
         request?.status === REQUEST_STATUS.UNDER_REVIEW
             ? REQUEST_STATUS.APPROVED
@@ -221,67 +196,6 @@ export function FailureReportDetailDialog({
                                     </span>
                                 </div>
                             </div>
-                        </div>
-                        <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
-                            <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                                {t('failure_report.current_package')}
-                            </p>
-
-                            {request.customer_packages.map((customerPackage) => {
-                                const isExpired = customerPackage.expiry_date
-                                    ? customerPackage.expiry_date < todayInTimezone()
-                                    : false;
-
-                                return (
-                                    <div key={customerPackage.id} className="...">
-                                        <div className="flex items-center justify-between gap-3 mt-3">
-                                            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                                <PackageIcon className="size-4 shrink-0 text-muted-foreground" />
-                                                {t('customers.package')}
-                                            </span>
-                                            <div className="flex flex-wrap items-center gap-x-1.5 text-sm font-semibold text-foreground">
-                                                <span>
-                                                    {customerPackage.package?.network?.[`name_${locale}`] ?? '—'}
-                                                </span>
-                                                <span className="text-muted-foreground">·</span>
-                                                <span>
-                                                    {customerPackage.package?.speed?.mbps
-                                                        ? `${customerPackage.package.speed.mbps} Mbps`
-                                                        : '—'}
-                                                </span>
-                                                <span className="text-muted-foreground">·</span>
-                                                <span>
-                                                    {customerPackage.package?.term?.months
-                                                        ? `${customerPackage.package.term.months} ${
-                                                              customerPackage.package.term.months === 1
-                                                                  ? t('failure_report.month')
-                                                                  : t('packages.months')
-                                                          }`
-                                                        : '—'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center justify-between gap-3 mt-3">
-                                            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                                <Calendar1Icon className="size-3.5" />
-                                                {t('failure_report.expiry_date')}
-                                            </span>
-
-                                            <span
-                                                className={`text-sm font-medium ${
-                                                    isExpired
-                                                        ? 'text-destructive font-semibold'
-                                                        : request.status === 'cancelled'
-                                                          ? 'select-none text-foreground'
-                                                          : 'text-foreground'
-                                                }`}
-                                            >
-                                                {formatDate(customerPackage.expiry_date)}
-                                            </span>
-                                        </div>
-                                    </div>
-                                );
-                            })}
                         </div>
                     </div>
                     <div className="rounded-xl border border-border/60 bg-muted/25 p-4">

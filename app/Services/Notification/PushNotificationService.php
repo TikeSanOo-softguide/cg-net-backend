@@ -54,6 +54,42 @@ class PushNotificationService
         return $this->dispatchDueAnnouncements($limit) + $this->dispatchDuePromotions($limit);
     }
 
+    /**
+     * A created announcement or promotion should be in the inbox immediately,
+     * before the scheduled push has copied it for this user.
+     */
+    public function materializeInboxFor(User $user): void
+    {
+        $now = now();
+        $today = today();
+
+        Announcement::query()
+            ->where('is_active', true)
+            ->where(function ($query) use ($now): void {
+                $query->whereNull('start_date')->orWhere('start_date', '<=', $now);
+            })
+            ->where(function ($query) use ($now): void {
+                $query->whereNull('end_date')->orWhere('end_date', '>=', $now);
+            })
+            ->orderBy('id')
+            ->each(function (Announcement $announcement) use ($user): void {
+                $this->ensureCampaignCopy($user, $announcement);
+            });
+
+        Promotion::query()
+            ->where('is_active', true)
+            ->where(function ($query) use ($today): void {
+                $query->whereNull('start_date')->orWhereDate('start_date', '<=', $today);
+            })
+            ->where(function ($query) use ($today): void {
+                $query->whereNull('end_date')->orWhereDate('end_date', '>=', $today);
+            })
+            ->orderBy('id')
+            ->each(function (Promotion $promotion) use ($user): void {
+                $this->ensureCampaignCopy($user, $promotion);
+            });
+    }
+
     public function dispatchScheduleById(int $id): bool
     {
         return DB::transaction(function () use ($id): bool {
@@ -201,24 +237,9 @@ class PushNotificationService
 
     private function sendTitlesOnce(Announcement|Promotion $record): bool
     {
-        $category = match (true) {
-            $record instanceof Promotion => NotificationCategory::Promotion,
-            $record->type === AnnouncementType::System => NotificationCategory::System,
-            default => NotificationCategory::Announcement,
-        };
-        $actionType =
-            $record instanceof Promotion ? NotificationActionType::Promotion : NotificationActionType::Announcement;
-        $content = [
-            'title_en' => $record->title_en,
-            'title_zh' => $record->title_zh,
-            'title_my' => $record->title_my,
-            'body_en' => $record instanceof Promotion ? $record->description_en : $record->content_en,
-            'body_zh' => $record instanceof Promotion ? $record->description_zh : $record->content_zh,
-            'body_my' => $record instanceof Promotion ? $record->description_my : $record->content_my,
-        ];
-        if ($record instanceof Promotion) {
-            $content['slug'] = $record->slug;
-        }
+        $category = $this->campaignCategory($record);
+        $actionType = $this->campaignActionType($record);
+        $content = $this->campaignContent($record);
 
         $notificationCount = 0;
         $pushCount = 0;
@@ -239,19 +260,7 @@ class PushNotificationService
                     &$skippedPreference,
                 ): void {
                     foreach ($users as $user) {
-                        $notification = UserNotification::query()->firstOrCreate(
-                            [
-                                'user_id' => $user->id,
-                                'action_type' => $actionType->value,
-                                'action_id' => (string) $record->id,
-                            ],
-                            [
-                                'category' => $category,
-                                'templateable_type' => $record::class,
-                                'templateable_id' => $record->id,
-                                'template_data' => $content,
-                            ],
-                        );
+                        $notification = $this->ensureCampaignCopy($user, $record);
                         $notificationCount++;
 
                         if ($notification->sent_at !== null || $user->deviceTokens->isEmpty()) {
@@ -296,6 +305,59 @@ class PushNotificationService
         $record->update(['push_sent_at' => now()]);
 
         return true;
+    }
+
+    private function ensureCampaignCopy(User $user, Announcement|Promotion $record): UserNotification
+    {
+        return UserNotification::query()->firstOrCreate(
+            [
+                'user_id' => $user->id,
+                'action_type' => $this->campaignActionType($record)->value,
+                'action_id' => (string) $record->id,
+            ],
+            [
+                'category' => $this->campaignCategory($record),
+                'templateable_type' => $record::class,
+                'templateable_id' => $record->id,
+                'template_data' => $this->campaignContent($record),
+            ],
+        );
+    }
+
+    private function campaignCategory(Announcement|Promotion $record): NotificationCategory
+    {
+        return match (true) {
+            $record instanceof Promotion => NotificationCategory::Promotion,
+            $record->type === AnnouncementType::System => NotificationCategory::System,
+            default => NotificationCategory::Announcement,
+        };
+    }
+
+    private function campaignActionType(Announcement|Promotion $record): NotificationActionType
+    {
+        return $record instanceof Promotion
+            ? NotificationActionType::Promotion
+            : NotificationActionType::Announcement;
+    }
+
+    /**
+     * @return array{title_en: string, title_zh: string, title_my: string, body_en: string, body_zh: string, body_my: string, slug?: string}
+     */
+    private function campaignContent(Announcement|Promotion $record): array
+    {
+        $content = [
+            'title_en' => $record->title_en,
+            'title_zh' => $record->title_zh,
+            'title_my' => $record->title_my,
+            'body_en' => $record instanceof Promotion ? $record->description_en : $record->content_en,
+            'body_zh' => $record instanceof Promotion ? $record->description_zh : $record->content_zh,
+            'body_my' => $record instanceof Promotion ? $record->description_my : $record->content_my,
+        ];
+        if ($record instanceof Promotion) {
+            $content['slug'] = $record->slug;
+        }
+
+        return $content;
     }
 
     /**

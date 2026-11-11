@@ -137,6 +137,7 @@ function DetailItem({
     format,
     className,
     secondary,
+    status,
 }: {
     label: string;
     value: string | number | null | undefined;
@@ -145,13 +146,16 @@ function DetailItem({
     format?: 'phone';
     className?: string;
     secondary?: string | null;
+    status?: string;
 }) {
     return (
         <div className={cn('rounded-xl border border-border/60 bg-muted/20 p-3.5', className)}>
             <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
             <dd className="mt-1 break-words text-sm font-semibold text-foreground">
                 <span className="flex items-center gap-1.5">
-                    {href && value !== null && value !== undefined && value !== '' ? (
+                    {status ? (
+                        <StatusBadge status={status} />
+                    ) : href && value !== null && value !== undefined && value !== '' ? (
                         <Link href={href} className="text-primary underline-offset-4 hover:underline">
                             {value}
                         </Link>
@@ -191,6 +195,7 @@ export function TransactionsTable({
     const [dateError, setDateError] = useState<string>();
     const debounce = useRef<number>(0);
     const transactionToOpen = new URLSearchParams(window.location.search).get('open_transaction');
+    const transactionIdToOpen = new URLSearchParams(window.location.search).get('open_transaction_id');
     const canExport = can('system.export') && can(embeddedCustomer ? 'customers.view' : 'billing.view');
     const canAdjust = can('customers.update') || (!embeddedCustomer && can('billing.update'));
 
@@ -198,9 +203,13 @@ export function TransactionsTable({
     useEffect(() => setFrom(filters.from), [filters.from]);
     useEffect(() => setTo(filters.to), [filters.to]);
     useEffect(() => {
-        const transaction = transactions.data.find((row) => row.transaction_no === transactionToOpen);
+        const transaction = transactions.data.find(
+            (row) =>
+                row.transaction_no === transactionToOpen ||
+                (transactionIdToOpen !== null && String(row.id) === transactionIdToOpen),
+        );
         if (transaction) setSelected(transaction);
-    }, [transactionToOpen, transactions.data]);
+    }, [transactionIdToOpen, transactionToOpen, transactions.data]);
     useEffect(() => () => window.clearTimeout(debounce.current), []);
 
     const updateSearch = (value: string) => {
@@ -601,7 +610,7 @@ export function TransactionsTable({
                                     label={t('transactions.detail_fields.balance_after')}
                                     value={formatTopUpAmount(selected.wallet_entry?.balance_after ?? '')}
                                 />
-                                <DetailItem label={t('common.status')} value={t(`status.${selected.status}`)} />
+                                <DetailItem label={t('common.status')} value={null} status={selected.status} />
                                 <DetailItem
                                     label={t('transactions.detail_fields.idempotency_key')}
                                     value={selected.idempotency_key}

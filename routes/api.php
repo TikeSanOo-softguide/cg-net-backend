@@ -10,14 +10,16 @@ use App\Http\Controllers\Api\ChatFlow\ChatFlowController;
 use App\Http\Controllers\Api\Contact\ContactController;
 use App\Http\Controllers\Api\Customer\ProfileController;
 use App\Http\Controllers\Api\DeviceToken\DeviceTokenController;
-use App\Http\Controllers\Api\FtthBill\FtthBillController;
+use App\Http\Controllers\Api\InternetBill\InternetBillController;
 use App\Http\Controllers\Api\Gallery\GalleryController;
 use App\Http\Controllers\Api\News\NewsController;
 use App\Http\Controllers\Api\Notification\AnnouncementController;
 use App\Http\Controllers\Api\Notification\InboxController;
 use App\Http\Controllers\Api\Notification\NotificationController;
+use App\Http\Controllers\Api\Office\OfficeController;
 use App\Http\Controllers\Api\Package\AddonController;
 use App\Http\Controllers\Api\Package\BuyPackageController;
+use App\Http\Controllers\Api\Package\CgNetProductController;
 use App\Http\Controllers\Api\Package\NetworkController;
 use App\Http\Controllers\Api\Package\PackageController;
 use App\Http\Controllers\Api\Package\SpeedController;
@@ -64,6 +66,7 @@ Route::middleware('throttle:60,1')->group(function () {
         Route::get('/gallery', [GalleryController::class, 'index']);
         Route::get('/promotions', [PromotionController::class, 'index']);
         Route::get('/promotions/{slug}', [PromotionController::class, 'show']);
+        Route::get('/cg-net-products', [CgNetProductController::class, 'index']);
         Route::get('/packages', [PackageController::class, 'index']);
         Route::get('/packages/recommended', [PackageController::class, 'recommended']);
         Route::get('/packages/{id}', [PackageController::class, 'show']);
@@ -73,6 +76,7 @@ Route::middleware('throttle:60,1')->group(function () {
         Route::get('/addons', [AddonController::class, 'index']);
     });
 
+    Route::get('/offices', [OfficeController::class, 'index']);
     Route::get('/locations', [RegionController::class, 'locations']);
     Route::get('/states', [RegionController::class, 'states']);
     Route::get('/states/{stateId}/regions', [RegionController::class, 'regions']);
@@ -129,10 +133,13 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
     Route::post('/packages/buy', [BuyPackageController::class, 'buy']);
 
-    Route::prefix('ftth-bills')->group(function () {
-        Route::post('/pay', [FtthBillController::class, 'pay'])->middleware('throttle:ftth-bill-pay');
-        Route::get('/pending-slip', [FtthBillController::class, 'pendingSlip']);
-        Route::get('/paid-slips', [FtthBillController::class, 'paidSlips']);
+    Route::prefix('internet-bills')->group(function () {
+        Route::post('/check', [InternetBillController::class, 'check']);
+        Route::post('/pay', [InternetBillController::class, 'pay'])->middleware('throttle:ftth-bill-pay');
+        Route::get('/history', [InternetBillController::class, 'history']);
+        Route::get('/history/{id}', [InternetBillController::class, 'show'])->whereNumber('id');
+        Route::get('/pending-slip', [InternetBillController::class, 'pendingSlip']);
+        Route::get('/paid-slips', [InternetBillController::class, 'paidSlips']);
     });
 
     Route::prefix('relocation-requests')->group(function () {
@@ -157,6 +164,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::post('/create', [ChangePlanRequestController::class, 'store']);
         Route::get('/{changePlanRequest}', [ChangePlanRequestController::class, 'show']);
         Route::put('/{changePlanRequest}', [ChangePlanRequestController::class, 'update']);
+        Route::patch('/{changePlanRequest}/cancel', [ChangePlanRequestController::class, 'cancel']);
         Route::delete('/{changePlanRequest}', [ChangePlanRequestController::class, 'destroy']);
     });
 
@@ -165,6 +173,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::post('/create', [ChangePasswordRequestController::class, 'store']);
         Route::get('/{changePasswordRequest}', [ChangePasswordRequestController::class, 'show']);
         Route::put('/{changePasswordRequest}', [ChangePasswordRequestController::class, 'update']);
+        Route::patch('/{changePasswordRequest}/cancel', [ChangePasswordRequestController::class, 'cancel']);
         Route::delete('/{changePasswordRequest}', [ChangePasswordRequestController::class, 'destroy']);
     });
 

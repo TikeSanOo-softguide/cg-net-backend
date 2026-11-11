@@ -112,13 +112,13 @@ class TopUpCardRedemptionService
                     return $this->response(400, MessageCode::TopupCardInvalid);
                 }
 
-                $amount = (int) $card->amount;
-                $balanceBefore = (int) $wallet->balance;
+                $amount = (float) $card->amount;
+                $balanceBefore = (float) $wallet->balance;
 
                 if (
                     $amount < 1 ||
                     $balanceBefore < 0 ||
-                    $amount > (int) config('top_up_cards.redemption.max_wallet_balance') - $balanceBefore
+                    $amount > (float) config('top_up_cards.redemption.max_wallet_balance') - $balanceBefore
                 ) {
                     return $this->response(409, MessageCode::TopupActionIncomplete);
                 }
@@ -144,7 +144,7 @@ class TopUpCardRedemptionService
                     );
                 }
 
-                $balanceAfter = (int) $wallet->refresh()->balance;
+                $balanceAfter = $wallet->refresh()->balance;
 
                 $card->status = TopUpCardStatus::Used;
                 $card->redeemed_at = now();
@@ -281,8 +281,8 @@ class TopUpCardRedemptionService
         $liabilityEntry = $existing->walletLiabilityEntry();
         $hasCashTopupDebit = $entries->contains(
             fn($entry): bool => $entry->ledgerAccount?->code === LedgerAccountCode::CashTopup->value &&
-                (int) $entry->debit === (int) $existing->amount &&
-                (int) $entry->credit === 0,
+                (float) $entry->debit === (float) $existing->amount &&
+                (float) $entry->credit === 0.0,
         );
 
         if (
@@ -291,23 +291,24 @@ class TopUpCardRedemptionService
             $existing->status !== LedgerTransactionStatus::Completed ||
             $existing->topUpCard?->getKey() !== $card->getKey() ||
             $liabilityEntry === null ||
-            (int) $liabilityEntry->debit !== 0 ||
-            (int) $liabilityEntry->credit !== (int) $existing->amount ||
+            (float) $liabilityEntry->debit !== 0.0 ||
+            (float) $liabilityEntry->credit !== (float) $existing->amount ||
             $liabilityEntry->balance_after === null ||
             $entries->count() !== 2 ||
             !$hasCashTopupDebit ||
-            (int) $entries->sum('debit') !== (int) $existing->amount ||
-            (int) $entries->sum('credit') !== (int) $existing->amount
+            (float) $entries->sum('debit') !== (float) $existing->amount ||
+            (float) $entries->sum('credit') !== (float) $existing->amount
         ) {
             return $this->response(409, MessageCode::TopupRequestIncomplete);
         }
 
         return $this->response(200, MessageCode::TopupAlreadyProcessed, [
             'amount' => $existing->amount,
-            'balance' => (int) $wallet->fresh()->balance,
+            'balance' => $wallet->fresh()->balance,
             'transaction_no' => $existing->transaction_no,
         ]);
     }
+
 
     /**
      * @param  array<string, mixed>  $body

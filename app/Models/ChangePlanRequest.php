@@ -48,7 +48,7 @@ class ChangePlanRequest extends Model
     {
         return [
             $key => ['required', 'array'],
-            "{$key}.package_id" => ['nullable', 'integer'],
+            "{$key}.package_id" => ['nullable', 'integer', 'exists:packages,id'],
             "{$key}.price" => ['required', 'numeric', 'min:0'],
             "{$key}.network_name" => ['nullable', 'array'],
             "{$key}.network_name.en" => ['nullable', 'string', 'max:255'],

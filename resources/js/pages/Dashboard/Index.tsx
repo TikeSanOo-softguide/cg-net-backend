@@ -1,7 +1,10 @@
 import { Head } from '@inertiajs/react';
 import { UsersIcon, UserPlusIcon, PackageIcon, CoinsIcon, ClipboardListIcon } from 'lucide-react';
 
-import { DashboardRegionChart, type RegionChartSlice } from '@/components/dashboard/DashboardRegionChart';
+import {
+    DashboardInstallationTypeChart,
+    type InstallationTypeChartSlice,
+} from '@/components/dashboard/DashboardInstallationTypeChart';
 import { DashboardRequestLevels, type RequestTypeChart } from '@/components/dashboard/DashboardRequestLevels';
 import { DashboardTrendChart, type TrendPoint } from '@/components/dashboard/DashboardTrendChart';
 import { DataTable } from '@/components/DataTable';
@@ -30,7 +33,7 @@ type DashboardProps = {
     };
     chart: TrendPoint[];
     topupUsageChange: number | null;
-    regionChart: RegionChartSlice[];
+    installationTypeChart: InstallationTypeChartSlice[];
     requestTypeChart: RequestTypeChart;
     recentRequests: RecentRequest[];
 };
@@ -39,7 +42,7 @@ export default function DashboardIndex({
     stats,
     chart,
     topupUsageChange,
-    regionChart,
+    installationTypeChart,
     requestTypeChart,
     recentRequests,
 }: DashboardProps) {
@@ -120,6 +123,19 @@ export default function DashboardIndex({
                     />
                     <DashboardTrendChart
                         data={chart}
+                        titleKey="dashboard.cg_bill_payments"
+                        showLegend={false}
+                        series={[
+                            {
+                                dataKey: 'cg_bill_payments',
+                                labelKey: 'dashboard.cg_bill_payments',
+                                color: '#0E9F8A',
+                                unit: t('dashboard.points'),
+                            },
+                        ]}
+                    />
+                    <DashboardTrendChart
+                        data={chart}
                         titleKey="dashboard.wifi_package_orders"
                         showLegend={false}
                         series={[
@@ -144,7 +160,7 @@ export default function DashboardIndex({
                             },
                         ]}
                     />
-                    <DashboardRegionChart data={regionChart} />
+                    <DashboardInstallationTypeChart data={installationTypeChart} />
                     <DashboardRequestLevels data={requestTypeChart} />
                 </div>
 

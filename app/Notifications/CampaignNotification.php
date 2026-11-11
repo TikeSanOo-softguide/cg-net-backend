@@ -39,6 +39,7 @@ class CampaignNotification extends Notification implements ShouldQueue
 
     public function toFcm(User $notifiable): FcmMessage
     {
+        $unreadCount = $notifiable->unreadAppNotificationCount();
         $data = array_filter(
             [
                 'type' => 'user_notification',
@@ -46,6 +47,7 @@ class CampaignNotification extends Notification implements ShouldQueue
                 'action_type' => $this->actionType->value,
                 'action_id' => $this->actionId,
                 'slug' => $this->slug,
+                'unread_count' => (string) $unreadCount,
             ],
             fn(?string $value): bool => $value !== null,
         );
@@ -63,6 +65,6 @@ class CampaignNotification extends Notification implements ShouldQueue
                 ],
             ])
             ->android(['priority' => 'high'])
-            ->ios(['payload' => ['aps' => ['sound' => 'default']]]);
+            ->ios(['payload' => ['aps' => ['sound' => 'default', 'badge' => $unreadCount]]]);
     }
 }

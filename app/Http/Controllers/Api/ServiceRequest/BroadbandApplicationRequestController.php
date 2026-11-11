@@ -25,10 +25,7 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class BroadbandApplicationRequestController extends Controller
 {
-    public function __construct(
-        private TelegramService $telegram,
-        private CgNetProductCatalog $catalog,
-    ) {}
+    public function __construct(private TelegramService $telegram, private CgNetProductCatalog $catalog) {}
 
     public function products(Request $request): JsonResponse
     {
@@ -44,10 +41,7 @@ class BroadbandApplicationRequestController extends Controller
                 'error' => $exception->getMessage(),
             ]);
 
-            return response()->json(
-                ApiMessage::attach(MessageCode::PkgCatalogUnavailable),
-                503,
-            );
+            return response()->json(ApiMessage::attach(MessageCode::PkgCatalogUnavailable), 503);
         }
 
         return response()->json(['data' => $products]);
@@ -55,11 +49,7 @@ class BroadbandApplicationRequestController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
-        $applications = InstallationApplication::query()
-            ->with(['area.region.state'])
-            ->where('user_id', $request->user()->id)
-            ->latest()
-            ->get();
+        $applications = InstallationApplication::query()->where('user_id', $request->user()->id)->latest()->get();
 
         return BroadbandApplicationResource::collection($applications);
     }
@@ -82,12 +72,11 @@ class BroadbandApplicationRequestController extends Controller
                 'ticket_number' => GeneratesTicketNumber::next(
                     InstallationApplication::class,
                     'ticket_number',
-                    'INT'.now()->format('md'),
+                    'INT' . now()->format('md'),
                 ),
                 'user_id' => $request->user()->id,
                 'status' => RequestStatus::UnderReview->value,
             ]);
-            ServiceRequestSubmitted::dispatch('installation_application', $application->id);
 
             $this->logActivity($request, 'create_broadband_application', [
                 'broadband_application_id' => $application->id,
@@ -96,33 +85,13 @@ class BroadbandApplicationRequestController extends Controller
 
             return $application;
         });
+        ServiceRequestSubmitted::dispatch('installation_application', $application->id);
 
-        $application->load([
-            'user:id,name,phone',
-            'admin:id,username',
-            'area:id,name_en,name_zh,name_my,region_id',
-            'area.region:id,name_en,name_zh,name_my,state_id',
-            'area.region.state:id,name_en,name_zh,name_my',
-        ]);
+        $this->sendTelegramStatusNotification($application, '📡 NEW BROADBAND INSTALLATION');
 
-        $detail = $application->package_detail ?? [];
-        $message =
-            "📡 Broadband Installation\n\n" .
-            "🗓️ Date: {$application->updated_at->format('d M Y, h:i A')}\n" .
-            "👤 Customer: {$application->name}\n" .
-            "📞 Phone: {$application->phone}\n" .
-            "📍 Area: {$application->area->name_en}\n" .
-            "🌐 Region: {$application->area->region->name_en}\n" .
-            "📦 Package: ".($detail['product_name'] ?? '—')."\n" .
-            "⚡ Speed: ".($detail['product_speed'] ?? '—')."\n" .
-            "📅 Term: ".($detail['month_cycle'] ?? '—').' '.($detail['month_cycle_unit'] ?? '')."\n" .
-            "📋 Status: {$application->status->value}";
-
-        $this->telegram->broadbandApplicaiton($message);
-        $application->load(['area.region.state']);
-
-        return (new BroadbandApplicationResource($application))
-            ->additional(ApiMessage::attach(MessageCode::ReqSubmitted));
+        return (new BroadbandApplicationResource($application))->additional(
+            ApiMessage::attach(MessageCode::ReqSubmitted),
+        );
     }
 
     public function update(
@@ -131,7 +100,7 @@ class BroadbandApplicationRequestController extends Controller
     ): BroadbandApplicationResource {
         $this->ensureOwner($request, $installationApplication);
 
-        return DB::transaction(function () use ($request, $installationApplication) {
+        $application = DB::transaction(function () use ($request, $installationApplication) {
             $validated = $request->validated();
             $installationApplication->update($validated);
 
@@ -139,12 +108,14 @@ class BroadbandApplicationRequestController extends Controller
                 'broadband_application_id' => $installationApplication->id,
             ]);
 
-            return (new BroadbandApplicationResource(
-                $installationApplication
-                    ->refresh()
-                    ->load(['area.region.state']),
-            ))->additional(ApiMessage::attach(MessageCode::ReqUpdated));
+            return $installationApplication->refresh();
         });
+
+        $this->sendTelegramStatusNotification($application, '🔄 BROADBAND INSTALLATION UPDATED');
+
+        return (new BroadbandApplicationResource($application))->additional(
+            ApiMessage::attach(MessageCode::ReqUpdated),
+        );
     }
 
     public function destroy(Request $request, InstallationApplication $installationApplication): Response
@@ -172,8 +143,42 @@ class BroadbandApplicationRequestController extends Controller
             'broadband_application_id' => $installationApplication->id,
         ]);
 
-        return (new BroadbandApplicationResource($installationApplication->refresh()))
-            ->additional(ApiMessage::attach(MessageCode::ReqCancelled));
+        $application = $installationApplication->refresh();
+        $this->sendTelegramStatusNotification($application, '🚫 BROADBAND INSTALLATION CANCELLED');
+
+        return (new BroadbandApplicationResource($application))->additional(
+            ApiMessage::attach(MessageCode::ReqCancelled),
+        );
+    }
+
+    private function sendTelegramStatusNotification(InstallationApplication $application, string $title): void
+    {
+        $detail = $application->package_detail ?? [];
+        $fields = [
+            '• Ticket' => $application->ticket_number,
+            '• Customer' => $application->name,
+            '• Phone' => $application->phone,
+            '• Address' => $application->address,
+            '• Date' => $application->created_at?->format('d M Y') ?? '—',
+            '• Package' => (string) ($detail['product_line'] ?? ($detail['product_name'] ?? '—')),
+            '• Speed' => (string) ($detail['product_speed'] ?? '—'),
+            '• Term' => trim(
+                (string) ($detail['month_cycle'] ?? '—') . ' ' . (string) ($detail['month_cycle_unit'] ?? ''),
+            ),
+            ...!empty($application->note) ? ['• Note' => $application->note] : [],
+            '• Status' => $application->status->value,
+        ];
+        $message = "<b>{$title}</b>\n\n";
+
+        foreach ($fields as $label => $value) {
+            $message .= $label . ': ' . htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . "\n";
+        }
+
+        try {
+            $this->telegram->sendMessage($message);
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
     }
 
     private function ensureOwner(Request $request, InstallationApplication $installationApplication): void
@@ -182,5 +187,4 @@ class BroadbandApplicationRequestController extends Controller
             throw new AccessDeniedHttpException();
         }
     }
-
 }

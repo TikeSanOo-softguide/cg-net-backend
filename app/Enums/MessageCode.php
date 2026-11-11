@@ -29,6 +29,8 @@ enum MessageCode: string
     case AuthSessionExpired = 'MSG-AUTH-017';
     case AuthTooManyRequests = 'MSG-AUTH-018';
     case AuthLoggedOut = 'MSG-AUTH-019';
+    case AuthRegistered = 'MSG-AUTH-020';
+    case AuthOtpVerified = 'MSG-AUTH-021';
 
     case ApiNetworkFailed = 'MSG-API-001';
     case ApiTimeout = 'MSG-API-002';
@@ -79,6 +81,7 @@ enum MessageCode: string
     case PkgKeyUsed = 'MSG-PKG-011';
     case PkgKeyMismatch = 'MSG-PKG-012';
     case PkgCannotReplay = 'MSG-PKG-013';
+    case PkgManualReview = 'MSG-PKG-014';
 
     case PwdChanged = 'MSG-PWD-001';
     case PwdChangeExpired = 'MSG-PWD-002';
@@ -107,6 +110,7 @@ enum MessageCode: string
     case FtthAlreadyProcessed = 'MSG-FTTH-011';
     case FtthAlreadyProcessing = 'MSG-FTTH-012';
     case FtthCannotReplay = 'MSG-FTTH-013';
+    case FtthAccountChecked = 'MSG-FTTH-014';
 
     case ChatStaleOption = 'MSG-CHAT-001';
     case ChatInvalidStart = 'MSG-CHAT-002';
@@ -135,6 +139,7 @@ enum MessageCode: string
             self::PkgAlreadyProcessed,
             self::PkgProcessing,
             self::PkgReconciliationPending,
+            self::PkgManualReview,
             self::FtthProcessing,
             self::FtthAlreadyProcessed,
             self::FtthAlreadyProcessing,
@@ -144,6 +149,8 @@ enum MessageCode: string
             self::ChatSelectOption,
             self::ChatWaitForJoin => 'warning',
             self::AuthLoggedOut,
+            self::AuthRegistered,
+            self::AuthOtpVerified,
             self::BbConnected,
             self::BbDisconnected,
             self::BbFound,
@@ -159,7 +166,8 @@ enum MessageCode: string
             self::UserDeactivated,
             self::FtthPendingSlip,
             self::FtthPaidSlips,
-            self::FtthPaid => 'success',
+            self::FtthPaid,
+            self::FtthAccountChecked => 'success',
             default => 'error',
         };
     }
@@ -169,7 +177,7 @@ enum MessageCode: string
         return match ($this) {
             self::AuthIncorrectPassword => 'Incorrect password',
             self::AuthAccountLocked => 'Account locked',
-            self::AuthOtpFailed => 'OTP verification failed',
+            self::AuthOtpFailed => 'Invalid OTP. Please try again.',
             self::AuthPhoneUnsupported => 'This phone number is not supported.',
             self::AuthPhoneRequired => 'Enter your mobile number.',
             self::AuthOtpResendCooldown => 'Please wait before requesting another code.',
@@ -191,6 +199,8 @@ enum MessageCode: string
             self::SysForbidden => 'This action is unauthorized.',
             self::SysNotFound => 'The requested resource was not found.',
             self::AuthLoggedOut => 'Logged out successfully.',
+            self::AuthRegistered => 'Account created successfully.',
+            self::AuthOtpVerified => 'Your phone number has been verified successfully.',
             self::BbConnectionFailed => 'broadband_api_connection_failed',
             self::BbNotMatch => 'broadband_account_not_match',
             self::BbAlreadyConnected => 'broadband_already_connected',
@@ -225,6 +235,7 @@ enum MessageCode: string
             self::PkgActivationRefunded => 'Package activation failed. Wallet was refunded.',
             self::PkgProcessing => 'This package purchase is already being processed.',
             self::PkgReconciliationPending => 'Package activation is awaiting provider reconciliation. The wallet debit remains on hold.',
+            self::PkgManualReview => 'Package activation requires manual review. The wallet debit remains on hold.',
             self::PkgInsufficientBalance => 'Insufficient wallet balance.',
             self::PkgKeyUsed => 'This idempotency key was already used.',
             self::PkgKeyMismatch => 'This idempotency key was already used for a different package.',
@@ -244,14 +255,15 @@ enum MessageCode: string
             self::FtthInsufficientBalance => 'Insufficient wallet balance.',
             self::FtthAccountMissing => 'Broadband account number not found.',
             self::FtthBillingFailed => 'Billing server request failed.',
-            self::FtthPendingSlip => 'Pending FTTH bill slip retrieved.',
-            self::FtthPaidSlips => 'Paid FTTH bill slips retrieved.',
-            self::FtthPaid => 'FTTH bill paid successfully.',
+            self::FtthPendingSlip => 'Pending Internet bill slip retrieved.',
+            self::FtthPaidSlips => 'Paid Internet bill slips retrieved.',
+            self::FtthPaid => 'Internet bill paid successfully.',
             self::FtthRefunded => 'External billing payment failed. Wallet was refunded.',
-            self::FtthProcessing => 'FTTH bill payment is processing. Confirmation is pending from the billing server.',
-            self::FtthAlreadyProcessed => 'FTTH bill payment already processed.',
+            self::FtthProcessing => 'Internet bill payment is processing. Confirmation is pending from the billing server.',
+            self::FtthAlreadyProcessed => 'Internet bill payment already processed.',
             self::FtthAlreadyProcessing => 'This payment request is already being processed.',
             self::FtthCannotReplay => 'This payment request cannot be replayed.',
+            self::FtthAccountChecked => 'Account checked.',
             self::ChatStaleOption => 'This option is no longer available. The current conversation has been refreshed.',
             self::ChatInvalidStart => 'The chat flow start step is not configured correctly.',
             self::ChatNoActive => 'No active conversation. Please start a new conversation.',

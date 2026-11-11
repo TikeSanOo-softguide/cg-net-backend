@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import { CalendarIcon, CircleDotIcon, EyeIcon, ReceiptIcon } from 'lucide-react';
+import { CalendarIcon, CheckCircle2Icon, EyeIcon, ReceiptIcon, RotateCcwIcon } from 'lucide-react';
 
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import { BackButton } from '@/components/BackButton';
@@ -15,6 +15,7 @@ import { CopyValueButton } from '@/components/CopyValueButton';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCan } from '@/hooks/useCan';
@@ -25,6 +26,7 @@ import { formatPhoneInternational } from '@/lib/phone';
 
 type BillPaymentRow = {
     id: number;
+    notification_unread: boolean;
     ledger_transaction_id: number;
     transaction_no: string | null;
     amount: number | null;
@@ -32,9 +34,13 @@ type BillPaymentRow = {
     customer_name: string | null;
     customer_phone: string | null;
     broadband_account_number: string | null;
+    order_no: string | null;
+    service_type: string | null;
+    product_id: string | null;
+    product_price: string | null;
+    snapshot: Record<string, unknown> | null;
+    remark: string | null;
     status: string;
-    external_bill_ref: string | null;
-    external_payment_ref: string | null;
     external_response: unknown;
     created_at: string | null;
     confirmed_at: string | null;
@@ -43,6 +49,7 @@ type BillPaymentRow = {
 type Filters = {
     search: string;
     status: string;
+    service_type: string;
     payment_id: number;
     from: string;
     to: string;
@@ -72,15 +79,50 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
     const [search, setSearch] = useState(filters.search);
     const [selectedPayment, setSelectedPayment] = useState<BillPaymentRow | null>(null);
     const debounce = useRef<number>(0);
+    const markedReadPaymentIds = useRef(new Set<number>());
 
     useEffect(() => setSearch(filters.search), [filters.search]);
     useEffect(() => {
         if (filters.payment_id <= 0) return;
 
         const payment = payments.data.find((row) => row.id === filters.payment_id);
-        if (payment) setSelectedPayment(payment);
+        if (!payment) return;
+
+        setSelectedPayment(payment);
     }, [filters.payment_id, payments.data]);
+    useEffect(() => {
+        if (!selectedPayment?.notification_unread || markedReadPaymentIds.current.has(selectedPayment.id)) {
+            return;
+        }
+
+        markedReadPaymentIds.current.add(selectedPayment.id);
+        router.put(
+            `/dashboard/notifications/reference/bill_payment/${selectedPayment.id}/read`,
+            {},
+            {
+                preserveState: true,
+                preserveScroll: true,
+                onFinish: () => markedReadPaymentIds.current.delete(selectedPayment.id),
+            },
+        );
+    }, [selectedPayment?.id, selectedPayment?.notification_unread]);
     useEffect(() => () => window.clearTimeout(debounce.current), []);
+
+    const closePaymentDetails = () => {
+        setSelectedPayment(null);
+
+        const currentUrl = new URL(window.location.href);
+        if (!currentUrl.searchParams.has('payment_id')) {
+            return;
+        }
+
+        currentUrl.searchParams.delete('payment_id');
+        router.visit(`${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
+    };
 
     const visit = (next: Partial<Filters>) => {
         window.clearTimeout(debounce.current);
@@ -89,7 +131,8 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
             {
                 search: (next.search ?? search) || undefined,
                 status: (next.status ?? filters.status) || undefined,
-                payment_id: filters.payment_id || undefined,
+                service_type: (next.service_type ?? filters.service_type) || undefined,
+                payment_id: next.payment_id || undefined,
                 from: (next.from ?? filters.from) || undefined,
                 to: (next.to ?? filters.to) || undefined,
                 return_to: returnTo || undefined,
@@ -120,7 +163,7 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                 payment.transaction_no ? (
                     <Link
                         href={transactionHref(payment.transaction_no)}
-                        className="text-primary underline-offset-4 hover:underline"
+                        className="font-mono text-xs text-primary underline-offset-4 hover:underline"
                     >
                         {payment.transaction_no}
                     </Link>
@@ -129,21 +172,19 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                 ),
         },
         {
-            id: 'external_bill_ref',
-            header: t('bill_payments.external_bill_ref'),
-            cell: (payment) => payment.external_bill_ref || '—',
-        },
-        {
-            id: 'external_payment_ref',
-            header: t('bill_payments.external_payment_ref'),
-            cell: (payment) => payment.external_payment_ref || '—',
+            id: 'order_no',
+            header: t('transactions.order_no'),
+            cell: (payment) =>
+                payment.order_no ? (
+                    <span className="flex items-center gap-1.5 font-mono text-xs">
+                        {payment.order_no}
+                        <CopyValueButton value={payment.order_no} label={t('transactions.order_no')} />
+                    </span>
+                ) : (
+                    '—'
+                ),
         },
 
-        {
-            id: 'account',
-            header: t('bill_payments.account_number'),
-            cell: (payment) => payment.broadband_account_number || '—',
-        },
         {
             id: 'customer',
             header: t('transactions.customer'),
@@ -158,6 +199,11 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                 ) : (
                     payment.customer_name || '—'
                 ),
+        },
+        {
+            id: 'account',
+            header: t('bill_payments.account_number'),
+            cell: (payment) => payment.broadband_account_number || '—',
         },
         {
             id: 'amount',
@@ -225,7 +271,6 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                             <FormField
                                 label={t('common.status')}
                                 htmlFor="bill-payment-status"
-                                icon={CircleDotIcon}
                                 className="w-full shrink-0 sm:w-40"
                                 labelClassName="text-[13px]"
                             >
@@ -243,6 +288,26 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                                                 {t(`status.${status}`)}
                                             </SelectItem>
                                         ))}
+                                    </SelectContent>
+                                </Select>
+                            </FormField>
+                            <FormField
+                                label={t('bill_payments.service_type')}
+                                htmlFor="bill-payment-service-type"
+                                className="w-full shrink-0 sm:w-40"
+                                labelClassName="text-[13px]"
+                            >
+                                <Select
+                                    value={filters.service_type || 'all'}
+                                    onValueChange={(value) => visit({ service_type: value === 'all' ? '' : value })}
+                                >
+                                    <SelectTrigger id="bill-payment-service-type">
+                                        <SelectValue placeholder={t('bill_payments.service_type')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">{t('common.all')}</SelectItem>
+                                        <SelectItem value="FTTH">FTTH</SelectItem>
+                                        <SelectItem value="CG">CG</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </FormField>
@@ -284,7 +349,7 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                 payment={selectedPayment}
                 open={selectedPayment !== null}
                 onOpenChange={(open) => {
-                    if (!open) setSelectedPayment(null);
+                    if (!open) closePaymentDetails();
                 }}
             />
         </>
@@ -301,6 +366,8 @@ function BillPaymentDetailDialog({
     onOpenChange: (open: boolean) => void;
 }) {
     const { t } = useTranslation();
+    const can = useCan();
+    const canResolveReview = can('billing.update');
 
     if (!payment) return null;
 
@@ -315,28 +382,29 @@ function BillPaymentDetailDialog({
         >
             <div className="space-y-3 overflow-y-auto p-4 sm:p-5">
                 <div className="grid gap-3 sm:grid-cols-2">
-                    <PaymentInfo label={t('bill_payments.bill_payment_id')} value={payment.id} />
+                    <PaymentInfo label={t('bill_payments.order_no')} value={payment.order_no} copyable mono />
                     <PaymentInfo
                         label={t('transactions.number')}
                         value={payment.transaction_no}
                         href={payment.transaction_no ? transactionHref(payment.transaction_no) : undefined}
                         copyable
+                        mono
                     />
-                    <PaymentInfo label={t('bill_payments.external_bill_ref')} value={payment.external_bill_ref} />
-                    <PaymentInfo label={t('bill_payments.external_payment_ref')} value={payment.external_payment_ref} />
+                    <PaymentInfo label={t('bill_payments.bill_payment_id')} value={payment.id} />
                     <PaymentInfo
                         label={t('bill_payments.ledger_transaction_id')}
                         value={payment.ledger_transaction_id}
                     />
 
                     <PaymentInfo label={t('bill_payments.account_number')} value={payment.broadband_account_number} />
+                    <PaymentInfo label={t('bill_payments.service_type')} value={payment.service_type} />
                     <PaymentInfo label={t('transactions.customer')} value={payment.customer_name} />
                     <PaymentInfo label={t('customers.phone')} value={payment.customer_phone} format="phone" copyable />
                     <PaymentInfo
                         label={t('transactions.amount')}
                         value={payment.amount === null ? null : formatTopUpAmount(payment.amount)}
                     />
-                    <PaymentInfo label={t('common.status')} value={t(`status.${payment.status}`)} />
+                    <PaymentInfo label={t('common.status')} value={null} status={payment.status} />
                     <PaymentInfo
                         label={t('common.created_at')}
                         value={payment.created_at ? formatDateTime(payment.created_at) : null}
@@ -347,8 +415,56 @@ function BillPaymentDetailDialog({
                     />
                 </div>
                 <div className="mt-5">
+                    <JsonDetails title={t('bill_payments.product_snapshot')} value={payment.snapshot} />
+                </div>
+                <div className="mt-5">
                     <JsonDetails title={t('bill_payments.external_response')} value={payment.external_response} />
                 </div>
+                {canResolveReview && payment.status === 'review' ? (
+                    <div className="flex justify-end gap-2 border-t border-border/70 pt-4">
+                        <Button
+                            type="button"
+                            size="sm"
+                            className="h-8 gap-1 rounded-[6px] px-2.5 text-[11px]"
+                            onClick={() =>
+                                router.post(
+                                    `/billing/bill-payments/${payment.id}/review/complete`,
+                                    {},
+                                    {
+                                        preserveScroll: true,
+                                        onSuccess: (page) => {
+                                            if (page.props.flash.success) onOpenChange(false);
+                                        },
+                                    },
+                                )
+                            }
+                        >
+                            <CheckCircle2Icon className="size-3.5" />
+                            {t('transactions.review.complete')}
+                        </Button>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-8 gap-1 rounded-[6px] px-2.5 text-[11px]"
+                            onClick={() =>
+                                router.post(
+                                    `/billing/bill-payments/${payment.id}/review/refund`,
+                                    {},
+                                    {
+                                        preserveScroll: true,
+                                        onSuccess: (page) => {
+                                            if (page.props.flash.success) onOpenChange(false);
+                                        },
+                                    },
+                                )
+                            }
+                        >
+                            <RotateCcwIcon className="size-3.5" />
+                            {t('transactions.review.refund')}
+                        </Button>
+                    </div>
+                ) : null}
             </div>
         </FormDialog>
     );
@@ -375,12 +491,16 @@ function PaymentInfo({
     href,
     copyable = false,
     format,
+    mono = false,
+    status,
 }: {
     label: string;
     value: string | number | null | undefined;
     href?: string;
     copyable?: boolean;
     format?: 'phone';
+    mono?: boolean;
+    status?: string;
 }) {
     const hasValue = value !== null && value !== undefined && value !== '';
     const displayValue = format === 'phone' && hasValue ? formatPhoneInternational(String(value)) : value;
@@ -388,13 +508,19 @@ function PaymentInfo({
     return (
         <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
             <p className="text-xs font-medium text-muted-foreground">{label}</p>
-            <p className="mt-1 flex items-center gap-1.5 break-words text-sm font-semibold text-foreground">
-                {href && hasValue ? (
-                    <Link href={href} className="min-w-0 text-primary underline-offset-4 hover:underline">
+            <p
+                className={`mt-1 flex items-center gap-1.5 break-words text-sm font-semibold text-foreground ${
+                    mono ? 'font-mono' : ''
+                }`}
+            >
+                {status ? (
+                    <StatusBadge status={status} />
+                ) : href && hasValue ? (
+                    <Link href={href} className="min-w-0 font-semibold text-primary underline-offset-4 hover:underline">
                         {displayValue}
                     </Link>
                 ) : (
-                    <span className="min-w-0 break-words">{hasValue ? displayValue : '—'}</span>
+                    <span className="min-w-0 break-words font-semibold">{hasValue ? displayValue : '—'}</span>
                 )}
                 {copyable && hasValue ? <CopyValueButton value={String(value)} label={label} format={format} /> : null}
             </p>

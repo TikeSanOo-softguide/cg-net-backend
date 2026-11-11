@@ -11,11 +11,11 @@ return new class extends Migration {
             $table->id();
             $table->string('serial_no', 32)->unique();
             $table->string('pin', 64)->unique();
-            $table->integer('amount');
+            $table->decimal('amount', 12, 2);
             $table->string('status', 16)->default('active')->index();
             $table->date('generate_date');
-            $table->date('activated_at');
-            $table->date('expires_at')->index();
+            $table->date('activated_at')->nullable();
+            $table->date('expires_at')->nullable()->index();
             $table->timestamp('redeemed_at')->nullable();
             $table->foreignId('redeemed_by')->nullable()->constrained('users')->restrictOnDelete();
             $table->foreignId('office_id')->constrained('offices')->cascadeOnUpdate()->restrictOnDelete();

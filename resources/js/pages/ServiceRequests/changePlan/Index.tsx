@@ -54,12 +54,6 @@ type Props = {
     };
 };
 
-function appServiceType(account?: string | null): string {
-    if (account?.startsWith('FTTH')) return 'FTTH';
-    if (account?.startsWith('CG')) return 'CG';
-    return '';
-}
-
 export default function ChangePlanIndex({ requests, filters, statuses, stats }: Props) {
     const { t } = useTranslation();
     const [selectedRequest, setSelectedRequest] = useState<ChangePlanRequestWithNotification | null>(null);
@@ -238,19 +232,14 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                             id: 'service_type',
                             header: t('change_plan.service_type'),
                             mobile: false,
-                            cell: (request) => {
-                                const serviceType = appServiceType(request.broadband_account_number);
-
-                                return (
-                                    <span>
-                                        {serviceType === 'CG'
-                                            ? t('change_plan.cg_router')
-                                            : serviceType || '—'}
-                                    </span>
-                                );
-                            },
-                            searchValue: (request) =>
-                                appServiceType(request.broadband_account_number),
+                            cell: (request) => (
+                                <span>
+                                    {request.service_type === 'CG'
+                                        ? t('change_plan.cg_router')
+                                        : request.service_type?.trim() || '—'}
+                                </span>
+                            ),
+                            searchValue: (request) => request.service_type ?? '',
                         },
                         {
                             id: 'current_plans',

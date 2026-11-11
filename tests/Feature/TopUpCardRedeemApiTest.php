@@ -38,7 +38,6 @@ class TopUpCardRedeemApiTest extends TestCase
         $usedCard = TopUpCard::factory()->create(['status' => TopUpCardStatus::Used]);
         $expiredCard = TopUpCard::factory()->create(['status' => TopUpCardStatus::Expired]);
         $blockedCard = TopUpCard::factory()->create(['status' => TopUpCardStatus::Blocked]);
-        $pendingCard = TopUpCard::factory()->create(['status' => TopUpCardStatus::Pending]);
 
         $this->withToken($token)
             ->postJson('/api/redeem/check-serial-no', ['serial_no' => $activeCard->serial_no])
@@ -59,7 +58,7 @@ class TopUpCardRedeemApiTest extends TestCase
                 'message' => 'This top-up card has already been used.',
             ]);
 
-        foreach ([$expiredCard, $blockedCard, $pendingCard] as $card) {
+        foreach ([$expiredCard, $blockedCard] as $card) {
             $this->postJson('/api/redeem/check-serial-no', ['serial_no' => $card->serial_no])
                 ->assertStatus(400)
                 ->assertExactJson([
@@ -156,17 +155,18 @@ class TopUpCardRedeemApiTest extends TestCase
             ->assertJsonPath('level', 'success')
             ->assertJsonPath('message', 'Top-up successful.')
             ->assertJsonPath('amount', 500)
-            ->assertJsonPath('balance', 1500);
+            ->assertJsonPath('balance', '1500.00');
 
         $transactionNo = $response->json('transaction_no');
         $transaction = LedgerTransaction::query()->where('transaction_no', $transactionNo)->firstOrFail();
         $entries = LedgerEntry::query()->where('ledger_transaction_id', $transaction->id)->get();
 
-        $this->assertSame(1500, $wallet->fresh()->balance);
+        $this->assertEquals(1500, $wallet->fresh()->balance);
         $this->assertSame(2, $wallet->fresh()->version);
         $this->assertSame(LedgerTransactionType::Topup, $transaction->type);
         $this->assertSame(LedgerTransactionStatus::Completed, $transaction->status);
         $this->assertSame($idempotencyKey, $transaction->idempotency_key);
+        $this->assertMatchesRegularExpression('/^TOPUP-/', $transactionNo);
         $this->assertCount(2, $entries);
         $this->assertSame((int) $entries->sum('debit'), (int) $entries->sum('credit'));
         $this->assertSame(500, (int) $entries->sum('debit'));
@@ -189,7 +189,7 @@ class TopUpCardRedeemApiTest extends TestCase
             ->assertJsonPath('code', 'MSG-TOPUP-014')
             ->assertJsonPath('level', 'warning')
             ->assertJsonPath('message', 'Top-up already processed.')
-            ->assertJsonPath('balance', 1500)
+            ->assertJsonPath('balance', '1500.00')
             ->assertJsonPath('transaction_no', $transactionNo);
 
         $otherPin = '1234567890123457';
@@ -201,7 +201,7 @@ class TopUpCardRedeemApiTest extends TestCase
             'idempotency_key' => $idempotencyKey,
         ])->assertStatus(409);
 
-        $this->assertSame(1500, $wallet->fresh()->balance);
+        $this->assertEquals(1500, $wallet->fresh()->balance);
         $this->assertSame(TopUpCardStatus::Active, $otherCard->fresh()->status);
         $this->assertDatabaseCount('ledger_transactions', 1);
         $this->assertDatabaseCount('ledger_entries', 2);
@@ -282,7 +282,7 @@ class TopUpCardRedeemApiTest extends TestCase
                 'message' => 'Invalid or unavailable top-up card.',
             ]);
 
-        $this->assertSame(1500, $wallet->fresh()->balance);
+        $this->assertEquals(1500, $wallet->fresh()->balance);
         $this->assertSame(TopUpCardStatus::Used, $card->fresh()->status);
         $this->assertDatabaseCount('ledger_transactions', 1);
         $this->assertDatabaseCount('ledger_entries', 2);
@@ -336,7 +336,7 @@ class TopUpCardRedeemApiTest extends TestCase
                 'Too many attempts, retry after 30 minutes.',
             );
 
-        $this->assertSame(1500, $wallet->fresh()->balance);
+        $this->assertEquals(1500, $wallet->fresh()->balance);
         $this->assertSame(TopUpCardStatus::Used, $card->fresh()->status);
         $this->assertDatabaseCount('ledger_transactions', 1);
     }
@@ -362,7 +362,7 @@ class TopUpCardRedeemApiTest extends TestCase
                 'message' => 'Invalid or unavailable top-up card.',
             ]);
 
-        $this->assertSame(1000, $wallet->fresh()->balance);
+        $this->assertEquals(1000, $wallet->fresh()->balance);
         $this->assertSame(TopUpCardStatus::Active, $card->fresh()->status);
         $this->assertDatabaseCount('ledger_transactions', 0);
         $this->assertDatabaseCount('ledger_entries', 0);
@@ -412,7 +412,7 @@ class TopUpCardRedeemApiTest extends TestCase
 
         $this->assertGreaterThan(0, (int) $limitedResponse->headers->get('Retry-After'));
         $this->assertLessThanOrEqual(30 * 60, (int) $limitedResponse->headers->get('Retry-After'));
-        $this->assertSame(1500, $wallet->fresh()->balance);
+        $this->assertEquals(1500, $wallet->fresh()->balance);
         $this->assertSame(TopUpCardStatus::Used, $card->fresh()->status);
         $this->assertDatabaseCount('ledger_transactions', 1);
     }
@@ -495,10 +495,10 @@ class TopUpCardRedeemApiTest extends TestCase
             ->assertJsonPath('code', 'MSG-TOPUP-010')
             ->assertJsonPath('level', 'success')
             ->assertJsonPath('amount', 500)
-            ->assertJsonPath('balance', 750);
+            ->assertJsonPath('balance', '750.00');
 
-        $this->assertSame(1000, $requesterWallet->fresh()->balance);
-        $this->assertSame(750, $recipientWallet->fresh()->balance);
+        $this->assertSame('1000.00', $requesterWallet->fresh()->balance);
+        $this->assertSame('750.00', $recipientWallet->fresh()->balance);
         $this->assertSame(TopUpCardStatus::Used, $card->fresh()->status);
         $this->assertSame($user->id, $card->fresh()->redeemed_by);
         $this->assertDatabaseHas('ledger_transactions', [
@@ -535,7 +535,7 @@ class TopUpCardRedeemApiTest extends TestCase
                 'message' => 'Wallet is not active.',
             ]);
 
-        $this->assertSame(1000, $wallet->fresh()->balance);
+        $this->assertEquals(1000, $wallet->fresh()->balance);
         $this->assertSame(TopUpCardStatus::Active, $card->fresh()->status);
         $this->assertDatabaseCount('ledger_transactions', 0);
     }
@@ -560,7 +560,7 @@ class TopUpCardRedeemApiTest extends TestCase
             ]);
     }
 
-    public function test_used_blocked_pending_and_expired_cards_cannot_be_redeemed(): void
+    public function test_used_blocked_and_expired_cards_cannot_be_redeemed(): void
     {
         $user = User::factory()->create();
         $token = $user->createToken('top-up')->plainTextToken;
@@ -568,7 +568,6 @@ class TopUpCardRedeemApiTest extends TestCase
         $cardCases = [
             ['status' => TopUpCardStatus::Used],
             ['status' => TopUpCardStatus::Blocked],
-            ['status' => TopUpCardStatus::Pending],
             ['status' => TopUpCardStatus::Active, 'expires_at' => now()->subDay()->toDateString()],
         ];
 
@@ -591,7 +590,7 @@ class TopUpCardRedeemApiTest extends TestCase
                 ]);
         }
 
-        $this->assertSame(1000, $wallet->fresh()->balance);
+        $this->assertEquals(1000, $wallet->fresh()->balance);
         $this->assertDatabaseCount('ledger_transactions', 0);
         $this->assertDatabaseCount('ledger_entries', 0);
     }
@@ -629,7 +628,7 @@ class TopUpCardRedeemApiTest extends TestCase
                 'message' => 'Invalid or unavailable top-up card.',
             ]);
 
-        $this->assertSame(1000, $wallet->fresh()->balance);
+        $this->assertEquals(1000, $wallet->fresh()->balance);
         $this->assertDatabaseCount('ledger_transactions', 1);
     }
 
@@ -682,7 +681,7 @@ class TopUpCardRedeemApiTest extends TestCase
                 'message' => 'Account is not available.',
             ]);
 
-        $this->assertSame(1000, $wallet->fresh()->balance);
+        $this->assertEquals(1000, $wallet->fresh()->balance);
         $this->assertSame(TopUpCardStatus::Active, $card->fresh()->status);
         $this->assertDatabaseCount('ledger_transactions', 0);
     }
@@ -709,7 +708,7 @@ class TopUpCardRedeemApiTest extends TestCase
                 'message' => 'This action could not be completed.',
             ]);
 
-        $this->assertSame(2147483647, $wallet->fresh()->balance);
+        $this->assertEquals(2147483647, $wallet->fresh()->balance);
         $this->assertSame(TopUpCardStatus::Active, $card->fresh()->status);
         $this->assertDatabaseCount('ledger_transactions', 0);
     }

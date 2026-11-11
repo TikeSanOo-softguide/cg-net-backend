@@ -9,12 +9,10 @@ use App\Enums\UserStatus;
 use App\Models\Admin;
 use App\Models\BillPayment;
 use App\Models\CustomerPackage;
-use App\Models\Invoice;
 use App\Models\LedgerAccount;
 use App\Models\LedgerEntry;
 use App\Models\LedgerTransaction;
 use App\Models\PackageOrder;
-use App\Models\Payment;
 use App\Models\TopUpCard;
 use App\Models\User;
 use App\Models\UserLog;
@@ -120,7 +118,7 @@ class CustomerManagementTest extends TestCase
                     ->where('accountBinding.account_number', '12345678')
                     ->where('accountBinding.service_type', 'CG')
                     ->has('packageHistory', 1)
-                    ->where('wallet.balance', '15000')
+                    ->where('wallet.balance', '15000.00')
                     ->has('wallet.transactions', 1),
             );
     }
@@ -226,9 +224,9 @@ class CustomerManagementTest extends TestCase
             ->assertInertia(
                 fn(Assert $page) => $page
                     ->where('wallet.transaction_overview.adjustment.credit.count', 1)
-                    ->where('wallet.transaction_overview.adjustment.credit.amount', '500')
+                    ->where('wallet.transaction_overview.adjustment.credit.amount', '500.00')
                     ->where('wallet.transaction_overview.adjustment.debit.count', 1)
-                    ->where('wallet.transaction_overview.adjustment.debit.amount', '200'),
+                    ->where('wallet.transaction_overview.adjustment.debit.amount', '200.00'),
             );
     }
 
@@ -694,12 +692,10 @@ class CustomerManagementTest extends TestCase
         foreach ([
             BillPayment::class,
             CustomerPackage::class,
-            Invoice::class,
             LedgerAccount::class,
             LedgerEntry::class,
             LedgerTransaction::class,
             PackageOrder::class,
-            Payment::class,
             TopUpCard::class,
             Wallet::class,
         ] as $recordType) {

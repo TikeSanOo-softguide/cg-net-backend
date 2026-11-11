@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Notification;
 
 use App\Http\Controllers\Controller;
-use App\Services\Notification\DueFtthBillNotificationService;
+use App\Services\Notification\DueInternetBillNotificationService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,7 +13,7 @@ use Inertia\Response;
 
 class BillDueAlertController extends Controller
 {
-    public function index(Request $request, DueFtthBillNotificationService $service): Response
+    public function index(Request $request, DueInternetBillNotificationService $service): Response
     {
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:191'],
@@ -48,7 +48,7 @@ class BillDueAlertController extends Controller
         ]);
     }
 
-    public function send(Request $request, DueFtthBillNotificationService $service): JsonResponse
+    public function send(Request $request, DueInternetBillNotificationService $service): JsonResponse
     {
         $data = $request->validate([
             'user_id' => ['required', 'integer', 'exists:users,id'],

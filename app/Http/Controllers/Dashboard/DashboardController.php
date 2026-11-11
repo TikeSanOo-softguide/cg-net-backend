@@ -24,7 +24,6 @@ use Carbon\CarbonPeriod;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -49,7 +48,7 @@ class DashboardController extends Controller
             'stats' => $this->stats(),
             'chart' => $this->chartSeries($start, $end),
             'topupUsageChange' => $this->topupUsageChange($start, $end),
-            'regionChart' => $this->regionChart($start, $end),
+            'installationTypeChart' => $this->installationTypeChart($start, $end),
             'requestTypeChart' => $this->requestTypeChart($start, $end),
             'recentRequests' => $this->recentRequests(),
         ]);
@@ -132,12 +131,13 @@ class DashboardController extends Controller
     }
 
     /**
-     * @return list<array{date: string, topup_usage: int, signups: int, ftth_bill_payments: int, wifi_package_orders: int}>
+     * @return list<array{date: string, topup_usage: int, signups: int, ftth_bill_payments: int, cg_bill_payments: int, wifi_package_orders: int}>
      */
     private function chartSeries(Carbon $start, Carbon $end): array
     {
         $topupUsage = $this->transactionVolumeByDay(LedgerTransactionType::Topup, $start, $end);
         $ftthBillPayments = $this->transactionVolumeByDay(LedgerTransactionType::FtthBill, $start, $end);
+        $cgBillPayments = $this->transactionVolumeByDay(LedgerTransactionType::CgBill, $start, $end);
         $wifiPackageOrders = $this->transactionVolumeByDay(LedgerTransactionType::WifiPackage, $start, $end);
 
         $signups = User::query()
@@ -147,7 +147,7 @@ class DashboardController extends Controller
             ->map(fn(Collection $rows) => $rows->count());
 
         return collect(CarbonPeriod::create($start, $end))
-            ->map(function (Carbon $day) use ($topupUsage, $signups, $ftthBillPayments, $wifiPackageOrders) {
+            ->map(function (Carbon $day) use ($topupUsage, $signups, $ftthBillPayments, $cgBillPayments, $wifiPackageOrders) {
                 $key = $day->toDateString();
 
                 return [
@@ -155,6 +155,7 @@ class DashboardController extends Controller
                     'topup_usage' => (int) ($topupUsage[$key] ?? 0),
                     'signups' => (int) ($signups[$key] ?? 0),
                     'ftth_bill_payments' => (int) ($ftthBillPayments[$key] ?? 0),
+                    'cg_bill_payments' => (int) ($cgBillPayments[$key] ?? 0),
                     'wifi_package_orders' => (int) ($wifiPackageOrders[$key] ?? 0),
                 ];
             })
@@ -162,10 +163,17 @@ class DashboardController extends Controller
             ->all();
     }
 
-    private function transactionVolumeByDay(LedgerTransactionType $type, Carbon $start, Carbon $end): Collection
+    /**
+     * @param  LedgerTransactionType|list<LedgerTransactionType>  $types
+     */
+    private function transactionVolumeByDay(LedgerTransactionType|array $types, Carbon $start, Carbon $end): Collection
     {
+        $values = is_array($types)
+            ? array_map(fn (LedgerTransactionType $type): string => $type->value, $types)
+            : [$types->value];
+
         return LedgerTransaction::query()
-            ->where('type', $type)
+            ->whereIn('type', $values)
             ->where('status', LedgerTransactionStatus::Completed)
             ->whereBetween('created_at', [$start, $end])
             ->selectRaw('DATE(created_at) as date, SUM(amount) as points')
@@ -197,53 +205,24 @@ class DashboardController extends Controller
     }
 
     /**
-     * @return list<array{id: int|null, name_en: string, name_zh: string, name_my: string, value: int}>
+     * @return list<array{service_type: string, value: int}>
      */
-    private function regionChart(Carbon $start, Carbon $end): array
+    private function installationTypeChart(Carbon $start, Carbon $end): array
     {
-        $counts = InstallationApplication::query()
-            ->join('areas', 'areas.id', '=', 'installation_applications.area_id')
-            ->join('regions', 'regions.id', '=', 'areas.region_id')
-            ->whereNull('areas.deleted_at')
-            ->whereNull('regions.deleted_at')
+        $serviceType = "COALESCE(NULLIF(service_type, ''), 'other')";
+
+        return InstallationApplication::query()
             ->whereBetween('installation_applications.created_at', [$start, $end])
-            ->select([
-                'regions.id',
-                'regions.name_en',
-                'regions.name_zh',
-                'regions.name_my',
-                DB::raw('COUNT(*) as total'),
-            ])
-            ->groupBy('regions.id', 'regions.name_en', 'regions.name_zh', 'regions.name_my')
+            ->selectRaw("{$serviceType} as service_type, COUNT(*) as total")
+            ->groupByRaw($serviceType)
             ->orderByDesc('total')
-            ->get();
-
-        $toSlice = static fn($row): array => [
-            'id' => (int) $row->id,
-            'name_en' => (string) $row->name_en,
-            'name_zh' => (string) $row->name_zh,
-            'name_my' => (string) $row->name_my,
-            'value' => (int) $row->total,
-        ];
-
-        if ($counts->count() <= 5) {
-            return $counts->map($toSlice)->values()->all();
-        }
-
-        $items = $counts->take(4)->map($toSlice)->values()->all();
-        $otherCount = (int) $counts->slice(4)->sum('total');
-
-        if ($otherCount > 0) {
-            $items[] = [
-                'id' => null,
-                'name_en' => 'Other',
-                'name_zh' => 'Other',
-                'name_my' => 'Other',
-                'value' => $otherCount,
-            ];
-        }
-
-        return $items;
+            ->get()
+            ->map(fn($row): array => [
+                'service_type' => (string) $row->service_type,
+                'value' => (int) $row->total,
+            ])
+            ->values()
+            ->all();
     }
 
     /**

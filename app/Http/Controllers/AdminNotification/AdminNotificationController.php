@@ -57,9 +57,12 @@ class AdminNotificationController extends Controller
         'change_plan_request' => 'service-requests.view',
         'failure_report' => 'service-requests.view',
         'relocation_request' => 'service-requests.view',
+        'chat_conversation' => 'support.view',
         'ledger_health_snapshot_full' => 'reports.view',
         'ledger_health_snapshot_daily' => 'reports.view',
         'ledger_health_snapshot_manual' => 'reports.view',
+        'bill_payment' => 'billing.view',
+        'package_order' => 'billing.view',
     ];
 
     public function index(Request $request): JsonResponse|Response

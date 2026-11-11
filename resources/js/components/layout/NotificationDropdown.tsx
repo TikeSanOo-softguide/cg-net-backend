@@ -1,7 +1,15 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, router, usePage } from '@inertiajs/react';
-import { BellIcon, CalendarIcon, CommandIcon, LayoutGridIcon, SettingsIcon, type LucideIcon } from 'lucide-react';
+import {
+    BellIcon,
+    CalendarIcon,
+    CommandIcon,
+    LayoutGridIcon,
+    MessageCircleIcon,
+    SettingsIcon,
+    type LucideIcon,
+} from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -65,15 +73,33 @@ const requestHrefByType = {
     change_plan_request: '/service-requests/change-plan',
     failure_report: '/service-requests/failures',
     relocation_request: '/service-requests/relocations',
+    bill_payment: '/billing/bill-payments',
+    package_order: '/billing/package-orders',
 } satisfies Record<
-    Exclude<AdminNotification['reference_type'], null | `ledger_health_snapshot_${'full' | 'daily' | 'manual'}`>,
+    Exclude<
+        AdminNotification['reference_type'],
+        null | 'chat_conversation' | `ledger_health_snapshot_${'full' | 'daily' | 'manual'}`
+    >,
     string
 >;
 
 function isServiceRequestReference(
     referenceType: AdminNotification['reference_type'],
-): referenceType is keyof typeof requestHrefByType {
-    return referenceType !== null && Object.hasOwn(requestHrefByType, referenceType);
+): referenceType is Exclude<keyof typeof requestHrefByType, 'bill_payment' | 'package_order'> {
+    return (
+        referenceType !== null &&
+        referenceType !== 'bill_payment' &&
+        referenceType !== 'package_order' &&
+        Object.hasOwn(requestHrefByType, referenceType)
+    );
+}
+
+function isBillPaymentReference(referenceType: AdminNotification['reference_type']): referenceType is 'bill_payment' {
+    return referenceType === 'bill_payment';
+}
+
+function isPackageOrderReference(referenceType: AdminNotification['reference_type']): referenceType is 'package_order' {
+    return referenceType === 'package_order';
 }
 
 const serviceRequestNavigationItems = navigation.flatMap((group) => group.children ?? []);
@@ -85,6 +111,10 @@ function isLedgerHealthNotification(item: AdminNotification | RecentNotification
 }
 
 function notificationIcon(item: AdminNotification | RecentNotification): LucideIcon {
+    if ('reference_type' in item && item.reference_type === 'chat_conversation') {
+        return MessageCircleIcon;
+    }
+
     if ('reference_type' in item && isServiceRequestReference(item.reference_type)) {
         const href = requestHrefByType[item.reference_type];
         return serviceRequestNavigationItems.find((navItem) => navItem.href === href)?.icon ?? fallbackLook.icon;
@@ -314,7 +344,13 @@ export function NotificationDropdown({ unread }: NotificationDropdownProps) {
                                                                   item.reference_id !== null &&
                                                                   isServiceRequestReference(item.reference_type)
                                                                       ? `${item.href}?status=all&open_request=${item.reference_id}`
-                                                                      : item.href!;
+                                                                      : item.reference_id !== null &&
+                                                                          isBillPaymentReference(item.reference_type)
+                                                                        ? `${item.href}?status=all&payment_id=${item.reference_id}`
+                                                                        : item.reference_id !== null &&
+                                                                            isPackageOrderReference(item.reference_type)
+                                                                          ? `${item.href}?status=all&open_package_order=${item.reference_id}`
+                                                                          : item.href!;
 
                                                               if (item.read_at === null) {
                                                                   router.put(

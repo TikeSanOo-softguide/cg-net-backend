@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\ChangePassword;
 
 use App\Enums\MessageCode;
-use App\Exceptions\ApiMessageException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ChangePassword\ChangePasswordRequest as StoreChangePasswordRequest;
 use App\Http\Requests\ChangePassword\VerifyChangePasswordOtpRequest;
 use App\Models\User;
 use App\Services\Auth\OtpService;
 use App\Support\ApiMessage;
+use App\Support\CustomerPassword;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
@@ -21,9 +21,7 @@ class ChangePasswordController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        if (!Hash::check($request->validated('current_password'), $user->getAuthPassword())) {
-            throw new ApiMessageException(MessageCode::UserPasswordIncorrect);
-        }
+        CustomerPassword::verify($user, $request->validated('current_password'));
 
         $challenge = $otp->request($user->phone, (string) $request->ip());
 
