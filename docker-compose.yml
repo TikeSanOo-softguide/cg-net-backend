@@ -21,6 +21,7 @@ services:
             REDIS_HOST: redis
             CACHE_STORE: redis
             QUEUE_CONNECTION: redis
+            TOP_UP_QUEUE_RETRY_AFTER: ${TOP_UP_QUEUE_RETRY_AFTER:-600}
             BROADCAST_CONNECTION: reverb
             REVERB_HOST: reverb
             REVERB_PORT: 8081
@@ -56,6 +57,7 @@ services:
             REDIS_HOST: redis
             CACHE_STORE: redis
             QUEUE_CONNECTION: redis
+            TOP_UP_QUEUE_RETRY_AFTER: ${TOP_UP_QUEUE_RETRY_AFTER:-600}
             BROADCAST_CONNECTION: reverb
             REVERB_HOST: reverb
             REVERB_PORT: 8081

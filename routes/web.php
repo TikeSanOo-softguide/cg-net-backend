@@ -444,6 +444,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::patch('/batches/{batch}/void', [OfficeController::class, 'voidBatch'])
                 ->middleware('can:top-up-cards.update')
                 ->name('batches.void');
+            Route::patch('/batches/{batch}/activate', [OfficeController::class, 'activateBatch'])
+                ->middleware('can:top-up-cards.update')
+                ->name('batches.activate');
             Route::get('/export', [TopUpCardController::class, 'export'])
                 ->middleware(['can:top-up-cards.view', 'can:' . AppPermissions::SystemExport])
                 ->name('export');

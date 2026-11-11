@@ -18,6 +18,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -120,15 +121,57 @@ class OfficeController extends Controller
 
     public function voidBatch(Batch $batch): RedirectResponse
     {
-        abort_unless($batch->status === BatchStatus::Active, 409);
+        DB::transaction(function () use ($batch): void {
+            $batch = Batch::query()->lockForUpdate()->findOrFail($batch->id);
 
-        $batch->topUpCards()->update([
-            'status' => TopUpCardStatus::Blocked,
-        ]);
+            if ($batch->status === BatchStatus::Blocked) {
+                return;
+            }
 
-        $batch->update(['status' => BatchStatus::Blocked]);
+            abort_unless($batch->status === BatchStatus::Active, 409);
+
+            $batch->topUpCards()->update([
+                'status' => TopUpCardStatus::Blocked,
+            ]);
+
+            $batch->update(['status' => BatchStatus::Blocked]);
+        });
 
         return back()->with('success', 'status.blocked');
+    }
+
+    public function activateBatch(Batch $batch): RedirectResponse
+    {
+        DB::transaction(function () use ($batch): void {
+            $batch = Batch::query()->lockForUpdate()->findOrFail($batch->id);
+
+            if ($batch->status === BatchStatus::Active) {
+                return;
+            }
+
+            abort_unless($batch->status === BatchStatus::Pending, 409);
+
+            $activationDate = now()->startOfDay();
+            $activatedAt = $activationDate->toDateString();
+            $expiresAt = $activationDate->copy()->addYears(2)->toDateString();
+            $activatedCards = $batch->topUpCards()
+                ->where('status', TopUpCardStatus::Pending)
+                ->update([
+                    'status' => TopUpCardStatus::Active->value,
+                    'activated_at' => $activatedAt,
+                    'expires_at' => $expiresAt,
+                    'updated_at' => now(),
+                ]);
+
+            abort_unless($activatedCards > 0, 409);
+
+            $batch->update([
+                'status' => BatchStatus::Active,
+                'expires_at' => $expiresAt,
+            ]);
+        });
+
+        return back()->with('success', 'top_up_cards.batch_activated');
     }
 
     public function import(Request $request): RedirectResponse

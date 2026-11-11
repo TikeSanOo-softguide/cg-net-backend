@@ -874,6 +874,7 @@ class TopUpCardController extends Controller
     {
         return [
             'total' => TopUpCard::query()->count(),
+            'pending' => TopUpCard::query()->where('status', TopUpCardStatus::Pending)->count(),
             'active' => TopUpCard::query()->where('status', TopUpCardStatus::Active)->count(),
             'used' => TopUpCard::query()->where('status', TopUpCardStatus::Used)->count(),
             'expired' => TopUpCard::query()->where('status', TopUpCardStatus::Expired)->count(),

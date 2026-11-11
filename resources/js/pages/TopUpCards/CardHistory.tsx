@@ -26,6 +26,7 @@ type Props = {
     filters: CardHistoryFilters;
     stats: {
         total: number;
+        pending: number;
         active: number;
         used: number;
         expired: number;
@@ -82,6 +83,12 @@ export default function CardHistory({ cards, batches, generated = [], amounts, o
             icon: CreditCard,
         },
         {
+            key: 'cards.pending',
+            title: t('status.pending'),
+            value: stats.pending.toLocaleString(),
+            icon: CreditCard,
+        },
+        {
             key: 'cards.active',
             title: t('status.active'),
             value: stats.active.toLocaleString(),
@@ -120,7 +127,7 @@ export default function CardHistory({ cards, batches, generated = [], amounts, o
             <Head title={t('menu.card_history')} />
             <PageContent>
                 <PageHeader />
-                <StatCard items={cardList} className="xl:grid-cols-5" />
+                <StatCard items={cardList} className="xl:grid-cols-6" />
                 <div className="print:hidden">
                     <TopUpCardHistoryTable
                         cards={cards}
