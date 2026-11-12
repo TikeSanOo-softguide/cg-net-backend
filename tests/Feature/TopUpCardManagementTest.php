@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\TopUpCardStatus;
-use App\Http\Controllers\TopUpCard\TopUpCardController;
+use App\Http\Controllers\TopUpCard\TopUpCardBatchController;
 use App\Jobs\GenerateTopUpCardsJob;
 use App\Jobs\ImportGeneratedTopUpCardsJob;
 use App\Models\Admin;
@@ -115,7 +115,7 @@ class TopUpCardManagementTest extends TestCase
         $batch->failedJobs = 0;
         $batch->shouldReceive('processedJobs')->andReturn(2);
 
-        TopUpCardController::logGenerationFinished($token, $batch, 'succeeded');
+        TopUpCardBatchController::logGenerationFinished($token, $batch, 'succeeded');
 
         $this->assertDatabaseHas('activity_log', [
             'description' => 'top_up_cards_generation_succeeded',
@@ -167,6 +167,7 @@ class TopUpCardManagementTest extends TestCase
                 ),
             ])
             ->assertSessionHasNoErrors()
+            ->assertSessionMissing('success')
             ->assertRedirect('/top-up-cards/card-import');
 
         Queue::assertPushed(ImportGeneratedTopUpCardsJob::class, 1);
@@ -215,6 +216,14 @@ class TopUpCardManagementTest extends TestCase
         $this->actingAs($actor, 'web')
             ->patch('/top-up-cards/batches/'.$batch->id.'/activate')
             ->assertRedirect();
+
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => 'top_up_cards',
+            'description' => 'top_up_cards_batch_activated',
+            'event' => 'status_changed',
+            'subject_id' => $batch->id,
+            'causer_id' => $actor->id,
+        ]);
 
         $this->assertDatabaseHas('batches', [
             'id' => $batch->id,
@@ -302,6 +311,13 @@ class TopUpCardManagementTest extends TestCase
             'id' => $batchId,
             'quantity' => 2,
             'total_value' => 3500,
+        ]);
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => 'top_up_cards',
+            'description' => 'top_up_cards_batch_import_succeeded',
+            'event' => 'succeeded',
+            'subject_id' => $batchId,
+            'causer_id' => $actor->id,
         ]);
 
         $batchMetadata = Batch::query()->findOrFail($batchId)->metadata;
@@ -524,6 +540,13 @@ class TopUpCardManagementTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $newOffice = Office::query()->where('cd', '22')->firstOrFail();
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => 'top_up_card_office',
+            'description' => 'office_created',
+            'event' => 'created',
+            'subject_id' => $newOffice->id,
+            'causer_id' => $actor->id,
+        ]);
         $this->assertSame('https://t.me/new-office', $newOffice->telegram_link);
         $this->assertSame('https://wechat.example/new-office', $newOffice->wechat_link);
         $this->assertSame('viber://chat?number=09123456780', $newOffice->viber_link);
@@ -594,6 +617,26 @@ class TopUpCardManagementTest extends TestCase
             'telegram_link' => 'https://t.me/updated-office',
             'wechat_link' => 'https://wechat.example/updated-office',
             'viber_link' => 'viber://chat?number=09123456780',
+        ]);
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => 'top_up_card_office',
+            'description' => 'office_updated',
+            'event' => 'updated',
+            'subject_id' => $office->id,
+            'causer_id' => $actor->id,
+        ]);
+
+        $this->actingAs($actor, 'web')
+            ->delete("/top-up-cards/offices/{$office->id}")
+            ->assertSessionHasNoErrors();
+
+        $this->assertSoftDeleted('offices', ['id' => $office->id]);
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => 'top_up_card_office',
+            'description' => 'office_deleted',
+            'event' => 'deleted',
+            'subject_id' => $office->id,
+            'causer_id' => $actor->id,
         ]);
     }
 
@@ -712,6 +755,13 @@ class TopUpCardManagementTest extends TestCase
             'id' => $batch->id,
             'status' => 'blocked',
         ]);
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => 'top_up_cards',
+            'description' => 'top_up_cards_batch_blocked',
+            'event' => 'voided',
+            'subject_id' => $batch->id,
+            'causer_id' => $actor->id,
+        ]);
 
         $this->actingAs($actor, 'web')
             ->patch('/top-up-cards/batches/'.$batch->id.'/void')
@@ -824,6 +874,95 @@ class TopUpCardManagementTest extends TestCase
             );
     }
 
+    public function test_card_history_defaults_to_latest_imported_batch_but_all_can_be_selected(): void
+    {
+        $actor = Admin::factory()->create();
+        $actor->assignRole(AppPermissions::SuperAdmin);
+        $olderImport = Batch::factory()->create([
+            'batch_no' => '202611110001',
+            'metadata' => ['import_status' => 'completed'],
+        ]);
+        $latestImport = Batch::factory()->create([
+            'batch_no' => '202611120001',
+            'metadata' => ['import_status' => 'completed'],
+        ]);
+        $generatedBatch = Batch::factory()->create(['batch_no' => '202611120002']);
+        TopUpCard::factory()->create(['batch_id' => $olderImport->id]);
+        $latestImportedCard = TopUpCard::factory()->create(['batch_id' => $latestImport->id]);
+        TopUpCard::factory()->create(['batch_id' => $generatedBatch->id]);
+
+        $this->actingAs($actor, 'web')
+            ->get('/top-up-cards/card-history')
+            ->assertOk()
+            ->assertInertia(
+                fn (Assert $page) => $page
+                    ->component('TopUpCards/CardHistory')
+                    ->where('filters.batch', (string) $latestImport->id)
+                    ->has('cards.data', 1)
+                    ->where('cards.data.0.id', $latestImportedCard->id),
+            );
+
+        $this->actingAs($actor, 'web')
+            ->get('/top-up-cards/card-history?batch=')
+            ->assertOk()
+            ->assertInertia(
+                fn (Assert $page) => $page
+                    ->component('TopUpCards/CardHistory')
+                    ->where('filters.batch', '')
+                    ->has('cards.data', 3),
+            );
+    }
+
+    public function test_card_history_stats_follow_status_amount_batch_and_office_filters(): void
+    {
+        $actor = Admin::factory()->create();
+        $actor->assignRole(AppPermissions::SuperAdmin);
+        $batch = Batch::factory()->create(['batch_no' => '202611120003']);
+        $office = $this->makeOffice('Central Office', 'Main Street', '31');
+        $otherOffice = $this->makeOffice('North Office', 'North Street', '11');
+        TopUpCard::factory()->create([
+            'batch_id' => $batch->id,
+            'office_id' => $office->id,
+            'amount' => 100,
+            'status' => TopUpCardStatus::Pending,
+        ]);
+        $activeCard = TopUpCard::factory()->create([
+            'batch_id' => $batch->id,
+            'office_id' => $office->id,
+            'amount' => 100,
+            'status' => TopUpCardStatus::Active,
+        ]);
+        TopUpCard::factory()->create([
+            'batch_id' => $batch->id,
+            'office_id' => $otherOffice->id,
+            'amount' => 100,
+            'status' => TopUpCardStatus::Pending,
+        ]);
+        TopUpCard::factory()->create([
+            'batch_id' => $batch->id,
+            'office_id' => $office->id,
+            'amount' => 500,
+            'status' => TopUpCardStatus::Pending,
+        ]);
+
+        $this->actingAs($actor, 'web')
+            ->get('/top-up-cards/card-history?amount=100&batch='.$batch->id.'&office='.$office->id.'&status=active&from=2050-01-01')
+            ->assertOk()
+            ->assertInertia(
+                fn (Assert $page) => $page
+                    ->component('TopUpCards/CardHistory')
+                    ->has('cards.data', 0)
+                    ->where('stats', [
+                        'total' => 1,
+                        'pending' => 0,
+                        'active' => 1,
+                        'used' => 0,
+                        'expired' => 0,
+                        'blocked' => 0,
+                    ]),
+            );
+    }
+
     public function test_card_history_can_filter_and_count_pending_cards(): void
     {
         $actor = Admin::factory()->create();
@@ -841,9 +980,9 @@ class TopUpCardManagementTest extends TestCase
                     ->has('cards.data', 1)
                     ->where('cards.data.0.id', $pending->id)
                     ->where('stats', [
-                        'total' => 2,
+                        'total' => 1,
                         'pending' => 1,
-                        'active' => 1,
+                        'active' => 0,
                         'used' => 0,
                         'expired' => 0,
                         'blocked' => 0,

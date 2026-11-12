@@ -51,6 +51,7 @@ use App\Http\Controllers\Support\ChatConversations\ChatConversationsController;
 use App\Http\Controllers\Support\ChatFlows\ChatbotFlowsController;
 use App\Http\Controllers\Support\QuickReplies\QuickRepliesController;
 use App\Http\Controllers\TopUpCard\OfficeController;
+use App\Http\Controllers\TopUpCard\TopUpCardBatchController;
 use App\Http\Controllers\TopUpCard\TopUpCardController;
 use App\Http\Controllers\TopUpReport\TopUpReportController;
 use App\Support\AdminHome;
@@ -417,21 +418,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
     Route::prefix('top-up-cards')
         ->name('top-up-cards.')
         ->group(function () {
-            Route::get('/batch', [TopUpCardController::class, 'index'])
-                ->middleware('can:top-up-cards.view')
-                ->name('batch');
-            Route::post('/batch', [TopUpCardController::class, 'store'])
-                ->middleware(['can:top-up-cards.create', 'throttle:top-up-card-generation'])
-                ->name('store');
-            Route::get('/generation-status', [TopUpCardController::class, 'generationStatus'])
-                ->middleware('can:top-up-cards.view')
-                ->name('generation-status');
             Route::get('/offices', [OfficeController::class, 'index'])
                 ->middleware('can:top-up-cards.view')
                 ->name('offices');
-            Route::get('/card-import', [OfficeController::class, 'cardImport'])
-                ->middleware('can:top-up-cards.view')
-                ->name('card-import');
             Route::post('/offices', [OfficeController::class, 'store'])
                 ->middleware('can:top-up-cards.create')
                 ->name('offices.store');
@@ -441,21 +430,30 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::delete('/offices/{office}', [OfficeController::class, 'destroy'])
                 ->middleware('can:top-up-cards.delete')
                 ->name('offices.destroy');
-            Route::post('/cards/import', [OfficeController::class, 'import'])
-                ->middleware('can:top-up-cards.create')
-                ->name('cards.import');
-            Route::patch('/batches/{batch}/void', [OfficeController::class, 'voidBatch'])
-                ->middleware('can:top-up-cards.update')
-                ->name('batches.void');
-            Route::patch('/batches/{batch}/activate', [OfficeController::class, 'activateBatch'])
-                ->middleware('can:top-up-cards.update')
-                ->name('batches.activate');
-            Route::get('/export', [TopUpCardController::class, 'export'])
+            Route::get('/export', [TopUpCardBatchController::class, 'export'])
                 ->middleware(['can:top-up-cards.view', 'can:' . AppPermissions::SystemExport])
                 ->name('export');
-            Route::post('/offices/validate-import', [OfficeController::class, 'validateImport'])
+            Route::get('/batch', [TopUpCardBatchController::class, 'index'])
+                ->middleware('can:top-up-cards.view')
+                ->name('batch');
+            Route::get('/card-import', [TopUpCardBatchController::class, 'cardImport'])
+                ->middleware('can:top-up-cards.view')
+                ->name('card-import');
+            Route::post('/batch', [TopUpCardBatchController::class, 'store'])
+                ->middleware(['can:top-up-cards.create', 'throttle:top-up-card-generation'])
+                ->name('store');
+            Route::patch('/batches/{batch}/void', [TopUpCardBatchController::class, 'voidBatch'])
+                ->middleware('can:top-up-cards.update')
+                ->name('batches.void');
+            Route::patch('/batches/{batch}/activate', [TopUpCardBatchController::class, 'activateBatch'])
+                ->middleware('can:top-up-cards.update')
+                ->name('batches.activate');
+            Route::post('/offices/validate-import', [TopUpCardBatchController::class, 'validateImport'])
                 ->middleware('can:top-up-cards.create')
                 ->name('offices.validate-import');
+            Route::post('/cards/import', [TopUpCardBatchController::class, 'import'])
+                ->middleware('can:top-up-cards.create')
+                ->name('cards.import');
             Route::get('/card-history', [TopUpCardController::class, 'cardHistory'])
                 ->middleware('can:top-up-cards.view')
                 ->name('card-history');

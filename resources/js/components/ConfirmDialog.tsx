@@ -46,6 +46,8 @@ export function ConfirmDialog({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
+                dismissOnOutsideClick
+                dismissOnEscape
                 overlayClassName="fixed inset-0 z-[100] h-dvh w-full bg-[#173236]/40 backdrop-blur-[4px]"
                 className={cn(
                     'z-[101] gap-0 overflow-hidden rounded-[12px] border border-white/60 bg-white p-0',

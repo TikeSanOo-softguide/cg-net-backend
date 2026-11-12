@@ -399,6 +399,7 @@ class TopUpCardCsvImportTest extends TestCase
 
     public function test_preview_reports_duplicate_serials_within_the_csv(): void
     {
+        config(['top_up_cards.chunk_size' => 1]);
         Storage::fake('local');
         $this->makeOffice('Office 31', 'Main Street', '31');
         $file = UploadedFile::fake()->createWithContent(

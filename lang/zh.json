@@ -2014,6 +2014,7 @@
             "drag_drop_csv": "拖放 CSV 文件到此处",
             "drop_csv_here": "在此处放下 CSV 文件",
             "import": "导入",
+            "importing": "正在导入…",
             "importing_csv": "正在导入 CSV…",
             "label": "导入 CSV",
             "preview_limit": "显示 :total 行中的 :shown 行。"
