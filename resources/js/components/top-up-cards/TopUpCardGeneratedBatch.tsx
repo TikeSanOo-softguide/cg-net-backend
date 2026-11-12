@@ -1,4 +1,5 @@
-import { memo, useCallback, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { DownloadIcon, EyeIcon, EyeOffIcon, PrinterIcon } from 'lucide-react';
 import QRCode from 'react-qr-code';
 
@@ -22,6 +23,7 @@ type BatchCardProps = {
     card: TopUpCardRow;
     open: boolean;
     qrTitle: string;
+    activatedLabel: string;
     expiresLabel: string;
     revealLabel: string;
     hideLabel: string;
@@ -32,6 +34,7 @@ const TopUpCardBatchItem = memo(function TopUpCardBatchItem({
     card,
     open,
     qrTitle,
+    activatedLabel,
     expiresLabel,
     revealLabel,
     hideLabel,
@@ -57,7 +60,7 @@ const TopUpCardBatchItem = memo(function TopUpCardBatchItem({
                         </span>
                     </p>
                     <div className="mt-2 flex items-center justify-between gap-2 rounded-[6px] border border-dashed border-primary/25 bg-card/70 px-2 py-1 print:border-gray-400 print:bg-gray-50">
-                        <p className="font-mono text-[12px] font-semibold tracking-wider text-foreground print:text-black">
+                        <p className="whitespace-nowrap font-mono text-[12px] font-semibold tracking-wider text-foreground print:text-black">
                             <span className="print:hidden">
                                 {open && card.pin ? formatTopUpPin(card.pin) : formatTopUpPin(null)}
                             </span>
@@ -77,6 +80,9 @@ const TopUpCardBatchItem = memo(function TopUpCardBatchItem({
                             </button>
                         ) : null}
                     </div>
+                    <p className="mt-1.5 text-[10px] text-muted-foreground">
+                        {activatedLabel}: {card.activated_at ?? '—'}
+                    </p>
                     <p className="mt-1.5 text-[10px] text-muted-foreground">
                         {expiresLabel}: {card.expires_at ?? '—'}
                     </p>
@@ -100,6 +106,11 @@ const TopUpCardBatchItem = memo(function TopUpCardBatchItem({
 export const TopUpCardGeneratedBatch = memo(function TopUpCardGeneratedBatch({ cards, onExport }: GeneratedBatchProps) {
     const { t } = useTranslation();
     const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+    const [printContainer, setPrintContainer] = useState<HTMLElement | null>(null);
+
+    useEffect(() => {
+        setPrintContainer(document.body);
+    }, []);
 
     const onTogglePin = useCallback((serialNo: string) => {
         setRevealed((current) => ({ ...current, [serialNo]: !current[serialNo] }));
@@ -117,32 +128,61 @@ export const TopUpCardGeneratedBatch = memo(function TopUpCardGeneratedBatch({ c
     }
 
     const qrTitle = t('top_up_cards.qr_code');
+    const activatedLabel = t('top_up_cards.activated_at');
     const expiresLabel = t('top_up_cards.expires_at');
     const revealLabel = t('top_up_cards.reveal_pin');
     const hideLabel = t('top_up_cards.hide_pin');
+    const printCards = printContainer
+        ? createPortal(
+              <div id="top-up-card-print-area">
+                  <div className="top-up-card-grid">
+                      {cards.map((card) => (
+                          <TopUpCardBatchItem
+                              key={card.serial_no}
+                              card={card}
+                              open={Boolean(revealed[card.serial_no])}
+                              qrTitle={qrTitle}
+                              activatedLabel={activatedLabel}
+                              expiresLabel={expiresLabel}
+                              revealLabel={revealLabel}
+                              hideLabel={hideLabel}
+                              onTogglePin={onTogglePin}
+                          />
+                      ))}
+                  </div>
+              </div>,
+              printContainer,
+          )
+        : null;
 
     return (
-        <div className="flex h-full min-h-0 flex-col gap-2.5">
-            <div className="flex flex-wrap gap-1.5 print:hidden">
-                {onExport ? (
-                    <Button type="button" size="sm" variant="outline" className="h-7 text-[11px]" onClick={onExport}>
-                        <DownloadIcon className="size-3.5" strokeWidth={1.9} />
-                        {t('common.export')}
+        <>
+            <div className="flex h-full min-h-0 flex-col gap-2.5">
+                <div className="flex flex-wrap gap-1.5 print:hidden">
+                    {onExport ? (
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-[11px]"
+                            onClick={onExport}
+                        >
+                            <DownloadIcon className="size-3.5" strokeWidth={1.9} />
+                            {t('common.export')}
+                        </Button>
+                    ) : null}
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-[11px]"
+                        onClick={() => window.print()}
+                    >
+                        <PrinterIcon className="size-3.5" strokeWidth={1.9} />
+                        {t('top_up_cards.print_all')}
                     </Button>
-                ) : null}
-                <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-[11px]"
-                    onClick={() => window.print()}
-                >
-                    <PrinterIcon className="size-3.5" strokeWidth={1.9} />
-                    {t('top_up_cards.print_all')}
-                </Button>
-            </div>
-            <div className="min-h-0 flex-1 overflow-y-auto print:h-auto print:overflow-visible">
-                <div id="top-up-card-print-area">
+                </div>
+                <div className="min-h-0 flex-1 overflow-y-auto print:h-auto print:overflow-visible">
                     <div className="top-up-card-grid grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                         {cards.map((card) => (
                             <TopUpCardBatchItem
@@ -150,6 +190,7 @@ export const TopUpCardGeneratedBatch = memo(function TopUpCardGeneratedBatch({ c
                                 card={card}
                                 open={Boolean(revealed[card.serial_no])}
                                 qrTitle={qrTitle}
+                                activatedLabel={activatedLabel}
                                 expiresLabel={expiresLabel}
                                 revealLabel={revealLabel}
                                 hideLabel={hideLabel}
@@ -159,6 +200,7 @@ export const TopUpCardGeneratedBatch = memo(function TopUpCardGeneratedBatch({ c
                     </div>
                 </div>
             </div>
-        </div>
+            {printCards}
+        </>
     );
 });

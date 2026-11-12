@@ -31,6 +31,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TopUpCardController extends Controller
 {
+    private const AMOUNT_OPTIONS = [50, 100, 150, 500];
+
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search'));
@@ -57,6 +59,7 @@ class TopUpCardController extends Controller
                 'serial_no',
                 'amount',
                 'status',
+                'activated_at',
                 'expires_at',
                 'redeemed_at',
                 'redeemed_by',
@@ -234,22 +237,13 @@ class TopUpCardController extends Controller
                     'total_chunks' => count($chunks),
                     'expires_at' => $expiresAt,
                     'amounts' => $amountBreakdown,
+                    'items' => $metadataItems,
                     'office_codes' => $officeCodes,
                     'user_id' => $userId,
                 ],
                 now()->addDay(),
             );
             Cache::put($this->generationGlobalActiveKey(), $token, now()->addDay());
-
-            $cardBatch = GeneratesTopUpCards::createGenerationBatch(
-                $expiresAt,
-                $totalCards,
-                $totalValue,
-                [
-                    'items' => $metadataItems,
-                ],
-                $token,
-            );
 
             $jobs = [];
 
@@ -263,7 +257,6 @@ class TopUpCardController extends Controller
                     $chunk['office_code'],
                     $index,
                     count($chunks),
-                    (int) $cardBatch->id,
                 );
             }
 
@@ -332,9 +325,8 @@ class TopUpCardController extends Controller
                     'expires_at' => $expiresAt,
                     'amounts' => $amountBreakdown,
                     'office_codes' => $officeCodes,
+                    'items' => $metadataItems,
                     'batch_id' => $queueBatch->id,
-                    'top_up_batch_id' => $cardBatch->id,
-                    'top_up_batch_no' => $cardBatch->batch_no,
                     'user_id' => $userId,
                 ],
                 now()->addDay(),
@@ -513,14 +505,7 @@ class TopUpCardController extends Controller
      */
     private function officeOptions(): array
     {
-        /** @var list<array{id: int, name: string, code: string}>|null $cached */
-        $cached = Cache::get('top_up_cards.office_options');
-
-        if (is_array($cached) && isset($cached[0]['code'])) {
-            return $cached;
-        }
-
-        $offices = Office::query()
+        return Office::query()
             ->select(['id', 'name', 'cd'])
             ->orderBy('name')
             ->get()
@@ -532,15 +517,6 @@ class TopUpCardController extends Controller
                 ],
             )
             ->all();
-
-        // Do not cache an empty list — offices may be added right after the first visit.
-        if ($offices !== []) {
-            Cache::put('top_up_cards.office_options', $offices, now()->addMinutes(5));
-        } else {
-            Cache::forget('top_up_cards.office_options');
-        }
-
-        return $offices;
     }
 
     private function generationToken(Request $request): ?string
@@ -588,29 +564,19 @@ class TopUpCardController extends Controller
             return;
         }
 
-        $cardBatchId = (int) ($generation['top_up_batch_id'] ?? 0);
-        $cardBatch = $cardBatchId > 0 ? Batch::query()->find($cardBatchId) : null;
-
-        if ($cardBatch === null) {
-            return;
-        }
-
         $userId = (int) ($generation['user_id'] ?? 0);
         $causer = $userId > 0 ? Admin::query()->find($userId) : null;
-        $metadata = is_array($cardBatch->metadata) ? $cardBatch->metadata : [];
-        $items = is_array($metadata['items'] ?? null) ? $metadata['items'] : [];
+        $items = is_array($generation['items'] ?? null) ? $generation['items'] : [];
 
         activity(ActivityLogName::TopUpCards->value)
             ->causedBy($causer)
-            ->performedOn($cardBatch)
             ->event(ActivityLogEvent::from($status)->value)
             ->withProperties([
                 'status' => $status,
-                'batch_id' => $cardBatch->id,
-                'batch_no' => $cardBatch->batch_no,
-                'total_value' => (int) $cardBatch->total_value,
-                'quantity' => (int) $cardBatch->quantity,
-                'expires_at' => $cardBatch->expires_at?->toDateString(),
+                'generation_token' => $token,
+                'total_value' => (int) ($generation['total_value'] ?? 0),
+                'quantity' => (int) ($generation['total_cards'] ?? 0),
+                'expires_at' => $generation['expires_at'] ?? null,
                 'items' => $items,
                 'queue_batch_id' => $batch->id,
                 'processed_jobs' => $batch->processedJobs(),
@@ -810,7 +776,7 @@ class TopUpCardController extends Controller
                 $query->whereDate('created_at', '<=', $to);
             })
             ->orderBy($sort, $direction)
-            ->paginate(15)
+            ->paginate(100)
             ->withQueryString()
             ->through(fn(TopUpCard $card) => $this->payload($card));
 
@@ -851,6 +817,7 @@ class TopUpCardController extends Controller
             'serial_no' => $card->serial_no,
             'amount' => $card->amount,
             'status' => $status->value,
+            'activated_at' => $card->activated_at?->toDateString(),
             'expires_at' => $card->expires_at?->toDateString(),
             'redeemed_at' => $card->redeemed_at?->toIso8601String(),
             'redeemed_by_id' => $card->redeemed_by,
@@ -890,21 +857,15 @@ class TopUpCardController extends Controller
 
     private function presetAmounts(): Collection
     {
-        return collect([50, 100, 250, 500]);
+        return collect(self::AMOUNT_OPTIONS);
     }
 
     /**
-     * @return list<string>
+     * @return list<int>
      */
     private function amountOptions(): array
     {
-        return TopUpCard::query()
-            ->select('amount')
-            ->distinct()
-            ->orderBy('amount')
-            ->pluck('amount')
-            ->map(fn($amount): string => (string) $amount)
-            ->all();
+        return self::AMOUNT_OPTIONS;
     }
 
     private function stats(): array

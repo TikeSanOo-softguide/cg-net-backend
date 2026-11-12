@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\TopUpCard;
 
+use App\Support\GeneratesTopUpCards;
 use App\Support\TopUpCardOffices;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -75,6 +76,27 @@ class GenerateTopUpCardsRequest extends FormRequest
                     'amounts',
                     __('top_up_cards.validation.quantity_total', ['max' => $maxCards]),
                 );
+            }
+
+            $quantitiesByBatchCode = [];
+
+            foreach ($this->input('amounts', []) as $tier) {
+                $batchCode = GeneratesTopUpCards::batchCodeForAmount((string) $tier['value']);
+                $quantitiesByBatchCode[$batchCode] =
+                    ($quantitiesByBatchCode[$batchCode] ?? 0) + (int) $tier['quantity'];
+            }
+
+            foreach ($quantitiesByBatchCode as $quantity) {
+                if ($quantity > GeneratesTopUpCards::DAILY_COUNTER_CAPACITY) {
+                    $validator->errors()->add(
+                        'amounts',
+                        __('top_up_cards.validation.daily_limit', [
+                            'max' => GeneratesTopUpCards::DAILY_COUNTER_CAPACITY,
+                        ]),
+                    );
+
+                    break;
+                }
             }
         });
     }

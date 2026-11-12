@@ -574,6 +574,10 @@
     }
 }
 
+#top-up-card-print-area {
+    display: none;
+}
+
 @media print {
     @page {
         size: A4 portrait;
@@ -603,6 +607,7 @@
     }
 
     #top-up-card-print-area {
+        display: block !important;
         position: absolute !important;
         top: 0 !important;
         left: 0 !important;
@@ -617,11 +622,10 @@
         transform: none !important;
     }
 
-    #top-up-card-print-area > div,
     #top-up-card-print-area .top-up-card-grid {
         display: grid !important;
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        gap: 6mm !important;
+        gap: 3mm !important;
         width: 100% !important;
         max-width: none !important;
         margin: 0 !important;
