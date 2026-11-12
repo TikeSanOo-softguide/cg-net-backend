@@ -43,7 +43,7 @@ class ChatFlowController extends Controller
                     $active = ChatConversation::query()->lockForUpdate()->findOrFail($active->id);
                     $step = $active->currentStep;
 
-                    if (! $step) {
+                    if (!$step) {
                         $active->current_step_id = $startStep->id;
                         $active->save();
                         $step = $startStep;
@@ -103,23 +103,21 @@ class ChatFlowController extends Controller
         $user = $this->customer($request);
         $conversation = $request->filled('conversation_id')
             ? $this->findCustomerConversation($user, (int) $request->input('conversation_id'))
-            : ($this->activeConversation($user) ?? $user->chatConversations()->latest('id')->first());
+            : $this->activeConversation($user) ?? $user->chatConversations()->latest('id')->first();
 
         $createdMessage = null;
         if ($conversation?->status->isChatFlow()) {
             [$conversation, $createdMessage] = DB::transaction(function () use ($conversation, $language) {
-                $conversation = ChatConversation::query()
-                    ->lockForUpdate()
-                    ->findOrFail($conversation->id);
+                $conversation = ChatConversation::query()->lockForUpdate()->findOrFail($conversation->id);
 
-                if (! $conversation->status->isChatFlow()) {
+                if (!$conversation->status->isChatFlow()) {
                     return [$conversation, null];
                 }
 
                 $this->lockFlowSteps();
                 $step = $conversation->currentStep;
 
-                if (! $step) {
+                if (!$step) {
                     $step = $this->getStartStep($language);
                     $conversation->current_step_id = $step->id;
                     $conversation->save();
@@ -166,22 +164,30 @@ class ChatFlowController extends Controller
             ? $this->findCustomerConversation($user, (int) $request->input('conversation_id'))
             : $this->activeConversation($user);
 
-        if (! $conversation) {
-            $this->fail(MessageCode::ChatNoActive, 409, __('support.chat_conversations.no_active_conversation', [], $language));
+        if (!$conversation) {
+            $this->fail(
+                MessageCode::ChatNoActive,
+                409,
+                __('support.chat_conversations.no_active_conversation', [], $language),
+            );
         }
 
         $previousStatus = null;
         $recoveredPayload = null;
 
-        [$payload, $createdMessages, $recoveredPayload, $selectedOption] = DB::transaction(function () use (&$conversation, &$previousStatus, &$recoveredPayload, $language, $validated) {
+        [$payload, $createdMessages, $recoveredPayload, $selectedOption] = DB::transaction(function () use (
+            &$conversation,
+            &$previousStatus,
+            &$recoveredPayload,
+            $language,
+            $validated,
+        ) {
             $conversation = ChatConversation::query()->lockForUpdate()->findOrFail($conversation->id);
 
-            if (! $conversation->status->isChatFlow()) {
+            if (!$conversation->status->isChatFlow()) {
                 $this->rejectForState(
                     $conversation,
-                    $conversation->status->isWaiting()
-                        ? MessageCode::ChatWaitingForAgent
-                        : MessageCode::ChatLive,
+                    $conversation->status->isWaiting() ? MessageCode::ChatWaitingForAgent : MessageCode::ChatLive,
                     $conversation->status->isWaiting()
                         ? __('support.chat_conversations.conversation_waiting_for_agent', [], $language)
                         : __('support.chat_conversations.conversation_in_live_chat', [], $language),
@@ -189,21 +195,27 @@ class ChatFlowController extends Controller
             }
 
             $this->lockFlowSteps();
-            $option = ChatFlowOption::query()
-                ->lockForUpdate()
-                ->find((int) $validated['option_id']);
+            $option = ChatFlowOption::query()->lockForUpdate()->find((int) $validated['option_id']);
 
-            if (! $option) {
-                $this->fail(MessageCode::ChatOptionMissing, 404, __('support.chat_conversations.no_chat_flow_option', [], $language));
+            if (!$option) {
+                $this->fail(
+                    MessageCode::ChatOptionMissing,
+                    404,
+                    __('support.chat_conversations.no_chat_flow_option', [], $language),
+                );
             }
 
-            if (! $option->is_active) {
-                $this->fail(MessageCode::ChatOptionInactive, 422, __('support.chat_conversations.this_option_is_no_longer_active', [], $language));
+            if (!$option->is_active) {
+                $this->fail(
+                    MessageCode::ChatOptionInactive,
+                    422,
+                    __('support.chat_conversations.this_option_is_no_longer_active', [], $language),
+                );
             }
 
             $currentStep = $conversation->currentStep;
 
-            if (! $currentStep) {
+            if (!$currentStep) {
                 $startStep = $this->getStartStep($language);
                 $conversation->current_step_id = $startStep->id;
                 $conversation->save();
@@ -227,7 +239,7 @@ class ChatFlowController extends Controller
             if ($option->action === ChatFlowOptionAction::GoToStep->value) {
                 $destination = $option->nextStep()->first();
 
-                if (! $destination) {
+                if (!$destination) {
                     $this->fail(
                         MessageCode::ChatStaleOption,
                         409,
@@ -259,7 +271,11 @@ class ChatFlowController extends Controller
                 ChatFlowOptionAction::GoToStep->value => $this->handleGoToStep($conversation, $option, $language),
                 ChatFlowOptionAction::GoToUrl->value => $this->handleGoToUrl($conversation, $option),
                 ChatFlowOptionAction::ReplyText->value => $this->handleReplyText($conversation, $option, $language),
-                ChatFlowOptionAction::TransferAgent->value => $this->handleTransferAgent($conversation, $option, $language),
+                ChatFlowOptionAction::TransferAgent->value => $this->handleTransferAgent(
+                    $conversation,
+                    $option,
+                    $language,
+                ),
                 ChatFlowOptionAction::CloseChat->value => $this->handleCloseChat($conversation, $option, $language),
                 default => [
                     'success' => true,
@@ -272,12 +288,10 @@ class ChatFlowController extends Controller
 
             $conversation->touch();
 
-            $result['data'] = array_merge(
-                $this->conversationPayload($conversation, $language),
-                $result['data'],
-            );
+            $result['data'] = array_merge($this->conversationPayload($conversation, $language), $result['data']);
 
-            $createdMessages = $conversation->messages()
+            $createdMessages = $conversation
+                ->messages()
                 ->whereNotIn('id', $existingMessageIds)
                 ->orderBy('created_at')
                 ->orderBy('id')
@@ -322,21 +336,28 @@ class ChatFlowController extends Controller
             'action' => ['required', 'in:main_menu'],
         ]);
         $user = $this->customer($request);
-        $conversation = $this->findCustomerConversation(
-            $user,
-            (int) $validated['conversation_id'],
-        );
+        $conversation = $this->findCustomerConversation($user, (int) $validated['conversation_id']);
 
         $payload = DB::transaction(function () use (&$conversation, $language) {
-            $conversation = ChatConversation::query()
-                ->lockForUpdate()
-                ->findOrFail($conversation->id);
+            $conversation = ChatConversation::query()->lockForUpdate()->findOrFail($conversation->id);
 
-            if (! $conversation->status->isChatFlow()) {
+            if (!$conversation->status->isChatFlow()) {
                 $message = match (true) {
-                    $conversation->status->isWaiting() => __('support.chat_conversations.conversation_waiting_for_agent', [], $language),
-                    $conversation->status->isLive() => __('support.chat_conversations.conversation_in_live_chat', [], $language),
-                    $conversation->status === ChatConversationStatus::Closed => __('support.chat_conversations.conversation_closed', [], $language),
+                    $conversation->status->isWaiting() => __(
+                        'support.chat_conversations.conversation_waiting_for_agent',
+                        [],
+                        $language,
+                    ),
+                    $conversation->status->isLive() => __(
+                        'support.chat_conversations.conversation_in_live_chat',
+                        [],
+                        $language,
+                    ),
+                    $conversation->status === ChatConversationStatus::Closed => __(
+                        'support.chat_conversations.conversation_closed',
+                        [],
+                        $language,
+                    ),
                     default => __('support.chat_conversations.select_chat_flow_option', [], $language),
                 };
                 $this->rejectForState(
@@ -378,7 +399,7 @@ class ChatFlowController extends Controller
         $message = DB::transaction(function () use ($conversation, $validated, $language) {
             $conversation = ChatConversation::query()->lockForUpdate()->findOrFail($conversation->id);
 
-            if (! $conversation->status->isLive()) {
+            if (!$conversation->status->isLive()) {
                 $this->rejectForState(
                     $conversation,
                     match (true) {
@@ -387,8 +408,16 @@ class ChatFlowController extends Controller
                         default => MessageCode::ChatSelectOption,
                     },
                     match (true) {
-                        $conversation->status === ChatConversationStatus::Closed => __('support.chat_conversations.conversation_closed', [], $language),
-                        $conversation->status->isWaiting() => __('support.chat_conversations.waiting_for_agent', [], $language),
+                        $conversation->status === ChatConversationStatus::Closed => __(
+                            'support.chat_conversations.conversation_closed',
+                            [],
+                            $language,
+                        ),
+                        $conversation->status->isWaiting() => __(
+                            'support.chat_conversations.waiting_for_agent',
+                            [],
+                            $language,
+                        ),
                         default => __('support.chat_conversations.select_chat_flow_option', [], $language),
                     },
                 );
@@ -407,21 +436,68 @@ class ChatFlowController extends Controller
 
         rescue(fn() => ChatMessageCreated::dispatch($message));
 
+        return response()->json(
+            [
+                'success' => true,
+                'data' => [
+                    'conversation_id' => $message->conversation_id,
+                    'message' => (new ChatMessageResource($message))->resolve(),
+                ],
+            ],
+            201,
+        );
+    }
+
+    public function close(Request $request): JsonResponse
+    {
+        $language = $this->resolveLanguage($request->input('language'));
+        $validated = $request->validate([
+            'conversation_id' => ['required', 'integer'],
+        ]);
+        $conversation = $this->findCustomerConversation($this->customer($request), (int) $validated['conversation_id']);
+
+        [$conversation, $message, $previousStatus] = DB::transaction(function () use ($conversation, $language) {
+            $conversation = ChatConversation::query()->lockForUpdate()->findOrFail($conversation->id);
+
+            if ($conversation->status === ChatConversationStatus::Closed) {
+                return [$conversation, null, null];
+            }
+
+            $previousStatus = $conversation->status;
+            $conversation->status = ChatConversationStatus::Closed;
+            $conversation->save();
+
+            $message = $conversation->messages()->create([
+                'sender_type' => ChatSenderType::System->value,
+                'message' => __('support.chat_conversations.reply_text_closed', [], $language),
+                'language' => $language,
+                'is_read' => true,
+            ]);
+
+            return [$conversation, $message, $previousStatus];
+        });
+
+        if ($message) {
+            rescue(fn() => ChatMessageCreated::dispatch($message));
+            $this->broadcastStatusChanged($conversation, $previousStatus);
+        }
+
         return response()->json([
             'success' => true,
-            'data' => [
-                'conversation_id' => $message->conversation_id,
-                'message' => (new ChatMessageResource($message))->resolve(),
-            ],
-        ], 201);
+            'data' => $this->conversationPayload($conversation, $language),
+        ]);
     }
 
     private function handleGoToStep(ChatConversation $conversation, ChatFlowOption $option, string $language): array
     {
         $nextStep = $option->nextStep()->first();
 
-        if (! $nextStep) {
-            $this->fail(MessageCode::ChatNoNextStep, 422, __('support.chat_conversations.no_valid_next_step', [], $language));
+        if (!$nextStep) {
+            $this->fail(
+                MessageCode::ChatNoNextStep,
+                422,
+                __('support.chat_conversations.no_valid_next_step', [], $language),
+            );
         }
 
         $conversation->current_step_id = $nextStep->id;
@@ -483,16 +559,20 @@ class ChatFlowController extends Controller
         ];
     }
 
-    private function handleTransferAgent(ChatConversation $conversation, ChatFlowOption $option, string $language): array
-    {
+    private function handleTransferAgent(
+        ChatConversation $conversation,
+        ChatFlowOption $option,
+        string $language,
+    ): array {
         $status = ChatConversationStatus::WaitingAgent;
 
         $conversation->status = $status;
         $conversation->agent_id = null;
         $conversation->save();
 
-        $message = $this->localizedValue($option, 'reply_text_' . $language)
-            ?: __('support.chat_conversations.reply_text_waiting_stage', [], $language);
+        $message =
+            $this->localizedValue($option, 'reply_text_' . $language) ?:
+            __('support.chat_conversations.reply_text_waiting_stage', [], $language);
 
         $conversation->messages()->create([
             'sender_type' => ChatSenderType::System->value,
@@ -517,8 +597,9 @@ class ChatFlowController extends Controller
         $conversation->status = ChatConversationStatus::Closed;
         $conversation->save();
 
-        $message = $this->localizedValue($option, 'reply_text_' . $language)
-            ?: __('support.chat_conversations.reply_text_closed', [], $language);
+        $message =
+            $this->localizedValue($option, 'reply_text_' . $language) ?:
+            __('support.chat_conversations.reply_text_closed', [], $language);
 
         $conversation->messages()->create([
             'sender_type' => ChatSenderType::System->value,
@@ -542,41 +623,35 @@ class ChatFlowController extends Controller
 
     private function buildStepPayload(ChatFlowStep $step, string $language): array
     {
-        $options = $step->options()
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->get();
+        $options = $step->options()->where('is_active', true)->orderBy('sort_order')->get();
 
         return [
             'id' => $step->id,
             'name' => $step->name,
             'message' => $this->localizedValue($step, 'message_' . $language),
-            'options' => $options->map(function (ChatFlowOption $option) use ($language) {
-                return [
-                    'id' => $option->id,
-                    'label' => $this->localizedValue($option, 'option_' . $language),
-                    'action' => $option->action,
-                ];
-            })->values()->all(),
+            'options' => $options
+                ->map(function (ChatFlowOption $option) use ($language) {
+                    return [
+                        'id' => $option->id,
+                        'label' => $this->localizedValue($option, 'option_' . $language),
+                        'action' => $option->action,
+                    ];
+                })
+                ->values()
+                ->all(),
         ];
     }
 
     private function conversationPayload(ChatConversation $conversation, string $language): array
     {
-        $startStep = $conversation->status->isChatFlow()
-            ? $this->getStartStep($language)
-            : null;
-        $step = $conversation->status->isChatFlow()
-            ? ($conversation->currentStep ?? $startStep)
-            : null;
+        $startStep = $conversation->status->isChatFlow() ? $this->getStartStep($language) : null;
+        $step = $conversation->status->isChatFlow() ? $conversation->currentStep ?? $startStep : null;
 
         $messages = ChatMessage::query()
             ->with(['option.step.options'])
             ->whereIn(
                 'conversation_id',
-                ChatConversation::query()
-                    ->select('id')
-                    ->where('user_id', $conversation->user_id),
+                ChatConversation::query()->select('id')->where('user_id', $conversation->user_id),
             )
             ->orderBy('created_at')
             ->orderBy('id')
@@ -632,10 +707,16 @@ class ChatFlowController extends Controller
         $flowCode = $extra['code'] ?? null;
         unset($extra['code']);
 
-        $body = ApiMessage::attach($code, array_merge([
-            'success' => false,
-            'message' => $message,
-        ], $extra));
+        $body = ApiMessage::attach(
+            $code,
+            array_merge(
+                [
+                    'success' => false,
+                    'message' => $message,
+                ],
+                $extra,
+            ),
+        );
 
         if (is_string($flowCode)) {
             $body['message_code'] = $code->value;
@@ -645,13 +726,18 @@ class ChatFlowController extends Controller
         throw new HttpResponseException(response()->json($body, $status));
     }
 
-    private function broadcastStatusChanged(ChatConversation $conversation, ?ChatConversationStatus $previousStatus): void
-    {
+    private function broadcastStatusChanged(
+        ChatConversation $conversation,
+        ?ChatConversationStatus $previousStatus,
+    ): void {
         rescue(fn() => ChatConversationStatusChanged::dispatch($conversation, $previousStatus));
     }
 
-    private function notifyAgentsOfWaitingConversation(ChatConversation $conversation, ChatFlowOption $option, string $language): void
-    {
+    private function notifyAgentsOfWaitingConversation(
+        ChatConversation $conversation,
+        ChatFlowOption $option,
+        string $language,
+    ): void {
         try {
             SendChatWaitingTelegramNotification::dispatch(
                 $conversation->id,
@@ -663,8 +749,11 @@ class ChatFlowController extends Controller
         }
     }
 
-    private function buildWaitingTelegramMessage(ChatConversation $conversation, ChatFlowOption $option, string $language): string
-    {
+    private function buildWaitingTelegramMessage(
+        ChatConversation $conversation,
+        ChatFlowOption $option,
+        string $language,
+    ): string {
         $customerName = $conversation->user?->name ?? 'Customer';
         $accountId = $conversation->user?->broadband_account_number ?? 'N/A';
         $optionLabel = $this->localizedValue($option, 'option_' . $language) ?? $option->option_en;
@@ -678,12 +767,7 @@ class ChatFlowController extends Controller
 
     private function getStartStep(string $language): ChatFlowStep
     {
-        $steps = ChatFlowStep::query()
-            ->where('is_start', true)
-            ->orderBy('id')
-            ->lockForUpdate()
-            ->limit(2)
-            ->get();
+        $steps = ChatFlowStep::query()->where('is_start', true)->orderBy('id')->lockForUpdate()->limit(2)->get();
 
         if ($steps->count() !== 1) {
             $this->fail(
@@ -699,17 +783,14 @@ class ChatFlowController extends Controller
 
     private function lockFlowSteps(): void
     {
-        ChatFlowStep::query()
-            ->orderBy('id')
-            ->lockForUpdate()
-            ->get();
+        ChatFlowStep::query()->orderBy('id')->lockForUpdate()->get();
     }
 
     private function customer(Request $request): User
     {
         $user = $request->user();
 
-        if (! $user instanceof User) {
+        if (!($user instanceof User)) {
             $this->fail(MessageCode::ChatCustomersOnly, 403, MessageCode::ChatCustomersOnly->message());
         }
 
@@ -725,7 +806,7 @@ class ChatFlowController extends Controller
     {
         $conversation = ChatConversation::query()->find($conversationId);
 
-        if (! $conversation) {
+        if (!$conversation) {
             $this->fail(MessageCode::ChatNotFound, 404, MessageCode::ChatNotFound->message());
         }
 
@@ -740,7 +821,7 @@ class ChatFlowController extends Controller
     {
         $normalized = strtolower((string) ($language ?? 'en'));
 
-        if (! in_array($normalized, ['en', 'my', 'zh'], true)) {
+        if (!in_array($normalized, ['en', 'my', 'zh'], true)) {
             $this->fail(MessageCode::ChatLanguageInvalid, 422, MessageCode::ChatLanguageInvalid->message());
         }
 

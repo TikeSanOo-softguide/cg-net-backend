@@ -36,7 +36,7 @@ class EodReportTest extends TestCase
         $debit = $poster->debitWallet(
             wallet: $wallet->fresh(),
             amount: 500,
-            contraAccount: LedgerAccountCode::FtthClearing,
+            contraAccount: LedgerAccountCode::InternetServiceRevenue,
             type: LedgerTransactionType::FtthBill,
             status: LedgerTransactionStatus::Completed,
             idempotencyKey: 'eod-debit',

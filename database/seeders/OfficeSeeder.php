@@ -23,7 +23,7 @@ class OfficeSeeder extends Seeder
                 'address_en' => '130/A Eain Twin Hmu Street,Mae Khong Ward,Tachileik.',
                 'address_mm' => '130/A Eain Twin Hmu Street,Mae Khong Ward,Tachileik.',
                 'address_zh' => '130/A Eain Twin Hmu Street,Mae Khong Ward,Tachileik.',
-                'phone_num1' => fake()->numerify('09#########'),
+                'phone_num1' => '09791234567',
                 'phone_num2' => null,
                 'phone_num3' => null,
             ],
@@ -35,8 +35,8 @@ class OfficeSeeder extends Seeder
                 'address_en' => 'Tachileik',
                 'address_mm' => 'တာချီလိတ်',
                 'address_zh' => '大其力',
-                'phone_num1' => fake()->numerify('09#########'),
-                'phone_num2' => fake()->numerify('09#########'),
+                'phone_num1' => '09791234568',
+                'phone_num2' => null,
                 'phone_num3' => null,
             ],
             [
@@ -47,9 +47,9 @@ class OfficeSeeder extends Seeder
                 'address_en' => 'Kyaing Tong',
                 'address_mm' => 'ကျိုင်းတုံ',
                 'address_zh' => '景栋',
-                'phone_num1' => fake()->numerify('09#########'),
-                'phone_num2' => fake()->numerify('09#########'),
-                'phone_num3' => fake()->numerify('09#########'),
+                'phone_num1' => '09791234569',
+                'phone_num2' => null,
+                'phone_num3' => null,
             ],
         ];
 

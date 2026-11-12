@@ -26,7 +26,7 @@ class GenerateLedgerHealthSnapshot implements ShouldQueue
 
     public function __construct(public readonly int $snapshotId)
     {
-        $this->onConnection('redis')->onQueue('ledger-reports');
+        $this->onConnection('redis')->onQueue('reports');
     }
 
     public function handle(LedgerHealthReportService $report): void

@@ -17,7 +17,7 @@ return [
     'waits' => [
         'redis:default' => 60,
         'redis:top-up-cards' => 60,
-        'redis:ledger-reports' => 120,
+        'redis:reports' => 120,
     ],
     'trim' => [
         'recent' => 60,
@@ -61,11 +61,11 @@ return [
             'timeout' => 60,
             'memory' => 128,
         ],
-        'supervisor-ledger-reports' => [
+        'supervisor-reports' => [
             'connection' => 'redis',
-            'queue' => ['ledger-reports'],
+            'queue' => ['reports'],
             'balance' => 'simple',
-            'processes' => 1,
+            'processes' => 2,
             'tries' => 1,
             'timeout' => 540,
             'memory' => 256,
@@ -102,11 +102,11 @@ return [
                 'timeout' => 60,
                 'memory' => 128,
             ],
-            'supervisor-ledger-reports' => [
+            'supervisor-reports' => [
                 'connection' => 'redis',
-                'queue' => ['ledger-reports'],
+                'queue' => ['reports'],
                 'balance' => 'simple',
-                'processes' => 1,
+                'processes' => 2,
                 'tries' => 1,
                 'timeout' => 540,
                 'memory' => 256,
@@ -140,11 +140,11 @@ return [
                 'timeout' => 60,
                 'memory' => 128,
             ],
-            'supervisor-ledger-reports' => [
+            'supervisor-reports' => [
                 'connection' => 'redis',
-                'queue' => ['ledger-reports'],
+                'queue' => ['reports'],
                 'balance' => 'simple',
-                'processes' => 1,
+                'processes' => 2,
                 'tries' => 1,
                 'timeout' => 540,
                 'memory' => 256,

@@ -331,7 +331,7 @@ function ActivityLogDetailDialog({
             title={activity.subject || t('activity_logs.details')}
             description={`${activity.created_at ? formatDateTime(activity.created_at) : '-'}`}
             icon={HistoryIcon}
-            size="lg"
+            size="2xl"
         >
             <div className="space-y-3 overflow-y-auto p-4 sm:p-5">
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">

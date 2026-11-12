@@ -217,7 +217,10 @@ class PackagePageTest extends TestCase
     {
         $admin = Admin::factory()->create();
         $networks = Network::factory()->count(2)->create();
-        $speeds = Speed::factory()->count(2)->create();
+        $speeds = collect([
+            Speed::factory()->create(['mbps' => 100]),
+            Speed::factory()->create(['mbps' => 200]),
+        ]);
         $terms = collect([
             Term::factory()->create(['months' => 3]),
             Term::factory()->create(['months' => 6]),

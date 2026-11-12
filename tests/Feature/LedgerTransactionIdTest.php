@@ -148,7 +148,7 @@ class LedgerTransactionIdTest extends TestCase
         $poster->ensureCustomerLiabilityAccount($wallet);
 
         $contra = $type->isInternetBill()
-            ? LedgerAccountCode::FtthClearing
+            ? LedgerAccountCode::InternetServiceRevenue
             : LedgerAccountCode::PackageRevenue;
 
         return $poster->debitWallet(

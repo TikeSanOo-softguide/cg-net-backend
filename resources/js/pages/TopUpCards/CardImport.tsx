@@ -90,10 +90,12 @@ export default function CardImportPage({ batchPage, batches, importProgress, fil
     const { t } = useTranslation();
     const { flash } = usePage<PageProps>().props;
     const [importError, setImportError] = useState<ImportError | null>(null);
+    const [importSubmitting, setImportSubmitting] = useState(false);
     const [batchFilter, setBatchFilter] = useState(filters.batch);
     const [statusFilter, setStatusFilter] = useState(filters.status);
     const pollInFlight = useRef(false);
     const previousImportStatus = useRef(importProgress?.status);
+    const importIsProcessing = importSubmitting || importProgress?.status === 'processing';
     const importErrorMessage = importError
         ? t(importError.key).replace(/:([a-z_]+)/g, (_, key: string) => String(importError.replace?.[key] ?? `:${key}`))
         : null;
@@ -187,6 +189,7 @@ export default function CardImportPage({ batchPage, batches, importProgress, fil
     };
 
     const importCards = (file: File) => {
+        setImportSubmitting(true);
         router.post(
             '/top-up-cards/cards/import',
             {
@@ -198,6 +201,9 @@ export default function CardImportPage({ batchPage, batches, importProgress, fil
                 preserveScroll: true,
                 onStart: () => {
                     setImportError(null);
+                },
+                onFinish: () => {
+                    setImportSubmitting(false);
                 },
             },
         );
@@ -232,14 +238,22 @@ export default function CardImportPage({ batchPage, batches, importProgress, fil
             <Head title={t('top_up_cards.office.assign_cards')} />
             <PageContent>
                 <PageHeader />
-                {importProgress?.status === 'processing' ? (
+                {importIsProcessing ? (
                     <div
                         role="status"
                         className="mb-3 ml-auto flex w-fit max-w-full flex-wrap items-center justify-end gap-x-2 gap-y-1 border-b border-border px-1 py-2 text-right text-[14px] text-foreground"
                     >
                         <Spinner size="xs" />
-                        <span className="font-semibold">{t('top_up_cards.import_csv.importing_csv')}</span>
-                        {importProgress.total_cards > 0 ? (
+                        <span className="font-semibold">
+                            {t(
+                                importSubmitting
+                                    ? 'top_up_cards.import_csv.importing_csv'
+                                    : 'top_up_cards.import_csv.importing',
+                            )}
+                        </span>
+                        {!importSubmitting &&
+                        importProgress?.status === 'processing' &&
+                        importProgress.total_cards > 0 ? (
                             <>
                                 <span className="font-mono font-semibold tabular-nums text-foreground">
                                     {importProgress.completed_cards.toLocaleString()}/
@@ -258,7 +272,7 @@ export default function CardImportPage({ batchPage, batches, importProgress, fil
                     batches={batches}
                     batchFilter={batchFilter}
                     statusFilter={statusFilter}
-                    importProcessing={importProgress?.status === 'processing'}
+                    importProcessing={importIsProcessing}
                     onBatchChange={(value) => refreshCards(value === 'all' ? '' : value, statusFilter)}
                     onStatusChange={(value) => refreshCards(batchFilter, value === 'all' ? '' : value)}
                     onCheckImport={checkImport}
@@ -273,7 +287,7 @@ export default function CardImportPage({ batchPage, batches, importProgress, fil
                     }
                 }}
             >
-                <DialogContent className="w-[min(100%-2rem,520px)]">
+                <DialogContent dismissOnOutsideClick dismissOnEscape className="w-[min(100%-2rem,520px)]">
                     <DialogHeader className="text-left">
                         <DialogTitle className="flex items-center gap-2 text-danger">
                             <CircleAlertIcon className="size-5" />

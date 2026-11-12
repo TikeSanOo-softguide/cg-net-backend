@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\LedgerAccountCode;
+use App\Enums\LedgerAccountType;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
 use App\Models\Admin;
@@ -18,6 +19,14 @@ use Tests\TestCase;
 class WalletAdjustmentTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_internet_service_account_is_classified_as_revenue(): void
+    {
+        $account = app(LedgerPoster::class)->systemAccount(LedgerAccountCode::InternetServiceRevenue);
+
+        $this->assertSame(LedgerAccountType::Revenue, $account->type);
+        $this->assertSame('Internet service revenue', $account->name);
+    }
 
     public function test_admin_can_credit_customer_wallet(): void
     {
