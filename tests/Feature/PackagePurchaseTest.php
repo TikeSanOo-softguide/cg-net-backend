@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ActivityLogEvent;
+use App\Enums\ActivityLogName;
 use App\Enums\CustomerPackageStatus;
 use App\Enums\LedgerAccountCode;
 use App\Enums\LedgerTransactionStatus;
@@ -65,10 +67,9 @@ class PackagePurchaseTest extends TestCase
     {
         parent::setUp();
 
-        $this->activation = new FakePackageActivationService;
+        $this->activation = new FakePackageActivationService();
         $this->app->instance(PackageActivationServiceInterface::class, $this->activation);
-        $this->catalog = new class(app(CgNetApiClient::class)) extends CgNetProductCatalog
-        {
+        $this->catalog = new class (app(CgNetApiClient::class)) extends CgNetProductCatalog {
             /** @var list<array<string, mixed>> */
             public array $catalogProducts = [];
 
@@ -124,7 +125,7 @@ class PackagePurchaseTest extends TestCase
                 ->assertJsonPath('data.product_id', $package->provider_product_id)
                 ->assertJsonPath('data.status', PackageOrderStatus::Completed->value)
                 ->assertJsonPath('data.package.product_id', $package->provider_product_id)
-                ->assertJsonPath('data.package.product_name', 'Provider package '.$package->provider_product_id)
+                ->assertJsonPath('data.package.product_name', 'Provider package ' . $package->provider_product_id)
                 ->assertJsonPath('data.package.product_price', number_format($package->price, 2, '.', ''))
                 ->assertJsonPath('data.package.product_line', 'test-line')
                 ->assertJsonPath('data.package.product_speed', (string) $this->mbps)
@@ -155,10 +156,9 @@ class PackagePurchaseTest extends TestCase
             $this->assertSame(LedgerTransactionStatus::Completed, $debit->status);
             $this->assertEquals(50000, $debit->amount);
             $this->assertSame('pkg-success-01', $debit->idempotency_key);
-            $this->assertTrue(app(TransactionIdGenerator::class)->matches(
-                $debit->transaction_no,
-                TransactionIdPrefix::BuyPackage,
-            ));
+            $this->assertTrue(
+                app(TransactionIdGenerator::class)->matches($debit->transaction_no, TransactionIdPrefix::BuyPackage),
+            );
             $this->assertSame('260115', substr($debit->transaction_no, 3, 6));
             $this->assertTrue(app(OrderNumberGenerator::class)->matches($order->order_no));
             $this->assertSame('ORD2601150000001', $order->order_no);
@@ -192,16 +192,14 @@ class PackagePurchaseTest extends TestCase
             $this->assertSame(CustomerPackageStatus::Active, $customerPackage->status);
             $this->assertSame('2026-01-15 12:00:00', $customerPackage->starts_at?->format('Y-m-d H:i:s'));
             $this->assertSame('2026-07-15 12:00:00', $customerPackage->expires_at?->format('Y-m-d H:i:s'));
-            $this->assertTrue(
-                $customerPackage->expires_at->equalTo($customerPackage->starts_at->copy()->addMonths(6)),
-            );
+            $this->assertTrue($customerPackage->expires_at->equalTo($customerPackage->starts_at->copy()->addMonths(6)));
             $this->assertSame(1, $this->activation->calls);
             $this->assertDatabaseCount('customer_packages', 1);
             Notification::assertSentTo(
                 $user,
                 PackageOrderStatusNotification::class,
-                fn (PackageOrderStatusNotification $notification): bool => $notification->event
-                    === PackageOrderNotificationEvent::Completed,
+                fn(PackageOrderStatusNotification $notification): bool => $notification->event ===
+                    PackageOrderNotificationEvent::Completed,
             );
         } finally {
             CarbonImmutable::setTestNow();
@@ -224,7 +222,8 @@ class PackagePurchaseTest extends TestCase
             $order = PackageOrder::query()->firstOrFail();
             $customerPackage = CustomerPackage::query()->where('package_order_id', $order->id)->firstOrFail();
 
-            $response->assertJsonPath('data.package.month_cycle', 7)
+            $response
+                ->assertJsonPath('data.package.month_cycle', 7)
                 ->assertJsonPath('data.package.month_cycle_unit', '天');
             $this->assertNull($order->snapshot['term_months']);
             $this->assertSame(7, $order->snapshot['term_cycle']);
@@ -335,7 +334,7 @@ class PackagePurchaseTest extends TestCase
         $this->assertSame($debit->id, $refund->reversal_of);
         $this->assertSame(LedgerTransactionStatus::Completed, $refund->status);
         $this->assertEquals(60000, $refund->amount);
-        $this->assertSame('refund:'.$key, $refund->idempotency_key);
+        $this->assertSame('refund:' . $key, $refund->idempotency_key);
 
         $this->assertDatabaseHas('ledger_entries', [
             'ledger_transaction_id' => $refund->id,
@@ -357,9 +356,9 @@ class PackagePurchaseTest extends TestCase
         Notification::assertSentTo(
             $user,
             PackageOrderStatusNotification::class,
-            fn (PackageOrderStatusNotification $notification): bool => $notification->event
-                === PackageOrderNotificationEvent::Refunded
-                && $notification->refundTransactionNo === $refund->transaction_no,
+            fn(PackageOrderStatusNotification $notification): bool => $notification->event ===
+                PackageOrderNotificationEvent::Refunded &&
+                $notification->refundTransactionNo === $refund->transaction_no,
         );
     }
 
@@ -395,8 +394,8 @@ class PackagePurchaseTest extends TestCase
         Notification::assertSentTo(
             $user,
             PackageOrderStatusNotification::class,
-            fn (PackageOrderStatusNotification $notification): bool => $notification->event
-                === PackageOrderNotificationEvent::Processing,
+            fn(PackageOrderStatusNotification $notification): bool => $notification->event ===
+                PackageOrderNotificationEvent::Processing,
         );
     }
 
@@ -582,7 +581,10 @@ class PackagePurchaseTest extends TestCase
         $this->configureCgNet();
         Http::fake([
             'provider.test/WalletApp/ServerCommand/GetTokenAPI*' => Http::response($this->cgnetToken()),
-            'provider.test/WalletApp/ServerCommand/ActivateCGNETAccountAPI' => Http::response(['ErrCode' => 0, 'Message' => 'ok']),
+            'provider.test/WalletApp/ServerCommand/ActivateCGNETAccountAPI' => Http::response([
+                'ErrCode' => 0,
+                'Message' => 'ok',
+            ]),
         ]);
 
         $user = User::factory()->create();
@@ -600,7 +602,7 @@ class PackagePurchaseTest extends TestCase
         $response
             ->assertJsonPath('data.order_no', $order->order_no)
             ->assertJsonPath('data.package.product_id', $package->provider_product_id)
-            ->assertJsonPath('data.package.product_name', 'Provider package '.$package->provider_product_id)
+            ->assertJsonPath('data.package.product_name', 'Provider package ' . $package->provider_product_id)
             ->assertJsonPath('data.package.product_price', number_format($package->price, 2, '.', ''))
             ->assertJsonPath('data.package.product_line', 'test-line')
             ->assertJsonPath('data.package.product_speed', (string) $this->mbps)
@@ -616,14 +618,14 @@ class PackagePurchaseTest extends TestCase
         Http::assertSent(function (ClientRequest $request) use ($package, $order): bool {
             $body = $request->data();
 
-            return $request->method() === 'POST'
-                && $request->url() === 'https://provider.test/WalletApp/ServerCommand/ActivateCGNETAccountAPI'
-                && $request->hasHeader('Authorization')
-                && $body['OrderNo'] === $order->order_no
-                && $body['Account'] === $order->account
-                && $body['Password'] === $order->activation_password
-                && $body['ProductID'] === $package->provider_product_id
-                && (float) $body['ProductPrice'] === (float) $package->price;
+            return $request->method() === 'POST' &&
+                $request->url() === 'https://provider.test/WalletApp/ServerCommand/ActivateCGNETAccountAPI' &&
+                $request->hasHeader('Authorization') &&
+                $body['OrderNo'] === $order->order_no &&
+                $body['Account'] === $order->account &&
+                $body['Password'] === $order->activation_password &&
+                $body['ProductID'] === $package->provider_product_id &&
+                (float) $body['ProductPrice'] === (float) $package->price;
         });
     }
 
@@ -632,7 +634,10 @@ class PackagePurchaseTest extends TestCase
         $this->configureCgNet();
         Http::fake([
             'provider.test/WalletApp/ServerCommand/GetTokenAPI*' => Http::response($this->cgnetToken()),
-            'provider.test/WalletApp/ServerCommand/ActivateCGNETAccountAPI' => Http::response(['ErrCode' => 0, 'Message' => 'ok']),
+            'provider.test/WalletApp/ServerCommand/ActivateCGNETAccountAPI' => Http::response([
+                'ErrCode' => 0,
+                'Message' => 'ok',
+            ]),
         ]);
 
         $user = User::factory()->create();
@@ -656,10 +661,10 @@ class PackagePurchaseTest extends TestCase
 
         $this->assertTrue($result->success);
         $this->assertSame('000012', $result->password);
-        Http::assertSent(fn (ClientRequest $request): bool => str_ends_with(
-            $request->url(),
-            '/ActivateCGNETAccountAPI',
-        ) && $request->data()['Password'] === '000012');
+        Http::assertSent(
+            fn(ClientRequest $request): bool => str_ends_with($request->url(), '/ActivateCGNETAccountAPI') &&
+                $request->data()['Password'] === '000012',
+        );
     }
 
     public function test_code_100_and_500_refund_once_without_creating_customer_packages(): void
@@ -714,16 +719,20 @@ class PackagePurchaseTest extends TestCase
 
         foreach ([2, 3, 4, 5] as $index) {
             $package = $this->makePackage(price: 10000, months: $index);
-            $response = $this->buy($user, $package, 'provider-pending-'.$index)
+            $response = $this->buy($user, $package, 'provider-pending-' . $index)
                 ->assertStatus(202)
                 ->assertJsonPath('data.status', PackageOrderStatus::Processing->value);
 
             $this->assertArrayNotHasKey('credentials', $response->json('data'));
         }
 
-        $this->buyRaw($user, [
-            'product_id' => $this->catalog->catalogProducts[0]['productID'],
-        ], 'provider-pending-1')
+        $this->buyRaw(
+            $user,
+            [
+                'product_id' => $this->catalog->catalogProducts[0]['productID'],
+            ],
+            'provider-pending-1',
+        )
             ->assertOk()
             ->assertJsonPath('data.status', PackageOrderStatus::Completed->value);
 
@@ -758,9 +767,7 @@ class PackagePurchaseTest extends TestCase
 
         $first = $this->buy($user, $package, 'provider-timeout-1')->assertStatus(202);
         $orderNo = $first->json('data.order_no');
-        $this->buy($user, $package, 'provider-timeout-1')
-            ->assertStatus(202)
-            ->assertJsonPath('data.order_no', $orderNo);
+        $this->buy($user, $package, 'provider-timeout-1')->assertStatus(202)->assertJsonPath('data.order_no', $orderNo);
 
         $wallet->refresh();
         $this->assertEquals(60000, $wallet->balance);
@@ -798,7 +805,7 @@ class PackagePurchaseTest extends TestCase
         $transaction = LedgerTransaction::query()->firstOrFail();
         Queue::assertPushed(
             ReconcileStuckPackageOrdersJob::class,
-            fn (ReconcileStuckPackageOrdersJob $job): bool => $job->ledgerTransactionId === $transaction->id,
+            fn(ReconcileStuckPackageOrdersJob $job): bool => $job->ledgerTransactionId === $transaction->id,
         );
 
         CarbonImmutable::setTestNow(now()->addSeconds(121));
@@ -812,11 +819,14 @@ class PackagePurchaseTest extends TestCase
         $this->assertSame(PackageOrderStatus::Completed, $order->status);
         $this->assertSame($orderNo, $order->order_no);
         $this->assertSame(1, $order->activation_result_code);
-        $this->assertSame([
-            'outcome' => 'success',
-            'http_status' => 200,
-            'payload' => ['ErrCode' => 1, 'Message' => 'This order has been opened.'],
-        ], $order->external_response);
+        $this->assertSame(
+            [
+                'outcome' => 'success',
+                'http_status' => 200,
+                'payload' => ['ErrCode' => 1, 'Message' => 'This order has been opened.'],
+            ],
+            $order->external_response,
+        );
         $this->assertSame(LedgerTransactionStatus::Completed, $transaction->refresh()->status);
         $this->assertDatabaseCount('customer_packages', 1);
         $this->assertDatabaseMissing('ledger_transactions', ['type' => LedgerTransactionType::Refund->value]);
@@ -877,14 +887,11 @@ class PackagePurchaseTest extends TestCase
         $notification = AdminNotification::query()->sole();
         $this->assertSame('package_order', $notification->reference_type);
         $this->assertSame($order->id, $notification->reference_id);
-        $this->assertSame(
-            '/billing/package-orders',
-            $notification->toDropdownArray()['href'],
-        );
+        $this->assertSame('/billing/package-orders', $notification->toDropdownArray()['href']);
         $this->assertSame([$billingAdmin->id], $notification->admins()->pluck('admins.id')->all());
         Event::assertDispatched(
             AdminNotificationCreated::class,
-            fn (AdminNotificationCreated $event): bool => $event->admin->is($billingAdmin),
+            fn(AdminNotificationCreated $event): bool => $event->admin->is($billingAdmin),
         );
         (new ReconcileStuckPackageOrdersJob($transaction->id))->handle(app(BuyPackageService::class));
         $this->assertSame(1, AdminNotification::query()->count());
@@ -906,7 +913,7 @@ class PackagePurchaseTest extends TestCase
         ]);
 
         $this->actingAs($admin, 'web')
-            ->post('/billing/package-orders/'.$order->id.'/review/complete')
+            ->post('/billing/package-orders/' . $order->id . '/review/complete')
             ->assertRedirect();
 
         $order->refresh();
@@ -919,13 +926,22 @@ class PackagePurchaseTest extends TestCase
         $this->assertSame($order->activation_password, $customerPackage->password);
         $this->assertSame('manual_review_completed', $order->external_response['phase']);
         $this->assertSame($admin->id, $order->external_response['resolved_by']);
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => ActivityLogName::PackageOrders->value,
+            'description' => 'package_order_completed',
+            'subject_type' => PackageOrder::class,
+            'subject_id' => $order->id,
+            'causer_type' => Admin::class,
+            'causer_id' => $admin->id,
+            'event' => ActivityLogEvent::Completed->value,
+        ]);
         $this->assertDatabaseMissing('ledger_transactions', ['type' => LedgerTransactionType::Refund->value]);
         $wallet->refresh();
         $this->assertEquals(60000, $wallet->balance);
         Notification::assertSentTo(
             $user,
             PackageOrderStatusNotification::class,
-            fn (PackageOrderStatusNotification $notification): bool => $notification->event ===
+            fn(PackageOrderStatusNotification $notification): bool => $notification->event ===
                 PackageOrderNotificationEvent::Completed,
         );
     }
@@ -943,7 +959,7 @@ class PackagePurchaseTest extends TestCase
         ]);
 
         $this->actingAs($admin, 'web')
-            ->post('/billing/package-orders/'.$order->id.'/review/refund')
+            ->post('/billing/package-orders/' . $order->id . '/review/refund')
             ->assertRedirect();
 
         $order->refresh();
@@ -953,6 +969,15 @@ class PackagePurchaseTest extends TestCase
         $this->assertSame(LedgerTransactionStatus::Failed, $transaction->status);
         $this->assertSame('manual_review_refunded', $order->external_response['phase']);
         $this->assertSame($admin->id, $order->external_response['resolved_by']);
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => ActivityLogName::PackageOrders->value,
+            'description' => 'package_order_refunded',
+            'subject_type' => PackageOrder::class,
+            'subject_id' => $order->id,
+            'causer_type' => Admin::class,
+            'causer_id' => $admin->id,
+            'event' => ActivityLogEvent::Refunded->value,
+        ]);
         $this->assertDatabaseHas('ledger_transactions', [
             'type' => LedgerTransactionType::Refund->value,
             'reversal_of' => $transaction->id,
@@ -963,7 +988,7 @@ class PackagePurchaseTest extends TestCase
         Notification::assertSentTo(
             $user,
             PackageOrderStatusNotification::class,
-            fn (PackageOrderStatusNotification $notification): bool => $notification->event ===
+            fn(PackageOrderStatusNotification $notification): bool => $notification->event ===
                 PackageOrderNotificationEvent::Refunded,
         );
     }
@@ -978,7 +1003,7 @@ class PackagePurchaseTest extends TestCase
         $order->ledgerTransaction()->update(['status' => LedgerTransactionStatus::Completed]);
 
         $this->actingAs($admin, 'web')
-            ->post('/billing/package-orders/'.$order->id.'/review/refund')
+            ->post('/billing/package-orders/' . $order->id . '/review/refund')
             ->assertRedirect()
             ->assertSessionHas('error', 'package_orders.review_unavailable');
 
@@ -998,7 +1023,7 @@ class PackagePurchaseTest extends TestCase
         $order->ledgerTransaction()->update(['status' => LedgerTransactionStatus::Completed]);
 
         $this->actingAs($admin, 'web')
-            ->post('/billing/package-orders/'.$order->id.'/review/complete')
+            ->post('/billing/package-orders/' . $order->id . '/review/complete')
             ->assertRedirect()
             ->assertSessionHas('error', 'package_orders.review_unavailable');
 
@@ -1013,7 +1038,7 @@ class PackagePurchaseTest extends TestCase
         [, , $order] = $this->makeReviewPackageOrder();
 
         $this->actingAs($admin, 'web')
-            ->postJson('/billing/package-orders/'.$order->id.'/review/complete')
+            ->postJson('/billing/package-orders/' . $order->id . '/review/complete')
             ->assertForbidden();
 
         $this->assertSame(PackageOrderStatus::Review, $order->fresh()->status);
@@ -1027,7 +1052,10 @@ class PackagePurchaseTest extends TestCase
         $this->configureCgNet();
         Http::fake([
             'provider.test/WalletApp/ServerCommand/GetTokenAPI*' => Http::response($this->cgnetToken()),
-            'provider.test/WalletApp/ServerCommand/ActivateCGNETAccountAPI' => Http::response(['ErrCode' => 0, 'Message' => 'ok']),
+            'provider.test/WalletApp/ServerCommand/ActivateCGNETAccountAPI' => Http::response([
+                'ErrCode' => 0,
+                'Message' => 'ok',
+            ]),
         ]);
 
         $user = User::factory()->create();
@@ -1074,12 +1102,12 @@ class PackagePurchaseTest extends TestCase
 
         Auth::forgetGuards();
         $this->withToken($otherUser->createToken('other')->plainTextToken, 'Bearer')
-            ->getJson('/api/customer/packages/'.$customerPackage->id.'/credentials')
+            ->getJson('/api/customer/packages/' . $customerPackage->id . '/credentials')
             ->assertNotFound();
 
         Auth::forgetGuards();
         $this->withToken($user->createToken('owner')->plainTextToken, 'Bearer')
-            ->getJson('/api/customer/packages/'.$customerPackage->id.'/credentials')
+            ->getJson('/api/customer/packages/' . $customerPackage->id . '/credentials')
             ->assertOk()
             ->assertJsonPath('data.credentials.account', $customerPackage->username)
             ->assertJsonPath('data.credentials.password', $customerPackage->password);
@@ -1110,8 +1138,7 @@ class PackagePurchaseTest extends TestCase
 
     public function test_guest_cannot_buy_a_package(): void
     {
-        $this->postJson('/api/packages/buy', ['product_id' => 'any'])
-            ->assertUnauthorized();
+        $this->postJson('/api/packages/buy', ['product_id' => 'any'])->assertUnauthorized();
 
         $this->assertDatabaseCount('package_orders', 0);
         $this->assertSame(0, $this->activation->calls);
@@ -1155,9 +1182,7 @@ class PackagePurchaseTest extends TestCase
         $user = User::factory()->create();
         $package = $this->makePackage(price: 10000, months: 1);
 
-        $this->buy($user, $package, 'pkg-no-wallet1')
-            ->assertNotFound()
-            ->assertJsonPath('message', 'Wallet not found.');
+        $this->buy($user, $package, 'pkg-no-wallet1')->assertNotFound()->assertJsonPath('message', 'Wallet not found.');
 
         $this->assertDatabaseCount('package_orders', 0);
         $this->assertSame(0, $this->activation->calls);
@@ -1199,8 +1224,7 @@ class PackagePurchaseTest extends TestCase
         $package = $this->makePackage(price: 20000, months: 1);
         $this->activation->returnEmptyCredentials = true;
 
-        $this->buy($user, $package, 'manual-review-'.fake()->unique()->numerify('######'))
-            ->assertStatus(202);
+        $this->buy($user, $package, 'manual-review-' . fake()->unique()->numerify('######'))->assertStatus(202);
 
         $order = PackageOrder::query()->where('user_id', $user->id)->firstOrFail();
         $order->update([
@@ -1244,11 +1268,11 @@ class PackagePurchaseTest extends TestCase
             'price' => $price,
             'is_active' => $active,
         ]);
-        $productId = 'p-'.fake()->unique()->numerify('###');
+        $productId = 'p-' . fake()->unique()->numerify('###');
         $package->setAttribute('provider_product_id', $productId);
         $this->catalog->catalogProducts[] = [
             'productID' => $productId,
-            'productName' => 'Provider package '.$productId,
+            'productName' => 'Provider package ' . $productId,
             'productPrice' => (float) $price,
             'monthCycle' => $months,
             'monthCycleUnit' => '月',

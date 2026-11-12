@@ -454,6 +454,68 @@ class ChatConversationLifecycleTest extends TestCase
             ->assertJsonPath('data.messages.1.language', 'zh');
     }
 
+    public function test_customer_can_close_an_active_conversation_and_broadcast_the_change(): void
+    {
+        Event::fake([ChatConversationStatusChanged::class, ChatMessageCreated::class]);
+
+        foreach ([ChatConversationStatus::Bot, ChatConversationStatus::WaitingAgent, ChatConversationStatus::Open] as $status) {
+            $user = User::factory()->create();
+            $conversation = $this->conversation($user, $status);
+
+            $this->customer($user)->postJson('/api/chat/close', [
+                'conversation_id' => $conversation->id,
+                'language' => 'en',
+            ])
+                ->assertOk()
+                ->assertJsonPath('success', true)
+                ->assertJsonPath('data.conversation_id', $conversation->id)
+                ->assertJsonPath('data.status', 'closed')
+                ->assertJsonPath('data.is_closed', true)
+                ->assertJsonPath('data.can_start_new_conversation', true)
+                ->assertJsonPath('data.messages.0.sender_type', 'system')
+                ->assertJsonPath('data.messages.0.message', 'This chat has been closed.');
+
+            $this->assertSame(ChatConversationStatus::Closed, $conversation->fresh()->status);
+            $this->assertSame(1, $conversation->messages()->count());
+            Event::assertDispatched(
+                ChatConversationStatusChanged::class,
+                fn ($event) => $event->conversation->id === $conversation->id
+                    && $event->previousStatus === $status
+                    && $event->conversation->status === ChatConversationStatus::Closed,
+            );
+            Event::assertDispatched(
+                ChatMessageCreated::class,
+                fn ($event) => $event->message->conversation_id === $conversation->id,
+            );
+        }
+
+        Event::assertDispatchedTimes(ChatConversationStatusChanged::class, 3);
+        Event::assertDispatchedTimes(ChatMessageCreated::class, 3);
+    }
+
+    public function test_closing_an_already_closed_conversation_does_not_add_duplicate_messages(): void
+    {
+        Event::fake([ChatConversationStatusChanged::class, ChatMessageCreated::class]);
+        $user = User::factory()->create();
+        $conversation = $this->conversation($user, ChatConversationStatus::Closed);
+        $conversation->messages()->create([
+            'sender_type' => 'system',
+            'message' => 'Already closed.',
+            'is_read' => true,
+        ]);
+
+        $this->customer($user)->postJson('/api/chat/close', [
+            'conversation_id' => $conversation->id,
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'closed')
+            ->assertJsonPath('data.messages.0.message', 'Already closed.');
+
+        $this->assertSame(1, $conversation->messages()->count());
+        Event::assertNotDispatched(ChatConversationStatusChanged::class);
+        Event::assertNotDispatched(ChatMessageCreated::class);
+    }
+
     public function test_telegram_failure_does_not_prevent_waiting_state(): void
     {
         $this->telegramStatus = 500;
@@ -607,12 +669,18 @@ class ChatConversationLifecycleTest extends TestCase
             'message' => 'Hijack',
         ])->assertForbidden();
 
+        $this->customer($intruder)->postJson('/api/chat/close', [
+            'conversation_id' => $live->id,
+        ])->assertForbidden();
+
         $this->customer($intruder)->postJson('/api/chat/start')
             ->assertOk()
             ->assertJsonPath('data.status', 'bot');
 
         $this->assertSame($this->startStep->id, $bot->fresh()->current_step_id);
+        $this->assertSame(ChatConversationStatus::Bot, $bot->fresh()->status);
         $this->assertSame(0, $live->messages()->count());
+        $this->assertSame(ChatConversationStatus::Open, $live->fresh()->status);
         $this->assertNotSame($bot->id, $intruder->chatConversations()->value('id'));
     }
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import { CheckCircle2Icon, EyeIcon, PackageIcon, RotateCcwIcon, SearchIcon, XIcon } from 'lucide-react';
+import { CalendarIcon, CheckCircle2Icon, EyeIcon, PackageIcon, RotateCcwIcon, SearchIcon, XIcon } from 'lucide-react';
 
 import { BackButton } from '@/components/BackButton';
 import { CopyValueButton } from '@/components/CopyValueButton';
@@ -14,6 +14,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -45,7 +46,7 @@ type PackageOrder = {
 type Props = {
     orders: Paginated<PackageOrder>;
     search: string;
-    filters: { package_id: number | null; status: string };
+    filters: { package_id: number | null; status: string; from: string; to: string };
     filter_options: {
         packages: { id: number; label: string }[];
         statuses: string[];
@@ -113,13 +114,21 @@ export default function PackageOrdersIndex({
     }, [selected?.id, selected?.notification_unread]);
     useEffect(() => () => window.clearTimeout(debounce.current), []);
 
-    const visitOrders = (nextSearch: string, nextPackageId: string, nextStatus: string) => {
+    const visitOrders = (
+        nextSearch: string,
+        nextPackageId: string,
+        nextStatus: string,
+        nextFrom = filters.from,
+        nextTo = filters.to,
+    ) => {
         router.get(
             '/billing/package-orders',
             {
                 search: nextSearch || undefined,
                 package_id: nextPackageId || undefined,
                 status: nextStatus || undefined,
+                from: nextFrom || undefined,
+                to: nextTo || undefined,
                 return_to: returnTo || undefined,
             },
             { preserveState: true, preserveScroll: true, replace: true },
@@ -206,7 +215,7 @@ export default function PackageOrdersIndex({
         },
         {
             id: 'package',
-            header: t('menu.packages'),
+            header: t('customers.package'),
             cell: (row) => row.package ?? '—',
             searchValue: (row) => row.package ?? '',
         },
@@ -281,6 +290,7 @@ export default function PackageOrdersIndex({
                                     className={toolbarInputClass}
                                 />
                             </FormField>
+                            {/*
                             <FormField
                                 label={t('menu.packages')}
                                 htmlFor="package-order-package"
@@ -304,6 +314,7 @@ export default function PackageOrdersIndex({
                                     </SelectContent>
                                 </Select>
                             </FormField>
+                            */}
                             <FormField
                                 label={t('common.status')}
                                 htmlFor="package-order-status"
@@ -326,6 +337,36 @@ export default function PackageOrdersIndex({
                                         ))}
                                     </SelectContent>
                                 </Select>
+                            </FormField>
+                            <FormField
+                                label={t('common.start_date')}
+                                htmlFor="package-order-from"
+                                icon={CalendarIcon}
+                                className="w-full shrink-0 sm:w-40"
+                                labelClassName="text-[13px]"
+                            >
+                                <DatePicker
+                                    id="package-order-from"
+                                    value={filters.from}
+                                    max={filters.to || undefined}
+                                    placeholder={t('common.start_date')}
+                                    onChange={(value) => visitOrders(search, packageId, status, value, filters.to)}
+                                />
+                            </FormField>
+                            <FormField
+                                label={t('common.end_date')}
+                                htmlFor="package-order-to"
+                                icon={CalendarIcon}
+                                className="w-full shrink-0 sm:w-40"
+                                labelClassName="text-[13px]"
+                            >
+                                <DatePicker
+                                    id="package-order-to"
+                                    value={filters.to}
+                                    min={filters.from || undefined}
+                                    placeholder={t('common.end_date')}
+                                    onChange={(value) => visitOrders(search, packageId, status, filters.from, value)}
+                                />
                             </FormField>
                         </>
                     }
@@ -388,6 +429,10 @@ export default function PackageOrdersIndex({
                                             </span>
                                         ) : null
                                     }
+                                />
+                                <DetailItem
+                                    label={t('transactions.detail_fields.package_order_id')}
+                                    value={selected.id}
                                 />
                                 <DetailItem
                                     label={t('common.status')}

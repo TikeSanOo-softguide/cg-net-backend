@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ActivityLogEvent;
+use App\Enums\ActivityLogName;
 use App\Enums\BillPaymentNotificationEvent;
 use App\Enums\BillPaymentStatus;
 use App\Enums\LedgerTransactionStatus;
@@ -26,6 +28,7 @@ use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
+use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -1296,7 +1299,7 @@ class InternetBillPaymentTest extends TestCase
             'idempotency_key' => 'ftth-review-already-completed',
             'transaction_no' => 'FTTH-REVIEW-ALREADY-COMPLETED',
         ]);
-        BillPayment::query()->create([
+        $billPayment = BillPayment::query()->create([
             'ledger_transaction_id' => $transaction->id,
             'broadband_account_number' => $user->broadband_account_number,
             'order_no' => 'FTTH-REVIEW-ALREADY-COMPLETED',
@@ -1307,13 +1310,96 @@ class InternetBillPaymentTest extends TestCase
         ]);
 
         $this->actingAs($admin, 'web')
-            ->post('/billing/transactions/'.$transaction->id.'/review/refund')
+            ->post('/billing/bill-payments/'.$billPayment->id.'/review/refund')
             ->assertRedirect()
             ->assertSessionHas('error', 'transactions.review_unavailable');
 
         $this->assertDatabaseMissing('ledger_transactions', [
             'reversal_of' => $transaction->id,
             'type' => LedgerTransactionType::Refund->value,
+        ]);
+    }
+
+    public function test_admin_can_filter_bill_payments_by_service_type(): void
+    {
+        RolePermissionSeeder::sync();
+        $admin = Admin::factory()->create();
+        $admin->givePermissionTo(['billing.view']);
+        [$user, $wallet, , $ftthPayment] = $this->makeReviewBillPayment();
+
+        $cgTransaction = LedgerTransaction::factory()->create([
+            'wallet_id' => $wallet->id,
+            'type' => LedgerTransactionType::CgBill,
+            'status' => LedgerTransactionStatus::Review,
+            'amount' => 1000,
+            'idempotency_key' => fake()->unique()->uuid(),
+            'transaction_no' => fake()->unique()->bothify('CG-REVIEW-########'),
+        ]);
+        $cgPayment = BillPayment::query()->create([
+            'ledger_transaction_id' => $cgTransaction->id,
+            'broadband_account_number' => $user->broadband_account_number,
+            'order_no' => fake()->unique()->bothify('CG-ORDER-########'),
+            'service_type' => 'CG',
+            'product_id' => 'cg-product-1',
+            'product_price' => 1000,
+            'status' => BillPaymentStatus::Review,
+        ]);
+
+        $this->actingAs($admin, 'web')
+            ->get('/billing/bill-payments?service_type=CG')
+            ->assertOk()
+            ->assertInertia(fn(Assert $page) => $page
+                ->component('BillPayment/BillPayment/Index')
+                ->where('filters.service_type', 'CG')
+                ->has('payments.data', 1)
+                ->where('payments.data.0.id', $cgPayment->id));
+
+        $this->assertNotSame($ftthPayment->id, $cgPayment->id);
+    }
+
+    public function test_admin_successfully_completes_bill_payment_review_and_logs_activity(): void
+    {
+        RolePermissionSeeder::sync();
+        $admin = Admin::factory()->create();
+        $admin->givePermissionTo(['billing.view', 'billing.update']);
+        [$user, , $transaction, $billPayment] = $this->makeReviewBillPayment();
+
+        $this->actingAs($admin, 'web')
+            ->post('/billing/bill-payments/'.$billPayment->id.'/review/complete')
+            ->assertRedirect();
+
+        $this->assertSame(LedgerTransactionStatus::Completed, $transaction->fresh()->status);
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => ActivityLogName::BillPayments->value,
+            'description' => 'bill_payment_completed',
+            'subject_type' => BillPayment::class,
+            'subject_id' => $billPayment->id,
+            'causer_type' => Admin::class,
+            'causer_id' => $admin->id,
+            'event' => ActivityLogEvent::Completed->value,
+        ]);
+    }
+
+    public function test_admin_successfully_refunds_bill_payment_review_and_logs_activity(): void
+    {
+        RolePermissionSeeder::sync();
+        $admin = Admin::factory()->create();
+        $admin->givePermissionTo(['billing.view', 'billing.update']);
+        [$user, , $transaction, $billPayment] = $this->makeReviewBillPayment();
+
+        $this->actingAs($admin, 'web')
+            ->post('/billing/bill-payments/'.$billPayment->id.'/review/refund')
+            ->assertRedirect();
+
+        $this->assertSame(LedgerTransactionStatus::Failed, $transaction->fresh()->status);
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => ActivityLogName::BillPayments->value,
+            'description' => 'bill_payment_refunded',
+            'subject_type' => BillPayment::class,
+            'subject_id' => $billPayment->id,
+            'causer_type' => Admin::class,
+            'causer_id' => $admin->id,
+            'event' => ActivityLogEvent::Refunded->value,
         ]);
     }
 
@@ -1507,6 +1593,31 @@ class InternetBillPaymentTest extends TestCase
         $user->deviceTokens()->create(['token' => 'fcm-' . fake()->unique()->uuid()]);
 
         return [$user, $wallet];
+    }
+
+    /** @return array{0: User, 1: Wallet, 2: LedgerTransaction, 3: BillPayment} */
+    private function makeReviewBillPayment(): array
+    {
+        [$user, $wallet] = $this->makePayer(balance: 500);
+        $transaction = LedgerTransaction::factory()->create([
+            'wallet_id' => $wallet->id,
+            'type' => LedgerTransactionType::FtthBill,
+            'status' => LedgerTransactionStatus::Review,
+            'amount' => 1000,
+            'idempotency_key' => fake()->unique()->uuid(),
+            'transaction_no' => fake()->unique()->bothify('FTTH-REVIEW-########'),
+        ]);
+        $billPayment = BillPayment::query()->create([
+            'ledger_transaction_id' => $transaction->id,
+            'broadband_account_number' => $user->broadband_account_number,
+            'order_no' => fake()->unique()->bothify('FTTH-ORDER-########'),
+            'service_type' => 'FTTH',
+            'product_id' => 'ftth-product-1',
+            'product_price' => 1000,
+            'status' => BillPaymentStatus::Review,
+        ]);
+
+        return [$user, $wallet, $transaction, $billPayment];
     }
 
     /** @return array<string, Response> */

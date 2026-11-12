@@ -25,6 +25,7 @@ class ChatFlowApiTest extends TestCase
         $this->postJson('/api/chat/select-option')->assertUnauthorized();
         $this->postJson('/api/chat/navigate')->assertUnauthorized();
         $this->postJson('/api/chat/messages')->assertUnauthorized();
+        $this->postJson('/api/chat/close')->assertUnauthorized();
     }
 
     public function test_customer_can_start_chat_flow_with_supported_language(): void
