@@ -61,6 +61,7 @@ class AdminNotificationController extends Controller
         'ledger_health_snapshot_full' => 'reports.view',
         'ledger_health_snapshot_daily' => 'reports.view',
         'ledger_health_snapshot_manual' => 'reports.view',
+        'financial_summary_snapshot' => 'reports.view',
         'bill_payment' => 'billing.view',
         'package_order' => 'billing.view',
     ];

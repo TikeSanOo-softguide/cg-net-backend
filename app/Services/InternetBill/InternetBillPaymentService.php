@@ -505,7 +505,7 @@ class InternetBillPaymentService
             $transaction = $this->ledger->debitWallet(
                 wallet: $lockedWallet,
                 amount: $amount,
-                contraAccount: LedgerAccountCode::FtthClearing,
+                contraAccount: LedgerAccountCode::InternetServiceRevenue,
                 type: LedgerTransactionType::forInternetServiceType($serviceType),
                 status: LedgerTransactionStatus::Processing,
                 idempotencyKey: $idempotencyKey,
@@ -1008,7 +1008,7 @@ class InternetBillPaymentService
             $refundTransaction = $this->ledger->creditWallet(
                 wallet: $wallet,
                 amount: $amount,
-                contraAccount: LedgerAccountCode::FtthClearing,
+                contraAccount: LedgerAccountCode::InternetServiceRevenue,
                 type: LedgerTransactionType::Refund,
                 status: LedgerTransactionStatus::Completed,
                 idempotencyKey: 'refund:' . $lockedDebit->idempotency_key,

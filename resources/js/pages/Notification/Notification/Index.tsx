@@ -54,10 +54,11 @@ const requestTypes = [
     'relocation_request',
 ] as const;
 
-const ledgerHealthReferenceTypes = new Set([
+const reportReferenceTypes = new Set([
     'ledger_health_snapshot_full',
     'ledger_health_snapshot_daily',
     'ledger_health_snapshot_manual',
+    'financial_summary_snapshot',
 ]);
 
 export default function AdminNotificationsIndex({ notifications, categories, filters }: Props) {
@@ -128,7 +129,7 @@ export default function AdminNotificationsIndex({ notifications, categories, fil
             return '—';
         }
 
-        const translationKey = ledgerHealthReferenceTypes.has(referenceType)
+        const translationKey = reportReferenceTypes.has(referenceType)
             ? `admin_notifications.${referenceType}`
             : `admin_notifications.request_types.${referenceType}`;
 

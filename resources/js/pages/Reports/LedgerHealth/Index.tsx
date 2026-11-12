@@ -169,7 +169,6 @@ export default function LedgerHealthReportIndex({
                 preserveScroll: true,
                 onSuccess: () => {
                     setReadSnapshotIds((current) => new Set(current).add(snapshotId));
-                    router.reload({ only: ['unreadAdminNotificationReferences'] });
                 },
             },
         );

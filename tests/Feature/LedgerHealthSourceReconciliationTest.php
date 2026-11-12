@@ -122,7 +122,7 @@ class LedgerHealthSourceReconciliationTest extends TestCase
         $completedTxn = $poster->debitWallet(
             wallet: $wallet->fresh(),
             amount: 100,
-            contraAccount: LedgerAccountCode::FtthClearing,
+            contraAccount: LedgerAccountCode::InternetServiceRevenue,
             type: LedgerTransactionType::FtthBill,
             status: LedgerTransactionStatus::Completed,
             idempotencyKey: 'bill-status',
@@ -137,7 +137,7 @@ class LedgerHealthSourceReconciliationTest extends TestCase
         $poster->debitWallet(
             wallet: $wallet->fresh(),
             amount: 50,
-            contraAccount: LedgerAccountCode::FtthClearing,
+            contraAccount: LedgerAccountCode::InternetServiceRevenue,
             type: LedgerTransactionType::FtthBill,
             status: LedgerTransactionStatus::Completed,
             idempotencyKey: 'orphan-bill',
@@ -278,7 +278,7 @@ class LedgerHealthSourceReconciliationTest extends TestCase
         $bill = $poster->debitWallet(
             wallet: $wallet->fresh(),
             amount: 200,
-            contraAccount: LedgerAccountCode::FtthClearing,
+            contraAccount: LedgerAccountCode::InternetServiceRevenue,
             type: LedgerTransactionType::FtthBill,
             status: LedgerTransactionStatus::Completed,
             idempotencyKey: 'ok-bill',

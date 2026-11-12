@@ -48,7 +48,6 @@ class DashboardController extends Controller
             'stats' => $this->stats(),
             'chart' => $this->chartSeries($start, $end),
             'topupUsageChange' => $this->topupUsageChange($start, $end),
-            'installationTypeChart' => $this->installationTypeChart($start, $end),
             'requestTypeChart' => $this->requestTypeChart($start, $end),
             'recentRequests' => $this->recentRequests(),
         ]);
@@ -202,27 +201,6 @@ class DashboardController extends Controller
             ->where('status', LedgerTransactionStatus::Completed)
             ->whereBetween('created_at', [$start, $end])
             ->sum('amount');
-    }
-
-    /**
-     * @return list<array{service_type: string, value: int}>
-     */
-    private function installationTypeChart(Carbon $start, Carbon $end): array
-    {
-        $serviceType = "COALESCE(NULLIF(service_type, ''), 'other')";
-
-        return InstallationApplication::query()
-            ->whereBetween('installation_applications.created_at', [$start, $end])
-            ->selectRaw("{$serviceType} as service_type, COUNT(*) as total")
-            ->groupByRaw($serviceType)
-            ->orderByDesc('total')
-            ->get()
-            ->map(fn($row): array => [
-                'service_type' => (string) $row->service_type,
-                'value' => (int) $row->total,
-            ])
-            ->values()
-            ->all();
     }
 
     /**

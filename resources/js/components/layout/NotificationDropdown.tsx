@@ -78,7 +78,10 @@ const requestHrefByType = {
 } satisfies Record<
     Exclude<
         AdminNotification['reference_type'],
-        null | 'chat_conversation' | `ledger_health_snapshot_${'full' | 'daily' | 'manual'}`
+        | null
+        | 'chat_conversation'
+        | 'financial_summary_snapshot'
+        | `ledger_health_snapshot_${'full' | 'daily' | 'manual'}`
     >,
     string
 >;
@@ -105,9 +108,15 @@ function isPackageOrderReference(referenceType: AdminNotification['reference_typ
 const serviceRequestNavigationItems = navigation.flatMap((group) => group.children ?? []);
 const ledgerHealthReportIcon =
     reports.find((report) => report.href === '/reports/ledger-health')?.icon ?? fallbackLook.icon;
+const financialSummaryReportIcon =
+    reports.find((report) => report.href === '/reports/financial-summary')?.icon ?? fallbackLook.icon;
 
 function isLedgerHealthNotification(item: AdminNotification | RecentNotification): item is AdminNotification {
     return 'reference_type' in item && item.reference_type?.startsWith('ledger_health_snapshot_') === true;
+}
+
+function isFinancialSummaryNotification(item: AdminNotification | RecentNotification): item is AdminNotification {
+    return 'reference_type' in item && item.reference_type === 'financial_summary_snapshot';
 }
 
 function notificationIcon(item: AdminNotification | RecentNotification): LucideIcon {
@@ -122,6 +131,10 @@ function notificationIcon(item: AdminNotification | RecentNotification): LucideI
 
     if (isLedgerHealthNotification(item)) {
         return ledgerHealthReportIcon;
+    }
+
+    if (isFinancialSummaryNotification(item)) {
+        return financialSummaryReportIcon;
     }
 
     return categoryLook[item.category]?.icon ?? fallbackLook.icon;

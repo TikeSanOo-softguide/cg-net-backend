@@ -46,9 +46,9 @@ type LedgerLine = {
     account_code: string | null;
     account_name: string | null;
     customer: string | null;
-    debit: number;
-    credit: number;
-    balance_after: number | null;
+    debit: string;
+    credit: string;
+    balance_after: string | null;
 };
 
 type Props = {
@@ -72,7 +72,7 @@ const localeTags: Record<SupportedLocale, string> = {
     zh: 'zh-CN',
 };
 
-function amount(value: number, _locale: SupportedLocale): string {
+function amount(value: number | string, _locale: SupportedLocale): string {
     return `${String(value)} ${TOP_UP_CARD_CURRENCY}`;
 }
 
@@ -272,10 +272,12 @@ export default function EodReportIndex({ date, summary, breakdown, entries }: Pr
             className: 'tabular-nums',
             cell: (line) => (
                 <>
-                    <span className="hidden sm:inline">{line.debit > 0 ? amount(line.debit, locale) : '—'}</span>
+                    <span className="hidden sm:inline">
+                        {Number(line.debit) > 0 ? amount(line.debit, locale) : '—'}
+                    </span>
                     <span className="sm:hidden">
-                        {t('eod_report.debit')}: {line.debit > 0 ? amount(line.debit, locale) : '—'} ·{' '}
-                        {t('eod_report.credit')}: {line.credit > 0 ? amount(line.credit, locale) : '—'}
+                        {t('eod_report.debit')}: {Number(line.debit) > 0 ? amount(line.debit, locale) : '—'} ·{' '}
+                        {t('eod_report.credit')}: {Number(line.credit) > 0 ? amount(line.credit, locale) : '—'}
                     </span>
                 </>
             ),
@@ -284,7 +286,7 @@ export default function EodReportIndex({ date, summary, breakdown, entries }: Pr
             id: 'credit',
             header: t('eod_report.credit'),
             className: 'tabular-nums',
-            cell: (line) => (line.credit > 0 ? amount(line.credit, locale) : '—'),
+            cell: (line) => (Number(line.credit) > 0 ? amount(line.credit, locale) : '—'),
         },
         {
             id: 'balance_after',
@@ -401,7 +403,9 @@ export default function EodReportIndex({ date, summary, breakdown, entries }: Pr
                                     </p>
                                     <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
                                         {amount(
-                                            selectedEntry.ledger_entries.reduce((total, line) => total + line.debit, 0),
+                                            selectedEntry.ledger_entries
+                                                .reduce((total, line) => total + Number(line.debit), 0)
+                                                .toFixed(2),
                                             locale,
                                         )}
                                     </p>
@@ -412,10 +416,9 @@ export default function EodReportIndex({ date, summary, breakdown, entries }: Pr
                                     </p>
                                     <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
                                         {amount(
-                                            selectedEntry.ledger_entries.reduce(
-                                                (total, line) => total + line.credit,
-                                                0,
-                                            ),
+                                            selectedEntry.ledger_entries
+                                                .reduce((total, line) => total + Number(line.credit), 0)
+                                                .toFixed(2),
                                             locale,
                                         )}
                                     </p>
