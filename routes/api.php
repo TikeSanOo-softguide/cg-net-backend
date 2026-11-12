@@ -199,6 +199,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::post('/select-option', [ChatFlowController::class, 'selectOption']);
         Route::post('/navigate', [ChatFlowController::class, 'navigate']);
         Route::post('/messages', [ChatFlowController::class, 'sendMessage']);
+        Route::post('/close', [ChatFlowController::class, 'close']);
     });
 });
 
