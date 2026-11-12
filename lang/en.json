@@ -2014,6 +2014,7 @@
             "drag_drop_csv": "Drag & drop your CSV file here",
             "drop_csv_here": "Drop your CSV file here",
             "import": "Import",
+            "importing": "Importing…",
             "importing_csv": "Importing CSV…",
             "label": "Import CSV",
             "preview_limit": "Showing :shown of :total rows."

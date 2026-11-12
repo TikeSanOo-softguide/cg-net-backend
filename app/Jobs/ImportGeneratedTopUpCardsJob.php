@@ -2,26 +2,32 @@
 
 namespace App\Jobs;
 
+use App\Enums\ActivityLogEvent;
+use App\Enums\ActivityLogName;
 use App\Enums\BatchStatus;
 use App\Enums\TopUpCardStatus;
+use App\Models\Admin;
 use App\Models\Batch;
 use App\Models\Office;
 use App\Support\CsvImportException;
 use App\Support\GeneratesTopUpCards;
 use App\Support\TopUpCardOffices;
 use App\Support\TopUpCardPin;
-use DateTimeImmutable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use DateTimeImmutable;
 use RuntimeException;
 use Throwable;
 
@@ -29,7 +35,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries = 2;
+    public int $tries = 3;
 
     public int $timeout;
 
@@ -68,8 +74,14 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
         $totalRows = 0;
         $summaries = [];
         $denominations = [];
-        $seenSerials = [];
-        $seenPins = [];
+        $chunk = [];
+        $chunkSize = min(500, max(1, (int) config('top_up_cards.chunk_size', 500)));
+        $stagingTable = 'top_up_card_preview_' . Str::lower(Str::random(20));
+        Schema::create($stagingTable, static function (Blueprint $table): void {
+            $table->string('serial_no', 32)->unique();
+            $table->string('pin_hash', 64)->unique();
+            $table->temporary();
+        });
 
         try {
             $format = $this->readHeaders($stream);
@@ -77,18 +89,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
             while (($row = fgetcsv($stream, 0, $format['delimiter'])) !== false) {
                 $line = $totalRows + 2;
                 $card = $this->parseRow($row, $line, $format);
-                $pinHash = TopUpCardPin::hash($card['pin']);
-
-                if (isset($seenSerials[$card['serial_no']])) {
-                    throw new CsvImportException('csv.import_errors.duplicate_serial', ['line' => $line]);
-                }
-
-                if (isset($seenPins[$pinHash])) {
-                    throw new CsvImportException('csv.import_errors.duplicate_pin', ['line' => $line]);
-                }
-
-                $seenSerials[$card['serial_no']] = true;
-                $seenPins[$pinHash] = true;
+                $chunk[] = ['line' => $line, ...$card];
                 $totalRows++;
                 $denominations[$card['amount']] = true;
                 $officeCode = TopUpCardOffices::officeCodeFromSerialNo($card['serial_no']);
@@ -111,9 +112,19 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                         'max' => (int) config('top_up_cards.max_cards', 100000),
                     ]);
                 }
+
+                if (count($chunk) >= $chunkSize) {
+                    $this->assertPreviewChunkIsUnique($chunk, $stagingTable);
+                    $chunk = [];
+                }
+            }
+
+            if ($chunk !== []) {
+                $this->assertPreviewChunkIsUnique($chunk, $stagingTable);
             }
         } finally {
             fclose($stream);
+            Schema::dropIfExists($stagingTable);
         }
 
         if ($totalRows === 0) {
@@ -156,6 +167,47 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
             'total_rows' => $totalRows,
             'total_summaries' => $totalSummaries,
         ];
+    }
+
+    /**
+     * @param  list<array{line: int, serial_no: string, pin: string, amount: int, generate_date: ?string}>  $chunk
+     */
+    private function assertPreviewChunkIsUnique(array $chunk, string $stagingTable): void
+    {
+        $serials = array_column($chunk, 'serial_no');
+        $pinHashes = array_map(static fn(array $row): string => TopUpCardPin::hash($row['pin']), $chunk);
+        $previousSerials = array_flip(
+            DB::table($stagingTable)->whereIn('serial_no', $serials)->pluck('serial_no')->all(),
+        );
+        $previousPins = array_flip(DB::table($stagingTable)->whereIn('pin_hash', $pinHashes)->pluck('pin_hash')->all());
+        $seenSerials = [];
+        $seenPins = [];
+
+        foreach ($chunk as $index => $row) {
+            $pinHash = $pinHashes[$index];
+
+            if (isset($seenSerials[$row['serial_no']]) || isset($previousSerials[$row['serial_no']])) {
+                throw new CsvImportException('csv.import_errors.duplicate_serial', ['line' => $row['line']]);
+            }
+
+            if (isset($seenPins[$pinHash]) || isset($previousPins[$pinHash])) {
+                throw new CsvImportException('csv.import_errors.duplicate_pin', ['line' => $row['line']]);
+            }
+
+            $seenSerials[$row['serial_no']] = true;
+            $seenPins[$pinHash] = true;
+        }
+
+        DB::table($stagingTable)->insert(
+            array_map(
+                static fn(array $row, string $pinHash): array => [
+                    'serial_no' => $row['serial_no'],
+                    'pin_hash' => $pinHash,
+                ],
+                $chunk,
+                $pinHashes,
+            ),
+        );
     }
 
     public function handle(): void
@@ -404,6 +456,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
             Cache::forget('top_up_cards.latest_expires_at');
             Cache::forget('top_up_cards.amount_options');
             $disk->delete($this->path);
+            $this->logImportSucceeded($importBatch, $totalCards, $totalValue);
         } finally {
             if (is_resource($stream)) {
                 fclose($stream);
@@ -433,6 +486,11 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                 Cache::forget('top_up_card_generation:active');
             }
             Storage::disk('local')->delete($this->path);
+            $this->logImportSucceeded(
+                $importBatch,
+                (int) ($importBatch->metadata['total_cards'] ?? 0),
+                (int) ($importBatch->metadata['total_value'] ?? 0),
+            );
 
             return;
         }
@@ -463,6 +521,46 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
             Cache::forget('top_up_card_generation:active');
         }
         Storage::disk('local')->delete($this->path);
+        $this->logImportFailed($exception, $importBatch, $generation);
+    }
+
+    private function logImportSucceeded(Batch $batch, int $totalCards, int|string $totalValue): void
+    {
+        activity(ActivityLogName::TopUpCards->value)
+            ->causedBy(Admin::query()->find($this->userId))
+            ->performedOn($batch)
+            ->event(ActivityLogEvent::Succeeded->value)
+            ->withProperties([
+                'batch_no' => $batch->batch_no,
+                'quantity' => $totalCards,
+                'total_value' => (string) $totalValue,
+            ])
+            ->log('top_up_cards_batch_import_succeeded');
+    }
+
+    /**
+     * @param  array<string, mixed>  $generation
+     */
+    private function logImportFailed(Throwable $exception, ?Batch $batch, array $generation): void
+    {
+        $activity = activity(ActivityLogName::TopUpCards->value)
+            ->causedBy(Admin::query()->find($this->userId))
+            ->event(ActivityLogEvent::Failed->value)
+            ->withProperties([
+                'batch_no' => $batch?->batch_no,
+                'quantity' => (int) ($generation['total_cards'] ?? 0),
+                'completed_cards' => (int) ($generation['completed_cards'] ?? 0),
+                'error' =>
+                    $exception instanceof CsvImportException
+                        ? $exception->translationKey
+                        : 'top_up_cards.generation_failed',
+            ]);
+
+        if ($batch instanceof Batch) {
+            $activity->performedOn($batch);
+        }
+
+        $activity->log('top_up_cards_batch_import_failed');
     }
 
     /**

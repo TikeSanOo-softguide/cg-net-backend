@@ -40,7 +40,7 @@ function visitIndex(filters: CardHistoryFilters, onStart?: () => void, onFinish?
         {
             search: filters.search || undefined,
             status: filters.status || undefined,
-            batch: filters.batch || undefined,
+            batch: filters.batch,
             amount: filters.amount || undefined,
             office: filters.office || undefined,
             from: filters.from || undefined,

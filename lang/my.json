@@ -2014,6 +2014,7 @@
             "drag_drop_csv": "CSV ဖိုင်ကို ဆွဲယူ၍ ချထားပါ",
             "drop_csv_here": "CSV ဖိုင်ကို ဤနေရာတွင် ချထားပါ",
             "import": "တင်သွင်းမည်။",
+            "importing": "တင်သွင်းနေသည်…",
             "importing_csv": "CSV တင်သွင်းနေသည်…",
             "label": "CSV တင်သွင်းရန်",
             "preview_limit": "အတန်း :total ခုအနက် :shown ခုကို ပြသထားသည်။"

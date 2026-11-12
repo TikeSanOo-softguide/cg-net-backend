@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Jobs\GenerateTopUpCardsJob;
-use App\Http\Controllers\TopUpCard\TopUpCardController;
+use App\Http\Controllers\TopUpCard\TopUpCardBatchController;
 use App\Http\Requests\TopUpCard\GenerateTopUpCardsRequest;
 use App\Models\Admin;
 use App\Models\Office;
@@ -456,7 +456,7 @@ class TopUpCardChunkGenerationTest extends TestCase
         $succeededBatch->failedJobs = 0;
         $succeededBatch->shouldReceive('processedJobs')->andReturn(1);
 
-        TopUpCardController::logGenerationFinished($token, $succeededBatch, 'succeeded');
+        TopUpCardBatchController::logGenerationFinished($token, $succeededBatch, 'succeeded');
 
         $this->assertDatabaseHas('activity_log', [
             'description' => 'top_up_cards_generation_succeeded',
@@ -499,7 +499,7 @@ class TopUpCardChunkGenerationTest extends TestCase
         $failedBatch->failedJobs = 1;
         $failedBatch->shouldReceive('processedJobs')->andReturn(0);
 
-        TopUpCardController::logGenerationFinished($failedToken, $failedBatch, 'failed');
+        TopUpCardBatchController::logGenerationFinished($failedToken, $failedBatch, 'failed');
 
         $this->assertDatabaseHas('activity_log', [
             'description' => 'top_up_cards_generation_failed',

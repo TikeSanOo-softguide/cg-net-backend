@@ -38,9 +38,15 @@ function DialogContent({
     className,
     overlayClassName,
     children,
+    dismissOnOutsideClick = false,
+    dismissOnEscape = false,
+    onPointerDownOutside,
+    onEscapeKeyDown,
     ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
     overlayClassName?: string;
+    dismissOnOutsideClick?: boolean;
+    dismissOnEscape?: boolean;
 }) {
     return (
         <DialogPortal>
@@ -52,6 +58,18 @@ function DialogContent({
                     'data-[state=open]:animate-[dialog-fade-in_100ms_ease-out] data-[state=closed]:animate-[dialog-fade-out_100ms_ease-in] motion-reduce:animate-none',
                     className,
                 )}
+                onPointerDownOutside={(event) => {
+                    onPointerDownOutside?.(event);
+                    if (!dismissOnOutsideClick) {
+                        event.preventDefault();
+                    }
+                }}
+                onEscapeKeyDown={(event) => {
+                    onEscapeKeyDown?.(event);
+                    if (!dismissOnEscape) {
+                        event.preventDefault();
+                    }
+                }}
                 {...props}
             >
                 {children}
