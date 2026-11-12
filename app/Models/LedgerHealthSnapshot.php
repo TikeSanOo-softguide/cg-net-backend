@@ -6,18 +6,7 @@ use App\Enums\LedgerHealthScanType;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
-#[
-    Fillable([
-        'requested_by',
-        'type',
-        'window_start',
-        'window_end',
-        'status',
-        'results',
-        'error',
-        'checked_at',
-    ]),
-]
+#[Fillable(['requested_by', 'type', 'window_start', 'window_end', 'status', 'results', 'error', 'checked_at'])]
 class LedgerHealthSnapshot extends Model
 {
     protected function casts(): array

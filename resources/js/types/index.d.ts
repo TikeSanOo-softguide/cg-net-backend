@@ -25,6 +25,7 @@ export type AdminNotification = {
         | 'ledger_health_snapshot_full'
         | 'ledger_health_snapshot_daily'
         | 'ledger_health_snapshot_manual'
+        | 'financial_summary_snapshot'
         | 'bill_payment'
         | 'package_order'
         | null;
@@ -64,7 +65,6 @@ export type PageProps<T extends Record<string, unknown> = Record<string, unknown
     timezone: string;
     translations: TranslationTree;
     unreadNotifications: number;
-    unreadAdminNotificationReferences: string[];
     totalAdminNotifications: number;
     recentNotifications: RecentNotification[];
     flash: {
@@ -88,7 +88,6 @@ declare module '@inertiajs/core' {
             timezone: string;
             translations: TranslationTree;
             unreadNotifications: number;
-            unreadAdminNotificationReferences: string[];
             totalAdminNotifications: number;
             recentNotifications: RecentNotification[];
             flash: {

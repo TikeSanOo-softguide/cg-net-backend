@@ -239,7 +239,7 @@ class WalletSeeder extends Seeder
         $transaction = $this->ledger()->debitWallet(
             wallet: $wallet->fresh(),
             amount: $debitAmount,
-            contraAccount: LedgerAccountCode::FtthClearing,
+            contraAccount: LedgerAccountCode::InternetServiceRevenue,
             type: $ledgerType,
             status: $status,
             idempotencyKey: (string) Str::uuid(),
@@ -364,7 +364,7 @@ class WalletSeeder extends Seeder
     private function refund(Wallet $wallet, User $user, int $amount, LedgerTransaction $reversedTransaction): void
     {
         $contra = match ($reversedTransaction->type) {
-            LedgerTransactionType::FtthBill, LedgerTransactionType::CgBill => LedgerAccountCode::FtthClearing,
+            LedgerTransactionType::FtthBill, LedgerTransactionType::CgBill => LedgerAccountCode::InternetServiceRevenue,
             LedgerTransactionType::WifiPackage => LedgerAccountCode::PackageRevenue,
             default => LedgerAccountCode::AdjustmentExpense,
         };

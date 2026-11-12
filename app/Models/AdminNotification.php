@@ -62,6 +62,7 @@ class AdminNotification extends Model
                 'ledger_health_snapshot_full' => '/reports/ledger-health?type=full&snapshot=' . $this->reference_id,
                 'ledger_health_snapshot_daily' => '/reports/ledger-health?type=daily&snapshot=' . $this->reference_id,
                 'ledger_health_snapshot_manual' => '/reports/ledger-health?type=manual&snapshot=' . $this->reference_id,
+                'financial_summary_snapshot' => '/reports/financial-summary?snapshot=' . $this->reference_id,
                 'bill_payment' => '/billing/bill-payments',
                 'package_order' => '/billing/package-orders',
                 default => null,

@@ -5,15 +5,15 @@ namespace App\Enums;
 enum LedgerAccountCode: string
 {
     case CashTopup = 'CASH_TOPUP';
-    case FtthClearing = 'FTTH_CLEARING';
+    case InternetServiceRevenue = 'INET_SVC_REVENUE';
     case PackageRevenue = 'PKG_REVENUE';
     case AdjustmentExpense = 'ADJ_EXPENSE';
 
     public function accountType(): LedgerAccountType
     {
         return match ($this) {
-            self::CashTopup, self::FtthClearing => LedgerAccountType::Asset,
-            self::PackageRevenue => LedgerAccountType::Revenue,
+            self::CashTopup => LedgerAccountType::Asset,
+            self::InternetServiceRevenue, self::PackageRevenue => LedgerAccountType::Revenue,
             self::AdjustmentExpense => LedgerAccountType::Expense,
         };
     }
@@ -22,7 +22,7 @@ enum LedgerAccountCode: string
     {
         return match ($this) {
             self::CashTopup => 'Top-up clearing',
-            self::FtthClearing => 'Internet billing clearing',
+            self::InternetServiceRevenue => 'Internet service revenue',
             self::PackageRevenue => 'Package revenue',
             self::AdjustmentExpense => 'Wallet adjustments',
         };

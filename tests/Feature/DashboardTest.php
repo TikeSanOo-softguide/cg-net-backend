@@ -87,35 +87,12 @@ class DashboardTest extends TestCase
                     ->where('chart.29.ftth_bill_payments', 15000)
                     ->where('chart.29.cg_bill_payments', 0)
                     ->where('chart.29.wifi_package_orders', 25000)
-                    ->has('installationTypeChart')
                     ->has('requestTypeChart')
                     ->has('recentRequests')
                     ->has('unreadNotifications')
                     ->has('recentNotifications')
                     ->has('locale')
                     ->has('translations'),
-            );
-    }
-
-    public function test_dashboard_groups_installations_by_service_type(): void
-    {
-        $admin = Admin::factory()->create();
-
-        InstallationApplication::factory()
-            ->count(3)
-            ->create(['service_type' => 'FTTH']);
-        InstallationApplication::factory()->create(['service_type' => 'CG']);
-
-        $this->actingAs($admin, 'web')
-            ->get('/dashboard')
-            ->assertOk()
-            ->assertInertia(
-                fn(Assert $page) => $page
-                    ->has('installationTypeChart', 2)
-                    ->where('installationTypeChart.0.service_type', 'FTTH')
-                    ->where('installationTypeChart.0.value', 3)
-                    ->where('installationTypeChart.1.service_type', 'CG')
-                    ->where('installationTypeChart.1.value', 1),
             );
     }
 

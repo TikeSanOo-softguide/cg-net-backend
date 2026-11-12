@@ -71,7 +71,7 @@ class BillingSeeder extends Seeder
             $transaction = $poster->debitWallet(
                 wallet: $wallet->fresh(),
                 amount: $amount,
-                contraAccount: LedgerAccountCode::FtthClearing,
+                contraAccount: LedgerAccountCode::InternetServiceRevenue,
                 type: LedgerTransactionType::forInternetServiceType($serviceType),
                 status: LedgerTransactionStatus::Completed,
                 idempotencyKey: 'seed-bill:' . $user->id . ':' . $index,

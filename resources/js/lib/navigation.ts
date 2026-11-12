@@ -44,6 +44,7 @@ import {
     Wallet,
     Workflow,
     Wrench,
+    DollarSign,
 } from 'lucide-react';
 
 const navIconTones: Record<string, string> = {
@@ -608,12 +609,11 @@ export const reports = [
         icon: Users,
     },
     {
-        labelKey: 'menu.billing_reports',
-        descriptionKey: 'menu.billing_reports_description',
-        href: '/reports/billing',
-        icon: Banknote,
+        labelKey: 'menu.service_request_reports',
+        descriptionKey: 'menu.service_request_reports_description',
+        href: '/reports/service-requests',
+        icon: ClipboardList,
     },
-
     {
         labelKey: 'menu.top_up_reports',
         descriptionKey: 'menu.top_up_reports_description',
@@ -633,9 +633,15 @@ export const reports = [
         icon: CalendarDays,
     },
     {
-        labelKey: 'menu.service_request_reports',
-        descriptionKey: 'menu.service_request_reports_description',
-        href: '/reports/service-requests',
-        icon: ClipboardList,
+        labelKey: 'menu.financial_summary',
+        descriptionKey: 'menu.financial_summary_description',
+        href: '/reports/financial-summary',
+        icon: DollarSign,
+    },
+    {
+        labelKey: 'menu.billing_reports',
+        descriptionKey: 'menu.billing_reports_description',
+        href: '/reports/billing',
+        icon: Banknote,
     },
 ];
