@@ -516,6 +516,7 @@
             "read_failed": "无法读取 CSV 文件。",
             "required_field": "CSV 字段“:field”在第 :line 行不能为空。",
             "serial_not_found": "未找到第 :line 行的 CSV 序列号“:serial”。",
+            "serial_already_exists": "第 :line 行的序列号已存在于充值卡中。",
             "serial_not_pending": "第 :line 行的 CSV 序列号“:serial”已不再处于待处理状态。",
             "title": "CSV 导入失败",
             "too_many_cards": "CSV 中的卡片数量超过 :max 张。"
@@ -1438,6 +1439,7 @@
                 "read_failed": "无法读取 CSV 文件。",
                 "required_field": "第 :line 行的 CSV 字段“:field”为必填项。",
                 "serial_not_found": "未找到第 :line 行的 CSV 序列号“:serial”。",
+                "serial_already_exists": "第 :line 行的序列号已存在于充值卡中。",
                 "serial_not_pending": "第 :line 行的 CSV 序列号“:serial”已不再处于待处理状态。",
                 "title": "CSV 导入失败",
                 "too_many_cards": "CSV 中的卡片数量超过 :max 张。"
@@ -1929,6 +1931,7 @@
         "empty_batch_description": "生成批次后，可在此查看序列号和 PIN。",
         "empty_batch_title": "尚未生成卡片",
         "empty_table": "没有符合筛选条件的充值卡。",
+        "activated_at": "激活日期",
         "expires_at": "有效期",
         "expires_in_days": ":days 天",
         "from_date": "开始日期",
@@ -2040,7 +2043,8 @@
             "office_name_unique": "该网点名称已被使用。",
             "offices_required": "请先添加至少一个网点再生成卡。",
             "quantity_min": "数量至少为 1。",
-            "quantity_total": "一次最多生成 :max 张卡（数量 × 网点数）。"
+            "quantity_total": "一次最多生成 :max 张卡（数量 × 网点数）。",
+            "daily_limit": "每个网点、每种积分类别每天最多生成 :max 张卡。"
         },
         "view_customer": "查看客户",
         "void": "作废",

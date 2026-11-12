@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\BatchStatus;
 use App\Enums\TopUpCardStatus;
 use App\Models\Batch;
 use App\Models\Office;
@@ -9,6 +10,7 @@ use App\Support\CsvImportException;
 use App\Support\GeneratesTopUpCards;
 use App\Support\TopUpCardOffices;
 use App\Support\TopUpCardPin;
+use Carbon\Carbon;
 use DateTimeImmutable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -19,6 +21,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Throwable;
@@ -39,7 +42,8 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
         public readonly string $token,
         public readonly int $userId,
     ) {
-        $this->timeout = (int) config('horizon.top_up_cards.timeout', 300);
+        $retryAfter = (int) config('queue.connections.redis.retry_after', 600);
+        $this->timeout = max(1, min(540, $retryAfter - 60));
         $this->onQueue('top-up-cards');
     }
 
@@ -49,7 +53,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
     }
 
     /**
-     * @return array{rows: list<array{office: string, count_50: int, count_100: int, count_250: int, count_500: int, total_points: int, expires_at: string}>, total_rows: int, total_summaries: int}
+     * @return array{rows: list<array{office: string, count_50: int, count_100: int, count_250: int, count_500: int, total_points: int, generate_date: ?string, activated_at: string, expires_at: string}>, total_rows: int, total_summaries: int}
      */
     public static function previewCsv(string $path): array
     {
@@ -57,11 +61,14 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
     }
 
     /**
-     * @return array{rows: list<array{office: string, count_50: int, count_100: int, count_250: int, count_500: int, total_points: int, expires_at: string}>, total_rows: int, total_summaries: int}
+     * @return array{rows: list<array{office: string, count_50: int, count_100: int, count_250: int, count_500: int, total_points: int, generate_date: ?string, activated_at: string, expires_at: string}>, total_rows: int, total_summaries: int}
      */
     private function readCsvPreview(): array
     {
         $stream = $this->openCsvStream();
+        $activationDate = now();
+        $activatedAt = $activationDate->toDateString();
+        $activationExpiresAt = $activationDate->copy()->addYears(2)->toDateString();
         $totalRows = 0;
         $summaries = [];
         $seenSerials = [];
@@ -87,7 +94,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                 $seenPins[$pinHash] = true;
                 $totalRows++;
                 $officeCode = TopUpCardOffices::officeCodeFromSerialNo($card['serial_no']);
-                $summaryKey = ($officeCode ?? '') . ':' . $card['expires_at'];
+                $summaryKey = ($officeCode ?? '').':'.$card['generate_date'];
                 $summaries[$summaryKey] ??= [
                     'office_code' => $officeCode,
                     'count_50' => 0,
@@ -95,7 +102,9 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                     'count_250' => 0,
                     'count_500' => 0,
                     'total_points' => 0,
-                    'expires_at' => $card['expires_at'],
+                    'generate_date' => $card['generate_date'],
+                    'activated_at' => $activatedAt,
+                    'expires_at' => $activationExpiresAt,
                 ];
 
                 $countKey = match ($card['amount']) {
@@ -132,7 +141,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
         $officesByCode = Office::query()
             ->whereIn('cd', $officeCodes)
             ->get(['name', 'cd'])
-            ->keyBy(fn(Office $office): string => (string) $office->cd);
+            ->keyBy(fn (Office $office): string => (string) $office->cd);
         $rows = array_map(function (array $summary) use ($officesByCode): array {
             $officeCode = $summary['office_code'];
             $office = $officeCode === null ? null : $officesByCode->get($officeCode);
@@ -144,6 +153,8 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                 'count_250' => $summary['count_250'],
                 'count_500' => $summary['count_500'],
                 'total_points' => $summary['total_points'],
+                'generate_date' => $summary['generate_date'],
+                'activated_at' => $summary['activated_at'],
                 'expires_at' => $summary['expires_at'],
             ];
         }, array_values($summaries));
@@ -157,6 +168,11 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
 
     public function handle(): void
     {
+        $this->process();
+    }
+
+    private function process(): void
+    {
         $disk = Storage::disk('local');
         $cachedGeneration = Cache::get($this->generationKey());
         $cachedBatch = Cache::get($this->batchKey());
@@ -167,40 +183,31 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
             return;
         }
 
+        $activationDate = is_string($cachedGeneration['activated_at'] ?? null)
+            ? Carbon::parse($cachedGeneration['activated_at'])
+            : (is_string($cachedGeneration['activation_expires_at'] ?? null)
+                ? Carbon::parse($cachedGeneration['activation_expires_at'])->subYears(2)
+                : now());
+        $activatedAt = $activationDate->toDateString();
+        $activationExpiresAt = $activationDate->copy()->addYears(2)->toDateString();
+
         $stream = $this->openCsvStream();
         try {
             $totalCards = 0;
             $totalValue = 0;
             $amountBreakdown = [];
             $metadataItems = [];
-            $seenSerials = [];
-            $seenPins = [];
-            $firstExpiry = null;
             $chunkSize = max(1, (int) config('top_up_cards.chunk_size', 1000));
             $format = $this->readHeaders($stream);
 
             while (($row = fgetcsv($stream, 0, $format['delimiter'])) !== false) {
                 $line = $totalCards + 2;
                 $card = $this->parseRow($row, $line, $format);
-                $firstExpiry ??= $card['expires_at'];
-
-                if (isset($seenSerials[$card['serial_no']])) {
-                    throw new CsvImportException('csv.import_errors.duplicate_serial', ['line' => $line]);
-                }
-
-                $pinHash = TopUpCardPin::hash($card['pin']);
-
-                if (isset($seenPins[$pinHash])) {
-                    throw new CsvImportException('csv.import_errors.duplicate_pin', ['line' => $line]);
-                }
-
-                $seenSerials[$card['serial_no']] = true;
-                $seenPins[$pinHash] = true;
                 $amountBreakdown[$card['amount']] = ($amountBreakdown[$card['amount']] ?? 0) + 1;
                 $officeCode = TopUpCardOffices::officeCodeFromSerialNo($card['serial_no']);
 
                 if ($officeCode !== null) {
-                    $itemKey = $officeCode . ':' . $card['amount'];
+                    $itemKey = $officeCode.':'.$card['amount'];
                     $metadataItems[$itemKey] ??= [
                         'office_cd' => $officeCode,
                         'amount' => $card['amount'],
@@ -264,7 +271,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
             $format = $this->readHeaders($stream);
             $totalChunks = (int) ceil($totalCards / $chunkSize);
             $amounts = array_map(
-                static fn(int $amount, int $count): array => [
+                static fn (int $amount, int $count): array => [
                     'amount' => $amount,
                     'cards' => $count,
                     'value' => $amount * $count,
@@ -285,22 +292,21 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                     $totalCards,
                     $totalValue,
                     $totalChunks,
-                    $firstExpiry,
+                    $activatedAt,
+                    $activationExpiresAt,
                     $amounts,
                     $metadataItems,
                     $chunkSize,
                     $previewLimit,
                 ): void {
-                    $importBatch = Batch::query()
-                        ->where('metadata->generation_token', $this->token)
-                        ->latest('id')
-                        ->first();
+                    $batchId = (int) (Cache::get($this->batchKey())['batch_id'] ?? 0);
+                    $importBatch = $batchId > 0 ? Batch::query()->find($batchId) : null;
 
-                    if (!($importBatch instanceof Batch)) {
+                    if (! ($importBatch instanceof Batch)) {
                         $importBatch = Batch::query()->create([
                             'batch_no' => GeneratesTopUpCards::nextBatchNo(),
-                            'status' => \App\Enums\BatchStatus::Active,
-                            'expires_at' => $firstExpiry ?? now()->toDateString(),
+                            'status' => BatchStatus::Active,
+                            'expires_at' => $activationExpiresAt,
                         ]);
                     }
 
@@ -313,7 +319,9 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                             'total_value' => (string) $totalValue,
                             'total_chunks' => $totalChunks,
                             'completed_chunks' => 0,
-                            'expires_at' => $firstExpiry,
+                            'expires_at' => $activationExpiresAt,
+                            'activated_at' => $activatedAt,
+                            'activation_expires_at' => $activationExpiresAt,
                             'amounts' => $amounts,
                             'user_id' => $this->userId,
                             'source' => 'csv_import',
@@ -343,6 +351,8 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                                 $preview,
                                 $previewLimit,
                                 (int) $importBatch->id,
+                                $activatedAt,
+                                $activationExpiresAt,
                             );
                             $chunk = [];
                             $chunkIndex++;
@@ -356,6 +366,8 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                             $preview,
                             $previewLimit,
                             (int) $importBatch->id,
+                            $activatedAt,
+                            $activationExpiresAt,
                         );
                         $chunkIndex++;
                     }
@@ -365,9 +377,10 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                         ->update([
                             'total_value' => $totalValue,
                             'quantity' => $totalCards,
-                            'status' => \App\Enums\BatchStatus::Active,
-                            'expires_at' => $firstExpiry ?? now()->toDateString(),
+                            'status' => BatchStatus::Active,
+                            'expires_at' => $activationExpiresAt,
                             'metadata' => [
+                                'import_status' => 'completed',
                                 'total_cards' => $totalCards,
                                 'total_value' => (string) $totalValue,
                                 'items' => array_values($metadataItems),
@@ -377,13 +390,13 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                 });
             } catch (Throwable $exception) {
                 for ($chunkIndex = 0; $chunkIndex < $totalChunks; $chunkIndex++) {
-                    Cache::forget($this->generationKey() . ':chunk:' . $chunkIndex);
+                    Cache::forget($this->generationKey().':chunk:'.$chunkIndex);
                 }
 
                 throw $exception;
             }
 
-            if (!($importBatch instanceof Batch)) {
+            if (! ($importBatch instanceof Batch)) {
                 throw new RuntimeException('CSV import batch was not created.');
             }
 
@@ -396,7 +409,9 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                     'total_value' => (string) $totalValue,
                     'total_chunks' => $totalChunks,
                     'completed_chunks' => $totalChunks,
-                    'expires_at' => $firstExpiry,
+                    'expires_at' => $activationExpiresAt,
+                    'activated_at' => $activatedAt,
+                    'activation_expires_at' => $activationExpiresAt,
                     'amounts' => $amounts,
                     'user_id' => $this->userId,
                     'source' => 'csv_import',
@@ -422,13 +437,40 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
     {
         $generation = Cache::get($this->generationKey());
         $generation = is_array($generation) ? $generation : [];
+        $batchId = (int) (Cache::get($this->batchKey())['batch_id'] ?? 0);
+        $importBatch = $batchId > 0 ? Batch::query()->find($batchId) : null;
+
+        if (
+            $importBatch instanceof Batch &&
+            ($importBatch->metadata['import_status'] ?? null) === 'completed' &&
+            (int) DB::table('top_up_card')->where('batch_id', $importBatch->id)->count() ===
+                (int) ($importBatch->metadata['total_cards'] ?? -1)
+        ) {
+            $generation['status'] = 'completed';
+            $generation['completed_cards'] = (int) $importBatch->metadata['total_cards'];
+            $generation['completed_chunks'] = (int) ($generation['total_chunks'] ?? 0);
+            Cache::put($this->generationKey(), $generation, now()->addDay());
+            Cache::put($this->batchKey(), ['status' => 'completed', 'batch_id' => $importBatch->id], now()->addDay());
+            if (Cache::get('top_up_card_generation:active') === $this->token) {
+                Cache::forget('top_up_card_generation:active');
+            }
+            Storage::disk('local')->delete($this->path);
+
+            return;
+        }
+
         $generation['status'] = 'failed';
-        $generation['message'] =
-            $exception instanceof CsvImportException ? $exception->translationKey : 'top_up_cards.generation_failed';
+        $generation['message'] = $exception instanceof CsvImportException
+            ? $exception->translationKey
+            : 'top_up_cards.generation_failed';
         $generation['message_replace'] = $exception instanceof CsvImportException ? $exception->replace : [];
 
         Cache::put($this->generationKey(), $generation, now()->addDay());
         Cache::put($this->batchKey(), ['status' => 'failed'], now()->addDay());
+        for ($chunkIndex = 0; $chunkIndex < (int) ($generation['total_chunks'] ?? 0); $chunkIndex++) {
+            Cache::forget($this->generationKey().':chunk:'.$chunkIndex);
+        }
+
         if (Cache::get('top_up_card_generation:active') === $this->token) {
             Cache::forget('top_up_card_generation:active');
         }
@@ -440,10 +482,15 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
      */
     private function openCsvStream()
     {
-        $stream = fopen(Storage::disk('local')->path($this->path), 'rb');
+        $stream = Storage::disk('local')->readStream($this->path);
 
-        if (!is_resource($stream)) {
-            throw new RuntimeException('The uploaded top-up card CSV file could not be read.');
+        if (! is_resource($stream)) {
+            Log::warning('Unable to open uploaded top-up card CSV from local storage.', [
+                'path' => $this->path,
+                'exists' => Storage::disk('local')->exists($this->path),
+            ]);
+
+            throw new CsvImportException('csv.import_errors.read_failed');
         }
 
         $prefix = fread($stream, 3);
@@ -464,8 +511,8 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
     }
 
     /**
-     * @param resource $stream
-     * @return array{delimiter: string, indexes: array{serial_no: int, pin: int, amount: int, expires_at: int, status?: int}, headers: list<string>, columns: int}
+     * @param  resource  $stream
+     * @return array{delimiter: string, indexes: array{serial_no: int, pin: int, amount: int, generate_date: int, status?: int}, headers: list<string>, columns: int}
      */
     private function readHeaders($stream): array
     {
@@ -496,31 +543,41 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
             $header = str_replace([' ', '-'], '_', $header);
 
             return match ($header) {
-                'expire_at' => 'expires_at',
+                'serialnumber', 'serial_number' => 'serial_no',
+                'pin_code' => 'pin',
+                'pointvalue', 'point_value' => 'amount',
+                'generatedate' => 'generate_date',
                 default => $header,
             };
         }, $headers);
 
-        if (count($headers) < 4 || count($headers) > 5 || count(array_unique($headers)) !== count($headers)) {
+        $allowedHeaders = ['serial_no', 'pin', 'amount', 'generate_date', 'expires_at', 'status'];
+        $required = ['serial_no', 'pin', 'amount'];
+
+        if (
+            count($headers) < 4 ||
+            count($headers) > 5 ||
+            count(array_unique($headers)) !== count($headers) ||
+            array_diff($headers, $allowedHeaders) !== [] ||
+            (! in_array('generate_date', $headers, true) && ! in_array('expires_at', $headers, true))
+        ) {
             throw new CsvImportException('csv.import_errors.invalid_headers');
         }
 
         $indexes = array_flip($headers);
-        $required = ['serial_no', 'pin', 'amount', 'expires_at'];
 
         foreach ($required as $header) {
-            if (!array_key_exists($header, $indexes)) {
+            if (! array_key_exists($header, $indexes)) {
                 throw new CsvImportException('csv.import_errors.invalid_headers');
             }
         }
 
-        if (count($headers) === 5 && !array_key_exists('status', $indexes)) {
-            throw new CsvImportException('csv.import_errors.invalid_headers');
-        }
-
         return [
             'delimiter' => $delimiter,
-            'indexes' => array_intersect_key($indexes, array_flip([...$required, 'status'])),
+            'indexes' => array_intersect_key(
+                $indexes,
+                array_flip([...$required, 'generate_date', 'expires_at', 'status']),
+            ),
             'headers' => array_values($headers),
             'columns' => count($headers),
         ];
@@ -528,15 +585,22 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
 
     private function detectDelimiter(string $line): string
     {
-        $counts = [',' => substr_count($line, ','), ';' => substr_count($line, ';'), "\t" => substr_count($line, "\t")];
+        $counts = [
+            ',' => substr_count($line, ','),
+            ';' => substr_count($line, ';'),
+            "\t" => substr_count($line, "\t"),
+            '|' => substr_count($line, '|'),
+        ];
         arsort($counts);
 
-        return (string) array_key_first($counts);
+        $delimiter = (string) array_key_first($counts);
+
+        return $counts[$delimiter] > 0 ? $delimiter : ' ';
     }
 
     /**
-     * @param array<int, mixed> $row
-     * @return array{serial_no: string, pin: string, amount: int, expires_at: string}
+     * @param  array<int, mixed>  $row
+     * @return array{serial_no: string, pin: string, amount: int, generate_date: ?string}
      */
     private function parseRow(array $row, int $line, array $format): array
     {
@@ -553,9 +617,11 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
         }
 
         $serial = trim((string) $row[$format['indexes']['serial_no']]);
-        $pin = trim((string) $row[$format['indexes']['pin']]);
+        $pin = str_replace('-', '', trim((string) $row[$format['indexes']['pin']]));
         $amount = trim((string) $row[$format['indexes']['amount']]);
-        $expiresAt = trim((string) $row[$format['indexes']['expires_at']]);
+        $generateDate = isset($format['indexes']['generate_date'])
+            ? trim((string) $row[$format['indexes']['generate_date']])
+            : null;
 
         if (preg_match('/^\d{16}$/', $serial) !== 1) {
             throw new CsvImportException('csv.import_errors.invalid_serial_no', ['line' => $line]);
@@ -565,23 +631,14 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
             throw new CsvImportException('csv.import_errors.invalid_pin', ['line' => $line]);
         }
 
-        $officeCode = TopUpCardOffices::officeCodeFromSerialNo($serial);
-
-        if ($officeCode === null || !$this->hasOfficeCode($officeCode)) {
-            throw new CsvImportException('csv.import_errors.invalid_office_code', [
-                'line' => $line,
-                'office_code' => $officeCode ?? '',
-            ]);
-        }
-
         $status = isset($format['indexes']['status']) ? trim((string) $row[$format['indexes']['status']]) : null;
 
         if ($status !== null && $status !== TopUpCardStatus::Pending->value) {
             throw new CsvImportException('csv.import_errors.invalid_row', ['line' => $line]);
         }
 
-        $parsedExpiry = DateTimeImmutable::createFromFormat('!Y-m-d', $expiresAt);
-
+        $dateToValidate = $generateDate ?? trim((string) $row[$format['indexes']['expires_at']]);
+        $parsedDate = DateTimeImmutable::createFromFormat('!Y-m-d', $dateToValidate);
         $dateErrors = DateTimeImmutable::getLastErrors();
 
         if (
@@ -589,18 +646,27 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
             filter_var($amount, FILTER_VALIDATE_INT) === false ||
             (int) $amount < 1 ||
             (int) $amount > 1000000 ||
-            $parsedExpiry === false ||
-            $parsedExpiry->format('Y-m-d') !== $expiresAt ||
+            $parsedDate === false ||
+            $parsedDate->format('Y-m-d') !== $dateToValidate ||
             ($dateErrors !== false && ($dateErrors['warning_count'] > 0 || $dateErrors['error_count'] > 0))
         ) {
             throw new CsvImportException('csv.import_errors.invalid_row', ['line' => $line]);
+        }
+
+        $officeCode = TopUpCardOffices::officeCodeFromSerialNo($serial);
+
+        if ($officeCode === null || ! $this->hasOfficeCode($officeCode)) {
+            throw new CsvImportException('csv.import_errors.invalid_office_code', [
+                'line' => $line,
+                'office_code' => $officeCode ?? '',
+            ]);
         }
 
         return [
             'serial_no' => $serial,
             'pin' => $pin,
             'amount' => (int) $amount,
-            'expires_at' => $expiresAt,
+            'generate_date' => $generateDate,
         ];
     }
 
@@ -609,7 +675,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
         if ($this->validOfficeCodes === null) {
             $this->validOfficeCodes = Office::query()
                 ->pluck('cd')
-                ->mapWithKeys(static fn($code): array => [(string) $code => true])
+                ->mapWithKeys(static fn ($code): array => [(string) $code => true])
                 ->all();
         }
 
@@ -617,30 +683,38 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
     }
 
     /**
-     * @param list<array{serial_no: string, pin: string, amount: int, expires_at: string}> $chunk
+     * @param  list<array{serial_no: string, pin: string, amount: int, generate_date: ?string}>  $chunk
      */
     private function assertChunkDoesNotExist(array $chunk, int $line, int $chunkIndex): void
     {
         $serials = array_column($chunk, 'serial_no');
-        $pinHashes = array_map(static fn(array $row): string => TopUpCardPin::hash($row['pin']), $chunk);
+        $pinHashes = array_map(static fn (array $row): string => TopUpCardPin::hash($row['pin']), $chunk);
         $existing = DB::table('top_up_card')
             ->whereIn('serial_no', $serials)
             ->orWhereIn('pin', $pinHashes)
-            ->get(['serial_no', 'pin']);
+            ->get(['serial_no', 'pin', 'batch_id']);
 
         if ($existing->isEmpty()) {
             return;
         }
 
         $existingBySerial = $existing->keyBy('serial_no');
-        $cached = Cache::get($this->generationKey() . ':chunk:' . $chunkIndex);
-        $recovering = in_array($cached['status'] ?? null, ['completed', 'inserting'], true);
+        $cached = Cache::get($this->generationKey().':chunk:'.$chunkIndex);
+        $generation = Cache::get($this->generationKey(), []);
+        $batchId = (int) ($generation['batch_id'] ?? 0);
+        $recovering = $batchId > 0
+            && in_array($cached['status'] ?? null, ['completed', 'inserting'], true)
+            && count($existingBySerial) === count($chunk);
 
-        if ($recovering && count($existingBySerial) === count($chunk)) {
+        if ($recovering) {
             foreach ($chunk as $row) {
                 $stored = $existingBySerial->get($row['serial_no']);
 
-                if ($stored === null || $stored->pin !== TopUpCardPin::hash($row['pin'])) {
+                if (
+                    $stored === null ||
+                    (int) $stored->batch_id !== $batchId ||
+                    $stored->pin !== TopUpCardPin::hash($row['pin'])
+                ) {
                     $recovering = false;
                     break;
                 }
@@ -655,21 +729,29 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
     }
 
     /**
-     * @param list<array{serial_no: string, pin: string, amount: int, expires_at: string}> $chunk
-     * @param list<array<string, mixed>> $preview
+     * @param  list<array{serial_no: string, pin: string, amount: int, generate_date: ?string}>  $chunk
+     * @param  list<array<string, mixed>>  $preview
      * @return list<array<string, mixed>>
      */
-    private function insertChunk(array $chunk, int $chunkIndex, array $preview, int $previewLimit, int $batchId): array
-    {
-        $chunkKey = $this->generationKey() . ':chunk:' . $chunkIndex;
+    private function insertChunk(
+        array $chunk,
+        int $chunkIndex,
+        array $preview,
+        int $previewLimit,
+        int $batchId,
+        string $activatedAt,
+        string $activationExpiresAt,
+    ): array {
+        $chunkKey = $this->generationKey().':chunk:'.$chunkIndex;
         $cached = Cache::get($chunkKey);
         $cards = array_map(
-            static fn(array $row): array => [
+            fn (array $row): array => [
                 'id' => null,
                 'serial_no' => $row['serial_no'],
                 'pin' => $row['pin'],
                 'amount' => $row['amount'],
-                'expires_at' => $row['expires_at'],
+                'activated_at' => $activatedAt,
+                'expires_at' => $activationExpiresAt,
                 'redeemed_at' => null,
                 'redeemed_by' => null,
                 'status' => TopUpCardStatus::Active->value,
@@ -677,33 +759,33 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
             $chunk,
         );
 
-        if (($cached['status'] ?? null) === 'completed') {
-            return array_slice([...$preview, ...$cached['cards'] ?? []], 0, $previewLimit);
-        }
-
-        $pinHashes = array_map(static fn(array $row): string => TopUpCardPin::hash($row['pin']), $chunk);
+        $pinHashes = array_map(static fn (array $row): string => TopUpCardPin::hash($row['pin']), $chunk);
         $serials = array_column($chunk, 'serial_no');
         $existing = DB::table('top_up_card')
             ->whereIn('serial_no', $serials)
             ->orWhereIn('pin', $pinHashes)
-            ->get(['serial_no', 'pin']);
+            ->get(['serial_no', 'pin', 'batch_id']);
         $existingBySerial = $existing->keyBy('serial_no');
 
-        $recovering = ($cached['status'] ?? null) === 'inserting';
+        $recovering = in_array($cached['status'] ?? null, ['completed', 'inserting'], true);
         $allRowsAlreadyInserted = count($existingBySerial) === count($chunk);
 
         if ($allRowsAlreadyInserted) {
             foreach ($chunk as $row) {
                 $stored = $existingBySerial->get($row['serial_no']);
 
-                if ($stored === null || $stored->pin !== TopUpCardPin::hash($row['pin'])) {
+                if (
+                    $stored === null ||
+                    (int) $stored->batch_id !== $batchId ||
+                    $stored->pin !== TopUpCardPin::hash($row['pin'])
+                ) {
                     $allRowsAlreadyInserted = false;
                     break;
                 }
             }
         }
 
-        if ($existing->isNotEmpty() && !($recovering && $allRowsAlreadyInserted)) {
+        if ($existing->isNotEmpty() && ! ($recovering && $allRowsAlreadyInserted)) {
             $this->throwForExistingDuplicate(
                 $chunk,
                 $chunkIndex * max(1, (int) config('top_up_cards.chunk_size', 1000)) + 2,
@@ -713,7 +795,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
 
         Cache::put($chunkKey, ['status' => 'inserting', 'cards' => $cards], now()->addDay());
 
-        if (!$allRowsAlreadyInserted) {
+        if (! $allRowsAlreadyInserted) {
             if ($batchId < 1) {
                 throw new RuntimeException('CSV import batch_id could not be resolved before inserting top-up cards.');
             }
@@ -721,11 +803,13 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
             $now = now();
             $officeIdsBySerial = TopUpCardOffices::resolveIdsBySerialNumbers(array_column($chunk, 'serial_no'));
             $insertRows = array_map(
-                static fn(array $row): array => [
+                fn (array $row): array => [
                     'serial_no' => $row['serial_no'],
                     'pin' => TopUpCardPin::hash($row['pin']),
                     'amount' => $row['amount'],
-                    'expires_at' => $row['expires_at'],
+                    'generate_date' => $row['generate_date'] ?? $activatedAt,
+                    'activated_at' => $activatedAt,
+                    'expires_at' => $activationExpiresAt,
                     'status' => TopUpCardStatus::Active->value,
                     'redeemed_at' => null,
                     'redeemed_by' => null,
@@ -739,7 +823,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
             );
 
             try {
-                DB::transaction(static fn() => DB::table('top_up_card')->insert($insertRows));
+                DB::transaction(static fn () => DB::table('top_up_card')->insert($insertRows));
             } catch (UniqueConstraintViolationException $exception) {
                 $message = strtolower($exception->getMessage());
                 $translationKey = str_contains($message, 'pin')
@@ -766,7 +850,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
     }
 
     /**
-     * @param list<array{serial_no: string, pin: string, amount: int, expires_at: string}> $chunk
+     * @param  list<array{serial_no: string, pin: string, amount: int, generate_date: ?string}>  $chunk
      */
     private function throwForExistingDuplicate(array $chunk, int $line, Collection $existing): void
     {
@@ -775,7 +859,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
 
         foreach ($chunk as $index => $row) {
             if ($existingBySerial->has($row['serial_no'])) {
-                throw new CsvImportException('csv.import_errors.duplicate_serial', ['line' => $line + $index]);
+                throw new CsvImportException('csv.import_errors.serial_already_exists', ['line' => $line + $index]);
             }
 
             if ($existingByPin->has(TopUpCardPin::hash($row['pin']))) {
@@ -788,11 +872,11 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
 
     private function generationKey(): string
     {
-        return 'top_up_card_generation:' . $this->token;
+        return 'top_up_card_generation:'.$this->token;
     }
 
     private function batchKey(): string
     {
-        return $this->generationKey() . ':batch';
+        return $this->generationKey().':batch';
     }
 }

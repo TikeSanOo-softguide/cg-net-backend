@@ -17,7 +17,7 @@ final class TopUpCard
     /**
      * @var list<string>
      */
-    private const ExportHeaders = ['serial_no', 'pin', 'amount', 'expires_at'];
+    private const ExportHeaders = ['SerialNumber', 'PIN_Code', 'PointValue', 'GenerateDate'];
 
     /**
      * @var list<string>
@@ -34,9 +34,9 @@ final class TopUpCard
             array_map(
                 fn(array $card): array => [
                     $card['serial_no'] ?? '',
-                    $card['pin'] ?? '',
+                    self::formatPin($card['pin'] ?? ''),
                     self::formatAmount($card['amount'] ?? 0),
-                    $card['expires_at'] ?? '',
+                    $card['generate_date'] ?? '',
                 ],
                 $cards,
             ),
@@ -112,12 +112,21 @@ final class TopUpCard
             }
 
             $batchIds = $cards->pluck('batch_id')->filter()->unique()->values();
+            $activationDate = now();
+            $expiresAt = $activationDate->copy()->addYears(2)->toDateString();
 
             TopUpCardModel::query()
                 ->whereIn('id', $cards->modelKeys())
                 ->update([
                     'status' => TopUpCardStatus::Active,
+                    'activated_at' => $activationDate->toDateString(),
+                    'expires_at' => $expiresAt,
+                    'updated_at' => $activationDate,
                 ]);
+
+            DB::table('batches')
+                ->whereIn('id', $batchIds)
+                ->update(['expires_at' => $expiresAt, 'updated_at' => $activationDate]);
 
             return (int) $batchIds->first();
         });
@@ -129,5 +138,12 @@ final class TopUpCard
         $numericAmount = preg_replace('/\.0+$/', '', $numericAmount);
 
         return preg_replace('/(\.\d*?)0+$/', '$1', $numericAmount) ?? $numericAmount;
+    }
+
+    private static function formatPin(mixed $pin): string
+    {
+        $digits = preg_replace('/\D/', '', (string) $pin) ?? '';
+
+        return implode('-', str_split($digits, 4));
     }
 }

@@ -16,6 +16,7 @@ import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { Spinner } from '@/components/ui/spinner';
 import type { Paginated } from '@/components/Pagination';
+import { toast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { TopUpCardImportTable } from '@/components/top-up-cards/TopUpCardImportTable';
 import type { TopUpCardCsvPreview } from '@/components/top-up-cards/TopUpCardImportDialog';
@@ -111,7 +112,17 @@ export default function CardImportPage({ batchPage, batches, importProgress, fil
     useEffect(() => {
         const failedAfterProcessing =
             previousImportStatus.current === 'processing' && importProgress?.status === 'failed';
+        const completedAfterProcessing =
+            previousImportStatus.current === 'processing' && importProgress?.status === 'completed';
         previousImportStatus.current = importProgress?.status;
+
+        if (completedAfterProcessing) {
+            toast({
+                variant: 'success',
+                title: t('toast.success'),
+                description: t('top_up_cards.imported').replace(':count', String(importProgress.total_cards)),
+            });
+        }
 
         if (failedAfterProcessing && importProgress.message) {
             setImportError({
@@ -119,7 +130,7 @@ export default function CardImportPage({ batchPage, batches, importProgress, fil
                 replace: importProgress.message_replace,
             });
         }
-    }, [importProgress?.status, importProgress?.message]);
+    }, [importProgress?.status, importProgress?.message, importProgress?.total_cards, t]);
 
     useEffect(() => {
         if (importProgress?.status !== 'processing') {

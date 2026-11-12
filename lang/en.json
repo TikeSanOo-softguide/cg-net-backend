@@ -516,6 +516,7 @@
             "read_failed": "The CSV file could not be read.",
             "required_field": "The CSV field ':field' is required at line :line.",
             "serial_not_found": "The CSV serial number ':serial' at line :line was not found.",
+            "serial_already_exists": "The serial number on line :line already exists in top-up cards.",
             "serial_not_pending": "The CSV serial number ':serial' at line :line is no longer pending.",
             "title": "CSV import failed",
             "too_many_cards": "The CSV contains more than :max cards."
@@ -1438,6 +1439,7 @@
                 "read_failed": "Unable to read the CSV file.",
                 "required_field": "The CSV field \":field\" on line :line is required.",
                 "serial_not_found": "The CSV serial number ':serial' at line :line was not found.",
+                "serial_already_exists": "The serial number on line :line already exists in top-up cards.",
                 "serial_not_pending": "The CSV serial number ':serial' at line :line is no longer pending.",
                 "title": "CSV import failed",
                 "too_many_cards": "The CSV contains more than :max cards."
@@ -1929,6 +1931,7 @@
         "empty_batch_description": "Generate a batch to see printable cards with serial numbers and PINs.",
         "empty_batch_title": "No cards generated yet",
         "empty_table": "No top-up cards match these filters.",
+        "activated_at": "Activated at",
         "expires_at": "Expiry date",
         "expires_in_days": ":days days",
         "from_date": "From Date",
@@ -2040,7 +2043,8 @@
             "office_name_unique": "This office name is already in use.",
             "offices_required": "Add at least one office before generating cards.",
             "quantity_min": "Quantity must be at least 1.",
-            "quantity_total": "You can generate at most :max cards at once (quantity × offices)."
+            "quantity_total": "You can generate at most :max cards at once (quantity × offices).",
+            "daily_limit": "You can generate at most :max cards per point category, per office, per day."
         },
         "view_customer": "View customer",
         "void": "Void",

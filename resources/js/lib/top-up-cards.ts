@@ -8,6 +8,7 @@ export type TopUpCardRow = {
     pin?: string;
     amount: number;
     status: string;
+    activated_at: string | null;
     expires_at: string | null;
     redeemed_at: string | null;
     redeemed_by_id?: number | null;

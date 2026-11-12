@@ -17,6 +17,8 @@ use LogicException;
         'serial_no',
         'pin',
         'amount',
+        'generate_date',
+        'activated_at',
         'expires_at',
         'redeemed_at',
         'redeemed_by',
@@ -48,6 +50,8 @@ class TopUpCard extends Model
     {
         return [
             'expires_at' => 'date',
+            'generate_date' => 'date',
+            'activated_at' => 'date',
             'redeemed_at' => 'datetime',
             'status' => TopUpCardStatus::class,
         ];

@@ -79,7 +79,11 @@ class TopUpCardManagementTest extends TestCase
         $this->actingAs($actor, 'web')
             ->get('/top-up-cards/batch')
             ->assertOk()
-            ->assertInertia(fn(Assert $page) => $page->component('TopUpCards/Generate'));
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->component('TopUpCards/Generate')
+                    ->where('amounts', [50, 100, 150, 500]),
+            );
 
         $this->actingAs($actor, 'web')
             ->from('/top-up-cards/batch')
@@ -97,20 +101,8 @@ class TopUpCardManagementTest extends TestCase
             $payload['job']->handle();
         }
 
-        $cards = TopUpCard::query()->get();
-
-        $this->assertCount(7, $cards);
-        $this->assertSame(5, TopUpCard::query()->where('amount', 3000)->count());
-        $this->assertSame(2, TopUpCard::query()->where('amount', 10000)->count());
-        $this->assertCount(7, $cards->pluck('serial_no')->unique());
-        $this->assertTrue($cards->every(fn(TopUpCard $card) => ctype_digit($card->serial_no)));
-        $this->assertTrue($cards->every(fn(TopUpCard $card) => $card->status === TopUpCardStatus::Pending));
-        $this->assertTrue(
-            $cards->every(function (TopUpCard $card): bool {
-                return strlen((string) $card->getAttributes()['pin']) === 64 &&
-                    ctype_xdigit((string) $card->getAttributes()['pin']);
-            }),
-        );
+        $this->assertDatabaseCount('top_up_card', 0);
+        $this->assertDatabaseCount('batches', 0);
 
         // Activity is recorded by the batch finally() callback after jobs finish,
         // not when the generate request is accepted.
@@ -134,6 +126,27 @@ class TopUpCardManagementTest extends TestCase
             'event' => 'succeeded',
             'causer_id' => $actor->id,
         ]);
+
+        $csvResponse = $this->actingAs($actor, 'web')->get('/top-up-cards/export')->assertOk();
+        $csv = $csvResponse->streamedContent();
+
+        $this->actingAs($actor, 'web')
+            ->post('/top-up-cards/cards/import', [
+                'file' => UploadedFile::fake()->createWithContent('generated.csv', $csv),
+            ])
+            ->assertRedirect('/top-up-cards/card-import');
+
+        Queue::assertPushed(ImportGeneratedTopUpCardsJob::class, 1);
+        Queue::pushedJobs()[ImportGeneratedTopUpCardsJob::class][0]['job']->handle();
+
+        $cards = TopUpCard::query()->get();
+        $this->assertCount(7, $cards);
+        $this->assertSame(5, TopUpCard::query()->where('amount', 3000)->count());
+        $this->assertSame(2, TopUpCard::query()->where('amount', 10000)->count());
+        $this->assertTrue(
+            $cards->every(fn(TopUpCard $card): bool => $card->generate_date !== null && $card->activated_at !== null),
+        );
+        $this->assertSame(1, Batch::query()->count());
     }
 
     public function test_admins_can_import_csv_with_a_single_data_row(): void
@@ -416,6 +429,40 @@ class TopUpCardManagementTest extends TestCase
             );
     }
 
+    public function test_newly_created_office_is_immediately_available_for_generation(): void
+    {
+        $actor = Admin::factory()->create();
+        $actor->assignRole(AppPermissions::SuperAdmin);
+
+        $existingOffice = Office::query()->create([
+            'name' => 'Existing Office',
+            'address' => 'Main Street',
+            'cd' => '11',
+        ]);
+
+        $this->actingAs($actor, 'web')
+            ->post('/top-up-cards/offices', [
+                'name' => 'New Office',
+                'address' => 'Second Street',
+                'cd' => '22',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $newOffice = Office::query()->where('cd', '22')->firstOrFail();
+
+        $this->actingAs($actor, 'web')
+            ->get('/top-up-cards/batch')
+            ->assertOk()
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->component('TopUpCards/Generate')
+                    ->where('offices', [
+                        ['id' => $existingOffice->id, 'name' => 'Existing Office', 'code' => '11'],
+                        ['id' => $newOffice->id, 'name' => 'New Office', 'code' => '22'],
+                    ]),
+            );
+    }
+
     public function test_admins_can_void_a_valid_card(): void
     {
         $actor = Admin::factory()->create();
@@ -452,8 +499,8 @@ class TopUpCardManagementTest extends TestCase
         $this->actingAs($actor, 'web')
             ->from('/top-up-cards/batch')
             ->post('/top-up-cards/batch', [
-                'amounts' => [['value' => 1000, 'quantity' => 1]],
-                'expires_at' => now()->addDays(30)->toDateString(),
+                'amounts' => [['value' => 50, 'quantity' => 1]],
+                'expires_at' => '2028-10-23',
             ])
             ->assertSessionHasNoErrors()
             ->assertSessionMissing('error')
@@ -468,8 +515,15 @@ class TopUpCardManagementTest extends TestCase
             ->assertHeader('content-type', 'text/csv; charset=UTF-8');
 
         $csvLines = array_values(array_filter(preg_split('/\r\n|\n|\r/', trim($response->streamedContent())) ?: []));
-        $this->assertSame(['serial_no', 'pin', 'amount', 'expires_at'], str_getcsv($csvLines[0]));
-        $this->assertCount(4, str_getcsv($csvLines[1]));
+        $this->assertSame(
+            ['SerialNumber', 'PIN_Code', 'PointValue', 'GenerateDate'],
+            str_getcsv($csvLines[0]),
+        );
+        $csvRow = str_getcsv($csvLines[1]);
+        $this->assertCount(4, $csvRow);
+        $this->assertMatchesRegularExpression('/^\d{4}-\d{4}-\d{4}-\d{4}$/', $csvRow[1]);
+        $this->assertSame('50', $csvRow[2]);
+        $this->assertSame(now()->toDateString(), $csvRow[3]);
         $this->assertStringNotContainsString('*', $csvLines[0]);
     }
 
@@ -571,7 +625,8 @@ class TopUpCardManagementTest extends TestCase
             $job->handle();
             $this->fail('An import must reject a serial number that already exists.');
         } catch (CsvImportException $exception) {
-            $this->assertSame('csv.import_errors.duplicate_serial', $exception->translationKey);
+            $this->assertSame('csv.import_errors.serial_already_exists', $exception->translationKey);
+            $this->assertSame(['line' => 2], $exception->replace);
             $job->failed($exception);
         }
 
@@ -631,6 +686,7 @@ class TopUpCardManagementTest extends TestCase
                     ->where('cards.data.0.id', $matchingCard->id)
                     ->where('cards.data.0.office.name', 'Central Office')
                     ->where('cards.data.0.office.code', '31')
+                    ->where('cards.per_page', 100)
                     ->where('offices.0.code', '31')
                     ->where('filters.office', (string) $office->id),
             );
