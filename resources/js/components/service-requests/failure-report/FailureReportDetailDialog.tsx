@@ -61,9 +61,7 @@ export function FailureReportDetailDialog({
 }) {
     const { t } = useTranslation();
     const nextStatus =
-        request?.status === REQUEST_STATUS.UNDER_REVIEW
-            ? REQUEST_STATUS.APPROVED
-            : REQUEST_STATUS.UNDER_REVIEW;
+        request?.status === REQUEST_STATUS.UNDER_REVIEW ? REQUEST_STATUS.APPROVED : REQUEST_STATUS.UNDER_REVIEW;
     const { data, setData, patch } = useForm({ status: nextStatus });
     const nextButton = request?.status === REQUEST_STATUS.UNDER_REVIEW ? 'approve' : 'review';
     useEffect(() => {
@@ -91,8 +89,8 @@ export function FailureReportDetailDialog({
         <FormDialog
             open={open}
             onOpenChange={onOpenChange}
-            title={t('relocation_requests.card_title')}
-            description={t('menu.relocation_requests_description')}
+            title={t('failure_reports.card_title')}
+            description={t('menu.failure_reports_description')}
             icon={NavigationIcon}
             size="2xl"
         >
