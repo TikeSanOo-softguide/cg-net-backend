@@ -12,6 +12,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -111,6 +112,74 @@ class TopUpCardCsvImportTest extends TestCase
         $this->assertSame(4, $preview['rows'][0]['total_cards']);
     }
 
+    public function test_preview_limits_stored_summary_rows_but_counts_all_summaries(): void
+    {
+        config([
+            'top_up_cards.chunk_size' => 1,
+            'top_up_cards.preview_limit' => 1,
+        ]);
+        Storage::fake('local');
+        $this->makeOffice('Office 31', 'Main Street', '31');
+        $file = UploadedFile::fake()->createWithContent(
+            'cards.csv',
+            implode("\n", [
+                'serial_no,pin,amount,generate_date',
+                '2609111128316006,1234567890123456,1000,2026-11-03',
+                '2609111128316007,2234567890123456,1000,2026-11-03',
+                '2609111128316008,3234567890123456,1000,2026-11-04',
+            ]),
+        );
+        $path = $file->store('imports/top-up-cards/validation', 'local');
+
+        $preview = ImportGeneratedTopUpCardsJob::previewCsv($path);
+
+        $this->assertCount(1, $preview['rows']);
+        $this->assertSame(2, $preview['total_summaries']);
+        $this->assertSame(2, $preview['rows'][0]['total_cards']);
+    }
+
+    public function test_csv_import_handles_100000_cards_with_compact_encrypted_chunk_cache(): void
+    {
+        config([
+            'top_up_cards.chunk_size' => 500,
+            'top_up_cards.preview_limit' => 100,
+            'top_up_cards.max_cards' => 100000,
+        ]);
+        Storage::fake('local');
+        $this->makeOffice('Office 31', 'Main Street', '31');
+        $path = 'imports/top-up-cards/large.csv';
+        Storage::disk('local')->put($path, "serial_no,pin,amount,generate_date\n");
+        $stream = fopen(Storage::disk('local')->path($path), 'ab');
+        $this->assertIsResource($stream);
+
+        for ($index = 1; $index <= 100000; $index++) {
+            $serial = str_pad((string) $index, 10, '0', STR_PAD_LEFT).'31'.'0001';
+            $pin = str_pad((string) $index, 16, '0', STR_PAD_LEFT);
+            fwrite($stream, "{$serial},{$pin},{$index},2026-11-03\n");
+        }
+
+        fclose($stream);
+
+        (new ImportGeneratedTopUpCardsJob($path, 'large-import', 0))->handle();
+
+        $generation = Cache::get('top_up_card_generation:large-import');
+        $chunk = Cache::get('top_up_card_generation:large-import:chunk:0');
+
+        $this->assertSame('completed', $generation['status']);
+        $this->assertSame(100000, $generation['completed_cards']);
+        $this->assertSame(100000, TopUpCard::query()->count());
+        $this->assertArrayNotHasKey('cards', $generation);
+        $this->assertArrayNotHasKey('cards', $chunk);
+        $this->assertStringNotContainsString('0000000000000001', $chunk['export_payload']);
+        $this->assertCount(
+            100,
+            json_decode(Crypt::decryptString($generation['preview_payload']), true, 512, JSON_THROW_ON_ERROR),
+        );
+        $exportRows = json_decode(Crypt::decryptString($chunk['export_payload']), true, 512, JSON_THROW_ON_ERROR);
+        $this->assertCount(500, $exportRows);
+        $this->assertSame('0000000000000001', $exportRows[0][1]);
+    }
+
     public function test_csv_import_keeps_cards_pending_until_batch_activation(): void
     {
         $this->travelTo(now()->setDate(2026, 11, 3)->startOfDay());
@@ -170,6 +239,8 @@ class TopUpCardCsvImportTest extends TestCase
             $this->assertSame(0, Batch::query()->count());
             $this->assertSame(0, Cache::get('top_up_card_generation:atomic-import')['completed_cards']);
             $this->assertSame(0, Cache::get('top_up_card_generation:atomic-import')['completed_chunks']);
+            $this->assertNull(Cache::get('top_up_card_generation:atomic-import:chunk:0'));
+            $this->assertNull(Cache::get('top_up_card_generation:atomic-import:chunk:1'));
         }
     }
 

@@ -150,6 +150,34 @@ class TopUpCardManagementTest extends TestCase
         $this->assertSame(1, Batch::query()->count());
     }
 
+    public function test_csv_import_cache_remains_exportable_after_job_completion(): void
+    {
+        $actor = Admin::factory()->create();
+        $actor->assignRole(AppPermissions::SuperAdmin);
+        $office = Office::factory()->create();
+        Storage::fake('local');
+        $serial = '2609111128'.$office->cd.'1001';
+        $pin = '1234567890123456';
+        $path = UploadedFile::fake()->createWithContent(
+            'cards.csv',
+            "serial_no,pin,amount,generate_date\n{$serial},{$pin},1000,2026-11-03\n",
+        )->store('imports/top-up-cards', 'local');
+        $token = 'encrypted-import-export';
+
+        (new ImportGeneratedTopUpCardsJob($path, $token, $actor->id))->handle();
+
+        $response = $this->actingAs($actor, 'web')
+            ->withSession(['top_up_card_generation_token' => $token])
+            ->get('/top-up-cards/export')
+            ->assertOk();
+        $csv = $response->streamedContent();
+
+        $this->assertStringContainsString('SerialNumber,PIN_Code,PointValue,GenerateDate', $csv);
+        $this->assertStringContainsString($serial, $csv);
+        $this->assertStringContainsString('1234-5678-9012-3456', $csv);
+        $this->assertStringContainsString('2026-11-03', $csv);
+    }
+
     public function test_admins_can_import_csv_with_a_single_data_row(): void
     {
         $actor = Admin::factory()->create();
@@ -741,14 +769,14 @@ class TopUpCardManagementTest extends TestCase
             );
     }
 
-    public function test_active_batch_can_be_voided(): void
+    public function test_active_batch_can_be_blocked(): void
     {
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
         $batch = Batch::factory()->create(['status' => 'active']);
 
         $this->actingAs($actor, 'web')
-            ->patch('/top-up-cards/batches/'.$batch->id.'/void')
+            ->patch('/top-up-cards/batches/'.$batch->id.'/block')
             ->assertRedirect();
 
         $this->assertDatabaseHas('batches', [
@@ -758,13 +786,13 @@ class TopUpCardManagementTest extends TestCase
         $this->assertDatabaseHas('activity_log', [
             'log_name' => 'top_up_cards',
             'description' => 'top_up_cards_batch_blocked',
-            'event' => 'voided',
+            'event' => 'status_changed',
             'subject_id' => $batch->id,
             'causer_id' => $actor->id,
         ]);
 
         $this->actingAs($actor, 'web')
-            ->patch('/top-up-cards/batches/'.$batch->id.'/void')
+            ->patch('/top-up-cards/batches/'.$batch->id.'/block')
             ->assertRedirect();
     }
 
@@ -887,9 +915,14 @@ class TopUpCardManagementTest extends TestCase
             'metadata' => ['import_status' => 'completed'],
         ]);
         $generatedBatch = Batch::factory()->create(['batch_no' => '202611120002']);
-        TopUpCard::factory()->create(['batch_id' => $olderImport->id]);
-        $latestImportedCard = TopUpCard::factory()->create(['batch_id' => $latestImport->id]);
-        TopUpCard::factory()->create(['batch_id' => $generatedBatch->id]);
+        $office = Office::factory()->create();
+        TopUpCard::factory()->create(['batch_id' => $olderImport->id, 'office_id' => $office->id]);
+        TopUpCard::factory()->create(['batch_id' => $latestImport->id, 'office_id' => $office->id]);
+        TopUpCard::factory()->create(['batch_id' => $generatedBatch->id, 'office_id' => $office->id]);
+        TopUpCard::factory()->count(101)->create([
+            'batch_id' => $latestImport->id,
+            'office_id' => $office->id,
+        ]);
 
         $this->actingAs($actor, 'web')
             ->get('/top-up-cards/card-history')
@@ -898,8 +931,16 @@ class TopUpCardManagementTest extends TestCase
                 fn (Assert $page) => $page
                     ->component('TopUpCards/CardHistory')
                     ->where('filters.batch', (string) $latestImport->id)
-                    ->has('cards.data', 1)
-                    ->where('cards.data.0.id', $latestImportedCard->id),
+                    ->has('cards.data', 100)
+                    ->where('cards.total', 102)
+                    ->where('cards.data.0.batch_no', '202611120001')
+                    ->where(
+                        'cards.links',
+                        fn ($links) => collect($links)->contains(
+                            fn ($link) => str_contains((string) ($link['url'] ?? ''), 'batch='.$latestImport->id)
+                                && str_contains((string) ($link['url'] ?? ''), 'page=2'),
+                        ),
+                    ),
             );
 
         $this->actingAs($actor, 'web')
@@ -909,7 +950,26 @@ class TopUpCardManagementTest extends TestCase
                 fn (Assert $page) => $page
                     ->component('TopUpCards/CardHistory')
                     ->where('filters.batch', '')
-                    ->has('cards.data', 3),
+                    ->has('cards.data', 100)
+                    ->where(
+                        'cards.links',
+                        fn ($links) => collect($links)->contains(
+                            fn ($link) => str_contains((string) ($link['url'] ?? ''), 'batch=all')
+                                && str_contains((string) ($link['url'] ?? ''), 'page=2'),
+                        ),
+                    ),
+            );
+
+        $this->actingAs($actor, 'web')
+            ->get('/top-up-cards/card-history?batch=all&page=2')
+            ->assertOk()
+            ->assertInertia(
+                fn (Assert $page) => $page
+                    ->component('TopUpCards/CardHistory')
+                    ->where('filters.batch', '')
+                    ->where('cards.current_page', 2)
+                    ->where('cards.total', 104)
+                    ->has('cards.data', 4),
             );
     }
 

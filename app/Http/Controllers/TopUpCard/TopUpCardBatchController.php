@@ -23,11 +23,13 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TopUpCardBatchController extends Controller
@@ -343,12 +345,8 @@ class TopUpCardBatchController extends Controller
         $batchStatus = BatchStatus::tryFrom($status);
 
         $batchPage = Batch::query()
-            ->whereHas('topUpCards')
             ->when($batchStatus, fn ($query) => $query->where('status', $batchStatus))
             ->when($batch !== '' && is_numeric($batch), fn ($query) => $query->whereKey((int) $batch))
-            ->withCount([
-                'topUpCards as assigned_cards_count' => fn ($query) => $query->whereNotNull('office_id'),
-            ])
             ->latest('id')
             ->paginate(100)
             ->withQueryString()
@@ -360,13 +358,11 @@ class TopUpCardBatchController extends Controller
                     'quantity' => $batch->quantity,
                     'status' => $batch->status->value,
                     'expires_at' => $batch->expires_at?->toDateString(),
-                    'assigned_cards_count' => $batch->assigned_cards_count,
                 ],
             );
 
         $batches = Batch::query()
             ->select(['id', 'batch_no', 'expires_at'])
-            ->whereHas('topUpCards')
             ->latest('id')
             ->get()
             ->map(fn (Batch $batch) => ['id' => $batch->id, 'batch_no' => $batch->batch_no]);
@@ -379,7 +375,7 @@ class TopUpCardBatchController extends Controller
         ]);
     }
 
-    public function voidBatch(Request $request, Batch $batch): RedirectResponse
+    public function blockBatch(Request $request, Batch $batch): RedirectResponse
     {
         $blockedBatch = DB::transaction(function () use ($batch): ?Batch {
             $lockedBatch = Batch::query()->lockForUpdate()->findOrFail($batch->id);
@@ -400,7 +396,7 @@ class TopUpCardBatchController extends Controller
             activity(ActivityLogName::TopUpCards->value)
                 ->causedBy($request->user())
                 ->performedOn($blockedBatch)
-                ->event(ActivityLogEvent::Voided->value)
+                ->event(ActivityLogEvent::StatusChanged->value)
                 ->log('top_up_cards_batch_blocked');
         }
 
@@ -421,7 +417,8 @@ class TopUpCardBatchController extends Controller
             $activationDate = now()->startOfDay();
             $activatedAt = $activationDate->toDateString();
             $expiresAt = $activationDate->copy()->addYears(2)->toDateString();
-            $activatedCards = $lockedBatch->topUpCards()
+            $activatedCards = $lockedBatch
+                ->topUpCards()
                 ->where('status', TopUpCardStatus::Pending)
                 ->update([
                     'status' => TopUpCardStatus::Active->value,
@@ -619,6 +616,13 @@ class TopUpCardBatchController extends Controller
             return [];
         }
 
+        if (($generation['status'] ?? null) === 'completed' && is_string($generation['preview_payload'] ?? null)) {
+            $generation['cards'] = $this->decodeEncryptedCachePayload($generation['preview_payload']);
+            unset($generation['preview_payload']);
+
+            return $generation;
+        }
+
         if (
             ($generation['status'] ?? null) === 'completed' &&
             isset($generation['cards']) &&
@@ -662,16 +666,26 @@ class TopUpCardBatchController extends Controller
 
             $completedChunks++;
             if ($needPreview) {
+                $chunkCards = is_string($chunk['preview_payload'] ?? null)
+                    ? $this->decodeEncryptedCachePayload($chunk['preview_payload'])
+                    : ($chunk['cards'] ?? []);
+
+                if (! is_array($chunkCards)) {
+                    throw new RuntimeException('Invalid top-up card preview cache payload.');
+                }
+
                 $preview = array_merge(
                     $preview,
-                    array_slice($chunk['cards'] ?? [], 0, $previewLimit - count($preview)),
+                    array_slice($chunkCards, 0, $previewLimit - count($preview)),
                 );
             }
         }
 
         $status = $failed
             ? 'failed'
-            : ($batchCompleted || ($completedChunks === $totalChunks && $totalChunks > 0) ? 'completed' : 'processing');
+            : ($batchCompleted || ($completedChunks === $totalChunks && $totalChunks > 0)
+                ? 'completed'
+                : 'processing');
         $generation['status'] = $status;
         $generation['completed_chunks'] = $batchCompleted ? $totalChunks : $completedChunks;
         $generation['cards'] = $preview;
@@ -848,11 +862,50 @@ class TopUpCardBatchController extends Controller
             $chunk = Cache::get($this->chunkCacheKey($token, $index), []);
 
             if (($chunk['status'] ?? null) === 'completed') {
-                $cards = array_merge($cards, $chunk['cards'] ?? []);
+                if (is_string($chunk['export_payload'] ?? null)) {
+                    foreach ($this->decodeEncryptedCachePayload($chunk['export_payload']) as $row) {
+                        if (! is_array($row) || count($row) !== 4) {
+                            throw new RuntimeException('Invalid top-up card export cache payload.');
+                        }
+
+                        $cards[] = [
+                            'id' => null,
+                            'serial_no' => $row[0],
+                            'pin' => $row[1],
+                            'amount' => $row[2],
+                            'generate_date' => $row[3],
+                            'activated_at' => null,
+                            'expires_at' => null,
+                            'redeemed_at' => null,
+                            'redeemed_by' => null,
+                            'status' => TopUpCardStatus::Pending->value,
+                        ];
+                    }
+
+                    continue;
+                }
+
+                foreach ($chunk['cards'] ?? [] as $card) {
+                    $cards[] = $card;
+                }
             }
         }
 
         return $cards;
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    private function decodeEncryptedCachePayload(string $payload): array
+    {
+        $decoded = json_decode(Crypt::decryptString($payload), true, 512, JSON_THROW_ON_ERROR);
+
+        if (! is_array($decoded)) {
+            throw new RuntimeException('Invalid encrypted top-up card cache payload.');
+        }
+
+        return $decoded;
     }
 
     private function clearGenerationCache(string $token): void

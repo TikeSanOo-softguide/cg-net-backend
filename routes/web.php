@@ -442,9 +442,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::post('/batch', [TopUpCardBatchController::class, 'store'])
                 ->middleware(['can:top-up-cards.create', 'throttle:top-up-card-generation'])
                 ->name('store');
-            Route::patch('/batches/{batch}/void', [TopUpCardBatchController::class, 'voidBatch'])
+            Route::patch('/batches/{batch}/block', [TopUpCardBatchController::class, 'blockBatch'])
                 ->middleware('can:top-up-cards.update')
-                ->name('batches.void');
+                ->name('batches.block');
             Route::patch('/batches/{batch}/activate', [TopUpCardBatchController::class, 'activateBatch'])
                 ->middleware('can:top-up-cards.update')
                 ->name('batches.activate');
