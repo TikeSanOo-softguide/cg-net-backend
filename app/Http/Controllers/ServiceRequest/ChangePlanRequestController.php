@@ -37,13 +37,7 @@ class ChangePlanRequestController extends Controller
             ->when($openRequestId < 1 && $search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
-                        ->whereLike('contact_name', '%' . $search . '%')
-                        ->orWhereLike('contact_phone', '%' . $search . '%')
-                        ->orWhereHas('user', function ($user) use ($search): void {
-                            $user
-                                ->whereLike('name', '%' . $search . '%')
-                                ->orWhereLike('phone', '%' . $search . '%');
-                        })
+                        ->whereHas('user', fn($user) => $user->whereLike('name', '%' . $search . '%'))
                         ->orWhereLike('broadband_account_number', '%' . $search . '%')
                         ->orWhereLike('ticket_number', '%' . $search . '%');
                 });
@@ -82,7 +76,7 @@ class ChangePlanRequestController extends Controller
                 'service_type' => $serviceType,
             ],
             'statuses' => array_column(RequestStatus::cases(), 'value'),
-            'stats' => $this->stats($status, $serviceType),
+            'stats' => $this->stats(),
         ]);
     }
 
@@ -109,22 +103,15 @@ class ChangePlanRequestController extends Controller
     /**
      * @return array{total_requests: int, under_reviews_requests: int, approved_requests: int}
      */
-    private function stats(string $status, string $serviceType): array
+    private function stats(): array
     {
-        $requests = ChangePlanRequest::query()
-            ->when(
-                $status !== '' && in_array($status, array_column(RequestStatus::cases(), 'value'), true),
-                fn($query) => $query->where('status', $status),
-            )
-            ->when($serviceType !== '', fn($query) => $query->where('service_type', $serviceType));
-
         return [
-            'total_requests' => (clone $requests)->count(),
-            'under_reviews_requests' => (clone $requests)
+            'total_requests' => ChangePlanRequest::query()->count(),
+            'under_reviews_requests' => ChangePlanRequest::query()
                 ->where('status', RequestStatus::UnderReview)
                 ->count(),
-            'approved_requests' => (clone $requests)->where('status', RequestStatus::Approved)->count(),
-            'cancelled_requests' => (clone $requests)->where('status', RequestStatus::Cancelled)->count(),
+            'approved_requests' => ChangePlanRequest::query()->where('status', RequestStatus::Approved)->count(),
+            'cancelled_requests' => ChangePlanRequest::query()->where('status', RequestStatus::Cancelled)->count(),
         ];
     }
 }

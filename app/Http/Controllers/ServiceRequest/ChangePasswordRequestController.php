@@ -34,21 +34,18 @@ class ChangePasswordRequestController extends Controller
 
         $requests = ChangePasswordRequest::query()
             ->with(['user:id,name,phone'])
-            ->whereIn('status', $statuses)
             ->when($openRequestId < 1 && $search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
                         ->whereLike('ticket_number', '%' . $search . '%')
                         ->orWhereLike('contact_name', '%' . $search . '%')
                         ->orWhereLike('contact_phone', '%' . $search . '%')
-                        ->orWhereHas('user', function ($query) use ($search): void {
-                            $query
-                                ->whereLike('name', '%' . $search . '%')
-                                ->orWhereLike('phone', '%' . $search . '%');
-                        })
+                        ->orWhereLike('new_wifi_name', '%' . $search . '%')
+                        ->orWhereHas('user', fn($query) => $query->whereLike('name', '%' . $search . '%'))
                         ->orWhereLike('broadband_account_number', '%' . $search . '%');
                 });
             })
+            ->whereIn('status', $statuses)
             ->when(
                 $openRequestId < 1 && $status !== '' && in_array($status, $statuses, true),
                 fn($query) => $query->where('status', $status),
@@ -75,7 +72,7 @@ class ChangePasswordRequestController extends Controller
             'requests' => $requests,
             'filters' => ['search' => $search, 'status' => $status],
             'statuses' => $statuses,
-            'stats' => $this->stats($status),
+            'stats' => $this->stats(),
         ]);
     }
 
@@ -97,35 +94,15 @@ class ChangePasswordRequestController extends Controller
         return back()->with('success', 'change_password.status_updated');
     }
 
-    private function stats(string $status): array
+    private function stats(): array
     {
-        $requests = ChangePasswordRequest::query()
-            ->whereIn('status', [
-                RequestStatus::UnderReview,
-                RequestStatus::Approved,
-                RequestStatus::Cancelled,
-            ])
-            ->when(
-                $status !== '' &&
-                    in_array(
-                        $status,
-                        [
-                            RequestStatus::UnderReview->value,
-                            RequestStatus::Approved->value,
-                            RequestStatus::Cancelled->value,
-                        ],
-                        true,
-                    ),
-                fn($query) => $query->where('status', $status),
-            );
-
         return [
-            'total_requests' => (clone $requests)->count(),
-            'under_reviews_requests' => (clone $requests)
+            'total_requests' => ChangePasswordRequest::query()->count(),
+            'under_reviews_requests' => ChangePasswordRequest::query()
                 ->where('status', RequestStatus::UnderReview)
                 ->count(),
-            'approved_requests' => (clone $requests)->where('status', RequestStatus::Approved)->count(),
-            'cancelled_requests' => (clone $requests)->where('status', RequestStatus::Cancelled)->count(),
+            'approved_requests' => ChangePasswordRequest::query()->where('status', RequestStatus::Approved)->count(),
+            'cancelled_requests' => ChangePasswordRequest::query()->where('status', RequestStatus::Cancelled)->count(),
         ];
     }
 }

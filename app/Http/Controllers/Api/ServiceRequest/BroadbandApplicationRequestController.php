@@ -156,8 +156,8 @@ class BroadbandApplicationRequestController extends Controller
         $detail = $application->package_detail ?? [];
         $fields = [
             '• Ticket' => $application->ticket_number,
-            '• Customer' => $application->contact_name,
-            '• Phone' => $application->contact_phone,
+            '• Customer' => $application->name,
+            '• Phone' => $application->phone,
             '• Address' => $application->address,
             '• Date' => $application->created_at?->format('d M Y') ?? '—',
             '• Package' => (string) ($detail['product_line'] ?? ($detail['product_name'] ?? '—')),

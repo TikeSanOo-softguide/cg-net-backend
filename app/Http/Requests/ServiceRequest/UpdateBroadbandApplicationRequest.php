@@ -16,12 +16,12 @@ class UpdateBroadbandApplicationRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if (!$this->exists('contact_phone')) {
+        if (!$this->exists('phone')) {
             return;
         }
 
         $this->merge([
-            'contact_phone' => PhoneNumber::normalizeLeniently($this->input('contact_phone')),
+            'phone' => PhoneNumber::normalizeLeniently($this->input('phone')),
         ]);
     }
 
@@ -31,7 +31,7 @@ class UpdateBroadbandApplicationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'contact_name' => ['required', 'string', 'max:30'],
+            'name' => ['required', 'string', 'max:30'],
             'service_type' => ['required', 'string', 'in:FTTH,CG'],
             'package_detail' => ['required', 'array'],
             'package_detail.product_id' => ['required', 'string', 'max:64'],
@@ -43,7 +43,7 @@ class UpdateBroadbandApplicationRequest extends FormRequest
             'package_detail.month_cycle' => ['required', 'integer', 'min:1'],
             'package_detail.month_cycle_unit' => ['nullable', 'string', 'max:32'],
             'address' => ['required', 'string', 'max:5000'],
-            'contact_phone' => ['required', 'string', 'max:16', 'regex:' . PhoneNumber::SUPPORTED_PATTERN],
+            'phone' => ['required', 'string', 'regex:' . PhoneNumber::SUPPORTED_PATTERN],
             'note' => ['nullable', 'string', 'max:5000'],
             'status' => ['nullable', Rule::in([RequestStatus::UnderReview->value, RequestStatus::Cancelled->value])],
         ];
@@ -52,7 +52,7 @@ class UpdateBroadbandApplicationRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'contact_phone.regex' => __('customers.validation.phone_invalid'),
+            'phone.regex' => __('customers.validation.phone_invalid'),
         ];
     }
 }

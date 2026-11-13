@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->text('new_address');
             $table->date('preferred_date')->nullable();
             $table->string('contact_name', 30);
-            $table->string('contact_phone', 16);
+            $table->string('phone', 16);
             $table->text('details')->nullable();
             $table->string('status', 16)->default('under_review')->index();
             $table->foreignId('admin_id')->nullable()->constrained()->cascadeOnDelete();

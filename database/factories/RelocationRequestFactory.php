@@ -24,7 +24,7 @@ class RelocationRequestFactory extends Factory
             'new_address' => MyanmarFake::address(),
             'preferred_date' => fake()->dateTimeBetween('now', '+30 days'),
             'contact_name' => MyanmarFake::name(),
-            'contact_phone' => MyanmarFake::phone(),
+            'phone' => MyanmarFake::phone(),
             'details' => fake()->optional()->sentence(),
             'status' => fake()->randomElement(RequestStatus::cases()),
         ];

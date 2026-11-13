@@ -1,17 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
-import { CalendarIcon, BookX, CircleCheckBig, ClipboardList, ScanEye, MapPinIcon } from 'lucide-react';
+import {
+    CalendarIcon,
+    BookX,
+    CircleCheckBig,
+    ClipboardList,
+    ScanEye,
+    MapPinIcon,
+    PhoneIcon,
+    WifiIcon,
+} from 'lucide-react';
 
 import { DataTable } from '@/components/DataTable';
 import { FormDialog } from '@/components/FormDialog';
 import { formActionBarClass, formActionButtonClass, formActionSubmitClass } from '@/components/FormActionBar';
-import { SearchInput } from '@/components/SearchInput';
 import type { Paginated } from '@/components/Pagination';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
-import { FormField } from '@/components/ui/form-field';
+import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -26,13 +34,10 @@ import { useOpenRequestFromQuery } from '@/hooks/useOpenRequestFromQuery';
 type RelocationRequest = {
     id: number;
     notification_unread: boolean;
-    ticket_number: string | null;
-    created_at: string;
-    contact_name: string;
     current_address: string;
     new_address: string;
     preferred_date: string | null;
-    contact_phone: string;
+    phone: string;
     details: string | null;
     status: string;
     broadband_account_number: string | null;
@@ -108,6 +113,7 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
     useEffect(() => {
         setSearch(filters.search);
     }, [filters.search]);
+
     useEffect(() => {
         return () => {
             window.clearTimeout(debounce.current);
@@ -150,58 +156,34 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                     getRowId={(request) => String(request.id)}
                     search={search}
                     onSearchChange={onSearchChange}
-                    showSearch={false}
+                    searchPlaceholder={t('relocation_requests.search')}
                     pagination={requests}
                     onView={(request) => setSelectedRequest(request)}
                     directActions
                     filters={
-                        <>
-                            <FormField
-                                label={t('common.search')}
-                                htmlFor="relocation-search"
-                                className="w-full shrink-0 sm:w-60"
-                                labelClassName="text-[13px]"
+                        <FormControl icon={WifiIcon} compact className="w-full shrink-0 sm:w-48">
+                            <Select
+                                value={filters.status || 'all'}
+                                onValueChange={(status) =>
+                                    visit({
+                                        status: status === 'all' ? '' : status,
+                                    })
+                                }
                             >
-                                <SearchInput
-                                    id="relocation-search"
-                                    value={search}
-                                    onChange={onSearchChange}
-                                    placeholder={t('relocation_requests.search')}
-                                    size="sm"
-                                />
-                            </FormField>
-                            <FormField
-                                label={t('common.status')}
-                                htmlFor="relocation-status"
-                                className="w-full shrink-0 sm:w-48"
-                                labelClassName="text-[13px]"
-                            >
-                                <Select
-                                    value={filters.status || 'all'}
-                                    onValueChange={(status) =>
-                                        visit({
-                                            status: status === 'all' ? '' : status,
-                                        })
-                                    }
-                                >
-                                    <SelectTrigger
-                                        id="relocation-status"
-                                        className="w-full rounded-xl border-border/60 bg-background"
-                                    >
-                                        <SelectValue placeholder={t('common.status')} />
-                                    </SelectTrigger>
+                                <SelectTrigger className="w-full rounded-xl border-border/60 bg-background">
+                                    <SelectValue placeholder={t('common.status')} />
+                                </SelectTrigger>
 
-                                    <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
-                                        <SelectItem value="all">{t('common.all')}</SelectItem>
-                                        {statuses.map((status) => (
-                                            <SelectItem key={status} value={status}>
-                                                {t(`status.${status}`)}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </FormField>
-                        </>
+                                <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                    <SelectItem value="all">{t('common.all')}</SelectItem>
+                                    {statuses.map((status) => (
+                                        <SelectItem key={status} value={status}>
+                                            {t(`status.${status}`)}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </FormControl>
                     }
                     columns={[
                         {
@@ -214,14 +196,12 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                                         <StaffListAvatar
                                             username={request.user.name}
                                             unreadLabel={
-                                                request.notification_unread
-                                                    ? t('admin_notifications.unread')
-                                                    : undefined
+                                                request.notification_unread ? t('admin_notifications.unread') : undefined
                                             }
                                         />
                                     </div>
-                                    <span className="line-clamp-2 min-w-0 font-medium leading-5">
-                                        {request.user.name}
+                                    <span className="min-w-0 truncate font-medium">
+                                        {truncateText(request.user.name, 20)}
                                     </span>
 
                                     <p className="truncate font-mono mt-1 text-xs text-muted-foreground">
@@ -230,36 +210,7 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                                 </div>
                             ),
                             searchValue: (request) =>
-                                `${request.user.name} ${request.broadband_account_number ?? ''} ${request.contact_phone}`,
-                        },
-                        {
-                            id: 'ticket_number',
-                            header: t('broadband_application.ticket_number'),
-                            mobile: 'subtitle' as const,
-                            cell: (request) => {
-                                const ticket = request.ticket_number?.trim();
-
-                                return ticket ? (
-                                    <span className="inline-flex max-w-full items-center rounded-md bg-primary/10 px-2 py-0.5 font-mono text-[11px] font-medium text-primary">
-                                        {ticket}
-                                    </span>
-                                ) : (
-                                    <span>—</span>
-                                );
-                            },
-                            searchValue: (request) => request.ticket_number ?? '',
-                        },
-                        {
-                            id: 'contact',
-                            header: t('requests.contact_information'),
-                            mobile: 'meta' as const,
-                            cell: (request) => (
-                                <div className="min-w-0 text-xs text-muted-foreground">
-                                    <p className="truncate font-medium leading-6 text-foreground">{request.contact_name}</p>
-                                    <p className="truncate">{formatPhoneInternational(request.contact_phone)}</p>
-                                </div>
-                            ),
-                            searchValue: (request) => `${request.contact_name} ${request.contact_phone}`,
+                                `${request.user.name} ${request.broadband_account_number ?? ''} ${request.phone}`,
                         },
                         {
                             id: 'current_address',
@@ -269,7 +220,7 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                             cell: (request) => (
                                 <span className="inline-flex max-w-[260px] items-center gap-1.5 text-muted-foreground mb-1">
                                     <MapPinIcon className="size-3.5 shrink-0 text-muted-foreground/60" />
-                                    <span className="min-w-0 truncate">{truncateText(request.current_address, 30)}</span>
+                                    <span>{truncateText(request.current_address, 30)}</span>
                                 </span>
                             ),
                             searchValue: (request) => request.current_address,
@@ -282,10 +233,23 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                             cell: (request) => (
                                 <span className="inline-flex max-w-[260px] items-center gap-1.5">
                                     <MapPinIcon className="size-3.5 shrink-0 text-muted-foreground/60 text-success/70" />
-                                    <span className="min-w-0 truncate">{truncateText(request.new_address, 30)}</span>
+                                    <span>{truncateText(request.new_address, 30)}</span>
                                 </span>
                             ),
                             searchValue: (request) => request.new_address,
+                        },
+                        {
+                            id: 'phone',
+                            header: t('requests.phone'),
+                            mobile: 'meta' as const,
+                            sortable: true,
+                            cell: (request) => (
+                                <span className="inline-flex items-center gap-1.5 text-xs">
+                                    <PhoneIcon className="size-3.5" />
+                                    {formatPhoneInternational(request.phone)}
+                                </span>
+                            ),
+                            searchValue: (request) => request.phone,
                         },
                         {
                             id: 'preferred_date',
