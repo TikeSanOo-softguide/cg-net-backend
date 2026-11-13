@@ -1109,6 +1109,13 @@ class PackagePurchaseTest extends TestCase
         $this->withToken($user->createToken('owner')->plainTextToken, 'Bearer')
             ->getJson('/api/customer/packages/' . $customerPackage->id . '/credentials')
             ->assertOk()
+            ->assertJsonPath('data.customer_package_id', $customerPackage->id)
+            ->assertJsonPath('data.package.product_id', $package->provider_product_id)
+            ->assertJsonPath('data.package.product_name', 'Provider package ' . $package->provider_product_id)
+            ->assertJsonPath('data.package.product_line', 'test-line')
+            ->assertJsonPath('data.package.product_speed', (string) $this->mbps)
+            ->assertJsonPath('data.package.month_cycle', 1)
+            ->assertJsonPath('data.package.month_cycle_unit', '月')
             ->assertJsonPath('data.credentials.account', $customerPackage->username)
             ->assertJsonPath('data.credentials.password', $customerPackage->password);
     }
