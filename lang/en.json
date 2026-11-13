@@ -72,7 +72,7 @@
         "payment_reference": "Payment reference",
         "product_snapshot": "Product snapshot",
         "search_placeholder": "Search broadband, customer, or order",
-        "service_type": "Service type"
+        "service_type": "Service Type"
     },
     "billing_report": {
         "apply_filters": "Apply filters",
@@ -162,7 +162,7 @@
         "package_price": "Package price",
         "region": "Region",
         "search_placeholder": "Search app user, account no, or ticket",
-        "service_type": "Service type",
+        "service_type": "Service Type",
         "speed": "Speed",
         "state": "State",
         "ticket_number": "Ticket Number"
@@ -202,7 +202,7 @@
         "requested_packages": "Requested Packages",
         "requested_plan": "Requested Plan",
         "search_placeholder": "Search account_no, ticket, app username",
-        "service_type": "Service type",
+        "service_type": "Service Type",
         "ticket_number": "Ticket Number",
         "cg_router": "CG Router",
         "status_updated": "Request status updated",
@@ -612,7 +612,7 @@
         "no_active_session": "No active session",
         "no_current_package": "No current package",
         "package_name": "Package name",
-        "service_type": "Service type",
+        "service_type": "Service Type",
         "no_packages": "No packages in this tab",
         "no_top_ups": "No top-up history",
         "no_transactions": "No wallet transactions",

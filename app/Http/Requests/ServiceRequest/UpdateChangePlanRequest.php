@@ -32,7 +32,7 @@ class UpdateChangePlanRequest extends FormRequest
             'preferred_date' => ['required', 'date'],
             'contact_name' => ['required', 'string', 'max:30'],
             'contact_phone' => ['required', 'string', 'max:16', 'regex:' . PhoneNumber::SUPPORTED_PATTERN],
-            'note' => ['nullable', 'string', 'max:5000'],
+            'note' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

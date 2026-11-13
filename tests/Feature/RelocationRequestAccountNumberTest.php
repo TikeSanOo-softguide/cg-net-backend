@@ -22,7 +22,7 @@ class RelocationRequestAccountNumberTest extends TestCase
                 'contact_name' => 'Test Customer',
                 'current_address' => 'Current address',
                 'new_address' => 'New address',
-                'phone' => '+95912345678',
+                'phone' => '0969345678',
             ])
             ->assertCreated()
             ->assertJsonPath('data.broadband_account_number', 'CG12345678');
@@ -44,7 +44,7 @@ class RelocationRequestAccountNumberTest extends TestCase
                 'contact_name' => 'Test Customer',
                 'current_address' => 'Current address',
                 'new_address' => 'New address',
-                'phone' => '+95912345678',
+                'phone' => '0977345678',
             ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('broadband_account_number');
@@ -67,7 +67,7 @@ class RelocationRequestAccountNumberTest extends TestCase
                 'contact_name' => 'Test Customer',
                 'current_address' => 'Current address',
                 'new_address' => 'New address',
-                'phone' => '+95912345678',
+                'phone' => '0977345678',
             ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('request');
@@ -90,7 +90,7 @@ class RelocationRequestAccountNumberTest extends TestCase
                 'contact_name' => 'Test Customer',
                 'current_address' => 'Current address',
                 'new_address' => 'New address',
-                'phone' => '+95912345678',
+                'phone' => '0977345678',
             ])
             ->assertCreated();
 
@@ -112,7 +112,7 @@ class RelocationRequestAccountNumberTest extends TestCase
                 'contact_name' => 'Test Customer',
                 'current_address' => 'Current address',
                 'new_address' => 'New address',
-                'phone' => '+95912345678',
+                'phone' => '0997345678',
             ])
             ->assertCreated();
 

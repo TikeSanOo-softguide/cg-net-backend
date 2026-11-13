@@ -88,8 +88,8 @@ export function FailureReportDetailDialog({
         <FormDialog
             open={open}
             onOpenChange={onOpenChange}
-            title={t('relocation_requests.card_title')}
-            description={t('menu.relocation_requests_description')}
+            title={t('menu.failure_reports')}
+            description={t('menu.failure_reports_description')}
             icon={NavigationIcon}
             size="2xl"
         >
@@ -197,6 +197,23 @@ export function FailureReportDetailDialog({
                                 </div>
                             </div>
                         </div>
+
+                        <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
+                            <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                                <FileTextIcon className="size-3.5 text-muted-foreground/70" />
+                                {t('cms.description')}
+                            </p>
+
+                            <div className="max-h-48 overflow-y-auto rounded-lg border border-border/40 bg-background/60 px-3 py-2.5 pr-2">
+                                <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">
+                                    {request.description || (
+                                        <span className="text-xs italic text-muted-foreground">
+                                            No additional description provided.
+                                        </span>
+                                    )}
+                                </p>
+                            </div>
+                        </div>
                     </div>
                     <div className="rounded-xl border border-border/60 bg-muted/25 p-4">
                         <div className="mb-3 flex items-center gap-2">
@@ -231,22 +248,6 @@ export function FailureReportDetailDialog({
                                 </div>
                             </div>
                         )}
-                    </div>
-                    <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
-                        <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                            <FileTextIcon className="size-3.5 text-muted-foreground/70" />
-                            {t('cms.description')}
-                        </p>
-
-                        <div className="max-h-48 overflow-y-auto rounded-lg border border-border/40 bg-background/60 px-3 py-2.5 pr-2">
-                            <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">
-                                {request.description || (
-                                    <span className="text-xs italic text-muted-foreground">
-                                        No additional description provided.
-                                    </span>
-                                )}
-                            </p>
-                        </div>
                     </div>
 
                     <div className="mt-4 flex flex-col gap-2 rounded-xl border border-border/60 bg-muted/10 p-3 sm:flex-row sm:items-center sm:justify-between">

@@ -51,9 +51,9 @@ class CreateBroadbandApplicationRequest extends CreateServiceRequest
             'package_detail.installation_fee' => ['required', 'numeric', 'decimal:0,2', 'min:0'],
             'package_detail.month_cycle' => ['required', 'integer', 'min:1'],
             'package_detail.month_cycle_unit' => ['nullable', 'string', 'max:32'],
-            'address' => ['required', 'string', 'max:5000'],
-            'phone' => ['required', 'string', 'regex:' . PhoneNumber::SUPPORTED_PATTERN],
-            'note' => ['nullable', 'string', 'max:5000'],
+            'address' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'max:16', 'regex:' . PhoneNumber::SUPPORTED_PATTERN],
+            'note' => ['nullable', 'string', 'max:255'],
         ];
     }
 

@@ -55,7 +55,7 @@ class UpdateFailureReport extends FormRequest
                 Rule::exists('users', 'broadband_account_number')->where('id', $this->user()->id),
             ],
             'failure_type' => ['required', Rule::enum(FailureType::class)],
-            'description' => ['required', 'string', 'max:5000'],
+            'description' => ['required', 'string', 'max:255'],
             'contact_name' => ['required', 'string', 'max:30'],
             'contact_phone' => ['required', 'string', 'max:16', 'regex:' . PhoneNumber::SUPPORTED_PATTERN],
             'photos' => ['nullable', 'array', 'min:1'],
