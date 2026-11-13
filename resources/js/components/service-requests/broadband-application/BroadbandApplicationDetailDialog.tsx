@@ -11,10 +11,6 @@ import {
 } from 'lucide-react';
 
 import { FormDialog } from '@/components/FormDialog';
-import {
-    ServiceRequestInfoCard,
-    ServiceRequestSectionHeading,
-} from '@/components/service-requests/ServiceRequestInfoCard';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -25,11 +21,11 @@ import { cn, formatDate } from '@/lib/utils';
 
 export type BroadbandApplicationDetail = {
     id: number;
-    contact_phone: string;
+    phone: string;
     address: string;
     note: string | null;
     status: string;
-    contact_name: string;
+    name: string;
     service_type: string | null;
     ticket_number: string | null;
     created_at: string;
@@ -68,8 +64,11 @@ function Section({
 }) {
     return (
         <section className={cn('rounded-xl border border-border/60 bg-muted/20 p-4', className)}>
-            <div className="mb-3">
-                <ServiceRequestSectionHeading icon={Icon} title={title} />
+            <div className="mb-3 flex items-center gap-2">
+                <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
+                    <Icon className="size-3.5 text-primary" />
+                </div>
+                <h3 className="text-xs font-semibold text-foreground">{title}</h3>
             </div>
             {children}
         </section>
@@ -145,8 +144,7 @@ export function BroadbandApplicationDetailDialog({
     const detail = request.package_detail;
     const ticket = request.ticket_number?.trim() || '';
     const accountNumber = request.user?.broadband_account_number?.trim() || '';
-    const appUserPhone = request.user?.phone ? formatPhoneInternational(request.user.phone) : '';
-    const contactPhone = request.contact_phone ? formatPhoneInternational(request.contact_phone) : '';
+    const contactPhone = request.phone ? formatPhoneInternational(request.phone) : '';
     const serviceLabel =
         request.service_type === 'CG'
             ? t('broadband_application.cg_router')
@@ -163,66 +161,61 @@ export function BroadbandApplicationDetailDialog({
         >
             <div className="mt-1 max-h-[70vh] space-y-3 overflow-y-auto p-1">
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-                    <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="min-w-0 space-y-1">
-                            <p className="text-xs font-medium text-muted-foreground">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                            <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
                                 {t('broadband_application.ticket_number')}
                             </p>
-                            <div className="flex min-w-0 items-center gap-1.5">
-                                <span className="break-all font-mono text-sm font-medium">{ticket || '—'}</span>
-                                {ticket && (
-                                    <CopyValueButton
-                                        value={ticket}
-                                        label={t('broadband_application.ticket_number')}
-                                    />
+                            <div className="mt-1 flex items-center gap-1.5">
+                                {ticket ? (
+                                    <span className="inline-flex max-w-full items-center truncate rounded-md bg-primary/10 px-2 py-0.5 font-mono text-[11px] font-medium text-primary">
+                                        {ticket}
+                                    </span>
+                                ) : (
+                                    <span className="text-sm text-muted-foreground">—</span>
                                 )}
+                                {ticket ? (
+                                    <CopyValueButton value={ticket} label={t('broadband_application.ticket_number')} />
+                                ) : null}
                             </div>
                         </div>
-                        <div className="flex flex-col items-start gap-2 text-xs text-muted-foreground sm:items-end">
-                            <span className="rounded-full bg-background px-2.5 py-1 font-medium text-foreground">
-                                {serviceLabel}
-                            </span>
-                            <span className="inline-flex items-center gap-1">
-                                <CalendarIcon className="size-3.5" />
-                                <span className="font-medium text-foreground">{formatDate(request.created_at)}</span>
-                            </span>
-                        </div>
+                        <StatusBadge status={request.status} />
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <span className="rounded-full bg-background px-2.5 py-1 font-medium text-foreground">
+                            {serviceLabel}
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                            <CalendarIcon className="size-3.5" />
+                            {formatDate(request.created_at)}
+                        </span>
                     </div>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                    <ServiceRequestInfoCard
-                        icon={UserIcon}
-                        title={t('broadband_application.app_user')}
-                        fields={[
-                            { label: t('customers.name'), value: request.user?.name },
-                            {
-                                label: t('requests.phone'),
-                                value: appUserPhone,
-                                copy: appUserPhone,
-                                copyLabel: t('requests.copy_phone'),
-                            },
-                            {
-                                label: t('requests.broadband_account'),
-                                value: accountNumber,
-                                copy: accountNumber,
-                                copyLabel: t('requests.broadband_account'),
-                            },
-                        ]}
-                    />
-                    <ServiceRequestInfoCard
-                        icon={PhoneIcon}
-                        title={t('change_password.contact')}
-                        fields={[
-                            { label: t('customers.name'), value: request.contact_name },
-                            {
-                                label: t('requests.phone'),
-                                value: contactPhone,
-                                copy: contactPhone,
-                                copyLabel: t('requests.copy_phone'),
-                            },
-                        ]}
-                    />
+                    <Section icon={UserIcon} title={t('broadband_application.app_user')}>
+                        <div className="space-y-3">
+                            <Field label={t('customers.name')} value={request.user?.name || '—'} />
+                            <Field
+                                label={t('requests.broadband_account')}
+                                value={accountNumber || '—'}
+                                copy={accountNumber}
+                                copyLabel={t('requests.broadband_account')}
+                            />
+                        </div>
+                    </Section>
+
+                    <Section icon={PhoneIcon} title={t('broadband_application.installation_contact')}>
+                        <div className="space-y-3">
+                            <Field label={t('customers.name')} value={request.name || '—'} />
+                            <Field
+                                label={t('requests.phone')}
+                                value={contactPhone || '—'}
+                                copy={contactPhone}
+                                copyLabel={t('requests.copy_phone')}
+                            />
+                        </div>
+                    </Section>
                 </div>
 
                 <Section icon={PackageIcon} title={t('broadband_application.package')}>

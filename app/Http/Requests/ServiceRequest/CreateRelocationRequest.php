@@ -38,7 +38,7 @@ class CreateRelocationRequest extends CreateServiceRequest
             'current_address' => ['required', 'string', 'max:5000'],
             'new_address' => ['required', 'string', 'max:5000'],
             'preferred_date' => ['nullable', 'date'],
-            'contact_phone' => ['required', 'string', 'max:16'],
+            'phone' => ['required', 'string', 'max:16'],
             'details' => ['nullable', 'string', 'max:5000'],
         ];
     }

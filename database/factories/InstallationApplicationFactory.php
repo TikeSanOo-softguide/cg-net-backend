@@ -5,7 +5,6 @@ namespace Database\Factories;
 use App\Enums\RequestStatus;
 use App\Models\InstallationApplication;
 use App\Models\User;
-use Database\Factories\Support\MyanmarFake;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -16,7 +15,7 @@ class InstallationApplicationFactory extends Factory
     public function definition(): array
     {
         return [
-            'contact_name' => MyanmarFake::name(),
+            'name' => fake()->name(),
             'service_type' => 'FTTH',
             'ticket_number' => 'INT'.now()->format('md').str_pad((string) fake()->unique()->numberBetween(1, 9999), 4, '0', STR_PAD_LEFT),
             'package_detail' => [
@@ -30,7 +29,7 @@ class InstallationApplicationFactory extends Factory
                 'month_cycle_unit' => '月',
             ],
             'address' => fake()->address(),
-            'contact_phone' => MyanmarFake::phone(),
+            'phone' => fake()->phoneNumber(),
             'note' => fake()->optional()->sentence(),
             'status' => fake()->randomElement([
                 RequestStatus::Approved,

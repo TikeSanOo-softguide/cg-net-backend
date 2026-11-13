@@ -12,12 +12,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[
     Fillable([
-        'contact_name',
+        'name',
         'service_type',
         'ticket_number',
         'package_detail',
         'address',
-        'contact_phone',
+        'phone',
         'note',
         'status',
         'user_id',

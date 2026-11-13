@@ -4,7 +4,6 @@ namespace Database\Factories;
 
 use App\Models\User;
 use App\Models\ChangePasswordRequest;
-use Database\Factories\Support\MyanmarFake;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -29,7 +28,7 @@ class ChangePasswordRequestFactory extends Factory
                 now()->format('md') .
                 str_pad((string) fake()->unique()->numberBetween(1, 9999), 4, '0', STR_PAD_LEFT),
             'contact_name' => fake()->name(),
-            'contact_phone' => MyanmarFake::phone(),
+            'contact_phone' => fake()->phoneNumber(),
             'new_wifi_name' => fake()->userName() . '_wifi',
             'new_password' => fake()->password(8, 16),
             'status' => 'under_review',

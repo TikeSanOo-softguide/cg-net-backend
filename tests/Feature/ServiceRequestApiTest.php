@@ -63,7 +63,7 @@ class ServiceRequestApiTest extends TestCase
         $user = User::factory()->create();
         $token = $user->createToken('service-requests')->plainTextToken;
         $applicationData = [
-            'contact_name' => 'Test Customer',
+            'name' => 'Test Customer',
             'service_type' => 'FTTH',
             'package_detail' => [
                 'product_id' => '249',
@@ -76,7 +76,7 @@ class ServiceRequestApiTest extends TestCase
                 'month_cycle_unit' => '月',
             ],
             'address' => 'Customer address',
-            'contact_phone' => '09922345678',
+            'phone' => '09922345678',
             'note' => 'Please install soon.',
             'id_type' => 'NRC',
             'id_name' => 'Test Customer',
@@ -90,11 +90,11 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonPath('code', 'MSG-REQ-002')
             ->assertJsonPath('level', 'success')
             ->assertJsonPath('data.user_id', $user->id)
-            ->assertJsonPath('data.contact_name', 'Test Customer')
+            ->assertJsonPath('data.name', 'Test Customer')
             ->assertJsonPath('data.service_type', 'FTTH')
             ->assertJsonPath('data.ticket_number', 'INT' . now()->format('md') . '0001')
             ->assertJsonPath('data.package_detail.product_id', '249')
-            ->assertJsonPath('data.contact_phone', '959922345678')
+            ->assertJsonPath('data.phone', '959922345678')
             ->assertJsonPath('data.status', 'under_review')
             ->assertJsonMissingPath('data.photos');
         Http::assertSentCount(1);
@@ -112,7 +112,7 @@ class ServiceRequestApiTest extends TestCase
                 '/api/installation-application/' . $application->id,
                 [
                     ...$applicationData,
-                    'contact_name' => 'Updated Customer',
+                    'name' => 'Updated Customer',
                     'address' => 'Updated customer address',
                     'photos' => [
                         UploadedFile::fake()->image('updated-front.jpg'),
@@ -124,7 +124,7 @@ class ServiceRequestApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('code', 'MSG-REQ-003')
             ->assertJsonPath('level', 'success')
-            ->assertJsonPath('data.contact_name', 'Updated Customer')
+            ->assertJsonPath('data.name', 'Updated Customer')
             ->assertJsonPath('data.address', 'Updated customer address')
             ->assertJsonMissingPath('data.photos');
         Http::assertSentCount(2);
@@ -256,7 +256,7 @@ class ServiceRequestApiTest extends TestCase
             'current_address' => 'Current address',
             'new_address' => 'New address',
             'preferred_date' => now()->addDays(5)->toDateString(),
-            'contact_phone' => '95922345678',
+            'phone' => '95922345678',
             'details' => 'Please call before the relocation.',
         ];
 
@@ -265,8 +265,6 @@ class ServiceRequestApiTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('data.user_id', $user->id)
             ->assertJsonPath('data.broadband_account_number', $user->broadband_account_number)
-            ->assertJsonPath('data.contact_name', 'Test Customer')
-            ->assertJsonPath('data.contact_phone', '95922345678')
             ->assertJsonPath('data.status', 'under_review');
         Http::assertSentCount(1);
         $relocationRequest = RelocationRequest::query()->findOrFail($response->json('data.id'));
@@ -1000,7 +998,7 @@ class ServiceRequestApiTest extends TestCase
                 'current_address' => 'Current address',
                 'new_address' => 'Updated address',
                 'preferred_date' => now()->addDays(5)->toDateString(),
-                'contact_phone' => '95922345678',
+                'phone' => '95922345678',
             ])
             ->assertForbidden();
         $this->withToken($token)
@@ -1035,11 +1033,11 @@ class ServiceRequestApiTest extends TestCase
             ->post(
                 '/api/installation-application/create',
                 [
-                    'contact_name' => 'Test Customer',
+                    'name' => 'Test Customer',
                     'service_type' => 'FTTH',
                     'package_detail' => $packageDetail,
                     'address' => 'Customer address',
-                    'contact_phone' => '95922345678',
+                    'phone' => '95922345678',
                     'note' => 'Please install soon.',
                 ],
                 ['Accept' => 'application/json'],
@@ -1048,11 +1046,11 @@ class ServiceRequestApiTest extends TestCase
 
         $this->withToken($token)
             ->putJson('/api/installation-application/' . $created->json('data.id'), [
-                'contact_name' => 'Edited Without New Photos',
+                'name' => 'Edited Without New Photos',
                 'service_type' => 'FTTH',
                 'package_detail' => $packageDetail,
                 'address' => 'Customer address',
-                'contact_phone' => '95922345678',
+                'phone' => '95922345678',
                 'note' => 'Please install soon.',
                 'status' => 'under_review',
                 'photos' => [
@@ -1061,7 +1059,7 @@ class ServiceRequestApiTest extends TestCase
                 ],
             ])
             ->assertOk()
-            ->assertJsonPath('data.contact_name', 'Edited Without New Photos')
+            ->assertJsonPath('data.name', 'Edited Without New Photos')
             ->assertJsonMissingPath('data.photos');
     }
 
@@ -1071,7 +1069,7 @@ class ServiceRequestApiTest extends TestCase
         $token = $user->createToken('service-requests')->plainTextToken;
         $this->withToken($token)
             ->postJson('/api/installation-application/create', [
-                'contact_name' => 'Test Customer',
+                'name' => 'Test Customer',
                 'service_type' => 'FTTH',
                 'package_detail' => [
                     'product_id' => '249',
@@ -1081,10 +1079,10 @@ class ServiceRequestApiTest extends TestCase
                     'month_cycle' => 1,
                 ],
                 'address' => 'Customer address',
-                'contact_phone' => 'abc',
+                'phone' => 'abc',
             ])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors('contact_phone');
+            ->assertJsonValidationErrors('phone');
 
         $this->assertDatabaseCount('installation_applications', 0);
     }

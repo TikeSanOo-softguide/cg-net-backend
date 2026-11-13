@@ -38,8 +38,8 @@ class BroadbandApplicationRequestController extends Controller
 
                 $query->where(function ($query) use ($search): void {
                     $query
-                        ->whereLike('contact_phone', $search)
-                        ->orWhereLike('contact_name', $search)
+                        ->whereLike('phone', $search)
+                        ->orWhereLike('name', $search)
                         ->orWhereLike('ticket_number', $search)
                         ->orWhereHas(
                             'user',
@@ -83,7 +83,7 @@ class BroadbandApplicationRequestController extends Controller
                 'service_type' => $serviceType,
             ],
             'statuses' => array_column(RequestStatus::cases(), 'value'),
-            'stats' => $this->stats($status, $serviceType),
+            'stats' => $this->stats(),
         ]);
     }
 
@@ -109,22 +109,15 @@ class BroadbandApplicationRequestController extends Controller
         ])->with('success', 'requests.status_updated');
     }
 
-    private function stats(string $status, string $serviceType): array
+    private function stats(): array
     {
-        $applications = InstallationApplication::query()
-            ->when(
-                $status !== '' && in_array($status, array_column(RequestStatus::cases(), 'value'), true),
-                fn($query) => $query->where('status', $status),
-            )
-            ->when($serviceType !== '', fn($query) => $query->where('service_type', $serviceType));
-
         return [
-            'total_requests' => (clone $applications)->count(),
-            'under_reviews_requests' => (clone $applications)
+            'total_requests' => InstallationApplication::query()->count(),
+            'under_reviews_requests' => InstallationApplication::query()
                 ->where('status', RequestStatus::UnderReview)
                 ->count(),
-            'approved_requests' => (clone $applications)->where('status', RequestStatus::Approved)->count(),
-            'cancelled_requests' => (clone $applications)
+            'approved_requests' => InstallationApplication::query()->where('status', RequestStatus::Approved)->count(),
+            'cancelled_requests' => InstallationApplication::query()
                 ->where('status', RequestStatus::Cancelled)
                 ->count(),
         ];

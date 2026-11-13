@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
         'current_address',
         'new_address',
         'preferred_date',
-        'contact_phone',
+        'phone',
         'details',
         'status',
         'admin_id',

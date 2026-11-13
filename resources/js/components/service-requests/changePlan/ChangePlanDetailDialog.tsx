@@ -5,17 +5,12 @@ import {
     ArrowRightIcon,
     CalendarIcon,
     FileTextIcon,
-    PackageIcon,
     PhoneIcon,
     UserIcon,
     WifiIcon,
 } from 'lucide-react';
 
 import { FormDialog } from '@/components/FormDialog';
-import {
-    ServiceRequestInfoCard,
-    ServiceRequestSectionHeading,
-} from '@/components/service-requests/ServiceRequestInfoCard';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { useCan } from '@/hooks/useCan';
@@ -39,7 +34,6 @@ export type PackageDetail = {
 
 export type ChangePlanRequestItem = {
     id: number;
-    created_at: string;
     preferred_date: string | null;
     contact_name: string;
     contact_phone: string;
@@ -140,7 +134,7 @@ export function ChangePlanDetailDialog({
                             <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" />
                             <div>
                                 <span className="font-semibold">{t('change_plan.overdue')}</span>
-                                <p className="mt-0.5 font-medium text-foreground">
+                                <p className="mt-0.5 text-muted-foreground">
                                     {t('change_plan.preferred_date')}: {formatDate(request.preferred_date)}{' '}
                                     {t('change_plan.urgent_processing')}
                                 </p>
@@ -149,126 +143,117 @@ export function ChangePlanDetailDialog({
                     )}
 
                     <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-                        <div className="grid gap-3 sm:grid-cols-2">
-                            <div className="min-w-0 space-y-1">
-                                <p className="text-xs font-medium text-muted-foreground">
-                                    {t('broadband_application.ticket_number')}
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                                <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                                    {t('change_plan.ticket_number')}
                                 </p>
-                                <div className="flex min-w-0 items-center gap-1.5">
-                                    <span className="break-all font-mono text-sm font-medium">{ticket || '—'}</span>
-                                    {ticket && (
-                                        <CopyValueButton
-                                            value={ticket}
-                                            label={t('broadband_application.ticket_number')}
-                                        />
+                                <div className="mt-1 flex items-center gap-1.5">
+                                    {ticket ? (
+                                        <span className="inline-flex max-w-full items-center truncate rounded-md bg-primary/10 px-2 py-0.5 font-mono text-[11px] font-medium text-primary">
+                                            {ticket}
+                                        </span>
+                                    ) : (
+                                        <span className="text-sm text-muted-foreground">—</span>
                                     )}
+                                    {ticket ? (
+                                        <CopyValueButton value={ticket} label={t('change_plan.ticket_number')} />
+                                    ) : null}
                                 </div>
                             </div>
-                            <div className="flex flex-col items-start gap-2 text-xs text-muted-foreground sm:items-end">
-                                <span className="rounded-full bg-background px-2.5 py-1 font-medium text-foreground">
-                                    {serviceLabel}
-                                </span>
-                                <span className="inline-flex items-center gap-1">
-                                    <CalendarIcon className="size-3.5" />
-                                    <span className="font-medium text-foreground">
-                                        {formatDate(request.created_at)}
-                                    </span>
-                                </span>
-                            </div>
+                            <StatusBadge status={request.status} />
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            <span className="rounded-full bg-background px-2.5 py-1 font-medium text-foreground">
+                                {serviceLabel}
+                            </span>
                         </div>
                     </div>
 
                     <div className="grid gap-3 sm:grid-cols-2">
-                        <ServiceRequestInfoCard
-                            icon={UserIcon}
-                            title={t('broadband_application.app_user')}
-                            fields={[
-                                { label: t('customers.name'), value: request.user.name },
-                                {
-                                    label: t('requests.phone'),
-                                    value: formatPhoneInternational(request.user.phone),
-                                    copy: request.user.phone,
-                                    copyLabel: t('change_password.copy_account_phone'),
-                                    copyFormat: 'phone',
-                                    isCancelled: request.status === 'cancelled',
-                                },
-                                {
-                                    label: t('requests.broadband_account'),
-                                    value: request.broadband_account_number,
-                                    copy: request.broadband_account_number,
-                                    copyLabel: t('requests.broadband_account'),
-                                },
-                            ]}
-                        />
-                        <ServiceRequestInfoCard
-                            icon={PhoneIcon}
-                            title={t('change_password.contact')}
-                            fields={[
-                                { label: t('customers.name'), value: request.contact_name },
-                                {
-                                    label: t('requests.phone'),
-                                    value: formatPhoneInternational(request.contact_phone),
-                                    copy: request.contact_phone,
-                                    copyLabel: t('change_password.copy_contact_phone'),
-                                    copyFormat: 'phone',
-                                    isCancelled: request.status === 'cancelled',
-                                },
-                            ]}
-                        />
+                        <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5 space-y-1">
+                            <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                                {t('change_plan.contact')}
+                            </p>
+                            <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                                <UserIcon className="size-3.5 text-muted-foreground/70" />
+                                {request.contact_name}
+                            </p>
+                            <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <PhoneIcon className="size-3" />
+                                <span className={request.status === 'cancelled' ? 'select-none' : ''}>
+                                    {formatPhoneInternational(request.contact_phone)}
+                                </span>
+                                {request.status !== 'cancelled' && (
+                                    <CopyValueButton
+                                        value={request.contact_phone}
+                                        label={t('change_password.copy_contact_phone')}
+                                        format="phone"
+                                    />
+                                )}
+                            </p>
+                        </div>
+
+                        <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5 space-y-1">
+                            <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                                {t('change_plan.broadband_account')}
+                            </p>
+                            <p className="flex items-center gap-1.5 font-mono text-sm font-semibold text-foreground">
+                                <WifiIcon className="size-3.5 text-muted-foreground/70" />
+                                {request.broadband_account_number ?? '—'}
+                            </p>
+                            <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <UserIcon className="size-3" />
+                                <span className="font-mono">{request.user.name}</span>
+                                <span className={`font-mono ${request.status === 'cancelled' ? 'select-none' : ''}`}>
+                                    ({formatPhoneInternational(request.user?.phone)})
+                                </span>
+                                {request.status !== 'cancelled' && (
+                                    <CopyValueButton
+                                        value={request.user?.phone}
+                                        label={t('change_password.copy_account_phone')}
+                                        format="phone"
+                                    />
+                                )}
+                            </p>
+                        </div>
                     </div>
 
-                    <div className="rounded-2xl border border-border/60 p-4">
-                        <div className="mb-4">
-                            <ServiceRequestSectionHeading
-                                icon={WifiIcon}
-                                title={t('change_plan.migration')}
-                            />
-                        </div>
-                        <p className="mb-4 flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <CalendarIcon className="size-3.5" />
-                            <span>{t('change_plan.preferred_date')}:</span>
-                            <span
-                                className={cn(
-                                    'font-medium text-foreground',
-                                    isExpired && 'font-semibold text-amber-600 dark:text-amber-400',
-                                )}
-                            >
-                                {formatDate(request.preferred_date)}
+                    <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                        <p className="mb-3 text-[11px] font-bold uppercase tracking-wider">
+                            {t('change_plan.migration')}
+                        </p>
+                        <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <CalendarIcon className="size-3" />
+                            <span className={cn(isExpired && 'font-semibold text-amber-600 dark:text-amber-400')}>
+                                {t('change_plan.preferred_date')}: {formatDate(request.preferred_date)}
                             </span>
                         </p>
-                        <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
-                            <div className="flex h-full min-w-0 flex-col rounded-xl border border-border/60 bg-muted/20 p-3.5">
-                                <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                            <div className="space-y-1">
+                                <span className="text-[11px] font-medium text-muted-foreground">
                                     {t('change_plan.current_plan')}
+                                </span>
+                                <p className="text-xs font-semibold text-foreground leading-snug">
+                                    {packageName(request.current_package_detail)}
                                 </p>
-                                <div className="flex min-w-0 items-start gap-1.5 text-sm font-medium leading-5 text-foreground">
-                                    <PackageIcon className="mt-0.5 size-3.5 shrink-0" />
-                                    <span className="min-w-0 break-words">
-                                        {packageName(request.current_package_detail)}
-                                    </span>
-                                </div>
-                                <p className="mt-2 text-xs font-mono font-medium text-muted-foreground">
+                                <p className="text-xs font-mono font-medium text-muted-foreground">
                                     {pointsLabel(request.current_package_detail?.price, t('billing_report.points'))}
                                 </p>
                             </div>
 
-                            <div className="hidden sm:flex">
-                                <div className="flex size-9 items-center justify-center rounded-full border border-primary/20 bg-primary/5 text-primary">
-                                    <ArrowRightIcon className="size-4" />
-                                </div>
+                            <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                <ArrowRightIcon className="size-4" />
                             </div>
 
-                            <div className="flex h-full min-w-0 flex-col rounded-xl border border-primary/20 bg-primary/5 p-3.5">
-                                <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                                    {t('change_plan.new_plan')}
+                            <div className="space-y-1 text-right">
+                                <span className="text-[11px] font-bold text-primary">
+                                    {t('change_plan.requested_plan')}
+                                </span>
+                                <p className="text-xs font-bold text-foreground leading-snug text-primary">
+                                    {packageName(request.new_package_detail)}
                                 </p>
-                                <div className="flex min-w-0 items-start gap-1.5 text-sm font-semibold leading-5 text-primary">
-                                    <PackageIcon className="mt-0.5 size-3.5 shrink-0" />
-                                    <span className="min-w-0 break-words">
-                                        {packageName(request.new_package_detail)}
-                                    </span>
-                                </div>
-                                <p className="mt-2 text-xs font-mono font-semibold text-primary">
+                                <p className="text-xs font-mono font-semibold text-primary">
                                     {pointsLabel(request.new_package_detail?.price, t('billing_report.points'))}
                                 </p>
                             </div>
@@ -276,9 +261,10 @@ export function ChangePlanDetailDialog({
                     </div>
 
                     <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
-                        <div className="mb-1.5">
-                            <ServiceRequestSectionHeading icon={FileTextIcon} title={t('change_plan.note')} />
-                        </div>
+                        <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                            <FileTextIcon className="size-3.5 text-muted-foreground/70" />
+                            {t('change_plan.note')}
+                        </p>
                         <div className="max-h-48 overflow-y-auto pr-1">
                             <p className="whitespace-pre-wrap text-xs text-foreground/80 leading-relaxed italic">
                                 {request.note ? `"${request.note}"` : t('change_plan.no_note')}

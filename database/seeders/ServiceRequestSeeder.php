@@ -2,19 +2,17 @@
 
 namespace Database\Seeders;
 
+use App\Enums\CustomerPackageStatus;
 use App\Enums\RequestStatus;
 use App\Models\Admin;
-use App\Models\ChangePasswordRequest;
 use App\Models\ChangePlanRequest;
-use App\Models\FailureReport;
-use App\Models\InstallationApplication;
+use App\Models\Package;
 use App\Models\RelocationRequest;
 use App\Models\User;
+use Database\Factories\Support\MyanmarFake;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
-use RuntimeException;
 
 class ServiceRequestSeeder extends Seeder
 {
@@ -30,128 +28,103 @@ class ServiceRequestSeeder extends Seeder
         $users = $userIds
             ? User::query()->whereIn('id', $userIds)->orderBy('id')->get()
             : User::query()->orderByDesc('id')->limit(20)->get()->sortBy('id')->values();
+        $packages = Package::query()->get();
 
-        if ($users->count() < 8 || ! Admin::query()->exists()) {
-            throw new RuntimeException('Run AdminSeeder and CustomerSeeder before ServiceRequestSeeder.');
+        if ($users->count() < 8 || $packages->isEmpty() || !Admin::query()->exists()) {
+            throw new \RuntimeException(
+                'Run AdminSeeder, PackageSeeder, and CustomerSeeder before ServiceRequestSeeder.',
+            );
         }
 
-        $admin = Admin::query()->firstOrFail();
-
-        $this->seedRequestType(InstallationApplication::class, 'SEED-INS', $users, $admin, function (
-            User $user,
-            Admin $admin,
-            RequestStatus $status,
-            string $ticketNumber,
-            string $createdAt,
-        ): void {
-            InstallationApplication::factory()->create([
-                'user_id' => $user->id,
-                'contact_name' => $user->name,
-                'contact_phone' => $user->phone,
-                'ticket_number' => $ticketNumber,
-                'status' => $status,
-                'admin_id' => $status === RequestStatus::Approved ? $admin->id : null,
-                'created_at' => $createdAt,
-            ]);
-        });
-
-        $this->seedRequestType(FailureReport::class, 'SEED-FAIL', $users, $admin, function (
-            User $user,
-            Admin $admin,
-            RequestStatus $status,
-            string $ticketNumber,
-            string $createdAt,
-        ): void {
-            FailureReport::factory()->create([
-                'user_id' => $user->id,
-                'broadband_account_number' => $user->broadband_account_number,
-                'ticket_number' => $ticketNumber,
-                'status' => $status,
-                'admin_id' => $status === RequestStatus::Approved ? $admin->id : null,
-                'created_at' => $createdAt,
-            ]);
-        });
-
-        $this->seedRequestType(RelocationRequest::class, 'SEED-REL', $users, $admin, function (
-            User $user,
-            Admin $admin,
-            RequestStatus $status,
-            string $ticketNumber,
-            string $createdAt,
-        ): void {
-            RelocationRequest::factory()->create([
-                'user_id' => $user->id,
-                'broadband_account_number' => $user->broadband_account_number,
-                'ticket_number' => $ticketNumber,
-                'status' => $status,
-                'admin_id' => $status === RequestStatus::Approved ? $admin->id : null,
-                'created_at' => $createdAt,
-            ]);
-        });
-
-        $this->seedRequestType(ChangePlanRequest::class, 'SEED-PLAN', $users, $admin, function (
-            User $user,
-            Admin $admin,
-            RequestStatus $status,
-            string $ticketNumber,
-            string $createdAt,
-        ): void {
-            ChangePlanRequest::factory()->create([
-                'user_id' => $user->id,
-                'broadband_account_number' => $user->broadband_account_number,
-                'service_type' => str_starts_with((string) $user->broadband_account_number, 'CG') ? 'CG' : 'FTTH',
-                'ticket_number' => $ticketNumber,
-                'status' => $status,
-                'admin_id' => $status === RequestStatus::Approved ? $admin->id : null,
-                'created_at' => $createdAt,
-            ]);
-        });
-
-        $this->seedRequestType(ChangePasswordRequest::class, 'SEED-PASS', $users, $admin, function (
-            User $user,
-            Admin $admin,
-            RequestStatus $status,
-            string $ticketNumber,
-            string $createdAt,
-        ): void {
-            ChangePasswordRequest::factory()->create([
-                'user_id' => $user->id,
-                'broadband_account_number' => $user->broadband_account_number,
-                'ticket_number' => $ticketNumber,
-                'status' => $status,
-                'admin_id' => null,
-                'created_at' => $createdAt,
-            ]);
-        });
+        $this->seedRequests($users, $packages);
     }
 
     /**
-     * @param  class-string<Model>  $modelClass
-     * @param  Collection<int, User>  $users
-     * @param  \Closure(User, Admin, RequestStatus, string, string): void  $create
+     * @param  \Illuminate\Database\Eloquent\Collection<int, User>  $users
+     * @param  Collection<int, Package>  $packages
      */
-    private function seedRequestType(
-        string $modelClass,
-        string $ticketPrefix,
-        Collection $users,
-        Admin $admin,
-        \Closure $create,
-    ): void {
-        $statuses = RequestStatus::cases();
+    private function seedRequests($users, $packages): void
+    {
+        $sample = $users->take(8)->values();
+        $admin = Admin::query()->first();
 
-        for ($number = 1; $number <= 100; $number++) {
-            $ticketNumber = $ticketPrefix . '-' . str_pad((string) $number, 4, '0', STR_PAD_LEFT);
-            if ($modelClass::query()->where('ticket_number', $ticketNumber)->exists()) {
+        foreach ($users->take(20)->values() as $index => $user) {
+            $customerPackage = $user
+                ->customerPackages()
+                ->where('status', CustomerPackageStatus::Active->value)
+                ->first();
+
+            if (!$customerPackage) {
                 continue;
             }
 
-            $user = $users->get(($number - 1) % $users->count());
-            $status = $statuses[($number - 1) % count($statuses)];
-            $createdAt = now()
-                ->subDays((($number - 1) * 3) % 365)
-                ->toDateTimeString();
+            $currentPackageId = $customerPackage->package_id;
+            $currentPackage = Package::query()
+                ->with(['network', 'speed', 'term'])
+                ->find($currentPackageId);
 
-            $create($user, $admin, $status, $ticketNumber, $createdAt);
+            $condition = $index % 3;
+            $status =
+                $index < 10
+                    ? RequestStatus::UnderReview
+                    : ($index < 17
+                        ? RequestStatus::Approved
+                        : RequestStatus::Cancelled);
+
+            $newPackage = match ($condition) {
+                0 => $currentPackage?->speed
+                    ? Package::query()
+                        ->whereKeyNot($currentPackageId)
+                        ->whereHas('speed', fn($query) => $query->where('mbps', '<', $currentPackage->speed->mbps))
+                        ->first()
+                    : null,
+                1 => $currentPackage?->speed
+                    ? Package::query()
+                        ->whereKeyNot($currentPackageId)
+                        ->whereHas('speed', fn($query) => $query->where('mbps', '>', $currentPackage->speed->mbps))
+                        ->first()
+                    : null,
+                default => $currentPackage?->speed
+                    ? Package::query()
+                        ->whereKeyNot($currentPackageId)
+                        ->where('network_id', '!=', $currentPackage->network_id)
+                        ->whereHas('speed', fn($query) => $query->where('mbps', $currentPackage->speed->mbps))
+                        ->first()
+                    : null,
+            };
+
+            $newPackage ??= Package::query()->whereKeyNot($currentPackageId)->first();
+
+            if (!$newPackage) {
+                continue;
+            }
+
+            $adminId = $status === RequestStatus::Approved ? $admin?->id : null;
+            do {
+                $contactPhone = MyanmarFake::phone();
+            } while ($contactPhone === $user->phone);
+
+            ChangePlanRequest::query()->firstOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'broadband_account_number' => $user->broadband_account_number,
+                    'preferred_date' => now()
+                        ->{$index < 2 ? 'subDays' : 'addDays'}($index + 1)
+                        ->toDateString(),
+                ],
+                [
+                    'broadband_account_number' => $user->broadband_account_number,
+                    'service_type' => str_starts_with((string) $user->broadband_account_number, 'CG') ? 'CG' : 'FTTH',
+                    'ticket_number' => 'CPL' . $user->id . str_pad((string) ($index + 1), 4, '0', STR_PAD_LEFT),
+                    'current_package_detail' => $currentPackage->changePlanDetail(),
+                    'new_package_detail' => $newPackage->loadMissing(['network', 'speed', 'term'])->changePlanDetail(),
+                    'contact_name' => $user->name,
+                    'contact_phone' => $contactPhone,
+                    'note' => 'Seeded change plan request.',
+                    'status' => $status,
+                    'admin_id' => $adminId,
+                ],
+            );
         }
     }
 }

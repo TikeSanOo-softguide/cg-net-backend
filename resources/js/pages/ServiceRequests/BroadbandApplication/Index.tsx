@@ -1,17 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { BookX, CalendarIcon, CircleCheckBig, ClipboardList, MapPinIcon, ScanEye } from 'lucide-react';
+import { BookX, CalendarIcon, CircleCheckBig, ClipboardList, MapPinIcon, ScanEye, WifiIcon } from 'lucide-react';
 
 import { BroadbandApplicationDetailDialog } from '@/components/service-requests/broadband-application/BroadbandApplicationDetailDialog';
 import { DataTable } from '@/components/DataTable';
-import { SearchInput } from '@/components/SearchInput';
 import type { Paginated } from '@/components/Pagination';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { StatCard } from '@/components/StatCard';
 import { StatusBadge } from '@/components/StatusBadge';
 import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
-import { FormField } from '@/components/ui/form-field';
+import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -22,12 +21,12 @@ import { formatDate, truncateText } from '@/lib/utils';
 type BroadbandApplication = {
     id: number;
     notification_unread: boolean;
-    contact_phone: string;
+    phone: string;
     address: string;
     note: string | null;
     status: string;
     created_at: string;
-    contact_name: string;
+    name: string;
     service_type: string | null;
     ticket_number: string | null;
     package_detail: {
@@ -157,84 +156,54 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                     getRowId={(request) => String(request.id)}
                     search={search}
                     onSearchChange={onSearchChange}
-                    showSearch={false}
+                    searchPlaceholder={t('broadband_application.search_placeholder')}
                     pagination={requests}
                     onView={(request) => setSelectedRequest(request)}
                     directActions
                     filters={
                         <>
-                            <FormField
-                                label={t('common.search')}
-                                htmlFor="installation-search"
-                                className="w-full shrink-0 sm:w-60"
-                                labelClassName="text-[13px]"
+                        <FormControl icon={WifiIcon} compact className="w-full shrink-0 sm:w-40">
+                            <Select
+                                value={filters.service_type || 'all'}
+                                onValueChange={(serviceType) =>
+                                    visit({
+                                        service_type: serviceType === 'all' ? '' : serviceType,
+                                    })
+                                }
                             >
-                                <SearchInput
-                                    id="installation-search"
-                                    value={search}
-                                    onChange={onSearchChange}
-                                    placeholder={t('broadband_application.search_placeholder')}
-                                    size="sm"
-                                />
-                            </FormField>
-                            <FormField
-                                label={t('broadband_application.service_type')}
-                                htmlFor="installation-service-type"
-                                className="w-full shrink-0 sm:w-40"
-                                labelClassName="text-[13px]"
+                                <SelectTrigger className="w-full rounded-xl border-border/60 bg-background">
+                                    <SelectValue placeholder={t('broadband_application.service_type')} />
+                                </SelectTrigger>
+                                <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                    <SelectItem value="all">{t('common.all')}</SelectItem>
+                                    <SelectItem value="FTTH">FTTH</SelectItem>
+                                    <SelectItem value="CG">{t('broadband_application.cg_router')}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </FormControl>
+                        <FormControl icon={WifiIcon} compact className="w-full shrink-0 sm:w-48">
+                            <Select
+                                value={filters.status || 'all'}
+                                onValueChange={(status) =>
+                                    visit({
+                                        status: status === 'all' ? '' : status,
+                                    })
+                                }
                             >
-                                <Select
-                                    value={filters.service_type || 'all'}
-                                    onValueChange={(serviceType) =>
-                                        visit({
-                                            service_type: serviceType === 'all' ? '' : serviceType,
-                                        })
-                                    }
-                                >
-                                    <SelectTrigger
-                                        id="installation-service-type"
-                                        className="w-full rounded-xl border-border/60 bg-background"
-                                    >
-                                        <SelectValue placeholder={t('broadband_application.service_type')} />
-                                    </SelectTrigger>
-                                    <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
-                                        <SelectItem value="all">{t('common.all')}</SelectItem>
-                                        <SelectItem value="FTTH">FTTH</SelectItem>
-                                        <SelectItem value="CG">{t('broadband_application.cg_router')}</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </FormField>
-                            <FormField
-                                label={t('common.status')}
-                                htmlFor="installation-status"
-                                className="w-full shrink-0 sm:w-48"
-                                labelClassName="text-[13px]"
-                            >
-                                <Select
-                                    value={filters.status || 'all'}
-                                    onValueChange={(status) =>
-                                        visit({
-                                            status: status === 'all' ? '' : status,
-                                        })
-                                    }
-                                >
-                                    <SelectTrigger
-                                        id="installation-status"
-                                        className="w-full rounded-xl border-border/60 bg-background"
-                                    >
-                                        <SelectValue placeholder={t('common.status')} />
-                                    </SelectTrigger>
+                                <SelectTrigger className="w-full rounded-xl border-border/60 bg-background">
+                                    <SelectValue placeholder={t('common.status')} />
+                                </SelectTrigger>
 
-                                    <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
-                                        <SelectItem value="all">{t('common.all')}</SelectItem>
-                                        {statuses.map((status) => (
-                                            <SelectItem key={status} value={status}>
-                                                {t(`status.${status}`)}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </FormField>
+                                <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                    <SelectItem value="all">{t('common.all')}</SelectItem>
+                                    {statuses.map((status) => (
+                                        <SelectItem key={status} value={status}>
+                                            {t(`status.${status}`)}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </FormControl>
                         </>
                     }
                     columns={[
@@ -248,14 +217,12 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                                         <StaffListAvatar
                                             username={request.user?.name || '—'}
                                             unreadLabel={
-                                                request.notification_unread
-                                                    ? t('admin_notifications.unread')
-                                                    : undefined
+                                                request.notification_unread ? t('admin_notifications.unread') : undefined
                                             }
                                         />
                                     </div>
-                                    <span className="line-clamp-2 min-w-0 font-medium leading-5">
-                                        {request.user?.name || '—'}
+                                    <span className="min-w-0 truncate font-medium">
+                                        {truncateText(request.user?.name || '—', 20)}
                                     </span>
 
                                     <p className="mt-1 truncate font-mono text-muted-foreground">
@@ -284,18 +251,6 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                             searchValue: (request) => request.ticket_number ?? '',
                         },
                         {
-                            id: 'contact',
-                            header: t('requests.contact_information'),
-                            mobile: 'meta' as const,
-                            cell: (request) => (
-                                <div className="min-w-0 text-xs text-muted-foreground">
-                                    <p className="truncate font-medium leading-6 text-foreground">{request.contact_name}</p>
-                                    <p className="truncate">{formatPhoneInternational(request.contact_phone)}</p>
-                                </div>
-                            ),
-                            searchValue: (request) => `${request.contact_name} ${request.contact_phone}`,
-                        },
-                        {
                             id: 'service_type',
                             header: t('broadband_application.service_type'),
                             mobile: 'meta' as const,
@@ -310,7 +265,7 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                         },
                         {
                             id: 'package',
-                            header: t('broadband_application.requested_plan'),
+                            header: t('requests.requested_packages'),
                             mobile: 'meta' as const,
                             sortable: true,
                             cell: (request) => (
@@ -322,16 +277,22 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                         },
                         {
                             id: 'address',
-                            header: t('requests.address'),
+                            header: t('requests.contact_information'),
                             mobile: 'meta' as const,
                             sortable: true,
                             cell: (request) => (
-                                <span className="inline-flex max-w-[260px] items-center gap-2">
-                                    <MapPinIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                                    <span className="truncate">{truncateText(request.address, 35)}</span>
-                                </span>
+                                <div className="min-w-0 space-y-1">
+                                    <div className="flex min-w-0 items-center gap-2">
+                                        <MapPinIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                                        <span className="truncate">{truncateText(request.address, 35)}</span>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                        <span>({formatPhoneInternational(request.phone)})</span>
+                                    </div>
+                                </div>
                             ),
-                            searchValue: (request) => request.address,
+                            searchValue: (request) => request.phone,
                         },
                         {
                             id: 'created_at',
