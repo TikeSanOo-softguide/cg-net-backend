@@ -49,7 +49,7 @@ class CreateRelocationRequest extends CreateServiceRequest
             'current_address' => ['required', 'string', 'max:255'],
             'new_address' => ['required', 'string', 'max:255'],
             'preferred_date' => ['nullable', 'date'],
-            'phone' => ['required', 'string', 'max:16', 'regex:' . PhoneNumber::SUPPORTED_PATTERN],
+            'contact_phone' => ['required', 'string', 'max:16', 'regex:' . PhoneNumber::SUPPORTED_PATTERN],
             'details' => ['nullable', 'string', 'max:255'],
         ];
     }
@@ -57,7 +57,7 @@ class CreateRelocationRequest extends CreateServiceRequest
     public function messages(): array
     {
         return [
-            'phone.regex' => __('customers.validation.phone_invalid'),
+            'contact_phone.regex' => __('customers.validation.phone_invalid'),
         ];
     }
 }
