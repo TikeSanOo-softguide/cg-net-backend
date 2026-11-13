@@ -5,7 +5,6 @@ import {
     ArrowDown,
     RefreshCcw,
     CalendarIcon,
-    WifiIcon,
     ClipboardList,
     ScanEye,
     CircleCheckBig,
@@ -18,16 +17,18 @@ import {
     packageName,
 } from '@/components/service-requests/changePlan/ChangePlanDetailDialog';
 import { DataTable } from '@/components/DataTable';
+import { SearchInput } from '@/components/SearchInput';
 import type { Paginated } from '@/components/Pagination';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Badge } from '@/components/ui/badge';
-import { FormControl } from '@/components/ui/form-control';
+import { FormField } from '@/components/ui/form-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { REQUEST_STATUS } from '@/lib/CommonNameConst';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn, formatDate, todayInTimezone } from '@/lib/utils';
+import { formatPhoneInternational } from '@/lib/phone';
 import { StatCard } from '@/components/StatCard';
 import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
 import { useOpenRequestFromQuery } from '@/hooks/useOpenRequestFromQuery';
@@ -97,7 +98,6 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
     useEffect(() => {
         setSearch(filters.search);
     }, [filters.search]);
-
     useEffect(() => () => window.clearTimeout(debounce.current), []);
 
     const visit = (next: Partial<Filters>) => {
@@ -135,13 +135,32 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                     getRowId={(row) => String(row.id)}
                     search={search}
                     onSearchChange={onSearchChange}
-                    searchPlaceholder={t('change_plan.search_placeholder')}
+                    showSearch={false}
                     pagination={requests}
                     onView={(row) => setSelectedRequest(row)}
                     directActions
                     filters={
                         <>
-                            <FormControl icon={WifiIcon} compact className="w-full shrink-0 sm:w-40">
+                            <FormField
+                                label={t('common.search')}
+                                htmlFor="change-plan-search"
+                                className="w-full shrink-0 sm:w-60"
+                                labelClassName="text-[13px]"
+                            >
+                                <SearchInput
+                                    id="change-plan-search"
+                                    value={search}
+                                    onChange={onSearchChange}
+                                    placeholder={t('change_plan.search_placeholder')}
+                                    size="sm"
+                                />
+                            </FormField>
+                            <FormField
+                                label={t('change_plan.service_type')}
+                                htmlFor="change-plan-service-type"
+                                className="w-full shrink-0 sm:w-40"
+                                labelClassName="text-[13px]"
+                            >
                                 <Select
                                     value={filters.service_type || 'all'}
                                     onValueChange={(serviceType) =>
@@ -150,7 +169,10 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                                         })
                                     }
                                 >
-                                    <SelectTrigger className="w-full rounded-xl border-border/60 bg-background">
+                                    <SelectTrigger
+                                        id="change-plan-service-type"
+                                        className="w-full rounded-xl border-border/60 bg-background"
+                                    >
                                         <SelectValue placeholder={t('change_plan.service_type')} />
                                     </SelectTrigger>
                                     <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
@@ -159,8 +181,13 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                                         <SelectItem value="CG">{t('change_plan.cg_router')}</SelectItem>
                                     </SelectContent>
                                 </Select>
-                            </FormControl>
-                            <FormControl icon={WifiIcon} compact className="w-full shrink-0 sm:w-48">
+                            </FormField>
+                            <FormField
+                                label={t('common.status')}
+                                htmlFor="change-plan-status"
+                                className="w-full shrink-0 sm:w-48"
+                                labelClassName="text-[13px]"
+                            >
                                 <Select
                                     value={filters.status || 'all'}
                                     onValueChange={(status) =>
@@ -169,7 +196,10 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                                         })
                                     }
                                 >
-                                    <SelectTrigger className="w-full rounded-xl border-border/60 bg-background">
+                                    <SelectTrigger
+                                        id="change-plan-status"
+                                        className="w-full rounded-xl border-border/60 bg-background"
+                                    >
                                         <SelectValue placeholder={t('common.status')} />
                                     </SelectTrigger>
                                     <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
@@ -181,7 +211,7 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                                         ))}
                                     </SelectContent>
                                 </Select>
-                            </FormControl>
+                            </FormField>
                         </>
                     }
                     columns={[
@@ -195,14 +225,14 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                                         <StaffListAvatar
                                             username={request.user.name}
                                             unreadLabel={
-                                                request.notification_unread ? t('admin_notifications.unread') : undefined
+                                                request.notification_unread
+                                                    ? t('admin_notifications.unread')
+                                                    : undefined
                                             }
                                         />
                                     </div>
 
-                                    <span className="truncate font-semibold">
-                                        {request.user.name}
-                                    </span>
+                                    <span className="line-clamp-2 font-semibold leading-5">{request.user.name}</span>
 
                                     <p className="truncate font-mono text-xs text-muted-foreground">
                                         {request.broadband_account_number ?? '—'}
@@ -229,6 +259,18 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                             searchValue: (request) => request.ticket_number ?? '',
                         },
                         {
+                            id: 'contact',
+                            header: t('requests.contact_information'),
+                            mobile: 'meta' as const,
+                            cell: (request) => (
+                                <div className="min-w-0 text-xs text-muted-foreground">
+                                    <p className="truncate font-medium leading-6 text-foreground">{request.contact_name}</p>
+                                    <p className="truncate">{formatPhoneInternational(request.contact_phone)}</p>
+                                </div>
+                            ),
+                            searchValue: (request) => `${request.contact_name} ${request.contact_phone}`,
+                        },
+                        {
                             id: 'service_type',
                             header: t('change_plan.service_type'),
                             mobile: false,
@@ -243,7 +285,7 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                         },
                         {
                             id: 'current_plans',
-                            header: t('change_plan.current_packages'),
+                            header: t('change_plan.current_plan'),
                             mobile: false,
                             cell: (request) => (
                                 <span className="truncate text-xs text-muted-foreground mb-1">
@@ -254,7 +296,7 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                         },
                         {
                             id: 'requested_plans',
-                            header: t('change_plan.requested_packages'),
+                            header: t('change_plan.new_plan'),
                             mobile: 'subtitle' as const,
                             cell: (request) => {
                                 const currentSpeed = Number(request.current_package_detail?.speed?.mbps);

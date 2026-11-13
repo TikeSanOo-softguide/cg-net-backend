@@ -8,15 +8,18 @@ import {
     NavigationIcon,
     PhoneIcon,
     UserIcon,
-    WifiIcon,
     WifiOffIcon,
 } from 'lucide-react';
 
 import { FormDialog } from '@/components/FormDialog';
+import {
+    ServiceRequestInfoCard,
+    ServiceRequestSectionHeading,
+} from '@/components/service-requests/ServiceRequestInfoCard';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
-import { cn } from '@/lib/utils';
+import { cn, formatDate } from '@/lib/utils';
 import { CopyValueButton } from '@/components/CopyValueButton';
 import { REQUEST_STATUS } from '@/lib/CommonNameConst';
 import { formatPhoneInternational } from '@/lib/phone';
@@ -95,117 +98,79 @@ export function FailureReportDetailDialog({
         >
             {request ? (
                 <div className="mt-1 space-y-4 overflow-y-auto p-2">
-                    <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5 space-y-1">
-                            <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                                {t('change_plan.contact')}
-                            </p>
-                            <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                                <UserIcon className="size-3.5 text-muted-foreground/70" />
-                                {request.customer_name}
-                            </p>
-                            <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <PhoneIcon className="size-3" />
-                                <span className={request.status === 'cancelled' ? 'select-none' : ''}>
-                                    {formatPhoneInternational(request.customer_phone)}
+                    <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="min-w-0 space-y-1">
+                                <p className="text-xs font-medium text-muted-foreground">
+                                    {t('broadband_application.ticket_number')}
+                                </p>
+                                <div className="flex min-w-0 items-center gap-1.5">
+                                    <span className="break-all font-mono text-sm font-medium">{ticket || '—'}</span>
+                                    {ticket && (
+                                        <CopyValueButton
+                                            value={ticket}
+                                            label={t('broadband_application.ticket_number')}
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                            <div className="flex flex-col items-start gap-2 text-xs text-muted-foreground sm:items-end">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-background px-2.5 py-1 font-medium text-foreground">
+                                    <WifiOffIcon className="size-3.5" />
+                                    {t(`failure_report.${request.failure_type}`)}
                                 </span>
-                                {request.status !== 'cancelled' && (
-                                    <CopyValueButton
-                                        value={request.customer_phone}
-                                        label={t('requests.copy_phone')}
-                                        format="phone"
-                                    />
-                                )}
-                            </p>
-                        </div>
-
-                        <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5 space-y-1">
-                            <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                                {t('change_plan.broadband_account')}
-                            </p>
-                            <p className="flex items-center gap-1.5 font-mono text-sm font-semibold text-foreground">
-                                <WifiIcon className="size-3.5 text-muted-foreground/70" />
-                                {request.broadband_account_number}
-                            </p>
-                            <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <UserIcon className="size-3" />
-                                <span className="font-mono">{request.account_customer}</span>
-                                <span className={`font-mono ${request.status === 'cancelled' ? 'select-none' : ''}`}>
-                                    ({formatPhoneInternational(request.contact_phone)})
+                                <span className="inline-flex items-center gap-1">
+                                    <Calendar1Icon className="size-3.5" />
+                                    <span className="font-medium text-foreground">
+                                        {formatDate(request.created_at)}
+                                    </span>
                                 </span>
-                                {request.status !== 'cancelled' && (
-                                    <CopyValueButton
-                                        value={request.contact_phone}
-                                        label={t('requests.copy_phone')}
-                                        format="phone"
-                                    />
-                                )}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
-                            <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                                {t('failure_report.request_info')}
-                            </p>
-
-                            <div className="space-y-2.5">
-                                <div className="flex items-center justify-between gap-3">
-                                    <span className="text-xs text-muted-foreground">
-                                        {t('broadband_application.ticket_number')}
-                                    </span>
-                                    <span className="inline-flex items-center gap-1">
-                                        {ticket ? (
-                                            <span className="inline-flex max-w-full items-center truncate rounded-md bg-primary/10 px-2 py-0.5 font-mono text-[11px] font-medium text-primary">
-                                                {ticket}
-                                            </span>
-                                        ) : (
-                                            <span className="text-sm text-muted-foreground">—</span>
-                                        )}
-                                        {ticket && (
-                                            <CopyValueButton
-                                                value={ticket}
-                                                label={t('broadband_application.ticket_number')}
-                                            />
-                                        )}
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between gap-3">
-                                    <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                        <WifiOffIcon className="size-3.5" />
-                                        {t('failure_report.failure_type')}
-                                    </span>
-
-                                    <span className="text-sm font-semibold text-foreground">
-                                        {t(`failure_report.${request.failure_type}`)}
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between gap-3">
-                                    <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                        <Calendar1Icon className="size-3.5" />
-                                        {t('requests.requested_date')}
-                                    </span>
-
-                                    <span
-                                        className={`text-sm font-medium text-foreground ${
-                                            request.status === 'cancelled' ? 'select-none' : ''
-                                        }`}
-                                    >
-                                        {request.created_at}
-                                    </span>
-                                </div>
                             </div>
                         </div>
                     </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        <ServiceRequestInfoCard
+                            icon={UserIcon}
+                            title={t('broadband_application.app_user')}
+                            fields={[
+                                { label: t('customers.name'), value: request.customer_name },
+                                {
+                                    label: t('requests.phone'),
+                                    value: formatPhoneInternational(request.customer_phone),
+                                    copy: request.customer_phone,
+                                    copyLabel: t('requests.copy_phone'),
+                                    copyFormat: 'phone',
+                                    isCancelled: request.status === 'cancelled',
+                                },
+                                {
+                                    label: t('requests.broadband_account'),
+                                    value: request.broadband_account_number,
+                                    copy: request.broadband_account_number,
+                                    copyLabel: t('requests.broadband_account'),
+                                },
+                            ]}
+                        />
+                        <ServiceRequestInfoCard
+                            icon={PhoneIcon}
+                            title={t('change_password.contact')}
+                            fields={[
+                                { label: t('customers.name'), value: request.contact_name },
+                                {
+                                    label: t('requests.phone'),
+                                    value: formatPhoneInternational(request.contact_phone),
+                                    copy: request.contact_phone,
+                                    copyLabel: t('requests.copy_phone'),
+                                    copyFormat: 'phone',
+                                    isCancelled: request.status === 'cancelled',
+                                },
+                            ]}
+                        />
+                    </div>
+
                     <div className="rounded-xl border border-border/60 bg-muted/25 p-4">
-                        <div className="mb-3 flex items-center gap-2">
-                            <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
-                                <ImageIcon className="size-3.5 text-primary" />
-                            </div>
-                            <div>
-                                <p className="text-xs font-semibold text-foreground">{t('requests.images')}</p>
-                            </div>
+                        <div className="mb-3">
+                            <ServiceRequestSectionHeading icon={ImageIcon} title={t('requests.images')} />
                         </div>
 
                         {request.photos?.length ? (
@@ -233,10 +198,9 @@ export function FailureReportDetailDialog({
                         )}
                     </div>
                     <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
-                        <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                            <FileTextIcon className="size-3.5 text-muted-foreground/70" />
-                            {t('cms.description')}
-                        </p>
+                        <div className="mb-2">
+                            <ServiceRequestSectionHeading icon={FileTextIcon} title={t('cms.description')} />
+                        </div>
 
                         <div className="max-h-48 overflow-y-auto rounded-lg border border-border/40 bg-background/60 px-3 py-2.5 pr-2">
                             <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">

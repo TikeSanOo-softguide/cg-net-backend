@@ -32,7 +32,14 @@ class RelocationRequestController extends Controller
             ->when($openRequestId < 1 && $search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
-                        ->whereHas('user', fn($user) => $user->whereLike('name', '%' . $search . '%'))
+                        ->whereLike('ticket_number', '%' . $search . '%')
+                        ->orWhereLike('contact_name', '%' . $search . '%')
+                        ->orWhereLike('contact_phone', '%' . $search . '%')
+                        ->orWhereHas('user', function ($user) use ($search): void {
+                            $user
+                                ->whereLike('name', '%' . $search . '%')
+                                ->orWhereLike('phone', '%' . $search . '%');
+                        })
                         ->orWhereLike('broadband_account_number', '%' . $search . '%');
                 });
             })
@@ -65,7 +72,7 @@ class RelocationRequestController extends Controller
                 'status' => $status,
             ],
             'statuses' => array_column(RequestStatus::cases(), 'value'),
-            'stats' => $this->stats(),
+            'stats' => $this->stats($status),
         ]);
     }
 
@@ -89,15 +96,21 @@ class RelocationRequestController extends Controller
         return back()->with('success', 'requests.status_updated');
     }
 
-    private function stats(): array
+    private function stats(string $status): array
     {
+        $requests = RelocationRequest::query()
+            ->when(
+                $status !== '' && in_array($status, array_column(RequestStatus::cases(), 'value'), true),
+                fn($query) => $query->where('status', $status),
+            );
+
         return [
-            'total_requests' => RelocationRequest::query()->count(),
-            'under_reviews_requests' => RelocationRequest::query()
+            'total_requests' => (clone $requests)->count(),
+            'under_reviews_requests' => (clone $requests)
                 ->where('status', RequestStatus::UnderReview)
                 ->count(),
-            'approved_requests' => RelocationRequest::query()->where('status', RequestStatus::Approved)->count(),
-            'cancelled_requests' => RelocationRequest::query()->where('status', RequestStatus::Cancelled)->count(),
+            'approved_requests' => (clone $requests)->where('status', RequestStatus::Approved)->count(),
+            'cancelled_requests' => (clone $requests)->where('status', RequestStatus::Cancelled)->count(),
         ];
     }
 }

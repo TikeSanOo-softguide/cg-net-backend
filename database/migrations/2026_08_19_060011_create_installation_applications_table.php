@@ -9,12 +9,12 @@ return new class extends Migration {
     {
         Schema::create('installation_applications', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 30);
+            $table->string('contact_name', 30);
             $table->string('service_type', 8)->nullable();
             $table->string('ticket_number', 32)->nullable()->unique();
             $table->json('package_detail');
             $table->text('address');
-            $table->string('phone');
+            $table->string('contact_phone', 16);
             $table->text('note')->nullable();
             $table->string('status', 16);
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
