@@ -292,13 +292,15 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                             header: t('relocation_requests.preferred_date'),
                             mobile: 'meta' as const,
                             sortable: true,
-                            cell: (request) => (
-                                <span className="inline-flex items-center gap-1.5 text-xs">
-                                    <CalendarIcon className="size-3.5" />
-                                    {formatDate(request.preferred_date)}
-                                </span>
-                            ),
-                            searchValue: (request) => formatDate(request.preferred_date),
+                            cell: (request) =>
+                                request.preferred_date !== null && (
+                                    <span className="inline-flex items-center gap-1.5 text-xs">
+                                        <CalendarIcon className="size-3.5" />
+                                        {formatDate(request.preferred_date)}
+                                    </span>
+                                ),
+                            searchValue: (request) =>
+                                request.preferred_date ? formatDate(request.preferred_date) : '',
                         },
                         {
                             id: 'status',

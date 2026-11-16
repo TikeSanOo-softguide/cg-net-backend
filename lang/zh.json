@@ -1428,6 +1428,9 @@
         "search": "搜索工单号、用户、联系人或账户",
         "service_transfer": "服务迁移"
     },
+    "failure_reports": {
+        "card_title": "故障报告详情"
+    },
     "requests": {
         "address": "地址",
         "approved_by": "批准人",
