@@ -179,6 +179,7 @@
         "new_password": "新密码",
         "preferred_date": "首选日期",
         "request_title": "更改密码请求",
+        "request_details_description": "查看此密码更改请求的详细信息。",
         "search_placeholder": "搜索工单号、用户、联系人或账户",
         "status_updated": "申请状态已更新",
         "total_requests": "总申请数",
@@ -1451,7 +1452,8 @@
         "requested_packages": "申请的套餐",
         "status_updated": "请求状态已更新",
         "total_requests": "请求总数",
-        "under_review_requests": "审核中的请求"
+        "under_review_requests": "审核中的请求",
+        "no_images": "暂无图片"
     },
     "security_logs": {
         "actor": "操作人",

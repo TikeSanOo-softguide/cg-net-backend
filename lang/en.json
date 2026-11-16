@@ -179,6 +179,7 @@
         "new_password": "New Password",
         "preferred_date": "Preferred date",
         "request_title": "Change Password Request",
+        "request_details_description": "View the details of this change password request.",
         "search_placeholder": "Search ticket, user, contact, account",
         "status_updated": "Request status updated",
         "total_requests": "Total Requests",
@@ -1451,7 +1452,8 @@
         "requested_packages": "Requested Package",
         "status_updated": "Request status updated",
         "total_requests": "Total Requests",
-        "under_review_requests": "Under Review Requests"
+        "under_review_requests": "Under Review Requests",
+        "no_images": "No images available"
     },
     "security_logs": {
         "actor": "Actor",
