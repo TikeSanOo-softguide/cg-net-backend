@@ -1,13 +1,24 @@
 import { useEffect, useState } from 'react';
 import { useForm } from '@inertiajs/react';
-import { ArrowRightIcon, FileTextIcon, MapPinIcon, NavigationIcon, PhoneIcon, UserIcon, WifiIcon } from 'lucide-react';
+import {
+    ArrowRightIcon,
+    CalendarIcon,
+    FileTextIcon,
+    MapPinIcon,
+    NavigationIcon,
+    PhoneIcon,
+    UserIcon,
+} from 'lucide-react';
 
 import { FormDialog } from '@/components/FormDialog';
-import { formActionBarClass, formActionSubmitClass } from '@/components/FormActionBar';
+import {
+    ServiceRequestInfoCard,
+    ServiceRequestSectionHeading,
+} from '@/components/service-requests/ServiceRequestInfoCard';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
-import { cn } from '@/lib/utils';
+import { cn, formatDate } from '@/lib/utils';
 import { CopyValueButton } from '@/components/CopyValueButton';
 import { REQUEST_STATUS } from '@/lib/CommonNameConst';
 import { formatPhoneInternational } from '@/lib/phone';
@@ -15,7 +26,11 @@ import { formatPhoneInternational } from '@/lib/phone';
 type RelocationRequest = {
     id: number;
     status: string;
-    phone: string;
+    ticket_number: string | null;
+    created_at: string;
+    preferred_date: string | null;
+    contact_name: string;
+    contact_phone: string;
     details?: string | null;
     current_address: string;
     new_address: string;
@@ -72,9 +87,7 @@ export function RelocationRequestDetailDialog({
 }) {
     const { t } = useTranslation();
     const nextStatus =
-        request?.status === REQUEST_STATUS.UNDER_REVIEW
-            ? REQUEST_STATUS.APPROVED
-            : REQUEST_STATUS.UNDER_REVIEW;
+        request?.status === REQUEST_STATUS.UNDER_REVIEW ? REQUEST_STATUS.APPROVED : REQUEST_STATUS.UNDER_REVIEW;
     const { data, setData, patch } = useForm({ status: nextStatus });
     const nextButton = request?.status === REQUEST_STATUS.UNDER_REVIEW ? 'approve' : 'review';
     useEffect(() => {
@@ -96,6 +109,13 @@ export function RelocationRequestDetailDialog({
         });
     };
 
+    const ticket = request.ticket_number?.trim() || '';
+    const serviceType = request.broadband_account_number?.startsWith('FTTH')
+        ? 'FTTH'
+        : request.broadband_account_number?.startsWith('CG')
+          ? t('change_plan.cg_router')
+          : '—';
+
     return (
         <FormDialog
             open={open}
@@ -107,67 +127,87 @@ export function RelocationRequestDetailDialog({
         >
             {request ? (
                 <div className="mt-1 space-y-4 overflow-y-auto p-2">
-                    <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5 space-y-1">
-                            <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                                {t('change_plan.contact')}
-                            </p>
-                            <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                                <UserIcon className="size-3.5 text-muted-foreground/70" />
-                                {request.user.name}
-                            </p>
-                            <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <PhoneIcon className="size-3" />
-                                <span className={request.status === 'cancelled' ? 'select-none' : ''}>
-                                    {formatPhoneInternational(request.phone)}
+                    <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="min-w-0 space-y-1">
+                                <p className="text-xs font-medium text-muted-foreground">
+                                    {t('broadband_application.ticket_number')}
+                                </p>
+                                <div className="flex min-w-0 items-center gap-1.5">
+                                    <span className="break-all font-mono text-sm font-medium">{ticket || '—'}</span>
+                                    {ticket && (
+                                        <CopyValueButton
+                                            value={ticket}
+                                            label={t('broadband_application.ticket_number')}
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                            <div className="flex flex-col items-start gap-2 text-xs text-muted-foreground sm:items-end">
+                                <span className="rounded-full bg-background px-2.5 py-1 font-medium text-foreground">
+                                    {serviceType}
                                 </span>
-                                {request.status !== 'cancelled' && (
-                                    <CopyValueButton
-                                        value={request.phone}
-                                        label={t('requests.copy_phone')}
-                                        format="phone"
-                                    />
-                                )}
-                            </p>
-                        </div>
-
-                        <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5 space-y-1">
-                            <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                                {t('change_plan.broadband_account')}
-                            </p>
-                            <p className="flex items-center gap-1.5 font-mono text-sm font-semibold text-foreground">
-                                <WifiIcon className="size-3.5 text-muted-foreground/70" />
-                                {request.broadband_account_number ?? '—'}
-                            </p>
-                            <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <UserIcon className="size-3" />
-                                <span className="font-mono">{request.user.name}</span>
-                                <span className={`font-mono ${request.status === 'cancelled' ? 'select-none' : ''}`}>
-                                    ({formatPhoneInternational(request.user.phone)})
+                                <span className="inline-flex items-center gap-1">
+                                    <CalendarIcon className="size-3.5" />
+                                    <span className="font-medium text-foreground">
+                                        {formatDate(request.created_at)}
+                                    </span>
                                 </span>
-                                {request.status !== 'cancelled' && (
-                                    <CopyValueButton
-                                        value={request.user.phone}
-                                        label={t('requests.copy_phone')}
-                                        format="phone"
-                                    />
-                                )}
-                            </p>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="rounded-2xl border border-border/60 p-4">
-                        <div className="mb-4 flex items-center justify-between">
-                            <div>
-                                <p className="mt-0.5 text-sm font-semibold">
-                                    {t('relocation_requests.service_transfer')}
-                                </p>
-                            </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        <ServiceRequestInfoCard
+                            icon={UserIcon}
+                            title={t('broadband_application.app_user')}
+                            fields={[
+                                { label: t('customers.name'), value: request.user.name },
+                                {
+                                    label: t('requests.phone'),
+                                    value: formatPhoneInternational(request.user.phone),
+                                    copy: request.user.phone,
+                                    copyLabel: t('requests.copy_phone'),
+                                    copyFormat: 'phone',
+                                    isCancelled: request.status === 'cancelled',
+                                },
+                                {
+                                    label: t('requests.broadband_account'),
+                                    value: request.broadband_account_number,
+                                    copy: request.broadband_account_number,
+                                    copyLabel: t('requests.broadband_account'),
+                                },
+                            ]}
+                        />
+                        <ServiceRequestInfoCard
+                            icon={PhoneIcon}
+                            title={t('change_password.contact')}
+                            fields={[
+                                { label: t('customers.name'), value: request.contact_name },
+                                {
+                                    label: t('requests.phone'),
+                                    value: formatPhoneInternational(request.contact_phone),
+                                    copy: request.contact_phone,
+                                    copyLabel: t('requests.copy_phone'),
+                                    copyFormat: 'phone',
+                                    isCancelled: request.status === 'cancelled',
+                                },
+                            ]}
+                        />
+                    </div>
 
-                            <div className="flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                                <NavigationIcon className="size-4" />
-                            </div>
+                    <div className="rounded-2xl border border-border/60 p-4">
+                        <div className="mb-4">
+                            <ServiceRequestSectionHeading
+                                icon={NavigationIcon}
+                                title={t('relocation_requests.service_transfer')}
+                            />
                         </div>
+                        <p className="mb-4 flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <CalendarIcon className="size-3.5" />
+                            <span>{t('relocation_requests.preferred_date')}:</span>
+                            <span className="font-medium text-foreground">{formatDate(request.preferred_date)}</span>
+                        </p>
 
                         <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
                             <AddressCard
@@ -190,10 +230,9 @@ export function RelocationRequestDetailDialog({
                     </div>
 
                     <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
-                        <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                            <FileTextIcon className="size-3.5 text-muted-foreground/70" />
-                            {t('relocation_requests.detail')}
-                        </p>
+                        <div className="mb-2">
+                            <ServiceRequestSectionHeading icon={FileTextIcon} title={t('relocation_requests.detail')} />
+                        </div>
 
                         <div className="max-h-48 overflow-y-auto rounded-lg border border-border/40 bg-background/60 px-3 py-2.5 pr-2">
                             <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">

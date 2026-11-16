@@ -1,30 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import {
-    BookX,
-    Calendar,
-    CircleCheckBig,
-    ClipboardList,
-    PhoneIcon,
-    ScanEye,
-    WifiIcon,
-    WifiOffIcon,
-} from 'lucide-react';
+import { BookX, Calendar, CircleCheckBig, ClipboardList, ScanEye, WifiOffIcon } from 'lucide-react';
 
-import { FormDialog } from '@/components/FormDialog';
-import { formActionBarClass, formActionButtonClass, formActionSubmitClass } from '@/components/FormActionBar';
 import type { Paginated } from '@/components/Pagination';
 import { Pagination } from '@/components/Pagination';
 import { PageContent } from '@/components/PageContent';
 import { PageHeader } from '@/components/PageHeader';
 import { SearchInput } from '@/components/SearchInput';
 import { StatusBadge } from '@/components/StatusBadge';
-import { TableActionButton } from '@/components/TableActionButton';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { FormControl } from '@/components/ui/form-control';
+import { FormField } from '@/components/ui/form-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { EDGE_PAD } from '@/components/data-table/styles';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatPhoneInternational } from '@/lib/phone';
@@ -64,9 +49,6 @@ type FailureReportRow = {
 type Filters = {
     search: string;
     status: string;
-    type: string;
-    sort: string;
-    direction: 'asc' | 'desc';
 };
 
 type FailureReportsIndexProps = {
@@ -81,20 +63,6 @@ type FailureReportsIndexProps = {
     };
 };
 
-const visit = (filters: Partial<Filters>) => {
-    router.get(
-        '/service-requests/failures',
-        {
-            search: (filters.search ?? filters.search) || undefined,
-            status: filters.status ?? filters.status,
-        },
-        {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        },
-    );
-};
 export default function FailureReportsIndex({ reports, filters, statuses, stats }: FailureReportsIndexProps) {
     const { t } = useTranslation();
     const can = useCan();
@@ -112,8 +80,22 @@ export default function FailureReportsIndex({ reports, filters, statuses, stats 
     useEffect(() => {
         setSearch(filters.search);
     }, [filters.search]);
-
     useEffect(() => () => window.clearTimeout(debounce.current), []);
+
+    const visit = (next: Partial<Filters>) => {
+        router.get(
+            '/service-requests/failures',
+            {
+                search: (next.search ?? filters.search) || undefined,
+                status: next.status ?? filters.status,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
+        );
+    };
 
     const onSearchChange = (value: string) => {
         setSearch(value);
@@ -163,34 +145,58 @@ export default function FailureReportsIndex({ reports, filters, statuses, stats 
                     getRowId={(request) => String(request.id)}
                     search={search}
                     onSearchChange={onSearchChange}
-                    searchPlaceholder={t('relocation_requests.search')}
+                    showSearch={false}
                     pagination={reports}
                     onView={(request) => setSelectedRequest(request)}
                     directActions
                     filters={
-                        <FormControl icon={WifiIcon} compact className="w-full shrink-0 sm:w-48">
-                            <Select
-                                value={filters.status || 'all'}
-                                onValueChange={(status) =>
-                                    visit({
-                                        status: status === 'all' ? '' : status,
-                                    })
-                                }
+                        <>
+                            <FormField
+                                label={t('common.search')}
+                                htmlFor="failure-search"
+                                className="w-full shrink-0 sm:w-60"
+                                labelClassName="text-[13px]"
                             >
-                                <SelectTrigger className="w-full rounded-xl border-border/60 bg-background">
-                                    <SelectValue placeholder={t('common.status')} />
-                                </SelectTrigger>
+                                <SearchInput
+                                    id="failure-search"
+                                    value={search}
+                                    onChange={onSearchChange}
+                                    placeholder={t('failure_report.search_placeholder')}
+                                    size="sm"
+                                />
+                            </FormField>
+                            <FormField
+                                label={t('common.status')}
+                                htmlFor="failure-status"
+                                className="w-full shrink-0 sm:w-48"
+                                labelClassName="text-[13px]"
+                            >
+                                <Select
+                                    value={filters.status || 'all'}
+                                    onValueChange={(status) =>
+                                        visit({
+                                            status: status === 'all' ? '' : status,
+                                        })
+                                    }
+                                >
+                                    <SelectTrigger
+                                        id="failure-status"
+                                        className="w-full rounded-xl border-border/60 bg-background"
+                                    >
+                                        <SelectValue placeholder={t('common.status')} />
+                                    </SelectTrigger>
 
-                                <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
-                                    <SelectItem value="all">{t('common.all')}</SelectItem>
-                                    {statuses.map((status) => (
-                                        <SelectItem key={status} value={status}>
-                                            {t(`status.${status}`)}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </FormControl>
+                                    <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                        <SelectItem value="all">{t('common.all')}</SelectItem>
+                                        {statuses.map((status) => (
+                                            <SelectItem key={status} value={status}>
+                                                {t(`status.${status}`)}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </FormField>
+                        </>
                     }
                     columns={[
                         {
@@ -201,7 +207,7 @@ export default function FailureReportsIndex({ reports, filters, statuses, stats 
                                 <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-2.5">
                                     <div className="row-span-2">
                                         <StaffListAvatar
-                                            username={request.customer_name}
+                                            username={request.customer_name || '-'}
                                             unreadLabel={
                                                 request.notification_unread
                                                     ? t('admin_notifications.unread')
@@ -209,8 +215,8 @@ export default function FailureReportsIndex({ reports, filters, statuses, stats 
                                             }
                                         />
                                     </div>
-                                    <span className="min-w-0 truncate font-medium">
-                                        {truncateText(request.customer_name, 20)}
+                                    <span className="min-w-0 truncate font-medium leading-5">
+                                        {truncateText(request.customer_name || '-', 20)}
                                     </span>
 
                                     <p className="truncate font-mono mt-1 text-xs text-muted-foreground">
@@ -237,7 +243,20 @@ export default function FailureReportsIndex({ reports, filters, statuses, stats 
                             },
                             searchValue: (request) => request.ticket_number ?? '',
                         },
-
+                        {
+                            id: 'contact',
+                            header: t('requests.contact_information'),
+                            mobile: 'meta' as const,
+                            cell: (request) => (
+                                <div className="min-w-0 text-xs text-muted-foreground">
+                                    <p className="truncate font-medium leading-6 text-foreground">
+                                        {request.contact_name}
+                                    </p>
+                                    <p className="truncate">{formatPhoneInternational(request.contact_phone)}</p>
+                                </div>
+                            ),
+                            searchValue: (request) => `${request.contact_name} ${request.contact_phone}`,
+                        },
                         {
                             id: 'failure_type',
                             header: t('failure_report.failure_type'),
@@ -262,19 +281,6 @@ export default function FailureReportsIndex({ reports, filters, statuses, stats 
                                 </span>
                             ),
                             searchValue: (request) => request.description,
-                        },
-                        {
-                            id: 'phone',
-                            header: t('requests.phone'),
-                            mobile: 'meta' as const,
-                            sortable: true,
-                            cell: (request) => (
-                                <span className="inline-flex items-center gap-1.5">
-                                    <PhoneIcon className="size-3.5" />
-                                    {formatPhoneInternational(request.contact_phone)}
-                                </span>
-                            ),
-                            searchValue: (request) => request.contact_phone,
                         },
                         {
                             id: 'created_at',
