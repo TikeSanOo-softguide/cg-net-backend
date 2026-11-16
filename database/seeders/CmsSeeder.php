@@ -127,5 +127,27 @@ class CmsSeeder extends Seeder
                 'end_date' => now()->addMonth()->toDateString(),
             ]);
         }
+
+        Banner::create([
+            'image_url_en' => 'seeder_images/banner/Ads.png',
+            'image_url_zh' => 'seeder_images/banner/Ads.png',
+            'image_url_my' => 'seeder_images/banner/Ads.png',
+            'type' => 'app_entry',
+            'sort_order' => 00,
+            'is_active' => true,
+            'start_date' => now()->subDay()->toDateString(),
+            'end_date' => now()->addMonth()->toDateString(),
+        ]);
+
+        Banner::create([
+            'image_url_en' => 'seeder_images/banner/network_outage.png',
+            'image_url_zh' => 'seeder_images/banner/network_outage.png',
+            'image_url_my' => 'seeder_images/banner/network_outage.png',
+            'type' => 'app_popup',
+            'sort_order' => 0,
+            'is_active' => true,
+            'start_date' => now()->subDay()->toDateString(),
+            'end_date' => now()->addMonth()->toDateString(),
+        ]);
     }
 }
