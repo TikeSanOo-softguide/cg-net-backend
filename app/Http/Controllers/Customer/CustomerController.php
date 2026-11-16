@@ -148,9 +148,9 @@ class CustomerController extends Controller
             ->where(fn($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
             ->latest('created_at')
             ->first();
-        $latestLogin = UserLog::query()
+        $latestAuthEvent = UserLog::query()
             ->where('user_id', $customer->id)
-            ->where('event', 'login_success')
+            ->whereIn('event', ['login_success', 'register_complete'])
             ->latest('created_at')
             ->first();
 
@@ -158,6 +158,7 @@ class CustomerController extends Controller
             'customerPackages.package.network:id,name_en,name_zh,name_my',
             'customerPackages.package.speed:id,mbps',
             'customerPackages.package.term:id,months',
+            'customerPackages.packageOrder:id,snapshot',
             'wallet',
             'wallet.transactions' => fn($query) => $query->latest()->limit(10),
         ]);
@@ -251,20 +252,29 @@ class CustomerController extends Controller
                 ? $transactions->paginate($transactionFilters, 'transaction_page')
                 : null;
 
-        $packageRows = $customer->customerPackages->sortByDesc('start_date')->values()->map(
-            fn($row) => [
-                'id' => $row->id,
-                'package_name' => [
-                    'en' => PackageLabel::make($row->package, 'en'),
-                    'my' => PackageLabel::make($row->package, 'my'),
-                    'zh' => PackageLabel::make($row->package, 'zh'),
-                ],
-                'account_number' => $customer->broadband_account_number,
-                'start_date' => $row->starts_at,
-                'expiry_date' => $row->expires_at,
-                'status' => $row->status->value,
-            ],
-        );
+        $packageRows = $customer->customerPackages
+            ->sortByDesc('starts_at')
+            ->values()
+            ->map(function ($row) use ($customer): array {
+                $snapshotProductName = $row->packageOrder?->snapshot['product_name'] ?? null;
+                $snapshotProductName =
+                    is_string($snapshotProductName) && trim($snapshotProductName) !== ''
+                        ? trim($snapshotProductName)
+                        : null;
+
+                return [
+                    'id' => $row->id,
+                    'package_name' => [
+                        'en' => $snapshotProductName ?? PackageLabel::make($row->package, 'en'),
+                        'my' => $snapshotProductName ?? PackageLabel::make($row->package, 'my'),
+                        'zh' => $snapshotProductName ?? PackageLabel::make($row->package, 'zh'),
+                    ],
+                    'account_number' => $customer->broadband_account_number,
+                    'start_date' => $row->starts_at,
+                    'expiry_date' => $row->expires_at,
+                    'status' => $row->status->value,
+                ];
+            });
 
         $accountBinding = null;
 
@@ -295,8 +305,8 @@ class CustomerController extends Controller
             'activeSession' => $activeToken !== null,
             'sessionInfo' => $activeToken
                 ? [
-                    'ip_address' => $latestLogin?->ip_address,
-                    'user_agent' => $latestLogin?->user_agent,
+                    'ip_address' => $latestAuthEvent?->ip_address,
+                    'user_agent' => $latestAuthEvent?->user_agent,
                     'token_id' => $activeToken->getKey(),
                     'token_name' => $activeToken->name,
                     'last_used_at' => $activeToken->last_used_at,

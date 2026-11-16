@@ -90,12 +90,22 @@ class CustomerManagementTest extends TestCase
         $token = $customer->createToken('flutter');
         UserLog::query()->create([
             'user_id' => $customer->id,
-            'event' => 'login_success',
+            'event' => 'register_complete',
             'ip_address' => '203.0.113.42',
             'user_agent' => 'Flutter/3.24 (Android 15; Pixel 8)',
         ]);
+        $packageOrder = PackageOrder::query()->create([
+            'user_id' => $customer->id,
+            'snapshot' => ['product_name' => 'Snapshot package name'],
+        ]);
         CustomerPackage::factory()->create([
             'user_id' => $customer->id,
+            'package_order_id' => $packageOrder->id,
+            'starts_at' => now()->subDays(2),
+        ]);
+        $newerPackage = CustomerPackage::factory()->create([
+            'user_id' => $customer->id,
+            'starts_at' => now()->subDay(),
         ]);
         $wallet = Wallet::factory()->create(['user_id' => $customer->id, 'balance' => 15000]);
         LedgerTransaction::factory()->create(['wallet_id' => $wallet->id, 'amount' => 5000]);
@@ -117,7 +127,9 @@ class CustomerManagementTest extends TestCase
                     ->where('sessionInfo.expires_at', null)
                     ->where('accountBinding.account_number', '12345678')
                     ->where('accountBinding.service_type', 'CG')
-                    ->has('packageHistory', 1)
+                    ->has('packageHistory', 2)
+                    ->where('packageHistory.0.id', $newerPackage->id)
+                    ->where('packageHistory.1.package_name.en', 'Snapshot package name')
                     ->where('wallet.balance', '15000.00')
                     ->has('wallet.transactions', 1),
             );
