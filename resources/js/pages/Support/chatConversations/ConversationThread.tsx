@@ -262,9 +262,6 @@ export function ConversationThread({
             {canReply && isLive ? (
                 <form onSubmit={submit} className="border-t border-border p-3 sm:p-4">
                     <div className="flex items-end gap-2 rounded-lg border border-border bg-background p-2 focus-within:ring-2 focus-within:ring-ring/30">
-                        <Button type="button" variant="ghost" size="icon" className="size-8 min-h-8">
-                            <PaperclipIcon />
-                        </Button>
                         <Input
                             value={form.data.message}
                             onChange={(event) => {
@@ -275,9 +272,6 @@ export function ConversationThread({
                             placeholder={t('support.chat_conversations.type_message')}
                             className="h-8 min-h-8 flex-1 border-0 bg-transparent px-1 shadow-none focus-visible:ring-0"
                         />
-                        <Button type="button" variant="ghost" size="icon" className="size-8 min-h-8">
-                            <SmileIcon />
-                        </Button>
                         <Button type="submit" size="sm" disabled={form.processing || !form.data.message.trim()}>
                             <SendIcon />{' '}
                             {form.processing

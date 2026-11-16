@@ -28,7 +28,6 @@ type BatchTableRow = {
     quantity: number;
     status: string;
     expires_at: string | null;
-    assigned_cards_count: number;
 };
 
 type TopUpCardImportTableProps = {
@@ -63,7 +62,7 @@ export function TopUpCardImportTable({
     const can = useCan();
 
     const [importDialogOpen, setImportDialogOpen] = useState(false);
-    const [voiding, setVoiding] = useState<BatchTableRow | null>(null);
+    const [blocking, setBlocking] = useState<BatchTableRow | null>(null);
     const [activating, setActivating] = useState<BatchTableRow | null>(null);
     const [activationProcessing, setActivationProcessing] = useState(false);
     const [blockProcessing, setBlockProcessing] = useState(false);
@@ -191,7 +190,7 @@ export function TopUpCardImportTable({
                                 : t('top_up_cards.activate_batch')}
                         </Button>
                     ) : row.status === 'active' ? (
-                        blockProcessing && voiding?.id === row.id ? (
+                        blockProcessing && blocking?.id === row.id ? (
                             <Button type="button" variant="outline" size="sm" className="whitespace-nowrap" disabled>
                                 <LoaderCircleIcon className="animate-spin" />
                                 {t('top_up_cards.blocking_batch')}
@@ -213,7 +212,7 @@ export function TopUpCardImportTable({
                                     </button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent side="top" align="center">
-                                    <DropdownMenuItem variant="destructive" onSelect={() => setVoiding(row)}>
+                                    <DropdownMenuItem variant="destructive" onSelect={() => setBlocking(row)}>
                                         <BanIcon className="size-4" />
                                         {t('top_up_cards.block_batch')}
                                     </DropdownMenuItem>
@@ -256,31 +255,31 @@ export function TopUpCardImportTable({
             />
 
             <ConfirmDialog
-                open={voiding !== null}
+                open={blocking !== null}
                 onOpenChange={(open) => {
                     if (!open) {
-                        setVoiding(null);
+                        setBlocking(null);
                     }
                 }}
                 title={t('top_up_cards.block_batch_title')}
                 description={t('top_up_cards.block_batch_description')}
                 destructive
-                confirmLabel={t('top_up_cards.void')}
+                confirmLabel={t('top_up_cards.block_batch')}
                 processing={blockProcessing}
                 onConfirm={() => {
-                    if (!voiding) {
+                    if (!blocking) {
                         return;
                     }
 
                     router.patch(
-                        `/top-up-cards/batches/${voiding.id}/void`,
+                        `/top-up-cards/batches/${blocking.id}/block`,
                         {},
                         {
                             preserveScroll: true,
                             onStart: () => setBlockProcessing(true),
                             onFinish: () => {
                                 setBlockProcessing(false);
-                                setVoiding(null);
+                                setBlocking(null);
                             },
                         },
                     );
