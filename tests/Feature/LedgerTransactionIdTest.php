@@ -65,7 +65,7 @@ class LedgerTransactionIdTest extends TestCase
         ));
     }
 
-    public function test_topup_posts_keep_the_legacy_transaction_id_format(): void
+    public function test_topup_posts_use_the_top_up_transaction_id_format(): void
     {
         $wallet = $this->wallet();
         $poster = app(LedgerPoster::class);
@@ -81,8 +81,7 @@ class LedgerTransactionIdTest extends TestCase
             idempotencyKey: 'topup-legacy-id-1',
         );
 
-        $this->assertMatchesRegularExpression('/^TOPUP-[0-9A-HJKMNP-TV-Z]{26}$/i', $transaction->transaction_no);
-        $this->assertFalse(app(TransactionIdGenerator::class)->matches(
+        $this->assertTrue(app(TransactionIdGenerator::class)->matches(
             $transaction->transaction_no,
             TransactionIdPrefix::TopUp,
         ));
