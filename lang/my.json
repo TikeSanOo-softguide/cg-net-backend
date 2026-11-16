@@ -1451,7 +1451,8 @@
         "requested_packages": "တောင်းဆိုထားသော Package",
         "status_updated": "တောင်းဆိုမှုအခြေအနေကို အပ်ဒိတ်လုပ်ပြီးပါပြီ",
         "total_requests": "တောင်းဆိုမှု စုစုပေါင်း",
-        "under_review_requests": "စိစစ်နေသော တောင်းဆိုမှုများ"
+        "under_review_requests": "စိစစ်နေသော တောင်းဆိုမှုများ",
+        "no_images": "ပုံမရှိပါ"
     },
     "security_logs": {
         "actor": "လုပ်ဆောင်သူ",

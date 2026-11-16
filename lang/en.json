@@ -1451,7 +1451,8 @@
         "requested_packages": "Requested Package",
         "status_updated": "Request status updated",
         "total_requests": "Total Requests",
-        "under_review_requests": "Under Review Requests"
+        "under_review_requests": "Under Review Requests",
+        "no_images": "No images available"
     },
     "security_logs": {
         "actor": "Actor",
