@@ -387,6 +387,26 @@ class CustomerProfileApiTest extends TestCase
         $this->assertStringNotContainsString('foreign-user', $response->getContent());
     }
 
+    public function test_customer_lists_only_their_active_package_ids(): void
+    {
+        $user = User::factory()->create();
+        $own = CustomerPackage::factory()->create([
+            'user_id' => $user->id,
+            'starts_at' => now()->subDay(),
+            'expires_at' => now()->addMonth(),
+        ]);
+        CustomerPackage::factory()->create([
+            'expires_at' => now()->addMonth(),
+        ]);
+        CustomerPackage::factory()->expired()->create(['user_id' => $user->id]);
+
+        $this->withToken($user->createToken('packages')->plainTextToken)
+            ->getJson('/api/customer/packages')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $own->id);
+    }
+
     public function test_customer_profile_api_is_rate_limited_per_authenticated_user(): void
     {
         $user = User::factory()->create();

@@ -113,6 +113,18 @@ class ProfileController extends Controller
             ->get();
     }
 
+    public function packageIds(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        return response()->json([
+            'data' => $this->activePackages($user)
+                ->map(fn (CustomerPackage $package): array => ['id' => $package->id])
+                ->values(),
+        ]);
+    }
+
     public function packageCredentials(Request $request, int $customerPackageId): JsonResponse
     {
         $customerPackage = CustomerPackage::query()

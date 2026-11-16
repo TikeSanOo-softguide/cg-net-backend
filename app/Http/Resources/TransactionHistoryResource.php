@@ -13,6 +13,7 @@ class TransactionHistoryResource extends JsonResource
     public function toArray(Request $request): array
     {
         $walletEntry = $this->entries->firstWhere('wallet_id', $this->wallet_id);
+        $messageCode = $this->historyMessageCode()?->value;
 
         return [
             'id' => $this->id,
@@ -21,6 +22,8 @@ class TransactionHistoryResource extends JsonResource
             'status' => $this->status->value,
             'amount' => $this->amount,
             'note' => $this->note,
+            'title_code' => $messageCode,
+            'description_code' => $messageCode,
             'direction' => $walletEntry
                 ? ($walletEntry->credit > 0 ? 'credit' : 'debit')
                 : null,
