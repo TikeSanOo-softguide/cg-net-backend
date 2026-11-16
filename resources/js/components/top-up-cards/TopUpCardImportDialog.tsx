@@ -339,8 +339,6 @@ export function TopUpCardImportDialog({ open, onOpenChange, onCheck, onImport }:
                                                 {t('top_up_cards.total_cards')}
                                             </th>
                                             <th className="px-3 py-2 font-medium">{t('top_up_cards.generate_date')}</th>
-                                            <th className="px-3 py-2 font-medium">{t('top_up_cards.activated_at')}</th>
-                                            <th className="px-3 py-2 font-medium">{t('top_up_cards.expires_at')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -364,8 +362,6 @@ export function TopUpCardImportDialog({ open, onOpenChange, onCheck, onImport }:
                                                         {row.total_cards.toLocaleString()}
                                                     </td>
                                                     <td className="px-3 py-2">{formatDate(row.generate_date)}</td>
-                                                    <td className="px-3 py-2">{formatDate(row.activated_at)}</td>
-                                                    <td className="px-3 py-2">{formatDate(row.expires_at)}</td>
                                                 </tr>
                                             );
                                         })}
