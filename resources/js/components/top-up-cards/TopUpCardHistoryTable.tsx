@@ -10,6 +10,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
 import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SearchInput } from '@/components/SearchInput';
 import { toast } from '@/hooks/use-toast';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -59,7 +60,7 @@ export function TopUpCardHistoryTable({
         () => [
             {
                 value: '',
-                label: t('common.all'),
+                label: t('top_up_cards.office.all_batches'),
             },
             ...batches.map((batch) => ({
                 value: String(batch.id),
@@ -100,6 +101,7 @@ export function TopUpCardHistoryTable({
                 search={search}
                 onSearchChange={onSearchChange}
                 searchPlaceholder={t('top_up_cards.search_placeholder')}
+                showSearch={false}
                 emptyLabel={t('top_up_cards.empty_table')}
                 sort={filters.sort}
                 direction={filters.direction}
@@ -111,54 +113,18 @@ export function TopUpCardHistoryTable({
                 filters={
                     <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
                         <FormField
-                            label={t('common.status')}
-                            htmlFor="status"
-                            className="w-full shrink-0 sm:w-40"
+                            label={t('top_up_cards.search_placeholder')}
+                            htmlFor="serial-search"
+                            className="w-full shrink-0 sm:w-50"
                             labelClassName="text-[13px]"
                         >
-                            <Select
-                                value={filters.status || 'all'}
-                                onValueChange={(value) =>
-                                    onFilter({ ...filters, status: value === 'all' ? '' : value })
-                                }
-                            >
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder={t('common.status')} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">{t('common.all')}</SelectItem>
-                                    <SelectItem value="pending">{t('status.pending')}</SelectItem>
-                                    <SelectItem value="active">{t('status.active')}</SelectItem>
-                                    <SelectItem value="used">{t('status.used')}</SelectItem>
-                                    <SelectItem value="blocked">{t('status.blocked')}</SelectItem>
-                                    <SelectItem value="expired">{t('status.expired')}</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </FormField>
-                        <FormField
-                            label={t('top_up_cards.amount')}
-                            htmlFor="amount"
-                            className="w-full shrink-0 sm:w-40"
-                            labelClassName="text-[13px]"
-                        >
-                            <Select
-                                value={filters.amount || 'all'}
-                                onValueChange={(value) =>
-                                    onFilter({ ...filters, amount: value === 'all' ? '' : value })
-                                }
-                            >
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder={t('top_up_cards.amount')} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">{t('common.all')}</SelectItem>
-                                    {amounts.map((amount) => (
-                                        <SelectItem key={amount} value={String(amount)}>
-                                            {formatTopUpAmount(amount)}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <SearchInput
+                                id="serial-search"
+                                value={search}
+                                onChange={onSearchChange}
+                                placeholder={t('top_up_cards.search_placeholder')}
+                                size="sm"
+                            />
                         </FormField>
                         <FormField
                             label={t('top_up_cards.batch_no')}
@@ -170,10 +136,35 @@ export function TopUpCardHistoryTable({
                                 value={String(filters.batch ?? '')}
                                 onValueChange={handleSelect}
                                 options={batchOptions}
-                                placeholder={t('common.all')}
+                                placeholder={t('top_up_cards.office.all_batches')}
                                 searchPlaceholder={t('top_up_cards.batch_no') as string}
                                 className="w-full"
                             />
+                        </FormField>
+                        <FormField
+                            label={t('top_up_cards.point_value')}
+                            htmlFor="amount"
+                            className="w-full shrink-0 sm:w-40"
+                            labelClassName="text-[13px]"
+                        >
+                            <Select
+                                value={filters.amount || 'all'}
+                                onValueChange={(value) =>
+                                    onFilter({ ...filters, amount: value === 'all' ? '' : value })
+                                }
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder={t('top_up_cards.point_value')} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">{t('top_up_cards.office.all_points')}</SelectItem>
+                                    {amounts.map((amount) => (
+                                        <SelectItem key={amount} value={String(amount)}>
+                                            {formatTopUpAmount(amount)}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </FormField>
                         <FormField
                             label={t('top_up_cards.office.title')}
@@ -191,17 +182,41 @@ export function TopUpCardHistoryTable({
                                 }
                             >
                                 <SelectTrigger className="w-full">
-                                    <SelectValue placeholder={t('common.all')} />
+                                    <SelectValue placeholder={t('top_up_cards.office.all_offices')} />
                                 </SelectTrigger>
-
                                 <SelectContent>
-                                    <SelectItem value="all">{t('common.all')}</SelectItem>
+                                    <SelectItem value="all">{t('top_up_cards.office.all_offices')}</SelectItem>
 
                                     {sortedOffices.map((office) => (
                                         <SelectItem key={office.id} value={String(office.id)}>
                                             {office.code} : {office.name}
                                         </SelectItem>
                                     ))}
+                                </SelectContent>
+                            </Select>
+                        </FormField>
+                        <FormField
+                            label={t('common.status')}
+                            htmlFor="status"
+                            className="w-full shrink-0 sm:w-40"
+                            labelClassName="text-[13px]"
+                        >
+                            <Select
+                                value={filters.status || 'all'}
+                                onValueChange={(value) =>
+                                    onFilter({ ...filters, status: value === 'all' ? '' : value })
+                                }
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder={t('top_up_cards.office.all_status')} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">{t('top_up_cards.office.all_status')}</SelectItem>
+                                    <SelectItem value="pending">{t('status.pending')}</SelectItem>
+                                    <SelectItem value="active">{t('status.active')}</SelectItem>
+                                    <SelectItem value="used">{t('status.used')}</SelectItem>
+                                    <SelectItem value="blocked">{t('status.blocked')}</SelectItem>
+                                    <SelectItem value="expired">{t('status.expired')}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </FormField>
@@ -242,7 +257,7 @@ export function TopUpCardHistoryTable({
                     },
                     {
                         id: 'amount',
-                        header: t('top_up_cards.amount'),
+                        header: t('top_up_cards.point_value'),
                         mobile: 'meta',
                         cell: (row) => formatTopUpAmount(row.amount),
                     },
