@@ -179,6 +179,7 @@
         "new_password": "New Password",
         "preferred_date": "Preferred date",
         "request_title": "Change Password Request",
+        "request_details_description": "View the details of this change password request.",
         "search_placeholder": "Search ticket, user, contact, account",
         "status_updated": "Request status updated",
         "total_requests": "Total Requests",

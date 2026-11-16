@@ -200,7 +200,9 @@ export default function ChangePasswordIndex({ requests, filters, statuses, stats
                                                 }
                                             />
                                         </div>
-                                        <span className="line-clamp-2 min-w-0 font-medium leading-5">{request.user?.name || ''}</span>
+                                        <span className="line-clamp-2 min-w-0 font-medium leading-5">
+                                            {request.user?.name || ''}
+                                        </span>
                                         <p className="truncate font-mono text-xs text-muted-foreground">
                                             {request.broadband_account_number ?? '—'}
                                         </p>
@@ -232,7 +234,9 @@ export default function ChangePasswordIndex({ requests, filters, statuses, stats
                             mobile: 'subtitle',
                             cell: (request) => (
                                 <div className="min-w-0 text-xs text-muted-foreground">
-                                    <p className="truncate font-medium leading-6 text-foreground">{request.contact_name}</p>
+                                    <p className="truncate font-medium leading-6 text-foreground">
+                                        {request.contact_name}
+                                    </p>
                                     <p className="truncate">{formatPhoneInternational(request.contact_phone)}</p>
                                 </div>
                             ),
@@ -325,7 +329,7 @@ function ChangePasswordDetailDialog({
             open={open}
             onOpenChange={onOpenChange}
             title={t('change_password.request_title')}
-            description={request.broadband_account_number ?? ''}
+            description={t('change_password.request_details_description')}
             icon={KeyRoundIcon}
             size="lg"
         >
@@ -339,10 +343,7 @@ function ChangePasswordDetailDialog({
                             <div className="flex min-w-0 items-center gap-1.5">
                                 <span className="break-all font-mono text-sm font-medium">{ticket || '—'}</span>
                                 {ticket && (
-                                    <CopyValueButton
-                                        value={ticket}
-                                        label={t('broadband_application.ticket_number')}
-                                    />
+                                    <CopyValueButton value={ticket} label={t('broadband_application.ticket_number')} />
                                 )}
                             </div>
                         </div>
