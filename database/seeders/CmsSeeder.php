@@ -129,9 +129,9 @@ class CmsSeeder extends Seeder
         }
 
         Banner::create([
-            'image_url_en' => 'seeder_images/banner/Ads.png',
-            'image_url_zh' => 'seeder_images/banner/Ads.png',
-            'image_url_my' => 'seeder_images/banner/Ads.png',
+            'image_url_en' => 'seeder_images/banner/Ads_en.png',
+            'image_url_zh' => 'seeder_images/banner/Ads_zh.png',
+            'image_url_my' => 'seeder_images/banner/Ads_my.png',
             'type' => 'app_entry',
             'sort_order' => 00,
             'is_active' => true,
@@ -140,9 +140,9 @@ class CmsSeeder extends Seeder
         ]);
 
         Banner::create([
-            'image_url_en' => 'seeder_images/banner/network_outage.png',
-            'image_url_zh' => 'seeder_images/banner/network_outage.png',
-            'image_url_my' => 'seeder_images/banner/network_outage.png',
+            'image_url_en' => 'seeder_images/banner/network_outage_en.png',
+            'image_url_zh' => 'seeder_images/banner/network_outage_zh.png',
+            'image_url_my' => 'seeder_images/banner/network_outage_my.png',
             'type' => 'app_popup',
             'sort_order' => 0,
             'is_active' => true,
