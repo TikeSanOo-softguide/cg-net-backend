@@ -172,6 +172,7 @@
         "approved_requests": "အတည်ပြုပြီး တောင်းဆိုချက်များ",
         "broadband_account": "ဘရော့်ဒ်ဘန်းအကောင့်",
         "cancelled_requests": "ပယ်ဖျက်လိုက်သော တောင်းဆိုချက်များ",
+        "cg_router": "CG Router",
         "contact": "ဆက်သွယ်ရန် အချက်အလက်",
         "copy_account_phone": "အကောင့်ဖုန်းနံပါတ်ကို ကူးရန်",
         "copy_contact_phone": "ဆက်သွယ်ရန် ဖုန်းနံပါတ်ကို ကူးရန်",
@@ -1417,6 +1418,7 @@
     },
     "relocation_requests": {
         "card_title": "နေရာပြောင်းရွှေ့ရန် တောင်းဆိုမှုအသေးစိတ်",
+        "cg_router": "CG Router",
         "copy_current_location": "လိပ်စာအသစ် ကို ကူးရန်",
         "copy_new_location": "လက်ရှိလိပ်စာ ကို ကူးရန်",
         "current_address": "လက်ရှိလိပ်စာ",

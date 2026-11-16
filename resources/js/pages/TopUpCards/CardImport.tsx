@@ -33,7 +33,6 @@ type BatchTableRow = {
     quantity: number;
     status: string;
     expires_at: string | null;
-    assigned_cards_count: number;
 };
 
 type ImportProgress = {

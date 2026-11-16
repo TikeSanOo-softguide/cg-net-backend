@@ -172,6 +172,7 @@
         "approved_requests": "Approved Requests",
         "broadband_account": "Broadband Account",
         "cancelled_requests": "Cancelled Requests",
+        "cg_router": "CG Router",
         "contact": "Contact Information",
         "copy_account_phone": "Copy account phone",
         "copy_contact_phone": "Copy contact phone",
@@ -1417,6 +1418,7 @@
     },
     "relocation_requests": {
         "card_title": "Relocation Request Detail",
+        "cg_router": "CG Router",
         "copy_current_location": "Copy Current Location",
         "copy_new_location": "Copy New Location",
         "current_address": "Current Address",

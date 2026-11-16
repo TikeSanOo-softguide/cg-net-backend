@@ -106,6 +106,9 @@ class TopUpCardController extends Controller
         $amount = $request->string('amount')->toString();
         $office = $request->string('office')->toString();
         $batch = $request->string('batch')->toString();
+        if ($batch === 'all') {
+            $batch = '';
+        }
         $from = $request->string('from')->toString();
         $to = $request->string('to')->toString();
         $sort = $request->string('sort')->toString();
@@ -172,6 +175,7 @@ class TopUpCardController extends Controller
             ->orderBy($sort, $direction)
             ->paginate(100)
             ->withQueryString()
+            ->appends(['batch' => $batch === '' ? 'all' : $batch])
             ->through(fn (TopUpCard $card) => $this->payload($card));
 
         return Inertia::render('TopUpCards/CardHistory', [
