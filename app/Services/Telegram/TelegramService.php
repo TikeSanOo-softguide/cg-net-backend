@@ -63,4 +63,36 @@ class TelegramService
             throw new RuntimeException('Telegram rejected or could not deliver the chat notification.');
         }
     }
+
+    public function sendChatInstallationNotification(string $message): void
+    {
+        $chatId = config('services.telegram.installation_chat_id');
+        $botToken = config('services.telegram.bot_token');
+
+        if (!is_string($chatId) || trim($chatId) === '' || !is_string($botToken) || trim($botToken) === '') {
+            $this->sendMessage($message);
+
+            return;
+        }
+
+        if ($this->sendMessage($message, $chatId) === null) {
+            throw new RuntimeException('Telegram rejected or could not deliver the chat notification.');
+        }
+    }
+
+    public function sendChatOtherNotification(string $message): void
+    {
+        $chatId = config('services.telegram.other_chat_id');
+        $botToken = config('services.telegram.bot_token');
+
+        if (!is_string($chatId) || trim($chatId) === '' || !is_string($botToken) || trim($botToken) === '') {
+            $this->sendMessage($message);
+
+            return;
+        }
+
+        if ($this->sendMessage($message, $chatId) === null) {
+            throw new RuntimeException('Telegram rejected or could not deliver the chat notification.');
+        }
+    }
 }

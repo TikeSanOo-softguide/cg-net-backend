@@ -36,6 +36,8 @@ return [
     'telegram' => [
         'bot_token' => env('TELEGRAM_BOT_TOKEN'),
         'chat_id' => env('TELEGRAM_CHAT_ID'),
+        'installation_chat_id' => env('TELEGRAM_INSTALLATION_CHAT_ID'),
+        'other_chat_id' => env('TELEGRAM_OTHER_CHAT_ID'),
     ],
 
     'billing' => [
