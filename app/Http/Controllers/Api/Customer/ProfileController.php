@@ -116,13 +116,31 @@ class ProfileController extends Controller
     public function packageCredentials(Request $request, int $customerPackageId): JsonResponse
     {
         $customerPackage = CustomerPackage::query()
+            ->with(['packageOrder', 'package.network', 'package.speed', 'package.term'])
             ->whereKey($customerPackageId)
             ->where('user_id', $request->user()->getKey())
             ->firstOrFail();
 
+        $snapshot = $customerPackage->packageOrder?->snapshot ?? [];
+        $package = $customerPackage->package;
+        $monthCycle = $snapshot['term_cycle'] ?? $snapshot['term_months'] ?? $package?->term?->months;
+        $monthCycleUnit = $snapshot['term_cycle_unit'] ?? $snapshot['month_cycle_unit'] ?? '月';
+
         return response()
             ->json([
                 'data' => [
+                    'customer_package_id' => $customerPackage->id,
+                    'starts_at' => $customerPackage->starts_at?->toISOString(),
+                    'expires_at' => $customerPackage->expires_at?->toISOString(),
+                    'package' => [
+                        'product_id' => $snapshot['product_id'] ?? $customerPackage->packageOrder?->product_id,
+                        'product_name' => $snapshot['product_name'] ?? null,
+                        'product_price' => $snapshot['product_price'] ?? $customerPackage->packageOrder?->product_price ?? $package?->price,
+                        'product_line' => $snapshot['product_line'] ?? $package?->network?->name_en,
+                        'product_speed' => $snapshot['product_speed'] ?? ($package?->speed?->mbps !== null ? (string) $package->speed->mbps : null),
+                        'month_cycle' => is_numeric($monthCycle) ? (int) $monthCycle : $monthCycle,
+                        'month_cycle_unit' => $monthCycleUnit,
+                    ],
                     'credentials' => [
                         'account' => $customerPackage->username,
                         'password' => $customerPackage->password,
