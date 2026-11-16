@@ -1451,7 +1451,8 @@
         "requested_packages": "申请的套餐",
         "status_updated": "请求状态已更新",
         "total_requests": "请求总数",
-        "under_review_requests": "审核中的请求"
+        "under_review_requests": "审核中的请求",
+        "no_images": "暂无图片"
     },
     "security_logs": {
         "actor": "操作人",
