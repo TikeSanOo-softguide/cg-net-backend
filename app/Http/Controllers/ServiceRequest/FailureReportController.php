@@ -49,7 +49,6 @@ class FailureReportController extends Controller
                         ->whereLike('ticket_number', '%' . $search . '%')
                         ->orWhereLike('contact_name', '%' . $search . '%')
                         ->orWhereLike('contact_phone', '%' . $search . '%')
-                        ->orWhereLike('description', '%' . $search . '%')
                         ->orWhereLike('broadband_account_number', '%' . $search . '%')
                         ->orWhereHas('user', function ($query) use ($search): void {
                             $query->whereLike('name', '%' . $search . '%')->orWhereLike('phone', '%' . $search . '%');
@@ -109,7 +108,7 @@ class FailureReportController extends Controller
                 'status' => $status,
             ],
             'statuses' => array_column(RequestStatus::cases(), 'value'),
-            'stats' => $this->stats(),
+            'stats' => $this->stats($status),
         ]);
     }
 
@@ -145,13 +144,19 @@ class FailureReportController extends Controller
         return back()->with('success', 'common.delete');
     }
 
-    private function stats(): array
+    private function stats(string $status): array
     {
+        $reports = FailureReport::query()
+            ->when(
+                $status !== '' && in_array($status, array_column(RequestStatus::cases(), 'value'), true),
+                fn($query) => $query->where('status', $status),
+            );
+
         return [
-            'total_requests' => FailureReport::query()->count(),
-            'under_reviews_requests' => FailureReport::query()->where('status', RequestStatus::UnderReview)->count(),
-            'approved_requests' => FailureReport::query()->where('status', RequestStatus::Approved)->count(),
-            'cancelled_requests' => FailureReport::query()->where('status', RequestStatus::Cancelled)->count(),
+            'total_requests' => (clone $reports)->count(),
+            'under_reviews_requests' => (clone $reports)->where('status', RequestStatus::UnderReview)->count(),
+            'approved_requests' => (clone $reports)->where('status', RequestStatus::Approved)->count(),
+            'cancelled_requests' => (clone $reports)->where('status', RequestStatus::Cancelled)->count(),
         ];
     }
 }
