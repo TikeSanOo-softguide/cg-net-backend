@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-use App\Enums\WalletActorType;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
+use App\Enums\MessageCode;
+use App\Enums\WalletActorType;
 use Database\Factories\LedgerTransactionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -100,6 +101,36 @@ class LedgerTransaction extends Model
     public function topUpCard(): HasOne
     {
         return $this->hasOne(TopUpCard::class, 'ledger_transaction_id')->withTrashed();
+    }
+
+    /**
+     * Stable copy code for the mobile history card. Title and description
+     * share one code; the app appends `_body` for the second line.
+     */
+    public function historyMessageCode(): ?MessageCode
+    {
+        return match ($this->type) {
+            LedgerTransactionType::Topup => match ($this->status) {
+                LedgerTransactionStatus::Completed => MessageCode::TopupSuccess,
+                default => null,
+            },
+            LedgerTransactionType::WifiPackage => match ($this->status) {
+                LedgerTransactionStatus::Completed => MessageCode::PkgPurchased,
+                LedgerTransactionStatus::Pending,
+                LedgerTransactionStatus::Processing,
+                LedgerTransactionStatus::Review => MessageCode::PkgProcessing,
+                default => null,
+            },
+            LedgerTransactionType::FtthBill,
+            LedgerTransactionType::CgBill => match ($this->status) {
+                LedgerTransactionStatus::Completed => MessageCode::FtthPaid,
+                LedgerTransactionStatus::Pending,
+                LedgerTransactionStatus::Processing,
+                LedgerTransactionStatus::Review => MessageCode::FtthProcessing,
+                default => null,
+            },
+            default => null,
+        };
     }
 
     /** Liability line for the primary wallet, if present. */
