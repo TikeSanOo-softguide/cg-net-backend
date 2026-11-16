@@ -212,12 +212,6 @@ export const navigation: NavGroup[] = [
                 icon: Building2,
             },
             {
-                labelKey: 'menu.top_up_card_batch',
-                descriptionKey: 'menu.top_up_card_batch_description',
-                href: '/top-up-cards/batch',
-                icon: Ticket,
-            },
-            {
                 labelKey: 'menu.top_up_card_batch_import',
                 descriptionKey: 'menu.top_up_card_batch_import_description',
                 href: '/top-up-cards/card-import',

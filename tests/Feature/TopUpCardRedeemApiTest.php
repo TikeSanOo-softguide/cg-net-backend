@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\LedgerAccountCode;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
+use App\Enums\TransactionIdPrefix;
 use App\Enums\TopUpCardStatus;
 use App\Enums\UserStatus;
 use App\Enums\WalletStatus;
@@ -13,6 +14,7 @@ use App\Models\LedgerTransaction;
 use App\Models\TopUpCard;
 use App\Models\User;
 use App\Models\Wallet;
+use App\Services\Ledger\TransactionIdGenerator;
 use App\Support\TopUpCardPin;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
@@ -166,7 +168,10 @@ class TopUpCardRedeemApiTest extends TestCase
         $this->assertSame(LedgerTransactionType::Topup, $transaction->type);
         $this->assertSame(LedgerTransactionStatus::Completed, $transaction->status);
         $this->assertSame($idempotencyKey, $transaction->idempotency_key);
-        $this->assertMatchesRegularExpression('/^TOPUP-/', $transactionNo);
+        $this->assertTrue(app(TransactionIdGenerator::class)->matches(
+            $transactionNo,
+            TransactionIdPrefix::TopUp,
+        ));
         $this->assertCount(2, $entries);
         $this->assertSame((int) $entries->sum('debit'), (int) $entries->sum('credit'));
         $this->assertSame(500, (int) $entries->sum('debit'));

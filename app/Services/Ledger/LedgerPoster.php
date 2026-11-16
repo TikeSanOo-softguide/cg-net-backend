@@ -426,6 +426,7 @@ class LedgerPoster
             LedgerTransactionType::WifiPackage => TransactionIdPrefix::BuyPackage,
             LedgerTransactionType::FtthBill => TransactionIdPrefix::PayBillFtth,
             LedgerTransactionType::CgBill => TransactionIdPrefix::PayBillCg,
+            LedgerTransactionType::Topup => TransactionIdPrefix::TopUp,
             default => null,
         };
 
@@ -435,7 +436,6 @@ class LedgerPoster
 
         $legacyPrefix = match ($type) {
             LedgerTransactionType::Refund => 'REFUND',
-            LedgerTransactionType::Topup => 'TOPUP',
             LedgerTransactionType::Adjustment => 'ADJ',
             default => 'TXN',
         };
