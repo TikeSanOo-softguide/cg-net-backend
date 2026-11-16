@@ -113,7 +113,7 @@ export function RelocationRequestDetailDialog({
     const serviceType = request.broadband_account_number?.startsWith('FTTH')
         ? 'FTTH'
         : request.broadband_account_number?.startsWith('CG')
-          ? t('change_plan.cg_router')
+          ? t('relocation_requests.cg_router')
           : '—';
 
     return (

@@ -304,7 +304,7 @@ function ChangePasswordDetailDialog({
     const serviceType = request.broadband_account_number?.startsWith('FTTH')
         ? 'FTTH'
         : request.broadband_account_number?.startsWith('CG')
-          ? t('change_plan.cg_router')
+          ? t('change_password.cg_router')
           : '—';
 
     const updateStatus = () => {

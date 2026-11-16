@@ -172,6 +172,7 @@
         "approved_requests": "已批准的申请数",
         "broadband_account": "宽带账户",
         "cancelled_requests": "已取消的申请数",
+        "cg_router": "CG Router",
         "contact": "联系信息",
         "copy_account_phone": "复制账户电话",
         "copy_contact_phone": "复制联系人电话",
@@ -1417,6 +1418,7 @@
     },
     "relocation_requests": {
         "card_title": "迁移请求详情",
+        "cg_router": "CG Router",
         "copy_current_location": "复制当前位置",
         "copy_new_location": "复制新位置",
         "current_address": "当前地址",
