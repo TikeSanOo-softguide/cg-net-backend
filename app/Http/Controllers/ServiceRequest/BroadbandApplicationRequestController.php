@@ -104,9 +104,7 @@ class BroadbandApplicationRequestController extends Controller
             'admin_id' => $request->user()->id,
         ]);
 
-        return to_route('service-requests.installations.index', [
-            'status' => $validated['status'],
-        ])->with('success', 'requests.status_updated');
+        return back()->with('success', 'requests.status_updated');
     }
 
     private function stats(string $status, string $serviceType): array

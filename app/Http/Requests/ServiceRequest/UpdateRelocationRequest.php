@@ -15,12 +15,12 @@ class UpdateRelocationRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if (!$this->exists('phone')) {
+        if (!$this->exists('contact_phone')) {
             return;
         }
 
         $this->merge([
-            'phone' => PhoneNumber::normalizeLeniently($this->input('phone')),
+            'contact_phone' => PhoneNumber::normalizeLeniently($this->input('contact_phone')),
         ]);
     }
 
