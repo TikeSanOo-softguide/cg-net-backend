@@ -162,8 +162,8 @@
         "package_price": "Package price",
         "requested_plan": "Requested Plan",
         "region": "Region",
-        "search_placeholder": "Search ticket, user, contact, account",
         "service_type": "Service Type",
+        "search_placeholder": "Search ticket, user, contact, account",
         "speed": "Speed",
         "state": "State",
         "ticket_number": "Ticket Number"
@@ -203,8 +203,8 @@
         "request_details": "Change Plan Request Details",
         "request_details_description": "View the details of this change plan request.",
         "requested_packages": "Requested Packages",
-        "search_placeholder": "Search ticket, user, contact, account",
         "service_type": "Service Type",
+        "search_placeholder": "Search ticket, user, contact, account",
         "ticket_number": "Ticket Number",
         "cg_router": "CG Router",
         "status_updated": "Request status updated",
@@ -1427,6 +1427,9 @@
         "preferred_date": "Preferred date",
         "search": "Search ticket, user, contact, account",
         "service_transfer": "Service Transfer"
+    },
+    "failure_reports": {
+        "card_title": "Failure Report Detail"
     },
     "requests": {
         "address": "Address",
