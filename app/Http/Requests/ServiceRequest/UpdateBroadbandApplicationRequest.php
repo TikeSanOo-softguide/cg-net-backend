@@ -43,7 +43,7 @@ class UpdateBroadbandApplicationRequest extends FormRequest
             'package_detail.month_cycle' => ['required', 'integer', 'min:1'],
             'package_detail.month_cycle_unit' => ['nullable', 'string', 'max:32'],
             'address' => ['required', 'string', 'max:255'],
-            'contact_phone' => ['required', 'string', 'max:16', 'max:16', 'regex:' . PhoneNumber::SUPPORTED_PATTERN],
+            'contact_phone' => ['required', 'string', 'max:16', 'regex:' . PhoneNumber::SUPPORTED_PATTERN],
             'note' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', Rule::in([RequestStatus::UnderReview->value, RequestStatus::Cancelled->value])],
         ];

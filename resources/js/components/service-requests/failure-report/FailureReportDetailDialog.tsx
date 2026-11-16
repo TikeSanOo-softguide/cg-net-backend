@@ -89,7 +89,7 @@ export function FailureReportDetailDialog({
         <FormDialog
             open={open}
             onOpenChange={onOpenChange}
-            title={t('menu.failure_reports')}
+            title={t('failure_reports.card_title')}
             description={t('menu.failure_reports_description')}
             icon={NavigationIcon}
             size="2xl"

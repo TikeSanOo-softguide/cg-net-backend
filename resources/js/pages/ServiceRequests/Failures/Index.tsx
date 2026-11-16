@@ -107,25 +107,25 @@ export default function FailureReportsIndex({ reports, filters, statuses, stats 
 
     const cards = [
         {
-            key: 'relocations.total_requests',
+            key: 'failure_reports.total_requests',
             title: t('requests.total_requests'),
             value: stats.total_requests.toLocaleString(),
             icon: ClipboardList,
         },
         {
-            key: 'relocations.under_review_requests',
+            key: 'failure_reports.under_review_requests',
             title: t('requests.under_review_requests'),
             value: stats.under_reviews_requests.toLocaleString(),
             icon: ScanEye,
         },
         {
-            key: 'relocations.approved_requests',
+            key: 'failure_reports.approved_requests',
             title: t('requests.approved_requests'),
             value: stats.approved_requests.toLocaleString(),
             icon: CircleCheckBig,
         },
         {
-            key: 'relocations.cancelled_requests',
+            key: 'failure_reports.cancelled_requests',
             title: t('requests.cancelled_requests'),
             value: stats.cancelled_requests.toLocaleString(),
             icon: BookX,
