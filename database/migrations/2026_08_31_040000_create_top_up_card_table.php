@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('top_up_card', function (Blueprint $table) {
@@ -20,6 +21,7 @@ return new class extends Migration {
             $table->foreignId('redeemed_by')->nullable()->constrained('users')->restrictOnDelete();
             $table->foreignId('office_id')->constrained('offices')->cascadeOnUpdate()->restrictOnDelete();
             $table->foreignId('batch_id')->constrained('batches')->cascadeOnUpdate()->restrictOnDelete();
+            $table->index('batch_id', 'top_up_card_batch_id_index');
             $table
                 ->foreignId('ledger_transaction_id')
                 ->nullable()
