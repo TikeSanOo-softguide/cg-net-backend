@@ -22,12 +22,12 @@ class CreateRelocationRequest extends CreateServiceRequest
 
     protected function prepareForValidation(): void
     {
-        if (!$this->exists('phone')) {
+        if (!$this->exists('contact_phone')) {
             return;
         }
 
         $this->merge([
-            'phone' => PhoneNumber::normalizeLeniently($this->input('phone')),
+            'contact_phone' => PhoneNumber::normalizeLeniently($this->input('contact_phone')),
         ]);
     }
 
@@ -49,7 +49,7 @@ class CreateRelocationRequest extends CreateServiceRequest
             'current_address' => ['required', 'string', 'max:255'],
             'new_address' => ['required', 'string', 'max:255'],
             'preferred_date' => ['nullable', 'date'],
-            'phone' => ['required', 'string', 'max:16', 'regex:' . PhoneNumber::SUPPORTED_PATTERN],
+            'contact_phone' => ['required', 'string', 'max:16', 'regex:' . PhoneNumber::SUPPORTED_PATTERN],
             'details' => ['nullable', 'string', 'max:255'],
         ];
     }
@@ -57,7 +57,7 @@ class CreateRelocationRequest extends CreateServiceRequest
     public function messages(): array
     {
         return [
-            'phone.regex' => __('customers.validation.phone_invalid'),
+            'contact_phone.regex' => __('customers.validation.phone_invalid'),
         ];
     }
 }
