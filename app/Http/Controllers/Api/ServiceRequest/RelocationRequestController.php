@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\ServiceRequest;
 
 use App\Enums\MessageCode;
 use App\Enums\RequestStatus;
+use App\Enums\UserLogEvent;
 use App\Events\ServiceRequestSubmitted;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ServiceRequest\CreateRelocationRequest;
@@ -59,7 +60,7 @@ class RelocationRequestController extends Controller
 
             ServiceRequestSubmitted::dispatch('relocation_request', $relocation->id);
 
-            $this->logActivity($request, 'create_relocation_request', [
+            $this->logActivity($request, UserLogEvent::CreateRelocationRequest, [
                 'relocation_request_id' => $relocation->id,
                 'status' => $relocation->status->value,
             ]);
@@ -87,7 +88,7 @@ class RelocationRequestController extends Controller
 
         $relocation = DB::transaction(function () use ($request, $relocationRequest) {
             $relocationRequest->update($request->validated());
-            $this->logActivity($request, 'update_relocation_request', [
+            $this->logActivity($request, UserLogEvent::UpdateRelocationRequest, [
                 'relocation_request_id' => $relocationRequest->id,
                 'status' => $relocationRequest->status,
             ]);
@@ -105,7 +106,7 @@ class RelocationRequestController extends Controller
         $relocationRequest->update([
             'status' => RequestStatus::Cancelled,
         ]);
-        $this->logActivity($request, 'cancel_relocation_request', [
+        $this->logActivity($request, UserLogEvent::CancelRelocationRequest, [
             'relocation_request_id' => $relocationRequest->id,
         ]);
 
@@ -119,7 +120,7 @@ class RelocationRequestController extends Controller
     {
         $this->ensureOwner($request, $relocationRequest);
         $relocationRequest->delete();
-        $this->logActivity($request, 'delete_relocation_request', [
+        $this->logActivity($request, UserLogEvent::DeleteRelocationRequest, [
             'relocation_request_id' => $relocationRequest->id,
         ]);
         return response()->json(null, 204);

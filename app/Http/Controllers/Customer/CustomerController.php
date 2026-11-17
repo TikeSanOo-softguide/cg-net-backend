@@ -269,9 +269,8 @@ class CustomerController extends Controller
                         'my' => $snapshotProductName ?? PackageLabel::make($row->package, 'my'),
                         'zh' => $snapshotProductName ?? PackageLabel::make($row->package, 'zh'),
                     ],
-                    'account_number' => $customer->broadband_account_number,
-                    'start_date' => $row->starts_at,
-                    'expiry_date' => $row->expires_at,
+                    'starts_at' => $row->starts_at,
+                    'expires_at' => $row->expires_at,
                     'status' => $row->status->value,
                 ];
             });

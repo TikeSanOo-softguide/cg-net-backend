@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\ServiceRequest;
 
 use App\Enums\MessageCode;
 use App\Enums\RequestStatus;
+use App\Enums\UserLogEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ServiceRequest\CreateChangePlanRequest;
 use App\Http\Requests\ServiceRequest\UpdateChangePlanRequest;
@@ -58,7 +59,7 @@ class ChangePlanRequestController extends Controller
             ]);
             ServiceRequestSubmitted::dispatch('change_plan_request', $changePlanRequest->id);
 
-            $this->logActivity($request, 'create_change_plan_request', [
+            $this->logActivity($request, UserLogEvent::CreateChangePlanRequest, [
                 'change_plan_request_id' => $changePlanRequest->id,
                 'status' => $changePlanRequest->status,
             ]);
@@ -90,7 +91,7 @@ class ChangePlanRequestController extends Controller
 
         $validated = $this->fillPackageDetails($request->validated());
         $changePlanRequest->update($validated);
-        $this->logActivity($request, 'update_change_plan_request', [
+        $this->logActivity($request, UserLogEvent::UpdateChangePlanRequest, [
             'change_plan_request_id' => $changePlanRequest->id,
         ]);
 
@@ -111,7 +112,7 @@ class ChangePlanRequestController extends Controller
             'status' => RequestStatus::Cancelled,
         ]);
 
-        $this->logActivity($request, 'cancel_change_plan_request', [
+        $this->logActivity($request, UserLogEvent::CancelChangePlanRequest, [
             'change_plan_request_id' => $changePlanRequest->id,
         ]);
 
@@ -129,7 +130,7 @@ class ChangePlanRequestController extends Controller
         $this->ensureUnderReview($changePlanRequest);
 
         $changePlanRequest->delete();
-        $this->logActivity($request, 'delete_change_plan_request', [
+        $this->logActivity($request, UserLogEvent::DeleteChangePlanRequest, [
             'change_plan_request_id' => $changePlanRequest->id,
         ]);
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\SecurityLogEvent;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetLocale;
 use App\Support\AdminHome;
@@ -72,7 +73,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
             if (in_array($statusCode, [401, 403], true) && !$isStorageUrl) {
                 app(SecurityLogService::class)->record(
-                    event: 'unauthorized_access',
+                    event: SecurityLogEvent::UnauthorizedAccess,
                     actor: $request->user(),
                     metadata: [
                         'reason' => $statusCode === 401 ? 'Unauthenticated access attempt' : 'Forbidden action',

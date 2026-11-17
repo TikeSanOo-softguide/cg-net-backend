@@ -15,7 +15,6 @@ use App\Models\LedgerTransaction;
 use App\Models\Wallet;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 use RuntimeException;
@@ -422,25 +421,7 @@ class LedgerPoster
 
     private function transactionNo(LedgerTransactionType $type, ?TransactionIdPrefix $prefix): string
     {
-        $resolved = $prefix ?? match ($type) {
-            LedgerTransactionType::WifiPackage => TransactionIdPrefix::BuyPackage,
-            LedgerTransactionType::FtthBill => TransactionIdPrefix::PayBillFtth,
-            LedgerTransactionType::CgBill => TransactionIdPrefix::PayBillCg,
-            LedgerTransactionType::Topup => TransactionIdPrefix::TopUp,
-            default => null,
-        };
-
-        if ($resolved !== null) {
-            return $this->transactionIds->generate($resolved);
-        }
-
-        $legacyPrefix = match ($type) {
-            LedgerTransactionType::Refund => 'REFUND',
-            LedgerTransactionType::Adjustment => 'ADJ',
-            default => 'TXN',
-        };
-
-        return $legacyPrefix.'-'.Str::ulid();
+        return $this->transactionIds->generate($prefix ?? TransactionIdPrefix::forType($type));
     }
 
     private function shouldRetryTransactionNo(QueryException $exception, ?string $transactionNo, int $attempt): bool

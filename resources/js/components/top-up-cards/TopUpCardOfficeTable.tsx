@@ -2,6 +2,8 @@ import { MapPinIcon, MessageCircleIcon, PencilIcon, PhoneIcon, PlusIcon, SendIco
 
 import { DataTable } from '@/components/DataTable';
 import type { Paginated } from '@/components/Pagination';
+import { FormField } from '@/components/ui/form-field';
+import { SearchInput } from '@/components/SearchInput';
 import { TableActionButton } from '@/components/TableActionButton';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -86,7 +88,25 @@ export function TopUpCardOfficeTable({
             getRowId={(row) => String(row.id)}
             search={search}
             onSearchChange={onSearchChange}
-            searchPlaceholder={t('top_up_cards.office.search')}
+            showSearch={false}
+            filters={
+                <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
+                    <FormField
+                        label={t('common.search')}
+                        htmlFor="office-search"
+                        className="w-full shrink-0 sm:w-60 mr-3"
+                        labelClassName="text-[13px]"
+                    >
+                        <SearchInput
+                            id="office-search"
+                            value={search}
+                            onChange={onSearchChange}
+                            placeholder={t('top_up_cards.office.search')}
+                            size="sm"
+                        />
+                    </FormField>
+                </div>
+            }
             emptyLabel={t('top_up_cards.office.empty')}
             onCreate={can('top-up-cards.create') ? onCreate : undefined}
             createLabel={t('top_up_cards.office.add')}

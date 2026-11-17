@@ -161,7 +161,7 @@ class PackageOrderController extends Controller
         activity(ActivityLogName::PackageOrders->value)
             ->causedBy($request->user())
             ->performedOn($packageOrder)
-            ->event(ActivityLogEvent::Completed->value)
+            ->event(ActivityLogEvent::MarkedCompleted->value)
             ->withProperties([
                 'from_status' => PackageOrderStatus::Review->value,
                 'to_status' => PackageOrderStatus::Completed->value,

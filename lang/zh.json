@@ -71,7 +71,7 @@
         "order_no": "订单号",
         "payment_reference": "支付参考号",
         "product_snapshot": "产品快照",
-        "search_placeholder": "搜索宽带、客户或订单",
+        "search_placeholder": "搜索订单、交易、客户",
         "service_type": "服务类型"
     },
     "billing_report": {
@@ -990,8 +990,6 @@
         "push_composer_description": "编写并向客户发送推送通知。",
         "quick_reply_templates": "快捷回复模板",
         "quick_reply_templates_description": "管理客服快捷回复模板。",
-        "redeem_history": "兑换记录",
-        "redeem_history_description": "查看充值卡兑换历史和使用情况。",
         "region_management": "州与地区",
         "region_management_description": "管理服务区域和覆盖范围。",
         "regions": "地区",
@@ -1197,7 +1195,7 @@
         "review_completed": "套餐订单已标记为成功。",
         "review_unavailable": "此套餐订单已不再等待审核。请刷新订单后重试。",
         "review_refunded": "套餐订单已退款。",
-        "search_placeholder": "搜索订单编号、客户或交易",
+        "search_placeholder": "搜索订单、交易、客户",
         "service_details": "已开通的服务",
         "snapshot": "订单快照",
         "starts_at": "开始时间"
@@ -1755,8 +1753,7 @@
         "unpaid": "未付款",
         "unread": "未读",
         "used": "已使用",
-        "valid": "有效",
-        "void": "作废"
+        "valid": "有效"
     },
     "support": {
         "chat_conversations": {
@@ -1976,14 +1973,13 @@
         "activating_batch": "正在激活...",
         "activate_batch_description": "此批次中的所有待处理卡片将于今天激活，并在两年后到期。",
         "activate_batch_title": "确定要激活此批次吗？",
-        "cannot_void": "只有有效卡片可以作废。",
+        "cannot_block": "只有有效卡片可以封禁。",
         "copied_pin": "PIN 已复制。",
         "copied_serials": "序列号已复制。",
         "copy_pin": "复制 PIN",
         "copy_serials": "复制全部序列号",
         "custom_amount": "自定义金额",
         "customer": "客户",
-        "customer_phone": "手机号",
         "decrease": "减少数量",
         "denominations": "面额",
         "denominations_hint": "选择一个或多个金额，并为每个金额设置数量。",
@@ -2007,10 +2003,6 @@
         "generation_started": "充值卡生成已开始。",
         "generation_throttled": "生成请求过于频繁，请稍后再试。",
         "hide_pin": "隐藏 PIN",
-        "history_empty_description": "客户兑换的充值卡会显示在此处，含客户与时间。",
-        "history_empty_filtered": "没有符合筛选条件的兑换记录。",
-        "history_empty_title": "尚无兑换记录",
-        "history_search_placeholder": "搜索序列号、客户或手机号",
         "import_csv": {
             "amount_points": ":amount 积分",
             "browse_csv": "浏览 CSV",
@@ -2031,7 +2023,6 @@
         },
         "imported": "已导入 :count 张充值卡。",
         "increase": "增加数量",
-        "no_customer": "未知客户",
         "office": {
             "add": "添加网点",
             "address": "地址",
@@ -2043,7 +2034,6 @@
             "all_points": "全部面值",
             "all_status": "全部状态",
             "assign": "分配网点",
-            "assign_cards": "分配充值卡",
             "assigned_cards": "已分配卡片",
             "available": "可用",
             "cd": "代码",
@@ -2085,22 +2075,12 @@
         "print_all": "全部打印",
         "qr_code": "二维码",
         "quantity": "数量",
-        "range_7d": "近 7 天",
-        "range_month": "本月",
-        "range_today": "今天",
-        "recent_description": "客户最近使用的充值卡。",
-        "recent_title": "最近兑换",
         "redeemed_at": "兑换时间",
         "redeemed_by": "兑换人",
         "redemption": "兑换详情",
-        "redemption_description": "如已使用，显示兑换时间和客户。",
         "reveal_pin": "显示 PIN",
         "search_placeholder": "搜索序列号",
         "serial_no": "序列号",
-        "stat_customers": "客户数",
-        "stat_month": "本月",
-        "stat_redeemed": "已兑换卡片",
-        "stat_value": "兑换总额",
         "summary_cards": ":count 张",
         "summary_value": "合计 :value",
         "to_date": "结束日期",
@@ -2132,11 +2112,10 @@
             "quantity_total": "一次最多生成 :max 张卡（数量 × 网点数）。",
             "daily_limit": "每个网点、每种积分类别每天最多生成 :max 张卡。"
         },
-        "view_customer": "查看客户",
-        "void": "作废",
-        "void_description": "作废后的卡片无法兑换。",
-        "void_title": "作废此卡？",
-        "voided": "充值卡已作废。"
+        "block": "封禁",
+        "block_description": "被封禁的卡片无法兑换。",
+        "block_title": "确定要封禁此卡吗？",
+        "blocked": "充值卡已封禁。"
     },
     "top_up_report": {
         "activity_description": "按发行日期统计生成和兑换的卡片",

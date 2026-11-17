@@ -30,7 +30,7 @@ function DropdownMenuContent({ className, sideOffset = 8, ...props }: React.Comp
                 sideOffset={sideOffset}
                 collisionPadding={12}
                 className={cn(
-                    'z-[70] min-w-44 overflow-hidden rounded-[8px] border border-white/40 bg-[rgba(255,255,255,0.74)] p-1.5 text-foreground shadow-[0_18px_40px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/12 dark:bg-[rgba(18,28,30,0.82)] dark:shadow-[0_18px_45px_rgba(0,0,0,0.4)]',
+                    'z-[70] min-w-44 overflow-hidden rounded-[8px] border border-white/40 bg-[rgba(255,255,255,0.74)] p-1.5 text-foreground leading-[1.7] shadow-[0_18px_40px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/12 dark:bg-[rgba(18,28,30,0.82)] dark:shadow-[0_18px_45px_rgba(0,0,0,0.4)]',
                     'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
                     className,
                 )}
@@ -55,7 +55,7 @@ function DropdownMenuItem({
             data-inset={inset}
             data-variant={variant}
             className={cn(
-                'relative flex cursor-default items-center gap-2 rounded-[8px] px-2.5 py-2 text-sm outline-hidden select-none',
+                'relative flex cursor-default items-center gap-2 rounded-[8px] px-2.5 py-2 text-sm leading-[1.7] outline-hidden select-none',
                 'focus:bg-primary/8 focus:text-foreground',
                 'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
                 'data-[inset]:pl-8',
@@ -77,7 +77,7 @@ function DropdownMenuCheckboxItem({
         <DropdownMenuPrimitive.CheckboxItem
             data-slot="dropdown-menu-checkbox-item"
             className={cn(
-                'relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none focus:bg-primary/8 focus:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+                'relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm leading-[1.7] outline-hidden select-none focus:bg-primary/8 focus:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
                 className,
             )}
             checked={checked}
@@ -102,7 +102,7 @@ function DropdownMenuRadioItem({ className, children, ...props }: React.Componen
         <DropdownMenuPrimitive.RadioItem
             data-slot="dropdown-menu-radio-item"
             className={cn(
-                'relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none focus:bg-primary/8 focus:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+                'relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm leading-[1.7] outline-hidden select-none focus:bg-primary/8 focus:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
                 className,
             )}
             {...props}
@@ -126,7 +126,7 @@ function DropdownMenuLabel({
         <DropdownMenuPrimitive.Label
             data-slot="dropdown-menu-label"
             data-inset={inset}
-            className={cn('px-2.5 py-2 text-sm font-medium data-[inset]:pl-8', className)}
+            className={cn('px-2.5 py-2 text-sm leading-[1.7] font-medium data-[inset]:pl-8', className)}
             {...props}
         />
     );
@@ -155,7 +155,7 @@ function DropdownMenuSubTrigger({
             data-slot="dropdown-menu-sub-trigger"
             data-inset={inset}
             className={cn(
-                'flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-primary/8 focus:text-foreground data-[inset]:pl-8 data-[state=open]:bg-primary/8',
+                'flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm leading-[1.7] outline-hidden select-none focus:bg-primary/8 focus:text-foreground data-[inset]:pl-8 data-[state=open]:bg-primary/8',
                 className,
             )}
             {...props}
@@ -171,7 +171,7 @@ function DropdownMenuSubContent({ className, ...props }: React.ComponentProps<ty
         <DropdownMenuPrimitive.SubContent
             data-slot="dropdown-menu-sub-content"
             className={cn(
-                'z-50 min-w-32 overflow-hidden rounded-md border border-white/40 bg-[rgba(255,255,255,0.74)] p-1 text-popover-foreground shadow-[0_18px_40px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/12 dark:bg-[rgba(18,28,30,0.82)] dark:shadow-[0_18px_45px_rgba(0,0,0,0.4)]',
+                'z-50 min-w-32 overflow-hidden rounded-md border border-white/40 bg-[rgba(255,255,255,0.74)] p-1 text-popover-foreground leading-[1.7] shadow-[0_18px_40px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/12 dark:bg-[rgba(18,28,30,0.82)] dark:shadow-[0_18px_45px_rgba(0,0,0,0.4)]',
                 className,
             )}
             {...props}

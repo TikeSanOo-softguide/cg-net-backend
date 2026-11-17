@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, router, Link } from '@inertiajs/react';
-import { ArrowLeftRightIcon, CalendarIcon, XIcon, EyeIcon, SearchIcon, UserIcon } from 'lucide-react';
+import { ArrowLeftRightIcon, CalendarIcon, XIcon, EyeIcon, SearchIcon } from 'lucide-react';
 
 import { BackButton } from '@/components/BackButton';
 import { DataTable } from '@/components/DataTable';
@@ -323,7 +323,6 @@ export function TransactionsTable({
                                 <FormField
                                     label={t('transactions.actor_type')}
                                     htmlFor="transaction-actor"
-                                    icon={UserIcon}
                                     className="w-full shrink-0 sm:w-40 mr-3"
                                     labelClassName="text-[13px]"
                                 >

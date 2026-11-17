@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from '@/hooks/use-toast';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatTopUpAmount, type TopUpCardFilters, type TopUpCardRow } from '@/lib/top-up-cards';
+import { formatTopUpAmount, formatTopUpDateTime, type TopUpCardFilters, type TopUpCardRow } from '@/lib/top-up-cards';
 import { formatDate } from '@/lib/utils';
 import { CopyValueButton } from '../CopyValueButton';
 
@@ -40,7 +40,7 @@ export const TopUpCardTable = memo(function TopUpCardTable({
 }: TopUpCardTableProps) {
     const { t } = useTranslation();
     const can = useCan();
-    const [voiding, setVoiding] = useState<TopUpCardRow | null>(null);
+    const [blocking, setBlocking] = useState<TopUpCardRow | null>(null);
     const [viewing, setViewing] = useState<TopUpCardRow | null>(null);
 
     const copyPin = async (card: TopUpCardRow) => {
@@ -168,12 +168,12 @@ export const TopUpCardTable = memo(function TopUpCardTable({
                         />
                         {can('top-up-cards.update') && row.status === 'active' ? (
                             <TableActionButton
-                                label={t('top_up_cards.void')}
+                                label={t('top_up_cards.block')}
                                 icon={BanIcon}
                                 tone="danger"
                                 onClick={(event) => {
                                     event.stopPropagation();
-                                    setVoiding(row);
+                                    setBlocking(row);
                                 }}
                             />
                         ) : null}
@@ -181,27 +181,27 @@ export const TopUpCardTable = memo(function TopUpCardTable({
                 )}
             />
             <ConfirmDialog
-                open={voiding !== null}
+                open={blocking !== null}
                 onOpenChange={(open) => {
                     if (!open) {
-                        setVoiding(null);
+                        setBlocking(null);
                     }
                 }}
-                title={t('top_up_cards.void_title')}
-                description={t('top_up_cards.void_description')}
+                title={t('top_up_cards.block_title')}
+                description={t('top_up_cards.block_description')}
                 destructive
-                confirmLabel={t('top_up_cards.void')}
+                confirmLabel={t('top_up_cards.block')}
                 onConfirm={() => {
-                    if (!voiding) {
+                    if (!blocking) {
                         return;
                     }
 
                     router.patch(
-                        `/top-up-cards/${voiding.id}/void`,
+                        `/top-up-cards/${blocking.id}/block`,
                         {},
                         {
                             preserveScroll: true,
-                            onFinish: () => setVoiding(null),
+                            onFinish: () => setBlocking(null),
                         },
                     );
                 }}
@@ -274,7 +274,7 @@ export const TopUpCardTable = memo(function TopUpCardTable({
                                 <div className="space-y-1">
                                     <dt className="text-muted-foreground">{t('top_up_cards.redeemed_at')}</dt>
                                     <dd className="font-medium text-foreground">
-                                        {formatDate(viewing.redeemed_at) ?? '—'}
+                                        {formatTopUpDateTime(viewing.redeemed_at)}
                                     </dd>
                                 </div>
                             </dl>

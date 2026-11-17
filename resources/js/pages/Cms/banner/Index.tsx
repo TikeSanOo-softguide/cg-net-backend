@@ -8,7 +8,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatDate, todayInTimezone } from '@/lib/utils';
 import { MultiSelect, MultiSelectOption } from '@/components/MultiSelect';
-import { FormControl } from '@/components/ui/form-control';
+import { FormField } from '@/components/ui/form-field';
 import { AppWindow, ImageIcon, LucideIcon, Monitor, Smartphone } from 'lucide-react';
 
 type Props = {
@@ -62,8 +62,14 @@ export default function BannersIndex({ items, filters, bannerTypes, bannerTypeCo
                 statusFilter="active"
                 showSearch={false}
                 extraFilters={
-                    <FormControl compact className="w-[700px] min-w-[700px] max-w-[900px] shrink-0">
+                    <FormField
+                        label={t('cms.banner.type')}
+                        htmlFor="banner-types"
+                        className="mr-3 w-full shrink-0 sm:w-64"
+                        labelClassName="text-[13px]"
+                    >
                         <MultiSelect
+                            id="banner-types"
                             values={filters.types ?? []}
                             options={bannerTypeOptions}
                             onChange={(types) => {
@@ -86,7 +92,7 @@ export default function BannersIndex({ items, filters, bannerTypes, bannerTypeCo
                             heading={t('cms.banner.type')}
                             className="relative flex"
                         />
-                    </FormControl>
+                    </FormField>
                 }
                 onCreate={() => {
                     setEditingItem(null);

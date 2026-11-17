@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { DownloadIcon, EyeIcon, PlusIcon, SquarePenIcon, Trash2Icon, UsersIcon } from 'lucide-react';
+import { DownloadIcon, EyeIcon, PlusIcon, SearchIcon, SquarePenIcon, Trash2Icon, UsersIcon, XIcon } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { PageContent } from '@/components/PageContent';
@@ -12,14 +12,15 @@ import {
     SYSTEM_EXPORT_PERMISSION,
     type PermissionMatrixGroup,
 } from '@/components/PermissionMatrix';
-import { SearchInput } from '@/components/SearchInput';
 import { TableActionButton } from '@/components/TableActionButton';
 import { RoleFormDialog, type RoleFormItem } from '@/components/staff/RoleFormDialog';
 import { Card } from '@/components/ui/card';
+import { FormField } from '@/components/ui/form-field';
+import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ToolbarIconButton } from '@/components/data-table/toolbar';
-import { EDGE_PAD } from '@/components/data-table/styles';
+import { EDGE_PAD, toolbarInputClass } from '@/components/data-table/styles';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { roleDescription, roleIcon } from '@/lib/staff-roles';
@@ -70,23 +71,58 @@ export default function RolesIndex({ roles, matrix, filters }: RolesIndexProps) 
                 <PageHeader />
                 <Card className="flex min-h-0 flex-col gap-0 overflow-hidden border-0 py-0 shadow-[0_4px_16px_rgb(23_50_54/0.06)] dark:shadow-[0_4px_16px_rgb(0_0_0/0.22)]">
                     <div className={cn('flex flex-col gap-2.5 py-3 sm:flex-row sm:items-center', EDGE_PAD)}>
-                        <SearchInput
-                            value={search}
-                            onChange={(value) => {
-                                setSearch(value);
-                                window.clearTimeout(debounce.current);
-                                debounce.current = window.setTimeout(() => {
-                                    router.get(
-                                        '/roles',
-                                        { search: value || undefined },
-                                        { preserveState: true, preserveScroll: true, replace: true },
-                                    );
-                                }, 300);
-                            }}
-                            placeholder={t('staff.search_roles')}
-                            size="sm"
-                            className="w-full sm:max-w-64"
-                        />
+                        <FormField
+                            label={t('common.search')}
+                            htmlFor="role-search"
+                            icon={SearchIcon}
+                            rightSlot={
+                                search ? (
+                                    <button
+                                        type="button"
+                                        aria-label={t('common.clear')}
+                                        className="inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                                        onClick={() => {
+                                            setSearch('');
+                                            window.clearTimeout(debounce.current);
+                                            debounce.current = window.setTimeout(() => {
+                                                router.get(
+                                                    '/roles',
+                                                    { search: undefined },
+                                                    { preserveState: true, preserveScroll: true, replace: true },
+                                                );
+                                            }, 300);
+                                        }}
+                                    >
+                                        <XIcon className="size-3.5" strokeWidth={2} />
+                                    </button>
+                                ) : undefined
+                            }
+                            className="w-full shrink-0 sm:w-60"
+                            labelClassName="text-[13px]"
+                        >
+                            <Input
+                                id="role-search"
+                                type="text"
+                                inputMode="search"
+                                autoComplete="off"
+                                value={search}
+                                onChange={(event) => {
+                                    const value = event.target.value;
+                                    setSearch(value);
+                                    window.clearTimeout(debounce.current);
+                                    debounce.current = window.setTimeout(() => {
+                                        router.get(
+                                            '/roles',
+                                            { search: value || undefined },
+                                            { preserveState: true, preserveScroll: true, replace: true },
+                                        );
+                                    }, 300);
+                                }}
+                                placeholder={t('staff.search_roles')}
+                                aria-label={t('staff.search_roles')}
+                                className={toolbarInputClass}
+                            />
+                        </FormField>
                         {can('roles.create') ? (
                             <div className="flex shrink-0 items-center justify-end sm:ms-auto">
                                 <ToolbarIconButton

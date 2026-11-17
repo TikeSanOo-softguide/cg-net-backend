@@ -1376,7 +1376,7 @@ class InternetBillPaymentTest extends TestCase
             'subject_id' => $billPayment->id,
             'causer_type' => Admin::class,
             'causer_id' => $admin->id,
-            'event' => ActivityLogEvent::Completed->value,
+            'event' => ActivityLogEvent::MarkedCompleted->value,
         ]);
     }
 

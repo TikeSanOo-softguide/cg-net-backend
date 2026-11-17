@@ -1,12 +1,14 @@
 <?php
 
 namespace App\Http\Controllers;
+
+use App\Enums\UserLogEvent;
 use App\Models\UserLog;
 use Illuminate\Http\Request;
 
 abstract class Controller
 {
-    protected function logActivity(Request $request, $action, $extraData = [])
+    protected function logActivity(Request $request, UserLogEvent $action, array $extraData = []): void
     {
         $userId = $request->user() ? $request->user()->id : null;
 
@@ -16,7 +18,7 @@ abstract class Controller
 
         UserLog::create([
             'user_id' => $userId,
-            'event' => $action,
+            'event' => $action->value,
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
             'metadata' => new \stdClass(),

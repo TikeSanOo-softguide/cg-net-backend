@@ -162,11 +162,11 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                     onView={(request) => setSelectedRequest(request)}
                     directActions
                     filters={
-                        <>
+                        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
                             <FormField
                                 label={t('common.search')}
                                 htmlFor="installation-search"
-                                className="w-full shrink-0 sm:w-60"
+                                className="w-full shrink-0 sm:w-60 mr-3"
                                 labelClassName="text-[13px]"
                             >
                                 <SearchInput
@@ -180,7 +180,7 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                             <FormField
                                 label={t('broadband_application.service_type')}
                                 htmlFor="installation-service-type"
-                                className="w-full shrink-0 sm:w-40"
+                                className="w-full shrink-0 sm:w-40 mr-3"
                                 labelClassName="text-[13px]"
                             >
                                 <Select
@@ -197,7 +197,7 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                                     >
                                         <SelectValue placeholder={t('broadband_application.service_type')} />
                                     </SelectTrigger>
-                                    <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                    <SelectContent>
                                         <SelectItem value="all">{t('common.all')}</SelectItem>
                                         <SelectItem value="FTTH">FTTH</SelectItem>
                                         <SelectItem value="CG">{t('broadband_application.cg_router')}</SelectItem>
@@ -207,7 +207,7 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                             <FormField
                                 label={t('common.status')}
                                 htmlFor="installation-status"
-                                className="w-full shrink-0 sm:w-48"
+                                className="w-full shrink-0 sm:w-48 mr-3"
                                 labelClassName="text-[13px]"
                             >
                                 <Select
@@ -225,7 +225,7 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                                         <SelectValue placeholder={t('common.status')} />
                                     </SelectTrigger>
 
-                                    <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                    <SelectContent>
                                         <SelectItem value="all">{t('common.all')}</SelectItem>
                                         {statuses.map((status) => (
                                             <SelectItem key={status} value={status}>
@@ -235,7 +235,7 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                                     </SelectContent>
                                 </Select>
                             </FormField>
-                        </>
+                        </div>
                     }
                     columns={[
                         {

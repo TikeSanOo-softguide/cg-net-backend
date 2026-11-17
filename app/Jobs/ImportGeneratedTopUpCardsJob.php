@@ -591,7 +591,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
 
     private function logImportSucceeded(Batch $batch, int $totalCards, int|string $totalValue): void
     {
-        activity(ActivityLogName::TopUpCards->value)
+        activity(ActivityLogName::TopUpCardBatchImport->value)
             ->causedBy(Admin::query()->find($this->userId))
             ->performedOn($batch)
             ->event(ActivityLogEvent::Succeeded->value)
@@ -608,7 +608,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
      */
     private function logImportFailed(Throwable $exception, ?Batch $batch, array $generation): void
     {
-        $activity = activity(ActivityLogName::TopUpCards->value)
+        $activity = activity(ActivityLogName::TopUpCardBatchImport->value)
             ->causedBy(Admin::query()->find($this->userId))
             ->event(ActivityLogEvent::Failed->value)
             ->withProperties([

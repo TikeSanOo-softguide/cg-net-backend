@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\SecurityLogEvent;
 use App\Models\Admin;
 use App\Models\SecurityLog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,8 +27,7 @@ class SecurityLogTest extends TestCase
             ->assertInertia(
                 fn(Assert $page) => $page
                     ->component('Logs/SecurityLog/index')
-                    ->has('filterOptions.event', 2)
-                    ->where('filterOptions.event.0', 'login_failed')
+                    ->where('filterOptions.event', SecurityLogEvent::values())
                     ->has('logs.data', 1)
                     ->where('logs.data.0.event', 'login_failed')
                     ->where('filters.event', 'login_failed'),

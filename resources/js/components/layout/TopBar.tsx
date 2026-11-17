@@ -97,7 +97,7 @@ export function TopBar({ sidebarOpen = false }: TopBarProps) {
         <header className="app-navbar sticky top-0 z-[60] shrink-0 shadow-navbar">
             <div className="flex h-[var(--navbar-height)] items-center justify-between gap-2 px-3 sm:px-5">
                 <div className="flex min-w-0 items-center gap-2.5">
-                    <h1 className="truncate font-heading text-sm font-medium tracking-tight text-primary/70 sm:text-[15px]">
+                    <h1 className="truncate font-heading text-sm leading-[1.75] font-medium tracking-tight text-primary/70 sm:text-[15px]">
                         {title}
                     </h1>
                 </div>

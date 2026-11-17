@@ -131,19 +131,6 @@ class FailureReportController extends Controller
         return back()->with('success', 'requests.status_updated');
     }
 
-    public function destroy(Request $request, FailureReport $failureReport): RedirectResponse
-    {
-        $failureReport->delete();
-
-        activity(ActivityLogName::FailureReport->value)
-            ->causedBy($request->user())
-            ->performedOn($failureReport)
-            ->event(ActivityLogEvent::Deleted->value)
-            ->log('failure_report_deleted');
-
-        return back()->with('success', 'common.delete');
-    }
-
     private function stats(string $status): array
     {
         $reports = FailureReport::query()

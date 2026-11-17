@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { FolderTreeIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
+import { SearchIcon, SquarePenIcon, Trash2Icon, XIcon } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
@@ -12,8 +12,10 @@ import { TableActionButton } from '@/components/TableActionButton';
 import { QuickReplyDetailDialog } from '@/components/support/quick-reply/QuickReplyDetailDialog';
 import { QuickReplyFormDialog, type QuickReplyItem } from '@/components/support/quick-reply/QuickReplyFormDialog';
 import type { QuickReplyCategoryOption } from '@/components/support/quick-reply/QuickReplyForm';
-import { FormControl } from '@/components/ui/form-control';
+import { FormField } from '@/components/ui/form-field';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toolbarInputClass } from '@/components/data-table/styles';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { visitBulkDelete } from '@/lib/bulk-delete';
@@ -77,6 +79,12 @@ export default function QuickRepliesIndex({ items, existingKeywords, filters, ca
         );
     };
 
+    const updateSearch = (value: string) => {
+        setSearch(value);
+        window.clearTimeout(debounce.current);
+        debounce.current = window.setTimeout(() => visit({ search: value }), 300);
+    };
+
     const openCreate = () => {
         setViewingReply(null);
         setEditingReply(null);
@@ -97,26 +105,56 @@ export default function QuickRepliesIndex({ items, existingKeywords, filters, ca
                 <DataTable
                     data={items.data}
                     getRowId={(row) => String(row.id)}
-                    search={search}
-                    onSearchChange={(value) => {
-                        setSearch(value);
-                        window.clearTimeout(debounce.current);
-                        debounce.current = window.setTimeout(() => visit({ search: value }), 300);
-                    }}
-                    searchPlaceholder={t('support.quick_replies.search_placeholder')}
+                    showSearch={false}
                     emptyLabel={t('support.quick_replies.empty')}
                     pagination={items}
                     filters={
-                        <>
-                            <FormControl icon={FolderTreeIcon} compact className="w-full shrink-0 sm:w-48">
+                        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
+                            <FormField
+                                label={t('common.search')}
+                                htmlFor="quick-reply-search"
+                                icon={SearchIcon}
+                                rightSlot={
+                                    search ? (
+                                        <button
+                                            type="button"
+                                            aria-label={t('common.clear')}
+                                            className="inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                                            onClick={() => updateSearch('')}
+                                        >
+                                            <XIcon className="size-3.5" strokeWidth={2} />
+                                        </button>
+                                    ) : undefined
+                                }
+                                className="mr-3 w-full shrink-0 sm:w-60"
+                                labelClassName="text-[13px]"
+                            >
+                                <Input
+                                    id="quick-reply-search"
+                                    type="text"
+                                    inputMode="search"
+                                    autoComplete="off"
+                                    value={search}
+                                    onChange={(event) => updateSearch(event.target.value)}
+                                    placeholder={t('support.quick_replies.search_placeholder')}
+                                    aria-label={t('support.quick_replies.search_placeholder')}
+                                    className={toolbarInputClass}
+                                />
+                            </FormField>
+                            <FormField
+                                label={t('support.quick_replies.category')}
+                                htmlFor="quick-reply-category"
+                                className="mr-3 w-full shrink-0 sm:w-40"
+                                labelClassName="text-[13px]"
+                            >
                                 <Select
                                     value={filters.category || 'all'}
                                     onValueChange={(value) => visit({ category: value === 'all' ? '' : value })}
                                 >
-                                    <SelectTrigger className="w-full">
+                                    <SelectTrigger id="quick-reply-category">
                                         <SelectValue placeholder={t('support.quick_replies.category')} />
                                     </SelectTrigger>
-                                    <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                    <SelectContent>
                                         <SelectItem value="all">{t('support.quick_replies.all_categories')}</SelectItem>
                                         {categories.map((category) => (
                                             <SelectItem key={category.value} value={category.value}>
@@ -125,8 +163,8 @@ export default function QuickRepliesIndex({ items, existingKeywords, filters, ca
                                         ))}
                                     </SelectContent>
                                 </Select>
-                            </FormControl>
-                        </>
+                            </FormField>
+                        </div>
                     }
                     onCreate={can('support.create') ? openCreate : undefined}
                     createLabel={t('support.quick_replies.create')}

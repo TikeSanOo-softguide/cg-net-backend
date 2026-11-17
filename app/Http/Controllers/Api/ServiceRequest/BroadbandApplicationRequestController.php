@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\ServiceRequest;
 
 use App\Enums\MessageCode;
 use App\Enums\RequestStatus;
+use App\Enums\UserLogEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ServiceRequest\CreateBroadbandApplicationRequest;
 use App\Http\Requests\ServiceRequest\UpdateBroadbandApplicationRequest;
@@ -78,7 +79,7 @@ class BroadbandApplicationRequestController extends Controller
                 'status' => RequestStatus::UnderReview->value,
             ]);
 
-            $this->logActivity($request, 'create_broadband_application', [
+            $this->logActivity($request, UserLogEvent::CreateBroadbandApplication, [
                 'broadband_application_id' => $application->id,
                 'status' => $application->status->value,
             ]);
@@ -104,7 +105,7 @@ class BroadbandApplicationRequestController extends Controller
             $validated = $request->validated();
             $installationApplication->update($validated);
 
-            $this->logActivity($request, 'update_broadband_application', [
+            $this->logActivity($request, UserLogEvent::UpdateBroadbandApplication, [
                 'broadband_application_id' => $installationApplication->id,
             ]);
 
@@ -123,7 +124,7 @@ class BroadbandApplicationRequestController extends Controller
         $this->ensureOwner($request, $installationApplication);
         $installationApplication->delete();
 
-        $this->logActivity($request, 'delete_broadband_application', [
+        $this->logActivity($request, UserLogEvent::DeleteBroadbandApplication, [
             'broadband_application_id' => $installationApplication->id,
         ]);
 
@@ -139,7 +140,7 @@ class BroadbandApplicationRequestController extends Controller
             'status' => RequestStatus::Cancelled,
         ]);
 
-        $this->logActivity($request, 'cancel_broadband_application', [
+        $this->logActivity($request, UserLogEvent::CancelBroadbandApplication, [
             'broadband_application_id' => $installationApplication->id,
         ]);
 

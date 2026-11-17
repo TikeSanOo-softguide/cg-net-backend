@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\ServiceRequest;
 
 use App\Enums\MessageCode;
 use App\Enums\RequestStatus;
+use App\Enums\UserLogEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ServiceRequest\CreateFailureReport;
 use App\Http\Requests\ServiceRequest\UpdateFailureReport;
@@ -78,7 +79,7 @@ class FailureReportController extends Controller
                 ]);
             }
 
-            $this->logActivity($request, 'create_failure_report', [
+            $this->logActivity($request, UserLogEvent::CreateFailureReport, [
                 'failure_report_id' => $failureReport->id,
                 'failure_type' => $failureReport->failure_type,
             ]);
@@ -135,7 +136,7 @@ class FailureReportController extends Controller
                 }
             }
 
-            $this->logActivity($request, 'update_failure_report', [
+            $this->logActivity($request, UserLogEvent::UpdateFailureReport, [
                 'failure_report_id' => $failureReport->id,
             ]);
             return $failureReport;
@@ -157,7 +158,7 @@ class FailureReportController extends Controller
             'status' => RequestStatus::Cancelled,
         ]);
 
-        $this->logActivity($request, 'cancel_failure_report', [
+        $this->logActivity($request, UserLogEvent::CancelFailureReport, [
             'failure_report_id' => $failureReport->id,
         ]);
 
@@ -180,7 +181,7 @@ class FailureReportController extends Controller
             $failureReport->delete();
         });
 
-        $this->logActivity($request, 'delete_failure_report', [
+        $this->logActivity($request, UserLogEvent::DeleteFailureReport, [
             'failure_report_id' => $failureReport->id,
         ]);
         return response()->noContent();
