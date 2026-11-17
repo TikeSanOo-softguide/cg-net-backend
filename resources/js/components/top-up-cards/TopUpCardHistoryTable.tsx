@@ -14,7 +14,7 @@ import { SearchInput } from '@/components/SearchInput';
 import { toast } from '@/hooks/use-toast';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
-import { CardHistoryFilters, formatTopUpAmount, type TopUpCardRow } from '@/lib/top-up-cards';
+import { CardHistoryFilters, formatTopUpAmount, formatTopUpDateTime, type TopUpCardRow } from '@/lib/top-up-cards';
 import { formatDate } from '@/lib/utils';
 import { DatePicker } from '../ui/date-picker';
 import { SearchableSelect } from '../SearchableSelect';
@@ -53,7 +53,7 @@ export function TopUpCardHistoryTable({
 }: TopUpCardHistoryProps) {
     const { t } = useTranslation();
     const can = useCan();
-    const [voiding, setVoiding] = useState<TopUpCardRow | null>(null);
+    const [blocking, setBlocking] = useState<TopUpCardRow | null>(null);
     const [viewing, setViewing] = useState<TopUpCardRow | null>(null);
 
     const batchOptions = React.useMemo(
@@ -113,20 +113,6 @@ export function TopUpCardHistoryTable({
                 filters={
                     <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
                         <FormField
-                            label={t('top_up_cards.search_placeholder')}
-                            htmlFor="serial-search"
-                            className="w-full shrink-0 sm:w-50"
-                            labelClassName="text-[13px]"
-                        >
-                            <SearchInput
-                                id="serial-search"
-                                value={search}
-                                onChange={onSearchChange}
-                                placeholder={t('top_up_cards.search_placeholder')}
-                                size="sm"
-                            />
-                        </FormField>
-                        <FormField
                             label={t('top_up_cards.batch_no')}
                             htmlFor="batch"
                             className="w-full shrink-0 sm:w-50"
@@ -139,6 +125,20 @@ export function TopUpCardHistoryTable({
                                 placeholder={t('top_up_cards.office.all_batches')}
                                 searchPlaceholder={t('top_up_cards.batch_no') as string}
                                 className="w-full"
+                            />
+                        </FormField>
+                        <FormField
+                            label={t('top_up_cards.search_placeholder')}
+                            htmlFor="serial-search"
+                            className="w-full shrink-0 sm:w-50"
+                            labelClassName="text-[13px]"
+                        >
+                            <SearchInput
+                                id="serial-search"
+                                value={search}
+                                onChange={onSearchChange}
+                                placeholder={t('top_up_cards.search_placeholder')}
+                                size="sm"
                             />
                         </FormField>
                         <FormField
@@ -302,12 +302,12 @@ export function TopUpCardHistoryTable({
                         />
                         {can('top-up-cards.update') && row.status === 'active' ? (
                             <TableActionButton
-                                label={t('top_up_cards.void')}
+                                label={t('top_up_cards.block')}
                                 icon={BanIcon}
                                 tone="danger"
                                 onClick={(event) => {
                                     event.stopPropagation();
-                                    setVoiding(row);
+                                    setBlocking(row);
                                 }}
                             />
                         ) : null}
@@ -315,27 +315,27 @@ export function TopUpCardHistoryTable({
                 )}
             />
             <ConfirmDialog
-                open={voiding !== null}
+                open={blocking !== null}
                 onOpenChange={(open) => {
                     if (!open) {
-                        setVoiding(null);
+                        setBlocking(null);
                     }
                 }}
-                title={t('top_up_cards.void_title')}
-                description={t('top_up_cards.void_description')}
+                title={t('top_up_cards.block_title')}
+                description={t('top_up_cards.block_description')}
                 destructive
-                confirmLabel={t('top_up_cards.void')}
+                confirmLabel={t('top_up_cards.block')}
                 onConfirm={() => {
-                    if (!voiding) {
+                    if (!blocking) {
                         return;
                     }
 
                     router.patch(
-                        `/top-up-cards/${voiding.id}/void`,
+                        `/top-up-cards/${blocking.id}/block`,
                         {},
                         {
                             preserveScroll: true,
-                            onFinish: () => setVoiding(null),
+                            onFinish: () => setBlocking(null),
                         },
                     );
                 }}
@@ -411,7 +411,7 @@ export function TopUpCardHistoryTable({
                                         <div className="space-y-1">
                                             <dt className="text-muted-foreground">{t('top_up_cards.redeemed_at')}</dt>
                                             <dd className="font-medium text-foreground">
-                                                {formatDate(viewing.redeemed_at) ?? '—'}
+                                                {formatTopUpDateTime(viewing.redeemed_at)}
                                             </dd>
                                         </div>
                                         {viewing.transaction_id ? (

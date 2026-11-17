@@ -43,7 +43,6 @@ class TopUpCardManagementTest extends TestCase
     public function test_guests_cannot_view_top_up_cards(): void
     {
         $this->get('/top-up-cards/batch')->assertRedirect('/login');
-        $this->get('/top-up-cards/redeem-history')->assertRedirect('/login');
     }
 
     public function test_admins_without_permission_are_forbidden(): void
@@ -52,8 +51,6 @@ class TopUpCardManagementTest extends TestCase
         $admin = Admin::factory()->create();
 
         $this->actingAs($admin, 'web')->get('/top-up-cards/batch')->assertForbidden();
-
-        $this->actingAs($admin, 'web')->get('/top-up-cards/redeem-history')->assertForbidden();
 
         $this->actingAs($admin, 'web')
             ->post('/top-up-cards/batch', [
@@ -668,14 +665,14 @@ class TopUpCardManagementTest extends TestCase
         ]);
     }
 
-    public function test_admins_can_void_a_valid_card(): void
+    public function test_admins_can_block_a_valid_card(): void
     {
         $actor = Admin::factory()->create();
         $actor->assignRole(AppPermissions::SuperAdmin);
         $card = TopUpCard::factory()->create();
 
         $this->actingAs($actor, 'web')
-            ->patch('/top-up-cards/'.$card->id.'/void')
+            ->patch('/top-up-cards/'.$card->id.'/block')
             ->assertRedirect();
 
         $this->assertSame(TopUpCardStatus::Blocked, $card->fresh()->status);
@@ -841,40 +838,6 @@ class TopUpCardManagementTest extends TestCase
         }
 
         $this->assertSame(TopUpCardStatus::Active, $card->fresh()->status);
-    }
-
-    public function test_admins_can_view_redeem_history(): void
-    {
-        $actor = Admin::factory()->create();
-        $actor->assignRole(AppPermissions::SuperAdmin);
-        $customer = User::factory()->create(['name' => 'Aung Aung', 'phone' => '09111111111']);
-        $redeemed = TopUpCard::factory()
-            ->redeemed($customer)
-            ->create([
-                'serial_no' => 'TOPUP-REDE-EMED-0001',
-                'amount' => 3000,
-            ]);
-        TopUpCard::factory()->create([
-            'serial_no' => 'TOPUP-VALID-CARD-0001',
-            'amount' => 5000,
-        ]);
-
-        $this->actingAs($actor, 'web')
-            ->get('/top-up-cards/redeem-history')
-            ->assertOk()
-            ->assertInertia(
-                fn (Assert $page) => $page
-                    ->component('TopUpCards/History')
-                    ->has('cards.data', 1)
-                    ->where('cards.data.0.id', $redeemed->id)
-                    ->where('stats.total', 1)
-                    ->where('recent.0.id', $redeemed->id),
-            );
-
-        $this->actingAs($actor, 'web')
-            ->get('/top-up-cards/redeem-history?search=Aung')
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->component('TopUpCards/History')->has('cards.data', 1));
     }
 
     public function test_card_history_can_filter_by_office_and_returns_office_name_and_code(): void

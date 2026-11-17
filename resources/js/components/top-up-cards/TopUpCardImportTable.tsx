@@ -153,7 +153,11 @@ export function TopUpCardImportTable({
                     {
                         id: 'total_value',
                         header: t('top_up_cards.total_value'),
-                        cell: (row) => row.total_value.toLocaleString(),
+                        cell: (row) =>
+                            t('top_up_cards.import_csv.amount_points').replace(
+                                ':amount',
+                                row.total_value.toLocaleString(),
+                            ),
                     },
                     {
                         id: 'status',
