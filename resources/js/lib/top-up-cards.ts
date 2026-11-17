@@ -44,22 +44,6 @@ export type CardHistoryFilters = {
     direction: 'asc' | 'desc';
 };
 
-export type RedeemHistoryFilters = {
-    search: string;
-    amount: string;
-    from: string;
-    to: string;
-    sort: string;
-    direction: 'asc' | 'desc';
-};
-
-export type RedeemHistoryStats = {
-    total: number;
-    value: string;
-    month: number;
-    customers: number;
-};
-
 export type BatchRow = {
     id: number;
     batch_no: string;
@@ -126,20 +110,6 @@ export function isoDate(date = new Date()): string {
     return calendarDate(dateInTimezone(date));
 }
 
-export function dateDaysAgo(days: number): string {
-    const date = dateInTimezone(new Date());
-    date.setUTCDate(date.getUTCDate() - days);
-
-    return calendarDate(date);
-}
-
-export function startOfMonthDate(): string {
-    const date = dateInTimezone(new Date());
-    date.setUTCDate(1);
-
-    return calendarDate(date);
-}
-
 export function formatTopUpDateTime(value: string | null): string {
     if (!value) {
         return '—';
@@ -154,14 +124,19 @@ export function formatTopUpDateTime(value: string | null): string {
         return value;
     }
 
-    return date.toLocaleString(undefined, {
+    const parts = new Intl.DateTimeFormat(undefined, {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
         timeZone: isLocalDateTime ? 'UTC' : appTimezone(),
-    });
+    }).formatToParts(date);
+    const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+
+    return `${values.day} ${values.month} ${values.year} ${values.hour}:${values.minute}:${values.second} ${values.dayPeriod.toLowerCase()}`;
 }
 
 function calendarDate(date: Date): string {

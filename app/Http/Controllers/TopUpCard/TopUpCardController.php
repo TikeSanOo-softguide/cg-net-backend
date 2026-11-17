@@ -16,10 +16,10 @@ use Inertia\Response;
 
 class TopUpCardController extends Controller
 {
-    public function void(Request $request, TopUpCard $topUpCard): RedirectResponse
+    public function block(Request $request, TopUpCard $topUpCard): RedirectResponse
     {
         if ($topUpCard->status !== TopUpCardStatus::Active) {
-            return back()->with('error', 'top_up_cards.cannot_void');
+            return back()->with('error', 'top_up_cards.cannot_block');
         }
 
         $topUpCard->update(['status' => TopUpCardStatus::Blocked]);
@@ -30,73 +30,7 @@ class TopUpCardController extends Controller
             ->event(ActivityLogEvent::Voided->value)
             ->log('top_up_card_voided');
 
-        return back()->with('success', 'top_up_cards.voided');
-    }
-
-    public function history(Request $request): Response
-    {
-        $search = trim((string) $request->string('search'));
-        $amount = $request->string('amount')->toString();
-        $from = $request->string('from')->toString();
-        $to = $request->string('to')->toString();
-        $sort = $request->string('sort')->toString();
-        $direction = $request->string('direction')->toString() === 'asc' ? 'asc' : 'desc';
-        $sortable = ['serial_no', 'amount', 'redeemed_at'];
-
-        if (! in_array($sort, $sortable, true)) {
-            $sort = 'redeemed_at';
-        }
-
-        $cards = TopUpCard::query()
-            ->with('redeemedBy:id,name,phone')
-            ->where('status', TopUpCardStatus::Used)
-            ->when($search !== '', function ($query) use ($search): void {
-                $query->where(function ($query) use ($search): void {
-                    $query
-                        ->whereLike('serial_no', '%'.$search.'%')
-                        ->orWhereHas('redeemedBy', function ($query) use ($search): void {
-                            $query->whereLike('name', '%'.$search.'%')->orWhereLike('phone', '%'.$search.'%');
-                        });
-                });
-            })
-            ->when($amount !== '' && is_numeric($amount), function ($query) use ($amount): void {
-                $query->where('amount', $amount);
-            })
-            ->when($from !== '', function ($query) use ($from): void {
-                $query->whereDate('redeemed_at', '>=', $from);
-            })
-            ->when($to !== '', function ($query) use ($to): void {
-                $query->whereDate('redeemed_at', '<=', $to);
-            })
-            ->orderBy($sort, $direction)
-            ->paginate(15)
-            ->withQueryString()
-            ->through(fn (TopUpCard $card) => $this->payload($card));
-
-        $recent = TopUpCard::query()
-            ->with('redeemedBy:id,name,phone')
-            ->where('status', TopUpCardStatus::Used)
-            ->latest('redeemed_at')
-            ->limit(8)
-            ->get()
-            ->map(fn (TopUpCard $card) => $this->payload($card))
-            ->values()
-            ->all();
-
-        return Inertia::render('TopUpCards/History', [
-            'cards' => $cards,
-            'recent' => $recent,
-            'amounts' => $this->amountOptions(),
-            'stats' => $this->historyStats(),
-            'filters' => [
-                'search' => $search,
-                'amount' => $amount,
-                'from' => $from,
-                'to' => $to,
-                'sort' => $sort,
-                'direction' => $direction,
-            ],
-        ]);
+        return back()->with('success', 'top_up_cards.blocked');
     }
 
     public function cardHistory(Request $request): Response
@@ -231,25 +165,6 @@ class TopUpCardController extends Controller
                 : null,
             'transaction_id' => $card->ledgerTransaction?->id,
             'transaction_no' => $card->ledgerTransaction?->transaction_no,
-        ];
-    }
-
-    /**
-     * @return array{total: int, value: string, month: int, customers: int}
-     */
-    private function historyStats(): array
-    {
-        $redeemed = TopUpCard::query()->where('status', TopUpCardStatus::Used);
-
-        return [
-            'total' => $redeemed->clone()->count(),
-            'value' => (string) $redeemed->clone()->sum('amount'),
-            'month' => $redeemed->clone()->where('redeemed_at', '>=', now()->startOfMonth())->count(),
-            'customers' => (int) $redeemed
-                ->clone()
-                ->whereNotNull('redeemed_by')
-                ->selectRaw('count(distinct redeemed_by) as aggregate')
-                ->value('aggregate'),
         ];
     }
 

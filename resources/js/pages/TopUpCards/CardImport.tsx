@@ -234,7 +234,7 @@ export default function CardImportPage({ batchPage, batches, importProgress, fil
 
     return (
         <>
-            <Head title={t('top_up_cards.office.assign_cards')} />
+            <Head title={t('menu.top_up_card_batch_import')} />
             <PageContent>
                 <PageHeader />
                 {importIsProcessing ? (

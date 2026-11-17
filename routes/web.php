@@ -457,12 +457,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::get('/card-history', [TopUpCardController::class, 'cardHistory'])
                 ->middleware('can:top-up-cards.view')
                 ->name('card-history');
-            Route::get('/redeem-history', [TopUpCardController::class, 'history'])
-                ->middleware('can:top-up-cards.view')
-                ->name('redeem-history');
-            Route::patch('/{topUpCard}/void', [TopUpCardController::class, 'void'])
+            Route::patch('/{topUpCard}/block', [TopUpCardController::class, 'block'])
                 ->middleware('can:top-up-cards.update')
-                ->name('void');
+                ->name('block');
         });
     Route::prefix('staff')
         ->name('staff.')
