@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\Auth;
 
 use App\Enums\MessageCode;
+use App\Enums\SecurityLogEvent;
+use App\Enums\UserLogEvent;
 use App\Exceptions\Auth\OtpThrottledException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\RequestOtpRequest;
@@ -34,7 +36,7 @@ class OtpController extends Controller
             $retryAfter = RateLimiter::availableIn($limiterKey);
 
             $this->securityLogService->record(
-                event: 'otp_request_limit_exceeded',
+                event: SecurityLogEvent::OtpRequestLimitExceeded,
                 actor: User::withTrashed()->where('phone', $phone)->first(),
                 metadata: [
                     'phone' => $phone,
@@ -137,7 +139,7 @@ class OtpController extends Controller
             $request->input('platform'),
         );
 
-        $this->logActivity($request, 'login_success', [
+        $this->logActivity($request, UserLogEvent::LoginSuccess, [
             'user_id' => $result['user']->id,
             'phone' => $result['user']->phone,
             'method' => 'otp',

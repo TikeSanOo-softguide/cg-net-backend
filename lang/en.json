@@ -71,7 +71,7 @@
         "order_no": "Order no",
         "payment_reference": "Payment reference",
         "product_snapshot": "Product snapshot",
-        "search_placeholder": "Search broadband, customer, or order",
+        "search_placeholder": "Search order, transaction, customer",
         "service_type": "Service Type"
     },
     "billing_report": {
@@ -1195,7 +1195,7 @@
         "review_completed": "Package order marked successful.",
         "review_unavailable": "This package order is no longer awaiting review. Refresh the order and try again.",
         "review_refunded": "Package order refunded.",
-        "search_placeholder": "Search order ID, customer, or transaction",
+        "search_placeholder": "Search order, transaction, customer",
         "service_details": "Activated service",
         "snapshot": "Order snapshot",
         "starts_at": "Starts at"

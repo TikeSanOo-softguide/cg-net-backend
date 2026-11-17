@@ -71,7 +71,7 @@
         "order_no": "订单号",
         "payment_reference": "支付参考号",
         "product_snapshot": "产品快照",
-        "search_placeholder": "搜索宽带、客户或订单",
+        "search_placeholder": "搜索订单、交易、客户",
         "service_type": "服务类型"
     },
     "billing_report": {
@@ -1195,7 +1195,7 @@
         "review_completed": "套餐订单已标记为成功。",
         "review_unavailable": "此套餐订单已不再等待审核。请刷新订单后重试。",
         "review_refunded": "套餐订单已退款。",
-        "search_placeholder": "搜索订单编号、客户或交易",
+        "search_placeholder": "搜索订单、交易、客户",
         "service_details": "已开通的服务",
         "snapshot": "订单快照",
         "starts_at": "开始时间"

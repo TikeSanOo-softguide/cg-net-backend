@@ -393,7 +393,7 @@ class TopUpCardBatchController extends Controller
         });
 
         if ($blockedBatch instanceof Batch) {
-            activity(ActivityLogName::TopUpCards->value)
+            activity(ActivityLogName::TopUpCardBatchImport->value)
                 ->causedBy($request->user())
                 ->performedOn($blockedBatch)
                 ->event(ActivityLogEvent::StatusChanged->value)
@@ -435,7 +435,7 @@ class TopUpCardBatchController extends Controller
         });
 
         if ($activatedBatch instanceof Batch) {
-            activity(ActivityLogName::TopUpCards->value)
+            activity(ActivityLogName::TopUpCardBatchImport->value)
                 ->causedBy($request->user())
                 ->performedOn($activatedBatch)
                 ->event(ActivityLogEvent::StatusChanged->value)
@@ -829,7 +829,7 @@ class TopUpCardBatchController extends Controller
         $causer = $userId > 0 ? Admin::query()->find($userId) : null;
         $items = is_array($generation['items'] ?? null) ? $generation['items'] : [];
 
-        activity(ActivityLogName::TopUpCards->value)
+        activity(ActivityLogName::TopUpCardBatchImport->value)
             ->causedBy($causer)
             ->event(ActivityLogEvent::from($status)->value)
             ->withProperties([

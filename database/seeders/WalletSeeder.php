@@ -8,6 +8,7 @@ use App\Enums\LedgerAccountCode;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
 use App\Enums\PackageOrderStatus;
+use App\Enums\TransactionIdPrefix;
 use App\Enums\WalletActorType;
 use App\Enums\WalletStatus;
 use App\Models\BillPayment;
@@ -18,6 +19,7 @@ use App\Models\PackageOrder;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Services\Ledger\LedgerPoster;
+use App\Services\Ledger\TransactionIdGenerator;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -32,8 +34,6 @@ class WalletSeeder extends Seeder
     private const FTTH_NETWORK_IDS = [1, 2];
 
     private const WIFI_NETWORK_ID = 3;
-
-    private int $sequence = 0;
 
     public function run(): void
     {
@@ -171,7 +171,7 @@ class WalletSeeder extends Seeder
         if ($status !== LedgerTransactionStatus::Completed) {
             LedgerTransaction::query()->create([
                 'wallet_id' => $wallet->id,
-                'transaction_no' => $this->nextTransactionNo($wallet),
+                'transaction_no' => app(TransactionIdGenerator::class)->generate(TransactionIdPrefix::TopUp),
                 'type' => LedgerTransactionType::Topup,
                 'status' => $status,
                 'amount' => $amount,
@@ -193,7 +193,6 @@ class WalletSeeder extends Seeder
             idempotencyKey: (string) Str::uuid(),
             actorType: WalletActorType::User,
             actorId: $user->id,
-            transactionNo: $this->nextTransactionNo($wallet),
         );
     }
 
@@ -245,7 +244,6 @@ class WalletSeeder extends Seeder
             idempotencyKey: (string) Str::uuid(),
             actorType: WalletActorType::User,
             actorId: $user->id,
-            transactionNo: $this->nextTransactionNo($wallet),
         );
 
         $this->createBillPayment($transaction, $accountNumber, $billOutcome, $serviceType);
@@ -300,7 +298,6 @@ class WalletSeeder extends Seeder
             idempotencyKey: (string) Str::uuid(),
             actorType: WalletActorType::User,
             actorId: $user->id,
-            transactionNo: $this->nextTransactionNo($wallet),
         );
 
         $packageOrder = $this->createPackageOrder($user, $package, $transaction, $orderOutcome);
@@ -344,7 +341,6 @@ class WalletSeeder extends Seeder
                 idempotencyKey: (string) Str::uuid(),
                 actorType: WalletActorType::Admin,
                 actorId: $user->id,
-                transactionNo: $this->nextTransactionNo($wallet),
             );
         } else {
             $this->ledger()->debitWallet(
@@ -356,7 +352,6 @@ class WalletSeeder extends Seeder
                 idempotencyKey: (string) Str::uuid(),
                 actorType: WalletActorType::Admin,
                 actorId: $user->id,
-                transactionNo: $this->nextTransactionNo($wallet),
             );
         }
     }
@@ -378,7 +373,6 @@ class WalletSeeder extends Seeder
             idempotencyKey: 'refund:'.$reversedTransaction->idempotency_key,
             actorType: WalletActorType::System,
             actorId: $user->id,
-            transactionNo: $this->nextTransactionNo($wallet),
             reversalOf: $reversedTransaction->id,
         );
     }
@@ -442,13 +436,6 @@ class WalletSeeder extends Seeder
         $pool = $available->flatMap(fn ($type) => array_fill(0, $weight($type), $type));
 
         return $pool[array_rand($pool->all())];
-    }
-
-    private function nextTransactionNo(Wallet $wallet): string
-    {
-        $this->sequence++;
-
-        return now()->format('YmdHis').$wallet->id.str_pad((string) $this->sequence, 5, '0', STR_PAD_LEFT);
     }
 
     private function generateUniqueAccountNumber(): string

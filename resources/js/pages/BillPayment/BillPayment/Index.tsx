@@ -252,11 +252,11 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                         />
                     )}
                     filters={
-                        <div className="flex w-full flex-wrap items-start gap-2">
+                        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
                             <FormField
                                 label={t('common.search')}
                                 htmlFor="bill-payment-search"
-                                className="w-full shrink-0 sm:w-60"
+                                className="w-full shrink-0 sm:w-60 mr-3"
                                 labelClassName="text-[13px]"
                             >
                                 <SearchInput
@@ -271,7 +271,7 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                             <FormField
                                 label={t('common.status')}
                                 htmlFor="bill-payment-status"
-                                className="w-full shrink-0 sm:w-40"
+                                className="w-full shrink-0 sm:w-40 mr-3"
                                 labelClassName="text-[13px]"
                             >
                                 <Select
@@ -294,7 +294,7 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                             <FormField
                                 label={t('bill_payments.service_type')}
                                 htmlFor="bill-payment-service-type"
-                                className="w-full shrink-0 sm:w-40"
+                                className="w-full shrink-0 sm:w-40 mr-3"
                                 labelClassName="text-[13px]"
                             >
                                 <Select
@@ -315,14 +315,13 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                                 label={t('common.start_date')}
                                 htmlFor="bill-payment-from"
                                 icon={CalendarIcon}
-                                className="w-full shrink-0 sm:w-40"
+                                className="w-full shrink-0 sm:w-40 mr-3"
                                 labelClassName="text-[13px]"
                             >
                                 <DatePicker
                                     id="bill-payment-from"
                                     value={filters.from}
                                     max={filters.to || undefined}
-                                    placeholder={t('common.start_date')}
                                     onChange={(value) => visit({ from: value })}
                                 />
                             </FormField>
@@ -330,14 +329,13 @@ export default function BillPaymentIndex({ payments, filters, statuses }: Props)
                                 label={t('common.end_date')}
                                 htmlFor="bill-payment-to"
                                 icon={CalendarIcon}
-                                className="w-full shrink-0 sm:w-40"
+                                className="w-full shrink-0 sm:w-40 mr-3"
                                 labelClassName="text-[13px]"
                             >
                                 <DatePicker
                                     id="bill-payment-to"
                                     value={filters.to}
                                     min={filters.from || undefined}
-                                    placeholder={t('common.end_date')}
                                     onChange={(value) => visit({ to: value })}
                                 />
                             </FormField>

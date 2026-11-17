@@ -67,7 +67,7 @@ export function MultiSelect({
                         aria-invalid={invalid}
                         className={cn(
                             formControlClass,
-                            'relative flex min-w-60 rounded-[10px] min-h-8 h-auto items-center py-1.5 text-left',
+                            'relative flex min-w-60 rounded-[10px] min-h-8 h-auto items-center py-1.5 text-left leading-[1.7]',
                             icon && 'pl-10',
                         )}
                     >
@@ -78,7 +78,7 @@ export function MultiSelect({
                                 selected.map((option) => (
                                     <span
                                         key={option.value}
-                                        className="inline-flex max-w-full items-center gap-1 rounded-[6px] text-xs bg-primary/12 px-2 py-0.5 font-medium text-primary"
+                                        className="inline-flex max-w-full items-center gap-1 rounded-[6px] text-[11px] bg-primary/12 px-2 font-medium text-primary"
                                     >
                                         <span className="truncate">{option.label}</span>
                                         <span
@@ -116,7 +116,9 @@ export function MultiSelect({
                 className="z-[90] w-[min(calc(100vw-2rem),var(--radix-dropdown-menu-trigger-width))] min-w-[min(100%,var(--radix-dropdown-menu-trigger-width))] max-h-[min(50vh,280px)] overflow-y-auto overflow-x-hidden rounded-[12px] border-border/80 bg-[#eef1f3] p-2 shadow-[0_10px_28px_rgb(23_50_54/0.12)] dark:bg-[#1a2e31]"
             >
                 {heading ? (
-                    <p className="mb-1.5 px-0.5 text-[11px] font-medium text-muted-foreground">{heading}</p>
+                    <p className="mb-1.5 px-0.5 text-[11px] leading-[1.7] font-medium text-muted-foreground">
+                        {heading}
+                    </p>
                 ) : null}
                 <div className="flex flex-col gap-1.5">
                     {options.map((option) => {
@@ -146,7 +148,7 @@ export function MultiSelect({
                                         {option.label}
                                     </span>
                                     {option.description ? (
-                                        <span className="mt-px block truncate text-[10px] leading-3.5 text-muted-foreground">
+                                        <span className="mt-px block truncate text-[10px] leading-[1.7] text-muted-foreground">
                                             {option.description}
                                         </span>
                                     ) : null}

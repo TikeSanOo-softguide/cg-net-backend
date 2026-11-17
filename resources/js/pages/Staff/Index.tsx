@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
-import { CircleDotIcon, SquarePenIcon, Trash2Icon } from 'lucide-react';
+import { SearchIcon, SquarePenIcon, Trash2Icon, XIcon } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
@@ -14,8 +14,10 @@ import { StaffFormDialog, type StaffFormMember } from '@/components/staff/StaffF
 import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
 import { StaffRoleChip } from '@/components/staff/StaffRoleChip';
 import type { StaffRoleOption } from '@/components/staff/StaffForm';
-import { FormControl } from '@/components/ui/form-control';
+import { FormField } from '@/components/ui/form-field';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toolbarInputClass } from '@/components/data-table/styles';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { visitBulkDelete } from '@/lib/bulk-delete';
@@ -75,13 +77,7 @@ export default function StaffIndex({ staff, roles = [], filters }: StaffIndexPro
                 <DataTable
                     data={staff.data}
                     getRowId={(row) => String(row.id)}
-                    search={search}
-                    onSearchChange={(value) => {
-                        setSearch(value);
-                        window.clearTimeout(debounce.current);
-                        debounce.current = window.setTimeout(() => visitIndex({ ...filters, search: value }), 300);
-                    }}
-                    searchPlaceholder={t('staff.search_placeholder')}
+                    showSearch={false}
                     sort={filters.sort}
                     direction={filters.direction}
                     onSort={(column) => {
@@ -129,21 +125,76 @@ export default function StaffIndex({ staff, roles = [], filters }: StaffIndexPro
                         </>
                     )}
                     filters={
-                        <FormControl icon={CircleDotIcon} compact className="w-full shrink-0 sm:w-48">
-                            <Select
-                                value={filters.status || 'all'}
-                                onValueChange={(value) => visitIndex({ ...filters, status: value === 'all' ? '' : value })}
+                        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
+                            <FormField
+                                label={t('common.search')}
+                                htmlFor="staff-search"
+                                icon={SearchIcon}
+                                rightSlot={
+                                    search ? (
+                                        <button
+                                            type="button"
+                                            aria-label={t('common.clear')}
+                                            className="inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                                            onClick={() => {
+                                                setSearch('');
+                                                window.clearTimeout(debounce.current);
+                                                debounce.current = window.setTimeout(
+                                                    () => visitIndex({ ...filters, search: '' }),
+                                                    300,
+                                                );
+                                            }}
+                                        >
+                                            <XIcon className="size-3.5" strokeWidth={2} />
+                                        </button>
+                                    ) : undefined
+                                }
+                                className="mr-3 w-full shrink-0 sm:w-60"
+                                labelClassName="text-[13px]"
                             >
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder={t('common.status')} />
-                                </SelectTrigger>
-                                <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
-                                    <SelectItem value="all">{t('common.all')}</SelectItem>
-                                    <SelectItem value="active">{t('status.active')}</SelectItem>
-                                    <SelectItem value="inactive">{t('status.inactive')}</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </FormControl>
+                                <Input
+                                    id="staff-search"
+                                    type="text"
+                                    inputMode="search"
+                                    autoComplete="off"
+                                    value={search}
+                                    onChange={(event) => {
+                                        const value = event.target.value;
+                                        setSearch(value);
+                                        window.clearTimeout(debounce.current);
+                                        debounce.current = window.setTimeout(
+                                            () => visitIndex({ ...filters, search: value }),
+                                            300,
+                                        );
+                                    }}
+                                    placeholder={t('staff.search_placeholder')}
+                                    aria-label={t('staff.search_placeholder')}
+                                    className={toolbarInputClass}
+                                />
+                            </FormField>
+                            <FormField
+                                label={t('common.status')}
+                                htmlFor="staff-status"
+                                className="mr-3 w-full shrink-0 sm:w-40"
+                                labelClassName="text-[13px]"
+                            >
+                                <Select
+                                    value={filters.status || 'all'}
+                                    onValueChange={(value) =>
+                                        visitIndex({ ...filters, status: value === 'all' ? '' : value })
+                                    }
+                                >
+                                    <SelectTrigger id="staff-status">
+                                        <SelectValue placeholder={t('common.status')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">{t('common.all')}</SelectItem>
+                                        <SelectItem value="active">{t('status.active')}</SelectItem>
+                                        <SelectItem value="inactive">{t('status.inactive')}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </FormField>
+                        </div>
                     }
                     columns={[
                         {

@@ -79,11 +79,12 @@ type SessionInfo = {
 type PackageRow = {
     id: number;
     package_name: LocalizedText | null;
-    account_number: string | null;
-    start_date: string | null;
-    expiry_date: string | null;
+    starts_at: string | null;
+    expires_at: string | null;
     status: string;
 };
+
+type PackageSort = 'starts_at' | 'expires_at';
 
 type TopUpRow = {
     id: number;
@@ -156,6 +157,8 @@ export default function CustomersShow({
     const can = useCan();
     const canUpdate = can('customers.update');
     const [packageTab, setPackageTab] = useState<'active' | 'expired'>('active');
+    const [packageSort, setPackageSort] = useState<PackageSort>('starts_at');
+    const [packageDirection, setPackageDirection] = useState<'asc' | 'desc'>('desc');
     const showAllTransactions = transactionPage !== null;
     const returnTo = useReturnTo('/customers');
     const goBackToCustomerList = () => {
@@ -234,9 +237,33 @@ export default function CustomersShow({
 
     const nextStatus = customer.status === 'active' ? 'suspended' : 'active';
     const filteredHistory = useMemo(
-        () => packageHistory.filter((row) => row.status === packageTab),
-        [packageTab, packageHistory],
+        () =>
+            packageHistory
+                .filter((row) => row.status === packageTab)
+                .sort((left, right) => {
+                    const leftValue = left[packageSort];
+                    const rightValue = right[packageSort];
+                    const leftDate = leftValue ? Date.parse(leftValue) : Number.NEGATIVE_INFINITY;
+                    const rightDate = rightValue ? Date.parse(rightValue) : Number.NEGATIVE_INFINITY;
+                    const comparison = leftDate - rightDate;
+
+                    return packageDirection === 'asc' ? comparison : -comparison;
+                }),
+        [packageDirection, packageHistory, packageSort, packageTab],
     );
+    const onPackageSort = (column: string) => {
+        if (column !== 'starts_at' && column !== 'expires_at') {
+            return;
+        }
+
+        if (packageSort === column) {
+            setPackageDirection((direction) => (direction === 'asc' ? 'desc' : 'asc'));
+            return;
+        }
+
+        setPackageSort(column);
+        setPackageDirection('asc');
+    };
 
     const bindFilters = (
         <div className="hidden sm:block">
@@ -443,6 +470,9 @@ export default function CustomersShow({
                                 emptyLabel={t('customers.no_packages')}
                                 numbered={false}
                                 showSearch={false}
+                                sort={packageSort}
+                                direction={packageDirection}
+                                onSort={onPackageSort}
                                 className="shadow-none"
                                 columns={[
                                     {
@@ -461,22 +491,26 @@ export default function CustomersShow({
                                         ),
                                     },
                                     {
-                                        id: 'account_number',
-                                        header: t('customers.account_number'),
-                                        className: 'font-mono text-[12px]',
-                                        mobile: 'subtitle',
-                                        searchValue: (row) => row.account_number ?? '',
-                                        cell: (row) => row.account_number ?? '—',
-                                    },
-                                    {
-                                        id: 'dates',
-                                        header: t('customers.validity'),
+                                        id: 'starts_at',
+                                        header: t('package_orders.starts_at'),
                                         mobile: 'meta',
-                                        searchValue: (row) => `${row.start_date ?? ''} ${row.expiry_date ?? ''}`,
+                                        sortable: true,
+                                        searchValue: (row) => row.starts_at ?? '',
                                         cell: (row) => (
                                             <span className="text-[12px]">
-                                                {row.start_date ? formatDate(row.start_date) : '—'} →{' '}
-                                                {row.expiry_date ? formatDate(row.expiry_date) : '—'}
+                                                {row.starts_at ? formatDateTime(row.starts_at) : '—'}
+                                            </span>
+                                        ),
+                                    },
+                                    {
+                                        id: 'expires_at',
+                                        header: t('package_orders.expires_at'),
+                                        mobile: 'subtitle',
+                                        sortable: true,
+                                        searchValue: (row) => row.expires_at ?? '',
+                                        cell: (row) => (
+                                            <span className="text-[12px]">
+                                                {row.expires_at ? formatDateTime(row.expires_at) : '—'}
                                             </span>
                                         ),
                                     },

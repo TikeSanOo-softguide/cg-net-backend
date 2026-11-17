@@ -276,13 +276,13 @@ export function DateTimePicker({
                     data-slot="input"
                     data-placeholder={display ? undefined : 'true'}
                     className={cn(
-                        'flex h-10 items-center py-2 text-left',
+                        'flex h-10 items-center text-left leading-[2.4]',
                         formControlClass,
                         'data-[placeholder=true]:text-muted-foreground',
                         className,
                     )}
                 >
-                    <span className="min-w-0 flex-1 truncate">
+                    <span className="min-w-0 flex-1 truncate leading-[2.4]">
                         {display || placeholder || t('common.select_datetime')}
                     </span>
                 </button>

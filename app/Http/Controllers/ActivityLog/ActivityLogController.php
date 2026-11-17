@@ -30,7 +30,9 @@ class ActivityLogController extends Controller
             'filters' => $filters,
             'filterOptions' => [
                 'admins' => Admin::query()->orderBy('username')->pluck('username')->all(),
-                'event' => ActivityLogEvent::values(),
+                'event' => $filters['log'] === ''
+                    ? ActivityLogEvent::values()
+                    : ActivityLogName::eventMap()[$filters['log']] ?? [],
                 'log' => ActivityLogName::groupedValues(),
             ],
         ]);

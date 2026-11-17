@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Log;
 
+use App\Enums\UserLogEvent;
 use App\Exports\UserLogExport;
 use App\Http\Controllers\Controller;
 use App\Models\UserLog;
@@ -41,13 +42,7 @@ class UserLogController extends Controller
             'logs' => $logs,
             'filters' => $filters,
             'filterOptions' => [
-                'event' => UserLog::query()
-                    ->whereNotNull('event')
-                    ->where('event', '!=', '')
-                    ->distinct()
-                    ->orderBy('event')
-                    ->pluck('event')
-                    ->all(),
+                'event' => UserLogEvent::values(),
             ],
         ]);
     }

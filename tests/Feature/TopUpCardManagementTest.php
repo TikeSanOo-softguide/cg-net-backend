@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ActivityLogEvent;
+use App\Enums\ActivityLogName;
 use App\Enums\TopUpCardStatus;
 use App\Http\Controllers\TopUpCard\TopUpCardBatchController;
 use App\Jobs\GenerateTopUpCardsJob;
@@ -243,7 +245,7 @@ class TopUpCardManagementTest extends TestCase
             ->assertRedirect();
 
         $this->assertDatabaseHas('activity_log', [
-            'log_name' => 'top_up_cards',
+            'log_name' => ActivityLogName::TopUpCardBatchImport->value,
             'description' => 'top_up_cards_batch_activated',
             'event' => 'status_changed',
             'subject_id' => $batch->id,
@@ -338,7 +340,7 @@ class TopUpCardManagementTest extends TestCase
             'total_value' => 3500,
         ]);
         $this->assertDatabaseHas('activity_log', [
-            'log_name' => 'top_up_cards',
+            'log_name' => ActivityLogName::TopUpCardBatchImport->value,
             'description' => 'top_up_cards_batch_import_succeeded',
             'event' => 'succeeded',
             'subject_id' => $batchId,
@@ -677,7 +679,8 @@ class TopUpCardManagementTest extends TestCase
 
         $this->assertSame(TopUpCardStatus::Blocked, $card->fresh()->status);
         $this->assertDatabaseHas('activity_log', [
-            'description' => 'top_up_card_voided',
+            'description' => 'top_up_card_blocked',
+            'event' => ActivityLogEvent::Blocked->value,
             'subject_id' => $card->id,
             'causer_id' => $actor->id,
         ]);
@@ -781,7 +784,7 @@ class TopUpCardManagementTest extends TestCase
             'status' => 'blocked',
         ]);
         $this->assertDatabaseHas('activity_log', [
-            'log_name' => 'top_up_cards',
+            'log_name' => ActivityLogName::TopUpCardBatchImport->value,
             'description' => 'top_up_cards_batch_blocked',
             'event' => 'status_changed',
             'subject_id' => $batch->id,

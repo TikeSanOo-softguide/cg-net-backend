@@ -113,9 +113,23 @@ export function TopUpCardHistoryTable({
                 filters={
                     <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
                         <FormField
+                            label={t('top_up_cards.search_placeholder')}
+                            htmlFor="serial-search"
+                            className="w-full shrink-0 sm:w-50 mr-3"
+                            labelClassName="text-[13px]"
+                        >
+                            <SearchInput
+                                id="serial-search"
+                                value={search}
+                                onChange={onSearchChange}
+                                placeholder={t('top_up_cards.search_placeholder')}
+                                size="sm"
+                            />
+                        </FormField>
+                        <FormField
                             label={t('top_up_cards.batch_no')}
                             htmlFor="batch"
-                            className="w-full shrink-0 sm:w-50"
+                            className="w-full shrink-0 sm:w-50 mr-3"
                             labelClassName="text-[13px]"
                         >
                             <SearchableSelect
@@ -128,23 +142,9 @@ export function TopUpCardHistoryTable({
                             />
                         </FormField>
                         <FormField
-                            label={t('top_up_cards.search_placeholder')}
-                            htmlFor="serial-search"
-                            className="w-full shrink-0 sm:w-50"
-                            labelClassName="text-[13px]"
-                        >
-                            <SearchInput
-                                id="serial-search"
-                                value={search}
-                                onChange={onSearchChange}
-                                placeholder={t('top_up_cards.search_placeholder')}
-                                size="sm"
-                            />
-                        </FormField>
-                        <FormField
                             label={t('top_up_cards.point_value')}
                             htmlFor="amount"
-                            className="w-full shrink-0 sm:w-40"
+                            className="w-full shrink-0 sm:w-40 mr-3"
                             labelClassName="text-[13px]"
                         >
                             <Select
@@ -169,7 +169,7 @@ export function TopUpCardHistoryTable({
                         <FormField
                             label={t('top_up_cards.office.title')}
                             htmlFor="office"
-                            className="w-full shrink-0 sm:w-50"
+                            className="w-full shrink-0 sm:w-50 mr-3"
                             labelClassName="text-[13px]"
                         >
                             <Select
@@ -198,7 +198,7 @@ export function TopUpCardHistoryTable({
                         <FormField
                             label={t('common.status')}
                             htmlFor="status"
-                            className="w-full shrink-0 sm:w-40"
+                            className="w-full shrink-0 sm:w-40 mr-3"
                             labelClassName="text-[13px]"
                         >
                             <Select
@@ -224,7 +224,7 @@ export function TopUpCardHistoryTable({
                             label={t('top_up_cards.from_date')}
                             htmlFor="from"
                             icon={CalendarIcon}
-                            className="w-full shrink-0 sm:w-40"
+                            className="w-full shrink-0 sm:w-40 mr-3"
                             labelClassName="text-[13px]"
                         >
                             <DatePicker
@@ -236,7 +236,7 @@ export function TopUpCardHistoryTable({
                             label={t('top_up_cards.to_date')}
                             htmlFor="to"
                             icon={CalendarIcon}
-                            className="w-full shrink-0 sm:w-40"
+                            className="w-full shrink-0 sm:w-40 mr-3"
                             labelClassName="text-[13px]"
                         >
                             <DatePicker

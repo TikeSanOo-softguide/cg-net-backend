@@ -77,7 +77,6 @@ class BillingSeeder extends Seeder
                 idempotencyKey: 'seed-bill:' . $user->id . ':' . $index,
                 actorType: WalletActorType::System,
                 actorId: $user->id,
-                transactionNo: 'BILL-' . strtoupper(fake()->bothify('???-####')),
             );
             $this->backdateLedgerTransaction($transaction, $timestamp);
 

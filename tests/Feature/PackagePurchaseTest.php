@@ -933,7 +933,7 @@ class PackagePurchaseTest extends TestCase
             'subject_id' => $order->id,
             'causer_type' => Admin::class,
             'causer_id' => $admin->id,
-            'event' => ActivityLogEvent::Completed->value,
+            'event' => ActivityLogEvent::MarkedCompleted->value,
         ]);
         $this->assertDatabaseMissing('ledger_transactions', ['type' => LedgerTransactionType::Refund->value]);
         $wallet->refresh();
