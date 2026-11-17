@@ -7,9 +7,11 @@ use App\Enums\ActivityLogEvent;
 use App\Enums\ActivityLogName;
 use App\Models\Admin;
 use App\Services\Auth\ApiTokenService;
+use App\Services\Auth\Otp\CountryRoutedOtpProvider;
 use App\Services\Auth\Otp\MockOtpProvider;
 use App\Services\Auth\Otp\OtpProviderInterface;
 use App\Services\Auth\Otp\SmsPohOtpProvider;
+use App\Services\Auth\Otp\TwilioVerifyOtpProvider;
 use App\Services\PackageActivation\FakePackageActivationService;
 use App\Services\PackageActivation\PackageActivationServiceInterface;
 use App\Services\PackageActivation\RealPackageActivationService;
@@ -41,7 +43,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(OtpProviderInterface::class, function (): OtpProviderInterface {
             return match (config('otp.provider')) {
                 'mock' => new MockOtpProvider(),
-                'smspoh' => new SmsPohOtpProvider(),
+                'country_routed', 'smspoh' => new CountryRoutedOtpProvider(
+                    new SmsPohOtpProvider(),
+                    new TwilioVerifyOtpProvider(),
+                ),
                 default => throw new \InvalidArgumentException('Unsupported OTP provider.'),
             };
         });
