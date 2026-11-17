@@ -113,20 +113,6 @@ export function TopUpCardHistoryTable({
                 filters={
                     <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
                         <FormField
-                            label={t('top_up_cards.search_placeholder')}
-                            htmlFor="serial-search"
-                            className="w-full shrink-0 sm:w-50"
-                            labelClassName="text-[13px]"
-                        >
-                            <SearchInput
-                                id="serial-search"
-                                value={search}
-                                onChange={onSearchChange}
-                                placeholder={t('top_up_cards.search_placeholder')}
-                                size="sm"
-                            />
-                        </FormField>
-                        <FormField
                             label={t('top_up_cards.batch_no')}
                             htmlFor="batch"
                             className="w-full shrink-0 sm:w-50"
@@ -139,6 +125,20 @@ export function TopUpCardHistoryTable({
                                 placeholder={t('top_up_cards.office.all_batches')}
                                 searchPlaceholder={t('top_up_cards.batch_no') as string}
                                 className="w-full"
+                            />
+                        </FormField>
+                        <FormField
+                            label={t('top_up_cards.search_placeholder')}
+                            htmlFor="serial-search"
+                            className="w-full shrink-0 sm:w-50"
+                            labelClassName="text-[13px]"
+                        >
+                            <SearchInput
+                                id="serial-search"
+                                value={search}
+                                onChange={onSearchChange}
+                                placeholder={t('top_up_cards.search_placeholder')}
+                                size="sm"
                             />
                         </FormField>
                         <FormField
