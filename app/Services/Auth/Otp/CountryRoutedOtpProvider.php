@@ -49,7 +49,7 @@ final class CountryRoutedOtpProvider implements OtpProviderInterface
         $number = ltrim($phone, '+');
 
         if (str_starts_with($number, '95')) {
-            return ['twilio', $this->twilio];
+            return ['smspoh', $this->smsPoh];
         }
 
         if (str_starts_with($number, '86') || str_starts_with($number, '66')) {

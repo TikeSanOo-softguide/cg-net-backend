@@ -43,7 +43,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(OtpProviderInterface::class, function (): OtpProviderInterface {
             return match (config('otp.provider')) {
                 'mock' => new MockOtpProvider(),
-                'country_routed', 'smspoh' => new CountryRoutedOtpProvider(
+                'country_routed' => new CountryRoutedOtpProvider(
                     new SmsPohOtpProvider(),
                     new TwilioVerifyOtpProvider(),
                 ),
@@ -81,7 +81,7 @@ class AppServiceProvider extends ServiceProvider
         );
 
         Event::listen(Login::class, function (Login $event): void {
-            if ($event->guard !== 'web' || !$event->user instanceof Admin) {
+            if ($event->guard !== 'web' || !($event->user instanceof Admin)) {
                 return;
             }
 
