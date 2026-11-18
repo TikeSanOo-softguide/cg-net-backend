@@ -145,6 +145,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::post('/bill-payments/{billPayment}/review/refund', [BillPaymentController::class, 'refundReview'])
                 ->middleware('can:billing.update')
                 ->name('bill-payments.review.refund');
+            Route::get('/package-orders/export', [PackageOrderController::class, 'export'])
+                ->middleware('can:' . AppPermissions::SystemExport)
+                ->name('package-orders.export');
             Route::get('/package-orders', [PackageOrderController::class, 'index'])->name('package-orders.index');
             Route::post('/package-orders/{packageOrder}/review/complete', [
                 PackageOrderController::class,

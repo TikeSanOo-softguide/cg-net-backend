@@ -145,10 +145,10 @@ class DeviceTokenTest extends TestCase
         $this->assertStringContainsString('refunded', $message['notification']['body']);
         $this->assertSame(
             [
-                'type' => 'ftth_bill_payment',
-                'category' => 'announcement',
-                'action_type' => 'ftth_bill_payment',
-                'action_id' => 'FTTH-1',
+                'type' => 'bill_payment',
+                'category' => 'bill_payment',
+                'action_type' => 'bill_payment',
+                'action_id' => '42',
                 'event' => 'refunded',
                 'transaction_no' => 'FTTH-1',
                 'amount' => '1500',
@@ -192,6 +192,7 @@ class DeviceTokenTest extends TestCase
     ): InternetBillPaymentStatusNotification {
         return new InternetBillPaymentStatusNotification(
             event: $event,
+            billPaymentId: 42,
             transactionNo: 'FTTH-1',
             amount: 1500,
             accountNumber: 'CG12345678',
@@ -217,6 +218,7 @@ class DeviceTokenTest extends TestCase
 
         $this->assertSame('Package purchase failed', $message['notification']['title']);
         $this->assertSame('package_order', $message['data']['type']);
+        $this->assertSame('package_order', $message['data']['category']);
         $this->assertSame('package_order', $message['data']['action_type']);
         $this->assertSame('7', $message['data']['action_id']);
         $this->assertSame('refunded', $message['data']['event']);

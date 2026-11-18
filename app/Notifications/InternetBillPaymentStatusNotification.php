@@ -23,6 +23,7 @@ class InternetBillPaymentStatusNotification extends Notification implements Shou
 
     public function __construct(
         public readonly BillPaymentNotificationEvent $event,
+        public readonly int $billPaymentId,
         public readonly string $transactionNo,
         public readonly int $amount,
         public readonly string $accountNumber,
@@ -46,10 +47,10 @@ class InternetBillPaymentStatusNotification extends Notification implements Shou
         $unreadCount = $notifiable->unreadAppNotificationCount();
         $data = array_filter(
             [
-                'type' => 'ftth_bill_payment',
-                'category' => NotificationCategory::Announcement->value,
-                'action_type' => NotificationActionType::FtthBillPayment->value,
-                'action_id' => $this->transactionNo,
+                'type' => 'bill_payment',
+                'category' => NotificationCategory::BillPayment->value,
+                'action_type' => NotificationActionType::BillPayment->value,
+                'action_id' => (string) $this->billPaymentId,
                 'event' => $this->event->value,
                 'transaction_no' => $this->transactionNo,
                 'amount' => (string) $this->amount,

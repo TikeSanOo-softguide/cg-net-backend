@@ -283,7 +283,7 @@ class CustomerManagementTest extends TestCase
             ->get('/customers/' . $customer->id . '/transactions/export?customer_id=' . $otherCustomer->id)
             ->assertOk();
 
-        Excel::assertDownloaded('customer-transactions.xlsx', function ($export) use ($customerTransaction): bool {
+        Excel::assertDownloaded('customer_transactions.xlsx', function ($export) use ($customerTransaction): bool {
             return $export->query()->get()->modelKeys() === [$customerTransaction->id];
         });
     }

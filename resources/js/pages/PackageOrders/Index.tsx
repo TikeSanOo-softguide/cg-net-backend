@@ -167,6 +167,22 @@ export default function PackageOrdersIndex({
         }, 300);
     };
 
+    const exportOrders = () => {
+        const query = new URLSearchParams();
+        const exportFilters = {
+            search,
+            package_id: packageId,
+            status,
+            from: filters.from,
+            to: filters.to,
+            open_package_order: open_order_id ? String(open_order_id) : '',
+        };
+        Object.entries(exportFilters).forEach(([key, value]) => {
+            if (value) query.set(key, value);
+        });
+        window.location.href = `/billing/package-orders/export?${query.toString()}`;
+    };
+
     const columns: DataTableColumn<PackageOrder>[] = [
         {
             id: 'transaction',
@@ -258,6 +274,8 @@ export default function PackageOrdersIndex({
                     columns={columns}
                     getRowId={(row) => String(row.id)}
                     showSearch={false}
+                    showExport={can('system.export')}
+                    onExport={can('system.export') ? exportOrders : undefined}
                     filters={
                         <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
                             <FormField

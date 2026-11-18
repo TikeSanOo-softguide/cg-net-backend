@@ -41,6 +41,7 @@ class TransactionExport implements FromQuery, ShouldAutoSize, WithHeadings, With
             'IP Address',
             'Device',
             'Created At',
+            'Posted At',
         ];
     }
 
@@ -73,6 +74,7 @@ class TransactionExport implements FromQuery, ShouldAutoSize, WithHeadings, With
             $transaction->ip_address ?? '',
             $transaction->user_agent ?? '',
             $transaction->created_at?->toDateTimeString() ?? '',
+            $transaction->posted_at?->toDateTimeString() ?? '',
         ];
     }
 }

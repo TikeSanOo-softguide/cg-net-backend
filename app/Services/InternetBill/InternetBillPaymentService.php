@@ -599,7 +599,7 @@ class InternetBillPaymentService
         string $accountNumber,
         array $billingResponse,
     ): array {
-        BillPayment::query()->updateOrCreate(
+        $billPayment = BillPayment::query()->updateOrCreate(
             ['ledger_transaction_id' => $transaction->id],
             [
                 'broadband_account_number' => $accountNumber,
@@ -615,6 +615,7 @@ class InternetBillPaymentService
         $this->notifyUser(
             $transaction->wallet?->user,
             BillPaymentNotificationEvent::Processing,
+            $billPayment,
             $transaction,
             $accountNumber,
         );
@@ -848,7 +849,7 @@ class InternetBillPaymentService
                 'posted_at' => $locked->posted_at ?? now(),
             ]);
 
-            BillPayment::query()->updateOrCreate(
+            $billPayment = BillPayment::query()->updateOrCreate(
                 ['ledger_transaction_id' => $locked->id],
                 [
                     'broadband_account_number' => $accountNumber,
@@ -860,6 +861,7 @@ class InternetBillPaymentService
 
             return [
                 'transaction' => $locked->refresh(),
+                'bill_payment' => $billPayment,
                 'completed' => true,
             ];
         });
@@ -868,6 +870,7 @@ class InternetBillPaymentService
             $this->notifyUser(
                 $transaction->wallet?->user,
                 BillPaymentNotificationEvent::Completed,
+                $completedTransaction['bill_payment'],
                 $transaction,
                 $accountNumber,
             );
@@ -878,7 +881,7 @@ class InternetBillPaymentService
 
     public function resolveReviewSuccessfully(LedgerTransaction $transaction, int $adminId): void
     {
-        $completed = DB::transaction(function () use ($transaction, $adminId): bool {
+        $billPayment = DB::transaction(function () use ($transaction, $adminId): BillPayment {
             /** @var LedgerTransaction $locked */
             $locked = LedgerTransaction::query()->whereKey($transaction->id)->lockForUpdate()->firstOrFail();
 
@@ -909,18 +912,17 @@ class InternetBillPaymentService
                 'confirmed_at' => now(),
             ]);
 
-            return true;
+            return $billPayment;
         });
 
-        if ($completed) {
-            $accountNumber = (string) $transaction->billPayment?->broadband_account_number;
-            $this->notifyUser(
-                $transaction->wallet?->user,
-                BillPaymentNotificationEvent::Completed,
-                $transaction,
-                $accountNumber,
-            );
-        }
+        $accountNumber = (string) $billPayment->broadband_account_number;
+        $this->notifyUser(
+            $transaction->wallet?->user,
+            BillPaymentNotificationEvent::Completed,
+            $billPayment,
+            $transaction,
+            $accountNumber,
+        );
     }
 
     public function refundReviewPayment(LedgerTransaction $transaction, User $user, int $adminId): LedgerTransaction
@@ -965,6 +967,7 @@ class InternetBillPaymentService
         bool $requireManualReview = false,
     ): LedgerTransaction {
         $refunded = false;
+        $billPayment = null;
 
         $refundTransaction = DB::transaction(function () use (
             $debitTransaction,
@@ -974,6 +977,7 @@ class InternetBillPaymentService
             $billingResponse,
             $requireManualReview,
             &$refunded,
+            &$billPayment,
         ) {
             /** @var LedgerTransaction $lockedDebit */
             $lockedDebit = LedgerTransaction::query()->whereKey($debitTransaction->id)->lockForUpdate()->firstOrFail();
@@ -1019,7 +1023,7 @@ class InternetBillPaymentService
 
             $lockedDebit->update(['status' => LedgerTransactionStatus::Failed]);
 
-            BillPayment::query()->updateOrCreate(
+            $billPayment = BillPayment::query()->updateOrCreate(
                 ['ledger_transaction_id' => $lockedDebit->id],
                 [
                     'broadband_account_number' => $accountNumber,
@@ -1035,9 +1039,14 @@ class InternetBillPaymentService
         });
 
         if ($refunded) {
+            if (! $billPayment instanceof BillPayment) {
+                throw new RuntimeException('The Internet bill payment record is missing.');
+            }
+
             $this->notifyUser(
                 $user,
                 BillPaymentNotificationEvent::Refunded,
+                $billPayment,
                 $debitTransaction,
                 $accountNumber,
                 $refundTransaction->transaction_no,
@@ -1050,13 +1059,19 @@ class InternetBillPaymentService
     protected function notifyUser(
         ?User $user,
         BillPaymentNotificationEvent $event,
+        BillPayment $billPayment,
         LedgerTransaction $transaction,
         string $accountNumber,
         ?string $refundTransactionNo = null,
     ): void {
-        $user?->notify(
+        if ($user === null) {
+            return;
+        }
+
+        $user->notify(
             new InternetBillPaymentStatusNotification(
                 event: $event,
+                billPaymentId: $billPayment->id,
                 transactionNo: $transaction->transaction_no,
                 amount: (float) $transaction->amount,
                 accountNumber: $accountNumber,
