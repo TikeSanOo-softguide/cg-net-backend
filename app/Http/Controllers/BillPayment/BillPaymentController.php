@@ -99,7 +99,7 @@ class BillPaymentController extends Controller
         activity(ActivityLogName::BillPayments->value)
             ->causedBy($request->user())
             ->performedOn($billPayment)
-            ->event(ActivityLogEvent::Completed->value)
+            ->event(ActivityLogEvent::MarkedCompleted->value)
             ->withProperties([
                 'from_status' => LedgerTransactionStatus::Review->value,
                 'to_status' => LedgerTransactionStatus::Completed->value,

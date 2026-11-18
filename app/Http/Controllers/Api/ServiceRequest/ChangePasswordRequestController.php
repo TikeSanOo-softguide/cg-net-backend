@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\ServiceRequest;
 
 use App\Enums\MessageCode;
 use App\Enums\RequestStatus;
+use App\Enums\UserLogEvent;
 use App\Events\ServiceRequestSubmitted;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ServiceRequest\CreateChangePasswordRequest;
@@ -55,7 +56,7 @@ class ChangePasswordRequestController extends Controller
                 'status' => 'under_review',
             ]);
             ServiceRequestSubmitted::dispatch('change_password_request', $password->id);
-            $this->logActivity($request, 'create_change_password_request', [
+            $this->logActivity($request, UserLogEvent::CreateChangePasswordRequest, [
                 'change_password_request_id' => $password->id,
                 'status' => $password->status,
             ]);
@@ -84,7 +85,7 @@ class ChangePasswordRequestController extends Controller
     ): ChangePasswordRequestResource {
         $this->ensureOwner($request, $changePasswordRequest);
         $changePasswordRequest->update($request->validated());
-        $this->logActivity($request, 'update_change_password_request', [
+        $this->logActivity($request, UserLogEvent::UpdateChangePasswordRequest, [
             'change_password_request_id' => $changePasswordRequest->id,
         ]);
 
@@ -106,7 +107,7 @@ class ChangePasswordRequestController extends Controller
         $changePasswordRequest->update([
             'status' => RequestStatus::Cancelled,
         ]);
-        $this->logActivity($request, 'cancel_change_password_request', [
+        $this->logActivity($request, UserLogEvent::CancelChangePasswordRequest, [
             'change_password_request_id' => $changePasswordRequest->id,
         ]);
 
@@ -122,7 +123,7 @@ class ChangePasswordRequestController extends Controller
     {
         $this->ensureOwner($request, $changePasswordRequest);
         $changePasswordRequest->delete();
-        $this->logActivity($request, 'delete_change_password_request', [
+        $this->logActivity($request, UserLogEvent::DeleteChangePasswordRequest, [
             'change_password_request_id' => $changePasswordRequest->id,
         ]);
 

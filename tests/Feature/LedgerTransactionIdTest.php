@@ -87,6 +87,50 @@ class LedgerTransactionIdTest extends TestCase
         ));
     }
 
+    public function test_refund_posts_use_the_refund_transaction_id_format(): void
+    {
+        $wallet = $this->wallet();
+        $poster = app(LedgerPoster::class);
+        $poster->ensureSystemAccounts();
+        $poster->ensureCustomerLiabilityAccount($wallet);
+
+        $transaction = $poster->creditWallet(
+            wallet: $wallet,
+            amount: 1000,
+            contraAccount: LedgerAccountCode::PackageRevenue,
+            type: LedgerTransactionType::Refund,
+            status: LedgerTransactionStatus::Completed,
+            idempotencyKey: 'refund-id-format-1',
+        );
+
+        $this->assertTrue(app(TransactionIdGenerator::class)->matches(
+            $transaction->transaction_no,
+            TransactionIdPrefix::Refund,
+        ));
+    }
+
+    public function test_adjustment_posts_use_the_adjustment_transaction_id_format(): void
+    {
+        $transaction = $this->postDebit(LedgerTransactionType::Adjustment, 'adjustment-id-format-1');
+
+        $this->assertTrue(app(TransactionIdGenerator::class)->matches(
+            $transaction->transaction_no,
+            TransactionIdPrefix::Adjustment,
+        ));
+    }
+
+    public function test_factory_transaction_id_matches_an_overridden_type(): void
+    {
+        $transaction = LedgerTransaction::factory()->create([
+            'type' => LedgerTransactionType::Refund,
+        ]);
+
+        $this->assertTrue(app(TransactionIdGenerator::class)->matches(
+            $transaction->transaction_no,
+            TransactionIdPrefix::Refund,
+        ));
+    }
+
     public function test_duplicate_transaction_numbers_are_rejected_by_the_database(): void
     {
         LedgerTransaction::factory()->create(['transaction_no' => 'PKG261109ABCDEFG']);

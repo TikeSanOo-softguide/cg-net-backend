@@ -2,6 +2,7 @@
 
 namespace App\Services\SecurityLog;
 
+use App\Enums\SecurityLogEvent;
 use App\Models\SecurityLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -28,7 +29,7 @@ class SecurityLogService
         }
 
         $this->record(
-            event: 'login_failed',
+            event: SecurityLogEvent::LoginFailed,
             actor: $actor,
             metadata: [...$metadata, 'failed_attempts' => self::LOGIN_FAILURE_THRESHOLD],
             request: $request,
@@ -47,7 +48,7 @@ class SecurityLogService
 
     /** @param array<string, mixed> $metadata */
     public function record(
-        string $event,
+        SecurityLogEvent $event,
         ?Model $actor = null,
         array $metadata = [],
         ?Request $request = null,
@@ -60,7 +61,7 @@ class SecurityLogService
         }
 
         $securityLog = new SecurityLog([
-            'event' => $event,
+            'event' => $event->value,
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
             'metadata' => $metadata,

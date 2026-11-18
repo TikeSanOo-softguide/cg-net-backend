@@ -3,7 +3,6 @@ import { Head, router } from '@inertiajs/react';
 import {
     CalendarClockIcon,
     CalendarIcon,
-    CircleDotIcon,
     CircleXIcon,
     EyeIcon,
     FileTextIcon,
@@ -26,7 +25,6 @@ import { TableActionButton } from '@/components/TableActionButton';
 import { Card } from '@/components/ui/card';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Button } from '@/components/ui/button';
-import { FormControl } from '@/components/ui/form-control';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -131,20 +129,46 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
                 <Card className="flex min-h-0 flex-col gap-0 overflow-hidden border-0 py-0 shadow-[0_4px_16px_rgb(23_50_54/0.06)] dark:shadow-[0_4px_16px_rgb(0_0_0/0.22)]">
                     <div
                         className={cn(
-                            'flex flex-col gap-2.5 py-3 sm:flex-row sm:items-center',
+                            'flex w-full flex-col gap-2 py-3 sm:flex-row sm:flex-wrap',
                             EDGE_PAD,
                             toolbarFiltersWrapperClass,
                         )}
                     >
-                        <FormControl icon={MegaphoneIcon} compact className="w-full shrink-0 sm:w-40">
+                        <FormField
+                            label={t('common.search')}
+                            htmlFor="announcement-search"
+                            className="w-full shrink-0 sm:w-60 mr-3"
+                            labelClassName="text-[13px]"
+                        >
+                            <SearchInput
+                                id="announcement-search"
+                                value={search}
+                                onChange={(value) => {
+                                    setSearch(value);
+                                    window.clearTimeout(debounce.current);
+                                    debounce.current = window.setTimeout(
+                                        () => visitIndex(value, status, filters.type),
+                                        300,
+                                    );
+                                }}
+                                placeholder={t('common.search')}
+                                size="sm"
+                            />
+                        </FormField>
+                        <FormField
+                            label={t('notification.announcement.type')}
+                            htmlFor="announcement-type"
+                            className="w-full shrink-0 sm:w-40 mr-3"
+                            labelClassName="text-[13px]"
+                        >
                             <Select
                                 value={filters.type || 'all'}
                                 onValueChange={(value) => visitIndex(search, status, value === 'all' ? '' : value)}
                             >
-                                <SelectTrigger className="w-full">
+                                <SelectTrigger id="announcement-type" className="w-full">
                                     <SelectValue placeholder={t('notification.announcement.type')} />
                                 </SelectTrigger>
-                                <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                <SelectContent>
                                     <SelectItem value="all">{t('common.all')}</SelectItem>
                                     <SelectItem value="announce">
                                         {t('notification.announcement.types.announce')}
@@ -154,18 +178,23 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
-                        </FormControl>
-                        <FormControl icon={CircleDotIcon} compact className="w-full shrink-0 sm:w-44">
+                        </FormField>
+                        <FormField
+                            label={t('common.status')}
+                            htmlFor="announcement-status"
+                            className="w-full shrink-0 sm:w-40 mr-3"
+                            labelClassName="text-[13px]"
+                        >
                             <Select
                                 value={status || 'all'}
                                 onValueChange={(value) =>
                                     visitIndex(search, value === 'all' ? '' : value, filters.type)
                                 }
                             >
-                                <SelectTrigger className="w-full">
+                                <SelectTrigger id="announcement-status" className="w-full">
                                     <SelectValue placeholder={t('common.status')} />
                                 </SelectTrigger>
-                                <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                <SelectContent>
                                     <SelectItem value="all">{t('common.all')}</SelectItem>
                                     <SelectItem value="active">{t('status.active')}</SelectItem>
                                     <SelectItem value="pending">{t('status.pending')}</SelectItem>
@@ -173,21 +202,7 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
                                     <SelectItem value="expired">{t('status.expired')}</SelectItem>
                                 </SelectContent>
                             </Select>
-                        </FormControl>
-                        <SearchInput
-                            value={search}
-                            onChange={(value) => {
-                                setSearch(value);
-                                window.clearTimeout(debounce.current);
-                                debounce.current = window.setTimeout(
-                                    () => visitIndex(value, status, filters.type),
-                                    300,
-                                );
-                            }}
-                            placeholder={t('common.search')}
-                            size="sm"
-                            className="w-full sm:max-w-64"
-                        />
+                        </FormField>
                         <div className="flex shrink-0 items-center justify-end sm:ms-auto">
                             {can('notifications.create') ? (
                                 <ToolbarIconButton

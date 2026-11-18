@@ -50,6 +50,8 @@ class TransactionIdGeneratorTest extends TestCase
             'pay bill cg' => [TransactionIdPrefix::PayBillCg, '261109', 6],
             'buy package' => [TransactionIdPrefix::BuyPackage, '261109', 7],
             'top up mapping' => [TransactionIdPrefix::TopUp, '261109', 7],
+            'refund' => [TransactionIdPrefix::Refund, '261109', 7],
+            'adjustment' => [TransactionIdPrefix::Adjustment, '261109', 7],
         ];
     }
 

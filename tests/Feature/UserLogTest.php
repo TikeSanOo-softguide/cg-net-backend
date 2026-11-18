@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\UserLogEvent;
 use App\Models\Admin;
 use App\Models\User;
 use App\Models\UserLog;
@@ -13,7 +14,7 @@ class UserLogTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_user_log_index_exposes_the_persisted_event_column(): void
+    public function test_user_log_index_exposes_predefined_event_options(): void
     {
         $admin = Admin::factory()->create();
         $user = User::factory()->create();
@@ -30,8 +31,7 @@ class UserLogTest extends TestCase
                 fn(Assert $page) => $page
                     ->component('Logs/UserLog/index')
                     ->has('logs.data', 1)
-                    ->has('filterOptions.event', 1)
-                    ->where('filterOptions.event.0', 'login_success')
+                    ->where('filterOptions.event', UserLogEvent::values())
                     ->where('logs.data.0.event', 'login_success'),
             );
     }

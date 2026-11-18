@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Auth;
 
 use App\Enums\MessageCode;
+use App\Enums\UserLogEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\CompleteRegistrationRequest;
 use App\Http\Resources\UserResource;
@@ -27,7 +28,7 @@ class RegistrationController extends Controller
             $request->input('platform'),
         );
 
-        $this->logActivity($request, 'register_complete', [
+        $this->logActivity($request, UserLogEvent::RegisterComplete, [
             'user_id' => $result['user']->id,
             'name' => $result['user']->name,
         ]);

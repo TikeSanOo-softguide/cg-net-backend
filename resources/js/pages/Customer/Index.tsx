@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { CircleDotIcon, PackageIcon, SquarePenIcon, WalletIcon, WifiIcon } from 'lucide-react';
+import { PackageIcon, SearchIcon, SquarePenIcon, WalletIcon, WifiIcon, XIcon } from 'lucide-react';
 
 import { DataTable } from '@/components/DataTable';
 import type { Paginated } from '@/components/Pagination';
@@ -12,8 +12,10 @@ import { CustomerFormDialog, type CustomerFormMember } from '@/components/custom
 import { MetaCell } from '@/components/customer/MetaCell';
 import { PhoneDisplay } from '@/components/customer/PhoneDisplay';
 import { StaffListAvatar } from '@/components/staff/StaffListAvatar';
-import { FormControl } from '@/components/ui/form-control';
+import { FormField } from '@/components/ui/form-field';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toolbarInputClass } from '@/components/data-table/styles';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatTopUpNumber, TOP_UP_CARD_CURRENCY } from '@/lib/top-up-cards';
@@ -103,9 +105,7 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                 <DataTable
                     data={customers.data}
                     getRowId={(row) => String(row.id)}
-                    search={search}
-                    onSearchChange={onSearchChange}
-                    searchPlaceholder={t('customers.search_placeholder')}
+                    showSearch={false}
                     sort={filters.sort}
                     direction={filters.direction}
                     onSort={onSort}
@@ -138,24 +138,62 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                         </>
                     )}
                     filters={
-                        <FormControl icon={CircleDotIcon} compact className="w-full shrink-0 sm:w-48">
-                            <Select
-                                value={filters.status || 'all'}
-                                onValueChange={(value) =>
-                                    visitIndex({ ...filters, status: value === 'all' ? '' : value })
+                        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
+                            <FormField
+                                label={t('common.search')}
+                                htmlFor="customer-search"
+                                icon={SearchIcon}
+                                rightSlot={
+                                    search ? (
+                                        <button
+                                            type="button"
+                                            aria-label={t('common.clear')}
+                                            className="inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                                            onClick={() => onSearchChange('')}
+                                        >
+                                            <XIcon className="size-3.5" strokeWidth={2} />
+                                        </button>
+                                    ) : undefined
                                 }
+                                className="w-full shrink-0 sm:w-60 mr-3"
+                                labelClassName="text-[13px]"
                             >
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder={t('customers.filter_status')} />
-                                </SelectTrigger>
-                                <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
-                                    <SelectItem value="all">{t('customers.all_statuses')}</SelectItem>
-                                    <SelectItem value="active">{t('status.active')}</SelectItem>
-                                    <SelectItem value="suspended">{t('status.suspended')}</SelectItem>
-                                    <SelectItem value="deactivated">{t('status.deactivated')}</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </FormControl>
+                                <Input
+                                    id="customer-search"
+                                    type="text"
+                                    inputMode="search"
+                                    autoComplete="off"
+                                    value={search}
+                                    onChange={(event) => onSearchChange(event.target.value)}
+                                    placeholder={t('customers.search_placeholder')}
+                                    aria-label={t('customers.search_placeholder')}
+                                    className={toolbarInputClass}
+                                />
+                            </FormField>
+                            <FormField
+                                label={t('common.status')}
+                                htmlFor="customer-status"
+                                className="w-full shrink-0 sm:w-40 mr-3"
+                                labelClassName="text-[13px]"
+                            >
+                                <Select
+                                    value={filters.status || 'all'}
+                                    onValueChange={(value) =>
+                                        visitIndex({ ...filters, status: value === 'all' ? '' : value })
+                                    }
+                                >
+                                    <SelectTrigger id="customer-status">
+                                        <SelectValue placeholder={t('common.status')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">{t('common.all')}</SelectItem>
+                                        <SelectItem value="active">{t('status.active')}</SelectItem>
+                                        <SelectItem value="suspended">{t('status.suspended')}</SelectItem>
+                                        <SelectItem value="deactivated">{t('status.deactivated')}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </FormField>
+                        </div>
                     }
                     columns={[
                         {

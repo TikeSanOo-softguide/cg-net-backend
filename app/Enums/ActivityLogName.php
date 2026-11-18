@@ -42,7 +42,196 @@ enum ActivityLogName: string
     case Term = 'term';
     case TermsAndConditions = 'terms_and_conditions';
     case TopUpCards = 'top_up_cards';
+    case TopUpCardBatchImport = 'top_up_card_batch_import';
     case TopUpCardOffice = 'top_up_card_office';
+
+    /** @return array<string, list<string>> */
+    public static function eventMap(): array
+    {
+        return [
+            self::Addon->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+                ActivityLogEvent::BulkDeleted,
+            ),
+            self::Admin->value => self::eventValues(
+                ActivityLogEvent::LoggedIn,
+                ActivityLogEvent::LoginFailed,
+                ActivityLogEvent::LoginBlocked,
+            ),
+            self::Announcement->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+            ),
+            self::AppVersion->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+            ),
+            self::Area->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+                ActivityLogEvent::BulkDeleted,
+            ),
+            self::Banner->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+            ),
+            self::BillPayments->value => self::eventValues(
+                ActivityLogEvent::MarkedCompleted,
+                ActivityLogEvent::Refunded,
+            ),
+            self::Category->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+            ),
+            self::ChatbotFlow->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+            ),
+            self::ChangePasswordRequest->value => self::eventValues(ActivityLogEvent::StatusUpdated),
+            self::ChangePlanRequest->value => self::eventValues(ActivityLogEvent::StatusUpdated),
+            self::Contact->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+            ),
+            self::Customers->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::StatusChanged,
+                ActivityLogEvent::SessionRevoked,
+                ActivityLogEvent::AccountBound,
+                ActivityLogEvent::AccountUnbound,
+                ActivityLogEvent::WalletAdjusted,
+            ),
+            self::FailureReport->value => self::eventValues(ActivityLogEvent::StatusUpdated),
+            self::Faq->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+            ),
+            self::Gallery->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+            ),
+            self::InstallationApplication->value => self::eventValues(ActivityLogEvent::StatusUpdated),
+            self::Network->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+                ActivityLogEvent::BulkDeleted,
+            ),
+            self::News->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+            ),
+            self::NotificationTemplate->value => self::eventValues(ActivityLogEvent::Updated),
+            self::Package->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+                ActivityLogEvent::BulkDeleted,
+            ),
+            self::PackageOrders->value => self::eventValues(
+                ActivityLogEvent::MarkedCompleted,
+                ActivityLogEvent::Refunded,
+            ),
+            self::Promotion->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+            ),
+            self::PushNotification->value => self::eventValues(
+                ActivityLogEvent::Pushed,
+                ActivityLogEvent::Scheduled,
+                ActivityLogEvent::Cancelled,
+            ),
+            self::QuickReply->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+                ActivityLogEvent::BulkDeleted,
+            ),
+            self::Region->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+                ActivityLogEvent::BulkDeleted,
+            ),
+            self::RelocationRequest->value => self::eventValues(ActivityLogEvent::StatusUpdated),
+            self::Reports->value => self::eventValues(ActivityLogEvent::Completed, ActivityLogEvent::Failed),
+            self::Role->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+            ),
+            self::Service->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+            ),
+            self::ServiceRequests->value => self::eventValues(ActivityLogEvent::Deleted),
+            self::Speed->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+                ActivityLogEvent::BulkDeleted,
+            ),
+            self::State->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+                ActivityLogEvent::BulkDeleted,
+            ),
+            self::Staff->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+            ),
+            self::SupportContact->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+            ),
+            self::Term->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+                ActivityLogEvent::BulkDeleted,
+            ),
+            self::TermsAndConditions->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+            ),
+            self::TopUpCards->value => self::eventValues(ActivityLogEvent::Blocked),
+            self::TopUpCardBatchImport->value => self::eventValues(
+                ActivityLogEvent::StatusChanged,
+                ActivityLogEvent::Succeeded,
+                ActivityLogEvent::Failed,
+            ),
+            self::TopUpCardOffice->value => self::eventValues(
+                ActivityLogEvent::Created,
+                ActivityLogEvent::Updated,
+                ActivityLogEvent::Deleted,
+            ),
+        ];
+    }
+
+    /** @return list<string> */
+    private static function eventValues(ActivityLogEvent ...$events): array
+    {
+        return array_map(static fn(ActivityLogEvent $event): string => $event->value, $events);
+    }
 
     public function menuLabelKey(): string
     {
@@ -53,39 +242,22 @@ enum ActivityLogName: string
             self::ChangePasswordRequest,
             self::ChangePlanRequest,
             self::RelocationRequest,
-            self::ServiceRequests => 'menu.service_requests',
-            self::TopUpCards,
-            self::TopUpCardOffice => 'menu.top_up_card_management',
+            self::ServiceRequests
+                => 'menu.service_requests',
+            self::TopUpCards, self::TopUpCardOffice, self::TopUpCardBatchImport => 'menu.top_up_card_management',
             self::Announcement,
             self::NotificationTemplate,
             self::Promotion,
-            self::PushNotification => 'menu.notifications',
-            self::ChatbotFlow,
-            self::QuickReply => 'menu.support',
-            self::Addon,
-            self::Network,
-            self::Package,
-            self::Speed,
-            self::Term => 'menu.packages',
-            self::PackageOrders => 'menu.package_orders',
-            self::BillPayments => 'menu.bill_payment',
-            self::Area,
-            self::Region,
-            self::State => 'menu.region_management',
+            self::PushNotification
+                => 'menu.notifications',
+            self::ChatbotFlow, self::QuickReply => 'menu.support',
+            self::Addon, self::Network, self::Package, self::Speed, self::Term => 'menu.packages',
+            self::PackageOrders, self::BillPayments => 'menu.billing',
+            self::Area, self::Region, self::State => 'menu.region_management',
             self::Reports => 'menu.reports',
-            self::Banner,
-            self::Category,
-            self::Contact,
-            self::Gallery,
-            self::News,
-            self::Service => 'menu.cms',
-            self::Admin,
-            self::Role,
-            self::Staff => 'menu.staff_role_management',
-            self::AppVersion,
-            self::Faq,
-            self::SupportContact,
-            self::TermsAndConditions => 'menu.settings',
+            self::Banner, self::Category, self::Contact, self::Gallery, self::News, self::Service => 'menu.cms',
+            self::Admin, self::Role, self::Staff => 'menu.staff_role_management',
+            self::AppVersion, self::Faq, self::SupportContact, self::TermsAndConditions => 'menu.settings',
         };
     }
 
@@ -101,31 +273,49 @@ enum ActivityLogName: string
             $groups[$group][] = $logName->value;
         }
 
-        foreach ($groups as &$options) {
-            sort($options, SORT_STRING);
-        }
-
         $orderedGroups = [
-            'menu.customers_list',
-            'menu.service_requests',
-            'menu.top_up_card_management',
-            'menu.notifications',
-            'menu.support',
-            'menu.packages',
-            'menu.package_orders',
-            'menu.bill_payment',
-            'menu.region_management',
-            'menu.reports',
-            'menu.cms',
-            'menu.staff_role_management',
-            'menu.settings',
+            'menu.customers_list' => [self::Customers],
+            'menu.billing' => [self::PackageOrders, self::BillPayments],
+            'menu.service_requests' => [
+                self::InstallationApplication,
+                self::FailureReport,
+                self::RelocationRequest,
+                self::ChangePlanRequest,
+                self::ChangePasswordRequest,
+                self::ServiceRequests,
+            ],
+            'menu.top_up_card_management' => [self::TopUpCardOffice, self::TopUpCardBatchImport, self::TopUpCards],
+            'menu.notifications' => [
+                self::Announcement,
+                self::Promotion,
+                self::PushNotification,
+                self::NotificationTemplate,
+            ],
+            'menu.support' => [self::QuickReply, self::ChatbotFlow],
+            'menu.packages' => [self::Network, self::Speed, self::Term, self::Addon, self::Package],
+            'menu.region_management' => [self::State, self::Region, self::Area],
+            'menu.reports' => [self::Reports],
+            'menu.cms' => [self::Banner, self::Category, self::News, self::Service, self::Gallery, self::Contact],
+            'menu.staff_role_management' => [self::Staff, self::Role, self::Admin],
+            'menu.settings' => [self::AppVersion, self::TermsAndConditions, self::Faq, self::SupportContact],
         ];
 
         $result = [];
-        foreach ($orderedGroups as $group) {
-            if (isset($groups[$group])) {
-                $result[] = ['group' => $group, 'options' => $groups[$group]];
+        foreach ($orderedGroups as $group => $orderedLogNames) {
+            if (!isset($groups[$group])) {
+                continue;
             }
+
+            $options = array_values(
+                array_filter(
+                    array_map(static fn(self $logName): string => $logName->value, $orderedLogNames),
+                    static fn(string $logName): bool => in_array($logName, $groups[$group], true),
+                ),
+            );
+            $remainingOptions = array_values(array_diff($groups[$group], $options));
+            sort($remainingOptions, SORT_STRING);
+
+            $result[] = ['group' => $group, 'options' => [...$options, ...$remainingOptions]];
         }
 
         return $result;

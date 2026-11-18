@@ -103,6 +103,12 @@ export default function ActivityLogIndex({ logs, filters, filterOptions }: Activ
     const onFilterSelect = (field: 'event' | 'log', value: string) => {
         const nextValue = value === 'all' ? '' : value;
         const nextFilters = { ...filters, [field]: nextValue };
+
+        if (field === 'log') {
+            nextFilters.event = '';
+            setEvent('');
+        }
+
         visitIndex(nextFilters);
 
         if (field === 'event') {
@@ -181,25 +187,6 @@ export default function ActivityLogIndex({ logs, filters, filterOptions }: Activ
                                 />
                             </FormField>
                             <FormField
-                                label={t('activity_logs.event')}
-                                htmlFor="activity-log-event"
-                                className="w-full shrink-0 sm:w-60 mr-3"
-                                labelClassName="text-[13px]"
-                            >
-                                <SearchableSelect
-                                    id="activity-log-event"
-                                    value={event}
-                                    onValueChange={(value) => onFilterSelect('event', value)}
-                                    options={[
-                                        { value: '', label: t('common.all') },
-                                        ...filterOptions.event.map((option) => ({ value: option, label: option })),
-                                    ]}
-                                    placeholder={t('common.all')}
-                                    searchPlaceholder={t('common.search')}
-                                    triggerClassName="text-[12px]"
-                                />
-                            </FormField>
-                            <FormField
                                 label={t('activity_logs.log')}
                                 htmlFor="activity-log-name"
                                 className="w-full shrink-0 sm:w-60 mr-3"
@@ -218,6 +205,25 @@ export default function ActivityLogIndex({ logs, filters, filterOptions }: Activ
                                                 group: t(group),
                                             })),
                                         ),
+                                    ]}
+                                    placeholder={t('common.all')}
+                                    searchPlaceholder={t('common.search')}
+                                    triggerClassName="text-[12px]"
+                                />
+                            </FormField>
+                            <FormField
+                                label={t('activity_logs.event')}
+                                htmlFor="activity-log-event"
+                                className="w-full shrink-0 sm:w-60 mr-3"
+                                labelClassName="text-[13px]"
+                            >
+                                <SearchableSelect
+                                    id="activity-log-event"
+                                    value={event}
+                                    onValueChange={(value) => onFilterSelect('event', value)}
+                                    options={[
+                                        { value: '', label: t('common.all') },
+                                        ...filterOptions.event.map((option) => ({ value: option, label: option })),
                                     ]}
                                     placeholder={t('common.all')}
                                     searchPlaceholder={t('common.search')}
@@ -282,15 +288,15 @@ export default function ActivityLogIndex({ logs, filters, filterOptions }: Activ
                             cell: (row) => row.subject || '-',
                         },
                         {
-                            id: 'event',
-                            header: t('activity_logs.event'),
-                            cell: (row) => row.event || '-',
-                        },
-                        {
                             id: 'log_name',
                             header: t('activity_logs.log'),
                             sortable: true,
                             cell: (row) => row.log_name || '-',
+                        },
+                        {
+                            id: 'event',
+                            header: t('activity_logs.event'),
+                            cell: (row) => row.event || '-',
                         },
                         {
                             id: 'created_at',

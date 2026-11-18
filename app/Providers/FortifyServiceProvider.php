@@ -9,6 +9,7 @@ use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
 use App\Enums\AdminStatus;
+use App\Enums\SecurityLogEvent;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Responses\LoginResponse;
 use App\Models\Admin;
@@ -101,7 +102,7 @@ class FortifyServiceProvider extends ServiceProvider
                     ->log('admin_login_blocked');
 
                 app(SecurityLogService::class)->record(
-                    event: 'login_blocked',
+                    event: SecurityLogEvent::LoginBlocked,
                     actor: $admin,
                     metadata: [
                         'username' => $admin->username,

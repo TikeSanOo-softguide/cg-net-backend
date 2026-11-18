@@ -6,6 +6,7 @@ enum ActivityLogEvent: string
 {
     case AccountBound = 'account_bound';
     case AccountUnbound = 'account_unbound';
+    case Blocked = 'blocked';
     case BulkDeleted = 'bulk_deleted';
     case Cancelled = 'cancelled';
     case Completed = 'completed';
@@ -15,6 +16,7 @@ enum ActivityLogEvent: string
     case LoggedIn = 'logged_in';
     case LoginBlocked = 'login_blocked';
     case LoginFailed = 'login_failed';
+    case MarkedCompleted = 'marked_completed';
     case Pushed = 'pushed';
     case Refunded = 'refunded';
     case Scheduled = 'scheduled';
@@ -23,7 +25,6 @@ enum ActivityLogEvent: string
     case StatusUpdated = 'status_updated';
     case Succeeded = 'succeeded';
     case Updated = 'updated';
-    case Voided = 'voided';
     case WalletAdjusted = 'wallet_adjusted';
 
     /** @return list<string> */

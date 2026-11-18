@@ -81,7 +81,7 @@ export function TopUpCardImportTable({
                         <FormField
                             label={t('top_up_cards.batch_no')}
                             htmlFor="batch-filter"
-                            className="w-full shrink-0 sm:w-50"
+                            className="w-full shrink-0 sm:w-50 mr-3"
                             labelClassName="text-[13px]"
                         >
                             <SearchableSelect
@@ -94,7 +94,7 @@ export function TopUpCardImportTable({
                                 ]}
                                 placeholder={t('top_up_cards.batch_no') as string}
                                 searchPlaceholder={t('top_up_cards.batch_no') as string}
-                                className="w-full text-xs"
+                                className="w-full"
                             />
                         </FormField>
                         <FormField

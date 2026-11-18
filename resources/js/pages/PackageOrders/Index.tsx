@@ -258,7 +258,7 @@ export default function PackageOrdersIndex({
                     getRowId={(row) => String(row.id)}
                     showSearch={false}
                     filters={
-                        <>
+                        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
                             <FormField
                                 label={t('transactions.search')}
                                 htmlFor="package-order-search"
@@ -275,7 +275,7 @@ export default function PackageOrdersIndex({
                                         </button>
                                     ) : undefined
                                 }
-                                className="mr-3 w-full shrink-0 sm:w-60"
+                                className="w-full shrink-0 sm:w-60 mr-3"
                                 labelClassName="text-[13px]"
                             >
                                 <Input
@@ -318,7 +318,7 @@ export default function PackageOrdersIndex({
                             <FormField
                                 label={t('common.status')}
                                 htmlFor="package-order-status"
-                                className="w-full shrink-0 sm:mr-3 sm:w-40"
+                                className="w-full shrink-0 sm:w-40 mr-3"
                                 labelClassName="text-[13px]"
                             >
                                 <Select
@@ -342,14 +342,13 @@ export default function PackageOrdersIndex({
                                 label={t('common.start_date')}
                                 htmlFor="package-order-from"
                                 icon={CalendarIcon}
-                                className="w-full shrink-0 sm:w-40"
+                                className="w-full shrink-0 sm:w-40 mr-3"
                                 labelClassName="text-[13px]"
                             >
                                 <DatePicker
                                     id="package-order-from"
                                     value={filters.from}
                                     max={filters.to || undefined}
-                                    placeholder={t('common.start_date')}
                                     onChange={(value) => visitOrders(search, packageId, status, value, filters.to)}
                                 />
                             </FormField>
@@ -357,18 +356,17 @@ export default function PackageOrdersIndex({
                                 label={t('common.end_date')}
                                 htmlFor="package-order-to"
                                 icon={CalendarIcon}
-                                className="w-full shrink-0 sm:w-40"
+                                className="w-full shrink-0 sm:w-40 mr-3"
                                 labelClassName="text-[13px]"
                             >
                                 <DatePicker
                                     id="package-order-to"
                                     value={filters.to}
                                     min={filters.from || undefined}
-                                    placeholder={t('common.end_date')}
                                     onChange={(value) => visitOrders(search, packageId, status, filters.from, value)}
                                 />
                             </FormField>
-                        </>
+                        </div>
                     }
                     pagination={orders}
                     emptyLabel={t('common.no_results')}

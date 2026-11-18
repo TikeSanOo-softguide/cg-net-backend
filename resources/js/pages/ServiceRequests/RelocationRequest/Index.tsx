@@ -155,11 +155,11 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                     onView={(request) => setSelectedRequest(request)}
                     directActions
                     filters={
-                        <>
+                        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
                             <FormField
                                 label={t('common.search')}
                                 htmlFor="relocation-search"
-                                className="w-full shrink-0 sm:w-60"
+                                className="w-full shrink-0 sm:w-60 mr-3"
                                 labelClassName="text-[13px]"
                             >
                                 <SearchInput
@@ -173,7 +173,7 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                             <FormField
                                 label={t('common.status')}
                                 htmlFor="relocation-status"
-                                className="w-full shrink-0 sm:w-48"
+                                className="w-full shrink-0 sm:w-48 mr-3"
                                 labelClassName="text-[13px]"
                             >
                                 <Select
@@ -191,7 +191,7 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                                         <SelectValue placeholder={t('common.status')} />
                                     </SelectTrigger>
 
-                                    <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                    <SelectContent>
                                         <SelectItem value="all">{t('common.all')}</SelectItem>
                                         {statuses.map((status) => (
                                             <SelectItem key={status} value={status}>
@@ -201,7 +201,7 @@ export default function RelocationRequestIndex({ requests, filters, statuses, st
                                     </SelectContent>
                                 </Select>
                             </FormField>
-                        </>
+                        </div>
                     }
                     columns={[
                         {

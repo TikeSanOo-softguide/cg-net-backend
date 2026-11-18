@@ -36,7 +36,7 @@ export function BrandLockup({
             ) : (
                 <span
                     className={cn(
-                        'overflow-hidden whitespace-nowrap font-heading text-[15px] font-bold tracking-[0.04em] text-primary uppercase sm:text-base',
+                        'overflow-hidden whitespace-nowrap font-heading text-[15px] leading-[1.75] font-bold tracking-[0.04em] text-primary uppercase sm:text-base',
                         'motion-reduce:transition-none transition-[max-width,opacity,margin] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]',
                         showWordmark ? 'ml-0 max-w-[200px] opacity-100' : 'pointer-events-none max-w-0 opacity-0',
                     )}

@@ -27,8 +27,8 @@ class TopUpCardController extends Controller
         activity(ActivityLogName::TopUpCards->value)
             ->causedBy($request->user())
             ->performedOn($topUpCard)
-            ->event(ActivityLogEvent::Voided->value)
-            ->log('top_up_card_voided');
+            ->event(ActivityLogEvent::Blocked->value)
+            ->log('top_up_card_blocked');
 
         return back()->with('success', 'top_up_cards.blocked');
     }

@@ -140,11 +140,11 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                     onView={(row) => setSelectedRequest(row)}
                     directActions
                     filters={
-                        <>
+                        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
                             <FormField
                                 label={t('common.search')}
                                 htmlFor="change-plan-search"
-                                className="w-full shrink-0 sm:w-60"
+                                className="w-full shrink-0 sm:w-60 mr-3"
                                 labelClassName="text-[13px]"
                             >
                                 <SearchInput
@@ -158,7 +158,7 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                             <FormField
                                 label={t('change_plan.service_type')}
                                 htmlFor="change-plan-service-type"
-                                className="w-full shrink-0 sm:w-40"
+                                className="w-full shrink-0 sm:w-40 mr-3"
                                 labelClassName="text-[13px]"
                             >
                                 <Select
@@ -175,7 +175,7 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                                     >
                                         <SelectValue placeholder={t('change_plan.service_type')} />
                                     </SelectTrigger>
-                                    <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                    <SelectContent>
                                         <SelectItem value="all">{t('common.all')}</SelectItem>
                                         <SelectItem value="FTTH">FTTH</SelectItem>
                                         <SelectItem value="CG">{t('change_plan.cg_router')}</SelectItem>
@@ -185,7 +185,7 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                             <FormField
                                 label={t('common.status')}
                                 htmlFor="change-plan-status"
-                                className="w-full shrink-0 sm:w-48"
+                                className="w-full shrink-0 sm:w-48 mr-3"
                                 labelClassName="text-[13px]"
                             >
                                 <Select
@@ -202,7 +202,7 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                                     >
                                         <SelectValue placeholder={t('common.status')} />
                                     </SelectTrigger>
-                                    <SelectContent className="[&_[data-slot=select-item]]:text-[11px]">
+                                    <SelectContent>
                                         <SelectItem value="all">{t('common.all')}</SelectItem>
                                         {statuses.map((status) => (
                                             <SelectItem key={status} value={status}>
@@ -212,7 +212,7 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                                     </SelectContent>
                                 </Select>
                             </FormField>
-                        </>
+                        </div>
                     }
                     columns={[
                         {

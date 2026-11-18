@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Auth;
 
 use App\Enums\MessageCode;
+use App\Enums\UserLogEvent;
 use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\LoginRequest;
@@ -59,7 +60,7 @@ class LoginController extends Controller
             $request->input('platform'),
         );
 
-        $this->logActivity($request, 'login_success', [
+        $this->logActivity($request, UserLogEvent::LoginSuccess, [
             'user_id' => $result['user']->id,
             'phone' => $result['user']->phone,
             'method' => 'password',
@@ -78,7 +79,7 @@ class LoginController extends Controller
         $user = $request->user();
         $user->tokens()->delete();
         $user->deviceTokens()->delete();
-        $this->logActivity($request, 'logout', [
+        $this->logActivity($request, UserLogEvent::Logout, [
             'user_id' => $user->id,
         ]);
 

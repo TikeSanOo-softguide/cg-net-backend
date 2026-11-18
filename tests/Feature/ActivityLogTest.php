@@ -18,7 +18,26 @@ class ActivityLogTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_activity_log_index_exposes_event_and_registered_log_filters(): void
+    public function test_activity_log_index_exposes_all_events_when_no_log_is_selected(): void
+    {
+        $admin = Admin::factory()->create();
+        $user = User::factory()->create();
+
+        activity(ActivityLogName::Customers->value)
+            ->causedBy($admin)
+            ->performedOn($user)
+            ->event(ActivityLogEvent::Created->value)
+            ->log('customer_created');
+
+        $this->actingAs($admin, 'web')
+            ->get('/logs/activity')
+            ->assertOk()
+            ->assertInertia(
+                fn(Assert $page) => $page->where('filterOptions.event', ActivityLogEvent::values()),
+            );
+    }
+
+    public function test_activity_log_index_exposes_events_for_the_selected_log(): void
     {
         $admin = Admin::factory()->create();
         $user = User::factory()->create();
@@ -26,18 +45,54 @@ class ActivityLogTest extends TestCase
         activity(ActivityLogName::Customers->value)->causedBy($admin)->performedOn($user)->event(ActivityLogEvent::Created->value)->log('customer_created');
 
         activity(ActivityLogName::Customers->value)->causedBy($admin)->performedOn($user)->event(ActivityLogEvent::Updated->value)->log('customer_updated');
+        activity(ActivityLogName::PackageOrders->value)->causedBy($admin)->event(ActivityLogEvent::Completed->value)->log('order_completed');
 
         $this->actingAs($admin, 'web')
-            ->get('/logs/activity')
+            ->get('/logs/activity?log=customers')
             ->assertOk()
             ->assertInertia(
                 fn(Assert $page) => $page
                     ->component('Logs/ActivityLog/Index')
-                    ->where('filterOptions.event', ActivityLogEvent::values())
+                    ->where('filterOptions.event', ActivityLogName::eventMap()[ActivityLogName::Customers->value])
                     ->where('filterOptions.log', ActivityLogName::groupedValues())
-                    ->where('filterOptions.event.0', 'account_bound')
                     ->where('filterOptions.log.0.group', 'menu.customers_list')
-                    ->where('filterOptions.log.0.options.0', 'customers'),
+                    ->where('filterOptions.log.0.options.0', 'customers')
+                    ->where('filterOptions.log.1.group', 'menu.billing')
+                    ->where('filterOptions.log.1.options', ['package_orders', 'bill_payments'])
+                    ->where('filterOptions.log.2.group', 'menu.service_requests')
+                    ->where('filterOptions.log.2.options', [
+                        'installation_application',
+                        'failure_report',
+                        'relocation_request',
+                        'change_plan_request',
+                        'change_password_request',
+                        'service-requests',
+                    ])
+                    ->where('filterOptions.log.3.group', 'menu.top_up_card_management')
+                    ->where('filterOptions.log.3.options', [
+                        'top_up_card_office',
+                        'top_up_card_batch_import',
+                        'top_up_cards',
+                    ])
+                    ->where('filterOptions.log.4.group', 'menu.notifications')
+                    ->where('filterOptions.log.4.options', [
+                        'announcement',
+                        'promotion',
+                        'push_notification',
+                        'notification_template',
+                    ])
+            );
+    }
+
+    public function test_failure_report_activity_filter_only_exposes_status_updates(): void
+    {
+        $admin = Admin::factory()->create();
+
+        $this->actingAs($admin, 'web')
+            ->get('/logs/activity?log=failure_report')
+            ->assertOk()
+            ->assertInertia(
+                fn(Assert $page) => $page->where('filterOptions.event', [ActivityLogEvent::StatusUpdated->value]),
             );
     }
 

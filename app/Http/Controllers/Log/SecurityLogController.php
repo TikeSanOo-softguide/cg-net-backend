@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Log;
 
+use App\Enums\SecurityLogEvent;
 use App\Exports\SecurityLogExport;
 use App\Http\Controllers\Controller;
 use App\Models\SecurityLog;
@@ -27,13 +28,7 @@ class SecurityLogController extends Controller
             'logs' => $logs,
             'filters' => $filters,
             'filterOptions' => [
-                'event' => SecurityLog::query()
-                    ->whereNotNull('event')
-                    ->where('event', '!=', '')
-                    ->distinct()
-                    ->orderBy('event')
-                    ->pluck('event')
-                    ->all(),
+                'event' => SecurityLogEvent::values(),
             ],
         ]);
     }

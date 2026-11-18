@@ -4,10 +4,12 @@ namespace Database\Factories;
 
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
+use App\Enums\TransactionIdPrefix;
 use App\Enums\WalletActorType;
 use App\Models\LedgerTransaction;
 use App\Models\User;
 use App\Models\Wallet;
+use App\Services\Ledger\TransactionIdGenerator;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,10 +21,18 @@ class LedgerTransactionFactory extends Factory
 
     public function definition(): array
     {
+        $type = fake()->randomElement(LedgerTransactionType::cases());
+
         return [
             'wallet_id' => Wallet::factory(),
-            'transaction_no' => fake()->unique()->bothify('TXN-##########'),
-            'type' => fake()->randomElement(LedgerTransactionType::cases()),
+            'type' => $type,
+            'transaction_no' => function (array $attributes): string {
+                $type = $attributes['type'] instanceof LedgerTransactionType
+                    ? $attributes['type']
+                    : LedgerTransactionType::from((string) $attributes['type']);
+
+                return app(TransactionIdGenerator::class)->generate(TransactionIdPrefix::forType($type));
+            },
             'status' => fake()->randomElement(LedgerTransactionStatus::cases()),
             'amount' => fake()->numberBetween(1000, 50000),
             'idempotency_key' => fake()->unique()->uuid(),
