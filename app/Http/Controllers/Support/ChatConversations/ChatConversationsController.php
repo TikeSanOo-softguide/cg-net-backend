@@ -13,6 +13,7 @@ use App\Models\ChatConversation;
 use App\Models\ChatMessage;
 use App\Models\QuickReply;
 use App\Services\AdminNotification\AdminNotificationReadStatus;
+use App\Support\StoresPublicImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -67,6 +68,7 @@ class ChatConversationsController extends Controller
                         'chat_messages.conversation_id',
                         'chat_messages.sender_type',
                         'chat_messages.message',
+                        'chat_messages.attachment_path',
                         'chat_messages.created_at',
                         'chat_messages.is_read',
                     ]);
@@ -100,6 +102,14 @@ class ChatConversationsController extends Controller
             })
             ->latest('updated_at')
             ->get();
+
+        $conversations->each(function (ChatConversation $conversation) {
+            $message = $conversation->latestMessage;
+
+            if ($message) {
+                $message->setAttribute('attachment_url', StoresPublicImage::url($message->attachment_path));
+            }
+        });
 
         if (! $selectedConversation && $conversations->isNotEmpty()) {
             $selectedConversation = ChatConversation::query()
@@ -194,6 +204,13 @@ class ChatConversationsController extends Controller
             ->orderBy('created_at')
             ->orderBy('id')
             ->get();
+
+        $messages->each(
+            fn (ChatMessage $message) => $message->setAttribute(
+                'attachment_url',
+                StoresPublicImage::url($message->attachment_path),
+            ),
+        );
 
         $conversation->setRelation('messages', $messages);
     }

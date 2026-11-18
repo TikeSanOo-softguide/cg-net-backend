@@ -4,7 +4,7 @@ import { MessageCircleIcon, SearchIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatTime as formatAppTime } from '@/lib/utils';
+import { appTimezone, formatTime as formatAppTime } from '@/lib/utils';
 
 import type { ChatFilters, ConversationSummary } from './types';
 
@@ -163,5 +163,27 @@ export function formatTime(value: string | null | undefined) {
 }
 
 export function formatDateTime(value: string) {
-    return formatAppTime(value);
+    const trimmed = value.trim();
+    const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(trimmed);
+    const date = new Date(
+        !hasTimezone && /^\d{4}-\d{2}-\d{2}[T ]/.test(trimmed) ? `${trimmed.replace(' ', 'T')}Z` : trimmed,
+    );
+
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+
+    const parts = new Intl.DateTimeFormat('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+        timeZone: hasTimezone ? appTimezone() : 'UTC',
+    }).formatToParts(date);
+    const values = Object.fromEntries(parts.map(({ type, value: partValue }) => [type, partValue]));
+
+    return `${values.day} ${values.month} ${values.year} ${values.hour}:${values.minute}:${values.second} ${values.dayPeriod.toLowerCase()}`;
 }
