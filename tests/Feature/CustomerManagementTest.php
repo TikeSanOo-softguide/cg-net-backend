@@ -201,7 +201,7 @@ class CustomerManagementTest extends TestCase
                 fn(Assert $page) => $page
                     ->component('Customer/Show')
                     ->where('accountBinding.account_number', null)
-                    ->where('accountBinding.status', 'unknown'),
+                    ->where('accountBinding.address', null),
             );
     }
 
@@ -701,16 +701,19 @@ class CustomerManagementTest extends TestCase
 
     public function test_financial_records_cannot_be_deleted(): void
     {
-        foreach ([
-            BillPayment::class,
-            CustomerPackage::class,
-            LedgerAccount::class,
-            LedgerEntry::class,
-            LedgerTransaction::class,
-            PackageOrder::class,
-            TopUpCard::class,
-            Wallet::class,
-        ] as $recordType) {
+        foreach (
+            [
+                BillPayment::class,
+                CustomerPackage::class,
+                LedgerAccount::class,
+                LedgerEntry::class,
+                LedgerTransaction::class,
+                PackageOrder::class,
+                TopUpCard::class,
+                Wallet::class,
+            ]
+            as $recordType
+        ) {
             $record = new $recordType();
             $record->exists = true;
 

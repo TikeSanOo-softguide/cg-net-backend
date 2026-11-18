@@ -228,22 +228,19 @@ export function RelocationRequestDetailDialog({
                             />
                         </div>
                     </div>
+                    {request.details?.trim() ? (
+                        <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
+                            <div className="mb-2">
+                                <ServiceRequestSectionHeading icon={FileTextIcon} title={t('requests.note')} />
+                            </div>
 
-                    <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
-                        <div className="mb-2">
-                            <ServiceRequestSectionHeading icon={FileTextIcon} title={t('relocation_requests.detail')} />
+                            <div className="max-h-48 overflow-y-auto rounded-lg border border-border/40 bg-background/60 px-3 py-2.5 pr-2">
+                                <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">
+                                    {request.details}
+                                </p>
+                            </div>
                         </div>
-
-                        <div className="max-h-48 overflow-y-auto rounded-lg border border-border/40 bg-background/60 px-3 py-2.5 pr-2">
-                            <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">
-                                {request.details || (
-                                    <span className="text-xs italic text-muted-foreground">
-                                        No additional details provided.
-                                    </span>
-                                )}
-                            </p>
-                        </div>
-                    </div>
+                    ) : null}
 
                     <div className="mt-4 flex flex-col gap-2 rounded-xl border border-border/60 bg-muted/10 p-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-2">

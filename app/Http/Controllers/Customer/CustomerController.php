@@ -316,8 +316,10 @@ class CustomerController extends Controller
                 ? [
                     'account_number' => $accountBinding['account'] ?? null,
                     'service_type' => $accountBinding['service_type'] ?? null,
-                    'status' => $accountBinding['status'] ?? null,
                     'package_name' => $accountBinding['productName'] ?? null,
+                    'address' => $accountBinding['address'] ?? null,
+                    'starttime' => $accountBinding['starttime'] ?? null,
+                    'endtime' => $accountBinding['endtime'] ?? null,
                 ]
                 : null,
             'packageHistory' => $packageRows->values(),

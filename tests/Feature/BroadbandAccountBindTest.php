@@ -12,6 +12,74 @@ class BroadbandAccountBindTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_check_account_returns_provider_account_details_for_submitted_account(): void
+    {
+        $user = User::factory()->create([
+            'service_type' => null,
+            'broadband_account_number' => null,
+        ]);
+        $account = ['account' => '12345678', 'status' => 'active', 'customer_name' => 'Test Customer'];
+
+        $this->mock(AccountInfoService::class)
+            ->shouldReceive('find')
+            ->once()
+            ->with('CG', '12345678')
+            ->andReturn($account);
+
+        $this->withToken($user->createToken('check')->plainTextToken)
+            ->postJson('/api/broadband-account/check-account', [
+                'account_number' => '12345678',
+                'service_type' => 'CG',
+            ])
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data', $account);
+    }
+
+    public function test_check_account_rejects_an_account_not_found_by_the_provider(): void
+    {
+        $user = User::factory()->create();
+
+        $this->mock(AccountInfoService::class)
+            ->shouldReceive('find')
+            ->once()
+            ->with('FTTH', '87654321')
+            ->andReturnNull();
+
+        $this->withToken($user->createToken('check')->plainTextToken)
+            ->postJson('/api/broadband-account/check-account', [
+                'account_number' => '87654321',
+                'service_type' => 'FTTH',
+            ])
+            ->assertNotFound()
+            ->assertJsonPath('code', 'MSG-BB-002')
+            ->assertJsonPath('success', false);
+    }
+
+    public function test_check_account_rejects_an_account_already_bound_to_another_user(): void
+    {
+        $user = User::factory()->create();
+        User::factory()->create([
+            'service_type' => 'CG',
+            'broadband_account_number' => '12345678',
+        ]);
+
+        $this->mock(AccountInfoService::class)
+            ->shouldReceive('find')
+            ->once()
+            ->with('CG', '12345678')
+            ->andReturn(['account' => '12345678', 'status' => 'active']);
+
+        $this->withToken($user->createToken('check')->plainTextToken)
+            ->postJson('/api/broadband-account/check-account', [
+                'account_number' => '12345678',
+                'service_type' => 'CG',
+            ])
+            ->assertConflict()
+            ->assertJsonPath('code', 'MSG-BB-010')
+            ->assertJsonPath('success', false);
+    }
+
     public function test_bind_rejects_a_service_type_other_than_ftth_or_cg(): void
     {
         $user = User::factory()->create(['broadband_account_number' => null]);
