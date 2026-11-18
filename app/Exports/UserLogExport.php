@@ -20,7 +20,7 @@ class UserLogExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapp
 
     public function headings(): array
     {
-        return ['User', 'Email', 'IP Address', 'User Agent', 'Event', 'Metadata', 'Occurred At'];
+        return ['User', 'Email', 'Device name', 'IP Address', 'User Agent', 'Event', 'Metadata', 'Occurred At'];
     }
 
     public function map(mixed $log): array
@@ -31,6 +31,7 @@ class UserLogExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapp
         return [
             $log->user?->name ?? 'Unknown',
             $log->user?->email ?? '',
+            is_string($metadata['device_name'] ?? null) ? $metadata['device_name'] : '',
             $log->ip_address ?? '',
             $log->user_agent ?? '',
             $log->event,

@@ -68,13 +68,19 @@ type AccountBinding = {
 };
 
 type SessionInfo = {
+    device_name: string | null;
+    platform: 'android' | 'ios' | 'web' | null;
     ip_address: string | null;
-    user_agent: string | null;
-    token_id: number;
-    token_name: string;
     last_used_at: string | null;
     expires_at: string | null;
 };
+
+function sessionPlatformLabel(platform: SessionInfo['platform']): string {
+    if (platform === 'ios') return 'iOS';
+    if (platform === 'android') return 'Android';
+    if (platform === 'web') return 'Web';
+    return '—';
+}
 
 type PackageRow = {
     id: number;
@@ -349,28 +355,28 @@ export default function CustomersShow({
                             </div>
                             {sessionInfo ? (
                                 <dl className="grid gap-1 border-t border-border/60 px-1 pt-3 sm:grid-cols-3">
+                                    <div className="m-1 min-w-0 rounded-[8px] border border-border/60 bg-muted/25 px-3 py-2.5 sm:col-span-2">
+                                        <dt className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                                            {t('customers.session_device')}
+                                        </dt>
+                                        <dd className="break-all font-heading text-sm leading-snug">
+                                            {sessionInfo.device_name || '—'}
+                                        </dd>
+                                    </div>
+                                    <div className="m-1 min-w-0 rounded-[8px] border border-border/60 bg-muted/25 px-3 py-2.5">
+                                        <dt className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                                            {t('customers.session_platform')}
+                                        </dt>
+                                        <dd className="font-heading text-sm">
+                                            {sessionPlatformLabel(sessionInfo.platform)}
+                                        </dd>
+                                    </div>
                                     <div className="m-1 min-w-0 rounded-[8px] border border-border/60 bg-muted/25 px-3 py-2.5">
                                         <dt className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                                             {t('customers.session_ip')}
                                         </dt>
                                         <dd className="break-all font-heading text-sm tabular-nums">
                                             {sessionInfo.ip_address || '—'}
-                                        </dd>
-                                    </div>
-                                    <div className="m-1 min-w-0 rounded-[8px] border border-border/60 bg-muted/25 px-3 py-2.5 sm:col-span-2">
-                                        <dt className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                                            {t('customers.session_device')}
-                                        </dt>
-                                        <dd className="break-all font-heading text-sm leading-snug">
-                                            {sessionInfo.user_agent || '—'}
-                                        </dd>
-                                    </div>
-                                    <div className="m-1 min-w-0 rounded-[8px] border border-border/60 bg-muted/25 px-3 py-2.5">
-                                        <dt className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                                            {t('customers.session_token')}
-                                        </dt>
-                                        <dd className="break-all font-heading text-sm tabular-nums">
-                                            #{sessionInfo.token_id} ({sessionInfo.token_name})
                                         </dd>
                                     </div>
                                     <div className="m-1 min-w-0 rounded-[8px] border border-border/60 bg-muted/25 px-3 py-2.5">

@@ -153,6 +153,9 @@ class CustomerController extends Controller
             ->whereIn('event', ['login_success', 'register_complete'])
             ->latest('created_at')
             ->first();
+        $authMetadata = is_array($latestAuthEvent?->metadata) ? $latestAuthEvent->metadata : [];
+        $deviceName = is_string($authMetadata['device_name'] ?? null) ? trim($authMetadata['device_name']) : '';
+        $platform = strtolower(is_string($authMetadata['platform'] ?? null) ? trim($authMetadata['platform']) : '');
 
         $customer->load([
             'customerPackages.package.network:id,name_en,name_zh,name_my',
@@ -304,10 +307,9 @@ class CustomerController extends Controller
             'activeSession' => $activeToken !== null,
             'sessionInfo' => $activeToken
                 ? [
+                    'device_name' => $deviceName !== '' ? $deviceName : ($latestAuthEvent?->user_agent ?: null),
+                    'platform' => in_array($platform, ['android', 'ios', 'web'], true) ? $platform : null,
                     'ip_address' => $latestAuthEvent?->ip_address,
-                    'user_agent' => $latestAuthEvent?->user_agent,
-                    'token_id' => $activeToken->getKey(),
-                    'token_name' => $activeToken->name,
                     'last_used_at' => $activeToken->last_used_at,
                     'expires_at' => $activeToken->expires_at,
                 ]

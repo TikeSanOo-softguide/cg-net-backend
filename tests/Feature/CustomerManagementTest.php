@@ -87,12 +87,16 @@ class CustomerManagementTest extends TestCase
             'service_type' => 'CG',
             'broadband_account_number' => '12345678',
         ]);
-        $token = $customer->createToken('flutter');
+        $customer->createToken('flutter');
         UserLog::query()->create([
             'user_id' => $customer->id,
             'event' => 'register_complete',
             'ip_address' => '203.0.113.42',
-            'user_agent' => 'Flutter/3.24 (Android 15; Pixel 8)',
+            'user_agent' => 'cg-net-mobile/1.0.0 (android; Samsung SM-A155F)',
+            'metadata' => [
+                'device_name' => 'Samsung SM-A155F',
+                'platform' => 'android',
+            ],
         ]);
         $packageOrder = PackageOrder::query()->create([
             'user_id' => $customer->id,
@@ -119,10 +123,11 @@ class CustomerManagementTest extends TestCase
                     ->where('customer.id', $customer->id)
                     ->where('customer.name', $customer->name)
                     ->where('activeSession', true)
+                    ->where('sessionInfo.device_name', 'Samsung SM-A155F')
+                    ->where('sessionInfo.platform', 'android')
                     ->where('sessionInfo.ip_address', '203.0.113.42')
-                    ->where('sessionInfo.user_agent', 'Flutter/3.24 (Android 15; Pixel 8)')
-                    ->where('sessionInfo.token_id', $token->accessToken->getKey())
-                    ->where('sessionInfo.token_name', 'flutter')
+                    ->missing('sessionInfo.token_id')
+                    ->missing('sessionInfo.token_name')
                     ->where('sessionInfo.last_used_at', null)
                     ->where('sessionInfo.expires_at', null)
                     ->where('accountBinding.account_number', '12345678')

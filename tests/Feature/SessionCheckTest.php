@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\UserStatus;
 use App\Models\User;
+use App\Models\UserLog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
@@ -27,7 +28,36 @@ class SessionCheckTest extends TestCase
         $this->postJson('/api/auth/session/check', ['phone' => '+95922345678'])
             ->assertOk()
             ->assertExactJson([
+                'code' => 'MSG-AUTH-012',
+                'level' => 'warning',
+                'message' => 'This account is already signed in on another device.',
                 'show_alert' => true,
+                'device_name' => null,
+            ]);
+    }
+
+    public function test_it_names_the_phone_that_already_has_the_session(): void
+    {
+        $user = User::factory()->create(['phone' => '95922345678']);
+        $token = $user->createToken('session-check')->accessToken;
+        $token->forceFill(['expires_at' => now()->addHour()])->save();
+        UserLog::query()->create([
+            'user_id' => $user->id,
+            'event' => 'login_success',
+            'metadata' => [
+                'device_name' => 'Samsung SM-A155F',
+                'device_id' => '8f3c1b2a-4d5e-4f60-8a71-223344556677',
+            ],
+        ]);
+
+        $this->postJson('/api/auth/session/check', ['phone' => '+95922345678'])
+            ->assertOk()
+            ->assertExactJson([
+                'code' => 'MSG-AUTH-012',
+                'level' => 'warning',
+                'message' => 'This account is already signed in on another device.',
+                'show_alert' => true,
+                'device_name' => 'Samsung SM-A155F',
             ]);
     }
 
@@ -58,6 +88,7 @@ class SessionCheckTest extends TestCase
             ->assertOk()
             ->assertExactJson([
                 'show_alert' => false,
+                'device_name' => null,
             ]);
     }
 
@@ -75,6 +106,7 @@ class SessionCheckTest extends TestCase
                 'level' => 'success',
                 'message' => 'Account deactivated successfully.',
                 'show_alert' => false,
+                'device_name' => null,
             ]);
     }
 
@@ -92,6 +124,7 @@ class SessionCheckTest extends TestCase
                 'level' => 'error',
                 'message' => 'Account suspended successfully.',
                 'show_alert' => false,
+                'device_name' => null,
             ]);
     }
 
