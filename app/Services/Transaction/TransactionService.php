@@ -7,7 +7,6 @@ use App\Enums\LedgerTransactionType;
 use App\Enums\WalletActorType;
 use App\Models\LedgerTransaction;
 use App\Models\Wallet;
-use App\Support\PackageLabel;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -40,9 +39,7 @@ class TransactionService
             ->with([
                 'wallet.user:id,name,phone',
                 'entries.ledgerAccount',
-                'packageOrder.package.network:id,name_en,name_zh,name_my',
-                'packageOrder.package.speed:id,mbps',
-                'packageOrder.package.term:id,months',
+                'packageOrder:id,ledger_transaction_id,status',
                 'topUpCard',
                 'billPayment',
                 'reversalOf:id,transaction_no',
@@ -160,16 +157,14 @@ class TransactionService
                 : null,
             'related' => [
                 'bill_payment_id' => $transaction->billPayment?->id,
-                'bill_payment_account' => $transaction->billPayment?->broadband_account_number
+                'bill_payment_account' => $transaction->billPayment
                     ? [
-                        'broadband_account_number' => $transaction->billPayment->broadband_account_number,
-                        'customer_name' => $transaction->wallet?->user?->name,
+                        'status' => $transaction->billPayment->status->value,
                     ]
                     : null,
                 'package_order_id' => $transaction->packageOrder?->id,
                 'package_order_detail' => $transaction->packageOrder
                     ? [
-                        'package' => PackageLabel::make($transaction->packageOrder->package),
                         'status' => $transaction->packageOrder->status->value,
                     ]
                     : null,

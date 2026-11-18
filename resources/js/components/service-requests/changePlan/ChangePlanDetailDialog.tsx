@@ -87,6 +87,7 @@ export function ChangePlanDetailDialog({
         request?.status === REQUEST_STATUS.UNDER_REVIEW
             ? REQUEST_STATUS.APPROVED
             : REQUEST_STATUS.UNDER_REVIEW;
+    const hasNote = Boolean(request?.note?.trim());
 
     const { data, setData, patch } = useForm({ status: nextStatus });
 
@@ -275,16 +276,18 @@ export function ChangePlanDetailDialog({
                         </div>
                     </div>
 
-                    <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
-                        <div className="mb-1.5">
-                            <ServiceRequestSectionHeading icon={FileTextIcon} title={t('change_plan.note')} />
+                    {hasNote && (
+                        <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
+                            <div className="mb-1.5">
+                                <ServiceRequestSectionHeading icon={FileTextIcon} title={t('change_plan.note')} />
+                            </div>
+                            <div className="max-h-48 overflow-y-auto pr-1">
+                                <p className="whitespace-pre-wrap text-xs text-foreground/80 leading-relaxed">
+                                    {request.note}
+                                </p>
+                            </div>
                         </div>
-                        <div className="max-h-48 overflow-y-auto pr-1">
-                            <p className="whitespace-pre-wrap text-xs text-foreground/80 leading-relaxed italic">
-                                {request.note ? `"${request.note}"` : t('change_plan.no_note')}
-                            </p>
-                        </div>
-                    </div>
+                    )}
 
                     <div className="mt-4 flex flex-col gap-2 rounded-xl border border-border/60 bg-muted/10 p-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-2">

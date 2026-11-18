@@ -22,6 +22,7 @@ import { useCan } from '@/hooks/useCan';
 import { useReturnTo } from '@/hooks/useReturnTo';
 import { useTranslation } from '@/hooks/useTranslation';
 import { toolbarInputClass } from '@/components/data-table/styles';
+import { formatPhoneInternational } from '@/lib/phone';
 import { formatTopUpAmount } from '@/lib/top-up-cards';
 import { formatDateTime } from '@/lib/utils';
 
@@ -382,11 +383,7 @@ export default function PackageOrdersIndex({
                 onOpenChange={(open) => {
                     if (!open) closeOrderDetails();
                 }}
-                title={
-                    selected
-                        ? `${t('package_orders.order_details')} #${selected.id}`
-                        : t('package_orders.order_details')
-                }
+                title={t('package_orders.order_details')}
                 description={t('menu.package_orders_description')}
                 icon={PackageIcon}
                 size="xl"
@@ -446,28 +443,18 @@ export default function PackageOrdersIndex({
                                 />
                                 <DetailItem
                                     label={t('transactions.customer')}
-                                    value={
-                                        selected.customer.id && selected.customer.name ? (
-                                            <Link
-                                                href={`/customers/${selected.customer.id}`}
-                                                className="text-primary underline-offset-4 hover:underline"
-                                            >
-                                                {selected.customer.name}
-                                            </Link>
-                                        ) : (
-                                            selected.customer.name
-                                        )
-                                    }
+                                    value={selected.customer.name}
                                 />
                                 <DetailItem
                                     label={t('transactions.detail_fields.customer_phone')}
                                     value={
                                         selected.customer.phone ? (
                                             <span className="flex items-center gap-1.5">
-                                                {selected.customer.phone}
+                                                {formatPhoneInternational(selected.customer.phone)}
                                                 <CopyValueButton
                                                     value={selected.customer.phone}
                                                     label={t('transactions.detail_fields.customer_phone')}
+                                                    format="phone"
                                                 />
                                             </span>
                                         ) : null
