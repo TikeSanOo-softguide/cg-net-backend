@@ -13,9 +13,11 @@ use App\Models\ChatFlowOption;
 use App\Models\ChatFlowStep;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ChatConversationLifecycleTest extends TestCase
@@ -265,6 +267,36 @@ class ChatConversationLifecycleTest extends TestCase
         ]);
         Event::assertDispatched(ChatMessageCreated::class, fn ($event) => $event->message->message === 'Hello agent');
         Event::assertNotDispatched(LiveChatRequested::class);
+    }
+
+    public function test_customer_can_send_an_image_during_live_chat(): void
+    {
+        Event::fake([ChatMessageCreated::class]);
+        Storage::fake('public');
+        $user = User::factory()->create();
+        $conversation = $this->conversation($user, ChatConversationStatus::Open);
+
+        $response = $this->customer($user)->post('/api/chat/messages', [
+            'conversation_id' => $conversation->id,
+            'image' => UploadedFile::fake()->image('chat-image.png'),
+        ])
+            ->assertCreated()
+            ->assertJsonPath('data.message.message', null)
+            ->assertJsonPath('data.message.sender_type', 'customer');
+
+        $attachmentPath = $response->json('data.message.attachment_path');
+
+        $this->assertStringStartsWith('chat/messages/', $attachmentPath);
+        Storage::disk('public')->assertExists($attachmentPath);
+        $this->assertDatabaseHas('chat_messages', [
+            'conversation_id' => $conversation->id,
+            'message' => null,
+            'attachment_path' => $attachmentPath,
+        ]);
+        Event::assertDispatched(
+            ChatMessageCreated::class,
+            fn ($event) => $event->message->attachment_path === $attachmentPath,
+        );
     }
 
     public function test_message_content_is_validated(): void

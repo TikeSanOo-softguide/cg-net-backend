@@ -25,6 +25,7 @@ class BillPaymentExport implements FromQuery, ShouldAutoSize, WithHeadings, With
             'Order No.',
             'Customer',
             'Customer Phone',
+            'Service Type',
             'Broadband Account',
             'Product ID',
             'Product Name',
@@ -46,10 +47,11 @@ class BillPaymentExport implements FromQuery, ShouldAutoSize, WithHeadings, With
 
         return [
             $transaction?->transaction_no ?? '',
+            $payment->order_no ?? '',
             $customer?->name ?? '',
             $customer?->phone ?? '',
+            $payment->service_type ?? '',
             $payment->broadband_account_number ?? '',
-            $payment->order_no ?? '',
             $payment->snapshot['product_id'] ?? ($payment->product_id ?? ''),
             $payment->snapshot['product_name'] ?? '',
             $payment->snapshot['product_line'] ?? '',

@@ -108,8 +108,9 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
             'packageCredentials',
         ])->whereNumber('customerPackageId');
         Route::get('/transactions', TransactionHistoryController::class);
-        Route::get('/transactions/{transaction}', [TransactionHistoryController::class, 'show'])
-            ->whereNumber('transaction');
+        Route::get('/transactions/{transaction}', [TransactionHistoryController::class, 'show'])->whereNumber(
+            'transaction',
+        );
     });
 
     Route::post('/device-tokens', [DeviceTokenController::class, 'store']);
@@ -123,6 +124,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     });
 
     Route::prefix('broadband-account')->group(function () {
+        Route::post('/check-account', [BroadbandAccountController::class, 'checkAccount']);
         Route::post('/bind', [BroadbandAccountController::class, 'bindAccount']);
         Route::post('/unbind', [BroadbandAccountController::class, 'unbindAccount']);
     });

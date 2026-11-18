@@ -6,6 +6,7 @@ use App\Enums\ActivityLogEvent;
 use App\Enums\ActivityLogName;
 use App\Enums\PackageOrderStatus;
 use App\Exceptions\PackageOrderReviewConflict;
+use App\Exports\PackageOrderExport;
 use App\Http\Controllers\Controller;
 use App\Models\Package;
 use App\Models\PackageOrder;
@@ -18,62 +19,16 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PackageOrderController extends Controller
 {
     public function index(Request $request, AdminNotificationReadStatus $readStatus): Response
     {
-        $search = trim((string) $request->query('search', ''));
-        $openOrderId = $request->integer('open_package_order') ?: null;
-        $packageId = $request->integer('package_id') ?: null;
-        $status = PackageOrderStatus::tryFrom((string) $request->query('status', ''));
-        $from = $request->query('from') === '' ? '' : $request->date('from')?->toDateString() ?? '';
-        $to = $request->query('to') === '' ? '' : $request->date('to')?->toDateString() ?? '';
+        $filters = $this->filters($request);
         $returnTo = $request->query('return_to');
 
-        $orders = PackageOrder::query()
-            ->with([
-                'user:id,name,phone',
-                'ledgerTransaction:id,transaction_no,amount',
-                'customerPackage:id,package_order_id,status,starts_at,expires_at',
-            ])
-            ->when($openOrderId, fn(Builder $query) => $query->whereKey($openOrderId))
-            ->when(!$openOrderId && $packageId, fn(Builder $query) => $query->where('package_id', $packageId))
-            ->when(!$openOrderId && $status, fn(Builder $query) => $query->where('status', $status->value))
-            ->when(
-                !$openOrderId && $from !== '',
-                fn(Builder $query) => $query->whereDate('package_orders.created_at', '>=', $from),
-            )
-            ->when(
-                !$openOrderId && $to !== '',
-                fn(Builder $query) => $query->whereDate('package_orders.created_at', '<=', $to),
-            )
-            ->when(!$openOrderId && $search !== '', function (Builder $query) use ($search): void {
-                $query->where(function (Builder $searchQuery) use ($search): void {
-                    $searchQuery
-                        ->where('package_orders.id', is_numeric($search) ? (int) $search : -1)
-                        ->orWhereLike('package_orders.order_no', "%{$search}%")
-                        ->orWhere('package_orders.status', 'like', "%{$search}%")
-                        ->orWhereHas('user', function (Builder $userQuery) use ($search): void {
-                            $userQuery->where('name', 'like', "%{$search}%")->orWhere('phone', 'like', "%{$search}%");
-                        })
-                        ->orWhereHas(
-                            'package',
-                            fn(Builder $packageQuery) => $packageQuery->where(
-                                'id',
-                                is_numeric($search) ? (int) $search : -1,
-                            ),
-                        )
-                        ->orWhereHas(
-                            'ledgerTransaction',
-                            fn(Builder $transactionQuery) => $transactionQuery->whereLike(
-                                'transaction_no',
-                                "%{$search}%",
-                            ),
-                        );
-                });
-            })
-            ->latest('package_orders.id')
+        $orders = $this->query($filters)
             ->paginate(15)
             ->withQueryString();
 
@@ -128,12 +83,12 @@ class PackageOrderController extends Controller
 
         return Inertia::render('PackageOrders/Index', [
             'orders' => $orders,
-            'search' => $search,
+            'search' => $filters['search'],
             'filters' => [
-                'package_id' => $packageId,
-                'status' => $status?->value ?? '',
-                'from' => $from,
-                'to' => $to,
+                'package_id' => $filters['package_id'],
+                'status' => $filters['status'],
+                'from' => $filters['from'],
+                'to' => $filters['to'],
             ],
             'filter_options' => [
                 'packages' => $packages,
@@ -142,9 +97,17 @@ class PackageOrderController extends Controller
                     PackageOrderStatus::cases(),
                 ),
             ],
-            'open_order_id' => $openOrderId,
+            'open_order_id' => $filters['open_order_id'],
             'return_to' => is_string($returnTo) ? NavigationStack::sanitize($returnTo) : null,
         ]);
+    }
+
+    public function export(Request $request)
+    {
+        return Excel::download(
+            new PackageOrderExport($this->query($this->filters($request))),
+            'package_orders_' . now()->format('Ymd_His') . '.xlsx',
+        );
     }
 
     public function resolveReview(
@@ -193,5 +156,79 @@ class PackageOrderController extends Controller
             ->log('package_order_refunded');
 
         return back()->with('success', 'package_orders.review_refunded');
+    }
+
+    /**
+     * @return array{search: string, open_order_id: ?int, package_id: ?int, status: string, from: string, to: string}
+     */
+    private function filters(Request $request): array
+    {
+        return [
+            'search' => trim((string) $request->query('search', '')),
+            'open_order_id' => $request->integer('open_package_order') ?: null,
+            'package_id' => $request->integer('package_id') ?: null,
+            'status' => PackageOrderStatus::tryFrom((string) $request->query('status', ''))?->value ?? '',
+            'from' => $request->query('from') === '' ? '' : $request->date('from')?->toDateString() ?? '',
+            'to' => $request->query('to') === '' ? '' : $request->date('to')?->toDateString() ?? '',
+        ];
+    }
+
+    /**
+     * @param  array{search: string, open_order_id: ?int, package_id: ?int, status: string, from: string, to: string}  $filters
+     */
+    private function query(array $filters): Builder
+    {
+        $openOrderId = $filters['open_order_id'];
+
+        return PackageOrder::query()
+            ->with([
+                'user:id,name,phone',
+                'ledgerTransaction:id,transaction_no,amount',
+                'customerPackage:id,package_order_id,status,starts_at,expires_at',
+            ])
+            ->when($openOrderId, fn(Builder $query) => $query->whereKey($openOrderId))
+            ->when(
+                !$openOrderId && $filters['package_id'],
+                fn(Builder $query) => $query->where('package_id', $filters['package_id']),
+            )
+            ->when(
+                !$openOrderId && $filters['status'] !== '',
+                fn(Builder $query) => $query->where('status', $filters['status']),
+            )
+            ->when(
+                !$openOrderId && $filters['from'] !== '',
+                fn(Builder $query) => $query->whereDate('package_orders.created_at', '>=', $filters['from']),
+            )
+            ->when(
+                !$openOrderId && $filters['to'] !== '',
+                fn(Builder $query) => $query->whereDate('package_orders.created_at', '<=', $filters['to']),
+            )
+            ->when(!$openOrderId && $filters['search'] !== '', function (Builder $query) use ($filters): void {
+                $query->where(function (Builder $searchQuery) use ($filters): void {
+                    $search = $filters['search'];
+                    $searchQuery
+                        ->where('package_orders.id', is_numeric($search) ? (int) $search : -1)
+                        ->orWhereLike('package_orders.order_no', "%{$search}%")
+                        ->orWhere('package_orders.status', 'like', "%{$search}%")
+                        ->orWhereHas('user', function (Builder $userQuery) use ($search): void {
+                            $userQuery->where('name', 'like', "%{$search}%")->orWhere('phone', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas(
+                            'package',
+                            fn(Builder $packageQuery) => $packageQuery->where(
+                                'id',
+                                is_numeric($search) ? (int) $search : -1,
+                            ),
+                        )
+                        ->orWhereHas(
+                            'ledgerTransaction',
+                            fn(Builder $transactionQuery) => $transactionQuery->whereLike(
+                                'transaction_no',
+                                "%{$search}%",
+                            ),
+                        );
+                });
+            })
+            ->latest('package_orders.id');
     }
 }

@@ -8,6 +8,7 @@ export type ChatMessage = {
     id: number;
     sender_type: string;
     message: string | null;
+    attachment_url?: string | null;
     created_at: string;
 };
 

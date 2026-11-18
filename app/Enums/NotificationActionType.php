@@ -7,6 +7,6 @@ enum NotificationActionType: string
     case Announcement = 'announcement';
     case Promotion = 'promotion';
     case FtthBill = 'ftth_bill';
-    case FtthBillPayment = 'ftth_bill_payment';
+    case BillPayment = 'bill_payment';
     case PackageOrder = 'package_order';
 }

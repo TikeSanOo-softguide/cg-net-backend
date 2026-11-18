@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Head, router, Link } from '@inertiajs/react';
 import { ArrowLeftRightIcon, CalendarIcon, XIcon, EyeIcon, SearchIcon } from 'lucide-react';
 
@@ -59,9 +60,9 @@ export type TransactionRow = {
     } | null;
     related: {
         bill_payment_id: number | null;
-        bill_payment_account: { broadband_account_number: string; customer_name: string } | null;
+        bill_payment_account: { status: string } | null;
         package_order_id: number | null;
-        package_order_detail: { package: string | null; status: string } | null;
+        package_order_detail: { status: string } | null;
         top_up_card_serial_no: string | null;
     };
 };
@@ -145,7 +146,7 @@ function DetailItem({
     copyable?: boolean;
     format?: 'phone';
     className?: string;
-    secondary?: string | null;
+    secondary?: ReactNode;
     status?: string;
 }) {
     return (
@@ -537,7 +538,7 @@ export function TransactionsTable({
                 onOpenChange={(open) => {
                     if (!open) setSelected(null);
                 }}
-                title={selected?.transaction_no ?? t('transactions.detail')}
+                title={t('transactions.detail')}
                 description={t('transactions.detail_description')}
                 icon={ArrowLeftRightIcon}
                 size="xl"
@@ -627,9 +628,12 @@ export function TransactionsTable({
                                     }
                                     copyable
                                     secondary={
-                                        selected.related.bill_payment_account
-                                            ? `${selected.related.bill_payment_account.broadband_account_number} · ${selected.related.bill_payment_account.customer_name}`
-                                            : null
+                                        selected.related.bill_payment_account ? (
+                                            <StatusBadge
+                                                status={selected.related.bill_payment_account.status}
+                                                className="text-xs font-normal text-muted-foreground"
+                                            />
+                                        ) : null
                                     }
                                 />
                                 <DetailItem
@@ -641,9 +645,12 @@ export function TransactionsTable({
                                             : undefined
                                     }
                                     secondary={
-                                        selected.related.package_order_detail
-                                            ? `${selected.related.package_order_detail.package ?? '—'} · ${t(`status.${selected.related.package_order_detail.status}`)}`
-                                            : null
+                                        selected.related.package_order_detail ? (
+                                            <StatusBadge
+                                                status={selected.related.package_order_detail.status}
+                                                className="text-xs font-normal text-muted-foreground"
+                                            />
+                                        ) : null
                                     }
                                 />
                                 <DetailItem

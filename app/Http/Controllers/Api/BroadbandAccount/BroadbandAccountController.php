@@ -16,39 +16,28 @@ class BroadbandAccountController extends Controller
 {
     public function __construct(private AccountInfoService $accountInfoService) {}
 
-    public function bindAccount(Request $request)
+    public function checkAccount(Request $request): JsonResponse
+    {
+        $account = $this->validateAccount($request);
+
+        if ($account instanceof JsonResponse) {
+            return $account;
+        }
+
+        return $this->result(true, MessageCode::BbFound, 200, ['data' => $account]);
+    }
+
+    public function bindAccount(Request $request): JsonResponse
     {
         $user = $request->user();
+        $account = $this->validateAccount($request);
 
-        $validated = $request->validate([
-            'account_number' => ['required', 'string', 'max:32'],
-            'service_type' => ['required', 'string', 'in:FTTH,CG'],
-        ]);
-
-        $serviceType = $validated['service_type'];
-        $accountNumber = $validated['account_number'];
-
-        try {
-            $account = $this->accountInfoService->find($serviceType, $accountNumber);
-        } catch (ConnectionException) {
-            return $this->result(false, MessageCode::BbConnectionFailed, 502);
-        } catch (BroadbandApiException $exception) {
-            return $this->result(false, MessageCode::BbUpstreamFailed, 502, ['message' => $exception->errorCode]);
+        if ($account instanceof JsonResponse) {
+            return $account;
         }
 
-        if (!$account) {
-            return $this->result(false, MessageCode::BbNotMatch, 404);
-        }
-
-        $alreadyBound = User::query()
-            ->where('id', '!=', $user->id)
-            ->where('broadband_account_number', $accountNumber)
-            ->where('service_type', $serviceType)
-            ->exists();
-
-        if ($alreadyBound) {
-            return $this->result(false, MessageCode::BbAlreadyBound, 409);
-        }
+        $serviceType = $request->string('service_type')->toString();
+        $accountNumber = $request->string('account_number')->toString();
 
         $user->update([
             'service_type' => $serviceType,
@@ -58,6 +47,45 @@ class BroadbandAccountController extends Controller
         return $this->result(true, MessageCode::BbConnected, 200);
     }
 
+    /**
+     * @return array<string, mixed>|JsonResponse
+     */
+    private function validateAccount(Request $request): array|JsonResponse
+    {
+        $validated = $request->validate([
+            'account_number' => ['required', 'string', 'max:32'],
+            'service_type' => ['required', 'string', 'in:FTTH,CG'],
+        ]);
+
+        try {
+            $account = $this->accountInfoService->find(
+                $validated['service_type'],
+                $validated['account_number'],
+            );
+        } catch (ConnectionException) {
+            return $this->result(false, MessageCode::BbConnectionFailed, 502);
+        } catch (BroadbandApiException $exception) {
+            return $this->result(false, MessageCode::BbUpstreamFailed, 502, ['message' => $exception->errorCode]);
+        }
+
+        if (! $account) {
+            return $this->result(false, MessageCode::BbNotMatch, 404);
+        }
+
+        $user = $request->user();
+        $alreadyBound = User::query()
+            ->where('id', '!=', $user->id)
+            ->where('broadband_account_number', $validated['account_number'])
+            ->where('service_type', $validated['service_type'])
+            ->exists();
+
+        if ($alreadyBound) {
+            return $this->result(false, MessageCode::BbAlreadyBound, 409);
+        }
+
+        return $account;
+    }
+
     public function unbindAccount(Request $request)
     {
         $user = $request->user();
@@ -65,8 +93,8 @@ class BroadbandAccountController extends Controller
         $accountNumber = $request->input('account_number');
 
         if (
-            ! is_string($accountNumber) ||
-            ! $this->accountMatches($user, $accountNumber, is_string($serviceType) ? $serviceType : null)
+            !is_string($accountNumber) ||
+            !$this->accountMatches($user, $accountNumber, is_string($serviceType) ? $serviceType : null)
         ) {
             abort(404);
         }
@@ -82,13 +110,11 @@ class BroadbandAccountController extends Controller
     private function accountMatches(User $user, string $given, ?string $serviceType): bool
     {
         $stored = $user->broadband_account_number;
-        if (! is_string($stored) || $stored === '') {
+        if (!is_string($stored) || $stored === '') {
             return false;
         }
 
-        $type = is_string($user->service_type) && $user->service_type !== ''
-            ? $user->service_type
-            : $serviceType;
+        $type = is_string($user->service_type) && $user->service_type !== '' ? $user->service_type : $serviceType;
 
         if ($serviceType !== null && $user->service_type !== null && $user->service_type !== $serviceType) {
             return false;
@@ -99,7 +125,7 @@ class BroadbandAccountController extends Controller
         }
 
         if (is_string($type) && $type !== '') {
-            return $stored === $type.$given || $given === $type.$stored;
+            return $stored === $type . $given || $given === $type . $stored;
         }
 
         return false;

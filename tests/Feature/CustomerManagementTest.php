@@ -206,7 +206,7 @@ class CustomerManagementTest extends TestCase
                 fn(Assert $page) => $page
                     ->component('Customer/Show')
                     ->where('accountBinding.account_number', null)
-                    ->where('accountBinding.status', 'unknown'),
+                    ->where('accountBinding.address', null),
             );
     }
 
@@ -288,7 +288,7 @@ class CustomerManagementTest extends TestCase
             ->get('/customers/' . $customer->id . '/transactions/export?customer_id=' . $otherCustomer->id)
             ->assertOk();
 
-        Excel::assertDownloaded('customer-transactions.xlsx', function ($export) use ($customerTransaction): bool {
+        Excel::assertDownloaded('customer_transactions.xlsx', function ($export) use ($customerTransaction): bool {
             return $export->query()->get()->modelKeys() === [$customerTransaction->id];
         });
     }
@@ -706,16 +706,19 @@ class CustomerManagementTest extends TestCase
 
     public function test_financial_records_cannot_be_deleted(): void
     {
-        foreach ([
-            BillPayment::class,
-            CustomerPackage::class,
-            LedgerAccount::class,
-            LedgerEntry::class,
-            LedgerTransaction::class,
-            PackageOrder::class,
-            TopUpCard::class,
-            Wallet::class,
-        ] as $recordType) {
+        foreach (
+            [
+                BillPayment::class,
+                CustomerPackage::class,
+                LedgerAccount::class,
+                LedgerEntry::class,
+                LedgerTransaction::class,
+                PackageOrder::class,
+                TopUpCard::class,
+                Wallet::class,
+            ]
+            as $recordType
+        ) {
             $record = new $recordType();
             $record->exists = true;
 

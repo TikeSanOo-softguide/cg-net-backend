@@ -44,7 +44,7 @@ import { useCan } from '@/hooks/useCan';
 import { useReturnTo } from '@/hooks/useReturnTo';
 import { navigationPopHeaders } from '@/lib/navigation-stack';
 import { useTranslation } from '@/hooks/useTranslation';
-import { cn, formatDate, formatDateTime } from '@/lib/utils';
+import { cn, formatDate, formatDateTime, truncateText } from '@/lib/utils';
 
 type Customer = {
     id: number;
@@ -63,8 +63,10 @@ type LocalizedText = {
 type AccountBinding = {
     service_type: string | null;
     account_number: string;
-    status: string;
     package_name: string | null;
+    address: string | null;
+    starttime: string | null;
+    endtime: string | null;
 };
 
 type SessionInfo = {
@@ -403,7 +405,7 @@ export default function CustomersShow({
 
                         <DetailSection
                             icon={WifiIcon}
-                            title={t('customers.broadband_accounts')}
+                            title={t('customers.broadband_account')}
                             description={t('customers.broadband_hint')}
                             actions={can('customers.update') ? (!accountBinding ? bindFilters : undefined) : null}
                         >
@@ -454,11 +456,22 @@ export default function CustomersShow({
                                         ),
                                     },
                                     {
-                                        id: 'status',
-                                        header: t('common.status'),
+                                        id: 'address',
+                                        header: t('common.address'),
                                         mobile: 'badge',
-                                        searchValue: (row) => row.status,
-                                        cell: (row) => <span>{row.status || '-'}</span>,
+                                        cell: (row) => <span>{row.address ? truncateText(row.address, 15) : '-'}</span>,
+                                    },
+                                    {
+                                        id: 'starttime',
+                                        header: t('common.start_date'),
+                                        mobile: 'meta',
+                                        cell: (row) => <span>{row.starttime ? formatDate(row.starttime) : '-'}</span>,
+                                    },
+                                    {
+                                        id: 'endtime',
+                                        header: t('common.end_date'),
+                                        mobile: 'meta',
+                                        cell: (row) => <span>{row.endtime ? formatDate(row.endtime) : '-'}</span>,
                                     },
                                 ]}
                             />
