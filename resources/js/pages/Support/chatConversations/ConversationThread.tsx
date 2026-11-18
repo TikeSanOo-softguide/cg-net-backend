@@ -238,13 +238,24 @@ export function ConversationThread({
                             <div className={cn('max-w-[82%] sm:max-w-[70%]', isAgent ? 'items-end' : 'items-start')}>
                                 <div
                                     className={cn(
-                                        'rounded-xl px-3.5 py-2.5 text-xs leading-relaxed',
+                                        'max-w-full rounded-xl px-3.5 py-2.5 text-xs leading-relaxed',
                                         isAgent
                                             ? 'rounded-br-sm bg-primary text-primary-foreground'
                                             : 'rounded-bl-sm bg-muted text-foreground',
                                     )}
                                 >
-                                    {message.message || t('support.chat_conversations.attachment')}
+                                    {message.attachment_url ? (
+                                        <img
+                                            src={message.attachment_url}
+                                            alt={t('support.chat_conversations.attachment')}
+                                            className={cn(
+                                                'max-h-80 max-w-full rounded-md object-contain',
+                                                message.message && 'mb-2',
+                                            )}
+                                        />
+                                    ) : null}
+                                    {message.message ||
+                                        (!message.attachment_url && t('support.chat_conversations.attachment'))}
                                 </div>
                                 <p className="mt-1 text-[10px] text-muted-foreground">
                                     {formatDateTime(message.created_at)}

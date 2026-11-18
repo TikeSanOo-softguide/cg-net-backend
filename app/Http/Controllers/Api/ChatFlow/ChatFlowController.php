@@ -18,6 +18,7 @@ use App\Models\ChatFlowStep;
 use App\Models\ChatMessage;
 use App\Models\User;
 use App\Support\ApiMessage;
+use App\Support\StoresPublicImage;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -391,7 +392,8 @@ class ChatFlowController extends Controller
         $language = $this->resolveLanguage($request->input('language'));
         $validated = $request->validate([
             'conversation_id' => ['required', 'integer'],
-            'message' => ['required', 'string', 'max:2000'],
+            'message' => ['nullable', 'required_without:image', 'string', 'max:2000'],
+            'image' => ['nullable', 'required_without:message', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
         $conversation = $this->findCustomerConversation($this->customer($request), (int) $validated['conversation_id']);
@@ -423,9 +425,14 @@ class ChatFlowController extends Controller
                 );
             }
 
+            $attachmentPath = isset($validated['image'])
+                ? StoresPublicImage::store($validated['image'], 'chat/messages')
+                : null;
+
             $message = $conversation->messages()->create([
                 'sender_type' => ChatSenderType::Customer->value,
-                'message' => $validated['message'],
+                'message' => $validated['message'] ?? null,
+                'attachment_path' => $attachmentPath,
                 'is_read' => false,
             ]);
 
