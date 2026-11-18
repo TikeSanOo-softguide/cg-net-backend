@@ -197,16 +197,12 @@ export function FailureReportDetailDialog({
                     </div>
                     <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
                         <div className="mb-2">
-                            <ServiceRequestSectionHeading icon={FileTextIcon} title={t('cms.description')} />
+                            <ServiceRequestSectionHeading icon={FileTextIcon} title={t('failure_report.note')} />
                         </div>
 
                         <div className="max-h-48 overflow-y-auto rounded-lg border border-border/40 bg-background/60 px-3 py-2.5 pr-2">
                             <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">
-                                {request.description || (
-                                    <span className="text-xs italic text-muted-foreground">
-                                        No additional description provided.
-                                    </span>
-                                )}
+                                {request.description || t('failure_report.no_note')}
                             </p>
                         </div>
                     </div>

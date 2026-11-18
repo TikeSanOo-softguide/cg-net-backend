@@ -802,6 +802,8 @@
         "failure_type": "故障类型",
         "month": "个月",
         "no_internet": "无法上网",
+        "no_note": "未提供备注",
+        "note": "备注",
         "other": "其他",
         "password": "密码",
         "request_info": "请求信息",
@@ -1196,7 +1198,7 @@
         "review_completed": "套餐订单已标记为成功。",
         "review_unavailable": "此套餐订单已不再等待审核。请刷新订单后重试。",
         "review_refunded": "套餐订单已退款。",
-        "search_placeholder": "搜索订单、交易、客户",
+        "search_placeholder": "搜索订单或客户",
         "service_details": "已开通的服务",
         "snapshot": "订单快照",
         "starts_at": "开始时间"

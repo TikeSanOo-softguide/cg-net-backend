@@ -435,6 +435,8 @@ function Info({
     icon: typeof WifiIcon;
     isCancelled?: boolean;
 }) {
+    const hasValue = Boolean(value?.trim());
+
     return (
         <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
             <div className="mb-2">
@@ -446,9 +448,9 @@ function Info({
                         isCancelled ? 'select-none' : ''
                     }`}
                 >
-                    {value || '-'}
+                    {hasValue ? value : '—'}
                 </p>
-                {!isCancelled && <CopyValueButton value={value} label={`Copy ${label}`} />}
+                {!isCancelled && hasValue && <CopyValueButton value={value} label={`Copy ${label}`} />}
             </div>
         </div>
     );
