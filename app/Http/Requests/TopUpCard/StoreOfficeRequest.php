@@ -22,9 +22,9 @@ class StoreOfficeRequest extends FormRequest
             'address_en' => ['required', 'string', 'max:255'],
             'address_mm' => ['required', 'string', 'max:255'],
             'address_zh' => ['required', 'string', 'max:255'],
-            'phone_num1' => ['required', 'string', 'max:16'],
-            'phone_num2' => ['nullable', 'string', 'max:16'],
-            'phone_num3' => ['nullable', 'string', 'max:16'],
+            'phone_num1' => ['required', 'string', 'max:16', 'regex:/^\+?[0-9]+(?:-[0-9]+)*$/'],
+            'phone_num2' => ['nullable', 'string', 'max:16', 'regex:/^\+?[0-9]+(?:-[0-9]+)*$/'],
+            'phone_num3' => ['nullable', 'string', 'max:16', 'regex:/^\+?[0-9]+(?:-[0-9]+)*$/'],
             'telegram_link' => ['nullable', 'string', 'max:255'],
             'wechat_link' => ['nullable', 'string', 'max:255'],
             'viber_link' => ['nullable', 'string', 'max:255'],
@@ -33,6 +33,11 @@ class StoreOfficeRequest extends FormRequest
 
     public function messages(): array
     {
-        return ['cd.unique' => __('top_up_cards.validation.office_cd_unique')];
+        return [
+            'cd.unique' => __('top_up_cards.validation.office_cd_unique'),
+            'phone_num1.regex' => __('top_up_cards.validation.office_phone_invalid'),
+            'phone_num2.regex' => __('top_up_cards.validation.office_phone_invalid'),
+            'phone_num3.regex' => __('top_up_cards.validation.office_phone_invalid'),
+        ];
     }
 }

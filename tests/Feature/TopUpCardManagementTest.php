@@ -352,8 +352,8 @@ class TopUpCardManagementTest extends TestCase
         $this->assertSame('3500', $batchMetadata['total_value']);
         $this->assertSame(
             [
-                ['office_cd' => '31', 'amount' => 1000, 'quantity' => 1],
-                ['office_cd' => '11', 'amount' => 2500, 'quantity' => 1],
+                ['office_cd' => '31', 'PointValue' => 1000, 'quantity' => 1],
+                ['office_cd' => '11', 'PointValue' => 2500, 'quantity' => 1],
             ],
             $batchMetadata['items'],
         );
@@ -667,6 +667,44 @@ class TopUpCardManagementTest extends TestCase
         ]);
     }
 
+    public function test_office_phone_numbers_allow_digits_plus_and_hyphen_only(): void
+    {
+        $actor = Admin::factory()->create();
+        $actor->assignRole(AppPermissions::SuperAdmin);
+
+        $this->actingAs($actor, 'web')
+            ->post('/top-up-cards/offices', [
+                'name_en' => 'Phone Format Office',
+                'name_mm' => 'ဖုန်းပုံစံရုံး',
+                'name_zh' => '电话格式网点',
+                'cd' => '23',
+                'address_en' => 'Main Street',
+                'address_mm' => 'လိပ်စာ',
+                'address_zh' => '地址',
+                'phone_num1' => '+95-9-12345678',
+                'phone_num2' => '09-12345678',
+                'phone_num3' => null,
+            ])
+            ->assertSessionHasNoErrors();
+
+        $office = Office::query()->where('cd', '23')->firstOrFail();
+
+        $this->actingAs($actor, 'web')
+            ->put('/top-up-cards/offices/'.$office->id, [
+                'name_en' => 'Phone Format Office',
+                'name_mm' => 'ဖုန်းပုံစံရုံး',
+                'name_zh' => '电话格式网点',
+                'cd' => '23',
+                'address_en' => 'Main Street',
+                'address_mm' => 'လိပ်စာ',
+                'address_zh' => '地址',
+                'phone_num1' => '+95-9-12345678',
+                'phone_num2' => '09 ABC',
+                'phone_num3' => null,
+            ])
+            ->assertSessionHasErrors('phone_num2');
+    }
+
     public function test_admins_can_block_a_valid_card(): void
     {
         $actor = Admin::factory()->create();
@@ -742,6 +780,7 @@ class TopUpCardManagementTest extends TestCase
                 fn (Assert $page) => $page
                     ->component('TopUpCards/CardImport')
                     ->has('batchPage.data', 2)
+                    ->where('batchPage.per_page', 15)
                     ->where('batchPage.data.0.id', $active->batch_id)
                     ->where('batchPage.data.1.id', $blocked->batch_id)
                     ->where('filters.status', ''),

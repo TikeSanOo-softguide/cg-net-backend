@@ -72,6 +72,7 @@ export function TopUpCardImportTable({
             <DataTable
                 data={batchRows}
                 pagination={pagination}
+                suppressVisitLoading={importProcessing}
                 getRowId={(row) => String(row.id)}
                 directActions
                 showSearch={false}
@@ -230,7 +231,7 @@ export function TopUpCardImportTable({
             <ConfirmDialog
                 open={activating !== null}
                 onOpenChange={(open) => {
-                    if (!open) {
+                    if (!open && !activationProcessing) {
                         setActivating(null);
                     }
                 }}
@@ -261,7 +262,7 @@ export function TopUpCardImportTable({
             <ConfirmDialog
                 open={blocking !== null}
                 onOpenChange={(open) => {
-                    if (!open) {
+                    if (!open && !blockProcessing) {
                         setBlocking(null);
                     }
                 }}

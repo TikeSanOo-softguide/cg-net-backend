@@ -75,6 +75,9 @@ export function validateOfficeField(field: OfficeField, data: OfficeFormValues, 
     if (field.startsWith('phone_num') && value.length > 16) {
         return t('top_up_cards.validation.office_phone_max');
     }
+    if (field.startsWith('phone_num') && value !== '' && !/^\+?[0-9]+(?:-[0-9]+)*$/.test(value)) {
+        return t('top_up_cards.validation.office_phone_invalid');
+    }
     if (field.endsWith('_link') && value.length > 255) {
         return t('top_up_cards.validation.office_link_max');
     }
