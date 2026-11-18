@@ -43,7 +43,7 @@ export function TermAndConditionTable({ items, canCreate, canUpdate, canDelete, 
                         <article key={item.id} className="flex items-start justify-between gap-4 px-5 py-4">
                             <div className="min-w-0 space-y-1">
                                 <h3 className="text-sm font-medium">
-                                    {truncateText(localizedValue(item, 'title', locale), 20)}
+                                    {truncateText(localizedValue(item, 'title', locale), 30)}
                                 </h3>
 
                                 <p className="whitespace-pre-wrap text-sm text-muted-foreground">

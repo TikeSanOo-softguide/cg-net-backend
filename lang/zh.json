@@ -542,7 +542,8 @@
         "updated_at": "更新时间",
         "view": "查看",
         "view_all_transactions": "查看所有交易",
-        "yes": "是"
+        "yes": "是",
+        "address": "地址"
     },
     "csv": {
         "import_errors": {
@@ -594,8 +595,8 @@
         "amount": "金额",
         "bind_account": "绑定账户",
         "broadband": "宽带",
-        "broadband_accounts": "宽带账户",
-        "broadband_hint": "绑定或解绑宽带账户。",
+        "broadband_account": "宽带账户",
+        "broadband_hint": "绑定宽带账号。",
         "bulk_delete_title": "删除所选应用用户？",
         "connected": "已连接",
         "create": "新建应用用户",
@@ -924,7 +925,7 @@
         "billing": "账单与付款",
         "billing_reports": "账单与支付",
         "billing_reports_description": "查看账单和支付相关报表。",
-        "broadband_accounts": "宽带账户",
+        "broadband_account": "宽带账户",
         "broadband_accounts_description": "搜索、筛选并管理宽带账户。",
         "card_history": "充值卡记录",
         "card_history_description": "管理充值卡批次。",

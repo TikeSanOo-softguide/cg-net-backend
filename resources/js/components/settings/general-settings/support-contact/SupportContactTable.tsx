@@ -1,6 +1,7 @@
 import { PencilIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 
-import type { SupportContactItem } from '@/components/settings/general-settings/SupportContact/SupportContactFormDialog';
+import type { SupportContactItem } from '@/components/settings/general-settings/support-contact/SupportContactFormDialog';
+import { PhoneDisplay } from '@/components/customer/PhoneDisplay';
 import { TableActionButton } from '@/components/TableActionButton';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -35,7 +36,7 @@ export function SupportContactTable({ items, canCreate, canUpdate, canDelete, on
                 <ul className="divide-y">
                     {items.map((contact) => (
                         <li key={contact.id} className="flex items-center justify-between gap-4 px-5 py-4">
-                            <span className="text-sm">{contact.phone}</span>
+                            <PhoneDisplay phone={contact.phone} className="text-sm" />
 
                             {canUpdate || canDelete ? (
                                 <div className="flex shrink-0 items-center gap-1">
