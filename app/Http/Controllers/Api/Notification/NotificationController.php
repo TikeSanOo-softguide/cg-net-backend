@@ -16,7 +16,7 @@ class NotificationController extends Controller
         $user = $request->user();
         app(PushNotificationService::class)->materializeInboxFor($user);
         $visible = $user->appNotifications()->withoutDeletedSources();
-        $notifications = $visible->with('templateable')->latest('id')->paginate(30);
+        $notifications = $visible->with('templateable')->orderBy('is_read')->latest('id')->paginate(30);
         $locale = $user->lang;
 
         return response()->json([

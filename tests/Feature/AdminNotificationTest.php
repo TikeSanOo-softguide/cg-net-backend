@@ -256,6 +256,35 @@ class AdminNotificationTest extends TestCase
             ->assertJsonPath('data.0.read_at', null);
     }
 
+    public function test_dropdown_prioritizes_unread_notifications_over_newer_read_notifications(): void
+    {
+        $admin = Admin::factory()->create();
+        $unread = AdminNotification::query()->create([
+            'type' => 'request',
+            'title' => 'Unread notification',
+            'body' => 'This should appear in the dropdown.',
+            'created_at' => now()->subDay(),
+        ]);
+        $unread->admins()->attach($admin->id, ['is_read' => false]);
+
+        foreach (range(1, 5) as $index) {
+            $read = AdminNotification::query()->create([
+                'type' => 'request',
+                'title' => "Read notification {$index}",
+                'body' => 'A newer read notification.',
+                'created_at' => now()->addSeconds($index),
+            ]);
+            $read->admins()->attach($admin->id, ['is_read' => true, 'read_at' => now()]);
+        }
+
+        $this->actingAs($admin, 'web')
+            ->getJson('/dashboard/notifications?limit=5')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $unread->id)
+            ->assertJsonPath('data.0.read_at', null)
+            ->assertJsonPath('unread_count', 1);
+    }
+
     public function test_shared_admin_notification_total_counts_only_the_current_admins_recipients(): void
     {
         $admin = Admin::factory()->create();

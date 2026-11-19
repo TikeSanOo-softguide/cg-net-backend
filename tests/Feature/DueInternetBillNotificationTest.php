@@ -206,6 +206,36 @@ class DueInternetBillNotificationTest extends TestCase
         $this->assertFalse((bool) Notification::query()->findOrFail($otherNotification->id)->is_read);
     }
 
+    public function test_notification_endpoint_prioritizes_unread_notifications(): void
+    {
+        $user = User::factory()->create();
+        $template = NotificationTemplate::query()->firstOrFail();
+        $unread = Notification::factory()->create([
+            'user_id' => $user->id,
+            'templateable_type' => NotificationTemplate::class,
+            'templateable_id' => $template->id,
+            'is_read' => false,
+            'created_at' => now()->subDay(),
+        ]);
+
+        foreach (range(1, 30) as $index) {
+            Notification::factory()->create([
+                'user_id' => $user->id,
+                'templateable_type' => NotificationTemplate::class,
+                'templateable_id' => $template->id,
+                'is_read' => true,
+                'created_at' => now()->addSeconds($index),
+            ]);
+        }
+
+        $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
+            ->getJson('/api/notifications')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $unread->id)
+            ->assertJsonPath('data.0.is_read', false)
+            ->assertJsonPath('unread_count', 1);
+    }
+
     public function test_deleted_announcements_and_promotions_stay_out_of_the_inbox(): void
     {
         $user = User::factory()->create();

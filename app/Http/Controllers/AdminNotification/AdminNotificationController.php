@@ -82,6 +82,12 @@ class AdminNotificationController extends Controller
 
         $notifications = (clone $adminNotifications)
             ->with(['admins' => fn (BelongsToMany $query) => $query->whereKey($admin->getKey())])
+            ->withCount([
+                'admins as recipient_read_status' => fn (Builder $query) => $query
+                    ->whereKey($admin->getKey())
+                    ->where('admin_notification_recipients.is_read', true),
+            ])
+            ->orderBy('recipient_read_status')
             ->latest('created_at')
             ->latest('id')
             ->limit($limit)
