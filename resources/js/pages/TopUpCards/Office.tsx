@@ -65,6 +65,7 @@ export default function OfficePage({ offices, officeCds, filters }: Props) {
                 title={editing ? t('top_up_cards.office.edit') : t('top_up_cards.office.add')}
                 description={t('top_up_cards.office.description')}
                 icon={editing ? UserRoundIcon : PlusIcon}
+                size="lg"
             >
                 {formOpen ? (
                     <TopUpCardOfficeForm item={editing} officeCds={officeCds} onClose={() => setFormOpen(false)} />

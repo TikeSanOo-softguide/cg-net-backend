@@ -244,8 +244,6 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
             memory_reset_peak_usage();
         }
 
-        $this->logMemory('import_started');
-
         $disk = Storage::disk('local');
         $cachedGeneration = Cache::get($this->generationKey());
         $cachedBatch = Cache::get($this->batchKey());
@@ -292,9 +290,6 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
         }
 
         $totalChunks = (int) ceil($totalCards / $chunkSize);
-        $this->logMemory('statistics_collected', null, $totalChunks, [
-            'metadata_items' => count($metadataItems),
-        ]);
 
         $stream = $this->openCsvStream();
         try {
@@ -314,11 +309,6 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                         $validationChunkIndex,
                     );
                     $validationChunk = [];
-
-                    if ($this->shouldLogChunk($validationChunkIndex, $totalChunks)) {
-                        $this->logMemory('duplicate_validation_chunk', $validationChunkIndex + 1, $totalChunks);
-                    }
-
                     $validationChunkIndex++;
                 }
             }
@@ -329,16 +319,10 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                     $validatedRows - count($validationChunk) + 2,
                     $validationChunkIndex,
                 );
-
-                if ($this->shouldLogChunk($validationChunkIndex, $totalChunks)) {
-                    $this->logMemory('duplicate_validation_chunk', $validationChunkIndex + 1, $totalChunks);
-                }
             }
         } finally {
             fclose($stream);
         }
-
-        $this->logMemory('duplicate_validation_completed', null, $totalChunks);
 
         try {
             $stream = $this->openCsvStream();
@@ -405,10 +389,6 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                         $chunk[] = $this->parseRow($row, $chunkIndex * $chunkSize + count($chunk) + 2, $format);
 
                         if (count($chunk) >= $chunkSize) {
-                            if ($this->shouldLogChunk($chunkIndex, $totalChunks)) {
-                                $this->logMemory('insert_chunk_before', $chunkIndex + 1, $totalChunks);
-                            }
-
                             $preview = $this->insertChunk(
                                 $chunk,
                                 $chunkIndex,
@@ -417,20 +397,11 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                                 (int) $importBatch->id,
                             );
                             $chunk = [];
-
-                            if ($this->shouldLogChunk($chunkIndex, $totalChunks)) {
-                                $this->logMemory('insert_chunk_after', $chunkIndex + 1, $totalChunks);
-                            }
-
                             $chunkIndex++;
                         }
                     }
 
                     if ($chunk !== []) {
-                        if ($this->shouldLogChunk($chunkIndex, $totalChunks)) {
-                            $this->logMemory('insert_chunk_before', $chunkIndex + 1, $totalChunks);
-                        }
-
                         $preview = $this->insertChunk(
                             $chunk,
                             $chunkIndex,
@@ -439,7 +410,6 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                             (int) $importBatch->id,
                         );
                         $chunkIndex++;
-                        $this->logMemory('insert_chunk_after', $chunkIndex, $totalChunks);
                     }
 
                     $batchItems = [];
@@ -448,7 +418,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                         [$officeCode, $amount] = explode(':', (string) $itemKey, 2);
                         $batchItems[] = [
                             'office_cd' => $officeCode,
-                            'amount' => (int) $amount,
+                            'PointValue' => (int) $amount,
                             'quantity' => $quantity,
                         ];
                     }
@@ -484,12 +454,8 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
                     Cache::put($this->generationKey(), $generation, now()->addDay());
                 }
 
-                $this->logMemory('transaction_rolled_back', null, $totalChunks);
-
                 throw $exception;
             }
-
-            $this->logMemory('database_committed', null, $totalChunks);
 
             if (! ($importBatch instanceof Batch)) {
                 throw new RuntimeException('CSV import batch was not created.');
@@ -520,7 +486,7 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
             Cache::forget('top_up_cards.latest_expires_at');
             Cache::forget('top_up_cards.amount_options');
             $disk->delete($this->path);
-            $this->logMemory('import_completed', null, $totalChunks);
+            $this->logMemory('import_completed', $totalChunks);
             $this->logImportSucceeded($importBatch, $totalCards, $totalValue);
         } finally {
             if (is_resource($stream)) {
@@ -1056,32 +1022,19 @@ class ImportGeneratedTopUpCardsJob implements ShouldQueue
         return ['by_serial' => $bySerial, 'by_pin' => $byPin];
     }
 
-    private function shouldLogChunk(int $chunkIndex, int $totalChunks): bool
+    private function logMemory(string $stage, int $totalChunks): void
     {
-        return $chunkIndex === 0 || $chunkIndex === $totalChunks - 1 || ($chunkIndex + 1) % 20 === 0;
-    }
-
-    /**
-     * @param  array<string, int>  $context
-     */
-    private function logMemory(
-        string $stage,
-        ?int $chunkIndex = null,
-        ?int $totalChunks = null,
-        array $context = [],
-    ): void {
         $memoryUnit = 1024 * 1024;
         $memoryLimit = ini_get('memory_limit');
 
-        Log::info('Top-up card CSV import memory usage', array_merge([
+        Log::info('Top-up card CSV import memory usage', [
             'stage' => $stage,
             'memory_mb' => round(memory_get_usage(false) / $memoryUnit, 2),
             'peak_memory_mb' => round(memory_get_peak_usage(false) / $memoryUnit, 2),
             'allocated_memory_mb' => round(memory_get_usage(true) / $memoryUnit, 2),
-            'chunk_index' => $chunkIndex,
             'total_chunks' => $totalChunks,
             'php_memory_limit' => is_string($memoryLimit) ? $memoryLimit : 'unknown',
-        ], $context));
+        ]);
     }
 
     private function generationKey(): string

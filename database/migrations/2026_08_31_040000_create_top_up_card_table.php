@@ -22,6 +22,7 @@ return new class extends Migration
             $table->foreignId('office_id')->constrained('offices')->cascadeOnUpdate()->restrictOnDelete();
             $table->foreignId('batch_id')->constrained('batches')->cascadeOnUpdate()->restrictOnDelete();
             $table->index('batch_id', 'top_up_card_batch_id_index');
+            $table->index(['office_id', 'deleted_at'], 'top_up_card_office_deleted_at_index');
             $table
                 ->foreignId('ledger_transaction_id')
                 ->nullable()

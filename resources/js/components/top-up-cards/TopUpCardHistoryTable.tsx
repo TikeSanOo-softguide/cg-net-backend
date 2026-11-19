@@ -379,6 +379,10 @@ export function TopUpCardHistoryTable({
                                     <dd className="font-mono font-medium text-foreground">{viewing.serial_no}</dd>
                                 </div>
                                 <div className="space-y-1">
+                                    <dt className="text-muted-foreground">{t('top_up_cards.batch_no')}</dt>
+                                    <dd className="font-medium text-foreground">{viewing.batch_no ?? '—'}</dd>
+                                </div>
+                                <div className="space-y-1">
                                     <dt className="text-muted-foreground">{t('top_up_cards.activated_at')}</dt>
                                     <dd className="font-medium text-foreground">
                                         {formatDate(viewing.activated_at) ?? '—'}
@@ -389,10 +393,6 @@ export function TopUpCardHistoryTable({
                                     <dd className="font-medium text-foreground">
                                         {formatDate(viewing.expires_at) ?? '—'}
                                     </dd>
-                                </div>
-                                <div className="space-y-1">
-                                    <dt className="text-muted-foreground">{t('top_up_cards.batch_no')}</dt>
-                                    <dd className="font-medium text-foreground">{viewing.batch_no ?? '—'}</dd>
                                 </div>
                             </dl>
                         </div>

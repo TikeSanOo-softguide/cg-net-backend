@@ -348,7 +348,7 @@ class TopUpCardBatchController extends Controller
             ->when($batchStatus, fn ($query) => $query->where('status', $batchStatus))
             ->when($batch !== '' && is_numeric($batch), fn ($query) => $query->whereKey((int) $batch))
             ->latest('id')
-            ->paginate(100)
+            ->paginate(15)
             ->withQueryString()
             ->through(
                 fn (Batch $batch) => [
