@@ -1632,10 +1632,22 @@
             "terms_updated": "Terms and conditions updated successfully.",
             "title": "Title",
             "validation": {
+                "description_en_max": "The English description must not exceed 5,000 characters.",
+                "description_en_required": "Please enter an English description.",
+                "description_my_max": "The Myanmar description must not exceed 5,000 characters.",
+                "description_my_required": "Please enter a Myanmar description.",
+                "description_zh_max": "The Chinese description must not exceed 5,000 characters.",
+                "description_zh_required": "Please enter a Chinese description.",
                 "phone_max": "The phone number must not exceed 20 characters.",
                 "phone_required": "Please enter a phone number.",
                 "required": "This field is required.",
-                "title_max": "The title must not exceed 120 characters."
+                "title_en_max": "The English title must not exceed 120 characters.",
+                "title_en_required": "Please enter an English title.",
+                "title_max": "The title must not exceed 120 characters.",
+                "title_my_max": "The Myanmar title must not exceed 120 characters.",
+                "title_my_required": "Please enter a Myanmar title.",
+                "title_zh_max": "The Chinese title must not exceed 120 characters.",
+                "title_zh_required": "Please enter a Chinese title."
             }
         }
     },
