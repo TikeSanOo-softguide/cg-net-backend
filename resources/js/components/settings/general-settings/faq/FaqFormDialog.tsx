@@ -8,6 +8,12 @@ import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/hooks/useTranslation';
+import {
+    getGeneralContentServerError,
+    validateGeneralContent,
+    validateGeneralContentField,
+} from '@/lib/general-settings-validation';
+import type { GeneralContentField, GeneralContentValues } from '@/lib/general-settings-validation';
 import { SupportedLocale } from '@/types';
 
 export type FaqItem = {
@@ -20,16 +26,8 @@ export type FaqItem = {
     description_my: string;
 };
 
-type FormValues = {
-    title_en: string;
-    title_zh: string;
-    title_my: string;
-    description_en: string;
-    description_zh: string;
-    description_my: string;
-};
-
-type FormFieldName = keyof FormValues;
+type FormValues = GeneralContentValues;
+type FormFieldName = GeneralContentField;
 type TouchedFields = Partial<Record<FormFieldName, boolean>>;
 
 type Props = {
@@ -47,34 +45,6 @@ function getInitialValues(item: FaqItem | null): FormValues {
         description_zh: item?.description_zh ?? '',
         description_my: item?.description_my ?? '',
     };
-}
-
-function validateField(field: FormFieldName, value: string, t: (key: string) => string): string | undefined {
-    if (value.trim() === '') {
-        return t('settings.general_settings.validation.required');
-    }
-
-    if (field === 'title_en' || field === 'title_zh' || field === 'title_my') {
-        if (value.length > 120) {
-            return t('settings.general_settings.validation.title_max');
-        }
-    }
-
-    return undefined;
-}
-
-function validateForm(values: FormValues, t: (key: string) => string): Partial<Record<FormFieldName, string>> {
-    const errors: Partial<Record<FormFieldName, string>> = {};
-
-    (Object.keys(values) as FormFieldName[]).forEach((field) => {
-        const error = validateField(field, values[field], t);
-
-        if (error) {
-            errors[field] = error;
-        }
-    });
-
-    return errors;
 }
 
 function FaqFormBody({ item, onClose }: { item: FaqItem | null; onClose: () => void }) {
@@ -109,7 +79,10 @@ function FaqFormBody({ item, onClose }: { item: FaqItem | null; onClose: () => v
             return undefined;
         }
 
-        return form.errors[field] || validateField(field, form.data[field], t);
+        return (
+            getGeneralContentServerError(form.errors[field], field, t) ||
+            validateGeneralContentField(field, form.data[field], t)
+        );
     };
 
     const fieldState = (field: FormFieldName): 'idle' | 'error' | 'success' => {
@@ -117,7 +90,10 @@ function FaqFormBody({ item, onClose }: { item: FaqItem | null; onClose: () => v
             return 'idle';
         }
 
-        if (form.errors[field] || validateField(field, form.data[field], t)) {
+        if (
+            getGeneralContentServerError(form.errors[field], field, t) ||
+            validateGeneralContentField(field, form.data[field], t)
+        ) {
             return 'error';
         }
 
@@ -138,7 +114,7 @@ function FaqFormBody({ item, onClose }: { item: FaqItem | null; onClose: () => v
             description_my: true,
         });
 
-        const errors = validateForm(form.data, t);
+        const errors = validateGeneralContent(form.data, t);
 
         if (Object.keys(errors).length > 0) {
             form.setError(errors);
@@ -307,7 +283,7 @@ export function FaqFormDialog({ open, onOpenChange, item }: Props) {
         <FormDialog
             open={open}
             onOpenChange={onOpenChange}
-            title={`${isEdit ? t('common.edit') : t('common.create')} ${t('settings.general_settings.faq')}`}
+            title={`${t('settings.general_settings.faq')} ${isEdit ? t('common.edit') : t('common.create')} `}
             description={t('settings.general_settings.content_form_description')}
             icon={isEdit ? SquarePenIcon : PlusIcon}
             size="xl"
