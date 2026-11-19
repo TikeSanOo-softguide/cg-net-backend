@@ -10,6 +10,7 @@ use App\Http\Requests\Api\Auth\LoginRequest;
 use App\Http\Requests\Api\Auth\SessionCheckRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Models\UserLog;
 use App\Services\Auth\ApiAuthenticationService;
 use App\Services\DeviceToken\DeviceTokenService;
 use App\Services\SecurityLog\SecurityLogService;
@@ -94,26 +95,48 @@ class LoginController extends Controller
                 ?->tokens()
                 ->where(fn($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
                 ->exists() ?? false;
+        $payload = [
+            'show_alert' => $showAlert,
+            'device_name' => $showAlert ? $this->signedInDeviceName($user) : null,
+        ];
 
         if ($user !== null && $user->status == UserStatus::Deactivated) {
             return response()->json(
-                ApiMessage::attach(MessageCode::UserDeactivated, [
-                    'show_alert' => $showAlert,
-                ]),
+                ApiMessage::attach(MessageCode::UserDeactivated, $payload),
                 403,
             );
         }
         if ($user !== null && $user->status == UserStatus::Suspended) {
             return response()->json(
-                ApiMessage::attach(MessageCode::UserSuspended, [
-                    'show_alert' => $showAlert,
-                ]),
+                ApiMessage::attach(MessageCode::UserSuspended, $payload),
                 403,
             );
         }
 
-        return response()->json([
-            'show_alert' => $showAlert,
-        ]);
+        if ($showAlert) {
+            return response()->json(ApiMessage::attach(MessageCode::AuthAlreadySignedIn, $payload));
+        }
+
+        return response()->json($payload);
+    }
+
+    private function signedInDeviceName(?User $user): ?string
+    {
+        if ($user === null) {
+            return null;
+        }
+
+        $log = UserLog::query()
+            ->where('user_id', $user->id)
+            ->whereIn('event', [
+                UserLogEvent::LoginSuccess->value,
+                UserLogEvent::RegisterComplete->value,
+            ])
+            ->latest('created_at')
+            ->first();
+        $name = is_array($log?->metadata) ? ($log->metadata['device_name'] ?? null) : null;
+        $name = is_string($name) ? trim($name) : '';
+
+        return $name === '' ? null : $name;
     }
 }

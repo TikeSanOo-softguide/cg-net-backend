@@ -21,9 +21,11 @@ class InternetBillCheckTest extends TestCase
             ->andReturn([
                 'account' => 'FTTH123456789',
                 'productID' => '218',
-                'productName' => '10M',
+                'productName' => '10M_1个月',
+                'productLine' => 'FTTH Home',
                 'productPrice' => 128,
                 'productSpeed' => '10M',
+                'endtime' => '2026-12-31 23:59:59',
                 'name' => 'Maung',
                 'mobile' => '09123456789',
                 'address' => 'Yangon',
@@ -41,6 +43,10 @@ class InternetBillCheckTest extends TestCase
             ->assertJsonPath('data.account', 'FTTH123456789')
             ->assertJsonPath('data.service_type', 'FTTH')
             ->assertJsonPath('data.product_id', '218')
+            ->assertJsonPath('data.product_line', 'FTTH Home')
+            ->assertJsonPath('data.product_speed', '10M')
+            ->assertJsonPath('data.duration', '1个月')
+            ->assertJsonPath('data.end_time', '2026-12-31 23:59:59')
             ->assertJsonPath('data.product_price', 128)
             ->assertJsonPath('data.outstanding_amount', 128)
             ->assertJsonPath('data.customer_name', 'Maung')
@@ -66,7 +72,7 @@ class InternetBillCheckTest extends TestCase
             ->assertJsonPath('code', 'MSG-FTTH-004');
     }
 
-    public function test_check_returns_billing_failed_when_the_provider_rejects_the_lookup(): void
+    public function test_check_returns_not_found_when_the_provider_rejects_the_lookup(): void
     {
         $this->mock(AccountInfoService::class)
             ->shouldReceive('find')
@@ -80,7 +86,7 @@ class InternetBillCheckTest extends TestCase
                 'account_number' => 'FTTH000',
                 'service_type' => 'FTTH',
             ])
-            ->assertStatus(502)
-            ->assertJsonPath('code', 'MSG-FTTH-005');
+            ->assertNotFound()
+            ->assertJsonPath('code', 'MSG-FTTH-004');
     }
 }

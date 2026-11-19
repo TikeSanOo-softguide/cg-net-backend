@@ -21,7 +21,7 @@ class UserLogTest extends TestCase
         UserLog::query()->create([
             'user_id' => $user->id,
             'event' => 'login_success',
-            'metadata' => ['action' => 'login_success'],
+            'metadata' => ['action' => 'login_success', 'device_name' => 'Samsung SM-A155F'],
         ]);
 
         $this->actingAs($admin, 'web')
@@ -32,7 +32,8 @@ class UserLogTest extends TestCase
                     ->component('Logs/UserLog/index')
                     ->has('logs.data', 1)
                     ->where('filterOptions.event', UserLogEvent::values())
-                    ->where('logs.data.0.event', 'login_success'),
+                    ->where('logs.data.0.event', 'login_success')
+                    ->where('logs.data.0.metadata.device_name', 'Samsung SM-A155F'),
             );
     }
 
