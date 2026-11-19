@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Faq;
+use App\Models\SupportContact;
 use App\Models\TermAndCondition;
 use Illuminate\Database\Seeder;
 
@@ -96,5 +97,10 @@ class GeneralSettingSeeder extends Seeder
             Faq::query()->create($faq);
         }
 
+        foreach (['+95 9 123 456 789', '+95 9 987 654 321', '+95 9 555 666 777'] as $phone) {
+            SupportContact::query()->create([
+                'phone' => $phone,
+            ]);
+        }
     }
 }

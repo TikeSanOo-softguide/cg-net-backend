@@ -224,10 +224,16 @@ class GeneralSettingsTest extends TestCase
         }
     }
 
-    public function test_general_settings_seeder_does_not_add_placeholder_support_contacts(): void
+    public function test_general_settings_seeder_adds_support_contacts(): void
     {
         $this->seed(\Database\Seeders\GeneralSettingSeeder::class);
 
-        $this->assertDatabaseCount('support_contacts', 0);
+        $phones = ['+95 9 123 456 789', '+95 9 987 654 321', '+95 9 555 666 777'];
+
+        $this->assertDatabaseCount('support_contacts', count($phones));
+
+        foreach ($phones as $phone) {
+            $this->assertDatabaseHas('support_contacts', ['phone' => $phone]);
+        }
     }
 }
