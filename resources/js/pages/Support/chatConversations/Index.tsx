@@ -90,9 +90,14 @@ export default function Index({
                 <div
                     className={cn(
                         'grid min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-background shadow-sm lg:grid-rows-none',
+                        // mobile rows
+                        showQuickReplies && !selectedConversation
+                            ? 'grid-rows-[auto_minmax(0,1fr)_minmax(0,1fr)]'
+                            : 'grid-rows-[auto_minmax(0,1fr)]',
+                        // desktop columns
                         showQuickReplies
-                            ? 'grid-rows-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1fr)] lg:grid-cols-[minmax(12rem,0.8fr)_minmax(0,2fr)_minmax(14rem,1fr)]'
-                            : 'grid-rows-[minmax(0,1fr)_minmax(0,1.5fr)] lg:grid-cols-[minmax(12rem,0.8fr)_minmax(0,2fr)]',
+                            ? 'lg:grid-cols-[minmax(12rem,0.8fr)_minmax(0,2fr)_minmax(14rem,1fr)]'
+                            : 'lg:grid-cols-[minmax(12rem,0.8fr)_minmax(0,2fr)]',
                     )}
                 >
                     <ConversationList
@@ -108,12 +113,14 @@ export default function Index({
                         quickReplies={quickReplies}
                     />
                     {showQuickReplies ? (
-                        <QuickRepliesPanel
-                            quickReplies={quickReplies}
-                            categories={quickReplyCategories}
-                            conversation={selectedConversation}
-                            onUse={setMessage}
-                        />
+                        <div className={selectedConversation ? 'hidden lg:contents' : 'contents'}>
+                            <QuickRepliesPanel
+                                quickReplies={quickReplies}
+                                categories={quickReplyCategories}
+                                conversation={selectedConversation}
+                                onUse={setMessage}
+                            />
+                        </div>
                     ) : null}
                 </div>
             </PageContent>
