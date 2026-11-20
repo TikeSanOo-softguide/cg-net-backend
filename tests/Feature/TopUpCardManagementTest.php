@@ -5,8 +5,6 @@ namespace Tests\Feature;
 use App\Enums\ActivityLogEvent;
 use App\Enums\ActivityLogName;
 use App\Enums\TopUpCardStatus;
-use App\Http\Controllers\TopUpCard\TopUpCardBatchController;
-use App\Jobs\GenerateTopUpCardsJob;
 use App\Jobs\ImportGeneratedTopUpCardsJob;
 use App\Models\Admin;
 use App\Models\Batch;
@@ -17,7 +15,6 @@ use App\Support\AppPermissions;
 use App\Support\CsvImportException;
 use App\Support\TopUpCardPin;
 use Database\Seeders\RolePermissionSeeder;
-use Illuminate\Bus\Batch as QueueBatch;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
@@ -25,7 +22,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
-use Mockery;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -44,7 +40,7 @@ class TopUpCardManagementTest extends TestCase
 
     public function test_guests_cannot_view_top_up_cards(): void
     {
-        $this->get('/top-up-cards/batch')->assertRedirect('/login');
+        $this->get('/top-up-cards/card-import')->assertRedirect('/login');
     }
 
     public function test_admins_without_permission_are_forbidden(): void
@@ -52,129 +48,7 @@ class TopUpCardManagementTest extends TestCase
         $this->autoGrantPermissions = false;
         $admin = Admin::factory()->create();
 
-        $this->actingAs($admin, 'web')->get('/top-up-cards/batch')->assertForbidden();
-
-        $this->actingAs($admin, 'web')
-            ->post('/top-up-cards/batch', [
-                'amounts' => [['value' => 1000, 'quantity' => 1]],
-                'expires_at' => now()->addDays(30)->toDateString(),
-            ])
-            ->assertForbidden();
-    }
-
-    public function test_admins_can_generate_one_row_per_quantity(): void
-    {
-        $actor = Admin::factory()->create();
-        $actor->assignRole(AppPermissions::SuperAdmin);
-
-        $this->makeOffice('Default Office', 'Main Street', '88');
-
-        Queue::fake();
-
-        $this->actingAs($actor, 'web')
-            ->get('/top-up-cards/batch')
-            ->assertOk()
-            ->assertInertia(
-                fn (Assert $page) => $page
-                    ->component('TopUpCards/Generate')
-                    ->where('amounts', [50, 100, 150, 500]),
-            );
-
-        $this->actingAs($actor, 'web')
-            ->from('/top-up-cards/batch')
-            ->post('/top-up-cards/batch', [
-                'amounts' => [['value' => 3000, 'quantity' => 5], ['value' => 10000, 'quantity' => 2]],
-                'expires_at' => now()->addDays(90)->toDateString(),
-            ])
-            ->assertSessionHasNoErrors()
-            ->assertSessionMissing('error')
-            ->assertRedirect('/top-up-cards/batch');
-
-        Queue::assertPushed(GenerateTopUpCardsJob::class, 2);
-
-        foreach (Queue::pushedJobs()[GenerateTopUpCardsJob::class] as $payload) {
-            $payload['job']->handle();
-        }
-
-        $this->assertDatabaseCount('top_up_card', 0);
-        $this->assertDatabaseCount('batches', 0);
-
-        // Activity is recorded by the batch finally() callback after jobs finish,
-        // not when the generate request is accepted.
-        $this->assertDatabaseMissing('activity_log', [
-            'description' => 'top_up_cards_generation_succeeded',
-        ]);
-
-        $token = session('top_up_card_generation_token');
-        $this->assertIsString($token);
-
-        $batch = Mockery::mock(QueueBatch::class);
-        $batch->id = 'test-batch-id';
-        $batch->totalJobs = 2;
-        $batch->failedJobs = 0;
-        $batch->shouldReceive('processedJobs')->andReturn(2);
-
-        TopUpCardBatchController::logGenerationFinished($token, $batch, 'succeeded');
-
-        $this->assertDatabaseHas('activity_log', [
-            'description' => 'top_up_cards_generation_succeeded',
-            'event' => 'succeeded',
-            'causer_id' => $actor->id,
-        ]);
-
-        $csvResponse = $this->actingAs($actor, 'web')->get('/top-up-cards/export')->assertOk();
-        $csv = $csvResponse->streamedContent();
-
-        $this->actingAs($actor, 'web')
-            ->post('/top-up-cards/cards/import', [
-                'file' => UploadedFile::fake()->createWithContent('generated.csv', $csv),
-            ])
-            ->assertRedirect('/top-up-cards/card-import');
-
-        Queue::assertPushed(ImportGeneratedTopUpCardsJob::class, 1);
-        Queue::pushedJobs()[ImportGeneratedTopUpCardsJob::class][0]['job']->handle();
-
-        $cards = TopUpCard::query()->get();
-        $this->assertCount(7, $cards);
-        $this->assertSame(5, TopUpCard::query()->where('amount', 3000)->count());
-        $this->assertSame(2, TopUpCard::query()->where('amount', 10000)->count());
-        $this->assertTrue(
-            $cards->every(
-                fn (TopUpCard $card): bool => $card->generate_date !== null &&
-                    $card->status === TopUpCardStatus::Pending &&
-                    $card->activated_at === null &&
-                    $card->expires_at === null,
-            ),
-        );
-        $this->assertSame(1, Batch::query()->count());
-    }
-
-    public function test_csv_import_cache_remains_exportable_after_job_completion(): void
-    {
-        $actor = Admin::factory()->create();
-        $actor->assignRole(AppPermissions::SuperAdmin);
-        $office = Office::factory()->create();
-        Storage::fake('local');
-        $serial = '2609111128'.$office->cd.'1001';
-        $pin = '1234567890123456';
-        $path = UploadedFile::fake()->createWithContent(
-            'cards.csv',
-            "serial_no,pin,amount,generate_date\n{$serial},{$pin},1000,2026-11-03\n",
-        )->store('imports/top-up-cards', 'local');
-        $token = 'encrypted-import-export';
-
-        (new ImportGeneratedTopUpCardsJob($path, $token, $actor->id))->handle();
-
-        $response = $this->actingAs($actor, 'web')
-            ->withSession(['top_up_card_generation_token' => $token])
-            ->get('/top-up-cards/export')
-            ->assertOk();
-        $csv = $response->streamedContent();
-
-        $this->assertStringContainsString('SerialNumber,PIN_Code,PointValue,GenerateDate', $csv);
-        $this->assertStringContainsString($serial, $csv);
-        $this->assertStringContainsString('1234-5678-9012-3456', $csv);
-        $this->assertStringContainsString('2026-11-03', $csv);
+        $this->actingAs($admin, 'web')->get('/top-up-cards/card-import')->assertForbidden();
     }
 
     public function test_admins_can_import_csv_with_a_single_data_row(): void
@@ -517,80 +391,6 @@ class TopUpCardManagementTest extends TestCase
         $this->assertDatabaseHas('top_up_card', ['id' => $card->id]);
     }
 
-    public function test_index_filters_by_serial_status_and_amount(): void
-    {
-        $actor = Admin::factory()->create();
-        $actor->assignRole(AppPermissions::SuperAdmin);
-        $match = TopUpCard::factory()->create([
-            'serial_no' => 'TOPUP-AAAA-BBBB-CCCC',
-            'amount' => 5000,
-            'status' => TopUpCardStatus::Active,
-        ]);
-        TopUpCard::factory()->create([
-            'serial_no' => 'TOPUP-DDDD-EEEE-FFFF',
-            'amount' => 1000,
-            'status' => TopUpCardStatus::Blocked,
-        ]);
-
-        $this->actingAs($actor, 'web')
-            ->get('/top-up-cards/batch?search=AAAA&status=valid&amount=5000')
-            ->assertOk()
-            ->assertInertia(
-                fn (Assert $page) => $page
-                    ->component('TopUpCards/Generate')
-                    ->has('cards.data', 1)
-                    ->where('cards.data.0.id', $match->id),
-            );
-    }
-
-    public function test_newly_created_office_is_immediately_available_for_generation(): void
-    {
-        $actor = Admin::factory()->create();
-        $actor->assignRole(AppPermissions::SuperAdmin);
-
-        $existingOffice = $this->makeOffice('Existing Office', 'Main Street', '11');
-
-        $this->actingAs($actor, 'web')
-            ->post('/top-up-cards/offices', [
-                'name_en' => 'New Office',
-                'name_mm' => 'ရုံးအသစ်',
-                'name_zh' => '新办公室',
-                'cd' => '22',
-                'address_en' => 'Second Street',
-                'address_mm' => 'လိပ်စာအသစ်',
-                'address_zh' => '第二街',
-                'phone_num1' => '09123456780',
-                'telegram_link' => 'https://t.me/new-office',
-                'wechat_link' => 'https://wechat.example/new-office',
-                'viber_link' => 'viber://chat?number=09123456780',
-            ])
-            ->assertSessionHasNoErrors();
-
-        $newOffice = Office::query()->where('cd', '22')->firstOrFail();
-        $this->assertDatabaseHas('activity_log', [
-            'log_name' => 'top_up_card_office',
-            'description' => 'office_created',
-            'event' => 'created',
-            'subject_id' => $newOffice->id,
-            'causer_id' => $actor->id,
-        ]);
-        $this->assertSame('https://t.me/new-office', $newOffice->telegram_link);
-        $this->assertSame('https://wechat.example/new-office', $newOffice->wechat_link);
-        $this->assertSame('viber://chat?number=09123456780', $newOffice->viber_link);
-
-        $this->actingAs($actor, 'web')
-            ->get('/top-up-cards/batch')
-            ->assertOk()
-            ->assertInertia(
-                fn (Assert $page) => $page
-                    ->component('TopUpCards/Generate')
-                    ->where('offices', [
-                        ['id' => $existingOffice->id, 'name' => 'Existing Office', 'code' => '11'],
-                        ['id' => $newOffice->id, 'name' => 'New Office', 'code' => '22'],
-                    ]),
-            );
-    }
-
     public function test_office_crud_uses_localized_fields_and_contact_details(): void
     {
         $actor = Admin::factory()->create();
@@ -722,48 +522,6 @@ class TopUpCardManagementTest extends TestCase
             'subject_id' => $card->id,
             'causer_id' => $actor->id,
         ]);
-    }
-
-    public function test_export_requires_a_generated_batch(): void
-    {
-        $actor = Admin::factory()->create();
-        $actor->assignRole(AppPermissions::SuperAdmin);
-
-        Queue::fake();
-
-        $this->makeOffice('Default Office', 'Main Street', '88');
-
-        $this->actingAs($actor, 'web')->get('/top-up-cards/export')->assertNotFound();
-
-        $this->actingAs($actor, 'web')
-            ->from('/top-up-cards/batch')
-            ->post('/top-up-cards/batch', [
-                'amounts' => [['value' => 50, 'quantity' => 1]],
-                'expires_at' => '2028-10-23',
-            ])
-            ->assertSessionHasNoErrors()
-            ->assertSessionMissing('error')
-            ->assertRedirect('/top-up-cards/batch');
-
-        Queue::assertPushed(GenerateTopUpCardsJob::class, 1);
-        Queue::pushedJobs()[GenerateTopUpCardsJob::class][0]['job']->handle();
-
-        $response = $this->actingAs($actor, 'web')
-            ->get('/top-up-cards/export')
-            ->assertOk()
-            ->assertHeader('content-type', 'text/csv; charset=UTF-8');
-
-        $csvLines = array_values(array_filter(preg_split('/\r\n|\n|\r/', trim($response->streamedContent())) ?: []));
-        $this->assertSame(
-            ['SerialNumber', 'PIN_Code', 'PointValue', 'GenerateDate'],
-            str_getcsv($csvLines[0]),
-        );
-        $csvRow = str_getcsv($csvLines[1]);
-        $this->assertCount(4, $csvRow);
-        $this->assertMatchesRegularExpression('/^\d{4}-\d{4}-\d{4}-\d{4}$/', $csvRow[1]);
-        $this->assertSame('50', $csvRow[2]);
-        $this->assertSame(now()->toDateString(), $csvRow[3]);
-        $this->assertStringNotContainsString('*', $csvLines[0]);
     }
 
     public function test_office_assignment_lists_batches_with_cards_regardless_of_status(): void

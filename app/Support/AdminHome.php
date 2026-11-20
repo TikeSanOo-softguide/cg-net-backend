@@ -18,7 +18,7 @@ final class AdminHome
             ['customers.view', '/customers'],
             ['packages.view', '/packages'],
             ['billing.view', '/billing/transactions'],
-            ['top-up-cards.view', '/top-up-cards/batch'],
+            ['top-up-cards.view', '/top-up-cards/card-import'],
             ['service-requests.view', '/service-requests/installations'],
             ['regions.view', '/regions'],
             ['notifications.view', '/notifications/announcements'],

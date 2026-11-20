@@ -62,7 +62,6 @@ const navIconTones: Record<string, string> = {
     '/service-requests/change-password': 'text-[#F59E0B]',
     'top-up-cards': 'text-[#22C55E]',
     '/top-up-cards/offices': 'text-[#0EA5E9]',
-    '/top-up-cards/batch': 'text-[#22C55E]',
     '/top-up-cards/card-import': 'text-[#6366F1]',
     '/top-up-cards/card-history': 'text-[#F97316]',
     notifications: 'text-[#A855F7]',
