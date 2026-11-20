@@ -12,6 +12,7 @@ use App\Models\PackageOrder;
 use App\Models\TopUpCard;
 use App\Models\User;
 use App\Models\Wallet;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -106,6 +107,37 @@ class TransactionHistoryApiTest extends TestCase
         $this->assertSame(['MSG-FTTH-008', 'MSG-FTTH-008'], $codes['ftth_bill:completed']);
         $this->assertSame(['MSG-FTTH-010', 'MSG-FTTH-010'], $codes['cg_bill:processing']);
         $this->assertSame([null, null], $codes['refund:completed']);
+    }
+
+    public function test_related_records_use_the_ledger_transaction_created_at_clock(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-20 08:00:00', config('app.timezone')), function (): void {
+            $user = User::factory()->create();
+            $billTransaction = LedgerTransaction::factory()->create([
+                'type' => LedgerTransactionType::FtthBill,
+            ]);
+            $billPayment = BillPayment::query()->create([
+                'ledger_transaction_id' => $billTransaction->id,
+                'status' => BillPaymentStatus::Processing,
+            ]);
+            $packageTransaction = LedgerTransaction::factory()->create([
+                'type' => LedgerTransactionType::WifiPackage,
+            ]);
+            $packageOrder = PackageOrder::query()->create([
+                'user_id' => $user->id,
+                'ledger_transaction_id' => $packageTransaction->id,
+                'status' => PackageOrderStatus::Processing,
+            ]);
+
+            $this->assertSame(
+                $billTransaction->created_at->toDateTimeString(),
+                $billPayment->created_at->toDateTimeString(),
+            );
+            $this->assertSame(
+                $packageTransaction->created_at->toDateTimeString(),
+                $packageOrder->created_at->toDateTimeString(),
+            );
+        });
     }
 
     public function test_transaction_detail_returns_type_specific_fields_for_the_owner(): void

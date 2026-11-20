@@ -64,7 +64,7 @@ class PackageOrderExport implements FromQuery, ShouldAutoSize, WithHeadings, Wit
             $order->status?->value ?? '',
             $order->activation_result_code ?? '',
             $order->failure_reason ?? '',
-            $order->created_at ?? '',
+            $order->created_at?->toDateTimeString() ?? '',
             $order->completed_at?->toDateTimeString() ?? '',
         ];
     }
