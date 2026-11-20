@@ -208,14 +208,32 @@ class GeneralSettingsTest extends TestCase
 
     public function test_support_contact_api_returns_support_contact_records(): void
     {
-        $contact = SupportContact::query()->create([
-            'phone' => '+95 9 123 456 789',
-        ]);
+        $phones = ['8613800138001', '95977745544445', '66923456789'];
+        $contacts = collect($phones)
+            ->map(fn (string $phone) => SupportContact::query()->create(['phone' => $phone]));
 
-        $this->getJson('/api/general-settings/support-contact')
+        $response = $this->getJson('/api/general-settings/support-contact')
             ->assertOk()
-            ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.id', $contact->id)
-            ->assertJsonPath('data.0.phone', '+95 9 123 456 789');
+            ->assertJsonCount(count($phones), 'data');
+
+        foreach ($contacts as $contact) {
+            $response->assertJsonFragment([
+                'id' => $contact->id,
+                'phone' => $contact->phone,
+            ]);
+        }
+    }
+
+    public function test_general_settings_seeder_adds_support_contacts(): void
+    {
+        $this->seed(\Database\Seeders\GeneralSettingSeeder::class);
+
+        $phones = ['+95 9 123 456 789', '+95 9 987 654 321', '+95 9 555 666 777'];
+
+        $this->assertDatabaseCount('support_contacts', count($phones));
+
+        foreach ($phones as $phone) {
+            $this->assertDatabaseHas('support_contacts', ['phone' => $phone]);
+        }
     }
 }

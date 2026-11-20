@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Support\AppPermissions;
 use App\Support\JsonTranslations;
 use App\Support\NavigationStack;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use Symfony\Component\HttpFoundation\Response;
@@ -79,12 +80,7 @@ class HandleInertiaRequests extends Middleware
                                 ->where('admin_notification_recipients.is_read', false))
                             ->count()
                         : 0)
-                    : ($user
-                        ? $user->appNotifications()
-                            ->whereDate('created_at', today()->toDateString())
-                            ->where('is_read', false)
-                            ->count()
-                        : 0),
+                    : ($user instanceof User ? $user->unreadAppNotificationCount() : 0),
             'totalAdminNotifications' =>
                 $user instanceof Admin && $user->can('notifications.view')
                     ? AdminNotification::query()
@@ -111,7 +107,12 @@ class HandleInertiaRequests extends Middleware
     {
         return $user->appNotifications()
             ->with('templateable')
-            ->whereDate('created_at', today()->toDateString())
+            ->withoutDeletedSources()
+            ->where(function (Builder $query): void {
+                $query->where('is_read', false)
+                    ->orWhereDate('created_at', today()->toDateString());
+            })
+            ->orderBy('is_read')
             ->latest('sent_at')
             ->latest('id')
             ->limit(5)
@@ -141,6 +142,12 @@ class HandleInertiaRequests extends Middleware
         return AdminNotification::query()
             ->whereHas('admins', fn ($query) => $query->whereKey($admin->getKey()))
             ->with(['admins' => fn ($query) => $query->whereKey($admin->getKey())])
+            ->withCount([
+                'admins as recipient_read_status' => fn (Builder $query) => $query
+                    ->whereKey($admin->getKey())
+                    ->where('admin_notification_recipients.is_read', true),
+            ])
+            ->orderBy('recipient_read_status')
             ->latest('created_at')
             ->latest('id')
             ->limit(5)

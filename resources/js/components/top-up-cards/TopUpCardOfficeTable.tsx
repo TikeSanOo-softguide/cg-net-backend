@@ -123,11 +123,14 @@ export function TopUpCardOfficeTable({
                     id: 'address',
                     header: t('top_up_cards.office.address'),
                     mobile: 'meta',
+                    className: 'max-w-[400px] whitespace-normal',
                     cell: (row) => (
-                        <span className="inline-flex items-center gap-1.5">
-                            <MapPinIcon className="size-3.5 text-muted-foreground" />
-                            {row[addressField]}
-                        </span>
+                        <div className="flex min-w-0 items-start gap-1.5">
+                            <MapPinIcon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+                            <span className="min-w-0 whitespace-normal [overflow-wrap:anywhere]">
+                                {row[addressField]}
+                            </span>
+                        </div>
                     ),
                 },
                 {

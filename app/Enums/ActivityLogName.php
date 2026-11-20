@@ -152,6 +152,8 @@ enum ActivityLogName: string
             ),
             self::PushNotification->value => self::eventValues(
                 ActivityLogEvent::Pushed,
+                ActivityLogEvent::Failed,
+                ActivityLogEvent::NoRecipients,
                 ActivityLogEvent::Scheduled,
                 ActivityLogEvent::Cancelled,
             ),

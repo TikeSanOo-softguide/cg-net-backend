@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PushNotificationDeliveryType;
 use App\Enums\PushScheduleStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'title_en',
     'title_zh',
     'title_my',
+    'delivery_type',
     'scheduled_at',
     'status',
     'sent_at',
@@ -22,6 +24,7 @@ class PushSchedule extends Model
     protected function casts(): array
     {
         return [
+            'delivery_type' => PushNotificationDeliveryType::class,
             'scheduled_at' => 'datetime',
             'sent_at' => 'datetime',
             'status' => PushScheduleStatus::class,

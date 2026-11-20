@@ -56,6 +56,7 @@ type DataTableProps<T> = {
     emptyStateClassName?: string;
     className?: string;
     loading?: boolean;
+    suppressVisitLoading?: boolean;
     search?: string;
     onSearchChange?: (value: string) => void;
     filters?: ReactNode;
@@ -101,6 +102,7 @@ export function DataTable<T>({
     emptyStateClassName,
     className,
     loading = false,
+    suppressVisitLoading = false,
     search,
     onSearchChange,
     filters,
@@ -713,7 +715,9 @@ export function DataTable<T>({
                         />
                     ) : null}
                 </CardContent>
-                {loading || visitLoading ? <SpinnerOverlay className="rounded-[12px]" /> : null}
+                {loading || (!suppressVisitLoading && visitLoading) ? (
+                    <SpinnerOverlay className="rounded-[12px]" />
+                ) : null}
             </Card>
             {shouldConfirmBulkDelete ? (
                 <ConfirmDialog

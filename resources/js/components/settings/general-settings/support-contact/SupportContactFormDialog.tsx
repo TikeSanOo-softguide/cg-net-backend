@@ -55,9 +55,9 @@ export function SupportContactFormDialog({ open, onOpenChange, item }: Props) {
         <FormDialog
             open={open}
             onOpenChange={onOpenChange}
-            title={`${isEdit ? t('common.edit') : t('common.create')} ${t(
+            title={`${t(
                 'settings.general_settings.support_contact',
-            )}`}
+            )} ${isEdit ? t('common.edit') : t('common.create')} `}
             description={t('settings.general_settings.contact_form_description')}
             icon={isEdit ? SquarePenIcon : PhoneIcon}
             size="md"

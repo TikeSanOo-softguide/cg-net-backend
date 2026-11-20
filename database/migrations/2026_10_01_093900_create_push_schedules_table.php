@@ -12,12 +12,16 @@ return new class extends Migration {
             $table->string('title_en', 120);
             $table->string('title_zh', 120);
             $table->string('title_my', 120);
-            $table->dateTime('scheduled_at')->index();
+            $table->string('delivery_type')->default('scheduled')->index();
+            $table->dateTime('scheduled_at')->nullable()->index();
             $table->string('status')->default('pending')->index();
             $table->timestamp('sent_at')->nullable();
             $table->text('error_message')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('admins')->nullOnDelete();
             $table->timestamps();
+
+            $table->index(['delivery_type', 'status', 'scheduled_at']);
+            $table->index('created_at');
         });
     }
 
