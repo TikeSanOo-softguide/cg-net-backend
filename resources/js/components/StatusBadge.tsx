@@ -34,6 +34,7 @@ function dotClass(status: string): string {
         case 'suspended':
         case 'slow':
         case 'unpaid':
+        case 'no_recipients':
         case 'redeemed':
         case 'used':
             return 'bg-orange-400';

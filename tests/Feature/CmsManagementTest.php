@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\AnnouncementType;
 use App\Enums\NotificationCategory;
 use App\Enums\NewsStatus;
+use App\Enums\PushNotificationDeliveryType;
 use App\Enums\PushScheduleStatus;
 use App\Models\Admin;
 use App\Models\Announcement;
@@ -421,6 +422,20 @@ class CmsManagementTest extends TestCase
             'is_active' => false,
             'start_date' => today(),
             'end_date' => today(),
+        ]);
+
+        $this->assertFalse(app(PushNotificationService::class)->hasDueWork());
+    }
+
+    public function test_immediate_push_records_are_not_treated_as_scheduled_work(): void
+    {
+        PushSchedule::query()->create([
+            'title_en' => 'Immediate EN',
+            'title_zh' => 'Immediate ZH',
+            'title_my' => 'Immediate MY',
+            'delivery_type' => PushNotificationDeliveryType::Immediate,
+            'scheduled_at' => now()->subMinute(),
+            'status' => PushScheduleStatus::Pending,
         ]);
 
         $this->assertFalse(app(PushNotificationService::class)->hasDueWork());

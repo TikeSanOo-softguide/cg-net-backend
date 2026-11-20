@@ -319,6 +319,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 Route::get('/', [PushNotificationController::class, 'index'])
                     ->middleware('can:notifications.view')
                     ->name('compose');
+                Route::get('/history', [PushNotificationController::class, 'history'])
+                    ->middleware('can:notifications.view')
+                    ->name('compose.history');
                 Route::post('/push-now', [PushNotificationController::class, 'pushNow'])
                     ->middleware('can:notifications.create')
                     ->name('compose.push-now');

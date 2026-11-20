@@ -5,6 +5,7 @@ namespace App\Services\Notification;
 use App\Enums\AnnouncementType;
 use App\Enums\NotificationActionType;
 use App\Enums\NotificationCategory;
+use App\Enums\PushNotificationDeliveryType;
 use App\Enums\PushScheduleStatus;
 use App\Enums\UserStatus;
 use App\Models\Announcement;
@@ -35,6 +36,7 @@ class PushNotificationService
         $today = $now->toDateString();
 
         return PushSchedule::query()
+            ->where('delivery_type', PushNotificationDeliveryType::Scheduled)
             ->where('status', PushScheduleStatus::Pending)
             ->where('scheduled_at', '<=', $now)
             ->exists() ||
@@ -63,6 +65,7 @@ class PushNotificationService
     public function processDue(int $limit = 50): int
     {
         $ids = PushSchedule::query()
+            ->where('delivery_type', PushNotificationDeliveryType::Scheduled)
             ->where('status', PushScheduleStatus::Pending)
             ->where('scheduled_at', '<=', now())
             ->orderBy('scheduled_at')
@@ -126,6 +129,7 @@ class PushNotificationService
         return DB::transaction(function () use ($id): bool {
             $schedule = PushSchedule::query()
                 ->whereKey($id)
+                ->where('delivery_type', PushNotificationDeliveryType::Scheduled)
                 ->where('status', PushScheduleStatus::Pending)
                 ->lockForUpdate()
                 ->first();
