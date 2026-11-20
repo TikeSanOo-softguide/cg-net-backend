@@ -145,6 +145,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::post('/bill-payments/{billPayment}/review/refund', [BillPaymentController::class, 'refundReview'])
                 ->middleware('can:billing.update')
                 ->name('bill-payments.review.refund');
+            Route::get('/package-orders/export', [PackageOrderController::class, 'export'])
+                ->middleware('can:' . AppPermissions::SystemExport)
+                ->name('package-orders.export');
             Route::get('/package-orders', [PackageOrderController::class, 'index'])->name('package-orders.index');
             Route::post('/package-orders/{packageOrder}/review/complete', [
                 PackageOrderController::class,
@@ -316,6 +319,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 Route::get('/', [PushNotificationController::class, 'index'])
                     ->middleware('can:notifications.view')
                     ->name('compose');
+                Route::get('/history', [PushNotificationController::class, 'history'])
+                    ->middleware('can:notifications.view')
+                    ->name('compose.history');
                 Route::post('/push-now', [PushNotificationController::class, 'pushNow'])
                     ->middleware('can:notifications.create')
                     ->name('compose.push-now');
@@ -345,27 +351,21 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 ->middleware('can:support.view')
                 ->group(function () {
                     Route::get('/', [ChatConversationsController::class, 'index'])->name('chat-conversations.index');
-
                     Route::get('/{conversation}', [ChatConversationsController::class, 'show'])->name(
                         'chat-conversations.show',
                     );
-
                     Route::post('/{conversation}/messages', [ChatConversationsController::class, 'sendMessage'])
                         ->name('chat-conversations.messages.store')
                         ->middleware('can:support.create');
-
                     Route::post('/{conversation}/accept', [ChatConversationsController::class, 'accept'])
                         ->name('chat-conversations.accept')
                         ->middleware('can:support.create');
-
                     Route::put('/{conversation}/status', [ChatConversationsController::class, 'updateStatus'])
                         ->name('chat-conversations.status')
                         ->middleware('can:support.update');
-
                     Route::post('/{conversation}/close', [ChatConversationsController::class, 'close'])
                         ->name('chat-conversations.close')
                         ->middleware('can:support.update');
-
                     Route::post('/{conversation}/quick-replies/{quickReply}', [
                         ChatConversationsController::class,
                         'useQuickReply',
@@ -430,18 +430,9 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
             Route::delete('/offices/{office}', [OfficeController::class, 'destroy'])
                 ->middleware('can:top-up-cards.delete')
                 ->name('offices.destroy');
-            Route::get('/export', [TopUpCardBatchController::class, 'export'])
-                ->middleware(['can:top-up-cards.view', 'can:' . AppPermissions::SystemExport])
-                ->name('export');
-            Route::get('/batch', [TopUpCardBatchController::class, 'index'])
-                ->middleware('can:top-up-cards.view')
-                ->name('batch');
             Route::get('/card-import', [TopUpCardBatchController::class, 'cardImport'])
                 ->middleware('can:top-up-cards.view')
                 ->name('card-import');
-            Route::post('/batch', [TopUpCardBatchController::class, 'store'])
-                ->middleware(['can:top-up-cards.create', 'throttle:top-up-card-generation'])
-                ->name('store');
             Route::patch('/batches/{batch}/block', [TopUpCardBatchController::class, 'blockBatch'])
                 ->middleware('can:top-up-cards.update')
                 ->name('batches.block');
@@ -461,6 +452,7 @@ Route::middleware(['auth:web', 'admin.active'])->group(function () {
                 ->middleware('can:top-up-cards.update')
                 ->name('block');
         });
+
     Route::prefix('staff')
         ->name('staff.')
         ->group(function () {

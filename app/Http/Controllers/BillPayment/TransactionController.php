@@ -50,14 +50,14 @@ class TransactionController extends Controller
         $filters = $transactions->filters($request);
         $filters['customer_id'] = $customer->id;
 
-        return $this->download($transactions, $filters, 'customer-transactions.xlsx');
+        return $this->download($transactions, $filters, 'customer_transactions.xlsx');
     }
 
     private function download(TransactionService $transactions, array $filters, ?string $filename = null)
     {
         return Excel::download(
             new TransactionExport($transactions->query($filters)),
-            $filename ?? 'transactions-' . now()->format('Ymd-His') . '.xlsx',
+            $filename ?? 'transactions_' . now()->format('Ymd_His') . '.xlsx',
         );
     }
 }

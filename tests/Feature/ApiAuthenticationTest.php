@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\UserStatus;
 use App\Models\SecurityLog;
 use App\Models\User;
+use App\Models\UserLog;
 use App\Services\Auth\Otp\MockOtpProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -222,6 +223,33 @@ class ApiAuthenticationTest extends TestCase
             ->assertJsonPath('token_type', 'Bearer')
             ->assertJsonPath('user.id', $user->id)
             ->assertJsonStructure(['token', 'expires_at']);
+    }
+
+    public function test_login_records_the_phone_on_the_user_log(): void
+    {
+        $user = User::factory()->create(['phone' => self::PHONE, 'password' => '123456']);
+        $verify = $this->verifyOtpFor('+95922345678');
+
+        $this->withHeaders([
+            'User-Agent' => 'cg-net-mobile/1.0.0 (android; Samsung SM-A155F)',
+            'X-Device-Id' => '8f3c1b2a-4d5e-4f60-8a71-223344556677',
+            'X-Device-Name' => "Samsung\nSM-A155F",
+            'X-Platform' => 'Android',
+        ])->postJson('/api/auth/login', [
+            'verification_token' => $verify['verification_token'],
+            'password' => '123456',
+        ])->assertOk();
+
+        $log = UserLog::query()
+            ->where('user_id', $user->id)
+            ->where('event', 'login_success')
+            ->firstOrFail();
+
+        $this->assertSame('cg-net-mobile/1.0.0 (android; Samsung SM-A155F)', $log->user_agent);
+        $this->assertSame('8f3c1b2a-4d5e-4f60-8a71-223344556677', $log->metadata['device_id']);
+        $this->assertSame('Samsung SM-A155F', $log->metadata['device_name']);
+        $this->assertSame('android', $log->metadata['platform']);
+        $this->assertSame('password', $log->metadata['method']);
     }
 
     public function test_login_requires_a_six_digit_numeric_password(): void

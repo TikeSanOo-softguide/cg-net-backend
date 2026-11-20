@@ -51,7 +51,7 @@ class PackageOrderStatusNotification extends Notification implements ShouldQueue
         $data = array_filter(
             [
                 'type' => 'package_order',
-                'category' => NotificationCategory::Announcement->value,
+                'category' => NotificationCategory::PackageOrder->value,
                 'action_type' => NotificationActionType::PackageOrder->value,
                 'action_id' => (string) $this->orderId,
                 'event' => $this->event->value,

@@ -17,6 +17,7 @@ enum ActivityLogEvent: string
     case LoginBlocked = 'login_blocked';
     case LoginFailed = 'login_failed';
     case MarkedCompleted = 'marked_completed';
+    case NoRecipients = 'no_recipients';
     case Pushed = 'pushed';
     case Refunded = 'refunded';
     case Scheduled = 'scheduled';

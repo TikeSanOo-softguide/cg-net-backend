@@ -204,6 +204,11 @@ export default function UserLogIndex({ logs, filters, filterOptions }: UserLogPr
                             cell: (row) => row.user?.name || 'Unknown',
                         },
                         {
+                            id: 'device_name',
+                            header: t('user_logs.device_name') || 'Device name',
+                            cell: (row) => deviceName(row),
+                        },
+                        {
                             id: 'ip_address',
                             header: t('user_logs.ip_address') || 'IP Address',
                             cell: (row) => row.ip_address || '-',
@@ -261,6 +266,7 @@ function UserLogDetailDialog({
                 <div className="grid gap-3 sm:grid-cols-2">
                     <LogInfo label={t('user_logs.user')} value={log.user?.name || t('user_logs.unknown')} />
                     <LogInfo label={t('customers.phone')} value={log.user?.phone || '-'} />
+                    <LogInfo label={t('user_logs.device_name')} value={deviceName(log)} />
                     <LogInfo label={t('security_logs.event')} value={log.event || '-'} />
                     <LogInfo label={t('user_logs.ip_address')} value={log.ip_address || '-'} />
                     <LogInfo
@@ -284,6 +290,11 @@ function UserLogDetailDialog({
             </div>
         </FormDialog>
     );
+}
+
+function deviceName(row: UserLogRow): string {
+    const name = row.metadata?.device_name;
+    return typeof name === 'string' && name.trim() !== '' ? name : '-';
 }
 
 function LogInfo({ label, value }: { label: string; value: string }) {

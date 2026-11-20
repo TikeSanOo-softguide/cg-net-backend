@@ -5,6 +5,7 @@ namespace App\Services\Notification;
 use App\Enums\AnnouncementType;
 use App\Enums\NotificationActionType;
 use App\Enums\NotificationCategory;
+use App\Enums\PushNotificationDeliveryType;
 use App\Enums\PushScheduleStatus;
 use App\Enums\UserStatus;
 use App\Models\Announcement;
@@ -29,9 +30,42 @@ class PushNotificationService
         return $this->broadcast($titles);
     }
 
+    public function hasDueWork(): bool
+    {
+        $now = now();
+        $today = $now->toDateString();
+
+        return PushSchedule::query()
+            ->where('delivery_type', PushNotificationDeliveryType::Scheduled)
+            ->where('status', PushScheduleStatus::Pending)
+            ->where('scheduled_at', '<=', $now)
+            ->exists() ||
+            Announcement::query()
+                ->where('is_active', true)
+                ->whereNull('push_sent_at')
+                ->where(function ($query) use ($now): void {
+                    $query->whereNull('start_date')->orWhere('start_date', '<=', $now);
+                })
+                ->where(function ($query) use ($now): void {
+                    $query->whereNull('end_date')->orWhere('end_date', '>=', $now);
+                })
+                ->exists() ||
+            Promotion::query()
+                ->where('is_active', true)
+                ->whereNull('push_sent_at')
+                ->where(function ($query) use ($today): void {
+                    $query->whereNull('start_date')->orWhereDate('start_date', '<=', $today);
+                })
+                ->where(function ($query) use ($today): void {
+                    $query->whereNull('end_date')->orWhereDate('end_date', '>=', $today);
+                })
+                ->exists();
+    }
+
     public function processDue(int $limit = 50): int
     {
         $ids = PushSchedule::query()
+            ->where('delivery_type', PushNotificationDeliveryType::Scheduled)
             ->where('status', PushScheduleStatus::Pending)
             ->where('scheduled_at', '<=', now())
             ->orderBy('scheduled_at')
@@ -95,6 +129,7 @@ class PushNotificationService
         return DB::transaction(function () use ($id): bool {
             $schedule = PushSchedule::query()
                 ->whereKey($id)
+                ->where('delivery_type', PushNotificationDeliveryType::Scheduled)
                 ->where('status', PushScheduleStatus::Pending)
                 ->lockForUpdate()
                 ->first();
@@ -335,9 +370,7 @@ class PushNotificationService
 
     private function campaignActionType(Announcement|Promotion $record): NotificationActionType
     {
-        return $record instanceof Promotion
-            ? NotificationActionType::Promotion
-            : NotificationActionType::Announcement;
+        return $record instanceof Promotion ? NotificationActionType::Promotion : NotificationActionType::Announcement;
     }
 
     /**

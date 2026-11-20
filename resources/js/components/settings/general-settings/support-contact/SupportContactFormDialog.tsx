@@ -3,10 +3,11 @@ import { useForm } from '@inertiajs/react';
 import { PhoneIcon, SquarePenIcon } from 'lucide-react';
 
 import { FormActionBar } from '@/components/FormActionBar';
+import { PhoneField } from '@/components/customer/PhoneField';
 import { FormDialog } from '@/components/FormDialog';
 import { FormField } from '@/components/ui/form-field';
-import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/hooks/useTranslation';
+import { isValidAppUserPhone } from '@/lib/phone';
 
 export type SupportContactItem = {
     id: number;
@@ -22,8 +23,8 @@ function validatePhone(phone: string, t: (key: string) => string): string | unde
         return t('settings.general_settings.validation.phone_required');
     }
 
-    if (phone.length > 20) {
-        return t('settings.general_settings.validation.phone_max');
+    if (!isValidAppUserPhone(phone)) {
+        return t('customers.validation.phone_invalid');
     }
 
     return undefined;
@@ -54,9 +55,9 @@ export function SupportContactFormDialog({ open, onOpenChange, item }: Props) {
         <FormDialog
             open={open}
             onOpenChange={onOpenChange}
-            title={`${isEdit ? t('common.edit') : t('common.create')} ${t(
+            title={`${t(
                 'settings.general_settings.support_contact',
-            )}`}
+            )} ${isEdit ? t('common.edit') : t('common.create')} `}
             description={t('settings.general_settings.contact_form_description')}
             icon={isEdit ? SquarePenIcon : PhoneIcon}
             size="md"
@@ -114,12 +115,11 @@ function SupportContactFormBody({ item, onClose }: { item: SupportContactItem | 
                     error={clientError ?? form.errors.phone}
                     required
                 >
-                    <Input
+                    <PhoneField
                         id="support-contact-phone"
-                        type="tel"
                         value={form.data.phone}
-                        onChange={(event) => setPhone(event.target.value)}
-                        aria-invalid={Boolean(clientError ?? form.errors.phone)}
+                        onChange={setPhone}
+                        invalid={Boolean(clientError ?? form.errors.phone)}
                         required
                     />
                 </FormField>

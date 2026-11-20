@@ -5,14 +5,16 @@ namespace Tests\Feature;
 use App\Enums\AnnouncementType;
 use App\Enums\NotificationCategory;
 use App\Enums\NewsStatus;
+use App\Enums\PushNotificationDeliveryType;
+use App\Enums\PushScheduleStatus;
 use App\Models\Admin;
 use App\Models\Announcement;
 use App\Models\Banner;
 use App\Models\Category;
 use App\Models\Contact;
 use App\Models\News;
-use App\Models\Notification as UserNotification;
 use App\Models\Promotion;
+use App\Models\PushSchedule;
 use App\Models\Service;
 use App\Models\User;
 use App\Notifications\AdminPushNotification;
@@ -373,6 +375,70 @@ class CmsManagementTest extends TestCase
 
         $this->assertDatabaseHas('categories', ['id' => $inUse->id, 'deleted_at' => null]);
         $this->assertSoftDeleted($unused);
+    }
+
+    public function test_due_push_work_is_detected_for_each_source(): void
+    {
+        $service = app(PushNotificationService::class);
+        $this->assertFalse($service->hasDueWork());
+
+        $schedule = PushSchedule::query()->create([
+            'title_en' => 'Push EN',
+            'title_zh' => 'Push ZH',
+            'title_my' => 'Push MY',
+            'scheduled_at' => now()->subMinute(),
+            'status' => PushScheduleStatus::Pending,
+        ]);
+        $this->assertTrue($service->hasDueWork());
+
+        $schedule->update(['status' => PushScheduleStatus::Sent]);
+        $announcement = Announcement::factory()->create([
+            'is_active' => true,
+            'start_date' => now()->subHour(),
+            'end_date' => now()->addHour(),
+        ]);
+        $this->assertTrue($service->hasDueWork());
+
+        $announcement->update(['push_sent_at' => now()]);
+        Promotion::factory()->create([
+            'is_active' => true,
+            'start_date' => today(),
+            'end_date' => today(),
+        ]);
+        $this->assertTrue($service->hasDueWork());
+    }
+
+    public function test_due_push_work_ignores_future_and_inactive_records(): void
+    {
+        PushSchedule::query()->create([
+            'title_en' => 'Future EN',
+            'title_zh' => 'Future ZH',
+            'title_my' => 'Future MY',
+            'scheduled_at' => now()->addMinute(),
+            'status' => PushScheduleStatus::Pending,
+        ]);
+        Announcement::factory()->upcoming()->create();
+        Promotion::factory()->create([
+            'is_active' => false,
+            'start_date' => today(),
+            'end_date' => today(),
+        ]);
+
+        $this->assertFalse(app(PushNotificationService::class)->hasDueWork());
+    }
+
+    public function test_immediate_push_records_are_not_treated_as_scheduled_work(): void
+    {
+        PushSchedule::query()->create([
+            'title_en' => 'Immediate EN',
+            'title_zh' => 'Immediate ZH',
+            'title_my' => 'Immediate MY',
+            'delivery_type' => PushNotificationDeliveryType::Immediate,
+            'scheduled_at' => now()->subMinute(),
+            'status' => PushScheduleStatus::Pending,
+        ]);
+
+        $this->assertFalse(app(PushNotificationService::class)->hasDueWork());
     }
 
     public function test_active_announcement_and_promotion_titles_are_pushed_once(): void

@@ -77,7 +77,10 @@ class BillPaymentController extends Controller
     {
         $filters = $this->filters($request);
 
-        return Excel::download(new BillPaymentExport($this->query($filters)), 'bill-payments.xlsx');
+        return Excel::download(
+            new BillPaymentExport($this->query($filters)),
+            'bill_payments_' . now()->format('Ymd_His') . '.xlsx',
+        );
     }
 
     public function resolveReview(

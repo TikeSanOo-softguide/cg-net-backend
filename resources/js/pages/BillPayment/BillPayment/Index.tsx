@@ -374,7 +374,7 @@ function BillPaymentDetailDialog({
             open={open}
             onOpenChange={onOpenChange}
             title={t('bill_payments.details')}
-            description={payment.transaction_no || t('bill_payments.details_description')}
+            description={t('bill_payments.details_description')}
             icon={ReceiptIcon}
             size="xl"
         >
@@ -397,7 +397,12 @@ function BillPaymentDetailDialog({
                     <PaymentInfo label={t('bill_payments.account_number')} value={payment.broadband_account_number} />
                     <PaymentInfo label={t('bill_payments.service_type')} value={payment.service_type} />
                     <PaymentInfo label={t('transactions.customer')} value={payment.customer_name} />
-                    <PaymentInfo label={t('customers.phone')} value={payment.customer_phone} format="phone" copyable />
+                    <PaymentInfo
+                        label={t('transactions.detail_fields.customer_phone')}
+                        value={payment.customer_phone}
+                        format="phone"
+                        copyable
+                    />
                     <PaymentInfo
                         label={t('transactions.amount')}
                         value={payment.amount === null ? null : formatTopUpAmount(payment.amount)}

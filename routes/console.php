@@ -4,6 +4,7 @@ use App\Console\Commands\ExpireTopUpCards;
 use App\Console\Commands\RunDailyLedgerHealthScan;
 use App\Jobs\ProcessDuePushSchedulesJob;
 use App\Jobs\ScanDueInternetBillsJob;
+use App\Services\Notification\PushNotificationService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -12,7 +13,15 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::job(new ProcessDuePushSchedulesJob())->everyMinute();
+Schedule::call(function (PushNotificationService $service): void {
+    if ($service->hasDueWork()) {
+        ProcessDuePushSchedulesJob::dispatch();
+    }
+})
+    ->name('process-due-push-schedules')
+    ->everyMinute()
+    ->withoutOverlapping(1)
+    ->onOneServer();
 
 Schedule::job(new ScanDueInternetBillsJob())->dailyAt('7:00')->withoutOverlapping()->onOneServer();
 

@@ -40,10 +40,20 @@ class InternetBillController extends Controller
 
         try {
             $account = $this->accountInfo->find($serviceType, $accountNumber);
-        } catch (ConnectionException|BroadbandApiException) {
+        } catch (ConnectionException) {
             return response()->json(
                 ApiMessage::attach(MessageCode::FtthBillingFailed, ['success' => false]),
                 502,
+            );
+        } catch (BroadbandApiException $exception) {
+            $missing = $exception->errorCode === 'broadband_api_account_request_rejected';
+
+            return response()->json(
+                ApiMessage::attach(
+                    $missing ? MessageCode::FtthAccountMissing : MessageCode::FtthBillingFailed,
+                    ['success' => false],
+                ),
+                $missing ? 404 : 502,
             );
         }
 
@@ -78,8 +88,11 @@ class InternetBillController extends Controller
                 'service_type' => $serviceType,
                 'product_id' => (string) $productId,
                 'product_name' => $this->accountText($account, ['productName']),
+                'product_line' => $this->accountText($account, ['productLine', 'product_line']),
                 'product_price' => $price,
                 'product_speed' => $this->accountText($account, ['productSpeed']),
+                'duration' => $this->accountDuration($account),
+                'end_time' => $this->accountText($account, ['endtime', 'endTime', 'end_time']),
                 'customer_name' => $this->accountText($account, ['name', 'customerName', 'customer_name']),
                 'phone' => $this->accountText($account, ['mobile', 'phone']),
                 'address' => $this->accountText($account, ['address']),
@@ -193,6 +206,24 @@ class InternetBillController extends Controller
             if (is_int($value) || is_float($value)) {
                 return (string) $value;
             }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $account
+     */
+    private function accountDuration(array $account): ?string
+    {
+        $direct = $this->accountText($account, ['duration', 'productDuration', 'term']);
+        if ($direct !== null) {
+            return $direct;
+        }
+
+        $name = $this->accountText($account, ['productName']);
+        if ($name !== null && preg_match('/_(\d*个?月)$/u', $name, $match) === 1) {
+            return $match[1];
         }
 
         return null;

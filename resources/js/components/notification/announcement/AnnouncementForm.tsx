@@ -106,7 +106,7 @@ export function AnnouncementForm({ form, onSubmit, onCancel, mode = 'create' }: 
         <CmsFormShell onSubmit={submit} onCancel={onCancel} processing={form.processing} mode={mode}>
             <div className="sm:col-span-2">
                 <p className="mb-2 text-[12px] font-medium text-foreground">{t('notification.announcement.type')}</p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-x-3.5">
                     {ANNOUNCEMENT_TYPES.map((type) => {
                         const selected = form.data.type === type;
                         const Icon = type === 'system' ? SettingsIcon : MegaphoneIcon;
@@ -122,6 +122,7 @@ export function AnnouncementForm({ form, onSubmit, onCancel, mode = 'create' }: 
                                 }}
                                 className={cn(
                                     'group flex items-center gap-2 rounded-[6px] border px-2.5 py-2 text-left transition-colors',
+                                    type === 'system' && 'md:ml-3',
                                     selected
                                         ? 'border-primary bg-primary/10 ring-1 ring-primary/25'
                                         : 'border-border/70 bg-background hover:border-primary/30',

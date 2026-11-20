@@ -166,6 +166,7 @@ class NotificationTemplateTest extends TestCase
 
         $notification = new InternetBillPaymentStatusNotification(
             event: BillPaymentNotificationEvent::Completed,
+            billPaymentId: 100,
             transactionNo: 'TX-100',
             amount: 1200,
             accountNumber: 'CG1234',
@@ -191,6 +192,7 @@ class NotificationTemplateTest extends TestCase
         ] as [$event, $templateType]) {
             $notification = new InternetBillPaymentStatusNotification(
                 event: $event,
+                billPaymentId: 100,
                 transactionNo: 'TX-100',
                 amount: 1200,
                 accountNumber: 'CG1234',

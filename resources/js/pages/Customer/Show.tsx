@@ -44,7 +44,7 @@ import { useCan } from '@/hooks/useCan';
 import { useReturnTo } from '@/hooks/useReturnTo';
 import { navigationPopHeaders } from '@/lib/navigation-stack';
 import { useTranslation } from '@/hooks/useTranslation';
-import { cn, formatDate, formatDateTime } from '@/lib/utils';
+import { cn, formatDate, formatDateTime, truncateText } from '@/lib/utils';
 
 type Customer = {
     id: number;
@@ -63,18 +63,26 @@ type LocalizedText = {
 type AccountBinding = {
     service_type: string | null;
     account_number: string;
-    status: string;
     package_name: string | null;
+    address: string | null;
+    starttime: string | null;
+    endtime: string | null;
 };
 
 type SessionInfo = {
+    device_name: string | null;
+    platform: 'android' | 'ios' | 'web' | null;
     ip_address: string | null;
-    user_agent: string | null;
-    token_id: number;
-    token_name: string;
     last_used_at: string | null;
     expires_at: string | null;
 };
+
+function sessionPlatformLabel(platform: SessionInfo['platform']): string {
+    if (platform === 'ios') return 'iOS';
+    if (platform === 'android') return 'Android';
+    if (platform === 'web') return 'Web';
+    return '—';
+}
 
 type PackageRow = {
     id: number;
@@ -349,28 +357,28 @@ export default function CustomersShow({
                             </div>
                             {sessionInfo ? (
                                 <dl className="grid gap-1 border-t border-border/60 px-1 pt-3 sm:grid-cols-3">
+                                    <div className="m-1 min-w-0 rounded-[8px] border border-border/60 bg-muted/25 px-3 py-2.5 sm:col-span-2">
+                                        <dt className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                                            {t('customers.session_device')}
+                                        </dt>
+                                        <dd className="break-all font-heading text-sm leading-snug">
+                                            {sessionInfo.device_name || '—'}
+                                        </dd>
+                                    </div>
+                                    <div className="m-1 min-w-0 rounded-[8px] border border-border/60 bg-muted/25 px-3 py-2.5">
+                                        <dt className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                                            {t('customers.session_platform')}
+                                        </dt>
+                                        <dd className="font-heading text-sm">
+                                            {sessionPlatformLabel(sessionInfo.platform)}
+                                        </dd>
+                                    </div>
                                     <div className="m-1 min-w-0 rounded-[8px] border border-border/60 bg-muted/25 px-3 py-2.5">
                                         <dt className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                                             {t('customers.session_ip')}
                                         </dt>
                                         <dd className="break-all font-heading text-sm tabular-nums">
                                             {sessionInfo.ip_address || '—'}
-                                        </dd>
-                                    </div>
-                                    <div className="m-1 min-w-0 rounded-[8px] border border-border/60 bg-muted/25 px-3 py-2.5 sm:col-span-2">
-                                        <dt className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                                            {t('customers.session_device')}
-                                        </dt>
-                                        <dd className="break-all font-heading text-sm leading-snug">
-                                            {sessionInfo.user_agent || '—'}
-                                        </dd>
-                                    </div>
-                                    <div className="m-1 min-w-0 rounded-[8px] border border-border/60 bg-muted/25 px-3 py-2.5">
-                                        <dt className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                                            {t('customers.session_token')}
-                                        </dt>
-                                        <dd className="break-all font-heading text-sm tabular-nums">
-                                            #{sessionInfo.token_id} ({sessionInfo.token_name})
                                         </dd>
                                     </div>
                                     <div className="m-1 min-w-0 rounded-[8px] border border-border/60 bg-muted/25 px-3 py-2.5">
@@ -397,7 +405,7 @@ export default function CustomersShow({
 
                         <DetailSection
                             icon={WifiIcon}
-                            title={t('customers.broadband_accounts')}
+                            title={t('customers.broadband_account')}
                             description={t('customers.broadband_hint')}
                             actions={can('customers.update') ? (!accountBinding ? bindFilters : undefined) : null}
                         >
@@ -448,11 +456,22 @@ export default function CustomersShow({
                                         ),
                                     },
                                     {
-                                        id: 'status',
-                                        header: t('common.status'),
+                                        id: 'address',
+                                        header: t('common.address'),
                                         mobile: 'badge',
-                                        searchValue: (row) => row.status,
-                                        cell: (row) => <span>{row.status || '-'}</span>,
+                                        cell: (row) => <span>{row.address ? truncateText(row.address, 15) : '-'}</span>,
+                                    },
+                                    {
+                                        id: 'starttime',
+                                        header: t('common.start_date'),
+                                        mobile: 'meta',
+                                        cell: (row) => <span>{row.starttime ? formatDate(row.starttime) : '-'}</span>,
+                                    },
+                                    {
+                                        id: 'endtime',
+                                        header: t('common.end_date'),
+                                        mobile: 'meta',
+                                        cell: (row) => <span>{row.endtime ? formatDate(row.endtime) : '-'}</span>,
                                     },
                                 ]}
                             />

@@ -1,5 +1,5 @@
-import { Head, router } from '@inertiajs/react';
-import { BanIcon, CalendarClockIcon } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import { BanIcon, CalendarClockIcon, HistoryIcon } from 'lucide-react';
 import { useState } from 'react';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -8,6 +8,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { PushNotificationForm } from '@/components/notification/push/PushNotificationForm';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TableActionButton } from '@/components/TableActionButton';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useCan } from '@/hooks/useCan';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -19,7 +20,7 @@ export type PushScheduleItem = {
     title_zh: string;
     title_my: string;
     scheduled_at: string | null;
-    status: 'pending' | 'sent' | 'failed' | 'cancelled';
+    status: 'pending';
     error_message: string | null;
     created_at: string | null;
 };
@@ -47,7 +48,16 @@ export default function PushComposeIndex({ schedules }: Props) {
         <>
             <Head title={t('menu.push_composer')} />
             <PageContent>
-                <PageHeader />
+                <PageHeader
+                    actions={
+                        <Button asChild size="sm">
+                            <Link href="/notifications/compose/history">
+                                <HistoryIcon className="size-3.5" />
+                                {t('notification.push.see_history')}
+                            </Link>
+                        </Button>
+                    }
+                />
 
                 {can('notifications.create') ? (
                     <Card className="gap-0 overflow-hidden border-0 py-0 shadow-[0_4px_16px_rgb(23_50_54/0.06)] dark:shadow-[0_4px_16px_rgb(0_0_0/0.22)]">

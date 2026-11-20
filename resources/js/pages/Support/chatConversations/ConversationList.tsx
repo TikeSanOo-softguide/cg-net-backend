@@ -4,7 +4,7 @@ import { MessageCircleIcon, SearchIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatTime as formatAppTime } from '@/lib/utils';
+import { appTimezone, formatTime as formatAppTime } from '@/lib/utils';
 
 import type { ChatFilters, ConversationSummary } from './types';
 
@@ -64,7 +64,78 @@ export function ConversationList({ conversations, filters, selectedId }: Convers
                     ))}
                 </div>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="flex gap-4 overflow-x-auto px-4 py-3 lg:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {conversations.map((conversation) => {
+                    const name = conversation.user?.name ?? t('support.chat_conversations.guest');
+                    const selected = selectedId === conversation.id;
+
+                    return (
+                        <button
+                            key={conversation.id}
+                            type="button"
+                            onClick={() =>
+                                router.get(
+                                    '/support/conversations',
+                                    { conversation: conversation.id },
+                                    { preserveState: true, preserveScroll: true },
+                                )
+                            }
+                            className="flex w-16 shrink-0 flex-col items-center gap-1.5"
+                        >
+                            <span className="relative">
+                                <span
+                                    className={cn(
+                                        'flex size-12 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary',
+                                        selected && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
+                                    )}
+                                >
+                                    {name
+                                        .split(' ')
+                                        .map((part) => part[0])
+                                        .join('')
+                                        .slice(0, 2)
+                                        .toUpperCase()}
+                                </span>
+
+                                {/* status dot */}
+                                <span
+                                    className={cn(
+                                        'absolute bottom-0 right-0 size-3 rounded-full border-2 border-background',
+                                        conversation.status === 'closed'
+                                            ? 'bg-muted-foreground/40'
+                                            : conversation.status === 'waiting_agent'
+                                              ? 'bg-amber-400'
+                                              : 'bg-emerald-400',
+                                    )}
+                                />
+
+                                {/* unread badge */}
+                                {conversation.unread_count > 0 ? (
+                                    <span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-4 text-primary-foreground">
+                                        {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
+                                    </span>
+                                ) : null}
+                            </span>
+
+                            <span
+                                className={cn(
+                                    'w-full truncate text-center text-[11px]',
+                                    selected ? 'font-semibold text-foreground' : 'text-muted-foreground',
+                                )}
+                            >
+                                {name}
+                            </span>
+                        </button>
+                    );
+                })}
+
+                {conversations.length === 0 ? (
+                    <p className="w-full py-3 text-center text-xs text-muted-foreground">
+                        {t('support.chat_conversations.no_conversations')}
+                    </p>
+                ) : null}
+            </div>
+            <div className="hidden min-h-0 flex-1 overflow-y-auto lg:block">
                 {conversations.map((conversation) => (
                     <button
                         key={conversation.id}
@@ -163,5 +234,27 @@ export function formatTime(value: string | null | undefined) {
 }
 
 export function formatDateTime(value: string) {
-    return formatAppTime(value);
+    const trimmed = value.trim();
+    const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(trimmed);
+    const date = new Date(
+        !hasTimezone && /^\d{4}-\d{2}-\d{2}[T ]/.test(trimmed) ? `${trimmed.replace(' ', 'T')}Z` : trimmed,
+    );
+
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+
+    const parts = new Intl.DateTimeFormat('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+        timeZone: hasTimezone ? appTimezone() : 'UTC',
+    }).formatToParts(date);
+    const values = Object.fromEntries(parts.map(({ type, value: partValue }) => [type, partValue]));
+
+    return `${values.day} ${values.month} ${values.year} ${values.hour}:${values.minute}:${values.second} ${values.dayPeriod.toLowerCase()}`;
 }

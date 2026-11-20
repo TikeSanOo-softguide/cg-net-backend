@@ -4,6 +4,7 @@ import { useForm } from '@inertiajs/react';
 import { FormActionBar } from '@/components/FormActionBar';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
     validateOffice,
@@ -182,28 +183,44 @@ export function TopUpCardOfficeForm({ item, officeCds, onClose }: TopUpCardOffic
                                     required={required || isCode}
                                     error={error}
                                 >
-                                    <Input
-                                        id={`office-${field}`}
-                                        type={isCode ? 'text' : field.startsWith('phone_num') ? 'tel' : 'text'}
-                                        inputMode={isCode ? 'numeric' : undefined}
-                                        maxLength={
-                                            isCode
-                                                ? 2
-                                                : field.startsWith('phone_num')
-                                                  ? 16
-                                                  : field.endsWith('_link')
-                                                    ? 255
-                                                    : undefined
-                                        }
-                                        value={form.data[field]}
-                                        aria-invalid={Boolean(error)}
-                                        onBlur={() => markTouched(field)}
-                                        onChange={(event) => {
-                                            markTouched(field);
-                                            form.setData(field, event.target.value);
-                                            form.clearErrors(field);
-                                        }}
-                                    />
+                                    {field.startsWith('address_') ? (
+                                        <Textarea
+                                            id={`office-${field}`}
+                                            rows={2}
+                                            maxLength={255}
+                                            value={form.data[field]}
+                                            aria-invalid={Boolean(error)}
+                                            onBlur={() => markTouched(field)}
+                                            onChange={(event) => {
+                                                markTouched(field);
+                                                form.setData(field, event.target.value);
+                                                form.clearErrors(field);
+                                            }}
+                                        />
+                                    ) : (
+                                        <Input
+                                            id={`office-${field}`}
+                                            type={isCode ? 'text' : field.startsWith('phone_num') ? 'tel' : 'text'}
+                                            inputMode={isCode ? 'numeric' : undefined}
+                                            maxLength={
+                                                isCode
+                                                    ? 2
+                                                    : field.startsWith('phone_num')
+                                                      ? 16
+                                                      : field.endsWith('_link')
+                                                        ? 255
+                                                        : undefined
+                                            }
+                                            value={form.data[field]}
+                                            aria-invalid={Boolean(error)}
+                                            onBlur={() => markTouched(field)}
+                                            onChange={(event) => {
+                                                markTouched(field);
+                                                form.setData(field, event.target.value);
+                                                form.clearErrors(field);
+                                            }}
+                                        />
+                                    )}
                                 </FormField>
                             );
                         })}
