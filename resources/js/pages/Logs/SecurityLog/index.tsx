@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { JSX, useEffect, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import { CalendarIcon, EyeIcon, HistoryIcon } from 'lucide-react';
 
@@ -198,23 +198,25 @@ export default function SecurityLogIndex({ logs, filters, filterOptions }: Secur
                         {
                             id: 'actor',
                             header: t('security_logs.actor'),
-                            cell: (row) => {
-                                return row.actor?.name || 'User';
-                            },
-                        },
-
-                        {
-                            id: 'event',
-                            header: t('security_logs.event'),
                             className: 'font-medium',
-                            sortable: true,
-                            cell: (row) => row.event,
+                            cell: (row) => row.actor?.name || t('security_logs.system'),
+                        },
+                        {
+                            id: 'device_name',
+                            header: t('security_logs.device_name'),
+                            cell: (row) => deviceName(row),
                         },
                         {
                             id: 'ip_address',
                             header: t('security_logs.ip_address'),
                             sortable: true,
                             cell: (row) => row.ip_address || '-',
+                        },
+                        {
+                            id: 'event',
+                            header: t('security_logs.event'),
+                            sortable: true,
+                            cell: (row) => row.event || '-',
                         },
                         {
                             id: 'created_at',
@@ -260,10 +262,11 @@ function SecurityLogDetailDialog({
         >
             <div className="space-y-3 overflow-y-auto p-4 sm:p-5">
                 <div className="grid gap-3 sm:grid-cols-2">
-                    <LogInfo label={t('security_logs.event')} value={log.event || '-'} />
                     <LogInfo label={t('security_logs.actor')} value={log.actor?.name || t('security_logs.system')} />
                     <LogInfo label={t('security_logs.actor_type')} value={log.actor?.type || '-'} />
+                    <LogInfo label={t('security_logs.device_name')} value={deviceName(log)} />
                     <LogInfo label={t('security_logs.ip_address')} value={log.ip_address || '-'} />
+                    <LogInfo label={t('security_logs.event')} value={log.event || '-'} />
                     <LogInfo
                         label={t('security_logs.date')}
                         value={log.created_at ? formatDateTime(log.created_at) : '-'}
@@ -273,28 +276,71 @@ function SecurityLogDetailDialog({
                 <LogInfo label={t('security_logs.user_agent')} value={log.user_agent || '-'} />
 
                 {log.metadata && Object.keys(log.metadata).length > 0 ? (
-                    <div className="mt-4 overflow-hidden rounded-lg border border-border/60 bg-muted/10">
+                    <div className="mt-4 overflow-hidden rounded-xl border border-border/60 bg-muted/10">
                         <div className="border-b border-border/60 bg-muted/20 px-3 py-2 text-xs font-semibold text-muted-foreground sm:px-4">
                             {t('security_logs.metadata')}
                         </div>
                         <div className="divide-y divide-border/50">
-                            {Object.entries(log.metadata).map(([key, value]) => (
-                                <div
-                                    key={key}
-                                    className="grid grid-cols-[minmax(140px,0.8fr)_minmax(0,1fr)] gap-3 px-3 py-3 text-xs sm:px-4"
-                                >
-                                    <span className="font-medium text-foreground">{key}</span>
-                                    <span className="min-w-0 break-words text-foreground">
-                                        {formatMetadataValue(value)}
-                                    </span>
-                                </div>
-                            ))}
+                            {renderMetaRows(log.metadata, t('security_logs.value'))}
                         </div>
                     </div>
                 ) : null}
             </div>
         </FormDialog>
     );
+}
+
+function deviceName(row: SecurityLogRow): string {
+    const name = row.metadata?.device_name;
+    return typeof name === 'string' && name.trim() !== '' ? name : '-';
+}
+
+function renderMetaRows(value: unknown, valueLabel: string): JSX.Element[] {
+    if (value === null || value === undefined) {
+        return [
+            <div
+                key="meta-null"
+                className="grid grid-cols-[minmax(140px,0.8fr)_minmax(0,1fr)] gap-3 px-3 py-3 text-xs sm:px-4"
+            >
+                <span className="font-medium text-foreground">{valueLabel}</span>
+                <span className="min-w-0 break-words text-foreground">-</span>
+            </div>,
+        ];
+    }
+
+    if (Array.isArray(value)) {
+        return value.map((item, index) => (
+            <div
+                key={`meta-array-${index}`}
+                className="grid grid-cols-[minmax(140px,0.8fr)_minmax(0,1fr)] gap-3 px-3 py-3 text-xs sm:px-4"
+            >
+                <span className="font-medium text-foreground">[{index}]</span>
+                <span className="min-w-0 break-words text-foreground">{formatMetadataValue(item)}</span>
+            </div>
+        ));
+    }
+
+    if (typeof value === 'object') {
+        return Object.entries(value as Record<string, unknown>).map(([key, child]) => (
+            <div
+                key={key}
+                className="grid grid-cols-[minmax(140px,0.8fr)_minmax(0,1fr)] gap-3 px-3 py-3 text-xs sm:px-4"
+            >
+                <span className="font-medium text-foreground">{key}</span>
+                <span className="min-w-0 break-words text-foreground">{formatMetadataValue(child)}</span>
+            </div>
+        ));
+    }
+
+    return [
+        <div
+            key="meta-scalar"
+            className="grid grid-cols-[minmax(140px,0.8fr)_minmax(0,1fr)] gap-3 px-3 py-3 text-xs sm:px-4"
+        >
+            <span className="font-medium text-foreground">{valueLabel}</span>
+            <span className="min-w-0 break-words text-foreground">{formatMetadataValue(value)}</span>
+        </div>,
+    ];
 }
 
 function formatMetadataValue(value: unknown): string {
@@ -306,7 +352,7 @@ function formatMetadataValue(value: unknown): string {
 
 function LogInfo({ label, value }: { label: string; value: string }) {
     return (
-        <div className="rounded-lg border border-border/60 bg-muted/20 p-3.5">
+        <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
             <p className="text-xs font-medium text-muted-foreground">{label}</p>
             <p className="mt-1 break-words text-sm font-semibold text-foreground">{value}</p>
         </div>

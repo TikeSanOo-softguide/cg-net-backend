@@ -20,18 +20,22 @@ class ActivityLogExport implements FromQuery, ShouldAutoSize, WithHeadings, With
 
     public function headings(): array
     {
-        return ['Actor', 'Action', 'Subject', 'Event', 'Log', 'Occurred At'];
+        return ['Actor', 'Device name', 'Action', 'Subject', 'Event', 'Log', 'Metadata', 'Occurred At'];
     }
 
     public function map(mixed $activity): array
     {
         /** @var Activity $activity */
+        $properties = $activity->properties?->all() ?? [];
+
         return [
             $activity->causer?->username ?? 'System',
+            is_string($properties['device_name'] ?? null) ? $properties['device_name'] : '',
             $activity->description,
             $this->subject($activity),
             $activity->event ?? '',
             $activity->log_name ?? '',
+            json_encode($properties, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '',
             $activity->created_at?->toDateTimeString() ?? '',
         ];
     }

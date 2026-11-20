@@ -14,6 +14,7 @@ use App\Services\PackageActivation\FakePackageActivationService;
 use App\Services\PackageActivation\PackageActivationServiceInterface;
 use App\Services\PackageActivation\RealPackageActivationService;
 use App\Support\AppPermissions;
+use App\Support\DeviceRequestMetadata;
 use App\Support\JsonTranslations;
 use App\Support\Like;
 use Illuminate\Auth\Events\Login;
@@ -26,6 +27,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Spatie\Activitylog\Models\Activity;
 use Laravel\Sanctum\Events\TokenAuthenticated;
 use RuntimeException;
 
@@ -68,6 +70,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->registerLikeMacros();
         $this->configureRateLimiting();
+        $this->registerActivityDeviceMetadata();
 
         // Sliding window: every authenticated API request pushes the token expiry forward.
         Event::listen(
@@ -98,6 +101,38 @@ class AppServiceProvider extends ServiceProvider
             }
 
             return null;
+        });
+    }
+
+    private function registerActivityDeviceMetadata(): void
+    {
+        Activity::creating(function (Activity $activity): void {
+            $request = request();
+            $extra = DeviceRequestMetadata::from($request);
+            $userAgent = trim((string) $request->userAgent());
+
+            if ($userAgent !== '') {
+                $extra['user_agent'] = $userAgent;
+                $ipAddress = $request->ip();
+
+                if (is_string($ipAddress) && $ipAddress !== '') {
+                    $extra['ip_address'] = $ipAddress;
+                }
+            }
+
+            if ($extra === []) {
+                return;
+            }
+
+            $properties = $activity->properties?->all() ?? [];
+
+            foreach ($extra as $key => $value) {
+                if (!array_key_exists($key, $properties) || $properties[$key] === null || $properties[$key] === '') {
+                    $properties[$key] = $value;
+                }
+            }
+
+            $activity->properties = $properties;
         });
     }
 

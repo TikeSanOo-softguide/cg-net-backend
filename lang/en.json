@@ -4,16 +4,21 @@
         "admin": "Actor",
         "description": "Action",
         "details": "Activity Log Details",
+        "device_name": "Device name",
         "event": "Event",
         "field": "Field",
+        "ip_address": "IP Address",
         "invalid_date_range": "To date must be equal to or after the from date.",
         "log": "Log",
+        "metadata": "Metadata",
         "new_value": "New Value",
         "no_changes": "No changed values recorded.",
         "occurred_at": "Occurred at",
         "old_value": "Old Value",
         "subject": "Subject",
-        "username": "Username"
+        "username": "Username",
+        "user_agent": "User Agent",
+        "value": "Value"
     },
     "admin_notifications": {
         "categories": {
@@ -1471,12 +1476,14 @@
         "actor_type": "Actor Type",
         "date": "Occurred at",
         "details": "Security Log Details",
+        "device_name": "Device name",
         "event": "Event",
         "invalid_date_range": "To date must be equal to or after the from date.",
         "ip_address": "IP Address",
         "metadata": "Metadata",
         "system": "System",
-        "user_agent": "User Agent"
+        "user_agent": "User Agent",
+        "value": "Value"
     },
     "service_request": {
         "pending_request_exists": "A request of this type for this broadband account is already under review."
@@ -2239,6 +2246,7 @@
         "details": "User Log Details",
         "device_name": "Device name",
         "email": "Email",
+        "event": "Event",
         "ip_address": "IP Address",
         "metadata": "Metadata",
         "unknown": "Unknown",

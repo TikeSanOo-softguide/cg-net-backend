@@ -201,7 +201,7 @@ export default function UserLogIndex({ logs, filters, filterOptions }: UserLogPr
                             id: 'user',
                             header: t('user_logs.user') || 'User',
                             className: 'font-medium',
-                            cell: (row) => row.user?.name || 'Unknown',
+                            cell: (row) => row.user?.name || t('user_logs.unknown'),
                         },
                         {
                             id: 'device_name',
@@ -211,12 +211,12 @@ export default function UserLogIndex({ logs, filters, filterOptions }: UserLogPr
                         {
                             id: 'ip_address',
                             header: t('user_logs.ip_address') || 'IP Address',
+                            sortable: true,
                             cell: (row) => row.ip_address || '-',
                         },
-
                         {
                             id: 'event',
-                            header: t('security_logs.event') || 'Event',
+                            header: t('user_logs.event') || 'Event',
                             sortable: true,
                             cell: (row) => row.event || '-',
                         },
@@ -258,7 +258,7 @@ function UserLogDetailDialog({
             open={open}
             onOpenChange={onOpenChange}
             title={t('user_logs.details') || 'Log Details'}
-            description={`${log.created_at ? formatDateTime(log.created_at) : '-'}`}
+            description={log.created_at ? formatDateTime(log.created_at) : '-'}
             icon={HistoryIcon}
             size="lg"
         >
@@ -267,8 +267,8 @@ function UserLogDetailDialog({
                     <LogInfo label={t('user_logs.user')} value={log.user?.name || t('user_logs.unknown')} />
                     <LogInfo label={t('customers.phone')} value={log.user?.phone || '-'} />
                     <LogInfo label={t('user_logs.device_name')} value={deviceName(log)} />
-                    <LogInfo label={t('security_logs.event')} value={log.event || '-'} />
                     <LogInfo label={t('user_logs.ip_address')} value={log.ip_address || '-'} />
+                    <LogInfo label={t('user_logs.event')} value={log.event || '-'} />
                     <LogInfo
                         label={t('user_logs.date')}
                         value={log.created_at ? formatDateTime(log.created_at) : '-'}

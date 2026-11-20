@@ -32,14 +32,14 @@ class PackageOrder extends Model
 {
     use HasFactory;
 
+    const UPDATED_AT = null;
+
     protected static function booted(): void
     {
         static::deleting(static function (): never {
             throw new LogicException('PackageOrder records cannot be deleted.');
         });
     }
-
-    public $timestamps = false;
 
     protected $table = 'package_orders';
 

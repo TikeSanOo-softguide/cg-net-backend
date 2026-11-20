@@ -29,14 +29,14 @@ class BillPayment extends Model
 {
     use HasFactory;
 
+    const UPDATED_AT = null;
+
     protected static function booted(): void
     {
         static::deleting(static function (): never {
             throw new LogicException('BillPayment records cannot be deleted.');
         });
     }
-
-    public $timestamps = false;
 
     protected $table = 'bill_payments';
 
