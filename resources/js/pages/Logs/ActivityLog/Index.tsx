@@ -276,10 +276,26 @@ export default function ActivityLogIndex({ logs, filters, filterOptions }: Activ
                             cell: (row) => row.username,
                         },
                         {
+                            id: 'device_name',
+                            header: t('activity_logs.device_name'),
+                            cell: (row) => deviceName(row),
+                        },
+                        {
+                            id: 'ip_address',
+                            header: t('activity_logs.ip_address'),
+                            cell: (row) => ipAddress(row),
+                        },
+                        {
+                            id: 'event',
+                            header: t('activity_logs.event'),
+                            sortable: true,
+                            cell: (row) => row.event || '-',
+                        },
+                        {
                             id: 'description',
                             header: t('activity_logs.description'),
                             mobile: 'meta',
-                            cell: (row) => row.description,
+                            cell: (row) => row.description || '-',
                         },
                         {
                             id: 'subject',
@@ -292,11 +308,6 @@ export default function ActivityLogIndex({ logs, filters, filterOptions }: Activ
                             header: t('activity_logs.log'),
                             sortable: true,
                             cell: (row) => row.log_name || '-',
-                        },
-                        {
-                            id: 'event',
-                            header: t('activity_logs.event'),
-                            cell: (row) => row.event || '-',
                         },
                         {
                             id: 'created_at',
@@ -334,17 +345,19 @@ function ActivityLogDetailDialog({
         <FormDialog
             open={open}
             onOpenChange={onOpenChange}
-            title={activity.subject || t('activity_logs.details')}
-            description={`${activity.created_at ? formatDateTime(activity.created_at) : '-'}`}
+            title={t('activity_logs.details')}
+            description={activity.created_at ? formatDateTime(activity.created_at) : '-'}
             icon={HistoryIcon}
-            size="2xl"
+            size="lg"
         >
             <div className="space-y-3 overflow-y-auto p-4 sm:p-5">
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                    <LogInfo label={t('activity_logs.admin')} value={activity.username} />
+                <div className="grid gap-3 sm:grid-cols-2">
+                    <LogInfo label={t('activity_logs.admin')} value={activity.username || '-'} />
+                    <LogInfo label={t('activity_logs.device_name')} value={deviceName(activity)} />
+                    <LogInfo label={t('activity_logs.ip_address')} value={ipAddress(activity)} />
+                    <LogInfo label={t('activity_logs.event')} value={activity.event || '-'} />
                     <LogInfo label={t('activity_logs.description')} value={activity.description || '-'} />
                     <LogInfo label={t('activity_logs.subject')} value={activity.subject || '-'} />
-                    <LogInfo label={t('activity_logs.event')} value={activity.event || '-'} />
                     <LogInfo label={t('activity_logs.log')} value={activity.log_name || '-'} />
                     <LogInfo
                         label={t('activity_logs.occurred_at')}
@@ -352,12 +365,16 @@ function ActivityLogDetailDialog({
                     />
                 </div>
 
+                <LogInfo label={t('activity_logs.user_agent')} value={userAgent(activity)} />
+
                 {activity.meta_data && Object.keys(activity.meta_data).length > 0 ? (
-                    <div className="overflow-hidden rounded-xl border border-border/60 bg-muted/10">
+                    <div className="mt-4 overflow-hidden rounded-xl border border-border/60 bg-muted/10">
                         <div className="border-b border-border/60 bg-muted/20 px-3 py-2 text-xs font-semibold text-muted-foreground sm:px-4">
-                            Meta Data
+                            {t('activity_logs.metadata')}
                         </div>
-                        <div className="divide-y divide-border/50">{renderMetaRows(activity.meta_data)}</div>
+                        <div className="divide-y divide-border/50">
+                            {renderMetaRows(activity.meta_data, t('activity_logs.value'))}
+                        </div>
                     </div>
                 ) : null}
             </div>
@@ -365,11 +382,27 @@ function ActivityLogDetailDialog({
     );
 }
 
+function deviceName(row: ActivityLogRow): string {
+    return textValue(row.meta_data?.device_name);
+}
+
+function ipAddress(row: ActivityLogRow): string {
+    return textValue(row.meta_data?.ip_address ?? row.meta_data?.ip);
+}
+
+function userAgent(row: ActivityLogRow): string {
+    return textValue(row.meta_data?.user_agent);
+}
+
+function textValue(value: unknown): string {
+    return typeof value === 'string' && value.trim() !== '' ? value : '-';
+}
+
 function LogInfo({ label, value }: { label: string; value: string }) {
     return (
         <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
             <p className="text-xs font-medium text-muted-foreground">{label}</p>
-            <p className="mt-1 truncate text-sm font-semibold text-foreground">{value}</p>
+            <p className="mt-1 break-words text-sm font-semibold text-foreground">{value}</p>
         </div>
     );
 }
@@ -381,14 +414,14 @@ function formatChangeValue(value: unknown): string {
     return String(value);
 }
 
-function renderMetaRows(value: unknown): JSX.Element[] {
+function renderMetaRows(value: unknown, valueLabel: string): JSX.Element[] {
     if (value === null || value === undefined) {
         return [
             <div
                 key="meta-null"
                 className="grid grid-cols-[minmax(140px,0.8fr)_minmax(0,1fr)] gap-3 px-3 py-3 text-xs sm:px-4"
             >
-                <span className="font-medium text-foreground">value</span>
+                <span className="font-medium text-foreground">{valueLabel}</span>
                 <span className="min-w-0 break-words text-foreground">-</span>
             </div>,
         ];
@@ -423,7 +456,7 @@ function renderMetaRows(value: unknown): JSX.Element[] {
             key="meta-scalar"
             className="grid grid-cols-[minmax(140px,0.8fr)_minmax(0,1fr)] gap-3 px-3 py-3 text-xs sm:px-4"
         >
-            <span className="font-medium text-foreground">value</span>
+            <span className="font-medium text-foreground">{valueLabel}</span>
             <span className="min-w-0 break-words text-foreground">{formatMetaValue(value)}</span>
         </div>,
     ];

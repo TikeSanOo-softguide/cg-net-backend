@@ -20,20 +20,22 @@ class SecurityLogExport implements FromQuery, ShouldAutoSize, WithHeadings, With
 
     public function headings(): array
     {
-        return ['Actor', 'Event', 'IP Address', 'User Agent', 'Metadata', 'Occurred At'];
+        return ['Actor', 'Device name', 'Event', 'IP Address', 'User Agent', 'Metadata', 'Occurred At'];
     }
 
     public function map(mixed $log): array
     {
         /** @var SecurityLog $log */
         $actor = $log->actor;
+        $metadata = $log->metadata ?? [];
 
         return [
             $actor ? $actor->username ?? ($actor->name ?? ($actor->phone ?? 'Unknown')) : 'System',
+            is_string($metadata['device_name'] ?? null) ? $metadata['device_name'] : '',
             $log->event,
             $log->ip_address ?? '',
             $log->user_agent ?? '',
-            $log->metadata ? json_encode($log->metadata) : '',
+            json_encode($metadata, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '',
             $log->created_at?->toDateTimeString() ?? '',
         ];
     }

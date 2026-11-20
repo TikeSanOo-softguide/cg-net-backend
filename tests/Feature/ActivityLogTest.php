@@ -10,6 +10,7 @@ use App\Models\Region;
 use App\Models\State;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Activitylog\Models\Activity;
 use Tests\TestCase;
@@ -114,6 +115,40 @@ class ActivityLogTest extends TestCase
                     ->where('logs.data.0.event', 'created')
                     ->where('logs.data.0.log_name', 'customers')
                     ->where('logs.data.0.description', 'customer_created'),
+            );
+    }
+
+    public function test_activity_log_stores_device_metadata_from_the_request(): void
+    {
+        $admin = Admin::factory()->create();
+        $user = User::factory()->create();
+        $this->app->instance('request', Request::create('/customers', 'POST', server: [
+            'HTTP_X_DEVICE_ID' => '2616a47c-d2e3-4e82-a269-c52eba7130ab',
+            'HTTP_X_DEVICE_NAME' => 'Web',
+            'HTTP_X_PLATFORM' => 'web',
+            'HTTP_USER_AGENT' => 'cg-admin',
+            'REMOTE_ADDR' => '192.168.10.148',
+        ]));
+
+        activity(ActivityLogName::Customers->value)
+            ->causedBy($admin)
+            ->performedOn($user)
+            ->event(ActivityLogEvent::Created->value)
+            ->withProperties(['name' => 'Alice'])
+            ->log('customer_created');
+
+        $this->actingAs($admin, 'web')
+            ->get('/logs/activity?event=created&log=customers')
+            ->assertOk()
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->has('logs.data', 1)
+                    ->where('logs.data.0.meta_data.name', 'Alice')
+                    ->where('logs.data.0.meta_data.device_id', '2616a47c-d2e3-4e82-a269-c52eba7130ab')
+                    ->where('logs.data.0.meta_data.device_name', 'Web')
+                    ->where('logs.data.0.meta_data.platform', 'web')
+                    ->where('logs.data.0.meta_data.ip_address', '192.168.10.148')
+                    ->where('logs.data.0.meta_data.user_agent', 'cg-admin'),
             );
     }
 

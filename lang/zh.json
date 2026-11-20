@@ -4,16 +4,21 @@
         "admin": "管理员",
         "description": "操作内容",
         "details": "活动日志详情",
+        "device_name": "设备名称",
         "event": "事件",
         "field": "字段",
+        "ip_address": "IP 地址",
         "invalid_date_range": "结束日期必须等于或晚于开始日期。",
         "log": "日志",
+        "metadata": "元数据",
         "new_value": "新值",
         "no_changes": "没有记录变更值。",
-        "occurred_at": "时间",
+        "occurred_at": "发生时间",
         "old_value": "旧值",
         "subject": "相关对象",
-        "username": "用户名"
+        "username": "用户名",
+        "user_agent": "用户代理",
+        "value": "值"
     },
     "admin_notifications": {
         "categories": {
@@ -1461,12 +1466,14 @@
         "actor_type": "操作人类型",
         "date": "发生时间",
         "details": "安全日志详情",
+        "device_name": "设备名称",
         "event": "事件",
         "invalid_date_range": "结束日期必须等于或晚于开始日期。",
         "ip_address": "IP 地址",
         "metadata": "元数据",
         "system": "系统",
-        "user_agent": "用户代理"
+        "user_agent": "用户代理",
+        "value": "值"
     },
     "service_request": {
         "pending_request_exists": "此宽带账户已有一项此类型的请求正在审核中。"
@@ -2211,10 +2218,11 @@
     },
     "user_logs": {
         "action": "操作",
-        "date": "发生于",
+        "date": "发生时间",
         "details": "用户日志详情",
         "device_name": "设备名称",
         "email": "电子邮箱",
+        "event": "事件",
         "ip_address": "IP 地址",
         "metadata": "元数据",
         "unknown": "未知",

@@ -4,8 +4,11 @@ import { createInertiaApp } from '@inertiajs/react';
 import AppLayout from '@/layouts/AppLayout';
 import AuthLayout from '@/layouts/AuthLayout';
 import ErrorLayout from '@/layouts/ErrorLayout';
+import { installAdminDeviceHeaders } from '@/lib/admin-device-headers';
 import { ThemeProvider } from '@/providers/ThemeProvider';
 import { ThemeSettingsProvider } from '@/providers/ThemeSettingsProvider';
+
+installAdminDeviceHeaders();
 
 const appName = import.meta.env.VITE_APP_NAME || 'YNO Admin';
 

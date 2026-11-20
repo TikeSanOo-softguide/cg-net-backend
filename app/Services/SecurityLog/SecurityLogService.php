@@ -4,6 +4,7 @@ namespace App\Services\SecurityLog;
 
 use App\Enums\SecurityLogEvent;
 use App\Models\SecurityLog;
+use App\Support\DeviceRequestMetadata;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -46,6 +47,14 @@ class SecurityLogService
         return 'security:login-failures:' . $guard . ':' . hash('sha256', Str::lower(trim($identity)));
     }
 
+    /**
+     * @return array<string, string>
+     */
+    private function deviceMetadata(Request $request): array
+    {
+        return DeviceRequestMetadata::from($request);
+    }
+
     /** @param array<string, mixed> $metadata */
     public function record(
         SecurityLogEvent $event,
@@ -58,6 +67,10 @@ class SecurityLogService
 
         if ($actor === null && $authenticatedActor instanceof Model) {
             $actor = $authenticatedActor;
+        }
+
+        foreach ($this->deviceMetadata($request) as $key => $value) {
+            $metadata[$key] = $value;
         }
 
         $securityLog = new SecurityLog([
