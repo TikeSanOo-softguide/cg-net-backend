@@ -98,11 +98,11 @@ final class ApiAuthenticationService
     }
 
     /** @return array{user: User, token: string, expires_at: CarbonInterface} */
-    public function login(string $verificationToken, string $password, string $ip): array
+    public function login(string $verificationToken, string $password, string $ip, string $deviceId): array
     {
         return $this->otp->consumeVerificationToken(
             $verificationToken,
-            fn(string $phone): array => $this->loginWithPassword($phone, $password, $ip),
+            fn(string $phone): array => $this->loginWithPassword($phone, $password, $ip, $deviceId),
             (int) config('auth_api.max_password_attempts', 5),
         );
     }
@@ -132,7 +132,7 @@ final class ApiAuthenticationService
     }
 
     /** @return array{user: User, token: string, expires_at: CarbonInterface} */
-    private function loginWithPassword(string $phone, string $password, string $ip): array
+    private function loginWithPassword(string $phone, string $password, string $ip, string $deviceId): array
     {
         $accountKey = 'auth:login:user:' . hash('sha256', $phone);
         $ipKey = 'auth:login:ip:' . hash('sha256', $ip);
@@ -153,7 +153,7 @@ final class ApiAuthenticationService
         RateLimiter::hit($accountKey, $decaySeconds);
         RateLimiter::hit($ipKey, $ipDecaySeconds);
 
-        $session = DB::transaction(function () use ($phone, $password, $accountKey, $ipKey): array {
+        $session = DB::transaction(function () use ($phone, $password, $deviceId): array {
             $user = User::query()->where('phone', $phone)->lockForUpdate()->first();
 
             if (!$user || !Hash::check($password, $user->getAuthPassword())) {
@@ -172,17 +172,7 @@ final class ApiAuthenticationService
                 throw new InvalidCredentialsException();
             }
 
-            $hasActiveSession = $user
-                ->tokens()
-                ->where(fn($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
-                ->exists();
-
-            if ($hasActiveSession) {
-                RateLimiter::clear($accountKey);
-                RateLimiter::clear($ipKey);
-
-                throw new ApiMessageException(MessageCode::AuthAlreadySignedIn, 409);
-            }
+            $this->assertDeviceAllowed($user, $deviceId);
 
             return $this->openSession($user);
         });
@@ -191,6 +181,20 @@ final class ApiAuthenticationService
         RateLimiter::clear($ipKey);
 
         return $session;
+    }
+
+    private function assertDeviceAllowed(User $user, string $deviceId): void
+    {
+        $hash = hash('sha256', $deviceId);
+
+        if ($user->device_id === null) {
+            $user->forceFill(['device_id' => $hash])->save();
+            return;
+        }
+
+        if (!hash_equals($user->device_id, $hash)) {
+            throw new ApiMessageException(MessageCode::AuthAlreadySignedIn, 403);
+        }
     }
 
     private function findUserByPhone(string $phone): ?User

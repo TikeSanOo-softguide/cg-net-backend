@@ -24,11 +24,17 @@ class SessionCheckRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['phone' => ['required', 'string', 'regex:'.PhoneNumber::SUPPORTED_PATTERN]];
+        return [
+            'phone' => ['required', 'string', 'regex:' . PhoneNumber::SUPPORTED_PATTERN],
+            'device_id' => ['required', 'string', 'max:255'],
+        ];
     }
 
     public function messages(): array
     {
-        return ['phone.regex' => 'This phone number is not supported.'];
+        return [
+            'phone.regex' => 'This phone number is not supported.',
+            'device_id.required' => 'The device ID is required.',
+        ];
     }
 }

@@ -91,9 +91,7 @@ export default function Index({
                     className={cn(
                         'grid min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-background shadow-sm lg:grid-rows-none',
                         // mobile rows
-                        showQuickReplies && !selectedConversation
-                            ? 'grid-rows-[auto_minmax(0,1fr)_minmax(0,1fr)]'
-                            : 'grid-rows-[auto_minmax(0,1fr)]',
+                        'grid-rows-[auto_minmax(0,1fr)]',
                         // desktop columns
                         showQuickReplies
                             ? 'lg:grid-cols-[minmax(12rem,0.8fr)_minmax(0,2fr)_minmax(14rem,1fr)]'
@@ -113,7 +111,7 @@ export default function Index({
                         quickReplies={quickReplies}
                     />
                     {showQuickReplies ? (
-                        <div className={selectedConversation ? 'hidden lg:contents' : 'contents'}>
+                        <div className="hidden lg:contents">
                             <QuickRepliesPanel
                                 quickReplies={quickReplies}
                                 categories={quickReplyCategories}

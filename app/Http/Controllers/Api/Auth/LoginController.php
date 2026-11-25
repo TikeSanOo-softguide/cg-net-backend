@@ -30,7 +30,12 @@ class LoginController extends Controller
         $phone = $service->verifiedPhone($verificationToken);
 
         try {
-            $result = $service->login($verificationToken, $request->string('password')->toString(), $request->ip());
+            $result = $service->login(
+                $verificationToken,
+                $request->string('password')->toString(),
+                $request->ip(),
+                $request->string('device_id')->toString(),
+            );
         } catch (ValidationException | HttpExceptionInterface $e) {
             $reason = match (true) {
                 $e instanceof HttpExceptionInterface && $e->getStatusCode() === 429 => 'Too many login attempts',
@@ -90,27 +95,32 @@ class LoginController extends Controller
     public function checkSession(SessionCheckRequest $request): JsonResponse
     {
         $user = User::query()->where('phone', $request->validated('phone'))->first();
-        $showAlert =
+        $deviceHash = hash('sha256', $request->validated('device_id'));
+
+        $isBound = $user?->device_id !== null;
+        $sameDevice = $isBound && hash_equals($user->device_id, $deviceHash);
+
+        $hasActiveToken =
             $user
                 ?->tokens()
-                ->where(fn($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+                ->where(fn($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()))
                 ->exists() ?? false;
+
+        $showAlert = $hasActiveToken && !$sameDevice;
         $payload = [
             'show_alert' => $showAlert,
             'device_name' => $showAlert ? $this->signedInDeviceName($user) : null,
         ];
 
         if ($user !== null && $user->status == UserStatus::Deactivated) {
-            return response()->json(
-                ApiMessage::attach(MessageCode::UserDeactivated, $payload),
-                403,
-            );
+            return response()->json(ApiMessage::attach(MessageCode::UserDeactivated, $payload), 403);
         }
         if ($user !== null && $user->status == UserStatus::Suspended) {
-            return response()->json(
-                ApiMessage::attach(MessageCode::UserSuspended, $payload),
-                403,
-            );
+            return response()->json(ApiMessage::attach(MessageCode::UserSuspended, $payload), 403);
+        }
+
+        if ($isBound && !$sameDevice) {
+            return response()->json(ApiMessage::attach(MessageCode::AuthAlreadySignedIn, $payload), 403);
         }
 
         if ($showAlert) {
@@ -128,13 +138,10 @@ class LoginController extends Controller
 
         $log = UserLog::query()
             ->where('user_id', $user->id)
-            ->whereIn('event', [
-                UserLogEvent::LoginSuccess->value,
-                UserLogEvent::RegisterComplete->value,
-            ])
+            ->whereIn('event', [UserLogEvent::LoginSuccess->value, UserLogEvent::RegisterComplete->value])
             ->latest('created_at')
             ->first();
-        $name = is_array($log?->metadata) ? ($log->metadata['device_name'] ?? null) : null;
+        $name = is_array($log?->metadata) ? $log->metadata['device_name'] ?? null : null;
         $name = is_string($name) ? trim($name) : '';
 
         return $name === '' ? null : $name;
