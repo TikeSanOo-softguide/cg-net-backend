@@ -13,6 +13,7 @@ use App\Models\Network;
 use App\Models\Package;
 use App\Models\PackageOrder;
 use App\Models\TopUpCard;
+use App\Models\User;
 use App\Models\Wallet;
 use App\Services\Ledger\LedgerPoster;
 use App\Services\Reports\LedgerHealthReportService;
@@ -253,6 +254,7 @@ class LedgerHealthSourceReconciliationTest extends TestCase
     {
         $wallet = Wallet::factory()->create(['balance' => 10000]);
         $user = $wallet->user;
+        $redeemer = User::factory()->create();
         $package = Package::factory()->create([
             'network_id' => Network::factory(),
             'price' => 500,
@@ -269,7 +271,7 @@ class LedgerHealthSourceReconciliationTest extends TestCase
             status: LedgerTransactionStatus::Completed,
             idempotencyKey: 'ok-topup',
         );
-        TopUpCard::factory()->redeemed($user)->create([
+        TopUpCard::factory()->redeemed($redeemer)->create([
             'amount' => 100,
             'status' => TopUpCardStatus::Used,
             'ledger_transaction_id' => $topup->id,
