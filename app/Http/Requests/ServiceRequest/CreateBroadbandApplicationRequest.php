@@ -25,12 +25,22 @@ class CreateBroadbandApplicationRequest extends CreateServiceRequest
 
     protected function prepareForValidation(): void
     {
-        if (!$this->exists('contact_phone')) {
-            return;
+        $packageDetail = $this->input('package_detail');
+
+        if (
+            is_array($packageDetail) &&
+            (is_int($packageDetail['product_id'] ?? null) || is_float($packageDetail['product_id'] ?? null))
+        ) {
+            $packageDetail['product_id'] = (string) $packageDetail['product_id'];
         }
 
+        $phone = $this->exists('contact_phone')
+            ? PhoneNumber::normalizeLeniently($this->input('contact_phone'))
+            : $this->input('contact_phone');
+
         $this->merge([
-            'contact_phone' => PhoneNumber::normalizeLeniently($this->input('contact_phone')),
+            'package_detail' => $packageDetail,
+            'contact_phone' => $phone,
         ]);
     }
 
@@ -41,7 +51,7 @@ class CreateBroadbandApplicationRequest extends CreateServiceRequest
     {
         return [
             'contact_name' => ['required', 'string', 'max:30'],
-            'service_type' => ['required', 'string', 'in:FTTH,CG'],
+            'service_type' => ['required', 'string', 'in:FTTH,CG,CG Router'],
             'package_detail' => ['required', 'array'],
             'package_detail.product_id' => ['required', 'string', 'max:64'],
             'package_detail.product_name' => ['required', 'string', 'max:255'],

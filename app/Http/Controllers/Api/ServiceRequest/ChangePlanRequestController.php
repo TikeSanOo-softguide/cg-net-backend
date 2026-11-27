@@ -46,6 +46,7 @@ class ChangePlanRequestController extends Controller
     {
         $changePlanRequest = DB::transaction(function () use ($request) {
             $validated = $this->fillPackageDetails($request->validated());
+            $validated['service_type'] = $this->storedServiceType($validated['service_type']);
 
             $changePlanRequest = ChangePlanRequest::query()->create([
                 ...$validated,
@@ -90,6 +91,7 @@ class ChangePlanRequestController extends Controller
         $this->ensureUnderReview($changePlanRequest);
 
         $validated = $this->fillPackageDetails($request->validated());
+        $validated['service_type'] = $this->storedServiceType($validated['service_type']);
         $changePlanRequest->update($validated);
         $this->logActivity($request, UserLogEvent::UpdateChangePlanRequest, [
             'change_plan_request_id' => $changePlanRequest->id,
@@ -165,6 +167,11 @@ class ChangePlanRequestController extends Controller
         if ($changePlanRequest->user_id !== $request->user()->id) {
             throw new AccessDeniedHttpException();
         }
+    }
+
+    private function storedServiceType(string $serviceType): string
+    {
+        return $serviceType === 'CG' ? 'CG Router' : $serviceType;
     }
 
     private function ensureUnderReview(ChangePlanRequest $changePlanRequest): void

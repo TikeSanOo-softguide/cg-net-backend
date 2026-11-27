@@ -50,7 +50,10 @@ class ChangePlanRequestController extends Controller
             })
             ->when(
                 $openRequestId < 1 && $serviceType !== '',
-                fn ($query) => $query->where('service_type', $serviceType),
+                fn ($query) => $query->whereIn(
+                    'service_type',
+                    $serviceType === 'CG' ? ['CG', 'CG Router'] : [$serviceType],
+                ),
             )
             ->when(
                 $openRequestId < 1 &&
@@ -116,7 +119,13 @@ class ChangePlanRequestController extends Controller
                 $status !== '' && in_array($status, array_column(RequestStatus::cases(), 'value'), true),
                 fn($query) => $query->where('status', $status),
             )
-            ->when($serviceType !== '', fn($query) => $query->where('service_type', $serviceType));
+            ->when(
+                $serviceType !== '',
+                fn($query) => $query->whereIn(
+                    'service_type',
+                    $serviceType === 'CG' ? ['CG', 'CG Router'] : [$serviceType],
+                ),
+            );
 
         return [
             'total_requests' => (clone $requests)->count(),

@@ -168,7 +168,7 @@
         "requested_plan": "Requested Plan",
         "region": "Region",
         "service_type": "Service Type",
-        "search_placeholder": "Search ticket, user, contact, account",
+        "search_placeholder": "Search records...",
         "speed": "Speed",
         "state": "State",
         "ticket_number": "Ticket Number"
@@ -185,7 +185,7 @@
         "preferred_date": "Preferred date",
         "request_title": "Change Password Request",
         "request_details_description": "View the details of this change password request.",
-        "search_placeholder": "Search ticket, user, contact, account",
+        "search_placeholder": "Search records...",
         "status_updated": "Request status updated",
         "total_requests": "Total Requests",
         "under_review_requests": "Under Review Requests",
@@ -211,7 +211,7 @@
         "request_details_description": "View the details of this change plan request.",
         "requested_packages": "Requested Packages",
         "service_type": "Service Type",
-        "search_placeholder": "Search ticket, user, contact, account",
+        "search_placeholder": "Search records...",
         "ticket_number": "Ticket Number",
         "cg_router": "CG Router",
         "status_updated": "Request status updated",
@@ -812,7 +812,7 @@
         "other": "Other",
         "password": "Password",
         "request_info": "Request Information",
-        "search_placeholder": "Search ticket, user, contact, account",
+        "search_placeholder": "Search records...",
         "slow": "Slow",
         "unstable": "Unstable"
     },
@@ -1446,7 +1446,7 @@
         "new_address": "New Address",
         "new_location": "New Location",
         "preferred_date": "Preferred date",
-        "search": "Search ticket, user, contact, account",
+        "search": "Search records...",
         "service_transfer": "Service Transfer"
     },
     "failure_reports": {

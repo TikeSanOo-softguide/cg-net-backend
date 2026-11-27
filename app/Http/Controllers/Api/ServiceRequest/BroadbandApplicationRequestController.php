@@ -67,6 +67,7 @@ class BroadbandApplicationRequestController extends Controller
     {
         $application = DB::transaction(function () use ($request) {
             $validated = $request->validated();
+            $validated['service_type'] = $this->storedServiceType($validated['service_type']);
 
             $application = InstallationApplication::query()->create([
                 ...$validated,
@@ -103,6 +104,7 @@ class BroadbandApplicationRequestController extends Controller
 
         $application = DB::transaction(function () use ($request, $installationApplication) {
             $validated = $request->validated();
+            $validated['service_type'] = $this->storedServiceType($validated['service_type']);
             $installationApplication->update($validated);
 
             $this->logActivity($request, UserLogEvent::UpdateBroadbandApplication, [
@@ -187,5 +189,10 @@ class BroadbandApplicationRequestController extends Controller
         if ($installationApplication->user_id !== $request->user()->id) {
             throw new AccessDeniedHttpException();
         }
+    }
+
+    private function storedServiceType(string $serviceType): string
+    {
+        return $serviceType === 'CG' ? 'CG Router' : $serviceType;
     }
 }

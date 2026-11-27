@@ -39,7 +39,7 @@ class FailureReportController extends Controller
 
         $reports = FailureReport::query()
             ->with([
-                'user:id,name,phone',
+                'user:id,name,phone,service_type',
                 'photos:id,failure_report_id,image_url',
                 'admin:id,username',
             ])
@@ -78,6 +78,7 @@ class FailureReportController extends Controller
                 'ticket_number' => $report->ticket_number,
                 'customer_name' => $report->user?->name ?? '—',
                 'customer_phone' => $report->user?->phone ?? '—',
+                'service_type' => $report->user?->service_type ?? '—',
                 'broadband_account_number' => $report->broadband_account_number ?? '—',
                 'account_customer' => $report->user?->name ?? '—',
                 'failure_type' => $report->failure_type->value,

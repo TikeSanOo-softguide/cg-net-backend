@@ -24,7 +24,7 @@ class CustomerProfileApiTest extends TestCase
     public function test_customer_profile_returns_broadband_account_details(): void
     {
         $user = User::factory()->create([
-            'service_type' => 'CG',
+            'service_type' => 'CG Router',
             'broadband_account_number' => '12345678',
         ]);
 
@@ -58,14 +58,14 @@ class CustomerProfileApiTest extends TestCase
         $response->assertJsonPath('data.account.mobile', '95912345678');
 
         $response->assertJsonPath('data.broadbandAccount.account_number', '12345678');
-        $response->assertJsonPath('data.broadbandAccount.service_type', 'CG');
+        $response->assertJsonPath('data.broadbandAccount.service_type', 'CG Router');
 
         Http::assertSentCount(2);
         Http::assertSent(
             fn(Request $request): bool => str_ends_with(
                 (string) parse_url($request->url(), PHP_URL_PATH),
                 '/AccountInfoAPI',
-            ),
+            ) && $request['ServiceType'] === 'CG',
         );
     }
 
