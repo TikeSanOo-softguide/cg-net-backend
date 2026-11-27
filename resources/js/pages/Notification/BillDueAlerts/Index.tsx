@@ -102,10 +102,15 @@ export default function BillDueAlertsIndex({ alerts, errorKey, filters }: Props)
             }
 
             setQueuedIds((current) => new Set(current).add(id));
+            const successMessageKey = !row.has_device
+                ? 'notification.bill_due_alerts.alert_recorded_no_device'
+                : row.state === 'unsent'
+                  ? 'notification.bill_due_alerts.retry_queued'
+                  : 'notification.bill_due_alerts.send_queued';
             toast({
                 variant: 'success',
                 title: t('toast.success'),
-                description: payload?.message ?? t('notification.bill_due_alerts.queued'),
+                description: t(successMessageKey),
             });
             router.reload({ only: ['alerts'] });
         } catch (error) {

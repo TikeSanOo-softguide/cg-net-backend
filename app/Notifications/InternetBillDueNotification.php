@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Enums\NotificationActionType;
+use App\Enums\NotificationCategory;
 use App\Models\User;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\Fcm\FcmChannel;
@@ -30,6 +31,7 @@ class InternetBillDueNotification extends Notification
         $unreadCount = $notifiable->unreadAppNotificationCount();
         $data = [
             'type' => 'user_notification',
+            'category' => NotificationCategory::BillAlert->value,
             'action_type' => NotificationActionType::FtthBill->value,
             'action_id' => $this->actionId,
             'unread_count' => (string) $unreadCount,

@@ -61,7 +61,7 @@ class SendInternetBillDueNotificationJob implements ShouldBeUnique, ShouldQueue
                 'action_id' => $this->actionId,
             ],
             [
-                'category' => NotificationCategory::Announcement,
+                'category' => NotificationCategory::BillAlert,
                 'templateable_type' => NotificationTemplate::class,
                 'templateable_id' => $template->id,
                 'template_data' => $templateData,

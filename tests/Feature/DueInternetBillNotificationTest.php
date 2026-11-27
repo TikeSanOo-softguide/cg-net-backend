@@ -201,7 +201,7 @@ class DueInternetBillNotificationTest extends TestCase
 
         $this->assertDatabaseHas('notifications', [
             'user_id' => $user->id,
-            'category' => NotificationCategory::Announcement->value,
+            'category' => NotificationCategory::BillAlert->value,
             'action_type' => 'ftth_bill',
             'action_id' => 'bill-123',
             'is_read' => false,
@@ -279,7 +279,7 @@ class DueInternetBillNotificationTest extends TestCase
         $otherUser = User::factory()->create();
         $notification = Notification::factory()->create([
             'user_id' => $user->id,
-            'category' => NotificationCategory::Announcement,
+            'category' => NotificationCategory::BillAlert,
             'action_type' => 'ftth_bill',
             'action_id' => 'bill-123',
             'is_read' => false,
@@ -298,7 +298,7 @@ class DueInternetBillNotificationTest extends TestCase
             ->getJson('/api/notifications')
             ->assertOk()
             ->assertJsonPath('unread_count', 1)
-            ->assertJsonPath('data.0.category', 'announcement')
+            ->assertJsonPath('data.0.category', 'bill_alert')
             ->assertJsonPath('data.0.action_type', 'ftth_bill')
             ->assertJsonPath('data.0.action_id', 'bill-123')
             ->assertJsonPath('data.0.title', 'Internet account expiring soon')
@@ -444,6 +444,7 @@ class DueInternetBillNotificationTest extends TestCase
         $message = $notification->toFcm($user)->toArray();
 
         $this->assertSame('ftth_bill', $message['data']['action_type']);
+        $this->assertSame('bill_alert', $message['data']['category']);
         $this->assertSame('bill-123', $message['data']['action_id']);
         $this->assertSame('Internet account expiring soon', $message['webpush']['notification']['title']);
         $this->assertSame('user_notification', $message['webpush']['notification']['data']['type']);
