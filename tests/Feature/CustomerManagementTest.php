@@ -409,7 +409,7 @@ class CustomerManagementTest extends TestCase
             ->assertRedirect();
 
         $this->assertSame('99999999', $customer->fresh()->broadband_account_number);
-        $this->assertSame('CG', $customer->fresh()->service_type);
+        $this->assertSame('CG Router', $customer->fresh()->service_type);
         $this->assertDatabaseHas('activity_log', [
             'description' => 'broadband_account_bound',
             'subject_id' => $customer->id,
@@ -420,7 +420,7 @@ class CustomerManagementTest extends TestCase
             ->assertInertia(
                 fn(Assert $page) => $page
                     ->where('accountBinding.account_number', '99999999')
-                    ->where('accountBinding.service_type', 'CG'),
+                    ->where('accountBinding.service_type', 'CG Router'),
             );
 
         $this->actingAs($admin, 'web')
@@ -474,7 +474,7 @@ class CustomerManagementTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $this->assertSame('99999999', $customer->fresh()->broadband_account_number);
-        $this->assertSame('CG', $customer->fresh()->service_type);
+        $this->assertSame('CG Router', $customer->fresh()->service_type);
     }
 
     public function test_admin_can_unbind_a_legacy_account_without_a_service_type(): void

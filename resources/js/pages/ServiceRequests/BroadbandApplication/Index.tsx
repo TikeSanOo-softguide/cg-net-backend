@@ -301,7 +301,7 @@ export default function BroadbandApplicationIndex({ requests, filters, statuses,
                             mobile: 'meta' as const,
                             cell: (request) => (
                                 <span>
-                                    {request.service_type === 'CG'
+                                    {['CG', 'CG Router'].includes(request.service_type?.trim() || '')
                                         ? t('broadband_application.cg_router')
                                         : request.service_type?.trim() || '—'}
                                 </span>

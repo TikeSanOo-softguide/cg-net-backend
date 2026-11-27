@@ -10,7 +10,7 @@ return new class extends Migration {
         Schema::create('installation_applications', function (Blueprint $table) {
             $table->id();
             $table->string('contact_name', 30);
-            $table->string('service_type', 8)->nullable();
+            $table->string('service_type', 16)->nullable();
             $table->string('ticket_number', 32)->nullable()->unique();
             $table->json('package_detail');
             $table->text('address');

@@ -33,7 +33,7 @@ class ChangePasswordRequestController extends Controller
         $openRequestId = $request->integer('open_request');
 
         $requests = ChangePasswordRequest::query()
-            ->with(['user:id,name,phone'])
+            ->with(['user:id,name,phone,service_type'])
             ->whereIn('status', $statuses)
             ->when($openRequestId < 1 && $search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {

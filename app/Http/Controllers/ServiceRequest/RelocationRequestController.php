@@ -28,7 +28,7 @@ class RelocationRequestController extends Controller
         $openRequestId = $request->integer('open_request');
 
         $relocationRequests = RelocationRequest::query()
-            ->with(['user:id,name,phone', 'admin:id,username'])
+            ->with(['user:id,name,phone,service_type', 'admin:id,username'])
             ->when($openRequestId < 1 && $search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query

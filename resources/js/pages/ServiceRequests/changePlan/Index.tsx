@@ -276,7 +276,7 @@ export default function ChangePlanIndex({ requests, filters, statuses, stats }: 
                             mobile: false,
                             cell: (request) => (
                                 <span>
-                                    {request.service_type === 'CG'
+                                    {request.service_type === 'CG' || request.service_type === 'CG Router'
                                         ? t('change_plan.cg_router')
                                         : request.service_type?.trim() || '—'}
                                 </span>

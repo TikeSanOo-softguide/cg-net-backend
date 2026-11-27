@@ -146,6 +146,63 @@ class ServiceRequestApiTest extends TestCase
         $this->assertSoftDeleted('installation_applications', ['id' => $application->id]);
     }
 
+    public function test_broadband_application_stores_cg_router_as_the_service_type(): void
+    {
+        Storage::fake('public');
+        config([
+            'services.telegram.bot_token' => 'test-bot-token',
+            'services.telegram.chat_id' => 'test-chat-id',
+        ]);
+        Http::fake([
+            'https://api.telegram.org/*' => Http::response(['ok' => true], 200),
+        ]);
+
+        $user = User::factory()->create();
+        $token = $user->createToken('service-requests')->plainTextToken;
+        $applicationData = [
+            'contact_name' => 'Test Customer',
+            'service_type' => 'CG',
+            'package_detail' => [
+                'product_id' => 246,
+                'product_name' => 'CG-NET_20M_3个月',
+                'product_line' => 'CG-无线网',
+                'product_speed' => '20M',
+                'product_price' => 588.0,
+                'installation_fee' => 350.0,
+                'month_cycle' => 3,
+                'month_cycle_unit' => '月',
+            ],
+            'address' => 'Customer address',
+            'contact_phone' => '09922345678',
+            'note' => 'Please install soon.',
+            'id_type' => 'NRC',
+            'id_name' => 'Test Customer',
+            'id_number' => '12/ABC(N)123456',
+            'photos' => [UploadedFile::fake()->image('id-front.jpg'), UploadedFile::fake()->image('id-back.jpg')],
+        ];
+
+        $response = $this->withToken($token)
+            ->post('/api/installation-application/create', $applicationData, ['Accept' => 'application/json'])
+            ->assertCreated()
+            ->assertJsonPath('data.service_type', 'CG Router')
+            ->assertJsonPath('data.package_detail.product_id', '246');
+
+        $applicationId = $response->json('data.id');
+        $this->assertDatabaseHas('installation_applications', [
+            'id' => $applicationId,
+            'service_type' => 'CG Router',
+        ]);
+
+        $this->withToken($token)
+            ->put(
+                '/api/installation-application/' . $applicationId,
+                [...$applicationData, 'service_type' => 'CG Router'],
+                ['Accept' => 'application/json'],
+            )
+            ->assertOk()
+            ->assertJsonPath('data.service_type', 'CG Router');
+    }
+
     public function test_installation_products_come_from_walletapp_ftth_and_cg_commands(): void
     {
         config([
@@ -571,12 +628,16 @@ class ServiceRequestApiTest extends TestCase
             ->assertJsonPath('level', 'success')
             ->assertJsonPath('data.user_id', $user->id)
             ->assertJsonPath('data.status', 'under_review')
-            ->assertJsonPath('data.service_type', 'CG');
+            ->assertJsonPath('data.service_type', 'CG Router');
+        $this->assertDatabaseHas('change_plan_requests', [
+            'id' => $response->json('data.id'),
+            'service_type' => 'CG Router',
+        ]);
         Http::assertSentCount(1);
         Http::assertSent(
             fn($request) => str_contains($request['text'], '📦 NEW CHANGE PLAN REQUEST')
                 && str_contains($request['text'], $user->name)
-                && str_contains($request['text'], '• Service Type: CG')
+                && str_contains($request['text'], '• Service Type: CG Router')
                 && str_contains(
                     $request['text'],
                     '• Current Package: ' . $requestData['current_package_detail']['network_name']['en'],
@@ -627,6 +688,7 @@ class ServiceRequestApiTest extends TestCase
             ])
             ->assertOk()
             ->assertJsonPath('code', 'MSG-REQ-003')
+            ->assertJsonPath('data.service_type', 'CG Router')
             ->assertJsonPath('data.note', 'Please apply the updated package.');
 
         Http::assertSentCount(2);

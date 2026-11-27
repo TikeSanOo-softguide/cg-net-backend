@@ -46,7 +46,7 @@ type RequestItem = {
     created_at: string;
     status: string;
     broadband_account_number: string | null;
-    user: { id: number; name: string; phone: string } | null;
+    user: { id: number; name: string; phone: string; service_type: string | null } | null;
     admin: { id: number; username: string } | null;
 };
 
@@ -305,11 +305,16 @@ function ChangePasswordDetailDialog({
     const nextStatus = request.status === 'under_review' ? 'approved' : 'under_review';
     const nextButton = request.status === 'under_review' ? 'approve' : 'review';
     const ticket = request.ticket_number?.trim() || '';
-    const serviceType = request.broadband_account_number?.startsWith('FTTH')
+    const accountServiceType = request.broadband_account_number?.startsWith('FTTH')
         ? 'FTTH'
         : request.broadband_account_number?.startsWith('CG')
-          ? t('change_password.cg_router')
+          ? 'CG'
           : '—';
+    const resolvedServiceType = request.user?.service_type?.trim() || accountServiceType;
+    const serviceType =
+        resolvedServiceType === 'CG' || resolvedServiceType === 'CG Router'
+            ? t('change_password.cg_router')
+            : resolvedServiceType;
 
     const updateStatus = () => {
         setProcessing(true);

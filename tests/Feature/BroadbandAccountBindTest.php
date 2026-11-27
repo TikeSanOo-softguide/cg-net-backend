@@ -20,11 +20,17 @@ class BroadbandAccountBindTest extends TestCase
         ]);
         $account = ['account' => '12345678', 'status' => 'active', 'customer_name' => 'Test Customer'];
 
-        $this->mock(AccountInfoService::class)
+        $accountInfoService = $this->mock(AccountInfoService::class);
+        $accountInfoService
             ->shouldReceive('find')
             ->once()
             ->with('CG', '12345678')
             ->andReturn($account);
+        $accountInfoService
+            ->shouldReceive('storedServiceType')
+            ->once()
+            ->with('CG')
+            ->andReturn('CG Router');
 
         $this->withToken($user->createToken('check')->plainTextToken)
             ->postJson('/api/broadband-account/check-account', [
@@ -60,15 +66,21 @@ class BroadbandAccountBindTest extends TestCase
     {
         $user = User::factory()->create();
         User::factory()->create([
-            'service_type' => 'CG',
+            'service_type' => 'CG Router',
             'broadband_account_number' => '12345678',
         ]);
 
-        $this->mock(AccountInfoService::class)
+        $accountInfoService = $this->mock(AccountInfoService::class);
+        $accountInfoService
             ->shouldReceive('find')
             ->once()
             ->with('CG', '12345678')
             ->andReturn(['account' => '12345678', 'status' => 'active']);
+        $accountInfoService
+            ->shouldReceive('storedServiceType')
+            ->once()
+            ->with('CG')
+            ->andReturn('CG Router');
 
         $this->withToken($user->createToken('check')->plainTextToken)
             ->postJson('/api/broadband-account/check-account', [
@@ -102,11 +114,17 @@ class BroadbandAccountBindTest extends TestCase
             'service_type' => 'CG',
             'broadband_account_number' => '12345678',
         ]);
-        $this->mock(AccountInfoService::class)
+        $accountInfoService = $this->mock(AccountInfoService::class);
+        $accountInfoService
             ->shouldReceive('find')
             ->once()
             ->with('CG', '12345678')
             ->andReturn(['account' => '12345678', 'status' => 'active']);
+        $accountInfoService
+            ->shouldReceive('storedServiceType')
+            ->once()
+            ->with('CG')
+            ->andReturn('CG Router');
 
         $this->withToken($user->createToken('bind')->plainTextToken)
             ->postJson('/api/broadband-account/bind', [
@@ -152,7 +170,7 @@ class BroadbandAccountBindTest extends TestCase
             ->assertJsonPath('success', true);
 
         $this->assertSame('12345678', $user->fresh()->broadband_account_number);
-        $this->assertSame('CG', $user->fresh()->service_type);
+        $this->assertSame('CG Router', $user->fresh()->service_type);
 
         $this->withToken($token)
             ->postJson('/api/broadband-account/unbind', ['account_number' => '12345678'])

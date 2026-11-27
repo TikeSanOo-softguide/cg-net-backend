@@ -117,11 +117,11 @@ export function ChangePlanDetailDialog({
     const accountPrefixType = request?.broadband_account_number?.startsWith('FTTH')
         ? 'FTTH'
         : request?.broadband_account_number?.startsWith('CG')
-          ? 'CG'
+          ? 'CG Router'
           : '';
     const resolvedServiceType = request?.service_type?.trim() || accountPrefixType;
     const serviceLabel =
-        resolvedServiceType === 'CG'
+        resolvedServiceType === 'CG' || resolvedServiceType === 'CG Router'
             ? t('change_plan.cg_router')
             : resolvedServiceType || '—';
 

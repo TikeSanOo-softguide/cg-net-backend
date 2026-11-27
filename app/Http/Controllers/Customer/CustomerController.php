@@ -450,8 +450,9 @@ class CustomerController extends Controller
 
         $serviceType = $validated['service_type'];
         $accountNumber = $validated['account_number'];
+        $storedServiceType = $accountInfoService->storedServiceType($serviceType);
 
-        if ($customer->service_type === $serviceType && $customer->broadband_account_number === $accountNumber) {
+        if ($customer->service_type === $storedServiceType && $customer->broadband_account_number === $accountNumber) {
             return back()->with('success', 'customers.account_already_bound');
         }
 
@@ -472,7 +473,7 @@ class CustomerController extends Controller
         }
 
         $customer->update([
-            'service_type' => $serviceType,
+            'service_type' => $storedServiceType,
             'broadband_account_number' => $accountNumber,
         ]);
 

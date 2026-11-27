@@ -31,7 +31,7 @@ class CreateChangePlanRequest extends CreateServiceRequest
                 'max:32',
                 Rule::exists('users', 'broadband_account_number')->where('id', $this->user()->id),
             ],
-            'service_type' => ['required', 'string', 'in:FTTH,CG'],
+            'service_type' => ['required', 'string', 'in:FTTH,CG,CG Router'],
             ...ChangePlanRequest::packageDetailRules('current_package_detail'),
             ...ChangePlanRequest::packageDetailRules('new_package_detail'),
             'preferred_date' => ['required', 'date'],

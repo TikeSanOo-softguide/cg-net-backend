@@ -34,6 +34,7 @@ type FailureReportRow = {
     ticket_number: string | null;
     customer_name: string;
     customer_phone: string;
+    service_type: string;
     broadband_account_number: string;
     account_customer: string;
     failure_type: string;

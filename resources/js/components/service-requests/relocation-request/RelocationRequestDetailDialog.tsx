@@ -38,6 +38,7 @@ type RelocationRequest = {
     user: {
         name: string;
         phone: string;
+        service_type: string | null;
     };
 };
 
@@ -110,11 +111,9 @@ export function RelocationRequestDetailDialog({
     };
 
     const ticket = request.ticket_number?.trim() || '';
-    const serviceType = request.broadband_account_number?.startsWith('FTTH')
-        ? 'FTTH'
-        : request.broadband_account_number?.startsWith('CG')
-          ? t('relocation_requests.cg_router')
-          : '—';
+    const serviceType = ['CG', 'CG Router'].includes(request.user.service_type?.trim() || '')
+        ? t('relocation_requests.cg_router')
+        : request.user.service_type?.trim() || '—';
 
     return (
         <FormDialog

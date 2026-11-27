@@ -72,6 +72,31 @@ class ServiceRequestIndexTest extends TestCase
                 ->where('requests.data.0.ticket_number', 'REL-2026-001'));
     }
 
+    public function test_change_plan_cg_filter_includes_both_legacy_and_cg_router_values(): void
+    {
+        $admin = Admin::factory()->create();
+        ChangePlanRequest::factory()->create([
+            'service_type' => 'CG',
+            'status' => RequestStatus::UnderReview,
+        ]);
+        ChangePlanRequest::factory()->create([
+            'service_type' => 'CG Router',
+            'status' => RequestStatus::UnderReview,
+        ]);
+        ChangePlanRequest::factory()->create([
+            'service_type' => 'FTTH',
+            'status' => RequestStatus::UnderReview,
+        ]);
+
+        $this->actingAs($admin, 'web')
+            ->get('/service-requests/change-plan?service_type=CG')
+            ->assertOk()
+            ->assertInertia(fn(Assert $page) => $page
+                ->where('filters.service_type', 'CG')
+                ->where('requests.total', 2)
+                ->where('stats.total_requests', 2));
+    }
+
     public function test_user_phone_is_searchable_for_every_service_request_type(): void
     {
         $admin = Admin::factory()->create();

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
 import {
     Calendar1Icon,
@@ -19,7 +19,7 @@ import {
 import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
-import { cn, formatDate } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 import { CopyValueButton } from '@/components/CopyValueButton';
 import { REQUEST_STATUS } from '@/lib/CommonNameConst';
 import { formatPhoneInternational } from '@/lib/phone';
@@ -31,6 +31,7 @@ type FailureReport = {
     status: string;
     customer_name: string;
     customer_phone: string;
+    service_type: string;
     broadband_account_number: string;
     account_customer: string;
     failure_type: string;
@@ -114,8 +115,9 @@ export function FailureReportDetailDialog({
                             </div>
                             <div className="flex flex-col items-start gap-2 text-xs text-muted-foreground sm:items-end">
                                 <span className="inline-flex items-center gap-1 rounded-full bg-background px-2.5 py-1 font-medium text-foreground">
-                                    <WifiOffIcon className="size-3.5" />
-                                    {t(`failure_report.${request.failure_type}`)}
+                                    {['CG', 'CG Router'].includes(request.service_type?.trim() || '')
+                                        ? t('broadband_application.cg_router')
+                                        : request.service_type?.trim() || '—'}
                                 </span>
                                 <span className="inline-flex items-center gap-1">
                                     <Calendar1Icon className="size-3.5" />
@@ -194,6 +196,15 @@ export function FailureReportDetailDialog({
                                 </div>
                             </div>
                         )}
+                    </div>
+                    <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/20 px-3.5 py-3">
+                        <span className="flex size-7 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                            <WifiOffIcon className="size-3.5" />
+                        </span>
+                        <span className="text-xs text-muted-foreground">{t('failure_report.failure_type')}:</span>
+                        <span className="inline-flex items-center rounded-full bg-background px-2.5 py-1 text-sm font-medium text-foreground">
+                            {t(`failure_report.${request.failure_type}`)}
+                        </span>
                     </div>
                     <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
                         <div className="mb-2">

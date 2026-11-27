@@ -117,6 +117,16 @@ class AccountInfoService
             return null;
         }
 
-        return $this->find($serviceType, $broadbandAccount);
+        return $this->find($this->providerServiceType($serviceType), $broadbandAccount);
+    }
+
+    public function storedServiceType(string $serviceType): string
+    {
+        return $serviceType === 'CG' ? 'CG Router' : $serviceType;
+    }
+
+    public function providerServiceType(string $serviceType): string
+    {
+        return $serviceType === 'CG Router' ? 'CG' : $serviceType;
     }
 }

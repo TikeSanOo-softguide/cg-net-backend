@@ -40,7 +40,7 @@ class BroadbandAccountController extends Controller
         $accountNumber = $request->string('account_number')->toString();
 
         $user->update([
-            'service_type' => $serviceType,
+            'service_type' => $this->accountInfoService->storedServiceType($serviceType),
             'broadband_account_number' => $accountNumber,
         ]);
 
@@ -76,7 +76,10 @@ class BroadbandAccountController extends Controller
         $alreadyBound = User::query()
             ->where('id', '!=', $user->id)
             ->where('broadband_account_number', $validated['account_number'])
-            ->where('service_type', $validated['service_type'])
+            ->whereIn('service_type', array_unique([
+                $validated['service_type'],
+                $this->accountInfoService->storedServiceType($validated['service_type']),
+            ]))
             ->exists();
 
         if ($alreadyBound) {
@@ -114,9 +117,15 @@ class BroadbandAccountController extends Controller
             return false;
         }
 
-        $type = is_string($user->service_type) && $user->service_type !== '' ? $user->service_type : $serviceType;
+        $storedType = is_string($user->service_type) && $user->service_type !== ''
+            ? $this->accountInfoService->providerServiceType($user->service_type)
+            : null;
+        $requestedType = $serviceType !== null
+            ? $this->accountInfoService->providerServiceType($serviceType)
+            : null;
+        $type = $storedType ?? $requestedType;
 
-        if ($serviceType !== null && $user->service_type !== null && $user->service_type !== $serviceType) {
+        if ($storedType !== null && $requestedType !== null && $storedType !== $requestedType) {
             return false;
         }
 

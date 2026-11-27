@@ -147,10 +147,11 @@ export function BroadbandApplicationDetailDialog({
     const accountNumber = request.user?.broadband_account_number?.trim() || '';
     const appUserPhone = request.user?.phone ? formatPhoneInternational(request.user.phone) : '';
     const contactPhone = request.contact_phone ? formatPhoneInternational(request.contact_phone) : '';
+    const serviceType = request.service_type?.trim() || '';
     const serviceLabel =
-        request.service_type === 'CG'
+        serviceType === 'CG' || serviceType === 'CG Router'
             ? t('broadband_application.cg_router')
-            : request.service_type?.trim() || '—';
+            : serviceType || '—';
 
     return (
         <FormDialog
