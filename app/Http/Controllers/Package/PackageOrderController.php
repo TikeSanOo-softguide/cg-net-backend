@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Package;
 
 use App\Enums\ActivityLogEvent;
 use App\Enums\ActivityLogName;
+use App\Enums\CustomerPackageStatus;
 use App\Enums\PackageOrderStatus;
 use App\Exceptions\PackageOrderReviewConflict;
 use App\Exports\PackageOrderExport;
@@ -28,17 +29,36 @@ class PackageOrderController extends Controller
         $filters = $this->filters($request);
         $returnTo = $request->query('return_to');
 
-        $orders = $this->query($filters)
-            ->paginate(15)
-            ->withQueryString();
+        $orders = $this->query($filters)->paginate(15)->withQueryString();
 
         $unreadOrderIds = $readStatus->unreadReferenceIds(
             (int) $request->user()->getAuthIdentifier(),
             'package_order',
             $orders->getCollection()->pluck('id')->all(),
         );
-        $orders->through(
-            fn(PackageOrder $order): array => [
+        $orders->through(function (PackageOrder $order) use ($unreadOrderIds): array {
+            $customerPackage = $order->customerPackage;
+            $customerPackageData = null;
+
+            if ($customerPackage !== null) {
+                $customerPackageStatus = $customerPackage->status;
+
+                if (
+                    $customerPackageStatus === CustomerPackageStatus::Active &&
+                    $customerPackage->expires_at !== null &&
+                    $customerPackage->expires_at->lte(now())
+                ) {
+                    $customerPackageStatus = CustomerPackageStatus::Expired;
+                }
+
+                $customerPackageData = [
+                    'status' => $customerPackageStatus->value,
+                    'starts_at' => $customerPackage->starts_at,
+                    'expires_at' => $customerPackage->expires_at,
+                ];
+            }
+
+            return [
                 'id' => $order->id,
                 'notification_unread' => in_array($order->id, $unreadOrderIds, true),
                 'order_no' => $order->order_no,
@@ -57,15 +77,9 @@ class PackageOrderController extends Controller
                 'completed_at' => $order->completed_at,
                 'snapshot' => $order->snapshot,
                 'external_response' => $order->external_response,
-                'customer_package' => $order->customerPackage
-                    ? [
-                        'status' => $order->customerPackage->status->value,
-                        'starts_at' => $order->customerPackage->starts_at,
-                        'expires_at' => $order->customerPackage->expires_at,
-                    ]
-                    : null,
-            ],
-        );
+                'customer_package' => $customerPackageData,
+            ];
+        });
 
         $packages = Package::withTrashed()
             ->whereHas('packageOrders')

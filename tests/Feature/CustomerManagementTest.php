@@ -106,6 +106,7 @@ class CustomerManagementTest extends TestCase
             'user_id' => $customer->id,
             'package_order_id' => $packageOrder->id,
             'starts_at' => now()->subDays(2),
+            'expires_at' => now()->subDay(),
         ]);
         $newerPackage = CustomerPackage::factory()->create([
             'user_id' => $customer->id,
@@ -135,6 +136,7 @@ class CustomerManagementTest extends TestCase
                     ->has('packageHistory', 2)
                     ->where('packageHistory.0.id', $newerPackage->id)
                     ->where('packageHistory.1.package_name.en', 'Snapshot package name')
+                    ->where('packageHistory.1.status', 'expired')
                     ->where('wallet.balance', '15000.00')
                     ->has('wallet.transactions', 1),
             );

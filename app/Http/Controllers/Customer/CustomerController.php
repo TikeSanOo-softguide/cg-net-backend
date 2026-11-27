@@ -51,16 +51,7 @@ class CustomerController extends Controller
                 $sort === 'wallet',
                 fn($query) => $query->select('users.*')->leftJoin('wallets', 'wallets.user_id', '=', 'users.id'),
             )
-            ->with([
-                'wallet:id,user_id,balance',
-                'customerPackages' => fn($query) => $query
-                    ->where('status', CustomerPackageStatus::Active->value)
-                    ->with(
-                        'package.network:id,name_en,name_zh,name_my',
-                        'package.speed:id,mbps',
-                        'package.term:id,months',
-                    ),
-            ])
+            ->with(['wallet:id,user_id,balance'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
@@ -81,8 +72,6 @@ class CustomerController extends Controller
             ->paginate(15)
             ->withQueryString()
             ->through(function (User $customer) {
-                $currentPackage = $customer->customerPackages->first()?->package;
-
                 return [
                     'id' => $customer->id,
                     'name' => $customer->name,
@@ -264,6 +253,12 @@ class CustomerController extends Controller
                     is_string($snapshotProductName) && trim($snapshotProductName) !== ''
                         ? trim($snapshotProductName)
                         : null;
+                $status =
+                    $row->status === CustomerPackageStatus::Active &&
+                    $row->expires_at !== null &&
+                    $row->expires_at->lte(now())
+                        ? CustomerPackageStatus::Expired
+                        : $row->status;
 
                 return [
                     'id' => $row->id,
@@ -274,7 +269,7 @@ class CustomerController extends Controller
                     ],
                     'starts_at' => $row->starts_at,
                     'expires_at' => $row->expires_at,
-                    'status' => $row->status->value,
+                    'status' => $status->value,
                 ];
             });
 

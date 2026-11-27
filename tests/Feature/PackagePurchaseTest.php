@@ -49,6 +49,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\TestResponse;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class PackagePurchaseTest extends TestCase
@@ -91,6 +92,33 @@ class PackagePurchaseTest extends TestCase
         };
         $this->app->instance(CgNetProductCatalog::class, $this->catalog);
         $this->network = Network::factory()->create();
+    }
+
+    public function test_package_order_shows_expired_status_when_active_package_has_expired(): void
+    {
+        $admin = Admin::factory()->create();
+        $user = User::factory()->create();
+        $order = PackageOrder::query()->create([
+            'user_id' => $user->id,
+            'status' => PackageOrderStatus::Completed,
+            'snapshot' => ['product_name' => 'Expired package'],
+        ]);
+        CustomerPackage::factory()->create([
+            'user_id' => $user->id,
+            'package_order_id' => $order->id,
+            'status' => CustomerPackageStatus::Active,
+            'expires_at' => now()->subSecond(),
+        ]);
+
+        $this->actingAs($admin, 'web')
+            ->get('/billing/package-orders')
+            ->assertOk()
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->component('PackageOrders/Index')
+                    ->where('orders.data.0.id', $order->id)
+                    ->where('orders.data.0.customer_package.status', CustomerPackageStatus::Expired->value),
+            );
     }
 
     public function test_user_can_buy_package_when_wallet_has_enough_balance(): void

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\BillPaymentStatus;
+use App\Enums\CustomerPackageStatus;
 use App\Enums\LedgerTransactionStatus;
 use App\Enums\LedgerTransactionType;
 use App\Enums\PackageOrderStatus;
@@ -11,6 +12,7 @@ use App\Enums\WalletActorType;
 use App\Models\Admin;
 use App\Models\AdminNotification;
 use App\Models\BillPayment;
+use App\Models\CustomerPackage;
 use App\Models\FailureReport;
 use App\Models\InstallationApplication;
 use App\Models\LedgerTransaction;
@@ -94,6 +96,33 @@ class DashboardTest extends TestCase
                     ->has('locale')
                     ->has('translations'),
             );
+    }
+
+    public function test_dashboard_counts_only_active_and_unexpired_customer_packages(): void
+    {
+        $admin = Admin::factory()->create();
+
+        CustomerPackage::factory()->create([
+            'status' => CustomerPackageStatus::Active,
+            'expires_at' => now()->addDay(),
+        ]);
+        CustomerPackage::factory()->create([
+            'status' => CustomerPackageStatus::Active,
+            'expires_at' => now()->subDay(),
+        ]);
+        CustomerPackage::factory()->create([
+            'status' => CustomerPackageStatus::Expired,
+            'expires_at' => now()->addDay(),
+        ]);
+        CustomerPackage::factory()->create([
+            'status' => CustomerPackageStatus::Active,
+            'expires_at' => null,
+        ]);
+
+        $this->actingAs($admin, 'web')
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertInertia(fn(Assert $page) => $page->where('stats.active_packages', 2));
     }
 
     public function test_dashboard_ranks_service_requests_highest_to_lowest(): void
