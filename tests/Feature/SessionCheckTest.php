@@ -13,6 +13,8 @@ class SessionCheckTest extends TestCase
 {
     use RefreshDatabase;
 
+    private const DEVICE_ID = 'current-device-id';
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -25,7 +27,10 @@ class SessionCheckTest extends TestCase
         $token = $user->createToken('session-check')->accessToken;
         $token->forceFill(['expires_at' => now()->addHour()])->save();
 
-        $this->postJson('/api/auth/session/check', ['phone' => '+95922345678'])
+        $this->postJson('/api/auth/session/check', [
+            'phone' => '+95922345678',
+            'device_id' => self::DEVICE_ID,
+        ])
             ->assertOk()
             ->assertExactJson([
                 'code' => 'MSG-AUTH-012',
@@ -50,8 +55,11 @@ class SessionCheckTest extends TestCase
             ],
         ]);
 
-        $this->postJson('/api/auth/session/check', ['phone' => '+95922345678'])
-            ->assertOk()
+        $this->postJson('/api/auth/session/check', [
+            'phone' => '+95922345678',
+            'device_id' => 'another-device-id',
+        ])
+            ->assertForbidden()
             ->assertExactJson([
                 'code' => 'MSG-AUTH-012',
                 'level' => 'warning',
@@ -66,7 +74,10 @@ class SessionCheckTest extends TestCase
         $user = User::factory()->create(['phone' => '95922345678']);
         $user->deviceTokens()->create(['token' => 'registered-device-token']);
 
-        $this->postJson('/api/auth/session/check', ['phone' => '95922345678'])
+        $this->postJson('/api/auth/session/check', [
+            'phone' => '95922345678',
+            'device_id' => self::DEVICE_ID,
+        ])
             ->assertOk()
             ->assertJsonPath('show_alert', false);
     }
@@ -77,14 +88,20 @@ class SessionCheckTest extends TestCase
         $token = $user->createToken('session-check')->accessToken;
         $token->forceFill(['expires_at' => now()->subSecond()])->save();
 
-        $this->postJson('/api/auth/session/check', ['phone' => '95922345678'])
+        $this->postJson('/api/auth/session/check', [
+            'phone' => '95922345678',
+            'device_id' => self::DEVICE_ID,
+        ])
             ->assertOk()
             ->assertJsonPath('show_alert', false);
     }
 
     public function test_it_does_not_show_an_alert_without_a_user(): void
     {
-        $this->postJson('/api/auth/session/check', ['phone' => '95922345679'])
+        $this->postJson('/api/auth/session/check', [
+            'phone' => '95922345679',
+            'device_id' => self::DEVICE_ID,
+        ])
             ->assertOk()
             ->assertExactJson([
                 'show_alert' => false,
@@ -99,7 +116,10 @@ class SessionCheckTest extends TestCase
             'status' => UserStatus::Deactivated,
         ]);
 
-        $this->postJson('/api/auth/session/check', ['phone' => '95922345678'])
+        $this->postJson('/api/auth/session/check', [
+            'phone' => '95922345678',
+            'device_id' => self::DEVICE_ID,
+        ])
             ->assertForbidden()
             ->assertExactJson([
                 'code' => 'MSG-USER-003',
@@ -117,7 +137,10 @@ class SessionCheckTest extends TestCase
             'status' => UserStatus::Suspended,
         ]);
 
-        $this->postJson('/api/auth/session/check', ['phone' => '95922345678'])
+        $this->postJson('/api/auth/session/check', [
+            'phone' => '95922345678',
+            'device_id' => self::DEVICE_ID,
+        ])
             ->assertForbidden()
             ->assertExactJson([
                 'code' => 'MSG-USER-004',
@@ -134,6 +157,10 @@ class SessionCheckTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors('phone');
 
+        $this->postJson('/api/auth/session/check', ['phone' => '95922345678'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('device_id');
+
         $this->postJson('/api/auth/session/check', ['phone' => 'not-a-phone'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('phone');
@@ -142,10 +169,57 @@ class SessionCheckTest extends TestCase
     public function test_it_rate_limits_session_checks(): void
     {
         for ($attempt = 0; $attempt < 10; $attempt++) {
-            $this->postJson('/api/auth/session/check', ['phone' => '95922345678'])->assertOk();
+            $this->postJson('/api/auth/session/check', [
+                'phone' => '95922345678',
+                'device_id' => self::DEVICE_ID,
+            ])->assertOk();
         }
 
-        $this->postJson('/api/auth/session/check', ['phone' => '95922345678'])
+        $this->postJson('/api/auth/session/check', [
+            'phone' => '95922345678',
+            'device_id' => self::DEVICE_ID,
+        ])
             ->assertTooManyRequests();
+    }
+
+    public function test_it_does_not_alert_when_the_current_device_matches_the_latest_login_log(): void
+    {
+        $user = User::factory()->create(['phone' => '95922345678']);
+        $token = $user->createToken('session-check')->accessToken;
+        $token->forceFill(['expires_at' => now()->addHour()])->save();
+        UserLog::query()->create([
+            'user_id' => $user->id,
+            'event' => 'login_success',
+            'metadata' => ['device_id' => self::DEVICE_ID],
+        ]);
+
+        $this->postJson('/api/auth/session/check', [
+            'phone' => '95922345678',
+            'device_id' => self::DEVICE_ID,
+        ])
+            ->assertOk()
+            ->assertJsonPath('show_alert', false);
+    }
+
+    public function test_logout_log_releases_the_previous_device_binding(): void
+    {
+        $user = User::factory()->create(['phone' => '95922345678']);
+        UserLog::query()->create([
+            'user_id' => $user->id,
+            'event' => 'login_success',
+            'metadata' => ['device_id' => 'previous-device-id'],
+        ]);
+        UserLog::query()->create([
+            'user_id' => $user->id,
+            'event' => 'logout',
+            'metadata' => [],
+        ]);
+
+        $this->postJson('/api/auth/session/check', [
+            'phone' => '95922345678',
+            'device_id' => self::DEVICE_ID,
+        ])
+            ->assertOk()
+            ->assertJsonPath('show_alert', false);
     }
 }

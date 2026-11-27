@@ -17,7 +17,7 @@ class CompleteRegistrationRequest extends FormRequest
     {
         return [
             'verification_token' => ['required', 'string', 'size:64'],
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', 'min:1'],
             'password' => ['required', 'string', 'regex:/^\d{6}$/', 'confirmed'],
             'lang' => ['required', 'string', Rule::in(JsonTranslations::LOCALES)],
             'device_token' => ['nullable', 'string', 'max:512'],

@@ -204,7 +204,8 @@ class PhoneCanonicalFormatTest extends TestCase
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify->json('verification_token'),
             'password' => '123456',
-        ])->assertOk();
+            'device_id' => 'phone-test-device',
+        ], ['X-Device-Id' => 'phone-test-device'])->assertOk();
         $this->assertDatabaseCount('users', 1);
     }
 

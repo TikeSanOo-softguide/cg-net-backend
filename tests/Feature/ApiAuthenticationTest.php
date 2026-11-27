@@ -47,7 +47,7 @@ class ApiAuthenticationTest extends TestCase
             'password' => '123456',
             'password_confirmation' => '123456',
             'lang' => 'my',
-        ]);
+        ], ['X-Device-Id' => 'new-user-device']);
 
         $response
             ->assertCreated()
@@ -59,6 +59,14 @@ class ApiAuthenticationTest extends TestCase
         $this->assertDatabaseHas('users', ['phone' => self::PHONE, 'name' => 'New User', 'lang' => 'my']);
 
         $user = User::query()->where('phone', self::PHONE)->firstOrFail();
+        $this->assertSame(
+            'new-user-device',
+            UserLog::query()
+                ->where('user_id', $user->id)
+                ->where('event', 'register_complete')
+                ->firstOrFail()
+                ->metadata['device_id'],
+        );
         $this->assertDatabaseHas('wallets', ['user_id' => $user->id, 'balance' => 0]);
         $this->assertDatabaseHas('ledger_accounts', [
             'wallet_id' => $user->wallet->id,
@@ -218,11 +226,28 @@ class ApiAuthenticationTest extends TestCase
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
             'password' => '123456',
-        ])
+            'device_id' => 'android:test-device-id',
+        ], ['X-Device-Id' => 'legacy-header-device-id'])
             ->assertOk()
             ->assertJsonPath('token_type', 'Bearer')
             ->assertJsonPath('user.id', $user->id)
             ->assertJsonStructure(['token', 'expires_at']);
+
+        $this->assertSame(
+            'android:test-device-id',
+            UserLog::query()
+                ->where('user_id', $user->id)
+                ->where('event', 'login_success')
+                ->firstOrFail()
+                ->metadata['device_id'],
+        );
+
+        $this->postJson('/api/auth/session/check', [
+            'phone' => '+95922345678',
+            'device_id' => 'android:test-device-id',
+        ])
+            ->assertOk()
+            ->assertJsonPath('show_alert', false);
     }
 
     public function test_login_records_the_phone_on_the_user_log(): void
@@ -238,6 +263,7 @@ class ApiAuthenticationTest extends TestCase
         ])->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
             'password' => '123456',
+            'device_id' => '8f3c1b2a-4d5e-4f60-8a71-223344556677',
         ])->assertOk();
 
         $log = UserLog::query()
@@ -287,7 +313,11 @@ class ApiAuthenticationTest extends TestCase
     {
         User::factory()->create(['phone' => self::PHONE, 'password' => '123456']);
         $verify = $this->verifyOtpFor('+95922345678');
-        $payload = ['verification_token' => $verify['verification_token'], 'password' => '123456'];
+        $payload = [
+            'verification_token' => $verify['verification_token'],
+            'password' => '123456',
+            'device_id' => 'login-device',
+        ];
 
         $this->postJson('/api/auth/login', $payload)->assertOk();
         $this->postJson('/api/auth/login', $payload)->assertUnprocessable();
@@ -303,6 +333,7 @@ class ApiAuthenticationTest extends TestCase
             $this->postJson('/api/auth/login', [
                 'verification_token' => $verify['verification_token'],
                 'password' => '000000',
+                'device_id' => 'login-device',
             ])->assertUnprocessable();
         }
 
@@ -310,6 +341,7 @@ class ApiAuthenticationTest extends TestCase
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
             'password' => '123456',
+            'device_id' => 'login-device',
         ])->assertUnprocessable();
         $this->assertDatabaseCount('personal_access_tokens', 0);
     }
@@ -322,11 +354,13 @@ class ApiAuthenticationTest extends TestCase
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
             'password' => '000000',
+            'device_id' => 'login-device',
         ])->assertUnprocessable();
 
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
             'password' => '123456',
+            'device_id' => 'login-device',
         ])->assertOk();
     }
 
@@ -335,7 +369,11 @@ class ApiAuthenticationTest extends TestCase
         config()->set('auth_api.max_password_attempts', 100);
         User::factory()->create(['phone' => self::PHONE, 'password' => '123456']);
         $verify = $this->verifyOtpFor('+95922345678');
-        $payload = ['verification_token' => $verify['verification_token'], 'password' => '000000'];
+        $payload = [
+            'verification_token' => $verify['verification_token'],
+            'password' => '000000',
+            'device_id' => 'login-device',
+        ];
 
         foreach (range(1, 5) as $_) {
             $this->postJson('/api/auth/login', $payload)->assertUnprocessable();
@@ -360,6 +398,7 @@ class ApiAuthenticationTest extends TestCase
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
             'password' => '123456',
+            'device_id' => 'login-device',
         ])->assertForbidden()
             ->assertExactJson([
                 'code' => 'MSG-USER-004',
@@ -399,6 +438,7 @@ class ApiAuthenticationTest extends TestCase
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
             'password' => '123456',
+            'device_id' => 'login-device',
         ])->assertForbidden()
             ->assertExactJson([
                 'code' => 'MSG-USER-003',
@@ -423,6 +463,7 @@ class ApiAuthenticationTest extends TestCase
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
             'password' => '654321',
+            'device_id' => 'login-device',
         ])->assertUnprocessable();
 
         $this->assertSame(UserStatus::Deactivated, $user->fresh()->status);
@@ -464,12 +505,18 @@ class ApiAuthenticationTest extends TestCase
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
             'password' => '123456',
+            'device_id' => 'login-device',
         ])->assertUnprocessable();
     }
 
     public function test_login_is_rejected_when_another_device_has_an_active_session(): void
     {
         $user = User::factory()->create(['phone' => self::PHONE, 'password' => '123456']);
+        UserLog::query()->create([
+            'user_id' => $user->id,
+            'event' => 'login_success',
+            'metadata' => ['device_id' => 'old-device-id'],
+        ]);
         $oldToken = $user->createToken('old-device')->plainTextToken;
         $user->deviceTokens()->create([
             'token' => 'old-device-push-token',
@@ -481,8 +528,9 @@ class ApiAuthenticationTest extends TestCase
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
             'password' => '123456',
+            'device_id' => 'new-device-id',
         ])
-            ->assertStatus(409)
+            ->assertForbidden()
             ->assertJsonPath('code', 'MSG-AUTH-012')
             ->assertJsonPath('level', 'warning')
             ->assertJsonPath(
@@ -632,12 +680,24 @@ class ApiAuthenticationTest extends TestCase
     public function test_logout_revokes_current_sanctum_token(): void
     {
         $user = User::factory()->create(['phone' => self::PHONE, 'password' => '123456']);
+        UserLog::query()->create([
+            'user_id' => $user->id,
+            'event' => 'login_success',
+            'metadata' => ['device_id' => 'previous-device-id'],
+        ]);
         $token = $user->createToken('test')->plainTextToken;
 
         $this->withToken($token, 'Bearer')->postJson('/api/auth/logout')->assertOk();
         $this->assertDatabaseCount('personal_access_tokens', 0);
         app('auth')->forgetGuards();
         $this->withToken($token, 'Bearer')->getJson('/api/user')->assertUnauthorized();
+
+        $verify = $this->verifyOtpFor('+95922345678');
+        $this->postJson('/api/auth/login', [
+            'verification_token' => $verify['verification_token'],
+            'password' => '123456',
+            'device_id' => 'new-device-id',
+        ])->assertOk();
     }
 
     // ---------------------------------------------------------------------
@@ -652,6 +712,7 @@ class ApiAuthenticationTest extends TestCase
         $this->postJson('/api/auth/login', [
             'verification_token' => $verify['verification_token'],
             'password' => '123456',
+            'device_id' => 'login-device',
             'device_token' => 'auto-login-device-token',
             'platform' => 'android',
         ])->assertOk();
@@ -891,8 +952,9 @@ class ApiAuthenticationTest extends TestCase
         return $this->postJson('/api/auth/otp/verify', [
             'challenge_id' => $challenge['challenge_id'],
             'code' => $challenge['debug_otp'],
+            'device_id' => 'test-device-id',
             ...$extra,
-        ])
+        ], ['X-Device-Id' => 'test-device-id'])
             ->assertOk()
             ->json();
     }
@@ -907,6 +969,6 @@ class ApiAuthenticationTest extends TestCase
             'password' => '123456',
             'password_confirmation' => '123456',
             'lang' => 'en',
-        ])->assertCreated();
+        ], ['X-Device-Id' => 'test-device-id'])->assertCreated();
     }
 }

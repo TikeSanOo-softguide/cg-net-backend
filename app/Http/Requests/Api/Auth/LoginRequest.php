@@ -18,6 +18,7 @@ class LoginRequest extends FormRequest
             'verification_token' => ['required', 'string', 'size:64'],
             'password' => ['required', 'string', 'regex:/^\d{6}$/'],
             'device_token' => ['nullable', 'string', 'max:512'],
+            'device_id' => ['required', 'string', 'max:255'],
             'platform' => ['nullable', 'string', Rule::in(['android', 'ios', 'web'])],
         ];
     }
