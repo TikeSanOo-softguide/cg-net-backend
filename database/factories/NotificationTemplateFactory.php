@@ -15,12 +15,13 @@ class NotificationTemplateFactory extends Factory
     {
         return [
             'type' => NotificationTemplateType::BillAlert,
-            'title_en' => 'Internet bill due soon',
-            'title_my' => 'Internet ဘေလ်ပေးချေရန် နီးကပ်လာပါပြီ',
-            'title_zh' => '互联网账单即将到期',
-            'description_en' => 'Your bill for account {account_number} is due on {due_date}. Tap to view details.',
-            'description_my' => 'အကောင့် {account_number} အတွက် ဘေလ်ကို {due_date} တွင် ပေးဆောင်ရပါမည်။ အသေးစိတ်ကြည့်ရန် နှိပ်ပါ။',
-            'description_zh' => '账户 {account_number} 的账单将于 {due_date} 到期。点击查看详情。',
+            'title_en' => 'Internet account expiring soon',
+            'title_my' => 'Internet အကောင့် သက်တမ်းကုန်တော့မည်',
+            'title_zh' => '互联网账户即将到期',
+            'description_en' => "Account {account_number} expires at {endtime}.\nRecharge to stay connected.",
+            'description_my' =>
+                "အကောင့် {account_number} သည် {endtime} တွင် သက်တမ်းကုန်ဆုံးပါတော့မည်။\nဆက်လက်အသုံးပြုရန် သက်တမ်းတိုးပါ။",
+            'description_zh' => "账户 {account_number} 将于 {endtime} 到期。\n请及时充值以保持连接。",
         ];
     }
 }

@@ -29,8 +29,8 @@ class CgNetApiClient
             ->withToken($this->tokens->getAccessToken($baseUrl))
             ->send(
                 $method,
-                $baseUrl.'/'.$command,
-                $method === 'GET' ? ['query' => $data] : ['json' => $data],
+                $baseUrl . '/' . $command,
+                $method === 'GET' ? ['query' => $data] : ['json' => $data ?: new \stdClass()],
             );
     }
 
@@ -40,15 +40,15 @@ class CgNetApiClient
         $parts = parse_url($baseUrl);
 
         if (
-            $baseUrl === ''
-            || filter_var($baseUrl, FILTER_VALIDATE_URL) === false
-            || ! is_array($parts)
-            || strtolower((string) ($parts['scheme'] ?? '')) !== 'https'
-            || isset($parts['user'])
-            || isset($parts['pass'])
-            || isset($parts['query'])
-            || isset($parts['fragment'])
-            || ! str_ends_with(rtrim((string) ($parts['path'] ?? ''), '/'), '/WalletApp/ServerCommand')
+            $baseUrl === '' ||
+            filter_var($baseUrl, FILTER_VALIDATE_URL) === false ||
+            !is_array($parts) ||
+            strtolower((string) ($parts['scheme'] ?? '')) !== 'https' ||
+            isset($parts['user']) ||
+            isset($parts['pass']) ||
+            isset($parts['query']) ||
+            isset($parts['fragment']) ||
+            !str_ends_with(rtrim((string) ($parts['path'] ?? ''), '/'), '/WalletApp/ServerCommand')
         ) {
             throw new RuntimeException('CG API URL must be configured as an HTTPS ServerCommand URL.');
         }

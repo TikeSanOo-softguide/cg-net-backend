@@ -23,122 +23,133 @@ class BillDueAlertManagementTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_default_date_is_seven_days_ahead_and_missing_alerts_are_shown_first(): void
+    public function test_api_due_accounts_are_compared_with_notification_records_and_missing_alerts_are_shown_first(): void
     {
         $admin = $this->notificationAdmin(canCreate: true);
-        $user = User::factory()->create(['broadband_account_number' => 'ACCOUNT-123']);
-        $dueDate = now()->addDays(7)->toDateString();
-        DeviceToken::query()->create(['user_id' => $user->id, 'token' => 'token']);
-        $notification = Notification::factory()->create([
-            'user_id' => $user->id,
+        $missingUser = User::factory()->create(['broadband_account_number' => 'ACCOUNT-MISSING']);
+        $unsentUser = User::factory()->create(['broadband_account_number' => 'ACCOUNT-UNSENT']);
+        $sentUser = User::factory()->create(['broadband_account_number' => 'ACCOUNT-SENT']);
+        $endTime = $this->dueEndTime();
+        $dueDate = now()->addDays(3)->toDateString();
+        DeviceToken::query()->create(['user_id' => $missingUser->id, 'token' => 'token']);
+        $unsentNotification = Notification::factory()->create([
+            'user_id' => $unsentUser->id,
             'category' => NotificationCategory::Announcement,
             'action_type' => NotificationActionType::FtthBill->value,
-            'action_id' => 'ACCOUNT-123:bill-456',
+            'action_id' => "bill_due:ACCOUNT-UNSENT:{$endTime}",
             'template_data' => [
-                'account_number' => 'ACCOUNT-123',
+                'account_number' => 'ACCOUNT-UNSENT',
+                'endtime' => $endTime,
                 'due_date' => $dueDate,
             ],
             'sent_at' => null,
         ]);
         Notification::factory()->create([
-            'user_id' => $user->id,
+            'user_id' => $sentUser->id,
             'category' => NotificationCategory::Announcement,
             'action_type' => NotificationActionType::FtthBill->value,
-            'action_id' => 'ACCOUNT-123:bill-789',
+            'action_id' => "bill_due:ACCOUNT-SENT:{$endTime}",
             'template_data' => [
-                'account_number' => 'ACCOUNT-123',
+                'account_number' => 'ACCOUNT-SENT',
+                'endtime' => $endTime,
                 'due_date' => $dueDate,
             ],
             'sent_at' => now(),
         ]);
+        $this->fakeDueAccountList(['ACCOUNT-MISSING', 'ACCOUNT-UNSENT', 'ACCOUNT-SENT']);
+
+        $this->actingAs($admin, 'web')
+            ->get('/notifications/bill-due-alerts?search=ACCOUNT-')
+            ->assertOk()
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->component('Notification/BillDueAlerts/Index')
+                    ->where('filters.search', 'ACCOUNT-')
+                    ->where('alerts.total', 3)
+                    ->where('alerts.data.0.action_id', "bill_due:ACCOUNT-MISSING:{$endTime}")
+                    ->where('alerts.data.0.endtime', $endTime)
+                    ->where('alerts.data.0.notification_id', null)
+                    ->where('alerts.data.0.state', 'not_recorded')
+                    ->where('alerts.data.1.customer_name', $unsentUser->name)
+                    ->where('alerts.data.1.action_id', "bill_due:ACCOUNT-UNSENT:{$endTime}")
+                    ->where('alerts.data.1.notification_id', $unsentNotification->id)
+                    ->where('alerts.data.1.state', 'unsent')
+                    ->where('alerts.data.2.action_id', "bill_due:ACCOUNT-SENT:{$endTime}")
+                    ->where('alerts.data.2.state', 'sent')
+                    ->where('alerts.data.0.has_device', true),
+            );
+
+        Http::assertSent(
+            fn(Request $request): bool => str_ends_with(
+                parse_url($request->url(), PHP_URL_PATH),
+                '/DueAccountListAPI',
+            ) &&
+                $request->method() === 'POST' &&
+                $request->data() === [],
+        );
+    }
+
+    public function test_screen_shows_an_error_message_when_the_due_account_api_is_unavailable(): void
+    {
+        $admin = $this->notificationAdmin(canCreate: true);
+
+        config([
+            'services.cg_api.url' => 'https://provider.test/WalletApp/ServerCommand',
+            'services.cg_api.client_id' => 'test-client',
+            'services.cg_api.client_secret' => 'test-secret',
+        ]);
         Http::fake([
-            'billing-server.test/due-bills*' => Http::response([
-                'data' => [
-                    [
-                        'account_number' => 'ACCOUNT-123',
-                        'bill_id' => 'bill-456',
-                        'due_date' => $dueDate,
-                    ],
-                    [
-                        'account_number' => 'ACCOUNT-123',
-                        'bill_id' => 'bill-789',
-                        'due_date' => $dueDate,
-                    ],
-                    [
-                        'account_number' => 'ACCOUNT-123',
-                        'bill_id' => 'bill-missing',
-                        'due_date' => $dueDate,
-                    ],
-                ],
+            'provider.test/WalletApp/ServerCommand/GetTokenAPI*' => Http::response([
+                'ErrCode' => 0,
+                'token' => 'test-access-token',
+                'expires_in' => 3600,
             ]),
+            'provider.test/WalletApp/ServerCommand/DueAccountListAPI' => Http::response(
+                ['Message' => 'Unavailable'],
+                503,
+            ),
         ]);
 
         $this->actingAs($admin, 'web')
-            ->get('/notifications/bill-due-alerts?search=ACCOUNT-123')
+            ->get('/notifications/bill-due-alerts')
             ->assertOk()
             ->assertInertia(
-                fn (Assert $page) => $page
+                fn(Assert $page) => $page
                     ->component('Notification/BillDueAlerts/Index')
-                    ->where('filters.search', 'ACCOUNT-123')
-                    ->where('filters.due_date', $dueDate)
-                    ->where('alerts.total', 3)
-                    ->where('alerts.data.0.action_id', 'ACCOUNT-123:bill-missing')
-                    ->where('alerts.data.0.notification_id', null)
-                    ->where('alerts.data.0.state', 'not_recorded')
-                    ->where('alerts.data.1.customer_name', $user->name)
-                    ->where('alerts.data.1.action_id', 'ACCOUNT-123:bill-456')
-                    ->where('alerts.data.1.notification_id', $notification->id)
-                    ->where('alerts.data.1.state', 'unsent')
-                    ->where('alerts.data.2.action_id', 'ACCOUNT-123:bill-789')
-                    ->where('alerts.data.2.state', 'sent')
-                    ->where('alerts.data.0.has_device', true)
+                    ->where('errorKey', 'notification.bill_due_alerts.load_failed')
+                    ->where('alerts.total', 0)
+                    ->where('alerts.data', []),
             );
-
-        Http::assertSent(fn (Request $request): bool => str_ends_with(
-            parse_url($request->url(), PHP_URL_PATH),
-            '/due-bills',
-        ) && $request['due_date_from'] === $dueDate && $request['due_date_to'] === $dueDate);
     }
 
-    public function test_due_date_filter_queries_and_compares_bills_for_only_the_selected_day(): void
+    public function test_screen_uses_the_api_due_account_list_without_filtering_by_date(): void
     {
         $admin = $this->notificationAdmin(canCreate: true);
         $user = User::factory()->create(['broadband_account_number' => 'ACCOUNT-123']);
-        $selectedDate = now()->addDays(3)->toDateString();
-        Http::fake([
-            'billing-server.test/due-bills*' => Http::response([
-                'data' => [
-                    [
-                        'account_number' => 'ACCOUNT-123',
-                        'bill_id' => 'bill-selected',
-                        'due_date' => $selectedDate,
-                    ],
-                    [
-                        'account_number' => 'ACCOUNT-123',
-                        'bill_id' => 'bill-other-day',
-                        'due_date' => now()->addDays(4)->toDateString(),
-                    ],
-                ],
-            ]),
+        $endTime = now()->addDays(5)->setTime(16, 37)->format('Y-m-d H:i');
+        $this->fakeDueAccountList([
+            ['account' => 'ACCOUNT-123', 'endtime' => $endTime],
+            ['account' => 'ACCOUNT-456', 'endtime' => $endTime],
         ]);
 
-        $this->actingAs($admin, 'web')
-            ->get("/notifications/bill-due-alerts?due_date={$selectedDate}")
-            ->assertOk()
-            ->assertInertia(
-                fn (Assert $page) => $page
-                    ->component('Notification/BillDueAlerts/Index')
-                    ->where('filters.due_date', $selectedDate)
-                    ->where('alerts.total', 1)
-                    ->where('alerts.data.0.user_id', $user->id)
-                    ->where('alerts.data.0.action_id', 'ACCOUNT-123:bill-selected')
-                    ->where('alerts.data.0.state', 'not_recorded'),
-            );
+        $this->actingAs($admin, 'web')->get('/notifications/bill-due-alerts')->assertOk()->assertInertia(
+            fn(Assert $page) => $page
+                ->component('Notification/BillDueAlerts/Index')
+                ->where('alerts.total', 1)
+                ->where('alerts.data.0.user_id', $user->id)
+                ->where('alerts.data.0.action_id', "bill_due:ACCOUNT-123:{$endTime}")
+                ->where('alerts.data.0.endtime', $endTime)
+                ->where('alerts.data.0.state', 'not_recorded'),
+        );
 
-        Http::assertSent(fn (Request $request): bool => str_ends_with(
-            parse_url($request->url(), PHP_URL_PATH),
-            '/due-bills',
-        ) && $request['due_date_from'] === $selectedDate && $request['due_date_to'] === $selectedDate);
+        Http::assertSent(
+            fn(Request $request): bool => str_ends_with(
+                parse_url($request->url(), PHP_URL_PATH),
+                '/DueAccountListAPI',
+            ) &&
+                $request->method() === 'POST' &&
+                $request->data() === [],
+        );
     }
 
     public function test_table_search_filters_billing_api_results_by_customer_or_account(): void
@@ -152,134 +163,102 @@ class BillDueAlertManagementTest extends TestCase
             'name' => 'Another Customer',
             'broadband_account_number' => 'ACCOUNT-456',
         ]);
-        $dueDate = now()->addDays(2)->toDateString();
-        Http::fake([
-            'billing-server.test/due-bills*' => Http::response([
-                'data' => [
-                    [
-                        'account_number' => 'ACCOUNT-123',
-                        'bill_id' => 'bill-123',
-                        'due_date' => $dueDate,
-                    ],
-                    [
-                        'account_number' => 'ACCOUNT-456',
-                        'bill_id' => 'bill-456',
-                        'due_date' => $dueDate,
-                    ],
-                ],
-            ]),
-        ]);
+        $endTime = $this->dueEndTime();
+        $this->fakeDueAccountList(['ACCOUNT-123', 'ACCOUNT-456']);
 
         $this->actingAs($admin, 'web')
-            ->get("/notifications/bill-due-alerts?search=matching&due_date={$dueDate}")
+            ->get('/notifications/bill-due-alerts?search=matching')
             ->assertOk()
             ->assertInertia(
-                fn (Assert $page) => $page
+                fn(Assert $page) => $page
                     ->component('Notification/BillDueAlerts/Index')
                     ->where('filters.search', 'matching')
-                    ->where('filters.due_date', $dueDate)
                     ->where('alerts.total', 1)
                     ->where('alerts.data.0.user_id', $matchingUser->id)
                     ->where('alerts.data.0.account_number', 'ACCOUNT-123'),
             );
     }
 
-    public function test_admin_can_retry_an_unsent_bill_alert_from_the_billing_server_list(): void
+    public function test_admin_can_retry_an_unsent_bill_alert_from_the_due_account_list(): void
     {
         $admin = $this->notificationAdmin(canCreate: true);
         $user = User::factory()->create(['broadband_account_number' => 'ACCOUNT-123']);
+        $endTime = $this->dueEndTime();
         DeviceToken::query()->create(['user_id' => $user->id, 'token' => 'token']);
         $notification = Notification::factory()->create([
             'user_id' => $user->id,
             'category' => NotificationCategory::Announcement,
             'action_type' => NotificationActionType::FtthBill->value,
-            'action_id' => 'ACCOUNT-123:bill-456',
+            'action_id' => "bill_due:ACCOUNT-123:{$endTime}",
             'template_data' => [
                 'account_number' => 'ACCOUNT-123',
-                'due_date' => now()->addDays(2)->toDateString(),
+                'endtime' => $endTime,
+                'due_date' => now()->addDays(3)->toDateString(),
             ],
             'sent_at' => null,
         ]);
-        Http::fake([
-            'billing-server.test/due-bills*' => Http::response([
-                'data' => [
-                    [
-                        'account_number' => 'ACCOUNT-123',
-                        'bill_id' => 'bill-456',
-                        'due_date' => now()->addDays(2)->toDateString(),
-                    ],
-                ],
-            ]),
-        ]);
+        $this->fakeDueAccountList(['ACCOUNT-123']);
         Queue::fake();
 
         $this->actingAs($admin, 'web')
             ->post('/notifications/bill-due-alerts/send', [
                 'user_id' => $user->id,
                 'account_number' => 'ACCOUNT-123',
-                'due_date' => now()->addDays(2)->toDateString(),
-                'action_id' => 'ACCOUNT-123:bill-456',
+                'endtime' => $endTime,
+                'action_id' => "bill_due:ACCOUNT-123:{$endTime}",
             ])
             ->assertAccepted()
             ->assertJsonPath('message', 'Bill due alert queued for delivery.');
 
         Queue::assertPushed(
             SendInternetBillDueNotificationJob::class,
-            fn (SendInternetBillDueNotificationJob $job): bool => $job->userId === $user->id &&
+            fn(SendInternetBillDueNotificationJob $job): bool => $job->userId === $user->id &&
                 $job->accountNumber === 'ACCOUNT-123' &&
-                $job->actionId === 'ACCOUNT-123:bill-456',
+                $job->endTime === $endTime &&
+                $job->actionId === "bill_due:ACCOUNT-123:{$endTime}",
         );
     }
 
-    public function test_manual_send_only_queues_a_bill_returned_by_the_billing_server_for_an_active_account(): void
+    public function test_manual_send_only_queues_an_account_and_endtime_returned_by_the_due_account_api(): void
     {
         $admin = $this->notificationAdmin(canCreate: true);
         $user = User::factory()->create(['broadband_account_number' => 'ACCOUNT-123']);
-        Http::fake([
-            'billing-server.test/due-bills*' => Http::response([
-                'data' => [
-                    [
-                        'account_number' => 'ACCOUNT-123',
-                        'bill_id' => 'bill-456',
-                        'due_date' => now()->addDays(2)->toDateString(),
-                    ],
-                ],
-            ]),
-        ]);
+        $endTime = $this->dueEndTime();
+        $this->fakeDueAccountList(['ACCOUNT-123']);
         Queue::fake();
 
         $this->actingAs($admin, 'web')
             ->post('/notifications/bill-due-alerts/send', [
                 'user_id' => $user->id,
                 'account_number' => 'ACCOUNT-123',
-                'due_date' => now()->addDays(2)->toDateString(),
-                'action_id' => 'ACCOUNT-123:bill-456',
+                'endtime' => $endTime,
+                'action_id' => "bill_due:ACCOUNT-123:{$endTime}",
             ])
             ->assertAccepted()
             ->assertJsonPath('message', 'Bill due alert queued for delivery.');
 
         Queue::assertPushed(
             SendInternetBillDueNotificationJob::class,
-            fn (SendInternetBillDueNotificationJob $job): bool => $job->userId === $user->id &&
-                $job->actionId === 'ACCOUNT-123:bill-456',
+            fn(SendInternetBillDueNotificationJob $job): bool => $job->userId === $user->id &&
+                $job->endTime === $endTime &&
+                $job->actionId === "bill_due:ACCOUNT-123:{$endTime}",
         );
     }
 
-    public function test_manual_send_does_not_queue_a_bill_that_is_no_longer_due(): void
+    public function test_manual_send_does_not_queue_an_account_absent_from_the_bill_list_api(): void
     {
         $admin = $this->notificationAdmin(canCreate: true);
         $user = User::factory()->create(['broadband_account_number' => 'ACCOUNT-123']);
-        Http::fake([
-            'billing-server.test/due-bills*' => Http::response(['data' => []]),
-        ]);
+        $endTime = $this->dueEndTime();
+        $this->fakeDueAccountList([]);
         Queue::fake();
 
         $this->actingAs($admin, 'web')
             ->post('/notifications/bill-due-alerts/send', [
                 'user_id' => $user->id,
                 'account_number' => 'ACCOUNT-123',
-                'due_date' => now()->addDays(2)->toDateString(),
-                'action_id' => 'ACCOUNT-123:bill-456',
+                'endtime' => $endTime,
+                'action_id' => "bill_due:ACCOUNT-123:{$endTime}",
             ])
             ->assertUnprocessable();
 
@@ -290,32 +269,28 @@ class BillDueAlertManagementTest extends TestCase
     {
         $admin = $this->notificationAdmin(canCreate: true);
         $user = User::factory()->create(['broadband_account_number' => 'ACCOUNT-123']);
+        $endTime = $this->dueEndTime();
         Notification::factory()->create([
             'user_id' => $user->id,
             'category' => NotificationCategory::Announcement,
             'action_type' => NotificationActionType::FtthBill->value,
-            'action_id' => 'ACCOUNT-123:bill-456',
+            'action_id' => "bill_due:ACCOUNT-123:{$endTime}",
+            'template_data' => [
+                'account_number' => 'ACCOUNT-123',
+                'endtime' => $endTime,
+                'due_date' => now()->addDays(3)->toDateString(),
+            ],
             'sent_at' => now(),
         ]);
-        Http::fake([
-            'billing-server.test/due-bills*' => Http::response([
-                'data' => [
-                    [
-                        'account_number' => 'ACCOUNT-123',
-                        'bill_id' => 'bill-456',
-                        'due_date' => now()->addDays(2)->toDateString(),
-                    ],
-                ],
-            ]),
-        ]);
+        $this->fakeDueAccountList(['ACCOUNT-123']);
         Queue::fake();
 
         $this->actingAs($admin, 'web')
             ->post('/notifications/bill-due-alerts/send', [
                 'user_id' => $user->id,
                 'account_number' => 'ACCOUNT-123',
-                'due_date' => now()->addDays(2)->toDateString(),
-                'action_id' => 'ACCOUNT-123:bill-456',
+                'endtime' => $endTime,
+                'action_id' => "bill_due:ACCOUNT-123:{$endTime}",
             ])
             ->assertUnprocessable();
 
@@ -341,11 +316,46 @@ class BillDueAlertManagementTest extends TestCase
         }
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
-        $role = Role::findOrCreate('Bill Due Alert Manager '.($canCreate ? 'Creator' : 'Viewer'), 'web');
+        $role = Role::findOrCreate('Bill Due Alert Manager ' . ($canCreate ? 'Creator' : 'Viewer'), 'web');
         $role->syncPermissions($permissions);
         $admin = Admin::factory()->create();
         $admin->assignRole($role);
 
         return $admin;
+    }
+
+    private function dueEndTime(): string
+    {
+        return now()->addDays(3)->setTime(16, 37)->format('Y-m-d H:i');
+    }
+
+    /**
+     * @param  list<string|array{account: string, endtime: string}>  $accounts
+     */
+    private function fakeDueAccountList(array $accounts): void
+    {
+        config([
+            'services.cg_api.url' => 'https://provider.test/WalletApp/ServerCommand',
+            'services.cg_api.client_id' => 'test-client',
+            'services.cg_api.client_secret' => 'test-secret',
+        ]);
+
+        Http::fake([
+            'provider.test/WalletApp/ServerCommand/GetTokenAPI*' => Http::response([
+                'ErrCode' => 0,
+                'token' => 'test-access-token',
+                'expires_in' => 3600,
+            ]),
+            'provider.test/WalletApp/ServerCommand/DueAccountListAPI' => Http::response([
+                'ErrCode' => 0,
+                'Message' => 'ok',
+                'Data' => array_map(
+                    fn(string|array $account): array => is_string($account)
+                        ? ['account' => $account, 'endtime' => $this->dueEndTime()]
+                        : $account,
+                    $accounts,
+                ),
+            ]),
+        ]);
     }
 }

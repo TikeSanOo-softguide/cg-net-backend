@@ -56,6 +56,54 @@ class NotificationTemplateTest extends TestCase
         ]);
     }
 
+    public function test_bill_alert_template_uses_endtime_in_all_supported_languages(): void
+    {
+        $template = NotificationTemplate::query()
+            ->where('type', NotificationTemplateType::BillAlert->value)
+            ->firstOrFail();
+        $templateData = [
+            'account_number' => '1234',
+            'endtime' => '2026-11-20 17:30',
+        ];
+
+        $this->assertSame(
+            "Account 1234 expires at November 20, 2026 5:30 PM.\nRecharge to stay connected.",
+            $template->render('en', $templateData)['description'],
+        );
+        $this->assertSame(
+            "အကောင့် 1234 သည် November 20, 2026 5:30 PM တွင် သက်တမ်းကုန်ဆုံးပါတော့မည်။\nဆက်လက်အသုံးပြုရန် သက်တမ်းတိုးပါ။",
+            $template->render('my', $templateData)['description'],
+        );
+        $this->assertSame(
+            "账户 1234 将于 November 20, 2026 5:30 PM 到期。\n请及时充值以保持连接。",
+            $template->render('zh', $templateData)['description'],
+        );
+        $templateData['endtime'] = '2026-11-20 17:30:15';
+        $this->assertSame(
+            "Account 1234 expires at November 20, 2026 5:30 PM.\nRecharge to stay connected.",
+            $template->render('en', $templateData)['description'],
+        );
+    }
+
+    public function test_seeder_does_not_overwrite_existing_bill_alert_edits(): void
+    {
+        $template = NotificationTemplate::query()
+            ->where('type', NotificationTemplateType::BillAlert->value)
+            ->firstOrFail();
+        $template->update([
+            'description_en' => 'Custom English description.',
+            'description_my' => 'Custom Myanmar description.',
+            'description_zh' => 'Custom Chinese description.',
+        ]);
+
+        $this->seed(\Database\Seeders\NotificationTemplateSeeder::class);
+
+        $template->refresh();
+        $this->assertSame('Custom English description.', $template->description_en);
+        $this->assertSame('Custom Myanmar description.', $template->description_my);
+        $this->assertSame('Custom Chinese description.', $template->description_zh);
+    }
+
     public function test_admin_can_update_the_bill_alert_template_in_all_supported_languages(): void
     {
         $admin = Admin::factory()->create();
@@ -84,16 +132,16 @@ class NotificationTemplateTest extends TestCase
                 'title_en' => 'Bill due',
                 'title_my' => 'ဘေလ်ကျသင့်ပြီ',
                 'title_zh' => '账单到期',
-                'description_en' => 'Pay account {account_number} by {due_date}.',
-                'description_my' => '{account_number} အကောင့်ကို {due_date} မတိုင်မီ ပေးချေပါ။',
-                'description_zh' => '请在 {due_date} 前支付账户 {account_number}。',
+                'description_en' => 'Pay account {account_number} by {endtime}.',
+                'description_my' => '{account_number} အကောင့်ကို {endtime} မတိုင်မီ ပေးချေပါ။',
+                'description_zh' => '请在 {endtime} 前支付账户 {account_number}。',
             ])
             ->assertRedirect(route('notifications.templates.index'))
             ->assertSessionHas('success', 'notification.template.updated');
 
         $this->assertSame(
             'Pay account 1234 by tomorrow.',
-            $template->fresh()->render('en', ['account_number' => '1234', 'due_date' => 'tomorrow'])['description'],
+            $template->fresh()->render('en', ['account_number' => '1234', 'endtime' => 'tomorrow'])['description'],
         );
     }
 
@@ -123,9 +171,9 @@ class NotificationTemplateTest extends TestCase
                 'title_en' => 'Bill due',
                 'title_my' => 'ဘေလ်ကျသင့်ပြီ',
                 'title_zh' => '账单到期',
-                'description_en' => 'Pay account {account_number} by {due_date}.',
-                'description_my' => '{account_number} အကောင့်ကို {due_date} မတိုင်မီ ပေးချေပါ။',
-                'description_zh' => '请在 {due_date} 前支付账户 {account_number}。',
+                'description_en' => 'Pay account {account_number} by {endtime}.',
+                'description_my' => '{account_number} အကောင့်ကို {endtime} မတိုင်မီ ပေးချေပါ။',
+                'description_zh' => '请在 {endtime} 前支付账户 {account_number}。',
             ])
             ->assertRedirect();
 
@@ -146,9 +194,9 @@ class NotificationTemplateTest extends TestCase
                 'title_en' => 'Updated bill due',
                 'title_my' => 'ဘေလ်ကျသင့်ပြီ',
                 'title_zh' => '账单到期',
-                'description_en' => 'Pay account {account_number} by {due_date}.',
-                'description_my' => '{account_number} အကောင့်ကို {due_date} မတိုင်မီ ပေးချေပါ။',
-                'description_zh' => '请在 {due_date} 前支付账户 {account_number}。',
+                'description_en' => 'Pay account {account_number} by {endtime}.',
+                'description_my' => '{account_number} အကောင့်ကို {endtime} မတိုင်မီ ပေးချေပါ။',
+                'description_zh' => '请在 {endtime} 前支付账户 {account_number}。',
             ])
             ->assertRedirect(route('notifications.templates.index'));
     }
@@ -240,17 +288,20 @@ class NotificationTemplateTest extends TestCase
         $notification = Notification::factory()->create(['user_id' => $user->id]);
         $template = $notification->templateable;
         $template->update([
-            'title_zh' => '账单即将到期',
-            'description_zh' => '账户 {account_number} 的账单将于 {due_date} 到期。',
+            'title_zh' => '互联网账户即将到期',
+            'description_zh' => '账户 {account_number} 将于 {endtime} 到期，请及时充值以保持连接。',
         ]);
         $notification->update([
-            'template_data' => ['account_number' => '1234', 'due_date' => '2026-10-15'],
+            'template_data' => ['account_number' => '1234', 'endtime' => '2026-10-15 16:37:39'],
         ]);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->getJson('/api/notifications')
             ->assertOk()
-            ->assertJsonPath('data.0.title', '账单即将到期')
-            ->assertJsonPath('data.0.body', '账户 1234 的账单将于 2026-10-15 到期。');
+            ->assertJsonPath('data.0.title', '互联网账户即将到期')
+            ->assertJsonPath(
+                'data.0.body',
+                '账户 1234 将于 October 15, 2026 4:37 PM 到期，请及时充值以保持连接。',
+            );
     }
 }

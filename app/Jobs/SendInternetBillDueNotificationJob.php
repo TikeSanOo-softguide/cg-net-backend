@@ -26,7 +26,7 @@ class SendInternetBillDueNotificationJob implements ShouldBeUnique, ShouldQueue
     public function __construct(
         public readonly int $userId,
         public readonly string $accountNumber,
-        public readonly string $dueDate,
+        public readonly string $endTime,
         public readonly string $actionId,
     ) {
         $this->onQueue('notifications');
@@ -51,7 +51,7 @@ class SendInternetBillDueNotificationJob implements ShouldBeUnique, ShouldQueue
 
         $templateData = [
             'account_number' => $this->accountNumber,
-            'due_date' => $this->dueDate,
+            'endtime' => $this->endTime,
         ];
 
         $notification = Notification::query()->firstOrCreate(
@@ -68,7 +68,13 @@ class SendInternetBillDueNotificationJob implements ShouldBeUnique, ShouldQueue
             ],
         );
 
-        if ($notification->sent_at !== null || !$user->deviceTokens()->exists()) {
+        if ($notification->sent_at !== null) {
+            return;
+        }
+
+        $notification->update(['template_data' => $templateData]);
+
+        if (!$user->deviceTokens()->exists()) {
             return;
         }
 

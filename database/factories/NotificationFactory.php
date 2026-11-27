@@ -18,7 +18,7 @@ class NotificationFactory extends Factory
     {
         $template = NotificationTemplate::query()->firstOrCreate(
             ['type' => NotificationTemplateType::BillAlert],
-            (new NotificationTemplateFactory)->definition(),
+            (new NotificationTemplateFactory())->definition(),
         );
 
         return [
@@ -30,16 +30,18 @@ class NotificationFactory extends Factory
             'templateable_id' => $template->id,
             'template_data' => [
                 'account_number' => fake()->numerify('########'),
-                'due_date' => fake()->date(),
+                'endtime' => fake()->dateTime()->format('Y-m-d H:i'),
             ],
         ];
     }
 
     public function broadcast(): static
     {
-        return $this->state(fn () => [
-            'user_id' => null,
-            'is_read' => false,
-        ]);
+        return $this->state(
+            fn() => [
+                'user_id' => null,
+                'is_read' => false,
+            ],
+        );
     }
 }

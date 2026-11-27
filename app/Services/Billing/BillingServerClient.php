@@ -2,54 +2,68 @@
 
 namespace App\Services\Billing;
 
+use App\Services\CgNetApiClient;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 class BillingServerClient
 {
-    /**
-     * @return list<array<string, mixed>>
-     *
-     * @throws RuntimeException when due bills cannot be retrieved
-     */
-    public function lookupBillsDueBetween(string $fromDate, string $toDate): array
-    {
-        $url = $this->url(config('services.billing.due_bills_endpoint', '/due-bills'));
+    public function __construct(private readonly CgNetApiClient $cgNet) {}
 
-        $response = Http::acceptJson()
-            ->withHeaders($this->headers())
-            ->timeout(30)
-            ->connectTimeout(5)
-            ->retry(2, 100, throw: false)
-            ->get($url, [
-                'due_date_from' => $fromDate,
-                'due_date_to' => $toDate,
-            ]);
+    /**
+     * @return list<array{account: string, endtime: string}>
+     *
+     * @throws RuntimeException when the due account list cannot be retrieved
+     */
+    public function lookupDueAccountList(): array
+    {
+        try {
+            $response = $this->cgNet->post('DueAccountListAPI');
+        } catch (ConnectionException $exception) {
+            throw new RuntimeException(
+                'Unable to retrieve the due account list from the CG API.',
+                previous: $exception,
+            );
+        }
 
         if (!$response->successful()) {
-            throw new RuntimeException('Unable to retrieve due Internet bills from the billing server.');
+            throw new RuntimeException('Unable to retrieve the due account list from the CG API.');
         }
 
         $payload = $response->json();
 
-        if (!is_array($payload)) {
-            throw new RuntimeException('The billing server returned an invalid due bill list.');
+        if (!is_array($payload) || !is_numeric($payload['ErrCode'] ?? null) || (int) $payload['ErrCode'] !== 0) {
+            throw new RuntimeException('The CG API returned an unsuccessful bill account list response.');
         }
 
-        $bills = $payload['bills'] ?? ($payload['data'] ?? null);
-
-        if (!is_array($bills) || !array_is_list($bills)) {
-            throw new RuntimeException('The billing server did not return a valid due bill list.');
+        $dueAccounts = $payload['Data'] ?? null;
+        if (!is_array($dueAccounts) || !array_is_list($dueAccounts)) {
+            throw new RuntimeException('The CG API did not return a valid due account list.');
         }
 
-        foreach ($bills as $bill) {
-            if (!is_array($bill)) {
-                throw new RuntimeException('The billing server returned an invalid due bill record.');
+        $uniqueDueAccounts = [];
+        foreach ($dueAccounts as $dueAccount) {
+            $accountNumber = is_array($dueAccount) ? $dueAccount['account'] ?? null : null;
+            $endTime = is_array($dueAccount) ? $dueAccount['endtime'] ?? null : null;
+            if (
+                !is_string($accountNumber) ||
+                trim($accountNumber) === '' ||
+                !is_string($endTime) ||
+                trim($endTime) === ''
+            ) {
+                throw new RuntimeException('The CG API returned an invalid due account record.');
             }
+
+            $accountNumber = trim($accountNumber);
+            $endTime = trim($endTime);
+            $uniqueDueAccounts[$accountNumber . "\0" . $endTime] = [
+                'account' => $accountNumber,
+                'endtime' => $endTime,
+            ];
         }
 
-        return $bills;
+        return array_values($uniqueDueAccounts);
     }
 
     /**

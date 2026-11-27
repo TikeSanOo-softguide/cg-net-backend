@@ -9,9 +9,8 @@ use App\Models\Notification;
 use App\Models\User;
 use App\Services\Billing\BillingServerClient;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
 use RuntimeException;
-use Throwable;
 
 class DueInternetBillNotificationService
 {
@@ -19,28 +18,52 @@ class DueInternetBillNotificationService
 
     public function dispatchDueBills(): int
     {
-        $billsByAccount = $this->dueBillsByAccount();
+        $dueAccounts = $this->dueAccountEntries();
+        $accountNumbers = collect($dueAccounts)->pluck('account_number')->all();
 
         $dispatched = 0;
 
-        foreach (array_chunk(array_keys($billsByAccount), 500) as $accountNumbers) {
+        foreach (array_chunk($accountNumbers, 100) as $accountNumberChunk) {
             User::query()
                 ->where('status', UserStatus::Active)
-                ->whereIn('broadband_account_number', $accountNumbers)
+                ->whereIn('broadband_account_number', $accountNumberChunk)
                 ->orderBy('id')
-                ->chunkById(200, function ($users) use ($billsByAccount, &$dispatched): void {
+                ->chunkById(100, function ($users) use ($dueAccounts, &$dispatched): void {
+                    $actionIds = $users
+                        ->map(
+                            fn(User $user): string => $dueAccounts[
+                                'account:' . (string) $user->broadband_account_number
+                            ]['action_id'],
+                        )
+                        ->unique()
+                        ->values();
+                    $sentNotifications = Notification::query()
+                        ->whereIn('user_id', $users->modelKeys())
+                        ->where('action_type', NotificationActionType::FtthBill->value)
+                        ->whereIn('action_id', $actionIds)
+                        ->whereNotNull('sent_at')
+                        ->get(['user_id', 'action_id'])
+                        ->mapWithKeys(function (Notification $notification): array {
+                            return [
+                                $notification->user_id . ':' . $notification->action_id => true,
+                            ];
+                        });
+
                     foreach ($users as $user) {
                         $accountNumber = (string) $user->broadband_account_number;
+                        $dueAccount = $dueAccounts['account:' . $accountNumber];
 
-                        foreach ($billsByAccount[$accountNumber] as $bill) {
-                            SendInternetBillDueNotificationJob::dispatch(
-                                userId: (int) $user->id,
-                                accountNumber: $accountNumber,
-                                dueDate: $bill['due_date'],
-                                actionId: $bill['action_id'],
-                            );
-                            $dispatched++;
+                        if ($sentNotifications->has($user->id . ':' . $dueAccount['action_id'])) {
+                            continue;
                         }
+
+                        SendInternetBillDueNotificationJob::dispatch(
+                            userId: (int) $user->id,
+                            accountNumber: $accountNumber,
+                            endTime: $dueAccount['endtime'],
+                            actionId: $dueAccount['action_id'],
+                        );
+                        $dispatched++;
                     }
                 });
         }
@@ -53,24 +76,26 @@ class DueInternetBillNotificationService
      *     user_id: int,
      *     customer_name: string,
      *     account_number: string,
-     *     due_date: string,
+     *     endtime: string,
      *     action_id: string,
      *     notification_id: int|null,
      *     state: 'not_recorded'|'unsent'|'sent',
      *     has_device: bool
      * }>
      */
-    public function dueBillAlerts(?string $accountNumber = null, ?string $dueDate = null): array
+    public function dueBillAlerts(?string $accountNumber = null): array
     {
-        $billsByAccount = $this->dueBillsByAccount($accountNumber, $dueDate);
+        $dueAccounts = $this->dueAccountEntries($accountNumber);
 
-        if ($billsByAccount === []) {
+        if ($dueAccounts === []) {
             return [];
         }
 
+        $accountNumbers = collect($dueAccounts)->pluck('account_number')->values();
+        $actionIds = collect($dueAccounts)->pluck('action_id')->values();
         $users = User::query()
             ->where('status', UserStatus::Active)
-            ->whereIn('broadband_account_number', array_keys($billsByAccount))
+            ->whereIn('broadband_account_number', $accountNumbers)
             ->withCount('deviceTokens')
             ->orderBy('id')
             ->get(['id', 'name', 'broadband_account_number']);
@@ -79,47 +104,43 @@ class DueInternetBillNotificationService
             return [];
         }
 
-        $actionIds = collect($billsByAccount)->flatten(1)->pluck('action_id')->unique()->values();
         $notifications = Notification::query()
             ->whereIn('user_id', $users->modelKeys())
             ->where('action_type', NotificationActionType::FtthBill->value)
             ->whereIn('action_id', $actionIds)
             ->get(['id', 'user_id', 'action_id', 'sent_at'])
-            ->keyBy(fn (Notification $notification): string => $notification->user_id.':'.$notification->action_id);
+            ->keyBy(fn(Notification $notification): string => $notification->user_id . ':' . $notification->action_id);
 
         $alerts = [];
 
         foreach ($users as $user) {
             $accountNumber = (string) $user->broadband_account_number;
-
-            foreach ($billsByAccount[$accountNumber] ?? [] as $bill) {
-                $notification = $notifications->get($user->id.':'.$bill['action_id']);
-                $alerts[] = [
-                    'user_id' => (int) $user->id,
-                    'customer_name' => $user->name,
-                    'account_number' => $accountNumber,
-                    'due_date' => $bill['due_date'],
-                    'action_id' => $bill['action_id'],
-                    'notification_id' => $notification?->id,
-                    'state' => $notification === null ? 'not_recorded' : ($notification->sent_at === null ? 'unsent' : 'sent'),
-                    'has_device' => $user->device_tokens_count > 0,
-                ];
-            }
+            $dueAccount = $dueAccounts['account:' . $accountNumber];
+            $notification = $notifications->get($user->id . ':' . $dueAccount['action_id']);
+            $alerts[] = [
+                'user_id' => (int) $user->id,
+                'customer_name' => $user->name,
+                'account_number' => $accountNumber,
+                'endtime' => $dueAccount['endtime'],
+                'action_id' => $dueAccount['action_id'],
+                'notification_id' => $notification?->id,
+                'state' =>
+                    $notification === null ? 'not_recorded' : ($notification->sent_at === null ? 'unsent' : 'sent'),
+                'has_device' => $user->device_tokens_count > 0,
+            ];
         }
 
         return $alerts;
     }
 
-    /**
-     * @return list<array{due_date: string, action_id: string}>
-     */
-    public function dueBillsForAccount(string $accountNumber, ?string $dueDate = null): array
+    public function dispatchBillToUser(int $userId, string $accountNumber, string $endTime, string $actionId): bool
     {
-        return $this->dueBillsByAccount($accountNumber, $dueDate)[$accountNumber] ?? [];
-    }
+        $parsedEndTime = $this->parseEndTime($endTime);
+        $normalizedEndTime = $parsedEndTime->format('Y-m-d H:i');
+        if ($actionId !== $this->actionId($accountNumber, $normalizedEndTime)) {
+            return false;
+        }
 
-    public function dispatchBillToUser(int $userId, string $accountNumber, string $dueDate, string $actionId): bool
-    {
         $user = User::query()
             ->whereKey($userId)
             ->where('status', UserStatus::Active)
@@ -130,11 +151,8 @@ class DueInternetBillNotificationService
             return false;
         }
 
-        $billExists = collect($this->dueBillsForAccount($accountNumber, $dueDate))->contains(
-            fn (array $bill): bool => $bill['due_date'] === $dueDate && $bill['action_id'] === $actionId,
-        );
-
-        if (! $billExists) {
+        $dueAccount = $this->dueAccountEntries($accountNumber)['account:' . $accountNumber] ?? null;
+        if ($dueAccount === null || $dueAccount['endtime'] !== $normalizedEndTime) {
             return false;
         }
 
@@ -152,7 +170,7 @@ class DueInternetBillNotificationService
         SendInternetBillDueNotificationJob::dispatch(
             userId: (int) $user->id,
             accountNumber: $accountNumber,
-            dueDate: $dueDate,
+            endTime: $normalizedEndTime,
             actionId: $actionId,
         );
 
@@ -160,91 +178,74 @@ class DueInternetBillNotificationService
     }
 
     /**
-     * @param  array<string, mixed>  $bill
+     * @return array<string, array{
+     *     account_number: string,
+     *     endtime: string,
+     *     action_id: string
+     * }>
      */
-    private function dueDate(array $bill): CarbonImmutable
+    private function dueAccountEntries(?string $accountFilter = null): array
     {
-        $value = $bill['due_date'] ?? null;
+        $entriesByAccount = [];
 
-        if (! is_string($value) || trim($value) === '') {
-            throw new RuntimeException('The billing server did not return a bill due date.');
+        foreach ($this->billing->lookupDueAccountList() as $dueAccount) {
+            $accountNumber = $dueAccount['account'];
+            if ($accountFilter !== null && $accountNumber !== $accountFilter) {
+                continue;
+            }
+
+            $parsedEndTime = $this->parseEndTime($dueAccount['endtime']);
+            $endTime = $parsedEndTime->format('Y-m-d H:i');
+
+            $key = 'account:' . $accountNumber;
+            $existing = $entriesByAccount[$key] ?? null;
+            if ($existing !== null) {
+                if ($existing['endtime'] !== $endTime) {
+                    throw new RuntimeException('The CG API returned multiple due times for one account.');
+                }
+
+                continue;
+            }
+            $entriesByAccount[$key] = [
+                'account_number' => $accountNumber,
+                'endtime' => $endTime,
+                'action_id' => $this->actionId($accountNumber, $endTime),
+            ];
         }
 
-        try {
-            return CarbonImmutable::parse($value)->startOfDay();
-        } catch (Throwable $exception) {
-            throw new RuntimeException('The billing server returned an invalid bill due date.', previous: $exception);
-        }
+        return $entriesByAccount;
     }
 
-    /**
-     * @param  array<string, mixed>  $bill
-     */
-    private function actionId(array $bill, string $accountNumber): string
+    private function parseEndTime(string $endTime): CarbonImmutable
     {
-        foreach (['bill_id', 'id', 'invoice_no'] as $key) {
-            $value = $bill[$key] ?? null;
+        $parseException = null;
 
-            if (is_string($value) || is_int($value)) {
-                return $this->boundedActionId("{$accountNumber}:{$value}");
+        foreach (['Y-m-d H:i', 'Y-m-d H:i:s'] as $format) {
+            try {
+                $parsed = CarbonImmutable::createFromFormat('!' . $format, $endTime);
+            } catch (InvalidArgumentException $exception) {
+                $parseException = $exception;
+                continue;
+            }
+
+            if ($parsed !== false && $parsed->format($format) === $endTime) {
+                return $parsed;
             }
         }
 
-        $billMonthValue = $bill['bill_month'] ?? null;
-        $billMonth = is_string($billMonthValue) || is_int($billMonthValue) ? (string) $billMonthValue : 'pending';
+        throw new RuntimeException(
+            'The CG API returned an invalid due account endtime.',
+            previous: $parseException,
+        );
+    }
 
-        return $this->boundedActionId("{$accountNumber}:{$billMonth}");
+    private function actionId(string $accountNumber, string $endTime): string
+    {
+        return $this->boundedActionId("bill_due:{$accountNumber}:{$endTime}");
     }
 
     private function boundedActionId(string $actionId): string
     {
         return strlen($actionId) <= 191 ? $actionId : hash('sha256', $actionId);
-    }
-
-    /**
-     * @return array<string, list<array{due_date: string, action_id: string}>>
-     */
-    private function dueBillsByAccount(?string $accountFilter = null, ?string $dueDateFilter = null): array
-    {
-        $today = $dueDateFilter !== null ? CarbonImmutable::parse($dueDateFilter)->startOfDay() : CarbonImmutable::today();
-        $lastDueDate = $dueDateFilter !== null ? $today : $today->addDays(7);
-        $bills = $this->billing->lookupBillsDueBetween($today->toDateString(), $lastDueDate->toDateString());
-        $billsByAccount = [];
-
-        foreach ($bills as $bill) {
-            $accountNumber = $bill['account_number'] ?? ($bill['broadband_account_number'] ?? null);
-
-            if (! is_string($accountNumber) || trim($accountNumber) === '') {
-                Log::warning('Billing server returned a due bill without a broadband account number.');
-
-                continue;
-            }
-
-            if ($accountFilter !== null && $accountNumber !== $accountFilter) {
-                continue;
-            }
-
-            try {
-                $dueDate = $this->dueDate($bill);
-            } catch (RuntimeException $exception) {
-                Log::warning('Billing server returned an invalid Internet bill due date.', [
-                    'account_number' => $accountNumber,
-                    'exception' => $exception->getMessage(),
-                ]);
-
-                continue;
-            }
-
-            if ($dueDate->lt($today) || $dueDate->gt($lastDueDate)) {
-                continue;
-            }
-
-            $billsByAccount[$accountNumber][] = [
-                'due_date' => $dueDate->toDateString(),
-                'action_id' => $this->actionId($bill, $accountNumber),
-            ];
-        }
-
-        return $billsByAccount;
     }
 }

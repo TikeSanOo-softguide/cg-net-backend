@@ -119,7 +119,10 @@ class DashboardController extends Controller
             'monthly_signups' => User::query()
                 ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfDay()])
                 ->count(),
-            'active_packages' => CustomerPackage::query()->where('status', CustomerPackageStatus::Active)->count(),
+            'active_packages' => CustomerPackage::query()
+                ->where('status', CustomerPackageStatus::Active)
+                ->where(fn($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+                ->count(),
             'todays_topup_usage' => (int) LedgerTransaction::query()
                 ->where('type', LedgerTransactionType::Topup)
                 ->where('status', LedgerTransactionStatus::Completed)
@@ -146,7 +149,13 @@ class DashboardController extends Controller
             ->map(fn(Collection $rows) => $rows->count());
 
         return collect(CarbonPeriod::create($start, $end))
-            ->map(function (Carbon $day) use ($topupUsage, $signups, $ftthBillPayments, $cgBillPayments, $wifiPackageOrders) {
+            ->map(function (Carbon $day) use (
+                $topupUsage,
+                $signups,
+                $ftthBillPayments,
+                $cgBillPayments,
+                $wifiPackageOrders,
+            ) {
                 $key = $day->toDateString();
 
                 return [
@@ -168,7 +177,7 @@ class DashboardController extends Controller
     private function transactionVolumeByDay(LedgerTransactionType|array $types, Carbon $start, Carbon $end): Collection
     {
         $values = is_array($types)
-            ? array_map(fn (LedgerTransactionType $type): string => $type->value, $types)
+            ? array_map(fn(LedgerTransactionType $type): string => $type->value, $types)
             : [$types->value];
 
         return LedgerTransaction::query()
@@ -212,7 +221,10 @@ class DashboardController extends Controller
             ->map(
                 fn(string $class, string $type) => [
                     'type' => $type,
-                    'value' => $class::query()->whereBetween('created_at', [$start, $end])->count(),
+                    'value' => $class
+                        ::query()
+                        ->whereBetween('created_at', [$start, $end])
+                        ->count(),
                 ],
             )
             ->sortByDesc('value')

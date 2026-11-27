@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { BellRingIcon, CalendarIcon } from 'lucide-react';
+import { BellRingIcon, CircleAlert, RotateCcwIcon, SendIcon } from 'lucide-react';
 
 import { DataTable, type DataTableColumn } from '@/components/DataTable';
 import { PageContent } from '@/components/PageContent';
@@ -8,7 +8,6 @@ import { PageHeader } from '@/components/PageHeader';
 import type { Paginated } from '@/components/Pagination';
 import { SearchInput } from '@/components/SearchInput';
 import { Button } from '@/components/ui/button';
-import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
 import { useCan } from '@/hooks/useCan';
 import { toast } from '@/hooks/use-toast';
@@ -19,7 +18,7 @@ type Alert = {
     user_id: number;
     customer_name: string;
     account_number: string;
-    due_date: string;
+    endtime: string;
     action_id: string;
     notification_id: number | null;
     state: 'not_recorded' | 'unsent' | 'sent';
@@ -28,40 +27,40 @@ type Alert = {
 
 type Props = {
     alerts: Paginated<Alert>;
-    filters: { search: string; due_date: string };
+    errorKey: string | null;
+    filters: { search: string };
 };
 
-export default function BillDueAlertsIndex({ alerts, filters }: Props) {
+export default function BillDueAlertsIndex({ alerts, errorKey, filters }: Props) {
     const { t } = useTranslation();
     const can = useCan();
     const [search, setSearch] = useState(filters.search);
-    const [dueDate, setDueDate] = useState(filters.due_date);
     const [workingIds, setWorkingIds] = useState<Set<string>>(() => new Set());
     const [queuedIds, setQueuedIds] = useState<Set<string>>(() => new Set());
     const debounce = useRef<number>(0);
     const maySend = can('notifications.create');
 
     useEffect(() => setSearch(filters.search), [filters.search]);
-    useEffect(() => setDueDate(filters.due_date), [filters.due_date]);
     useEffect(() => () => window.clearTimeout(debounce.current), []);
     useEffect(() => {
-        const sentIds = new Set(
-            alerts.data.filter((row) => row.state === 'sent').map((row) => `${row.user_id}-${row.action_id}`),
+        const recordedIds = new Set(
+            alerts.data
+                .filter((row) => row.state === 'sent' || (row.state === 'unsent' && !row.has_device))
+                .map((row) => `${row.user_id}-${row.action_id}`),
         );
-        if (sentIds.size === 0) {
+        if (recordedIds.size === 0) {
             return;
         }
 
-        setQueuedIds((current) => new Set([...current].filter((id) => !sentIds.has(id))));
+        setQueuedIds((current) => new Set([...current].filter((id) => !recordedIds.has(id))));
     }, [alerts.data]);
 
-    const visit = (nextSearch: string, nextDueDate: string) => {
+    const visit = (nextSearch: string) => {
         window.clearTimeout(debounce.current);
         router.get(
             '/notifications/bill-due-alerts',
             {
                 search: nextSearch || undefined,
-                due_date: nextDueDate || undefined,
             },
             { preserveState: true, preserveScroll: true, replace: true },
         );
@@ -70,13 +69,7 @@ export default function BillDueAlertsIndex({ alerts, filters }: Props) {
     const updateSearch = (value: string) => {
         setSearch(value);
         window.clearTimeout(debounce.current);
-        debounce.current = window.setTimeout(() => visit(value, dueDate), 300);
-    };
-
-    const updateDueDate = (value: string) => {
-        window.clearTimeout(debounce.current);
-        setDueDate(value);
-        visit(search, value);
+        debounce.current = window.setTimeout(() => visit(value), 300);
     };
 
     const queueAlert = async (row: Alert) => {
@@ -98,7 +91,7 @@ export default function BillDueAlertsIndex({ alerts, filters }: Props) {
                 body: JSON.stringify({
                     user_id: row.user_id,
                     account_number: row.account_number,
-                    due_date: row.due_date,
+                    endtime: row.endtime,
                     action_id: row.action_id,
                 }),
             });
@@ -141,10 +134,10 @@ export default function BillDueAlertsIndex({ alerts, filters }: Props) {
             cell: (row) => row.account_number,
         },
         {
-            id: 'due_date',
-            header: t('notification.bill_due_alerts.due_date'),
+            id: 'endtime',
+            header: t('notification.bill_due_alerts.end_time'),
             mobile: 'meta',
-            cell: (row) => formatDate(row.due_date),
+            cell: (row) => `${formatDate(row.endtime)} ${row.endtime.slice(11)}`,
         },
         {
             id: 'record_status',
@@ -179,22 +172,33 @@ export default function BillDueAlertsIndex({ alerts, filters }: Props) {
             cell: (row) => {
                 const id = `${row.user_id}-${row.action_id}`;
                 const queued = queuedIds.has(id);
+                const actionLabel = queued
+                    ? 'notification.bill_due_alerts.states.queued'
+                    : row.state === 'unsent'
+                      ? row.has_device
+                          ? 'notification.bill_due_alerts.retry'
+                          : 'notification.bill_due_alerts.send'
+                      : row.has_device
+                        ? 'notification.bill_due_alerts.send'
+                        : 'notification.bill_due_alerts.alert';
+                const ActionIcon =
+                    row.state === 'unsent'
+                        ? row.has_device
+                            ? RotateCcwIcon
+                            : SendIcon
+                        : row.has_device
+                          ? SendIcon
+                          : BellRingIcon;
 
                 return row.state === 'sent' ? null : (
                     <Button
                         size="sm"
-                        className="w-25 justify-center whitespace-nowrap"
-                        disabled={workingIds.has(id) || queued || !row.has_device}
+                        className="w-auto shrink-0 gap-1.5 px-2.5 text-[11px]"
+                        disabled={workingIds.has(id) || queued || (row.state === 'unsent' && !row.has_device)}
                         onClick={() => queueAlert(row)}
                     >
-                        <BellRingIcon />
-                        {t(
-                            queued
-                                ? 'notification.bill_due_alerts.states.queued'
-                                : row.state === 'unsent'
-                                  ? 'notification.bill_due_alerts.retry'
-                                  : 'notification.bill_due_alerts.send',
-                        )}
+                        <ActionIcon />
+                        {t(actionLabel)}
                     </Button>
                 );
             },
@@ -206,49 +210,40 @@ export default function BillDueAlertsIndex({ alerts, filters }: Props) {
             <Head title={t('menu.bill_due_alerts')} />
             <PageContent>
                 <PageHeader title={t('menu.bill_due_alerts')} />
+                {errorKey ? (
+                    <div
+                        role="alert"
+                        className="flex w-full items-center gap-2 rounded-md ring-1 ring-inset px-3 py-2.5 text-sm font-semibold ring-danger bg-danger/10 text-danger"
+                    >
+                        <CircleAlert className="size-4 shrink-0" />
+                        <span>{t(errorKey)}</span>
+                    </div>
+                ) : null}
                 <DataTable
                     title={t('notification.bill_due_alerts.results_title')}
                     description={t('notification.bill_due_alerts.results_description')}
                     data={alerts.data}
                     columns={columns}
                     getRowId={(row) => `${row.user_id}-${row.action_id}`}
-                    emptyLabel={t('notification.bill_due_alerts.no_due_bills')}
+                    emptyLabel={errorKey ? t('common.no_results') : t('notification.bill_due_alerts.no_due_bills')}
                     pagination={alerts}
                     showSearch={false}
                     filters={
-                        <>
-                            <FormField
-                                label={t('common.search')}
-                                htmlFor="bill-due-alert-search"
-                                className="mr-3 w-full shrink-0 sm:w-60"
-                                labelClassName="text-[13px]"
-                            >
-                                <SearchInput
-                                    id="bill-due-alert-search"
-                                    value={search}
-                                    onChange={updateSearch}
-                                    placeholder={t('notification.bill_due_alerts.search_placeholder')}
-                                    ariaLabel={t('common.search')}
-                                    size="sm"
-                                />
-                            </FormField>
-                            <FormField
-                                label={t('notification.bill_due_alerts.due_date')}
-                                htmlFor="bill-due-alert-date"
-                                icon={CalendarIcon}
-                                className="mr-3 w-full shrink-0 sm:w-48"
-                                labelClassName="text-[13px]"
-                            >
-                                <DatePicker
-                                    id="bill-due-alert-date"
-                                    value={dueDate}
-                                    placeholder={t('notification.bill_due_alerts.due_date')}
-                                    aria-label={t('notification.bill_due_alerts.due_date')}
-                                    className="h-8 text-[11px]"
-                                    onChange={updateDueDate}
-                                />
-                            </FormField>
-                        </>
+                        <FormField
+                            label={t('common.search')}
+                            htmlFor="bill-due-alert-search"
+                            className="mr-3 w-full shrink-0 sm:w-60"
+                            labelClassName="text-[13px]"
+                        >
+                            <SearchInput
+                                id="bill-due-alert-search"
+                                value={search}
+                                onChange={updateSearch}
+                                placeholder={t('notification.bill_due_alerts.search_placeholder')}
+                                ariaLabel={t('common.search')}
+                                size="sm"
+                            />
+                        </FormField>
                     }
                 />
             </PageContent>

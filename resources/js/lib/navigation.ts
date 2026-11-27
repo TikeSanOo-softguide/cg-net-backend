@@ -241,14 +241,12 @@ export const navigation: NavGroup[] = [
                 href: '/notifications/promotions',
                 icon: Gift,
             },
-            /*
             {
                 labelKey: 'menu.bill_due_alerts',
                 descriptionKey: 'menu.bill_due_alerts_description',
                 href: '/notifications/bill-due-alerts',
                 icon: Bell,
             },
-            */
             {
                 labelKey: 'menu.push_composer',
                 descriptionKey: 'menu.push_composer_description',

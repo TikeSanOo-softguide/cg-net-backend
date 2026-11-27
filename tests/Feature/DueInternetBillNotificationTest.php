@@ -34,32 +34,16 @@ class DueInternetBillNotificationTest extends TestCase
         ]);
     }
 
-    public function test_scan_queues_notifications_only_for_active_users_with_bills_due_in_seven_days(): void
+    public function test_scan_queues_notifications_for_active_accounts_returned_by_the_due_account_list_api(): void
     {
         $firstUser = User::factory()->create(['broadband_account_number' => 'DUE-ACCOUNT']);
-        $outsideWindowUser = User::factory()->create(['broadband_account_number' => 'LATE-ACCOUNT']);
+        $unlistedUser = User::factory()->create(['broadband_account_number' => 'UNLISTED-ACCOUNT']);
+        $endTime = $this->dueEndTime();
         User::factory()
             ->suspended()
             ->create(['broadband_account_number' => 'DUE-SUSPENDED']);
 
-        Http::fake([
-            'billing-server.test/due-bills*' => Http::response([
-                'data' => [
-                    [
-                        'account_number' => 'DUE-ACCOUNT',
-                        'bill_month' => '2026-10',
-                        'due_date' => now()->addDays(7)->toDateString(),
-                        'bill_id' => 'bill-due',
-                    ],
-                    [
-                        'account_number' => 'LATE-ACCOUNT',
-                        'bill_month' => '2026-10',
-                        'due_date' => now()->addDays(8)->toDateString(),
-                        'bill_id' => 'bill-late',
-                    ],
-                ],
-            ]),
-        ]);
+        $this->fakeDueAccountList(['DUE-ACCOUNT', 'DUE-ACCOUNT', 'DUE-SUSPENDED']);
         Queue::fake();
 
         $count = app(DueInternetBillNotificationService::class)->dispatchDueBills();
@@ -68,18 +52,135 @@ class DueInternetBillNotificationTest extends TestCase
         Queue::assertPushed(SendInternetBillDueNotificationJob::class, 1);
         Queue::assertPushed(
             SendInternetBillDueNotificationJob::class,
-            fn(SendInternetBillDueNotificationJob $job): bool => $job->userId === $firstUser->id,
+            fn(SendInternetBillDueNotificationJob $job): bool => $job->userId === $firstUser->id &&
+                $job->actionId === "bill_due:DUE-ACCOUNT:{$endTime}" &&
+                $job->endTime === $endTime,
         );
         Queue::assertNotPushed(
             SendInternetBillDueNotificationJob::class,
-            fn(SendInternetBillDueNotificationJob $job): bool => $job->userId === $outsideWindowUser->id,
+            fn(SendInternetBillDueNotificationJob $job): bool => $job->userId === $unlistedUser->id,
         );
-        $this->assertCount(1, Http::recorded());
         Http::assertSent(function (Request $request): bool {
-            return str_ends_with(parse_url($request->url(), PHP_URL_PATH), '/due-bills') &&
-                $request['due_date_from'] === now()->toDateString() &&
-                $request['due_date_to'] === now()->addDays(7)->toDateString();
+            return str_ends_with(parse_url($request->url(), PHP_URL_PATH), '/DueAccountListAPI') &&
+                $request->method() === 'POST' &&
+                $request->data() === [];
         });
+    }
+
+    public function test_scan_never_queues_an_account_alert_that_was_already_sent(): void
+    {
+        $user = User::factory()->create(['broadband_account_number' => 'DUE-ACCOUNT']);
+        $endTime = $this->dueEndTime();
+        Notification::factory()->create([
+            'user_id' => $user->id,
+            'action_type' => 'ftth_bill',
+            'action_id' => "bill_due:DUE-ACCOUNT:{$endTime}",
+            'template_data' => [
+                'account_number' => 'DUE-ACCOUNT',
+                'endtime' => $endTime,
+                'due_date' => now()->addDays(3)->toDateString(),
+            ],
+            'sent_at' => now(),
+        ]);
+        $this->fakeDueAccountList(['DUE-ACCOUNT']);
+        Queue::fake();
+
+        $this->assertSame(0, app(DueInternetBillNotificationService::class)->dispatchDueBills());
+        Queue::assertNothingPushed();
+    }
+
+    public function test_scan_queues_an_account_again_when_its_endtime_changes(): void
+    {
+        $user = User::factory()->create(['broadband_account_number' => 'DUE-ACCOUNT']);
+        $previousEndTime = now()->addDays(3)->setTime(16, 37)->format('Y-m-d H:i');
+        $currentEndTime = now()->addDays(3)->setTime(17, 15)->format('Y-m-d H:i');
+        Notification::factory()->create([
+            'user_id' => $user->id,
+            'action_type' => 'ftth_bill',
+            'action_id' => "bill_due:DUE-ACCOUNT:{$previousEndTime}",
+            'template_data' => [
+                'account_number' => 'DUE-ACCOUNT',
+                'endtime' => $previousEndTime,
+                'due_date' => substr($previousEndTime, 0, 10),
+            ],
+            'sent_at' => now(),
+        ]);
+        $this->fakeDueAccountList([['account' => 'DUE-ACCOUNT', 'endtime' => $currentEndTime]]);
+        Queue::fake();
+
+        $this->assertSame(1, app(DueInternetBillNotificationService::class)->dispatchDueBills());
+        Queue::assertPushed(
+            SendInternetBillDueNotificationJob::class,
+            fn(SendInternetBillDueNotificationJob $job): bool => $job->userId === $user->id &&
+                $job->endTime === $currentEndTime &&
+                $job->actionId === "bill_due:DUE-ACCOUNT:{$currentEndTime}",
+        );
+    }
+
+    public function test_due_account_list_rejects_multiple_endtimes_for_one_account(): void
+    {
+        $this->fakeDueAccountList([
+            ['account' => 'DUE-ACCOUNT', 'endtime' => $this->dueEndTime()],
+            [
+                'account' => 'DUE-ACCOUNT',
+                'endtime' => now()->addDays(4)->setTime(16, 37)->format('Y-m-d H:i'),
+            ],
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('The CG API returned multiple due times for one account.');
+
+        app(DueInternetBillNotificationService::class)->dueBillAlerts();
+    }
+
+    public function test_due_account_endtimes_keep_minute_precision(): void
+    {
+        User::factory()->create(['broadband_account_number' => 'DUE-ACCOUNT']);
+        $this->fakeDueAccountList([
+            ['account' => 'DUE-ACCOUNT', 'endtime' => '2026-11-29 08:43'],
+            ['account' => 'DUE-ACCOUNT', 'endtime' => '2026-11-29 08:43:15'],
+        ]);
+
+        $alert = app(DueInternetBillNotificationService::class)->dueBillAlerts()[0];
+
+        $this->assertSame('2026-11-29 08:43', $alert['endtime']);
+        $this->assertSame('bill_due:DUE-ACCOUNT:2026-11-29 08:43', $alert['action_id']);
+        $this->assertArrayNotHasKey('due_date', $alert);
+    }
+
+    private function dueEndTime(): string
+    {
+        return now()->addDays(3)->setTime(16, 37)->format('Y-m-d H:i');
+    }
+
+    /**
+     * @param  list<string|array{account: string, endtime: string}>  $accounts
+     */
+    private function fakeDueAccountList(array $accounts): void
+    {
+        config([
+            'services.cg_api.url' => 'https://provider.test/WalletApp/ServerCommand',
+            'services.cg_api.client_id' => 'test-client',
+            'services.cg_api.client_secret' => 'test-secret',
+        ]);
+
+        Http::fake([
+            'provider.test/WalletApp/ServerCommand/GetTokenAPI*' => Http::response([
+                'ErrCode' => 0,
+                'token' => 'test-access-token',
+                'expires_in' => 3600,
+            ]),
+            'provider.test/WalletApp/ServerCommand/DueAccountListAPI' => Http::response([
+                'ErrCode' => 0,
+                'Message' => 'ok',
+                'Data' => array_map(
+                    fn(string|array $account): array => is_string($account)
+                        ? ['account' => $account, 'endtime' => $this->dueEndTime()]
+                        : $account,
+                    $accounts,
+                ),
+            ]),
+        ]);
     }
 
     public function test_delivery_creates_a_common_notification_record_and_sends_fcm_once(): void
@@ -91,7 +192,7 @@ class DueInternetBillNotificationTest extends TestCase
         $job = new SendInternetBillDueNotificationJob(
             userId: (int) $user->id,
             accountNumber: 'CG12345678',
-            dueDate: '2026-10-11',
+            endTime: '2026-10-11 16:37',
             actionId: 'bill-123',
         );
 
@@ -108,13 +209,20 @@ class DueInternetBillNotificationTest extends TestCase
         $stored = Notification::query()->where('user_id', $user->id)->firstOrFail();
         $this->assertSame('bill_alert', $stored->templateable->type->value);
         $this->assertSame('CG12345678', $stored->template_data['account_number']);
+        $this->assertSame('2026-10-11 16:37', $stored->template_data['endtime']);
+        $this->assertArrayNotHasKey('due_date', $stored->template_data);
+        $this->assertStringContainsString(
+            'October 11, 2026 4:37 PM',
+            $stored->renderedContent('zh')['description'],
+        );
         $this->assertSame(1, Notification::query()->where('user_id', $user->id)->count());
         NotificationFacade::assertSentTo($user, InternetBillDueNotification::class, 1);
         NotificationFacade::assertSentTo(
             $user,
             InternetBillDueNotification::class,
-            fn(InternetBillDueNotification $sent): bool => $sent->title === '互联网账单即将到期' &&
-                str_contains($sent->body, 'CG12345678'),
+            fn(InternetBillDueNotification $sent): bool => $sent->title === '互联网账户即将到期' &&
+                str_contains($sent->body, "October 11, 2026 4:37 PM 到期。\n") &&
+                str_contains($sent->body, 'October 11, 2026 4:37 PM'),
         );
     }
 
@@ -126,7 +234,7 @@ class DueInternetBillNotificationTest extends TestCase
         (new SendInternetBillDueNotificationJob(
             userId: (int) $user->id,
             accountNumber: 'CG12345678',
-            dueDate: '2026-10-11',
+            endTime: '2026-10-11 16:37',
             actionId: 'bill-without-device',
         ))->handle();
 
@@ -146,15 +254,22 @@ class DueInternetBillNotificationTest extends TestCase
         $job = new SendInternetBillDueNotificationJob(
             userId: (int) $user->id,
             accountNumber: 'CG12345678',
-            dueDate: '2026-10-11',
+            endTime: '2026-10-11 16:37',
             actionId: 'bill-token-added-later',
         );
 
         $job->handle();
         DeviceToken::query()->create(['user_id' => $user->id, 'token' => 'registered-later']);
-        $job->handle();
+        (new SendInternetBillDueNotificationJob(
+            userId: (int) $user->id,
+            accountNumber: 'CG12345678',
+            endTime: '2026-10-11 16:37',
+            actionId: 'bill-token-added-later',
+        ))->handle();
 
-        $this->assertNotNull(Notification::query()->where('action_id', 'bill-token-added-later')->value('sent_at'));
+        $notification = Notification::query()->where('action_id', 'bill-token-added-later')->firstOrFail();
+        $this->assertNotNull($notification->sent_at);
+        $this->assertSame('2026-10-11 16:37', $notification->template_data['endtime']);
         NotificationFacade::assertSentTo($user, InternetBillDueNotification::class, 1);
     }
 
@@ -168,6 +283,10 @@ class DueInternetBillNotificationTest extends TestCase
             'action_type' => 'ftth_bill',
             'action_id' => 'bill-123',
             'is_read' => false,
+            'template_data' => [
+                'account_number' => '1234',
+                'endtime' => '2026-11-20 17:30',
+            ],
         ]);
         $otherNotification = Notification::factory()->create([
             'user_id' => $otherUser->id,
@@ -182,14 +301,10 @@ class DueInternetBillNotificationTest extends TestCase
             ->assertJsonPath('data.0.category', 'announcement')
             ->assertJsonPath('data.0.action_type', 'ftth_bill')
             ->assertJsonPath('data.0.action_id', 'bill-123')
-            ->assertJsonPath('data.0.title', 'Internet bill due soon')
+            ->assertJsonPath('data.0.title', 'Internet account expiring soon')
             ->assertJsonPath(
                 'data.0.body',
-                'Your bill for account ' .
-                    $notification->template_data['account_number'] .
-                    ' is due on ' .
-                    $notification->template_data['due_date'] .
-                    '. Tap to view details.',
+                "Account 1234 expires at November 20, 2026 5:30 PM.\nRecharge to stay connected.",
             )
             ->assertJsonPath('data.0.is_read', false);
 
@@ -296,10 +411,12 @@ class DueInternetBillNotificationTest extends TestCase
             'start_date' => now()->subHour(),
             'end_date' => now()->addDay(),
         ]);
-        Announcement::factory()->inactive()->create([
-            'type' => AnnouncementType::System,
-            'title_en' => 'Hidden notice',
-        ]);
+        Announcement::factory()
+            ->inactive()
+            ->create([
+                'type' => AnnouncementType::System,
+                'title_en' => 'Hidden notice',
+            ]);
 
         $this->withToken($user->createToken('test')->plainTextToken, 'Bearer')
             ->getJson('/api/notifications')
@@ -319,8 +436,8 @@ class DueInternetBillNotificationTest extends TestCase
     {
         $user = User::factory()->create();
         $notification = new InternetBillDueNotification(
-            title: 'Internet bill due soon',
-            body: 'Your bill for account CG12345678 is due soon.',
+            title: 'Internet account expiring soon',
+            body: 'Account CG12345678 expires soon. Recharge to stay connected.',
             actionId: 'bill-123',
         );
 
@@ -328,7 +445,7 @@ class DueInternetBillNotificationTest extends TestCase
 
         $this->assertSame('ftth_bill', $message['data']['action_type']);
         $this->assertSame('bill-123', $message['data']['action_id']);
-        $this->assertSame('Internet bill due soon', $message['webpush']['notification']['title']);
+        $this->assertSame('Internet account expiring soon', $message['webpush']['notification']['title']);
         $this->assertSame('user_notification', $message['webpush']['notification']['data']['type']);
         $this->assertSame('bill-123', $message['webpush']['notification']['data']['action_id']);
     }
