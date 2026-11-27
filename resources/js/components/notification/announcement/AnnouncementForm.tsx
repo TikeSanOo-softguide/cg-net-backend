@@ -1,6 +1,15 @@
 import { FormEvent, useState } from 'react';
 import type { InertiaFormProps } from '@inertiajs/react';
-import { CalendarClockIcon, CheckIcon, CircleDotIcon, CalendarIcon, FileTextIcon, MegaphoneIcon, SettingsIcon, TypeIcon } from 'lucide-react';
+import {
+    CalendarClockIcon,
+    CheckIcon,
+    CircleDotIcon,
+    CalendarIcon,
+    FileTextIcon,
+    MegaphoneIcon,
+    SettingsIcon,
+    TypeIcon,
+} from 'lucide-react';
 
 import { FormField } from '@/components/ui/form-field';
 import { CmsFormShell } from '@/components/cms/shared/CmsFormShell';
@@ -8,7 +17,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { StaffStatusSwitch } from '@/components/staff/StaffStatusSwitch';
 import { useTranslation } from '@/hooks/useTranslation';
-import { ANNOUNCEMENT_TYPES, validateAnnouncement, validateAnnouncementField, type AnnouncementType } from '@/lib/announcement-validation';
+import {
+    ANNOUNCEMENT_TYPES,
+    validateAnnouncement,
+    validateAnnouncementField,
+    type AnnouncementType,
+} from '@/lib/announcement-validation';
 import { formControlStateClass } from '@/lib/form-control';
 import { cn } from '@/lib/utils';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
@@ -31,9 +45,18 @@ type AnnouncementFormProps = {
     onSubmit: (event: FormEvent) => void;
     onCancel?: () => void;
     mode?: 'create' | 'edit';
+    createdAt?: string | null;
+    updatedAt?: string | null;
 };
 
-export function AnnouncementForm({ form, onSubmit, onCancel, mode = 'create' }: AnnouncementFormProps) {
+export function AnnouncementForm({
+    form,
+    onSubmit,
+    onCancel,
+    mode = 'create',
+    createdAt,
+    updatedAt,
+}: AnnouncementFormProps) {
     const { t } = useTranslation();
     const [touched, setTouched] = useState<Record<keyof AnnouncementFormValues, boolean>>({
         type: false,
@@ -103,7 +126,14 @@ export function AnnouncementForm({ form, onSubmit, onCancel, mode = 'create' }: 
     };
 
     return (
-        <CmsFormShell onSubmit={submit} onCancel={onCancel} processing={form.processing} mode={mode}>
+        <CmsFormShell
+            onSubmit={submit}
+            onCancel={onCancel}
+            processing={form.processing}
+            mode={mode}
+            createdAt={createdAt}
+            updatedAt={updatedAt}
+        >
             <div className="sm:col-span-2">
                 <p className="mb-2 text-[12px] font-medium text-foreground">{t('notification.announcement.type')}</p>
                 <div className="grid grid-cols-2 gap-x-3.5">
@@ -139,7 +169,12 @@ export function AnnouncementForm({ form, onSubmit, onCancel, mode = 'create' }: 
                                     <Icon className="size-3.5" strokeWidth={1.8} />
                                 </span>
                                 <span className="min-w-0 flex-1">
-                                    <span className={cn('block truncate text-[12px] font-semibold leading-4', selected ? 'text-primary' : 'text-foreground')}>
+                                    <span
+                                        className={cn(
+                                            'block truncate text-[12px] font-semibold leading-6',
+                                            selected ? 'text-primary' : 'text-foreground',
+                                        )}
+                                    >
                                         {t(`notification.announcement.types.${type}`)}
                                     </span>
                                 </span>

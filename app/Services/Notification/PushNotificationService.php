@@ -15,6 +15,7 @@ use App\Models\PushSchedule;
 use App\Models\User;
 use App\Notifications\AdminPushNotification;
 use App\Notifications\CampaignNotification;
+use App\Support\FcmText;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
@@ -312,7 +313,7 @@ class PushNotificationService
                             $user,
                             new CampaignNotification(
                                 title: $content["title_{$locale}"],
-                                body: $content["body_{$locale}"],
+                                body: FcmText::truncateText($content["body_{$locale}"]),
                                 category: $category->value,
                                 actionType: $actionType,
                                 actionId: (string) $record->id,

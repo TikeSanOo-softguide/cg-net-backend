@@ -89,6 +89,84 @@ class CmsManagementTest extends TestCase
             );
     }
 
+    public function test_announcement_status_filter_uses_only_the_active_flag(): void
+    {
+        $admin = Admin::factory()->create();
+        Announcement::factory()->create([
+            'is_active' => true,
+            'start_date' => now()->addDay(),
+            'end_date' => now()->addDays(2),
+        ]);
+        Announcement::factory()->create([
+            'is_active' => true,
+            'start_date' => now()->subDays(2),
+            'end_date' => now()->subDay(),
+        ]);
+        Announcement::factory()->create([
+            'is_active' => false,
+            'start_date' => now()->addDay(),
+            'end_date' => now()->addDays(2),
+        ]);
+
+        $this->actingAs($admin, 'web')
+            ->get('/notifications/announcement?status=active')
+            ->assertOk()
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->component('Notification/announcement/Index')
+                    ->has('announcement.data', 2)
+                    ->where('announcement.data.0.is_active', true)
+                    ->where('announcement.data.1.is_active', true),
+            );
+
+        $this->actingAs($admin, 'web')
+            ->get('/notifications/announcement?status=inactive')
+            ->assertOk()
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->component('Notification/announcement/Index')
+                    ->has('announcement.data', 1)
+                    ->where('announcement.data.0.is_active', false),
+            );
+    }
+
+    public function test_announcement_form_submissions_preserve_list_filters(): void
+    {
+        $admin = Admin::factory()->create();
+        $formData = [
+            'type' => AnnouncementType::Announce->value,
+            'title_en' => 'Announcement title',
+            'title_zh' => 'Announcement title',
+            'title_my' => 'Announcement title',
+            'content_en' => 'Announcement content',
+            'content_zh' => 'Announcement content',
+            'content_my' => 'Announcement content',
+            'is_active' => true,
+        ];
+
+        $this->actingAs($admin, 'web')
+            ->from('/notifications/announcement?status=active')
+            ->post('/notifications/announcement', $formData)
+            ->assertRedirect('/notifications/announcement?status=active');
+
+        $announcement = Announcement::query()->firstOrFail();
+
+        $this->from('/notifications/announcement?status=inactive')
+            ->put('/notifications/announcement/' . $announcement->id, $formData)
+            ->assertRedirect('/notifications/announcement?status=inactive');
+    }
+
+    public function test_announcement_destroy_preserves_list_filters(): void
+    {
+        $admin = Admin::factory()->create();
+        $announcement = Announcement::factory()->create();
+
+        $this->actingAs($admin, 'web')
+            ->from('/notifications/announcement?status=active')
+            ->delete('/notifications/announcement/' . $announcement->id)
+            ->assertRedirect('/notifications/announcement?status=active');
+    }
+
     public function test_admins_can_create_update_and_delete_a_promotion(): void
     {
         $admin = Admin::factory()->create();
@@ -453,6 +531,7 @@ class CmsManagementTest extends TestCase
             'title_en' => 'Announce EN',
             'title_zh' => 'Announce ZH',
             'title_my' => 'Announce MY',
+            'content_en' => 'Announce body',
             'is_active' => true,
             'start_date' => now()->subHour(),
             'end_date' => now()->addHour(),
@@ -462,6 +541,7 @@ class CmsManagementTest extends TestCase
             'title_en' => 'System EN',
             'title_zh' => 'System ZH',
             'title_my' => 'System MY',
+            'content_en' => 'System body',
             'is_active' => true,
             'start_date' => now()->subHour(),
             'end_date' => now()->addHour(),
@@ -476,6 +556,7 @@ class CmsManagementTest extends TestCase
         Announcement::factory()->expired()->create();
         $undatedAnnouncement = Announcement::factory()->create([
             'type' => AnnouncementType::Announce,
+            'content_en' => 'Undated body',
             'is_active' => true,
             'start_date' => null,
             'end_date' => null,
@@ -485,6 +566,7 @@ class CmsManagementTest extends TestCase
             'title_en' => 'Promo EN',
             'title_zh' => 'Promo ZH',
             'title_my' => 'Promo MY',
+            'description_en' => 'Promo body',
             'is_active' => true,
             'start_date' => now()->toDateString(),
             'end_date' => now()->toDateString(),
@@ -493,6 +575,7 @@ class CmsManagementTest extends TestCase
             'title_en' => 'CMS Promo EN',
             'title_zh' => 'CMS Promo ZH',
             'title_my' => 'CMS Promo MY',
+            'description_en' => 'CMS promo body',
             'is_active' => true,
             'start_date' => now()->toDateString(),
             'end_date' => now()->toDateString(),
@@ -614,6 +697,66 @@ class CmsManagementTest extends TestCase
             ]);
         $this->assertSame(3, Announcement::query()->whereNull('push_sent_at')->count());
         $this->assertSame(3, Promotion::query()->whereNull('push_sent_at')->count());
+    }
+
+    public function test_campaign_fcm_bodies_are_limited_without_truncating_inbox_content(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create(['lang' => 'en']);
+        $user->deviceTokens()->create(['token' => 'fcm-long-campaign-body']);
+        $longBody = str_repeat('က', 5000);
+        $expectedPushBody = str_repeat('က', 200) . '...';
+
+        $announcement = Announcement::factory()->create([
+            'type' => AnnouncementType::Announce,
+            'content_en' => $longBody,
+            'is_active' => true,
+            'start_date' => now()->subMinute(),
+            'end_date' => now()->addHour(),
+        ]);
+        $promotion = Promotion::factory()->create([
+            'description_en' => $longBody,
+            'is_active' => true,
+            'start_date' => today()->toDateString(),
+            'end_date' => today()->toDateString(),
+        ]);
+
+        $this->assertSame(2, app(PushNotificationService::class)->processDueTitles());
+
+        Notification::assertSentTo(
+            $user,
+            CampaignNotification::class,
+            fn(CampaignNotification $notification): bool => $notification->actionId === (string) $announcement->id &&
+                $notification->body === $expectedPushBody &&
+                mb_strlen($notification->body) === 203,
+        );
+        Notification::assertSentTo(
+            $user,
+            CampaignNotification::class,
+            fn(CampaignNotification $notification): bool => $notification->actionId === (string) $promotion->id &&
+                $notification->body === $expectedPushBody &&
+                mb_strlen($notification->body) === 203,
+        );
+
+        $this->assertSame(
+            $longBody,
+            \App\Models\Notification::query()
+                ->where('user_id', $user->id)
+                ->where('action_type', 'announcement')
+                ->where('action_id', (string) $announcement->id)
+                ->firstOrFail()
+                ->template_data['body_en'],
+        );
+        $this->assertSame(
+            $longBody,
+            \App\Models\Notification::query()
+                ->where('user_id', $user->id)
+                ->where('action_type', 'promotion')
+                ->where('action_id', (string) $promotion->id)
+                ->firstOrFail()
+                ->template_data['body_en'],
+        );
     }
 
     public function test_campaign_pushes_respect_the_users_category_preferences(): void

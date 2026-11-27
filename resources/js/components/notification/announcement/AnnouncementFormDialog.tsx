@@ -111,5 +111,14 @@ function AnnouncementFormDialogBody({ item, onClose }: { item: AnnouncementItem 
         form.post('/notifications/announcement', options);
     };
 
-    return <AnnouncementForm form={form} onSubmit={submit} onCancel={onClose} mode={isEdit ? 'edit' : 'create'} />;
+    return (
+        <AnnouncementForm
+            form={form}
+            onSubmit={submit}
+            onCancel={onClose}
+            mode={isEdit ? 'edit' : 'create'}
+            createdAt={item?.created_at}
+            updatedAt={item?.updated_at}
+        />
+    );
 }

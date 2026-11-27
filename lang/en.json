@@ -1050,6 +1050,7 @@
             "description": "Write announce and system messages for customers.",
             "edit": "Edit announcement",
             "edit_description": "Update this announcement's title, content, type, and schedule.",
+            "search_placeholder": "Search announcements",
             "title_en": "Title (English)",
             "title_my": "Title (Myanmar)",
             "title_zh": "Title (Chinese)",

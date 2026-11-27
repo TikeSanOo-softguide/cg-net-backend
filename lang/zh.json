@@ -1050,6 +1050,7 @@
             "description": "为客户编写公告和系统消息。",
             "edit": "编辑公告",
             "edit_description": "更新此公告的标题、内容、类型和时间安排。",
+            "search_placeholder": "搜索公告",
             "title_en": "标题（英文）",
             "title_my": "标题（缅甸文）",
             "title_zh": "标题（中文）",

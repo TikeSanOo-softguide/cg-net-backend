@@ -26,7 +26,7 @@ class AnnouncementController extends Controller
         $type = $request->string('type')->toString();
         $types = array_column(AnnouncementType::cases(), 'value');
 
-        if (! in_array($type, $types, true)) {
+        if (!in_array($type, $types, true)) {
             $type = '';
         }
         $sort = $request->string('sort')->toString();
@@ -53,30 +53,12 @@ class AnnouncementController extends Controller
                 $status !== '' && in_array($status, array_column(AnnouncementStatus::cases(), 'value'), true),
                 function ($query) use ($status): void {
                     match ($status) {
-                        'active' => $query
-                            ->where('is_active', true)
-                            ->where(function ($query): void {
-                                $query->whereNull('start_date')->orWhere('start_date', '<=', now());
-                            })
-                            ->where(function ($query): void {
-                                $query->whereNull('end_date')->orWhere('end_date', '>=', now());
-                            }),
-                        'pending' => $query
-                            ->where('is_active', true)
-                            ->whereNotNull('start_date')
-                            ->where('start_date', '>', now())
-                            ->where(function ($query): void {
-                                $query->whereNull('end_date')->orWhere('end_date', '>=', now());
-                            }),
+                        'active' => $query->where('is_active', true),
                         'inactive' => $query->where('is_active', false),
-                        'expired' => $query
-                            ->where('is_active', true)
-                            ->whereNotNull('end_date')
-                            ->where('end_date', '<', now()),
                     };
                 },
             )
-            ->when($type !== '', fn ($query) => $query->where('type', $type))
+            ->when($type !== '', fn($query) => $query->where('type', $type))
             ->orderBy($sort, $direction)
             ->paginate(15)
             ->withQueryString()
@@ -108,7 +90,7 @@ class AnnouncementController extends Controller
             ->log('announcement_created');
 
         return redirect()
-            ->route('notifications.announcement.index')
+            ->back()
             ->with('success', 'notification.announcement.created');
     }
 
@@ -126,7 +108,7 @@ class AnnouncementController extends Controller
             ->log('announcement_updated');
 
         return redirect()
-            ->route('notifications.announcement.index')
+            ->back()
             ->with('success', 'notification.announcement.updated');
     }
 
@@ -141,7 +123,7 @@ class AnnouncementController extends Controller
             ->log('announcement_deleted');
 
         return redirect()
-            ->route('notifications.announcement.index')
+            ->back()
             ->with('success', 'notification.announcement.deleted');
     }
 
@@ -165,7 +147,7 @@ class AnnouncementController extends Controller
         }
 
         $redirect = redirect()
-            ->route('notifications.announcement.index')
+            ->back()
             ->with('success', 'common.bulk_deleted')
             ->with('deleted_count', $deleted);
 
@@ -189,8 +171,8 @@ class AnnouncementController extends Controller
             'start_date' => $announcement->start_date,
             'end_date' => $announcement->end_date,
             'is_active' => $announcement->is_active,
-            'created_at' => $announcement->created_at,
-            'updated_at' => $announcement->updated_at,
+            'created_at' => $announcement->created_at?->toISOString(),
+            'updated_at' => $announcement->updated_at?->toISOString(),
         ];
     }
 }

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import {
     CalendarClockIcon,
-    CalendarIcon,
+    CheckIcon,
     CircleXIcon,
     EyeIcon,
     FileTextIcon,
@@ -64,27 +64,14 @@ function visitIndex(search: string, status: string, type: string) {
 }
 
 function getStatus(item: AnnouncementItem, timezone: string) {
-    if (!item.is_active) {
-        return 'inactive';
-    }
-
-    const now = dateInTimezone(new Date(), timezone).getTime();
-
-    if (item.start_date) {
-        const start = dateTimeInputInTimezone(item.start_date, timezone);
-        if (start && Date.parse(`${start}Z`) > now) {
-            return 'pending';
-        }
-    }
-
     if (item.end_date) {
         const end = dateTimeInputInTimezone(item.end_date, timezone);
-        if (end && Date.parse(`${end}Z`) < now) {
+        if (end && Date.parse(`${end}Z`) < dateInTimezone(new Date(), timezone).getTime()) {
             return 'expired';
         }
     }
 
-    return 'active';
+    return item.is_active ? 'active' : 'inactive';
 }
 
 export default function AnnouncementsIndex({ announcement, filters }: Props) {
@@ -151,7 +138,7 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
                                         300,
                                     );
                                 }}
-                                placeholder={t('common.search')}
+                                placeholder={t('notification.announcement.search_placeholder')}
                                 size="sm"
                             />
                         </FormField>
@@ -197,9 +184,7 @@ export default function AnnouncementsIndex({ announcement, filters }: Props) {
                                 <SelectContent>
                                     <SelectItem value="all">{t('common.all')}</SelectItem>
                                     <SelectItem value="active">{t('status.active')}</SelectItem>
-                                    <SelectItem value="pending">{t('status.pending')}</SelectItem>
                                     <SelectItem value="inactive">{t('status.inactive')}</SelectItem>
-                                    <SelectItem value="expired">{t('status.expired')}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </FormField>
@@ -355,7 +340,7 @@ function AnnouncementDetailDialog({
     item: AnnouncementItem | null;
     onEdit: (item: AnnouncementItem) => void;
 }) {
-    const { t } = useTranslation();
+    const { t, timezone } = useTranslation();
     const can = useCan();
 
     if (!item) {
@@ -374,6 +359,72 @@ function AnnouncementDetailDialog({
             {open ? (
                 <div className="flex min-h-0 flex-1 flex-col">
                     <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
+                        <div className="mb-3">
+                            <p
+                                id="view-type-label"
+                                className="mb-2 text-[12px] font-medium text-foreground"
+                            >
+                                {t('notification.announcement.type')}
+                            </p>
+                            <div
+                                role="group"
+                                aria-labelledby="view-type-label"
+                                className="grid grid-cols-2 gap-x-3.5"
+                            >
+                                {['announce', 'system'].map((type) => {
+                                    const selected = item.type === type;
+                                    const Icon = type === 'system' ? SettingsIcon : MegaphoneIcon;
+
+                                    return (
+                                        <button
+                                            key={type}
+                                            type="button"
+                                            disabled
+                                            aria-pressed={selected}
+                                            className={cn(
+                                                'group flex items-center gap-2 rounded-[6px] border px-2.5 py-2 text-left transition-colors',
+                                                type === 'system' && 'sm:ml-1.5',
+                                                selected
+                                                    ? 'border-primary bg-primary/10 ring-1 ring-primary/25'
+                                                    : 'border-border/70 bg-background hover:border-primary/30',
+                                            )}
+                                        >
+                                            <span
+                                                className={cn(
+                                                    'flex size-8 shrink-0 items-center justify-center rounded-[6px] transition-colors',
+                                                    selected
+                                                        ? 'bg-primary text-primary-foreground'
+                                                        : 'bg-muted text-muted-foreground group-hover:text-primary',
+                                                )}
+                                            >
+                                                <Icon className="size-3.5" strokeWidth={1.8} />
+                                            </span>
+                                            <span className="min-w-0 flex-1">
+                                                <span
+                                                    className={cn(
+                                                        'block truncate text-[12px] font-semibold leading-6',
+                                                        selected ? 'text-primary' : 'text-foreground',
+                                                    )}
+                                                >
+                                                    {t(`notification.announcement.types.${type}`)}
+                                                </span>
+                                            </span>
+                                            <span
+                                                className={cn(
+                                                    'flex size-4 shrink-0 items-center justify-center rounded-full border',
+                                                    selected
+                                                        ? 'border-primary bg-primary text-primary-foreground'
+                                                        : 'border-border bg-background text-transparent',
+                                                )}
+                                            >
+                                                <CheckIcon className="size-2.5" strokeWidth={3} />
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
                         <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
                             <div>
                                 <FormField
@@ -391,7 +442,7 @@ function AnnouncementDetailDialog({
                                 >
                                     <Textarea
                                         id="view-content-en"
-                                        className="min-h-36"
+                                        className="h-36"
                                         value={item.content_en || '—'}
                                         rows={5}
                                         readOnly
@@ -415,7 +466,7 @@ function AnnouncementDetailDialog({
                                 >
                                     <Textarea
                                         id="view-content-zh"
-                                        className="min-h-36"
+                                        className="h-36"
                                         value={item.content_zh || '—'}
                                         rows={5}
                                         readOnly
@@ -439,7 +490,7 @@ function AnnouncementDetailDialog({
                                 >
                                     <Textarea
                                         id="view-content-my"
-                                        className="min-h-36"
+                                        className="h-36"
                                         value={item.content_my || '—'}
                                         rows={5}
                                         readOnly
@@ -462,14 +513,14 @@ function AnnouncementDetailDialog({
                                     <FormField
                                         label={t('common.start_date_time')}
                                         htmlFor="view-start-date"
-                                        icon={CalendarIcon}
+                                        icon={CalendarClockIcon}
                                     >
                                         <DateTimePicker
                                             id="view-start-date"
                                             value={item.start_date ?? ''}
                                             disabled
                                             clearable={false}
-                                            className="w-full border-0 bg-transparent shadow-none px-0"
+                                            className="w-full border-0 bg-transparent shadow-none px-0 disabled:text-foreground disabled:opacity-100"
                                             onChange={() => undefined}
                                         />
                                     </FormField>
@@ -484,13 +535,33 @@ function AnnouncementDetailDialog({
                                             value={item.end_date ?? ''}
                                             disabled
                                             clearable={false}
-                                            className="w-full border-0 bg-transparent shadow-none px-0"
+                                            className="w-full border-0 bg-transparent shadow-none px-0 disabled:text-foreground disabled:opacity-100"
                                             onChange={() => undefined}
                                         />
                                     </FormField>
                                 </div>
                             </div>
                         </div>
+                        {item.created_at || item.updated_at ? (
+                            <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 pt-3 text-xs text-muted-foreground">
+                                {item.created_at ? (
+                                    <p>
+                                        <span className="font-medium text-foreground">
+                                            {t('common.created_at')}:{' '}
+                                        </span>
+                                        {formatDateTime(item.created_at, false, timezone)}
+                                    </p>
+                                ) : null}
+                                {item.updated_at ? (
+                                    <p>
+                                        <span className="font-medium text-foreground">
+                                            {t('common.updated_at')}:{' '}
+                                        </span>
+                                        {formatDateTime(item.updated_at, false, timezone)}
+                                    </p>
+                                ) : null}
+                            </div>
+                        ) : null}
                     </div>
 
                     <div className={formActionBarClass}>
