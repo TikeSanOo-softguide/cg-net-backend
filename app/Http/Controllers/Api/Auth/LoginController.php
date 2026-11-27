@@ -28,6 +28,7 @@ class LoginController extends Controller
     public function __invoke(LoginRequest $request, ApiAuthenticationService $service): JsonResponse
     {
         $verificationToken = $request->string('verification_token')->toString();
+        $deviceId = $request->string('device_id')->toString();
         $phone = $service->verifiedPhone($verificationToken);
 
         try {
