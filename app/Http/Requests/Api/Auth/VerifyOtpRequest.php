@@ -17,6 +17,12 @@ class VerifyOtpRequest extends FormRequest
         return [
             'challenge_id' => ['required', 'string', 'size:64'],
             'code' => ['required', 'digits:6'],
+            'device_id' => [
+                Rule::requiredIf(!config('auth_api.require_password_on_login', true)),
+                'nullable',
+                'string',
+                'max:255',
+            ],
             'device_token' => ['nullable', 'string', 'max:512'],
             'platform' => ['nullable', 'string', Rule::in(['android', 'ios', 'web'])],
         ];

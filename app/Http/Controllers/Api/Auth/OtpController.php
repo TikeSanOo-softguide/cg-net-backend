@@ -16,6 +16,7 @@ use App\Services\DeviceToken\DeviceTokenService;
 use App\Services\SecurityLog\SecurityLogService;
 use App\Support\ApiMessage;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 
 class OtpController extends Controller
@@ -116,10 +117,23 @@ class OtpController extends Controller
      */
     public function verify(VerifyOtpRequest $request, ApiAuthenticationService $service): JsonResponse
     {
-        $result = $service->verifyOtp(
-            $request->string('challenge_id')->toString(),
-            $request->string('code')->toString(),
-        );
+        $result = DB::transaction(function () use ($request, $service): array {
+            $result = $service->verifyOtp(
+                $request->string('challenge_id')->toString(),
+                $request->string('code')->toString(),
+                $request->filled('device_id') ? $request->string('device_id')->toString() : null,
+            );
+
+            if (!isset($result['verification_token'])) {
+                $this->logActivity($request, UserLogEvent::LoginSuccess, [
+                    'user_id' => $result['user']->id,
+                    'phone' => $result['user']->phone,
+                    'method' => 'otp',
+                ]);
+            }
+
+            return $result;
+        });
 
         $payload = ['next_step' => $result['next_step']];
 
@@ -138,12 +152,6 @@ class OtpController extends Controller
             $request->string('device_token')->toString() !== '' ? $request->string('device_token')->toString() : null,
             $request->input('platform'),
         );
-
-        $this->logActivity($request, UserLogEvent::LoginSuccess, [
-            'user_id' => $result['user']->id,
-            'phone' => $result['user']->phone,
-            'method' => 'otp',
-        ]);
 
         return response()->json(ApiMessage::attach(MessageCode::AuthOtpVerified, [
             ...$payload,
