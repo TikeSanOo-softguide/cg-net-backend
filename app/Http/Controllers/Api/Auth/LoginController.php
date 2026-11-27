@@ -28,16 +28,25 @@ class LoginController extends Controller
     public function __invoke(LoginRequest $request, ApiAuthenticationService $service): JsonResponse
     {
         $verificationToken = $request->string('verification_token')->toString();
-        $deviceId = $request->string('device_id')->toString();
         $phone = $service->verifiedPhone($verificationToken);
 
         try {
-            $result = $service->login(
-                $verificationToken,
-                $request->string('password')->toString(),
-                $request->ip(),
-                $request->string('device_id')->toString(),
-            );
+            $result = DB::transaction(function () use ($request, $service, $verificationToken): array {
+                $result = $service->login(
+                    $verificationToken,
+                    $request->string('password')->toString(),
+                    $request->ip(),
+                    $request->string('device_id')->toString(),
+                );
+
+                $this->logActivity($request, UserLogEvent::LoginSuccess, [
+                    'user_id' => $result['user']->id,
+                    'phone' => $result['user']->phone,
+                    'method' => 'password',
+                ]);
+
+                return $result;
+            });
         } catch (ValidationException | HttpExceptionInterface $e) {
             $reason = match (true) {
                 $e instanceof HttpExceptionInterface && $e->getStatusCode() === 429 => 'Too many login attempts',
@@ -93,10 +102,11 @@ class LoginController extends Controller
     public function checkSession(SessionCheckRequest $request): JsonResponse
     {
         $user = User::query()->where('phone', $request->validated('phone'))->first();
-        $deviceHash = hash('sha256', $request->validated('device_id'));
+        $latestAuthEvent = $user ? UserLog::latestAuthenticationEventFor($user) : null;
+        $boundDeviceId = $latestAuthEvent?->deviceId();
 
-        $isBound = $user?->device_id !== null;
-        $sameDevice = $isBound && hash_equals($user->device_id, $deviceHash);
+        $isBound = $boundDeviceId !== null;
+        $sameDevice = $isBound && hash_equals($boundDeviceId, $request->validated('device_id'));
 
         $hasActiveToken =
             $user

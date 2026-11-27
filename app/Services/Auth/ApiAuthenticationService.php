@@ -192,14 +192,9 @@ final class ApiAuthenticationService
 
     private function assertDeviceAllowed(User $user, string $deviceId): void
     {
-        $hash = hash('sha256', $deviceId);
+        $boundDeviceId = UserLog::latestAuthenticationEventFor($user)?->deviceId();
 
-        if ($user->device_id === null) {
-            $user->forceFill(['device_id' => $hash])->save();
-            return;
-        }
-
-        if (!hash_equals($user->device_id, $hash)) {
+        if ($boundDeviceId !== null && !hash_equals($boundDeviceId, $deviceId)) {
             throw new ApiMessageException(MessageCode::AuthAlreadySignedIn, 403);
         }
     }
