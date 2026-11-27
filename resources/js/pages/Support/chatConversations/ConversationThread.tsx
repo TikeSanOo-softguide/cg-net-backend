@@ -1,4 +1,4 @@
-import { useForm } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 import { ArrowDownIcon, ChevronDownIcon, LockKeyholeIcon, SendIcon, UserCheckIcon, XIcon } from 'lucide-react';
 import type { FormEvent, KeyboardEvent } from 'react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
+import type { PageProps } from '@/types';
 
 import { Avatar, formatDateTime } from './ConversationList';
 import type { Conversation, QuickReply } from './types';
@@ -47,6 +48,7 @@ export function ConversationThread({
     quickReplies,
 }: ConversationThreadProps) {
     const { t, locale } = useTranslation();
+    const { auth } = usePage<PageProps>().props;
     const form = useForm({ message: '' });
     const closeForm = useForm({ message: '', conversation: '' });
     const acceptForm = useForm({ conversation: '' });
@@ -190,6 +192,12 @@ export function ConversationThread({
     };
 
     const isLive = conversation.status === 'open' || conversation.status === 'with_agent';
+    const currentAgentId = auth.user?.id;
+
+    const isAssignedToAnotherAgent =
+        conversation.agent !== null && Number(conversation.agent.id) !== Number(currentAgentId);
+
+    const canAcceptConversation = canReply && conversation.status === 'waiting_agent' && !conversation.agent;
 
     const acceptConversation = () => {
         acceptForm.post(`/support/conversations/${conversation.id}/accept`, {
@@ -271,14 +279,14 @@ export function ConversationThread({
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">
-                    {canReply && conversation.status === 'waiting_agent' ? (
+                    {canAcceptConversation ? (
                         <Button type="button" size="sm" disabled={acceptForm.processing} onClick={acceptConversation}>
                             <UserCheckIcon />
                             <span className="hidden lg:inline">{t('support.chat_conversations.accept')}</span>
                         </Button>
                     ) : null}
 
-                    {canManage && canReply && conversation.status === 'open' ? (
+                    {canManage && canReply && conversation.status === 'open' && !isAssignedToAnotherAgent ? (
                         <Button
                             type="button"
                             size="sm"
@@ -369,7 +377,11 @@ export function ConversationThread({
                     {acceptForm.errors.conversation}
                 </p>
             ) : null}
-            {canReply && isLive ? (
+            {isLive && isAssignedToAnotherAgent ? (
+                <p className="border-t border-border bg-muted/30 px-4 py-3 text-center text-xs text-muted-foreground">
+                    {t('support.chat_conversations.already_chatting')}
+                </p>
+            ) : canReply && isLive ? (
                 <form onSubmit={submit} className="relative border-t border-border p-3 sm:p-4">
                     {quickReplyPanelOpen ? (
                         <div className="absolute inset-x-0 bottom-full z-20 flex max-h-[45vh] flex-col overflow-hidden border-t border-border bg-background shadow-[0_-8px_24px_rgba(0,0,0,0.12)]">
