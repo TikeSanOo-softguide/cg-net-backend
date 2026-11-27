@@ -11,27 +11,32 @@ use App\Services\Auth\ApiAuthenticationService;
 use App\Services\DeviceToken\DeviceTokenService;
 use App\Support\ApiMessage;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class RegistrationController extends Controller
 {
     /** New account, after POST /auth/otp/verify returned next_step=register. */
     public function __invoke(CompleteRegistrationRequest $request, ApiAuthenticationService $service): JsonResponse
     {
-        $result = $service->completeRegistration(
-            $request->string('verification_token')->toString(),
-            $request->validated(),
-        );
+        $result = DB::transaction(function () use ($request, $service): array {
+            $result = $service->completeRegistration(
+                $request->string('verification_token')->toString(),
+                $request->validated(),
+            );
+
+            $this->logActivity($request, UserLogEvent::RegisterComplete, [
+                'user_id' => $result['user']->id,
+                'name' => $result['user']->name,
+            ]);
+
+            return $result;
+        });
 
         DeviceTokenService::register(
             $result['user'],
             $request->string('device_token')->toString() !== '' ? $request->string('device_token')->toString() : null,
             $request->input('platform'),
         );
-
-        $this->logActivity($request, UserLogEvent::RegisterComplete, [
-            'user_id' => $result['user']->id,
-            'name' => $result['user']->name,
-        ]);
 
         return response()->json(
             ApiMessage::attach(MessageCode::AuthRegistered, [

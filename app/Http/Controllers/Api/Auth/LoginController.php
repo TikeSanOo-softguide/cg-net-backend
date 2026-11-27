@@ -17,6 +17,7 @@ use App\Services\SecurityLog\SecurityLogService;
 use App\Support\ApiMessage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
@@ -27,6 +28,7 @@ class LoginController extends Controller
     public function __invoke(LoginRequest $request, ApiAuthenticationService $service): JsonResponse
     {
         $verificationToken = $request->string('verification_token')->toString();
+        $deviceId = $request->string('device_id')->toString();
         $phone = $service->verifiedPhone($verificationToken);
 
         try {
@@ -66,12 +68,6 @@ class LoginController extends Controller
             $request->input('platform'),
         );
 
-        $this->logActivity($request, UserLogEvent::LoginSuccess, [
-            'user_id' => $result['user']->id,
-            'phone' => $result['user']->phone,
-            'method' => 'password',
-        ]);
-
         return response()->json([
             'token' => $result['token'],
             'token_type' => 'Bearer',
@@ -83,11 +79,13 @@ class LoginController extends Controller
     public function logout(Request $request): JsonResponse
     {
         $user = $request->user();
-        $user->tokens()->delete();
-        $user->deviceTokens()->delete();
-        $this->logActivity($request, UserLogEvent::Logout, [
-            'user_id' => $user->id,
-        ]);
+        DB::transaction(function () use ($request, $user): void {
+            $user->tokens()->delete();
+            $user->deviceTokens()->delete();
+            $this->logActivity($request, UserLogEvent::Logout, [
+                'user_id' => $user->id,
+            ]);
+        });
 
         return response()->json(ApiMessage::attach(MessageCode::AuthLoggedOut));
     }

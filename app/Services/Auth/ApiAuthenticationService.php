@@ -8,6 +8,7 @@ use App\Enums\WalletStatus;
 use App\Exceptions\ApiMessageException;
 use App\Exceptions\Auth\InvalidCredentialsException;
 use App\Models\User;
+use App\Models\UserLog;
 use App\Models\Wallet;
 use App\Services\Ledger\LedgerPoster;
 use Carbon\CarbonInterface;
@@ -56,7 +57,7 @@ final class ApiAuthenticationService
      *     expires_at?: CarbonInterface
      * }
      */
-    public function verifyOtp(string $challengeId, string $code): array
+    public function verifyOtp(string $challengeId, string $code, ?string $deviceId = null): array
     {
         $verificationToken = $this->otp->verify($challengeId, $code);
         $phone = (string) $this->otp->phoneForVerificationToken($verificationToken);
@@ -79,10 +80,16 @@ final class ApiAuthenticationService
         }
 
         // Password step switched off: a verified OTP is enough to sign in.
-        $session = $this->otp->consumeVerificationToken(
-            $verificationToken,
-            fn(string $phone): array => $this->openSession($this->findUserByPhone($phone)),
-        );
+        $session = $this->otp->consumeVerificationToken($verificationToken, function (string $phone) use (
+            $deviceId,
+        ): array {
+            $user = $this->findUserByPhone($phone);
+            if ($user !== null && $deviceId !== null) {
+                $this->assertDeviceAllowed($user, $deviceId);
+            }
+
+            return $this->openSession($user);
+        });
 
         return ['next_step' => self::STEP_AUTHENTICATED, ...$session];
     }
