@@ -1794,6 +1794,7 @@
         "chat_conversations": {
             "accept": "Accept conversation",
             "accept_to_reply": "Accept this conversation to reply to the customer.",
+            "already_chatting": "Another agent is already chatting with this user.",
             "all": "All",
             "app_name": "CGNet Chat",
             "attachment": "Attachment",

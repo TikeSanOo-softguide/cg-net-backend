@@ -1794,6 +1794,7 @@
         "chat_conversations": {
             "accept": "接受对话",
             "accept_to_reply": "接受此对话后即可回复客户。",
+            "already_chatting": "已有其他客服人员正在与此用户聊天。",
             "all": "全部",
             "app_name": "CGNet Chat",
             "attachment": "附件",
