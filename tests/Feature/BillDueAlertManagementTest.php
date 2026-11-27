@@ -34,7 +34,7 @@ class BillDueAlertManagementTest extends TestCase
         DeviceToken::query()->create(['user_id' => $missingUser->id, 'token' => 'token']);
         $unsentNotification = Notification::factory()->create([
             'user_id' => $unsentUser->id,
-            'category' => NotificationCategory::Announcement,
+            'category' => NotificationCategory::BillAlert,
             'action_type' => NotificationActionType::FtthBill->value,
             'action_id' => "bill_due:ACCOUNT-UNSENT:{$endTime}",
             'template_data' => [
@@ -46,7 +46,7 @@ class BillDueAlertManagementTest extends TestCase
         ]);
         Notification::factory()->create([
             'user_id' => $sentUser->id,
-            'category' => NotificationCategory::Announcement,
+            'category' => NotificationCategory::BillAlert,
             'action_type' => NotificationActionType::FtthBill->value,
             'action_id' => "bill_due:ACCOUNT-SENT:{$endTime}",
             'template_data' => [
@@ -187,7 +187,7 @@ class BillDueAlertManagementTest extends TestCase
         DeviceToken::query()->create(['user_id' => $user->id, 'token' => 'token']);
         $notification = Notification::factory()->create([
             'user_id' => $user->id,
-            'category' => NotificationCategory::Announcement,
+            'category' => NotificationCategory::BillAlert,
             'action_type' => NotificationActionType::FtthBill->value,
             'action_id' => "bill_due:ACCOUNT-123:{$endTime}",
             'template_data' => [
@@ -208,7 +208,7 @@ class BillDueAlertManagementTest extends TestCase
                 'action_id' => "bill_due:ACCOUNT-123:{$endTime}",
             ])
             ->assertAccepted()
-            ->assertJsonPath('message', 'Bill due alert queued for delivery.');
+            ->assertJsonPath('message', 'notification.bill_due_alerts.queued');
 
         Queue::assertPushed(
             SendInternetBillDueNotificationJob::class,
@@ -235,7 +235,7 @@ class BillDueAlertManagementTest extends TestCase
                 'action_id' => "bill_due:ACCOUNT-123:{$endTime}",
             ])
             ->assertAccepted()
-            ->assertJsonPath('message', 'Bill due alert queued for delivery.');
+            ->assertJsonPath('message', 'notification.bill_due_alerts.queued');
 
         Queue::assertPushed(
             SendInternetBillDueNotificationJob::class,
@@ -272,7 +272,7 @@ class BillDueAlertManagementTest extends TestCase
         $endTime = $this->dueEndTime();
         Notification::factory()->create([
             'user_id' => $user->id,
-            'category' => NotificationCategory::Announcement,
+            'category' => NotificationCategory::BillAlert,
             'action_type' => NotificationActionType::FtthBill->value,
             'action_id' => "bill_due:ACCOUNT-123:{$endTime}",
             'template_data' => [
