@@ -2,7 +2,7 @@
 
 return [
     // Larger chunks are fine after switching PIN hashing to HMAC-SHA256.
-    'chunk_size' => (int) env('TOPUP_CARDS_CHUNK_SIZE', 2000),
+    'chunk_size' => (int) env('TOPUP_CARDS_CHUNK_SIZE', 500),
     'max_cards' => (int) env('TOPUP_CARDS_MAX_CARDS', 100000),
     'preview_limit' => (int) env('TOPUP_CARDS_PREVIEW_LIMIT', 100),
     'retry_after' => (int) env('TOP_UP_QUEUE_RETRY_AFTER', 540),
